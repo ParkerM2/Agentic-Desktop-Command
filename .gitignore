@@ -1,7 +1,27 @@
+# Dependencies
 node_modules/
+
+# Build output
 out/
 dist/
-*.log
+release/
+
+# Environment & local config
 .env
 .env.*
+settings.json
+
+# Runtime data
+.auto-claude/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
 nul

@@ -14,14 +14,7 @@ import globals from 'globals';
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────
   {
-    ignores: [
-      'out/**',
-      'dist/**',
-      'node_modules/**',
-      'ai-docs/**',
-      'apps/**',
-      '*.config.*',
-    ],
+    ignores: ['out/**', 'dist/**', 'node_modules/**', 'ai-docs/**', 'apps/**', '*.config.*'],
   },
 
   // ── Base JS recommended rules ─────────────────────────────────
@@ -109,15 +102,7 @@ export default tseslint.config(
       'import-x/order': [
         'error',
         {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            'parent',
-            'sibling',
-            'index',
-            'type',
-          ],
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
           pathGroups: [
             { pattern: 'react', group: 'external', position: 'before' },
             { pattern: 'react-dom/**', group: 'external', position: 'before' },
@@ -149,7 +134,10 @@ export default tseslint.config(
     plugins: { unicorn },
     rules: {
       // Filename conventions
-      'unicorn/filename-case': ['error', { cases: { kebabCase: true, camelCase: true, pascalCase: true } }],
+      'unicorn/filename-case': [
+        'error',
+        { cases: { kebabCase: true, camelCase: true, pascalCase: true } },
+      ],
 
       // Best practices
       'unicorn/prefer-node-protocol': 'error',
@@ -266,7 +254,11 @@ export default tseslint.config(
         // Default: camelCase
         { selector: 'default', format: ['camelCase'], leadingUnderscore: 'allow' },
         // Variables: camelCase or UPPER_CASE (constants) or PascalCase (React components)
-        { selector: 'variable', format: ['camelCase', 'UPPER_CASE', 'PascalCase'], leadingUnderscore: 'allow' },
+        {
+          selector: 'variable',
+          format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+          leadingUnderscore: 'allow',
+        },
         // Functions: camelCase or PascalCase (React components)
         { selector: 'function', format: ['camelCase', 'PascalCase'] },
         // Type-like: PascalCase
@@ -274,7 +266,11 @@ export default tseslint.config(
         // Enum members: PascalCase or UPPER_CASE
         { selector: 'enumMember', format: ['PascalCase', 'UPPER_CASE'] },
         // Properties: camelCase, snake_case (API responses), PascalCase (React)
-        { selector: 'property', format: ['camelCase', 'snake_case', 'PascalCase', 'UPPER_CASE'], leadingUnderscore: 'allow' },
+        {
+          selector: 'property',
+          format: ['camelCase', 'snake_case', 'PascalCase', 'UPPER_CASE'],
+          leadingUnderscore: 'allow',
+        },
         // Allow quoted properties with special chars (IPC channels: 'projects.list', 'event:terminal.output')
         { selector: 'property', modifiers: ['requiresQuotes'], format: null },
         // Import: any (can't control external packages)
@@ -288,7 +284,10 @@ export default tseslint.config(
       '@typescript-eslint/no-import-type-side-effects': 'error',
 
       // Relax for this project's patterns
-      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true, allowBoolean: true }],
+      '@typescript-eslint/restrict-template-expressions': [
+        'error',
+        { allowNumber: true, allowBoolean: true },
+      ],
       '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
     },
   },
