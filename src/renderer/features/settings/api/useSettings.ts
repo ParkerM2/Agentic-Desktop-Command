@@ -59,3 +59,51 @@ export function useProfiles() {
     staleTime: 60_000,
   });
 }
+
+/** Create a new profile */
+export function useCreateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string; apiKey?: string; model?: string }) =>
+      ipc('settings.createProfile', data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
+    },
+  });
+}
+
+/** Update an existing profile */
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      updates: { name?: string; apiKey?: string; model?: string };
+    }) => ipc('settings.updateProfile', data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
+    },
+  });
+}
+
+/** Delete a profile */
+export function useDeleteProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ipc('settings.deleteProfile', { id }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
+    },
+  });
+}
+
+/** Set a profile as the default */
+export function useSetDefaultProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ipc('settings.setDefaultProfile', { id }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
+    },
+  });
+}

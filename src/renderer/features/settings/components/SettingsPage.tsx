@@ -16,6 +16,9 @@ import { useThemeStore } from '@renderer/shared/stores';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
+import { ProfileSection } from './ProfileSection';
+
+const themeOptions: Array<{
 // ── Constants ───────────────────────────────────────────────
 
 const THEME_MODE_OPTIONS: Array<{
@@ -150,6 +153,10 @@ export function SettingsPage() {
         </div>
       </section>
 
+      {/* Profiles */}
+      <ProfileSection />
+
+      {/* About */}
       {/* ── Color Theme ── */}
       <section className="mb-8">
         <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
