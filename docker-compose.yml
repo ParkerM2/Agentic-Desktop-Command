@@ -1,0 +1,42 @@
+services:
+  hub:
+    build:
+      context: ./hub
+      dockerfile: Dockerfile
+    container_name: claude-ui-hub
+    restart: unless-stopped
+    volumes:
+      - hub-data:/app/data
+      - hub-certs:/certs
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/claude-ui.db
+      - PORT=3200
+    networks:
+      - claude-ui-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: claude-ui-proxy
+    restart: unless-stopped
+    ports:
+      - "3443:443"
+      - "3080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - hub-certs:/certs:ro
+    depends_on:
+      - hub
+    networks:
+      - claude-ui-net
+
+volumes:
+  hub-data:
+    driver: local
+  hub-certs:
+    driver: local
+
+networks:
+  claude-ui-net:
+    driver: bridge

@@ -8,6 +8,7 @@ export type * from './project';
 export type * from './terminal';
 export type * from './settings';
 export type * from './agent';
+export type * from './hub-connection';
 
 /**
  * Generic IPC result wrapper
