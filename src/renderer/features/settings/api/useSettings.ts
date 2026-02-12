@@ -15,7 +15,7 @@ export const settingsKeys = {
 
 /** Fetch app settings */
 export function useSettings() {
-  const { setMode, setColorTheme } = useThemeStore();
+  const { setMode, setColorTheme, setUiScale } = useThemeStore();
 
   return useQuery({
     queryKey: settingsKeys.app(),
@@ -24,6 +24,16 @@ export function useSettings() {
       // Sync theme store on load
       setMode(settings.theme);
       setColorTheme(settings.colorTheme);
+      setUiScale(settings.uiScale);
+      if (settings.fontFamily) {
+        document.documentElement.style.setProperty('--app-font-sans', settings.fontFamily);
+      }
+      if (settings.fontSize !== undefined) {
+        document.documentElement.style.setProperty(
+          '--app-font-size',
+          `${String(settings.fontSize)}px`,
+        );
+      }
       return settings;
     },
     staleTime: 60_000,
