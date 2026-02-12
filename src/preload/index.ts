@@ -36,9 +36,9 @@ const api: IpcBridge = {
     return ipcRenderer.invoke(channel, input);
   },
 
-  on(channel, handler) {
+  on<T extends EventChannel>(channel: T, handler: (payload: EventPayload<T>) => void) {
     const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- IPC bridge: payload validated by contract
+       
       handler(payload as EventPayload<T>);
     };
     ipcRenderer.on(channel, listener);

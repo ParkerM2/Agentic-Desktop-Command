@@ -144,6 +144,36 @@ specs/
 
 The TaskService reads/writes these files. The Kanban board displays tasks grouped by status.
 
+## Design System & Theme Architecture
+
+```
+globals.css @theme block
+  ├── Registers CSS vars as Tailwind tokens (--color-primary: var(--primary))
+  ├── Defines fonts, radius scale, animations, keyframes
+  └── Tailwind generates utility classes (bg-primary, text-foreground, etc.)
+
+Theme variable blocks (in globals.css)
+  ├── :root            — Default light theme
+  ├── .dark            — Default dark theme (Oscura Midnight)
+  ├── [data-theme="X"]       — Named theme light variant
+  └── [data-theme="X"].dark  — Named theme dark variant
+
+theme-store.ts (Zustand)
+  ├── setMode('dark')       → adds class="dark" to <html>
+  ├── setColorTheme('ocean') → sets data-theme="ocean" on <html>
+  └── setUiScale(110)       → sets data-ui-scale="110" on <html>
+
+Constants (src/shared/constants/themes.ts)
+  ├── COLOR_THEMES — ['default', 'dusk', 'lime', 'ocean', 'retro', 'neo', 'forest']
+  ├── ColorTheme type
+  └── COLOR_THEME_LABELS — human-readable names
+```
+
+Key rules:
+- **`color-mix(in srgb, var(--token) XX%, transparent)`** for all semi-transparent theme colors
+- Raw color values ONLY in theme variable definitions, never in utility classes
+- `postcss.config.mjs` is required for Tailwind v4 processing via `@tailwindcss/postcss`
+
 ## Build System
 
 - **electron-vite** handles three separate builds:
@@ -151,4 +181,5 @@ The TaskService reads/writes these files. The Kanban board displays tasks groupe
   - Preload: ESM output for context bridge
   - Renderer: Bundled SPA with Vite + React plugin
 - Path aliases are configured in both `tsconfig.json` and `electron.vite.config.ts`
-- Tailwind v4 uses raw CSS variables (no `@theme` directive)
+- Tailwind v4 uses `@theme` directive in `globals.css` to register design tokens
+- PostCSS pipeline: `postcss.config.mjs` → `@tailwindcss/postcss` + `autoprefixer`

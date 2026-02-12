@@ -41,7 +41,7 @@ export function AgentDashboard() {
     <div className="mx-auto max-w-4xl p-6">
       <h1 className="mb-6 text-xl font-bold">Agents</h1>
 
-      {(agents?.length ?? 0) > 0 ? (
+      {agents && agents.length > 0 ? (
         <div className="space-y-3">
           {agents.map((agent: AgentSession) => (
             <div

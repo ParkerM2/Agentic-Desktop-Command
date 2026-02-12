@@ -70,7 +70,7 @@ export function ProjectListPage() {
         </button>
       </div>
 
-      {(projects?.length ?? 0) > 0 ? (
+      {projects && projects.length > 0 ? (
         <div className="space-y-2">
           {projects.map((project) => (
             <button

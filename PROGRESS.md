@@ -1,6 +1,6 @@
 # Claude-UI Build Progress
 
-**Last Updated:** 2026-02-11T23:30
+**Last Updated:** 2026-02-12
 **Architecture Plan:** ../Claude-UI-Architecture.md
 
 ---
@@ -111,13 +111,23 @@
 - [x] Profile management (single default profile)
 - [x] App version from package.json
 
-## Phase 5: Build & Distribution — ✅ DEV MODE WORKING
+## Phase 5: Build & Distribution — ✅ PRODUCTION BUILD VERIFIED
 - [x] npm install + dependencies resolved
 - [x] TypeScript compiles without errors
 - [x] Vite build passes (main, preload, renderer)
 - [x] Dev mode hot reload working
-- [ ] electron-builder distribution (Windows installer)
-- [ ] Production build testing
+- [x] Production build verified (typecheck + lint + build pass clean)
+- [x] App icons generated (SVG source + PNG at 16/32/48/64/128/256px)
+- [x] electron-builder config verified (appId, targets, icon paths)
+- [ ] electron-builder distribution packaging (Windows installer, macOS dmg)
+
+### Bundle Sizes (Production)
+| Output | Size |
+|--------|------|
+| Main (`out/main/index.cjs`) | 36.59 kB |
+| Preload (`out/preload/index.mjs`) | 0.42 kB |
+| Renderer JS (`out/renderer/assets/index.js`) | 1,748.47 kB |
+| Renderer CSS (`out/renderer/assets/index.css`) | 29.40 kB |
 
 ## Phase 6: Code Quality & Documentation ✅ COMPLETE
 - [x] Replaced Biome with ESLint 9 + Prettier 3 (maximum strictness)
@@ -130,8 +140,10 @@
 - [x] Created ai-docs/LINTING.md — ESLint rules reference and fix patterns
 
 ## Known Issues
-1. No Tailwind v4 `@theme` directive in CSS (using raw CSS vars)
-2. 9 unused dependencies in package.json (anthropic-sdk, i18next, react-i18next, react-markdown, remark-gfm, electron-updater, semver, motion, chokidar) — kept for planned features
+1. ~~No Tailwind v4 `@theme` directive in CSS (using raw CSS vars)~~ — **RESOLVED**: `@theme` block and 7 color themes implemented in globals.css (on feature/task branch)
+2. ~~9 unused dependencies in package.json~~ — **RESOLVED**: Removed @anthropic-ai/sdk, i18next, react-i18next, react-markdown, remark-gfm, electron-updater, semver, motion, chokidar (114 packages removed)
+3. UI scale backend is complete (theme store + CSS custom properties) — frontend controls being built separately
+4. Agent pause/resume uses Unix signals (SIGTSTP/SIGCONT) — no-op on Windows
 
 ## Session Log
 - **2026-02-11 18:00** — Audited full codebase. Updated PROGRESS.md to reflect actual state.
@@ -162,3 +174,11 @@
   - Created AI documentation: CLAUDE.md, ai-docs/ARCHITECTURE.md, ai-docs/PATTERNS.md, ai-docs/LINTING.md
 
   **Next:** Remove unused dependencies, test app manually, build Windows installer.
+
+- **2026-02-12** — Build cleanup & distribution prep:
+  - Removed 9 unused dependencies (114 packages removed): @anthropic-ai/sdk, i18next, react-i18next, react-markdown, remark-gfm, electron-updater, semver, motion, chokidar
+  - Generated app icons: SVG source + PNG at 16/32/48/64/128/256px sizes
+  - Updated electron-builder config to use PNG icons (cross-platform compatible)
+  - Fixed 6 pre-existing TypeScript errors (ImplementationPlanJson types, preload generic scope, undefined narrowing)
+  - Production build verified: typecheck + lint + build all pass clean
+  - Bundle sizes documented (renderer JS: 1.7 MB, CSS: 29 kB, main: 37 kB)

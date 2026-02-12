@@ -20,7 +20,7 @@ import {
   METADATA_FILENAME,
   LOGS_FILENAME,
 } from '@shared/constants';
-import type { Task, TaskDraft, TaskStatus, Subtask } from '@shared/types';
+import type { ExecutionPhase, Task, TaskDraft, TaskStatus, Subtask } from '@shared/types';
 
 /* ------------------------------------------------------------------ */
 /*  Interfaces for on-disk JSON structures                            */
@@ -44,12 +44,12 @@ interface ImplementationPlanJson {
   feature?: string;
   description?: string;
   status?: TaskStatus;
-  xstateState?: string;
+  xstateState?: TaskStatus;
   created_at?: string;
   updated_at?: string;
   phases?: PlanPhase[];
-  executionPhase?: string;
-  completedPhases?: string[];
+  executionPhase?: ExecutionPhase;
+  completedPhases?: ExecutionPhase[];
   planStatus?: string;
   [key: string]: unknown;
 }
@@ -319,7 +319,7 @@ export function createTaskService(resolveProject: ProjectResolver): TaskService 
         const plan = readJsonFile(planPath) as ImplementationPlanJson;
         plan.status = 'in_progress';
         plan.xstateState = 'in_progress';
-        plan.executionPhase = 'starting';
+        plan.executionPhase = 'idle';
         plan.updated_at = new Date().toISOString();
         writeFileSync(planPath, JSON.stringify(plan, null, 2));
       }
