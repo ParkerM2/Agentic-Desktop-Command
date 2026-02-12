@@ -236,3 +236,80 @@ useIpcEvent('event:agent.log', ({ agentId: _agentId }) => { ... });
 
 // Remove unused imports entirely (don't prefix with _)
 ```
+
+## Design System — CSS Patterns
+
+### Semi-Transparent Theme Colors with `color-mix()`
+
+Use `color-mix(in srgb, var(--token) XX%, transparent)` instead of hardcoded RGBA.
+This ensures colors adapt to whichever theme is active.
+
+```css
+/* CORRECT — works with any active theme */
+.my-element:hover {
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+/* CORRECT — for foreground-based transparency (dividers, overlays) */
+.divider {
+  border-color: color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+/* WRONG — hardcoded, breaks on non-default themes */
+.my-element:hover {
+  border-color: rgba(214, 216, 118, 0.4);
+}
+```
+
+Benefits:
+- Eliminates need for `.dark` / `:root` variant selectors for color differences
+- Works with hex, rgb, hsl — any format the theme variables use
+- Supported in Electron's Chromium (Chrome 111+)
+
+### Theme Variable Structure
+
+Every theme block must define all tokens. Template:
+
+```css
+[data-theme="mytheme"] {
+  --background: #HEX;  --foreground: #HEX;
+  --card: #HEX;        --card-foreground: #HEX;
+  --primary: #HEX;     --primary-foreground: #HEX;
+  --secondary: #HEX;   --secondary-foreground: #HEX;
+  --muted: #HEX;       --muted-foreground: #HEX;
+  --accent: #HEX;      --accent-foreground: #HEX;
+  --destructive: #HEX; --destructive-foreground: #HEX;
+  --border: #HEX;      --input: #HEX;    --ring: #HEX;
+  --sidebar: #HEX;     --sidebar-foreground: #HEX;
+  --popover: #HEX;     --popover-foreground: #HEX;
+  --success: #HEX;     --success-foreground: #HEX;   --success-light: #HEX;
+  --warning: #HEX;     --warning-foreground: #HEX;   --warning-light: #HEX;
+  --info: #HEX;        --info-foreground: #HEX;      --info-light: #HEX;
+  --error: #HEX;       --error-light: #HEX;
+  --shadow-sm/md/lg/xl/focus: ...;
+}
+```
+
+### Theme Switching Flow
+
+```
+User selects theme → useThemeStore.setColorTheme('ocean')
+  → Zustand state updates
+  → applyColorTheme() sets data-theme="ocean" on <html>
+  → CSS [data-theme="ocean"] variables take effect
+  → All Tailwind classes (bg-primary, etc.) automatically use new values
+  → color-mix() expressions automatically use new values
+```
+
+### Constants for Theme Names
+
+```typescript
+import { COLOR_THEMES } from '@shared/constants';
+import type { ColorTheme } from '@shared/constants';
+
+// Available: 'default' | 'dusk' | 'lime' | 'ocean' | 'retro' | 'neo' | 'forest'
+```
+
+When adding a theme, update BOTH `globals.css` AND `src/shared/constants/themes.ts`.
