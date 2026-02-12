@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sort:*)",
+      "WebFetch(domain:tweakcn.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm test:*)",
+      "Bash(git checkout:*)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(curl:*)",
+      "Bash(python -c \" import sys, json data = json.load\\(sys.stdin\\) for item in data.get\\(''tree'', []\\): path = item.get\\(''path'', ''''\\) if ''sidebar'' in path.lower\\(\\) and \\(''sidebar-07'' in path or ''ui/sidebar'' in path\\): print\\(path\\) \")",
+      "Bash(python -c \" import sys, json data = json.load\\(sys.stdin\\) for item in data.get\\(''items'', []\\)[:20]: print\\(item.get\\(''path'', ''''\\)\\) \")",
+      "Bash(python -c:*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(node -e:*)",
+      "Bash(git grep:*)",
+      "Bash(grep:*)",
+      "Bash(npx biome check:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:www.electronjs.org)",
+      "Bash(echo:*)"
+    ]
+  }
+}

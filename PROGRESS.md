@@ -1,0 +1,164 @@
+# Claude-UI Build Progress
+
+**Last Updated:** 2026-02-11T23:30
+**Architecture Plan:** ../Claude-UI-Architecture.md
+
+---
+
+## Phase 1: Scaffold + IPC Contract ✅ COMPLETE
+- [x] Folder structure matching architecture plan
+- [x] `shared/ipc-contract.ts` — All Zod schemas, invoke + event contracts, type utilities
+- [x] `main/ipc/router.ts` — IpcRouter class with Zod validation at boundary
+- [x] `preload/index.ts` — Typed IPC bridge (invoke + on)
+- [x] Shared types: task, project, terminal, agent, settings
+- [x] `package.json` with all dependencies
+- [x] `tsconfig.json` with path aliases (@shared, @renderer, @features, @ui)
+- [x] `electron.vite.config.ts` with main/preload/renderer configs + aliases
+- [x] ESLint 9 + Prettier 3 (strict config with 8 plugins)
+
+## Phase 2: Core Infrastructure ✅ COMPLETE
+- [x] React Query provider (`providers.tsx`) with desktop-optimized defaults
+- [x] TanStack Router (`router.tsx`) — all routes defined
+- [x] App shell: `App.tsx` (~16 lines), `RootLayout.tsx`, `Sidebar.tsx`, `ProjectTabBar.tsx`
+- [x] Theme system: `theme-store.ts` + CSS custom properties (light/dark)
+- [x] Layout store: sidebar collapse, active project, tab management
+- [x] `useIpcEvent` hook (replaces old 415-line useIpc.ts)
+- [x] `useIpcQuery` / `ipc()` wrapper for React Query + IPC
+- [x] Shared utils: `cn()`, `formatRelativeTime()`, `formatDuration()`, `truncate()`
+- [x] `globals.css` with full light/dark theme variables + scrollbar styling
+
+## Phase 3: Feature-by-Feature Port ✅ UI COMPLETE
+
+### Projects ✅ COMPLETE
+- [x] `useProjects`, `useAddProject`, `useRemoveProject`, `useSelectDirectory`
+- [x] `projectKeys` factory
+- [x] `useProjectEvents` — cache invalidation on project updates
+- [x] `ProjectListPage` — full UI (list, add via directory picker, remove, open)
+
+### Tasks ✅ COMPLETE
+- [x] `useTasks`, `useTask`, `useCreateTask`
+- [x] `useUpdateTaskStatus`, `useDeleteTask`, `useExecuteTask` (with optimistic updates)
+- [x] `taskKeys` factory
+- [x] `useTaskEvents` — status change, progress, log, plan events
+- [x] `useTaskUI` store — selections, filters, search, kanban column order
+- [x] `TaskCard` — progress bar, subtask count, relative time
+- [x] `TaskStatusBadge` — color-coded status chips
+
+### Kanban ✅ COMPLETE
+- [x] `KanbanBoard` — DndContext + SortableContext + DragOverlay
+- [x] `KanbanColumn` — useDroppable, isOver highlight
+- [x] `KanbanCard` — useSortable, CSS transform, drag opacity
+- [x] dnd-kit drag-and-drop between columns (status updates on drop)
+- [x] `TaskDetailModal` — slide-in panel with progress, subtasks, logs, actions
+
+### Terminals ✅ UI COMPLETE
+- [x] `TerminalGrid` — tabs, create/close terminals, empty state
+- [x] `TerminalInstance` — full xterm.js with WebGL, FitAddon, WebLinksAddon
+- [x] `useTerminals`, `useCreateTerminal`, `useCloseTerminal`
+- [x] `useTerminalEvents` — output, closed, title changed
+- [x] `useTerminalUI` store
+- [x] xterm.js IPC integration (sendInput, resize, output events)
+
+### Agents ✅ UI COMPLETE
+- [x] `AgentDashboard` — list agents, pause/stop/resume controls
+- [x] `useAgents`, `useStopAgent`, `usePauseAgent`, `useResumeAgent`
+- [x] `useAgentEvents` — status change, log events
+
+### Settings ⚠️ BASIC
+- [x] `SettingsPage` — theme toggle (light/dark/system)
+- [x] `useSettings`, `useUpdateSettings`
+- [ ] UI scale, font settings, language selector
+- [ ] Profile management
+
+### Stubs (UI placeholders exist, no build errors)
+- [ ] GitHub — "Coming soon" placeholder
+- [ ] Roadmap — "Coming soon" placeholder
+- [ ] Ideation — "Coming soon" placeholder
+- [ ] Changelog — "Coming soon" placeholder
+- [ ] Insights — "Coming soon" placeholder
+
+## Phase 4: Main Process Services ✅ COMPLETE
+
+### TerminalService ✅ IMPLEMENTED
+- [x] Spawn actual PTY via @lydell/node-pty
+- [x] Pipe PTY stdout → IPC event:terminal.output
+- [x] Pipe renderer input → PTY stdin
+- [x] Handle resize (cols/rows → PTY resize)
+- [x] Kill PTY on close
+- [x] Claude CLI invocation in terminal
+
+### ProjectService ✅ IMPLEMENTED
+- [x] Persist projects to disk (JSON in app data dir)
+- [x] Load projects on startup
+- [x] Create .claude-ui directory in project folder
+- [x] Validate project paths exist
+
+### TaskService ✅ IMPLEMENTED
+- [x] Read/write task spec files from .auto-claude directory
+- [x] Task status persistence
+- [x] Task execution → spawn agent
+- [x] Subtask tracking from agent output
+
+### AgentService ✅ IMPLEMENTED
+- [x] Spawn Claude CLI process via PTY
+- [x] Parse agent output for status/progress/logs
+- [x] Lifecycle management (pause/resume via process signals)
+- [x] Emit agent events to renderer
+- [ ] Queue management for parallel agents (future enhancement)
+
+### SettingsService ✅ IMPLEMENTED
+- [x] Read/write settings JSON to app data directory
+- [x] Profile management (single default profile)
+- [x] App version from package.json
+
+## Phase 5: Build & Distribution — ✅ DEV MODE WORKING
+- [x] npm install + dependencies resolved
+- [x] TypeScript compiles without errors
+- [x] Vite build passes (main, preload, renderer)
+- [x] Dev mode hot reload working
+- [ ] electron-builder distribution (Windows installer)
+- [ ] Production build testing
+
+## Phase 6: Code Quality & Documentation ✅ COMPLETE
+- [x] Replaced Biome with ESLint 9 + Prettier 3 (maximum strictness)
+- [x] ESLint plugins: typescript-eslint, react, react-hooks, jsx-a11y, import-x, unicorn, sonarjs, promise
+- [x] Fixed 549 ESLint violations → 0 (clean pass)
+- [x] All services refactored: async → sync return values, handlers use Promise.resolve()
+- [x] Created CLAUDE.md — root-level AI agent guidelines
+- [x] Created ai-docs/ARCHITECTURE.md — system architecture reference
+- [x] Created ai-docs/PATTERNS.md — code patterns and conventions
+- [x] Created ai-docs/LINTING.md — ESLint rules reference and fix patterns
+
+## Known Issues
+1. No Tailwind v4 `@theme` directive in CSS (using raw CSS vars)
+2. 9 unused dependencies in package.json (anthropic-sdk, i18next, react-i18next, react-markdown, remark-gfm, electron-updater, semver, motion, chokidar) — kept for planned features
+
+## Session Log
+- **2026-02-11 18:00** — Audited full codebase. Updated PROGRESS.md to reflect actual state.
+  Phase 3 UI is essentially complete (kanban dnd, xterm, task modal all done).
+  Starting Phase 4: real main process services.
+  Priority: TerminalService (PTY) → ProjectService (persistence) → TaskService → AgentService
+  
+- **2026-02-11 22:00** — Phase 4 complete! All main process services now have real implementations:
+  - TerminalService: Real PTY spawning with @lydell/node-pty
+  - ProjectService: Disk persistence with JSON in app data directory
+  - TaskService: Spec file integration with .auto-claude/specs
+  - AgentService: Claude CLI process spawning, lifecycle management, event emission
+  - SettingsService: Disk persistence with settings.json
+  
+- **2026-02-11 22:15** — Phase 5 build verification:
+  - Fixed Zod 4 compatibility (z.record needs key type)
+  - Fixed node-pty onTitleChange type issue
+  - Fixed electron-vite CJS output config
+  - Dev mode launches successfully!
+  
+  **Next:** Test the app manually, then build Windows installer.
+
+- **2026-02-11 23:30** — Phase 6 code quality & documentation:
+  - Replaced Biome with ESLint 9 flat config + Prettier 3 (maximum strictness)
+  - 8 ESLint plugins: typescript-eslint strict, react, jsx-a11y strict, import-x, unicorn, sonarjs, promise
+  - Fixed all 549 ESLint violations (auto-fix: 341, manual: 208) → 0 errors
+  - Major refactor: all services now return sync values, IPC handlers wrap with Promise.resolve()
+  - Created AI documentation: CLAUDE.md, ai-docs/ARCHITECTURE.md, ai-docs/PATTERNS.md, ai-docs/LINTING.md
+
+  **Next:** Remove unused dependencies, test app manually, build Windows installer.

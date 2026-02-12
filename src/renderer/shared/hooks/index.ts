@@ -1,0 +1,1 @@
+export { useIpcEvent } from './useIpcEvent';

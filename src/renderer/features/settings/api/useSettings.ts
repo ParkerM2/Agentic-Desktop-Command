@@ -1,0 +1,51 @@
+/**
+ * React Query hooks for settings
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { ipc } from '@renderer/shared/lib/ipc';
+import { useThemeStore } from '@renderer/shared/stores';
+
+export const settingsKeys = {
+  all: ['settings'] as const,
+  app: () => [...settingsKeys.all, 'app'] as const,
+  profiles: () => [...settingsKeys.all, 'profiles'] as const,
+};
+
+/** Fetch app settings */
+export function useSettings() {
+  const { setMode, setColorTheme } = useThemeStore();
+
+  return useQuery({
+    queryKey: settingsKeys.app(),
+    queryFn: async () => {
+      const settings = await ipc('settings.get', {});
+      // Sync theme store on load
+      setMode(settings.theme);
+      setColorTheme(settings.colorTheme);
+      return settings;
+    },
+    staleTime: 60_000,
+  });
+}
+
+/** Update settings */
+export function useUpdateSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (updates: Record<string, unknown>) => ipc('settings.update', updates),
+    onSuccess: (data) => {
+      queryClient.setQueryData(settingsKeys.app(), data);
+    },
+  });
+}
+
+/** Fetch API profiles */
+export function useProfiles() {
+  return useQuery({
+    queryKey: settingsKeys.profiles(),
+    queryFn: () => ipc('settings.getProfiles', {}),
+    staleTime: 60_000,
+  });
+}

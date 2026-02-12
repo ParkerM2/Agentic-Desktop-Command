@@ -1,0 +1,122 @@
+/**
+ * Task-related types
+ */
+
+export type TaskStatus =
+  | 'backlog'
+  | 'queue'
+  | 'in_progress'
+  | 'ai_review'
+  | 'human_review'
+  | 'done'
+  | 'pr_created'
+  | 'error';
+
+export type SubtaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
+
+export type ReviewReason = 'completed' | 'errors' | 'qa_rejected' | 'plan_review';
+
+export type ExecutionPhase =
+  | 'idle'
+  | 'planning'
+  | 'coding'
+  | 'testing'
+  | 'reviewing'
+  | 'complete'
+  | 'error';
+
+export interface ExecutionProgress {
+  phase: ExecutionPhase;
+  phaseProgress: number;
+  overallProgress: number;
+  currentSubtask?: string;
+  message?: string;
+  startedAt?: string;
+  sequenceNumber?: number;
+  completedPhases?: ExecutionPhase[];
+}
+
+export interface Subtask {
+  id: string;
+  title: string;
+  description: string;
+  status: SubtaskStatus;
+  files: string[];
+}
+
+export interface QAReport {
+  status: 'passed' | 'failed' | 'pending';
+  issues: QAIssue[];
+  timestamp: string;
+}
+
+export interface QAIssue {
+  id: string;
+  severity: 'critical' | 'major' | 'minor';
+  description: string;
+  file?: string;
+  line?: number;
+}
+
+export interface PRStatusInfo {
+  prNumber: number;
+  state: 'open' | 'closed' | 'merged';
+  reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
+  ciStatus: 'passing' | 'failing' | 'pending' | 'none';
+  isDraft: boolean;
+  mergeable: 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN';
+  lastUpdated: string;
+}
+
+export interface ImageAttachment {
+  id: string;
+  filename: string;
+  path: string;
+  mimeType: string;
+}
+
+export interface ImplementationPlan {
+  phases: ImplementationPhase[];
+  estimatedDuration?: string;
+}
+
+export interface ImplementationPhase {
+  name: string;
+  description: string;
+  subtasks: Subtask[];
+}
+
+export interface TaskMetadata {
+  specId?: string;
+  worktreePath?: string;
+  branch?: string;
+  prUrl?: string;
+  [key: string]: unknown;
+}
+
+export interface Task {
+  id: string;
+  specId?: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  subtasks: Subtask[];
+  executionProgress?: ExecutionProgress;
+  qaReport?: QAReport;
+  reviewReason?: ReviewReason;
+  prStatus?: PRStatusInfo;
+  metadata?: TaskMetadata;
+  logs?: string[];
+  images?: ImageAttachment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskDraft {
+  title: string;
+  description: string;
+  projectId: string;
+  complexity?: 'simple' | 'standard' | 'complex';
+}
+
+export type TaskOrderState = Record<TaskStatus, string[]>;
