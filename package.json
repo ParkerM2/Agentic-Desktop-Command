@@ -105,28 +105,32 @@
     "vitest": "^4.0.16"
   },
   "build": {
-    "appId": "com.claude-ui.desktop",
-    "productName": "Claude-UI",
+    "appId": "com.claude-ui.app",
+    "productName": "Claude UI",
     "directories": {
-      "output": "dist",
+      "output": "release",
       "buildResources": "resources"
     },
     "files": [
-      "out/**/*",
-      "package.json"
+      "out/**/*"
     ],
     "win": {
       "icon": "resources/icon.png",
       "target": [
-        "nsis",
-        "zip"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
       ]
     },
     "mac": {
       "icon": "resources/icon.png",
+      "category": "public.app-category.developer-tools",
       "target": [
-        "dmg",
-        "zip"
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
       ]
     },
     "linux": {
@@ -135,6 +139,11 @@
         "AppImage",
         "deb"
       ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
     }
   }
 }

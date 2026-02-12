@@ -74,7 +74,9 @@ export function ProfileSection() {
 
   function handleSave(data: { name: string; apiKey?: string; model?: string }) {
     setErrorMessage(null);
-    const errorHandler = { onError: (error: unknown) => setErrorMessage(extractErrorMessage(error)) };
+    const errorHandler = {
+      onError: (error: unknown) => setErrorMessage(extractErrorMessage(error)),
+    };
     if (editingProfile === null) {
       createProfile.mutate(data, errorHandler);
     } else {
@@ -97,9 +99,8 @@ export function ProfileSection() {
     );
   }
 
-  const deleteTarget = deleteConfirmId === null
-    ? undefined
-    : profiles?.find((p) => p.id === deleteConfirmId);
+  const deleteTarget =
+    deleteConfirmId === null ? undefined : profiles?.find((p) => p.id === deleteConfirmId);
 
   return (
     <section className="mb-8">

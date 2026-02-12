@@ -32,10 +32,8 @@ export function ProfileCard({ profile, onEdit, onDelete, onSetDefault }: Profile
     >
       <div className="flex items-center gap-3">
         <button
+          aria-label={profile.isDefault ? 'Default profile' : `Set ${profile.name} as default`}
           type="button"
-          aria-label={
-            profile.isDefault ? 'Default profile' : `Set ${profile.name} as default`
-          }
           className={cn(
             'shrink-0 rounded p-1 transition-colors',
             profile.isDefault
@@ -44,9 +42,7 @@ export function ProfileCard({ profile, onEdit, onDelete, onSetDefault }: Profile
           )}
           onClick={handleSetDefault}
         >
-          <Star
-            className={cn('h-4 w-4', profile.isDefault && 'fill-current')}
-          />
+          <Star className={cn('h-4 w-4', profile.isDefault && 'fill-current')} />
         </button>
         <div>
           <div className="flex items-center gap-2">

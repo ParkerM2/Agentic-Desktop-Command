@@ -20,11 +20,7 @@ import type { Task } from '@shared/types';
 
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
-import {
-  useDeleteTask,
-  useExecuteTask,
-  TaskStatusBadge,
-} from '@features/tasks';
+import { useDeleteTask, useExecuteTask, TaskStatusBadge } from '@features/tasks';
 
 interface TaskDetailModalProps {
   task: Task;

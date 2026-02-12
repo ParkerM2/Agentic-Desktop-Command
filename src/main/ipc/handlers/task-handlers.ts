@@ -13,17 +13,13 @@ export function registerTaskHandlers(
   agentService: AgentService,
   projectService: ProjectService,
 ): void {
-  router.handle('tasks.list', ({ projectId }) =>
-    Promise.resolve(service.listTasks(projectId)),
-  );
+  router.handle('tasks.list', ({ projectId }) => Promise.resolve(service.listTasks(projectId)));
 
   router.handle('tasks.get', ({ projectId, taskId }) =>
     Promise.resolve(service.getTask(projectId, taskId)),
   );
 
-  router.handle('tasks.create', (draft) =>
-    Promise.resolve(service.createTask(draft)),
-  );
+  router.handle('tasks.create', (draft) => Promise.resolve(service.createTask(draft)));
 
   router.handle('tasks.update', ({ taskId, updates }) =>
     Promise.resolve(service.updateTask(taskId, updates)),

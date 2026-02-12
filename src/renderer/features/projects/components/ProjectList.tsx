@@ -65,7 +65,9 @@ export function ProjectList() {
                   : 'border-border hover:bg-accent/50',
               )}
               onClick={() => setActiveProject(project.id)}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveProject(project.id); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setActiveProject(project.id);
+              }}
             >
               <div>
                 <p className="text-sm font-medium">{project.name}</p>

@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bot,
   GitBranch,
+  Home,
   LayoutDashboard,
   Lightbulb,
   ListTodo,
@@ -82,6 +83,27 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-2">
+        {/* Dashboard — top-level, not project-scoped */}
+        <button
+          title={sidebarCollapsed ? 'Dashboard' : undefined}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
+            'hover:bg-accent hover:text-foreground',
+            currentPath === ROUTES.DASHBOARD
+              ? 'bg-accent text-foreground font-medium'
+              : 'text-muted-foreground',
+            sidebarCollapsed && 'justify-center px-0',
+          )}
+          onClick={() => void navigate({ to: ROUTES.DASHBOARD })}
+        >
+          <Home className="h-4 w-4 shrink-0" />
+          {!sidebarCollapsed && <span>Dashboard</span>}
+        </button>
+
+        {/* Divider */}
+        <div className="border-border my-1 border-t" />
+
+        {/* Project views */}
         {navItems.map((item) => {
           const isActive = currentPath.includes(`/${item.path}`);
           return (

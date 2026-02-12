@@ -39,9 +39,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   onboardingCompleted: false,
 };
 
-const DEFAULT_PROFILES: Profile[] = [
-  { id: 'default', name: 'Default', isDefault: true },
-];
+const DEFAULT_PROFILES: Profile[] = [{ id: 'default', name: 'Default', isDefault: true }];
 
 function getSettingsFilePath(): string {
   return join(app.getPath('userData'), 'settings.json');

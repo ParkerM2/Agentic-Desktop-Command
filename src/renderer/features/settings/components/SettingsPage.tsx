@@ -18,7 +18,6 @@ import { useSettings, useUpdateSettings } from '../api/useSettings';
 
 import { ProfileSection } from './ProfileSection';
 
-const themeOptions: Array<{
 // ── Constants ───────────────────────────────────────────────
 
 const THEME_MODE_OPTIONS: Array<{
@@ -174,12 +173,8 @@ export function SettingsPage() {
               )}
               onClick={() => handleColorThemeChange(theme)}
             >
-              <div
-                className={cn('h-8 w-8 rounded-full', THEME_SWATCH_COLORS[theme] ?? '')}
-              />
-              <span className="text-xs font-medium">
-                {COLOR_THEME_LABELS[theme]}
-              </span>
+              <div className={cn('h-8 w-8 rounded-full', THEME_SWATCH_COLORS[theme] ?? '')} />
+              <span className="text-xs font-medium">{COLOR_THEME_LABELS[theme]}</span>
               {colorTheme === theme ? (
                 <Check className="text-primary absolute top-1.5 right-1.5 h-3.5 w-3.5" />
               ) : null}
@@ -227,7 +222,7 @@ export function SettingsPage() {
             type="button"
             className={cn(
               'border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm transition-colors',
-              'hover:bg-accent focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-2',
+              'hover:bg-accent focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             )}
             onClick={() => setFontDropdownOpen(!fontDropdownOpen)}
             onKeyDown={handleFontDropdownKeyDown}
@@ -300,9 +295,7 @@ export function SettingsPage() {
         <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Language
         </h2>
-        <div
-          className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm"
-        >
+        <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
           <span>English</span>
           <span className="text-muted-foreground text-xs">Only language available</span>
         </div>

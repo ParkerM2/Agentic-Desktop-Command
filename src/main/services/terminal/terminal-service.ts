@@ -99,14 +99,14 @@ export function createTerminalService(router: IpcRouter): TerminalService {
 
       // Handle PTY title changes (if available in this node-pty version)
       if ('onTitleChange' in ptyProcess) {
-        (ptyProcess as unknown as { onTitleChange: (cb: (title: string) => void) => void }).onTitleChange(
-          (title: string) => {
-            router.emit('event:terminal.titleChanged', {
-              sessionId: id,
-              title,
-            });
-          },
-        );
+        (
+          ptyProcess as unknown as { onTitleChange: (cb: (title: string) => void) => void }
+        ).onTitleChange((title: string) => {
+          router.emit('event:terminal.titleChanged', {
+            sessionId: id,
+            title,
+          });
+        });
       }
 
       // Handle PTY exit

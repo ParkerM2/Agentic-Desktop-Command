@@ -38,7 +38,6 @@ const api: IpcBridge = {
 
   on<T extends EventChannel>(channel: T, handler: (payload: EventPayload<T>) => void) {
     const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
-       
       handler(payload as EventPayload<T>);
     };
     ipcRenderer.on(channel, listener);

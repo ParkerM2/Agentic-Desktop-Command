@@ -119,11 +119,7 @@ export function ProfileFormModal({ open, profile, onClose, onSave }: ProfileForm
                   type="button"
                   onClick={() => setShowApiKey((previous) => !previous)}
                 >
-                  {showApiKey ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>

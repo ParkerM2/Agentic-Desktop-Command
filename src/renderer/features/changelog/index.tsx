@@ -49,7 +49,10 @@ const CHANGELOG_DATA: VersionEntry[] = [
       },
       {
         type: 'changed',
-        items: ['Settings page redesigned with sections', 'Sidebar updated with new navigation items'],
+        items: [
+          'Settings page redesigned with sections',
+          'Sidebar updated with new navigation items',
+        ],
       },
       {
         type: 'fixed',
@@ -125,7 +128,7 @@ function VersionCard({ entry }: { entry: VersionEntry }) {
   return (
     <div className="relative pl-8">
       {/* Timeline dot */}
-      <div className="border-primary bg-primary/30 absolute left-0 top-1 h-3 w-3 rounded-full border-2" />
+      <div className="border-primary bg-primary/30 absolute top-1 left-0 h-3 w-3 rounded-full border-2" />
 
       {/* Version header */}
       <div className="mb-3">
@@ -162,7 +165,7 @@ export function ChangelogPage() {
       {/* Timeline */}
       <div className="relative space-y-8">
         {/* Timeline line */}
-        <div className="bg-border absolute bottom-0 left-[5px] top-0 w-px" />
+        <div className="bg-border absolute top-0 bottom-0 left-[5px] w-px" />
 
         {CHANGELOG_DATA.map((entry) => (
           <VersionCard key={entry.version} entry={entry} />

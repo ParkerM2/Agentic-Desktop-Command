@@ -12,17 +12,13 @@ export function registerSettingsHandlers(router: IpcRouter, service: SettingsSer
 
   router.handle('settings.getProfiles', () => Promise.resolve(service.getProfiles()));
 
-  router.handle('settings.createProfile', (data) =>
-    Promise.resolve(service.createProfile(data)),
-  );
+  router.handle('settings.createProfile', (data) => Promise.resolve(service.createProfile(data)));
 
   router.handle('settings.updateProfile', ({ id, updates }) =>
     Promise.resolve(service.updateProfile(id, updates)),
   );
 
-  router.handle('settings.deleteProfile', ({ id }) =>
-    Promise.resolve(service.deleteProfile(id)),
-  );
+  router.handle('settings.deleteProfile', ({ id }) => Promise.resolve(service.deleteProfile(id)));
 
   router.handle('settings.setDefaultProfile', ({ id }) =>
     Promise.resolve(service.setDefaultProfile(id)),
