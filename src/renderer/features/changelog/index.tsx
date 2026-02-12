@@ -23,12 +23,12 @@ interface VersionEntry {
 
 const CATEGORY_CONFIG: Record<
   CategoryType,
-  { label: string; icon: React.ComponentType<{ className?: string }>; colorClass: string }
+  { label: string; icon: React.ComponentType<{ className?: string }>; cssVar: string }
 > = {
-  added: { label: 'Added', icon: Plus, colorClass: 'text-green-500' },
-  changed: { label: 'Changed', icon: RefreshCw, colorClass: 'text-blue-500' },
-  fixed: { label: 'Fixed', icon: Wrench, colorClass: 'text-yellow-500' },
-  removed: { label: 'Removed', icon: Trash2, colorClass: 'text-red-500' },
+  added: { label: 'Added', icon: Plus, cssVar: '--success' },
+  changed: { label: 'Changed', icon: RefreshCw, cssVar: '--info' },
+  fixed: { label: 'Fixed', icon: Wrench, cssVar: '--warning' },
+  removed: { label: 'Removed', icon: Trash2, cssVar: '--destructive' },
 };
 
 // ─── Mock Data ───────────────────────────────────────────────
@@ -103,7 +103,10 @@ function CategorySection({ category }: { category: ChangeCategory }) {
 
   return (
     <div className="space-y-2">
-      <div className={`flex items-center gap-2 text-sm font-semibold ${config.colorClass}`}>
+      <div
+        className="flex items-center gap-2 text-sm font-semibold"
+        style={{ color: `hsl(var(${config.cssVar}))` }}
+      >
         <IconComponent className="h-4 w-4" />
         <span>{config.label}</span>
       </div>
@@ -122,13 +125,7 @@ function VersionCard({ entry }: { entry: VersionEntry }) {
   return (
     <div className="relative pl-8">
       {/* Timeline dot */}
-      <div
-        className="absolute left-0 top-1 h-3 w-3 rounded-full border-2"
-        style={{
-          borderColor: 'hsl(var(--primary))',
-          backgroundColor: 'hsl(var(--primary) / 0.3)',
-        }}
-      />
+      <div className="border-primary bg-primary/30 absolute left-0 top-1 h-3 w-3 rounded-full border-2" />
 
       {/* Version header */}
       <div className="mb-3">
@@ -165,10 +162,7 @@ export function ChangelogPage() {
       {/* Timeline */}
       <div className="relative space-y-8">
         {/* Timeline line */}
-        <div
-          className="absolute bottom-0 left-[5px] top-0 w-px"
-          style={{ backgroundColor: 'hsl(var(--border))' }}
-        />
+        <div className="bg-border absolute bottom-0 left-[5px] top-0 w-px" />
 
         {CHANGELOG_DATA.map((entry) => (
           <VersionCard key={entry.version} entry={entry} />

@@ -44,11 +44,11 @@ const TASK_DISTRIBUTION: TaskDistribution[] = [
   { label: 'Queued', count: 3, percentage: 10, colorVar: '--muted-foreground' },
 ];
 
-const ACTIVITY_CONFIG: Record<ActivityType, { color: string; dotColor: string }> = {
-  completed: { color: 'text-green-500', dotColor: 'bg-green-500' },
-  started: { color: 'text-blue-500', dotColor: 'bg-blue-500' },
-  moved: { color: 'text-yellow-500', dotColor: 'bg-yellow-500' },
-  created: { color: 'text-muted-foreground', dotColor: 'bg-muted-foreground' },
+const ACTIVITY_CONFIG: Record<ActivityType, { dotVar: string }> = {
+  completed: { dotVar: '--success' },
+  started: { dotVar: '--info' },
+  moved: { dotVar: '--warning' },
+  created: { dotVar: '--muted-foreground' },
 };
 
 const RECENT_ACTIVITY: ActivityItem[] = [
@@ -106,7 +106,10 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
   return (
     <div className="flex items-center gap-3 py-2">
-      <div className={`h-2 w-2 shrink-0 rounded-full ${config.dotColor}`} />
+      <div
+        className="h-2 w-2 shrink-0 rounded-full"
+        style={{ backgroundColor: `hsl(var(${config.dotVar}))` }}
+      />
       <span className="text-foreground flex-1 text-sm">{item.message}</span>
       <span className="text-muted-foreground shrink-0 text-xs">{item.time}</span>
     </div>
