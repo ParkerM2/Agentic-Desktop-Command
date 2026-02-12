@@ -17,8 +17,10 @@ import { ROUTES, ROUTE_PATTERNS } from '@shared/constants';
 
 // Feature page components
 import { AgentDashboard } from '@features/agents';
+import { ChangelogPage } from '@features/changelog';
 import { GitHubPage } from '@features/github';
 import { IdeationPage } from '@features/ideation';
+import { InsightsPage } from '@features/insights';
 import { KanbanBoard } from '@features/kanban';
 import { ProjectListPage } from '@features/projects';
 import { RoadmapPage } from '@features/roadmap';
@@ -101,6 +103,18 @@ const ideationRoute = createRoute({
   component: IdeationPage,
 });
 
+const changelogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTE_PATTERNS.PROJECT_CHANGELOG,
+  component: ChangelogPage,
+});
+
+const insightsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTE_PATTERNS.PROJECT_INSIGHTS,
+  component: InsightsPage,
+});
+
 const tasksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTE_PATTERNS.PROJECT_TASKS,
@@ -131,6 +145,8 @@ const routeTree = rootRoute.addChildren([
   githubRoute,
   roadmapRoute,
   ideationRoute,
+  changelogRoute,
+  insightsRoute,
   tasksRoute,
   settingsRoute,
 ]);

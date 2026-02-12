@@ -7,16 +7,18 @@
 
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import {
-  LayoutDashboard,
-  ListTodo,
-  Terminal,
+  BarChart3,
   Bot,
   GitBranch,
-  Map,
+  LayoutDashboard,
   Lightbulb,
-  Settings,
-  PanelLeftClose,
+  ListTodo,
+  Map,
   PanelLeft,
+  PanelLeftClose,
+  ScrollText,
+  Settings,
+  Terminal,
 } from 'lucide-react';
 
 import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
@@ -38,6 +40,8 @@ const navItems: NavItem[] = [
   { label: 'Roadmap', icon: Map, path: PROJECT_VIEWS.ROADMAP },
   { label: 'Ideation', icon: Lightbulb, path: PROJECT_VIEWS.IDEATION },
   { label: 'GitHub', icon: GitBranch, path: PROJECT_VIEWS.GITHUB },
+  { label: 'Changelog', icon: ScrollText, path: PROJECT_VIEWS.CHANGELOG },
+  { label: 'Insights', icon: BarChart3, path: PROJECT_VIEWS.INSIGHTS },
 ];
 
 export function Sidebar() {

@@ -21,6 +21,8 @@ export const PROJECT_VIEWS = {
   ROADMAP: 'roadmap',
   IDEATION: 'ideation',
   GITHUB: 'github',
+  CHANGELOG: 'changelog',
+  INSIGHTS: 'insights',
 } as const;
 
 /** TanStack Router path patterns (use $projectId param syntax) */
@@ -33,6 +35,8 @@ export const ROUTE_PATTERNS = {
   PROJECT_ROADMAP: '/projects/$projectId/roadmap',
   PROJECT_IDEATION: '/projects/$projectId/ideation',
   PROJECT_GITHUB: '/projects/$projectId/github',
+  PROJECT_CHANGELOG: '/projects/$projectId/changelog',
+  PROJECT_INSIGHTS: '/projects/$projectId/insights',
 } as const;
 
 /** Build a project view path with a concrete project ID */
