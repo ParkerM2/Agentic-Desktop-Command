@@ -103,6 +103,16 @@ const AppSettingsSchema = z.object({
   fontSize: z.number().optional(),
 });
 
+const ProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  apiKey: z.string().optional(),
+  model: z.string().optional(),
+  configDir: z.string().optional(),
+  oauthToken: z.string().optional(),
+  isDefault: z.boolean(),
+});
+
 const AgentSessionSchema = z.object({
   id: z.string(),
   taskId: z.string(),
@@ -227,7 +237,34 @@ export const ipcInvokeContract = {
   },
   'settings.getProfiles': {
     input: z.object({}),
-    output: z.array(z.object({ id: z.string(), name: z.string(), isDefault: z.boolean() })),
+    output: z.array(ProfileSchema),
+  },
+  'settings.createProfile': {
+    input: z.object({
+      name: z.string(),
+      apiKey: z.string().optional(),
+      model: z.string().optional(),
+    }),
+    output: ProfileSchema,
+  },
+  'settings.updateProfile': {
+    input: z.object({
+      id: z.string(),
+      updates: z.object({
+        name: z.string().optional(),
+        apiKey: z.string().optional(),
+        model: z.string().optional(),
+      }),
+    }),
+    output: ProfileSchema,
+  },
+  'settings.deleteProfile': {
+    input: z.object({ id: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'settings.setDefaultProfile': {
+    input: z.object({ id: z.string() }),
+    output: z.object({ success: z.boolean() }),
   },
 
   // ── App ──
@@ -327,4 +364,5 @@ export {
   AgentSessionSchema,
   ExecutionProgressSchema,
   SubtaskSchema,
+  ProfileSchema,
 };

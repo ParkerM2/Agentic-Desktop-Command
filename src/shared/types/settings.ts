@@ -22,17 +22,11 @@ export interface CustomTheme {
   css: string;
 }
 
-export interface APIProfile {
+export interface Profile {
   id: string;
   name: string;
-  apiKey: string;
+  apiKey?: string;
   model?: string;
-  isDefault: boolean;
-}
-
-export interface ClaudeProfile {
-  id: string;
-  name: string;
   configDir?: string;
   oauthToken?: string;
   isDefault: boolean;

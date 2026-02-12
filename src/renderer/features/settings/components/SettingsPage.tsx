@@ -11,6 +11,8 @@ import { useThemeStore } from '@renderer/shared/stores';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
+import { ProfileSection } from './ProfileSection';
+
 const themeOptions: Array<{
   mode: ThemeMode;
   label: string;
@@ -66,7 +68,10 @@ export function SettingsPage() {
         </div>
       </section>
 
-      {/* More settings sections will go here */}
+      {/* Profiles */}
+      <ProfileSection />
+
+      {/* About */}
       <section className="mb-8">
         <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           About
