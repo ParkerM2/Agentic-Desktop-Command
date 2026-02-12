@@ -18,6 +18,7 @@ import { ROUTES, ROUTE_PATTERNS } from '@shared/constants';
 // Feature page components
 import { AgentDashboard } from '@features/agents';
 import { ChangelogPage } from '@features/changelog';
+import { DashboardPage } from '@features/dashboard';
 import { GitHubPage } from '@features/github';
 import { IdeationPage } from '@features/ideation';
 import { InsightsPage } from '@features/insights';
@@ -42,8 +43,16 @@ const indexRoute = createRoute({
   path: ROUTES.INDEX,
   beforeLoad: () => {
     // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
-    throw redirect({ to: ROUTES.PROJECTS });
+    throw redirect({ to: ROUTES.DASHBOARD });
   },
+});
+
+// ─── Dashboard ──────────────────────────────────────────────
+
+const dashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTES.DASHBOARD,
+  component: DashboardPage,
 });
 
 // ─── Projects ────────────────────────────────────────────────
@@ -137,6 +146,7 @@ const settingsRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
+  dashboardRoute,
   projectsRoute,
   projectRoute,
   kanbanRoute,
