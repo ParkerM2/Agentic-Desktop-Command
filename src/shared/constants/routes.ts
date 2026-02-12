@@ -8,6 +8,7 @@
 /** Top-level routes */
 export const ROUTES = {
   INDEX: '/',
+  DASHBOARD: '/dashboard',
   PROJECTS: '/projects',
   SETTINGS: '/settings',
 } as const;
