@@ -55,6 +55,7 @@ import { createSpotifyService } from './services/spotify/spotify-service';
 import { createGithubImporter, createTaskDecomposer } from './services/tasks';
 import { createTerminalService } from './services/terminal/terminal-service';
 import { createTimeParserService } from './services/time-parser/time-parser-service';
+import { createVoiceService } from './services/voice/voice-service';
 
 import type { OAuthConfig } from './auth/types';
 
@@ -253,6 +254,9 @@ function initializeApp(): void {
   const taskDecomposer = createTaskDecomposer({ claudeClient });
   const githubImporter = createGithubImporter({ githubService, taskService });
 
+  // Voice service — manages voice configuration
+  const voiceService = createVoiceService();
+
   const services = {
     projectService,
     taskService,
@@ -284,6 +288,7 @@ function initializeApp(): void {
     timeParserService: createTimeParserService(),
     taskDecomposer,
     githubImporter,
+    voiceService,
     dataDir,
     providers,
     tokenStore,

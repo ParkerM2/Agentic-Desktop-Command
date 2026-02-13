@@ -31,6 +31,7 @@ import { registerSpotifyHandlers } from './handlers/spotify-handlers';
 import { registerTaskHandlers } from './handlers/task-handlers';
 import { registerTerminalHandlers } from './handlers/terminal-handlers';
 import { registerTimeHandlers } from './handlers/time-handlers';
+import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
 
 import type { IpcRouter } from './router';
@@ -66,6 +67,7 @@ import type { GithubTaskImporter } from '../services/tasks/github-importer';
 import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
+import type { VoiceService } from '../services/voice/voice-service';
 
 export interface Services {
   projectService: ProjectService;
@@ -98,6 +100,7 @@ export interface Services {
   timeParserService: TimeParserService;
   taskDecomposer: TaskDecomposer;
   githubImporter: GithubTaskImporter;
+  voiceService: VoiceService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -146,5 +149,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerMergeHandlers(router, services.mergeService);
   registerNotificationHandlers(router, services.notificationManager);
   registerTimeHandlers(router, services.timeParserService);
+  registerVoiceHandlers(router, services.voiceService);
   registerWebhookSettingsHandlers(router, services.settingsService);
 }

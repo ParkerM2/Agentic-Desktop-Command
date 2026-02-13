@@ -22,7 +22,9 @@ export type * from './project';
 export type * from './settings';
 export type * from './task';
 export type * from './terminal';
+export type * from './voice';
 export * from './notifications';
+export { VOICE_LANGUAGES, DEFAULT_VOICE_CONFIG } from './voice';
 
 /**
  * Generic IPC result wrapper

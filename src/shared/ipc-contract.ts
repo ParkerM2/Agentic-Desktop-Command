@@ -735,6 +735,15 @@ const NotificationWatcherConfigSchema = z.object({
   github: GitHubWatcherConfigSchema,
 });
 
+// ─── Voice Schemas ─────────────────────────────────────────────
+
+const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
+
+const VoiceConfigSchema = z.object({
+  enabled: z.boolean(),
+  language: z.string(),
+  inputMode: VoiceInputModeSchema,
+});
 
 // ─── IPC Contract Definition ──────────────────────────────────
 
@@ -1698,6 +1707,27 @@ export const ipcInvokeContract = {
       errors: z.record(NotificationSourceSchema, z.string()).optional(),
     }),
   },
+
+  // ── Voice ──
+  'voice.getConfig': {
+    input: z.object({}),
+    output: VoiceConfigSchema,
+  },
+  'voice.updateConfig': {
+    input: z.object({
+      enabled: z.boolean().optional(),
+      language: z.string().optional(),
+      inputMode: VoiceInputModeSchema.optional(),
+    }),
+    output: VoiceConfigSchema,
+  },
+  'voice.checkPermission': {
+    input: z.object({}),
+    output: z.object({
+      granted: z.boolean(),
+      canRequest: z.boolean(),
+    }),
+  },
 } as const;
 
 /**
@@ -1901,6 +1931,14 @@ export const ipcEventContract = {
       status: z.enum(['started', 'stopped', 'polling', 'error']),
     }),
   },
+
+  // ── Voice Events ──
+  'event:voice.transcript': {
+    payload: z.object({
+      transcript: z.string(),
+      isFinal: z.boolean(),
+    }),
+  },
 } as const;
 
 // ─── Type Utilities ───────────────────────────────────────────
@@ -2011,4 +2049,6 @@ export {
   NotificationWatcherConfigSchema,
   SlackWatcherConfigSchema,
   GitHubWatcherConfigSchema,
+  VoiceInputModeSchema,
+  VoiceConfigSchema,
 };
