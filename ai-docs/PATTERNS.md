@@ -313,3 +313,88 @@ import type { ColorTheme } from '@shared/constants';
 ```
 
 When adding a theme, update BOTH `globals.css` AND `src/shared/constants/themes.ts`.
+
+## Security — Secret Storage Pattern
+
+All secrets (OAuth credentials, webhook secrets, API keys) MUST be encrypted using Electron's `safeStorage` API.
+
+### Storage Format
+
+Encrypted secrets are stored as JSON objects with two fields:
+
+```typescript
+interface EncryptedSecretEntry {
+  encrypted: string;      // Base64-encoded encrypted data
+  useSafeStorage: boolean; // Whether real encryption was used
+}
+```
+
+### Implementation Pattern
+
+```typescript
+import { safeStorage } from 'electron';
+
+// Check if a value is legacy plaintext or already encrypted
+function isEncryptedEntry(value: unknown): value is EncryptedSecretEntry {
+  if (typeof value !== 'object' || value === null) return false;
+  const obj = value as Record<string, unknown>;
+  return typeof obj.encrypted === 'string' && typeof obj.useSafeStorage === 'boolean';
+}
+
+// Encrypt — always call before persisting secrets
+function encryptSecret(value: string): EncryptedSecretEntry {
+  if (safeStorage.isEncryptionAvailable()) {
+    const buffer = safeStorage.encryptString(value);
+    return { encrypted: buffer.toString('base64'), useSafeStorage: true };
+  }
+  // Fallback for CI/testing (safeStorage unavailable)
+  console.warn('[Service] safeStorage not available — falling back to base64');
+  return { encrypted: Buffer.from(value, 'utf-8').toString('base64'), useSafeStorage: false };
+}
+
+// Decrypt — always call when reading secrets
+function decryptSecret(entry: EncryptedSecretEntry): string {
+  if (entry.useSafeStorage) {
+    const buffer = Buffer.from(entry.encrypted, 'base64');
+    return safeStorage.decryptString(buffer);
+  }
+  return Buffer.from(entry.encrypted, 'base64').toString('utf-8');
+}
+```
+
+### Migration Pattern
+
+Services MUST handle migration from plaintext to encrypted format:
+
+```typescript
+function loadSecrets(): Map<string, Secret> {
+  const parsed = JSON.parse(readFileSync(filePath, 'utf-8'));
+  let needsMigration = false;
+
+  for (const [key, value] of Object.entries(parsed)) {
+    if (isEncryptedEntry(value)) {
+      // Already encrypted — decrypt and use
+      secrets.set(key, decryptSecret(value));
+    } else if (typeof value === 'string') {
+      // Legacy plaintext — mark for migration
+      secrets.set(key, value);
+      needsMigration = true;
+    }
+  }
+
+  if (needsMigration) {
+    console.log('[Service] Migrating plaintext secrets to encrypted format');
+    saveSecrets(secrets); // Re-save with encryption
+  }
+
+  return secrets;
+}
+```
+
+### Key Rules
+
+- **NEVER** store secrets as plaintext in JSON files
+- **ALWAYS** use `safeStorage.isEncryptionAvailable()` check before encrypting
+- **ALWAYS** provide base64 fallback for CI/testing environments
+- **ALWAYS** implement automatic migration from plaintext to encrypted
+- **ALWAYS** log a warning when falling back to base64 (indicates non-production environment)

@@ -174,6 +174,51 @@ Key rules:
 - Raw color values ONLY in theme variable definitions, never in utility classes
 - `postcss.config.mjs` is required for Tailwind v4 processing via `@tailwindcss/postcss`
 
+## Security — Secret Storage
+
+All sensitive credentials are encrypted using Electron's `safeStorage` API, which provides OS-level encryption:
+- **macOS**: Keychain
+- **Windows**: DPAPI (Data Protection API)
+- **Linux**: libsecret
+
+### What's Encrypted
+
+| Secret Type | Storage Location | Service |
+|-------------|-----------------|---------|
+| OAuth client credentials | `<userData>/oauth-providers.json` | `provider-config.ts` |
+| Webhook secrets (Slack, GitHub) | `<userData>/settings.json` | `settings-service.ts` |
+
+### Encryption Pattern
+
+```typescript
+import { safeStorage } from 'electron';
+
+// Encrypt before saving
+function encryptSecret(value: string): EncryptedSecretEntry {
+  if (safeStorage.isEncryptionAvailable()) {
+    const buffer = safeStorage.encryptString(value);
+    return { encrypted: buffer.toString('base64'), useSafeStorage: true };
+  }
+  // Fallback for CI/testing environments
+  return { encrypted: Buffer.from(value, 'utf-8').toString('base64'), useSafeStorage: false };
+}
+
+// Decrypt on read
+function decryptSecret(entry: EncryptedSecretEntry): string {
+  if (entry.useSafeStorage) {
+    const buffer = Buffer.from(entry.encrypted, 'base64');
+    return safeStorage.decryptString(buffer);
+  }
+  return Buffer.from(entry.encrypted, 'base64').toString('utf-8');
+}
+```
+
+### Migration
+
+Both services automatically migrate plaintext secrets to encrypted format on first read. The `useSafeStorage` flag tracks whether real encryption was used, enabling graceful fallback in environments where safeStorage is unavailable.
+
+---
+
 ## Build System
 
 - **electron-vite** handles three separate builds:
