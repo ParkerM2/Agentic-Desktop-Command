@@ -26,8 +26,9 @@ import { GitHubPage } from '@features/github';
 import { IdeationPage } from '@features/ideation';
 import { InsightsPage } from '@features/insights';
 import { KanbanBoard } from '@features/kanban';
+import { MyWorkPage } from '@features/my-work';
 import { NotesPage } from '@features/notes';
-import { PlannerPage } from '@features/planner';
+import { PlannerPage, WeeklyReviewPage } from '@features/planner';
 import { ProductivityPage } from '@features/productivity';
 import { ProjectListPage } from '@features/projects';
 import { RoadmapPage } from '@features/roadmap';
@@ -59,6 +60,14 @@ const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTES.DASHBOARD,
   component: DashboardPage,
+});
+
+// ─── My Work ───────────────────────────────────────────────
+
+const myWorkRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTES.MY_WORK,
+  component: MyWorkPage,
 });
 
 // ─── Alerts ───────────────────────────────────────────────
@@ -99,6 +108,12 @@ const plannerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTES.PLANNER,
   component: PlannerPage,
+});
+
+const plannerWeeklyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTES.PLANNER_WEEKLY,
+  component: WeeklyReviewPage,
 });
 
 // ─── Productivity ────────────────────────────────────────────
@@ -201,11 +216,13 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   dashboardRoute,
+  myWorkRoute,
   alertsRoute,
   communicationsRoute,
   fitnessRoute,
   notesRoute,
   plannerRoute,
+  plannerWeeklyRoute,
   productivityRoute,
   projectsRoute,
   projectRoute,

@@ -2,13 +2,15 @@
  * Changelog Service — Disk-persisted version history
  *
  * Changelog entries stored as JSON in the app's user data directory.
- * All methods are synchronous; IPC handlers wrap with Promise.resolve().
+ * All methods are synchronous except generateFromGit which uses async git operations.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { ChangeCategory, ChangelogEntry } from '@shared/types';
+
+import { generateChangelogEntry } from './changelog-generator';
 
 export interface ChangelogService {
   listEntries: () => ChangelogEntry[];
@@ -17,6 +19,7 @@ export interface ChangelogService {
     date: string;
     categories: ChangeCategory[];
   }) => ChangelogEntry;
+  generateFromGit: (repoPath: string, version: string, fromTag?: string) => Promise<ChangelogEntry>;
 }
 
 interface ChangelogFile {
@@ -132,6 +135,10 @@ export function createChangelogService(deps: { dataDir: string }): ChangelogServ
       store.entries.unshift(entry);
       persist();
       return entry;
+    },
+
+    async generateFromGit(repoPath, version, fromTag) {
+      return await generateChangelogEntry(repoPath, version, fromTag);
     },
   };
 }

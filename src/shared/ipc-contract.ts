@@ -152,6 +152,22 @@ const DailyPlanSchema = z.object({
   reflection: z.string().optional(),
 });
 
+const WeeklyReviewSummarySchema = z.object({
+  totalGoalsSet: z.number(),
+  totalGoalsCompleted: z.number(),
+  totalTimeBlocks: z.number(),
+  totalHoursPlanned: z.number(),
+  categoryBreakdown: z.record(z.string(), z.number()),
+});
+
+const WeeklyReviewSchema = z.object({
+  weekStartDate: z.string(),
+  weekEndDate: z.string(),
+  days: z.array(DailyPlanSchema),
+  summary: WeeklyReviewSummarySchema,
+  reflection: z.string().optional(),
+});
+
 const GitStatusSchema = z.object({
   branch: z.string(),
   isClean: z.boolean(),
@@ -261,7 +277,7 @@ const IdeaSchema = z.object({
   updatedAt: z.string(),
 });
 
-const ChangeTypeSchema = z.enum(['added', 'changed', 'fixed', 'removed']);
+const ChangeTypeSchema = z.enum(['added', 'changed', 'fixed', 'removed', 'security', 'deprecated']);
 
 const ChangeCategorySchema = z.object({
   type: ChangeTypeSchema,
@@ -370,6 +386,29 @@ const FitnessStatsSchema = z.object({
   averageWorkoutDuration: z.number(),
 });
 
+const TokenUsageSchema = z.object({
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  totalTokens: z.number(),
+  estimatedCostUsd: z.number(),
+  lastUpdated: z.string(),
+});
+
+const AggregatedTokenUsageSchema = z.object({
+  totalInputTokens: z.number(),
+  totalOutputTokens: z.number(),
+  totalTokens: z.number(),
+  totalCostUsd: z.number(),
+  byAgent: z.array(
+    z.object({
+      agentId: z.string(),
+      taskId: z.string(),
+      projectId: z.string(),
+      usage: TokenUsageSchema,
+    }),
+  ),
+});
+
 const AgentSessionSchema = z.object({
   id: z.string(),
   taskId: z.string(),
@@ -379,6 +418,7 @@ const AgentSessionSchema = z.object({
   terminalId: z.string().optional(),
   startedAt: z.string(),
   completedAt: z.string().optional(),
+  tokenUsage: TokenUsageSchema.optional(),
 });
 
 const GitHubLabelSchema = z.object({
@@ -564,6 +604,10 @@ export const ipcInvokeContract = {
     input: z.object({ taskId: z.string(), projectId: z.string() }),
     output: z.object({ agentId: z.string() }),
   },
+  'tasks.listAll': {
+    input: z.object({}),
+    output: z.array(TaskSchema),
+  },
 
   // ── Terminals ──
   'terminals.list': {
@@ -686,6 +730,18 @@ export const ipcInvokeContract = {
     }),
     output: z.object({ success: z.boolean() }),
   },
+  'settings.getAgentSettings': {
+    input: z.object({}),
+    output: z.object({
+      maxConcurrentAgents: z.number(),
+    }),
+  },
+  'settings.setAgentSettings': {
+    input: z.object({
+      maxConcurrentAgents: z.number(),
+    }),
+    output: z.object({ success: z.boolean() }),
+  },
 
   // ── Notes ──
   'notes.list': {
@@ -765,6 +821,18 @@ export const ipcInvokeContract = {
   'planner.removeTimeBlock': {
     input: z.object({ date: z.string(), blockId: z.string() }),
     output: z.object({ success: z.boolean() }),
+  },
+  'planner.getWeek': {
+    input: z.object({ startDate: z.string() }),
+    output: WeeklyReviewSchema,
+  },
+  'planner.generateWeeklyReview': {
+    input: z.object({ startDate: z.string() }),
+    output: WeeklyReviewSchema,
+  },
+  'planner.updateWeeklyReflection': {
+    input: z.object({ startDate: z.string(), reflection: z.string() }),
+    output: WeeklyReviewSchema,
   },
 
   // ── Alerts ──
@@ -941,6 +1009,14 @@ export const ipcInvokeContract = {
       version: z.string(),
       date: z.string(),
       categories: z.array(ChangeCategorySchema),
+    }),
+    output: ChangelogEntrySchema,
+  },
+  'changelog.generate': {
+    input: z.object({
+      repoPath: z.string(),
+      version: z.string(),
+      fromTag: z.string().optional(),
     }),
     output: ChangelogEntrySchema,
   },
@@ -1242,6 +1318,41 @@ export const ipcInvokeContract = {
     input: z.object({}),
     output: z.array(AgentSessionSchema),
   },
+  'agents.getQueueStatus': {
+    input: z.object({}),
+    output: z.object({
+      pending: z.array(
+        z.object({
+          id: z.string(),
+          taskId: z.string(),
+          projectId: z.string(),
+          priority: z.number(),
+          queuedAt: z.string(),
+        }),
+      ),
+      running: z.array(z.string()),
+      maxConcurrent: z.number(),
+    }),
+  },
+  'agents.getTokenUsage': {
+    input: z.object({}),
+    output: AggregatedTokenUsageSchema,
+  },
+
+  // ── Time Parser ──
+  'time.parse': {
+    input: z.object({
+      text: z.string(),
+      referenceDate: z.string().optional(),
+    }),
+    output: z
+      .object({
+        iso: z.string(),
+        text: z.string(),
+        isRelative: z.boolean(),
+      })
+      .nullable(),
+  },
 
   // ── MCP ──
   'mcp.callTool': {
@@ -1305,6 +1416,19 @@ export const ipcEventContract = {
   },
   'event:agent.log': {
     payload: z.object({ agentId: z.string(), message: z.string() }),
+  },
+  'event:agent.queueChanged': {
+    payload: z.object({
+      pending: z.number(),
+      running: z.number(),
+      maxConcurrent: z.number(),
+    }),
+  },
+  'event:agent.tokenUsage': {
+    payload: z.object({
+      agentId: z.string(),
+      usage: TokenUsageSchema,
+    }),
   },
 
   // ── Project Events ──
@@ -1456,6 +1580,8 @@ export {
   TimeBlockSchema,
   ScheduledTaskSchema,
   TimeBlockTypeSchema,
+  WeeklyReviewSchema,
+  WeeklyReviewSummarySchema,
   GitStatusSchema,
   GitBranchSchema,
   WorktreeSchema,

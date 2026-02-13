@@ -15,4 +15,8 @@ export function registerAgentHandlers(router: IpcRouter, service: AgentService):
   router.handle('agents.pause', ({ agentId }) => Promise.resolve(service.pauseAgent(agentId)));
 
   router.handle('agents.resume', ({ agentId }) => Promise.resolve(service.resumeAgent(agentId)));
+
+  router.handle('agents.getQueueStatus', () => Promise.resolve(service.getQueueStatus()));
+
+  router.handle('agents.getTokenUsage', () => Promise.resolve(service.getAggregatedTokenUsage()));
 }

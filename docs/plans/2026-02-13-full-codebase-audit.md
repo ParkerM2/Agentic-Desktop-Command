@@ -417,13 +417,13 @@ These must be addressed before any public release or multi-user deployment.
 16. ~~Hub connection pre-save validation (ping before save)~~ **DONE** (2026-02-13)
 
 ### P3 — Missing Features (High Value)
-17. Natural language time parser (chrono-node)
-18. Agent queue + parallelism config
-19. Cost tracking (parse Claude CLI token output)
-20. My Work view (cross-project tasks)
-21. Merge workflow UI (diff preview + conflict resolution)
-22. Changelog auto-generation from git
-23. Weekly review auto-generation
+17. ~~Natural language time parser (chrono-node)~~ **DONE** (2026-02-13)
+18. ~~Agent queue + parallelism config~~ **DONE** (2026-02-13)
+19. ~~Cost tracking (parse Claude CLI token output)~~ **DONE** (2026-02-13)
+20. ~~My Work view (cross-project tasks)~~ **DONE** (2026-02-13)
+21. ~~Merge workflow UI (diff preview + conflict resolution)~~ **DONE** (2026-02-13)
+22. ~~Changelog auto-generation from git~~ **DONE** (2026-02-13)
+23. ~~Weekly review auto-generation~~ **DONE** (2026-02-13)
 
 ### P4 — Missing Features (Large Scope)
 24. Persistent Claude session (Anthropic Messages API)

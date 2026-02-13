@@ -11,7 +11,20 @@
 
 import type { AssistantAction, IntentType } from '@shared/types';
 
+import {
+  createTimeParserService,
+  type TimeParserService,
+} from '../time-parser/time-parser-service';
+
 import { classifyWithClaude } from './claude-classifier';
+
+// Lazy-initialized time parser service
+let timeParserService: TimeParserService | null = null;
+
+function getTimeParser(): TimeParserService {
+  timeParserService ??= createTimeParserService();
+  return timeParserService;
+}
 
 export interface ClassifiedIntent {
   type: IntentType;
@@ -91,9 +104,37 @@ const INTENT_RULES: IntentRule[] = [
     subtype: 'reminder',
     action: 'create_reminder',
     confidence: 0.85,
-    extractEntities: (input) => ({
-      content: input,
-    }),
+    extractEntities: (input) => {
+      // Extract time and message from reminder input
+      // Patterns: "remind me tomorrow at 3pm to X" or "remind me in 2 hours to X"
+      const stripped = stripPrefix(input, /^(remind|alert)\s+(me\s+)?/i);
+      const parser = getTimeParser();
+
+      // Try to parse time from the input
+      const parsed = parser.parseTime(stripped);
+
+      if (parsed) {
+        // Extract the message after the time expression
+        const timeText = parsed.text;
+        const afterTime = stripped.slice(stripped.indexOf(timeText) + timeText.length);
+        const message = afterTime.replace(/^\s*to\s+/i, '').trim();
+
+        return {
+          content: input,
+          message: message || stripped,
+          triggerAt: parsed.date.toISOString(),
+          isRelative: String(parsed.isRelative),
+        };
+      }
+
+      // Fallback: return raw content if parsing fails (no triggerAt)
+      return {
+        content: input,
+        message: stripped,
+        triggerAt: '',
+        isRelative: 'false',
+      };
+    },
   },
   // Launcher: "open ..." or "launch ..."
   {

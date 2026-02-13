@@ -20,9 +20,18 @@ import {
   STATUS_ERROR_PATTERNS,
   PROGRESS_PATTERNS,
 } from '@shared/constants';
-import type { AgentSession, AgentStatus } from '@shared/types';
+import type { AgentSession, AgentStatus, AggregatedTokenUsage } from '@shared/types';
 
+import {
+  createEmptyUsage,
+  mightContainTokenInfo,
+  parseTokenLine,
+  updateTokenUsage,
+} from './token-parser';
+
+import type { AgentQueue, AgentQueueStatus, QueuedAgent } from './agent-queue';
 import type { IpcRouter } from '../../ipc/router';
+
 
 interface AgentProcess {
   session: AgentSession;
@@ -31,13 +40,22 @@ interface AgentProcess {
   isPaused: boolean;
 }
 
+export interface StartAgentResult {
+  session: AgentSession | null;
+  queued: QueuedAgent | null;
+}
+
 export interface AgentService {
   listAgents: (projectId: string) => AgentSession[];
   listAllAgents: () => AgentSession[];
-  startAgent: (taskId: string, projectId: string, cwd: string) => AgentSession;
+  startAgent: (taskId: string, projectId: string, cwd: string, priority?: number) => StartAgentResult;
   stopAgent: (agentId: string) => { success: boolean };
   pauseAgent: (agentId: string) => { success: boolean };
   resumeAgent: (agentId: string) => { success: boolean };
+  getQueueStatus: () => AgentQueueStatus;
+  removeFromQueue: (queuedId: string) => { success: boolean };
+  processQueue: () => void;
+  getAggregatedTokenUsage: () => AggregatedTokenUsage;
   dispose: () => void;
 }
 
@@ -85,6 +103,7 @@ function parseClaudeOutput(
 export function createAgentService(
   router: IpcRouter,
   resolveProject: ProjectResolver,
+  queue: AgentQueue,
 ): AgentService {
   const agents = new Map<string, AgentProcess>();
 
@@ -94,6 +113,132 @@ export function createAgentService(
 
   function emitLog(agentId: string, message: string): void {
     router.emit('event:agent.log', { agentId, message });
+  }
+
+  /**
+   * Internal function to actually spawn an agent process.
+   * Called when there's capacity or when processing the queue.
+   */
+  function spawnAgent(taskId: string, projectId: string, cwd: string): AgentSession {
+    const id = `agent-${taskId}-${String(Date.now())}`;
+    const shell = getShell();
+
+    // Resolve working directory
+    let workDir = cwd;
+    const projectPath = resolveProject(projectId);
+    if (!workDir && projectPath) {
+      workDir = projectPath;
+    }
+    if (!workDir || !existsSync(workDir)) {
+      workDir = process.env.HOME ?? process.env.USERPROFILE ?? '.';
+    }
+
+    const ptyProcess = pty.spawn(shell, [], {
+      name: 'xterm-256color',
+      cols: 120,
+      rows: 30,
+      cwd: workDir,
+      env: {
+        ...process.env,
+        TERM: 'xterm-256color',
+        COLORTERM: 'truecolor',
+      } as Record<string, string>,
+    });
+
+    const session: AgentSession = {
+      id,
+      taskId,
+      projectId,
+      status: 'idle',
+      worktreePath: workDir,
+      startedAt: new Date().toISOString(),
+      tokenUsage: createEmptyUsage(),
+    };
+
+    const agentProc: AgentProcess = {
+      session,
+      pty: ptyProcess,
+      outputBuffer: [],
+      isPaused: false,
+    };
+
+    // Parse PTY output for status events and token usage
+    ptyProcess.onData((data: string) => {
+      if (agentProc.isPaused) return;
+
+      const lines = data.split('\n');
+      for (const line of lines) {
+        // Parse for token usage if line might contain it
+        if (mightContainTokenInfo(line) && session.tokenUsage) {
+          const tokenData = parseTokenLine(line);
+          if (tokenData.inputTokens !== undefined || tokenData.outputTokens !== undefined || tokenData.cost !== undefined) {
+            session.tokenUsage = updateTokenUsage(session.tokenUsage, tokenData);
+            router.emit('event:agent.tokenUsage', {
+              agentId: id,
+              usage: session.tokenUsage,
+            });
+          }
+        }
+
+        const parsed = parseClaudeOutput(line);
+        if (parsed) {
+          if (parsed.type === 'status') {
+            const newStatus = parsed.data.status as AgentStatus;
+            session.status = newStatus;
+            emitStatus(id, newStatus, taskId);
+            if (newStatus === 'completed') {
+              session.completedAt = new Date().toISOString();
+            }
+          } else if (parsed.type === 'log') {
+            agentProc.outputBuffer.push(parsed.data.message as string);
+            emitLog(id, parsed.data.message as string);
+          }
+        }
+      }
+    });
+
+    // Handle PTY exit
+    ptyProcess.onExit(({ exitCode }) => {
+      if (session.status !== 'completed' && session.status !== 'error') {
+        session.status = exitCode === 0 ? 'completed' : 'error';
+        session.completedAt = new Date().toISOString();
+        emitStatus(id, session.status, taskId);
+      }
+      agents.delete(id);
+      queue.removeRunning(id);
+
+      // Process queue after an agent completes
+      processQueueInternal();
+    });
+
+    agents.set(id, agentProc);
+    queue.addRunning(id);
+
+    // Start the agent by invoking Claude CLI
+    // Send the claude command after a brief delay for shell init
+    setTimeout(() => {
+      // Construct the claude command with the task context
+      const specDir = join(workDir, AUTO_CLAUDE_DIR, SPECS_DIR, taskId);
+      const claudeCmd = existsSync(specDir) ? `claude --task "${taskId}"\r` : `claude\r`;
+      ptyProcess.write(claudeCmd);
+      session.status = 'running';
+      emitStatus(id, 'running', taskId);
+    }, 500);
+
+    return session;
+  }
+
+  /**
+   * Process the queue, starting agents if there's capacity.
+   */
+  function processQueueInternal(): void {
+    while (queue.canStartImmediately()) {
+      const next = queue.dequeue();
+      if (!next) break;
+
+      const projectPath = resolveProject(next.projectId);
+      spawnAgent(next.taskId, next.projectId, projectPath ?? '');
+    }
   }
 
   return {
@@ -111,95 +256,19 @@ export function createAgentService(
       return [...agents.values()].map((proc) => proc.session);
     },
 
-    startAgent(taskId, projectId, cwd) {
-      const id = `agent-${taskId}-${String(Date.now())}`;
-      const shell = getShell();
-
-      // Resolve working directory
-      let workDir = cwd;
-      const projectPath = resolveProject(projectId);
-      if (!workDir && projectPath) {
-        workDir = projectPath;
-      }
-      if (!workDir || !existsSync(workDir)) {
-        workDir = process.env.HOME ?? process.env.USERPROFILE ?? '.';
+    startAgent(taskId, projectId, cwd, priority = 0) {
+      // Check if we can start immediately
+      if (queue.canStartImmediately()) {
+        const session = spawnAgent(taskId, projectId, cwd);
+        return { session, queued: null };
       }
 
-      const ptyProcess = pty.spawn(shell, [], {
-        name: 'xterm-256color',
-        cols: 120,
-        rows: 30,
-        cwd: workDir,
-        env: {
-          ...process.env,
-          TERM: 'xterm-256color',
-          COLORTERM: 'truecolor',
-        } as Record<string, string>,
-      });
+      // Queue the agent for later execution
+      const queuedId = queue.enqueue(taskId, projectId, priority);
+      const queueStatus = queue.getQueueStatus();
+      const queuedAgent = queueStatus.pending.find((q) => q.id === queuedId);
 
-      const session: AgentSession = {
-        id,
-        taskId,
-        projectId,
-        status: 'idle',
-        worktreePath: workDir,
-        startedAt: new Date().toISOString(),
-      };
-
-      const agentProc: AgentProcess = {
-        session,
-        pty: ptyProcess,
-        outputBuffer: [],
-        isPaused: false,
-      };
-
-      // Parse PTY output for status events
-      ptyProcess.onData((data: string) => {
-        if (agentProc.isPaused) return;
-
-        const lines = data.split('\n');
-        for (const line of lines) {
-          const parsed = parseClaudeOutput(line);
-          if (parsed) {
-            if (parsed.type === 'status') {
-              const newStatus = parsed.data.status as AgentStatus;
-              session.status = newStatus;
-              emitStatus(id, newStatus, taskId);
-              if (newStatus === 'completed') {
-                session.completedAt = new Date().toISOString();
-              }
-            } else if (parsed.type === 'log') {
-              agentProc.outputBuffer.push(parsed.data.message as string);
-              emitLog(id, parsed.data.message as string);
-            }
-          }
-        }
-      });
-
-      // Handle PTY exit
-      ptyProcess.onExit(({ exitCode }) => {
-        if (session.status !== 'completed' && session.status !== 'error') {
-          session.status = exitCode === 0 ? 'completed' : 'error';
-          session.completedAt = new Date().toISOString();
-          emitStatus(id, session.status, taskId);
-        }
-        agents.delete(id);
-      });
-
-      agents.set(id, agentProc);
-
-      // Start the agent by invoking Claude CLI
-      // Send the claude command after a brief delay for shell init
-      setTimeout(() => {
-        // Construct the claude command with the task context
-        const specDir = join(workDir, AUTO_CLAUDE_DIR, SPECS_DIR, taskId);
-        const claudeCmd = existsSync(specDir) ? `claude --task "${taskId}"\r` : `claude\r`;
-        ptyProcess.write(claudeCmd);
-        session.status = 'running';
-        emitStatus(id, 'running', taskId);
-      }, 500);
-
-      return session;
+      return { session: null, queued: queuedAgent ?? null };
     },
 
     stopAgent(agentId) {
@@ -216,6 +285,11 @@ export function createAgentService(
       proc.session.completedAt = new Date().toISOString();
       emitStatus(agentId, 'error', proc.session.taskId);
       agents.delete(agentId);
+      queue.removeRunning(agentId);
+
+      // Process queue after stopping an agent
+      processQueueInternal();
+
       return { success: true };
     },
 
@@ -249,6 +323,49 @@ export function createAgentService(
       }
 
       return { success: true };
+    },
+
+    getQueueStatus() {
+      return queue.getQueueStatus();
+    },
+
+    removeFromQueue(queuedId) {
+      const removed = queue.remove(queuedId);
+      return { success: removed };
+    },
+
+    processQueue() {
+      processQueueInternal();
+    },
+
+    getAggregatedTokenUsage() {
+      const byAgent: AggregatedTokenUsage['byAgent'] = [];
+      let totalInputTokens = 0;
+      let totalOutputTokens = 0;
+      let totalCostUsd = 0;
+
+      for (const proc of agents.values()) {
+        const { session } = proc;
+        if (session.tokenUsage) {
+          totalInputTokens += session.tokenUsage.inputTokens;
+          totalOutputTokens += session.tokenUsage.outputTokens;
+          totalCostUsd += session.tokenUsage.estimatedCostUsd;
+          byAgent.push({
+            agentId: session.id,
+            taskId: session.taskId,
+            projectId: session.projectId,
+            usage: session.tokenUsage,
+          });
+        }
+      }
+
+      return {
+        totalInputTokens,
+        totalOutputTokens,
+        totalTokens: totalInputTokens + totalOutputTokens,
+        totalCostUsd: Math.round(totalCostUsd * 10000) / 10000,
+        byAgent,
+      };
     },
 
     dispose() {

@@ -3,5 +3,5 @@
  */
 
 export { ChangelogPage } from './components/ChangelogPage';
-export { useChangelog } from './api/useChangelog';
+export { useAddChangelogEntry, useChangelog, useGenerateChangelog } from './api/useChangelog';
 export { changelogKeys } from './api/queryKeys';

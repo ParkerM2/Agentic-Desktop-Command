@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import { app, safeStorage } from 'electron';
 
-import type { AppSettings, Profile, WebhookConfig } from '@shared/types';
+import type { AgentSettings, AppSettings, Profile, WebhookConfig } from '@shared/types';
 
 // Webhook secret keys that should be encrypted
 const WEBHOOK_SECRET_KEYS = [
@@ -93,6 +93,8 @@ export interface SettingsService {
     slack?: { botToken?: string; signingSecret?: string };
     github?: { webhookSecret?: string };
   }) => { success: boolean };
+  getAgentSettings: () => AgentSettings;
+  setAgentSettings: (settings: AgentSettings) => { success: boolean };
 }
 
 interface SettingsFile {
@@ -100,12 +102,17 @@ interface SettingsFile {
   profiles: Profile[];
 }
 
+const DEFAULT_AGENT_SETTINGS: AgentSettings = {
+  maxConcurrentAgents: 2,
+};
+
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   colorTheme: 'default',
   language: 'en',
   uiScale: 100,
   onboardingCompleted: false,
+  agentSettings: DEFAULT_AGENT_SETTINGS,
 };
 
 const DEFAULT_PROFILES: Profile[] = [{ id: 'default', name: 'Default', isDefault: true }];
@@ -326,8 +333,22 @@ export function createSettingsService(): SettingsService {
         }
       }
       if (updates.github?.webhookSecret !== undefined) {
-          raw.webhookGithubSecret = updates.github.webhookSecret;
-        }
+        raw.webhookGithubSecret = updates.github.webhookSecret;
+      }
+      persist();
+      return { success: true };
+    },
+
+    getAgentSettings() {
+      return store.settings.agentSettings ?? DEFAULT_AGENT_SETTINGS;
+    },
+
+    setAgentSettings(settings) {
+      store.settings.agentSettings = {
+        ...DEFAULT_AGENT_SETTINGS,
+        ...settings,
+        maxConcurrentAgents: Math.max(1, settings.maxConcurrentAgents),
+      };
       persist();
       return { success: true };
     },
