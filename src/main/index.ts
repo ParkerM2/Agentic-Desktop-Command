@@ -50,6 +50,7 @@ import {
 import { createPlannerService } from './services/planner/planner-service';
 import { createProjectService } from './services/project/project-service';
 import { createTaskService } from './services/project/task-service';
+import { createScreenCaptureService } from './services/screen/screen-capture-service';
 import { createSettingsService } from './services/settings/settings-service';
 import { createSpotifyService } from './services/spotify/spotify-service';
 import { createGithubImporter, createTaskDecomposer } from './services/tasks';
@@ -253,6 +254,9 @@ function initializeApp(): void {
   const taskDecomposer = createTaskDecomposer({ claudeClient });
   const githubImporter = createGithubImporter({ githubService, taskService });
 
+  // Screen capture service — uses Electron desktopCapturer
+  const screenCaptureService = createScreenCaptureService();
+
   const services = {
     projectService,
     taskService,
@@ -284,6 +288,7 @@ function initializeApp(): void {
     timeParserService: createTimeParserService(),
     taskDecomposer,
     githubImporter,
+    screenCaptureService,
     dataDir,
     providers,
     tokenStore,

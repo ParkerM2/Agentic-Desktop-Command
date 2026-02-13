@@ -735,6 +735,25 @@ const NotificationWatcherConfigSchema = z.object({
   github: GitHubWatcherConfigSchema,
 });
 
+// ─── Screen Capture Schemas ───────────────────────────────────
+
+const ScreenSourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  thumbnail: z.string(),
+  display_id: z.string().optional(),
+  appIcon: z.string().optional(),
+});
+
+const ScreenshotSchema = z.object({
+  data: z.string(),
+  timestamp: z.string(),
+  source: ScreenSourceSchema,
+  width: z.number(),
+  height: z.number(),
+});
+
+const ScreenPermissionStatusSchema = z.enum(['granted', 'denied', 'not-determined', 'restricted']);
 
 // ─── IPC Contract Definition ──────────────────────────────────
 
@@ -1698,6 +1717,34 @@ export const ipcInvokeContract = {
       errors: z.record(NotificationSourceSchema, z.string()).optional(),
     }),
   },
+
+  // ── Screen Capture ──
+  'screen.listSources': {
+    input: z.object({
+      types: z.array(z.enum(['screen', 'window'])).optional(),
+      thumbnailSize: z.object({ width: z.number(), height: z.number() }).optional(),
+    }),
+    output: z.array(ScreenSourceSchema),
+  },
+  'screen.capture': {
+    input: z.object({
+      sourceId: z.string(),
+      options: z
+        .object({
+          width: z.number().optional(),
+          height: z.number().optional(),
+        })
+        .optional(),
+    }),
+    output: ScreenshotSchema,
+  },
+  'screen.checkPermission': {
+    input: z.object({}),
+    output: z.object({
+      status: ScreenPermissionStatusSchema,
+      platform: z.string(),
+    }),
+  },
 } as const;
 
 /**
@@ -2011,4 +2058,7 @@ export {
   NotificationWatcherConfigSchema,
   SlackWatcherConfigSchema,
   GitHubWatcherConfigSchema,
+  ScreenSourceSchema,
+  ScreenshotSchema,
+  ScreenPermissionStatusSchema,
 };

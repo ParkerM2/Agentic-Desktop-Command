@@ -26,6 +26,7 @@ import { registerNotesHandlers } from './handlers/notes-handlers';
 import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerPlannerHandlers } from './handlers/planner-handlers';
 import { registerProjectHandlers } from './handlers/project-handlers';
+import { registerScreenHandlers } from './handlers/screen-handlers';
 import { registerSettingsHandlers } from './handlers/settings-handlers';
 import { registerSpotifyHandlers } from './handlers/spotify-handlers';
 import { registerTaskHandlers } from './handlers/task-handlers';
@@ -60,6 +61,7 @@ import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
 import type { ProjectService } from '../services/project/project-service';
 import type { TaskService } from '../services/project/task-service';
+import type { ScreenCaptureService } from '../services/screen/screen-capture-service';
 import type { SettingsService } from '../services/settings/settings-service';
 import type { SpotifyService } from '../services/spotify/spotify-service';
 import type { GithubTaskImporter } from '../services/tasks/github-importer';
@@ -98,6 +100,7 @@ export interface Services {
   timeParserService: TimeParserService;
   taskDecomposer: TaskDecomposer;
   githubImporter: GithubTaskImporter;
+  screenCaptureService: ScreenCaptureService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -147,4 +150,5 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerNotificationHandlers(router, services.notificationManager);
   registerTimeHandlers(router, services.timeParserService);
   registerWebhookSettingsHandlers(router, services.settingsService);
+  registerScreenHandlers(router, services.screenCaptureService);
 }

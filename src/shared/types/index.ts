@@ -22,6 +22,7 @@ export type * from './project';
 export type * from './settings';
 export type * from './task';
 export type * from './terminal';
+export type * from './screen';
 export * from './notifications';
 
 /**
