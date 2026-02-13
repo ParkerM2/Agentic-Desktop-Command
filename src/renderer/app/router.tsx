@@ -18,6 +18,7 @@ import { ROUTES, ROUTE_PATTERNS } from '@shared/constants';
 // Feature page components
 import { AgentDashboard } from '@features/agents';
 import { AlertsPage } from '@features/alerts';
+import { BriefingPage } from '@features/briefing';
 import { ChangelogPage } from '@features/changelog';
 import { CommunicationsPage } from '@features/communications';
 import { DashboardPage } from '@features/dashboard';
@@ -76,6 +77,14 @@ const alertsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTES.ALERTS,
   component: AlertsPage,
+});
+
+// ─── Briefing ──────────────────────────────────────────────
+
+const briefingRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTES.BRIEFING,
+  component: BriefingPage,
 });
 
 // ─── Communications ──────────────────────────────────────────
@@ -218,6 +227,7 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   myWorkRoute,
   alertsRoute,
+  briefingRoute,
   communicationsRoute,
   fitnessRoute,
   notesRoute,

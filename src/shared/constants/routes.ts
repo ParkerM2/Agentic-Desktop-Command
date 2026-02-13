@@ -10,6 +10,7 @@ export const ROUTES = {
   INDEX: '/',
   ALERTS: '/alerts',
   ASSISTANT: '/assistant',
+  BRIEFING: '/briefing',
   COMMUNICATIONS: '/communications',
   DASHBOARD: '/dashboard',
   FITNESS: '/fitness',
