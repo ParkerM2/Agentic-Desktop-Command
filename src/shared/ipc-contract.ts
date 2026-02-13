@@ -547,6 +547,82 @@ const WebhookConfigSchema = z.object({
   }),
 });
 
+// ─── Notification Schemas ──────────────────────────────────────
+
+const NotificationSourceSchema = z.enum(['slack', 'github']);
+
+const SlackNotificationTypeSchema = z.enum(['mention', 'dm', 'channel', 'thread_reply']);
+
+const GitHubNotificationTypeSchema = z.enum([
+  'pr_review',
+  'pr_comment',
+  'issue_mention',
+  'ci_status',
+  'pr_merged',
+  'pr_closed',
+  'issue_assigned',
+]);
+
+const NotificationTypeSchema = z.union([SlackNotificationTypeSchema, GitHubNotificationTypeSchema]);
+
+const NotificationMetadataSchema = z.object({
+  channelId: z.string().optional(),
+  channelName: z.string().optional(),
+  userId: z.string().optional(),
+  userName: z.string().optional(),
+  threadTs: z.string().optional(),
+  owner: z.string().optional(),
+  repo: z.string().optional(),
+  prNumber: z.number().optional(),
+  issueNumber: z.number().optional(),
+  ciStatus: z.enum(['pending', 'success', 'failure']).optional(),
+});
+
+const NotificationSchema = z.object({
+  id: z.string(),
+  source: NotificationSourceSchema,
+  type: NotificationTypeSchema,
+  title: z.string(),
+  body: z.string(),
+  url: z.string(),
+  timestamp: z.string(),
+  read: z.boolean(),
+  metadata: NotificationMetadataSchema.optional(),
+});
+
+const NotificationFilterSchema = z.object({
+  sources: z.array(NotificationSourceSchema).optional(),
+  types: z.array(NotificationTypeSchema).optional(),
+  keywords: z.array(z.string()).optional(),
+  unreadOnly: z.boolean().optional(),
+});
+
+const SlackWatcherConfigSchema = z.object({
+  enabled: z.boolean(),
+  pollIntervalSeconds: z.number(),
+  channels: z.array(z.string()),
+  keywords: z.array(z.string()),
+  watchMentions: z.boolean(),
+  watchDms: z.boolean(),
+  watchThreads: z.boolean(),
+});
+
+const GitHubWatcherConfigSchema = z.object({
+  enabled: z.boolean(),
+  pollIntervalSeconds: z.number(),
+  repos: z.array(z.string()),
+  watchPrReviews: z.boolean(),
+  watchPrComments: z.boolean(),
+  watchIssueMentions: z.boolean(),
+  watchCiStatus: z.boolean(),
+});
+
+const NotificationWatcherConfigSchema = z.object({
+  enabled: z.boolean(),
+  slack: SlackWatcherConfigSchema,
+  github: GitHubWatcherConfigSchema,
+});
+
 // ─── IPC Contract Definition ──────────────────────────────────
 
 /**
@@ -1379,6 +1455,52 @@ export const ipcInvokeContract = {
     input: z.object({ server: z.string() }),
     output: z.enum(['disconnected', 'connecting', 'connected', 'error']),
   },
+
+  // ── Notifications ──
+  'notifications.list': {
+    input: z.object({
+      filter: NotificationFilterSchema.optional(),
+      limit: z.number().optional(),
+    }),
+    output: z.array(NotificationSchema),
+  },
+  'notifications.markRead': {
+    input: z.object({ id: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'notifications.markAllRead': {
+    input: z.object({ source: NotificationSourceSchema.optional() }),
+    output: z.object({ success: z.boolean(), count: z.number() }),
+  },
+  'notifications.getConfig': {
+    input: z.object({}),
+    output: NotificationWatcherConfigSchema,
+  },
+  'notifications.updateConfig': {
+    input: z.object({
+      enabled: z.boolean().optional(),
+      slack: SlackWatcherConfigSchema.partial().optional(),
+      github: GitHubWatcherConfigSchema.partial().optional(),
+    }),
+    output: NotificationWatcherConfigSchema,
+  },
+  'notifications.startWatching': {
+    input: z.object({}),
+    output: z.object({ success: z.boolean(), watchersStarted: z.array(z.string()) }),
+  },
+  'notifications.stopWatching': {
+    input: z.object({}),
+    output: z.object({ success: z.boolean() }),
+  },
+  'notifications.getWatcherStatus': {
+    input: z.object({}),
+    output: z.object({
+      isWatching: z.boolean(),
+      activeWatchers: z.array(NotificationSourceSchema),
+      lastPollTime: z.record(NotificationSourceSchema, z.string()).optional(),
+      errors: z.record(NotificationSourceSchema, z.string()).optional(),
+    }),
+  },
 } as const;
 
 /**
@@ -1542,6 +1664,25 @@ export const ipcEventContract = {
       retryAfter: z.number().optional(),
     }),
   },
+
+  // ── Notification Events ──
+  'event:notifications.new': {
+    payload: z.object({
+      notification: NotificationSchema,
+    }),
+  },
+  'event:notifications.watcherError': {
+    payload: z.object({
+      source: NotificationSourceSchema,
+      error: z.string(),
+    }),
+  },
+  'event:notifications.watcherStatusChanged': {
+    payload: z.object({
+      source: NotificationSourceSchema,
+      status: z.enum(['started', 'stopped', 'polling', 'error']),
+    }),
+  },
 } as const;
 
 // ─── Type Utilities ───────────────────────────────────────────
@@ -1628,4 +1769,11 @@ export {
   WebhookCommandSourceContextSchema,
   WebhookCommandSchema,
   WebhookConfigSchema,
+  NotificationSchema,
+  NotificationSourceSchema,
+  NotificationTypeSchema,
+  NotificationFilterSchema,
+  NotificationWatcherConfigSchema,
+  SlackWatcherConfigSchema,
+  GitHubWatcherConfigSchema,
 };

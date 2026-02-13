@@ -40,6 +40,11 @@ import { createInsightsService } from './services/insights/insights-service';
 import { createMergeService } from './services/merge/merge-service';
 import { createMilestonesService } from './services/milestones/milestones-service';
 import { createNotesService } from './services/notes/notes-service';
+import {
+  createGitHubWatcher,
+  createNotificationManager,
+  createSlackWatcher,
+} from './services/notifications';
 import { createPlannerService } from './services/planner/planner-service';
 import { createProjectService } from './services/project/project-service';
 import { createTaskService } from './services/project/task-service';
@@ -55,6 +60,7 @@ let terminalServiceRef: ReturnType<typeof createTerminalService> | null = null;
 let agentServiceRef: ReturnType<typeof createAgentService> | null = null;
 let alertServiceRef: ReturnType<typeof createAlertService> | null = null;
 let hubConnectionManagerRef: ReturnType<typeof createHubConnectionManager> | null = null;
+let notificationManagerRef: ReturnType<typeof createNotificationManager> | null = null;
 
 function getMainWindow(): BrowserWindow | null {
   return mainWindow;
@@ -203,6 +209,34 @@ function initializeApp(): void {
     webhookRelay.handleHubMessage(data);
   });
 
+  // Notification watchers — background polling for Slack and GitHub
+  const notificationManager = createNotificationManager(router);
+  notificationManagerRef = notificationManager;
+
+  // Create and register Slack watcher
+  const slackWatcher = createSlackWatcher({
+    oauthManager,
+    router,
+    notificationManager,
+    getConfig: () => notificationManager.getConfig().slack,
+  });
+  notificationManager.registerWatcher(slackWatcher);
+
+  // Create and register GitHub watcher
+  const githubWatcher = createGitHubWatcher({
+    oauthManager,
+    router,
+    notificationManager,
+    getConfig: () => notificationManager.getConfig().github,
+  });
+  notificationManager.registerWatcher(githubWatcher);
+
+  // Start watchers if previously enabled
+  const notifConfig = notificationManager.getConfig();
+  if (notifConfig.enabled) {
+    notificationManager.startWatching();
+  }
+
   const services = {
     projectService,
     taskService,
@@ -222,6 +256,7 @@ function initializeApp(): void {
     mcpManager,
     milestonesService,
     notesService,
+    notificationManager,
     plannerService,
     spotifyService,
     gitService,
@@ -258,4 +293,5 @@ app.on('before-quit', () => {
   agentServiceRef?.dispose();
   alertServiceRef?.stopChecking();
   hubConnectionManagerRef?.dispose();
+  notificationManagerRef?.dispose();
 });

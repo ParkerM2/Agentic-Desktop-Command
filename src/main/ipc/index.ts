@@ -21,6 +21,7 @@ import { registerMcpHandlers } from './handlers/mcp-handlers';
 import { registerMergeHandlers } from './handlers/merge-handlers';
 import { registerMilestonesHandlers } from './handlers/milestones-handlers';
 import { registerNotesHandlers } from './handlers/notes-handlers';
+import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerPlannerHandlers } from './handlers/planner-handlers';
 import { registerProjectHandlers } from './handlers/project-handlers';
 import { registerSettingsHandlers } from './handlers/settings-handlers';
@@ -51,6 +52,7 @@ import type { InsightsService } from '../services/insights/insights-service';
 import type { MergeService } from '../services/merge/merge-service';
 import type { MilestonesService } from '../services/milestones/milestones-service';
 import type { NotesService } from '../services/notes/notes-service';
+import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
 import type { ProjectService } from '../services/project/project-service';
 import type { TaskService } from '../services/project/task-service';
@@ -78,6 +80,7 @@ export interface Services {
   mcpManager: McpManager;
   milestonesService: MilestonesService;
   notesService: NotesService;
+  notificationManager: NotificationManager;
   plannerService: PlannerService;
   spotifyService: SpotifyService;
   gitService: GitService;
@@ -127,6 +130,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerHubHandlers(router, services.hubConnectionManager, services.hubSyncService);
   registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);
+  registerNotificationHandlers(router, services.notificationManager);
   registerTimeHandlers(router, services.timeParserService);
   registerWebhookSettingsHandlers(router, services.settingsService);
 }

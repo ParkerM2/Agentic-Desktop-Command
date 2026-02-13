@@ -20,6 +20,7 @@ export type * from './project';
 export type * from './settings';
 export type * from './task';
 export type * from './terminal';
+export * from './notifications';
 
 /**
  * Generic IPC result wrapper
