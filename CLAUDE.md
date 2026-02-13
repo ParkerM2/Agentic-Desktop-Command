@@ -222,6 +222,16 @@ Raw hex/rgb/hsl values are **ONLY** allowed inside theme variable definitions:
 
 ## Detailed Architecture Docs
 
-- `ai-docs/ARCHITECTURE.md` — Full system architecture and data flow
-- `ai-docs/PATTERNS.md` — Code patterns, conventions, and examples
-- `ai-docs/LINTING.md` — ESLint rules reference and fix patterns
+**Read these when you need deeper context:**
+
+| Document | When to Read |
+|----------|--------------|
+| `ai-docs/FEATURES-INDEX.md` | Starting point — what features exist, file locations, service inventory |
+| `ai-docs/ARCHITECTURE.md` | System architecture, IPC flow, service patterns |
+| `ai-docs/PATTERNS.md` | Code conventions, component patterns, examples |
+| `ai-docs/DATA-FLOW.md` | Detailed data flow diagrams for all systems |
+| `ai-docs/CODEBASE-GUARDIAN.md` | File placement rules, naming conventions, import rules |
+| `ai-docs/LINTING.md` | ESLint rules reference and fix patterns |
+| `ai-docs/prompts/implementing-features/README.md` | Team workflow for multi-agent feature implementation |
+
+**Current gaps and priorities:** `docs/plans/2026-02-13-full-codebase-audit.md`
