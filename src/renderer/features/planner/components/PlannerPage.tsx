@@ -4,7 +4,10 @@
 
 import { useState } from 'react';
 
-import { Calendar, ChevronLeft, ChevronRight, Loader2, MessageSquare } from 'lucide-react';
+import { Link } from '@tanstack/react-router';
+import { Calendar, CalendarDays, ChevronLeft, ChevronRight, Loader2, MessageSquare } from 'lucide-react';
+
+import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -156,6 +159,14 @@ export function PlannerPage() {
               Week
             </button>
           </div>
+
+          <Link
+            className="text-muted-foreground hover:text-primary ml-2 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+            to={ROUTES.PLANNER_WEEKLY}
+          >
+            <CalendarDays className="h-3.5 w-3.5" />
+            Weekly Review
+          </Link>
         </div>
       </header>
 

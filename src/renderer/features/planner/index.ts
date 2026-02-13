@@ -10,6 +10,11 @@ export {
   useUpdateTimeBlock,
   useRemoveTimeBlock,
 } from './api/usePlanner';
+export {
+  useWeeklyReview,
+  useGenerateWeeklyReview,
+  useUpdateWeeklyReflection,
+} from './api/useWeeklyReview';
 export { plannerKeys } from './api/queryKeys';
 
 // Events
@@ -20,3 +25,4 @@ export { usePlannerUI } from './store';
 
 // Components
 export { PlannerPage } from './components/PlannerPage';
+export { WeeklyReviewPage } from './components/WeeklyReviewPage';
