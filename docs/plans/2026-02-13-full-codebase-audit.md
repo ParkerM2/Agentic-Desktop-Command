@@ -16,7 +16,7 @@
 | IPC Channels (invoke) | 115 | 0 | 0 | 115 |
 | IPC Events (defined) | 23 | 7 | 0 | 30 |
 | Renderer Features | 18 | 1 | 3 | 22 |
-| Setup/Onboarding Flows | 3 | 2 | 4 | 9 |
+| Setup/Onboarding Flows | 4 | 1 | 4 | 9 |
 | Security Hardening | 7 | 2 | 0 | 9 |
 
 What works well: Core infrastructure is solid — IPC contract has 100% handler coverage, all 22 main services are real implementations (not stubs), 18/19 renderer features are fully wired to real data, and the MCP framework is complete.
@@ -79,14 +79,16 @@ These must be addressed before any public release or multi-user deployment.
 
 ## 2. HIGH — Missing Setup & Onboarding Flows
 
-### 2a. No First-Run Onboarding Experience
-- **Status**: MISSING (CRITICAL gap for usability)
-- **Evidence**: `onboardingCompleted` field exists in `AppSettings` type but is never checked
-- **What's needed**:
-  1. Detect first launch (no settings file or `onboardingCompleted === false`)
-  2. Step-by-step wizard: Claude CLI check → Anthropic API key → OAuth providers → Hub connection
-  3. Skip/defer options for optional integrations
-  4. Mark complete so it doesn't show again
+### 2a. First-Run Onboarding Experience — DONE
+- **Status**: FIXED (2026-02-13)
+- **Implementation**: Created onboarding feature module with 5-step wizard:
+  1. **Welcome** — Introduction to the app
+  2. **Claude CLI** — Checks CLI installation and authentication status
+  3. **API Key** — Validates Anthropic API key configuration
+  4. **Integrations** — Optional OAuth provider setup (skip/defer available)
+  5. **Complete** — Marks `onboardingCompleted` and redirects to dashboard
+- **Location**: `src/renderer/features/onboarding/` with components, hooks, and store
+- **Wiring**: RootLayout checks `onboardingCompleted` and renders wizard on first run
 
 ### 2b. Claude CLI Detection Exists But Is Never Called — DONE
 - **Handler exists**: `app.checkClaudeAuth` in `app-handlers.ts` — runs `claude --version`
@@ -408,7 +410,7 @@ These must be addressed before any public release or multi-user deployment.
 11. ~~Wire Calendar overlay into Planner view~~ **DONE** (2026-02-13)
 
 ### P2 — Setup & Onboarding
-12. Build first-run onboarding wizard
+12. ~~Build first-run onboarding wizard~~ **DONE** (2026-02-13)
 13. ~~Add webhook setup instructions + test/ping button~~ **DONE** (2026-02-13)
 14. ~~Add OAuth credential validation before saving~~ **DONE** (2026-02-13)
 15. ~~Create `.env.example` with all supported variables~~ **DONE** (2026-02-13)
