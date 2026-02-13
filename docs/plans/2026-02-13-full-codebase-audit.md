@@ -16,7 +16,7 @@
 | IPC Channels (invoke) | 115 | 0 | 0 | 115 |
 | IPC Events (defined) | 23 | 7 | 0 | 30 |
 | Renderer Features | 18 | 1 | 3 | 22 |
-| Setup/Onboarding Flows | 2 | 3 | 4 | 9 |
+| Setup/Onboarding Flows | 3 | 2 | 4 | 9 |
 | Security Hardening | 7 | 2 | 0 | 9 |
 
 What works well: Core infrastructure is solid — IPC contract has 100% handler coverage, all 22 main services are real implementations (not stubs), 18/19 renderer features are fully wired to real data, and the MCP framework is complete.
@@ -88,12 +88,12 @@ These must be addressed before any public release or multi-user deployment.
   3. Skip/defer options for optional integrations
   4. Mark complete so it doesn't show again
 
-### 2b. Claude CLI Detection Exists But Is Never Called
+### 2b. Claude CLI Detection Exists But Is Never Called — DONE
 - **Handler exists**: `app.checkClaudeAuth` in `app-handlers.ts` — runs `claude --version`
 - **Hook exists**: `useClaudeAuth.ts` — calls the IPC channel
 - **Component exists**: `AuthNotification.tsx` — displays the notification
-- **Gap**: Nothing calls `useClaudeAuth()` on startup or renders `AuthNotification` conditionally
-- **Fix**: Wire into `RootLayout.tsx` or onboarding flow
+- **Status**: FIXED (2026-02-13)
+- **Implementation**: `AuthNotification` is already rendered in `RootLayout.tsx` and calls `useClaudeAuth()` on startup. The hook checks Claude CLI authentication status and displays a banner if not authenticated.
 
 ### 2c. Webhook Setup Has No Guided Instructions
 - **File**: `WebhookSettings.tsx`
@@ -125,22 +125,24 @@ These must be addressed before any public release or multi-user deployment.
 - **Fix**: Wire action buttons → MCP manager tool calls (send_message, read_channel, search, set_status)
 - **Scope**: ~100 lines per panel (modal UI + MCP call)
 
-### 3b. DailyStats — tasksCompleted Still Hardcoded to 0
-- **File**: `DailyStats.tsx:13`
-- **Evidence**: `// TODO: Wire tasksCompleted when task tracking is available`
-- **Fix**: Query `tasks.list` filtered to today's date + `status === 'done'`, count results
+### 3b. DailyStats — tasksCompleted Still Hardcoded to 0 — DONE
+- **File**: `DailyStats.tsx`
+- **Status**: FIXED (2026-02-13)
+- **Implementation**: DailyStats now uses `useProjectTasks()` to fetch real task data and counts tasks with `status === 'done'` that were completed today (by checking `completedAt` timestamp).
 
-### 3c. 7 IPC Events Defined But Not Fully Wired
+### 3c. 7 IPC Events Defined But Not Fully Wired — PARTIAL (4 of 7 DONE)
 
 | Event | Emitted? | Listened? | Issue |
 |-------|----------|-----------|-------|
 | `event:alert.changed` | NO | NO | Defined in contract but never emitted |
 | `event:app.updateAvailable` | NO | NO | Stub for electron-updater (not implemented) |
 | `event:app.updateDownloaded` | NO | NO | Stub for electron-updater (not implemented) |
-| `event:assistant.commandCompleted` | YES | NO | Emitted but nothing listens |
-| `event:git.worktreeChanged` | YES | NO | Emitted but no renderer listener |
-| `event:hub.connectionChanged` | YES | NO | Emitted but no global status indicator |
-| `event:hub.syncCompleted` | YES | NO | Emitted but no sync feedback in UI |
+| `event:assistant.commandCompleted` | YES | YES | **DONE** — HubNotification listens and shows toast |
+| `event:git.worktreeChanged` | YES | YES | **DONE** — HubNotification listens and shows toast |
+| `event:hub.connectionChanged` | YES | YES | **DONE** — HubNotification listens and shows toast |
+| `event:hub.syncCompleted` | YES | YES | **DONE** — HubNotification listens and shows toast |
+
+**Implementation** (2026-02-13): Added `HubNotification` component in `src/renderer/app/components/` with `useHubEvents` hook that listens to all 4 emitted events and displays toast notifications via the existing toast system. Rendered in `RootLayout.tsx`.
 
 ### 3d. 5 IPC Invoke Channels Have No Renderer Usage
 - `tasks.update` — renderer uses `tasks.updateStatus` variant instead
@@ -402,9 +404,9 @@ These must be addressed before any public release or multi-user deployment.
 
 ### P1 — Wiring Gaps (Components Exist, Just Need Connection)
 7. Wire Slack/Discord action buttons to MCP tools
-8. Wire DailyStats tasksCompleted to real query
-9. Wire Claude CLI auth check into app startup / RootLayout
-10. Add listeners for 4 emitted-but-unlistened events (hub.connectionChanged, hub.syncCompleted, git.worktreeChanged, assistant.commandCompleted)
+8. ~~Wire DailyStats tasksCompleted to real query~~ **DONE** (2026-02-13)
+9. ~~Wire Claude CLI auth check into app startup / RootLayout~~ **DONE** (2026-02-13) — already wired
+10. ~~Add listeners for 4 emitted-but-unlistened events (hub.connectionChanged, hub.syncCompleted, git.worktreeChanged, assistant.commandCompleted)~~ **DONE** (2026-02-13)
 11. Wire Calendar overlay into Planner view
 
 ### P2 — Setup & Onboarding

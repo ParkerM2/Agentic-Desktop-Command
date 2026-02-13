@@ -23,4 +23,8 @@ export function useAssistantEvents() {
   useIpcEvent('event:assistant.thinking', (payload) => {
     setIsThinking(payload.isThinking);
   });
+
+  useIpcEvent('event:assistant.commandCompleted', () => {
+    void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
+  });
 }

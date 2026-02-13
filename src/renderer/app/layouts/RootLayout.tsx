@@ -8,6 +8,7 @@
 import { Outlet } from '@tanstack/react-router';
 
 import { AuthNotification } from '@renderer/shared/components/AuthNotification';
+import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
 import { ThemeHydrator } from '@renderer/shared/stores';
 
@@ -26,6 +27,7 @@ export function RootLayout() {
         </main>
       </div>
       <AuthNotification />
+      <HubNotification />
       <WebhookNotification />
     </div>
   );
