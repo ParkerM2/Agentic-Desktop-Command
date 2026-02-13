@@ -62,6 +62,8 @@ import type { ProjectService } from '../services/project/project-service';
 import type { TaskService } from '../services/project/task-service';
 import type { SettingsService } from '../services/settings/settings-service';
 import type { SpotifyService } from '../services/spotify/spotify-service';
+import type { GithubTaskImporter } from '../services/tasks/github-importer';
+import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
 
@@ -94,6 +96,8 @@ export interface Services {
   worktreeService: WorktreeService;
   mergeService: MergeService;
   timeParserService: TimeParserService;
+  taskDecomposer: TaskDecomposer;
+  githubImporter: GithubTaskImporter;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -106,6 +110,8 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.taskService,
     services.agentService,
     services.projectService,
+    services.taskDecomposer,
+    services.githubImporter,
   );
   registerTerminalHandlers(router, services.terminalService);
   registerSettingsHandlers(router, services.settingsService, {

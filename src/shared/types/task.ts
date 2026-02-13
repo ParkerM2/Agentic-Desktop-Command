@@ -120,3 +120,35 @@ export interface TaskDraft {
 }
 
 export type TaskOrderState = Record<TaskStatus, string[]>;
+
+// ── Smart Task Creation Types ─────────────────────────────────
+
+/** Effort estimate for a suggested subtask. */
+export type EstimatedEffort = 'small' | 'medium' | 'large';
+
+/** Priority suggestion for a decomposed subtask. */
+export type SuggestedPriority = 'low' | 'medium' | 'high';
+
+/** A suggested subtask from LLM task decomposition. */
+export interface TaskSuggestion {
+  title: string;
+  description: string;
+  estimatedEffort: EstimatedEffort;
+  suggestedPriority: SuggestedPriority;
+}
+
+/** Result of decomposing a task description into subtasks. */
+export interface TaskDecompositionResult {
+  originalDescription: string;
+  suggestions: TaskSuggestion[];
+}
+
+/** Import data extracted from a GitHub issue. */
+export interface GithubIssueImport {
+  issueNumber: number;
+  issueUrl: string;
+  title: string;
+  body: string;
+  labels: string[];
+  assignees: string[];
+}

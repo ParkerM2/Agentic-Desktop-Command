@@ -5,13 +5,25 @@
 import type { AgentService } from '../../services/agent/agent-service';
 import type { ProjectService } from '../../services/project/project-service';
 import type { TaskService } from '../../services/project/task-service';
+import type { GithubTaskImporter } from '../../services/tasks/github-importer';
+import type { TaskDecomposer } from '../../services/tasks/task-decomposer';
 import type { IpcRouter } from '../router';
+
+export interface TaskHandlerDeps {
+  taskService: TaskService;
+  agentService: AgentService;
+  projectService: ProjectService;
+  taskDecomposer: TaskDecomposer;
+  githubImporter: GithubTaskImporter;
+}
 
 export function registerTaskHandlers(
   router: IpcRouter,
   service: TaskService,
   agentService: AgentService,
   projectService: ProjectService,
+  taskDecomposer?: TaskDecomposer,
+  githubImporter?: GithubTaskImporter,
 ): void {
   router.handle('tasks.list', ({ projectId }) => Promise.resolve(service.listTasks(projectId)));
 
@@ -52,5 +64,28 @@ export function registerTaskHandlers(
     // Agent was queued — task stays in queue status
     service.updateTaskStatus(taskId, 'queue');
     return Promise.resolve({ agentId: result.queued?.id ?? '' });
+  });
+
+  // ── Smart Task Creation Handlers ────────────────────────────
+
+  router.handle('tasks.decompose', async ({ description }) => {
+    if (!taskDecomposer) {
+      throw new Error('Task decomposer is not available');
+    }
+    return await taskDecomposer.decompose(description);
+  });
+
+  router.handle('tasks.importFromGithub', async ({ url, projectId }) => {
+    if (!githubImporter) {
+      throw new Error('GitHub importer is not available');
+    }
+    return await githubImporter.importFromUrl(url, projectId);
+  });
+
+  router.handle('tasks.listGithubIssues', async ({ owner, repo }) => {
+    if (!githubImporter) {
+      throw new Error('GitHub importer is not available');
+    }
+    return await githubImporter.listImportableIssues(owner, repo);
   });
 }
