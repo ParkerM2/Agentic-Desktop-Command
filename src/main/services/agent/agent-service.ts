@@ -33,6 +33,7 @@ interface AgentProcess {
 
 export interface AgentService {
   listAgents: (projectId: string) => AgentSession[];
+  listAllAgents: () => AgentSession[];
   startAgent: (taskId: string, projectId: string, cwd: string) => AgentSession;
   stopAgent: (agentId: string) => { success: boolean };
   pauseAgent: (agentId: string) => { success: boolean };
@@ -104,6 +105,10 @@ export function createAgentService(
         }
       }
       return sessions;
+    },
+
+    listAllAgents() {
+      return [...agents.values()].map((proc) => proc.session);
     },
 
     startAgent(taskId, projectId, cwd) {

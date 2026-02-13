@@ -2,7 +2,8 @@
  * SlackPanel — Quick Slack actions and status display
  */
 
-import { Hash, MessageSquare, Search, UserCircle } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { Hash, MessageSquare, Search, Settings, UserCircle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -29,6 +30,20 @@ const slackActions: QuickAction[] = [
 
 export function SlackPanel() {
   const { slackStatus } = useCommunicationsStore();
+  const navigate = useNavigate();
+
+  function handleAction(action: string): void {
+    if (slackStatus !== 'connected') {
+      void navigate({ to: '/settings' });
+      return;
+    }
+    // TODO: Wire to MCP tool call
+    console.warn(`[Slack] Action not yet wired: ${action}`);
+  }
+
+  function handleConnect(): void {
+    void navigate({ to: '/settings' });
+  }
 
   return (
     <div className="bg-card border-border rounded-lg border p-4">
@@ -38,18 +53,32 @@ export function SlackPanel() {
           <span className={cn('inline-block h-2 w-2 rounded-full', STATUS_COLORS[slackStatus])} />
           <span className="text-muted-foreground text-xs capitalize">{slackStatus}</span>
         </div>
+        {slackStatus === 'disconnected' ? (
+          <button
+            className="text-primary hover:text-primary/80 flex items-center gap-1 text-xs font-medium transition-colors"
+            type="button"
+            onClick={handleConnect}
+          >
+            <Settings className="h-3 w-3" />
+            Connect
+          </button>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
         {slackActions.map((action) => (
           <button
             key={action.label}
-            disabled={slackStatus !== 'connected'}
+            disabled={slackStatus === 'error'}
+            type="button"
             className={cn(
               'border-border flex items-start gap-2 rounded-md border p-3 text-left',
               'hover:bg-accent transition-colors',
               'disabled:pointer-events-none disabled:opacity-40',
             )}
+            onClick={() => {
+              handleAction(action.label);
+            }}
           >
             <action.icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
             <div>

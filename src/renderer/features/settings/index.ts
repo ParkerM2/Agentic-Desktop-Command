@@ -12,4 +12,5 @@ export {
   useSetDefaultProfile,
   settingsKeys,
 } from './api/useSettings';
+export { useWebhookConfig, useUpdateWebhookConfig } from './api/useWebhookConfig';
 export { SettingsPage } from './components/SettingsPage';

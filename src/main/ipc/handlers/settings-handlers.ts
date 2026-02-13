@@ -2,10 +2,20 @@
  * Settings IPC handlers
  */
 
+import {
+  loadOAuthCredentials,
+  saveOAuthCredentials,
+} from '../../auth/providers/provider-config';
+
+import type { OAuthConfig } from '../../auth/types';
 import type { SettingsService } from '../../services/settings/settings-service';
 import type { IpcRouter } from '../router';
 
-export function registerSettingsHandlers(router: IpcRouter, service: SettingsService): void {
+export function registerSettingsHandlers(
+  router: IpcRouter,
+  service: SettingsService,
+  deps: { dataDir: string; providers: Map<string, OAuthConfig> },
+): void {
   router.handle('settings.get', () => Promise.resolve(service.getSettings()));
 
   router.handle('settings.update', (updates) => Promise.resolve(service.updateSettings(updates)));
@@ -23,6 +33,25 @@ export function registerSettingsHandlers(router: IpcRouter, service: SettingsSer
   router.handle('settings.setDefaultProfile', ({ id }) =>
     Promise.resolve(service.setDefaultProfile(id)),
   );
+
+  router.handle('settings.getOAuthProviders', () => {
+    const creds = loadOAuthCredentials(deps.dataDir);
+    const result = [...deps.providers.keys()].map((name) => ({
+      name,
+      hasCredentials: creds.has(name) || (deps.providers.get(name)?.clientId ?? '').length > 0,
+    }));
+    return Promise.resolve(result);
+  });
+
+  router.handle('settings.setOAuthProvider', ({ name, clientId, clientSecret }) => {
+    saveOAuthCredentials(deps.dataDir, name, { clientId, clientSecret });
+    // Update the live provider config so OAuth flows use the new credentials
+    const existing = deps.providers.get(name);
+    if (existing) {
+      deps.providers.set(name, { ...existing, clientId, clientSecret });
+    }
+    return Promise.resolve({ success: true });
+  });
 
   router.handle('app.getVersion', () => Promise.resolve(service.getAppVersion()));
 }

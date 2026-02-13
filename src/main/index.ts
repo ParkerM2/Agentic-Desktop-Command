@@ -12,7 +12,10 @@ import { app, BrowserWindow, shell } from 'electron';
 import { createOAuthManager } from './auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from './auth/providers/github';
 import { GOOGLE_OAUTH_CONFIG } from './auth/providers/google';
+import { loadOAuthCredentials } from './auth/providers/provider-config';
+import { SLACK_OAUTH_CONFIG } from './auth/providers/slack';
 import { SPOTIFY_OAUTH_CONFIG } from './auth/providers/spotify';
+import { WITHINGS_OAUTH_CONFIG } from './auth/providers/withings';
 import { createTokenStore } from './auth/token-store';
 import { registerAllHandlers } from './ipc';
 import { IpcRouter } from './ipc/router';
@@ -28,6 +31,9 @@ import { createGitService } from './services/git/git-service';
 import { createPolyrepoService } from './services/git/polyrepo-service';
 import { createWorktreeService } from './services/git/worktree-service';
 import { createGitHubService } from './services/github/github-service';
+import { createHubConnectionManager } from './services/hub/hub-connection';
+import { createHubSyncService } from './services/hub/hub-sync';
+import { createWebhookRelay } from './services/hub/webhook-relay';
 import { createIdeasService } from './services/ideas/ideas-service';
 import { createInsightsService } from './services/insights/insights-service';
 import { createMergeService } from './services/merge/merge-service';
@@ -46,6 +52,7 @@ let mainWindow: BrowserWindow | null = null;
 let terminalServiceRef: ReturnType<typeof createTerminalService> | null = null;
 let agentServiceRef: ReturnType<typeof createAgentService> | null = null;
 let alertServiceRef: ReturnType<typeof createAlertService> | null = null;
+let hubConnectionManagerRef: ReturnType<typeof createHubConnectionManager> | null = null;
 
 function getMainWindow(): BrowserWindow | null {
   return mainWindow;
@@ -59,7 +66,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.cjs'),
+      preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
@@ -137,17 +144,22 @@ function initializeApp(): void {
 
   // OAuth + MCP infrastructure — shared by GitHub, Spotify, Calendar
   const tokenStore = createTokenStore({ dataDir });
+  const savedCreds = loadOAuthCredentials(dataDir);
   const providers = new Map<string, OAuthConfig>([
-    ['github', GITHUB_OAUTH_CONFIG],
-    ['google', GOOGLE_OAUTH_CONFIG],
-    ['spotify', SPOTIFY_OAUTH_CONFIG],
+    ['github', { ...GITHUB_OAUTH_CONFIG, ...savedCreds.get('github') }],
+    ['google', { ...GOOGLE_OAUTH_CONFIG, ...savedCreds.get('google') }],
+    ['slack', { ...SLACK_OAUTH_CONFIG, ...savedCreds.get('slack') }],
+    ['spotify', { ...SPOTIFY_OAUTH_CONFIG, ...savedCreds.get('spotify') }],
+    ['withings', { ...WITHINGS_OAUTH_CONFIG, ...savedCreds.get('withings') }],
   ]);
   const oauthManager = createOAuthManager({ tokenStore, providers });
   const mcpRegistry = createMcpRegistry();
   const mcpManager = createMcpManager({ registry: mcpRegistry });
 
-  // Assistant service — intent classification + MCP tool routing
-  const assistantService = createAssistantService({ router, mcpManager });
+  // Hub services — connection manager + sync queue
+  const hubConnectionManager = createHubConnectionManager(router);
+  hubConnectionManagerRef = hubConnectionManager;
+  const hubSyncService = createHubSyncService(hubConnectionManager);
 
   // GitHub service — wraps GitHub REST API with OAuth tokens
   const githubService = createGitHubService({ oauthManager, router });
@@ -157,6 +169,23 @@ function initializeApp(): void {
 
   // Calendar service — wraps Google Calendar API with OAuth tokens
   const calendarService = createCalendarService({ oauthManager });
+
+  // Assistant service — intent classification + direct service routing
+  const assistantService = createAssistantService({
+    router,
+    mcpManager,
+    notesService,
+    alertService,
+    spotifyService,
+    taskService,
+    plannerService,
+  });
+
+  // Webhook relay — forward Hub WebSocket messages to assistant service
+  const webhookRelay = createWebhookRelay({ assistantService, router });
+  hubConnectionManager.onWebSocketMessage((data) => {
+    webhookRelay.handleHubMessage(data);
+  });
 
   const services = {
     projectService,
@@ -169,6 +198,8 @@ function initializeApp(): void {
     calendarService,
     changelogService,
     fitnessService,
+    hubConnectionManager,
+    hubSyncService,
     ideasService,
     insightsService,
     milestonesService,
@@ -179,6 +210,9 @@ function initializeApp(): void {
     githubService,
     worktreeService,
     mergeService,
+    dataDir,
+    providers,
+    tokenStore,
   };
 
   registerAllHandlers(router, services);
@@ -204,4 +238,5 @@ app.on('before-quit', () => {
   terminalServiceRef?.dispose();
   agentServiceRef?.dispose();
   alertServiceRef?.stopChecking();
+  hubConnectionManagerRef?.dispose();
 });

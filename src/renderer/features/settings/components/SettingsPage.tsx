@@ -16,7 +16,10 @@ import { useThemeStore } from '@renderer/shared/stores';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
+import { HubSettings } from './HubSettings';
+import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
+import { WebhookSettings } from './WebhookSettings';
 
 // ── Constants ───────────────────────────────────────────────
 
@@ -299,6 +302,30 @@ export function SettingsPage() {
           <span>English</span>
           <span className="text-muted-foreground text-xs">Only language available</span>
         </div>
+      </section>
+
+      {/* ── OAuth Providers ── */}
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          OAuth Providers
+        </h2>
+        <OAuthProviderSettings />
+      </section>
+
+      {/* ── Hub Connection ── */}
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          Hub Connection
+        </h2>
+        <HubSettings />
+      </section>
+
+      {/* ── Webhooks ── */}
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          Assistant &amp; Webhooks
+        </h2>
+        <WebhookSettings />
       </section>
 
       {/* ── About ── */}

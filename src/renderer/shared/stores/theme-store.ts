@@ -16,6 +16,7 @@ interface ThemeState {
   setMode: (mode: ThemeMode) => void;
   setColorTheme: (theme: string) => void;
   setUiScale: (scale: number) => void;
+  hydrate: (settings: { theme?: string; colorTheme?: string; uiScale?: number }) => void;
 }
 
 function applyMode(mode: ThemeMode): void {
@@ -55,8 +56,18 @@ export const useThemeStore = create<ThemeState>((set) => ({
     set({ colorTheme });
     applyColorTheme(colorTheme);
   },
-  setUiScale: (uiScale) => {
+  setUiScale: (scale) => {
+    const uiScale = Math.max(75, Math.min(150, scale));
     set({ uiScale });
+    applyUiScale(uiScale);
+  },
+  hydrate: (settings) => {
+    const mode = (settings.theme as ThemeMode | undefined) ?? 'dark';
+    const colorTheme = settings.colorTheme ?? 'default';
+    const uiScale = Math.max(75, Math.min(150, settings.uiScale ?? 100));
+    set({ mode, colorTheme, uiScale });
+    applyMode(mode);
+    applyColorTheme(colorTheme);
     applyUiScale(uiScale);
   },
 }));

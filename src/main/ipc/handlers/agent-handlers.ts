@@ -8,6 +8,8 @@ import type { IpcRouter } from '../router';
 export function registerAgentHandlers(router: IpcRouter, service: AgentService): void {
   router.handle('agents.list', ({ projectId }) => Promise.resolve(service.listAgents(projectId)));
 
+  router.handle('agents.listAll', () => Promise.resolve(service.listAllAgents()));
+
   router.handle('agents.stop', ({ agentId }) => Promise.resolve(service.stopAgent(agentId)));
 
   router.handle('agents.pause', ({ agentId }) => Promise.resolve(service.pauseAgent(agentId)));

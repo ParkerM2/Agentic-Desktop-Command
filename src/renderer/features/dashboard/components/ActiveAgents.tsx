@@ -8,49 +8,44 @@ import type { AgentStatus } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-type MockAgentStatus = Extract<AgentStatus, 'running' | 'completed' | 'error'>;
+import { useAllAgents } from '@features/agents';
 
-interface MockAgent {
-  id: string;
-  projectName: string;
-  taskName: string;
-  status: MockAgentStatus;
-  progress: number;
-}
+type DisplayStatus = Extract<AgentStatus, 'running' | 'completed' | 'error'>;
 
-const STATUS_CONFIG: Record<MockAgentStatus, { icon: typeof Loader2; className: string }> = {
+const STATUS_CONFIG: Record<DisplayStatus, { icon: typeof Loader2; className: string }> = {
   running: { icon: Loader2, className: 'text-blue-400' },
   completed: { icon: CheckCircle2, className: 'text-green-400' },
   error: { icon: XCircle, className: 'text-red-400' },
 };
 
-/** Placeholder agent data */
-const MOCK_AGENTS: MockAgent[] = [
-  {
-    id: 'ma-1',
-    projectName: 'Claude-UI',
-    taskName: 'Build dashboard feature',
-    status: 'running',
-    progress: 65,
-  },
-  {
-    id: 'ma-2',
-    projectName: 'API Server',
-    taskName: 'Fix auth middleware',
-    status: 'running',
-    progress: 30,
-  },
-];
+function isDisplayStatus(status: AgentStatus): status is DisplayStatus {
+  return status === 'running' || status === 'completed' || status === 'error';
+}
 
 export function ActiveAgents() {
+  const { data: allAgents, isLoading } = useAllAgents();
+  const runningAgents = allAgents?.filter((agent) => agent.status === 'running') ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="bg-card border-border rounded-lg border p-4">
+        <h2 className="text-foreground mb-3 text-sm font-semibold">Active Agents</h2>
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-card border-border rounded-lg border p-4">
       <h2 className="text-foreground mb-3 text-sm font-semibold">Active Agents</h2>
 
-      {MOCK_AGENTS.length > 0 ? (
+      {runningAgents.length > 0 ? (
         <div className="space-y-3">
-          {MOCK_AGENTS.map((agent) => {
-            const config = STATUS_CONFIG[agent.status];
+          {runningAgents.map((agent) => {
+            const status = isDisplayStatus(agent.status) ? agent.status : 'running';
+            const config = STATUS_CONFIG[status];
             const StatusIcon = config.icon;
 
             return (
@@ -64,17 +59,15 @@ export function ActiveAgents() {
                         agent.status === 'running' && 'animate-spin',
                       )}
                     />
-                    <span className="text-foreground text-xs font-medium">{agent.projectName}</span>
+                    <span className="text-foreground text-xs font-medium">
+                      {agent.projectId}
+                    </span>
                   </div>
-                  <span className="text-muted-foreground text-xs">{agent.progress}%</span>
+                  <span className="text-muted-foreground text-xs">{agent.status}</span>
                 </div>
-                <p className="text-muted-foreground truncate pl-5.5 text-xs">{agent.taskName}</p>
-                <div className="ml-5.5 h-1 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-blue-500 transition-all"
-                    style={{ width: `${String(agent.progress)}%` }}
-                  />
-                </div>
+                <p className="text-muted-foreground truncate pl-5.5 text-xs">
+                  Task: {agent.taskId}
+                </p>
               </div>
             );
           })}

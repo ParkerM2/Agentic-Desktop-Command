@@ -10,7 +10,7 @@ import { join } from 'node:path';
 
 import { app } from 'electron';
 
-import type { AppSettings, Profile } from '@shared/types';
+import type { AppSettings, Profile, WebhookConfig } from '@shared/types';
 
 export interface SettingsService {
   getSettings: () => AppSettings;
@@ -24,6 +24,11 @@ export interface SettingsService {
   deleteProfile: (id: string) => { success: boolean };
   setDefaultProfile: (id: string) => { success: boolean };
   getAppVersion: () => { version: string };
+  getWebhookConfig: () => WebhookConfig;
+  updateWebhookConfig: (updates: {
+    slack?: { botToken?: string; signingSecret?: string };
+    github?: { webhookSecret?: string };
+  }) => { success: boolean };
 }
 
 interface SettingsFile {
@@ -35,7 +40,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   colorTheme: 'default',
   language: 'en',
-  uiScale: 1,
+  uiScale: 100,
   onboardingCompleted: false,
 };
 
@@ -160,6 +165,42 @@ export function createSettingsService(): SettingsService {
 
     getAppVersion() {
       return { version: app.getVersion() || '0.1.0' };
+    },
+
+    getWebhookConfig() {
+      const raw = store.settings as unknown as Record<string, unknown>;
+      const slackBotToken = (raw.webhookSlackBotToken as string | undefined) ?? '';
+      const slackSigningSecret = (raw.webhookSlackSigningSecret as string | undefined) ?? '';
+      const githubSecret = (raw.webhookGithubSecret as string | undefined) ?? '';
+
+      return {
+        slack: {
+          botToken: slackBotToken,
+          signingSecret: slackSigningSecret,
+          configured: slackBotToken.length > 0 && slackSigningSecret.length > 0,
+        },
+        github: {
+          webhookSecret: githubSecret,
+          configured: githubSecret.length > 0,
+        },
+      };
+    },
+
+    updateWebhookConfig(updates) {
+      const raw = store.settings as unknown as Record<string, unknown>;
+      if (updates.slack) {
+        if (updates.slack.botToken !== undefined) {
+          raw.webhookSlackBotToken = updates.slack.botToken;
+        }
+        if (updates.slack.signingSecret !== undefined) {
+          raw.webhookSlackSigningSecret = updates.slack.signingSecret;
+        }
+      }
+      if (updates.github?.webhookSecret !== undefined) {
+          raw.webhookGithubSecret = updates.github.webhookSecret;
+        }
+      persist();
+      return { success: true };
     },
   };
 }

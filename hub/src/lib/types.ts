@@ -76,6 +76,21 @@ export interface ApiKey {
   created_at: string;
 }
 
+// Webhook command (stored in webhook_commands table)
+export interface WebhookCommand {
+  id: string;
+  source: 'slack' | 'github' | 'manual';
+  source_id: string | null;
+  source_channel: string | null;
+  source_url: string | null;
+  command_text: string;
+  project_id: string | null;
+  status: 'pending' | 'processed' | 'failed';
+  result_text: string | null;
+  created_at: string;
+  processed_at: string | null;
+}
+
 // WebSocket broadcast message
 export interface WsBroadcastMessage {
   type: 'mutation';

@@ -42,6 +42,8 @@ export interface HubConnectionManager {
   isAvailable: () => boolean;
   /** Remove hub configuration entirely. */
   removeConfig: () => void;
+  /** Register a callback for raw WebSocket messages. */
+  onWebSocketMessage: (callback: (data: unknown) => void) => void;
   /** Clean up resources. */
   dispose: () => void;
 }
@@ -127,6 +129,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
   let status: HubConnectionStatus = 'disconnected';
   let wsConnection: WebSocket | null = null;
   let reconnectTimerId: ReturnType<typeof setTimeout> | null = null;
+  const messageListeners: Array<(data: unknown) => void> = [];
 
   function getConnectionForClient(): HubConnection | null {
     if (!persistedConfig) {
@@ -172,6 +175,10 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
           console.log(`[Hub] WS event: ${data.entity}.${data.action} (${data.id})`);
           // Forward as IPC event for query invalidation
           router.emit('event:project.updated', { projectId: data.id });
+          // Forward raw message to registered listeners (e.g. webhook relay)
+          for (const listener of messageListeners) {
+            listener(data);
+          }
         } catch {
           // Ignore malformed messages
         }
@@ -325,6 +332,10 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
       persistedConfig = null;
       setStatus('disconnected');
       console.log('[Hub] Configuration removed');
+    },
+
+    onWebSocketMessage(callback) {
+      messageListeners.push(callback);
     },
 
     dispose() {

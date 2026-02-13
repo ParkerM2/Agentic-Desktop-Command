@@ -11,7 +11,7 @@ export type { ResponseEntry } from './store';
 
 // API
 export { assistantKeys } from './api/queryKeys';
-export { useHistory, useSendCommand } from './api/useAssistant';
+export { useHistory, useSendCommand, useClearHistory } from './api/useAssistant';
 
 // Events
 export { useAssistantEvents } from './hooks/useAssistantEvents';

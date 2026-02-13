@@ -5,7 +5,6 @@ import cors from '@fastify/cors';
 import websocket from '@fastify/websocket';
 
 import { createDatabase } from './db/database.js';
-import './lib/fastify.d.js';
 import { createApiKeyMiddleware } from './middleware/api-key.js';
 import { agentRoutes } from './routes/agents.js';
 import { authRoutes } from './routes/auth.js';
@@ -14,6 +13,7 @@ import { plannerRoutes } from './routes/planner.js';
 import { projectRoutes } from './routes/projects.js';
 import { settingsRoutes } from './routes/settings.js';
 import { taskRoutes } from './routes/tasks.js';
+import { webhookRoutes } from './routes/webhooks/index.js';
 import { addClient } from './ws/broadcaster.js';
 
 export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fastify>> {
@@ -57,6 +57,7 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   await app.register(captureRoutes);
   await app.register(agentRoutes);
   await app.register(authRoutes);
+  await app.register(webhookRoutes);
 
   // Health check
   app.get('/api/health', async () => {

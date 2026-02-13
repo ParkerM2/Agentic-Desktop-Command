@@ -12,4 +12,9 @@ export function registerAssistantHandlers(router: IpcRouter, service: AssistantS
   );
 
   router.handle('assistant.getHistory', ({ limit }) => Promise.resolve(service.getHistory(limit)));
+
+  router.handle('assistant.clearHistory', () => {
+    service.clearHistory();
+    return Promise.resolve({ success: true });
+  });
 }

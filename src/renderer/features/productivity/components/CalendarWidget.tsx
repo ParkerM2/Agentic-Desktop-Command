@@ -6,6 +6,8 @@ import { useMemo } from 'react';
 
 import { Calendar, Clock, MapPin, Trash2 } from 'lucide-react';
 
+import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
+
 import { useCalendarDeleteEvent, useCalendarEvents } from '../api/useCalendar';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -48,6 +50,11 @@ export function CalendarWidget() {
 
   return (
     <div className="bg-card border-border space-y-4 rounded-lg border p-4">
+      <IntegrationRequired
+        description="Sync your Google Calendar events to see today's schedule."
+        provider="google"
+        title="Connect Google Calendar"
+      />
       <div className="flex items-center gap-2">
         <Calendar className="text-primary h-4 w-4" />
         <h3 className="text-foreground text-sm font-semibold">Today&apos;s Schedule</h3>

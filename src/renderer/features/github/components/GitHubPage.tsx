@@ -7,6 +7,7 @@
 
 import { Bell, CircleDot, GitPullRequest, Loader2 } from 'lucide-react';
 
+import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/useGitHub';
@@ -77,6 +78,12 @@ export function GitHubPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6">
+      <IntegrationRequired
+        description="Connect your GitHub account to view pull requests, issues, and notifications."
+        provider="github"
+        title="Connect GitHub"
+      />
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2">

@@ -13,6 +13,7 @@
   },
   "scripts": {
     "dev": "electron-vite dev",
+    "dev:mcp": "electron-vite dev -- --remote-debugging-port=9222",
     "build": "electron-vite build",
     "start": "electron .",
     "preview": "electron-vite preview",

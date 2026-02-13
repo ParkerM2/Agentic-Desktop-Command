@@ -2,13 +2,23 @@
  * React Query hooks for agent operations
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { taskKeys } from '@features/tasks';
 
 import { agentKeys } from './queryKeys';
+
+/** Fetch all agents across all projects */
+export function useAllAgents() {
+  return useQuery({
+    queryKey: agentKeys.all,
+    queryFn: () => ipc('agents.listAll', {}),
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+  });
+}
 
 /** Fetch agents for a project */
 export function useAgents(projectId: string | null) {

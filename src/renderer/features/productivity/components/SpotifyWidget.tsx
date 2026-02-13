@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { Music, Pause, Play, Search, SkipBack, SkipForward, Volume2 } from 'lucide-react';
 
+import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 import { cn } from '@renderer/shared/lib/utils';
 
 import {
@@ -158,6 +159,11 @@ export function SpotifyWidget() {
 
   return (
     <div className="bg-card border-border space-y-4 rounded-lg border p-4">
+      <IntegrationRequired
+        description="Link your Spotify account to control playback and search tracks."
+        provider="spotify"
+        title="Connect Spotify"
+      />
       <h3 className="text-foreground text-sm font-semibold">Spotify</h3>
 
       {/* Now Playing */}

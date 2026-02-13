@@ -71,3 +71,20 @@ CREATE TABLE IF NOT EXISTS api_keys (
   name TEXT NOT NULL DEFAULT 'default',
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS webhook_commands (
+  id TEXT PRIMARY KEY,
+  source TEXT NOT NULL CHECK(source IN ('slack', 'github', 'manual')),
+  source_id TEXT,
+  source_channel TEXT,
+  source_url TEXT,
+  command_text TEXT NOT NULL,
+  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'processed', 'failed')),
+  result_text TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  processed_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_webhook_commands_source ON webhook_commands(source);
+CREATE INDEX IF NOT EXISTS idx_webhook_commands_status ON webhook_commands(status);

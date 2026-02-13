@@ -101,6 +101,7 @@ const AppSettingsSchema = z.object({
   onboardingCompleted: z.boolean(),
   fontFamily: z.string().optional(),
   fontSize: z.number().optional(),
+  anthropicApiKey: z.string().optional(),
 });
 
 const ProfileSchema = z.object({
@@ -434,6 +435,78 @@ const GitHubNotificationSchema = z.object({
   updatedAt: z.string(),
 });
 
+// ─── Assistant Schemas ────────────────────────────────────────
+
+const IntentTypeSchema = z.enum(['quick_command', 'task_creation', 'conversation']);
+
+const AssistantActionSchema = z.enum([
+  'create_task',
+  'create_time_block',
+  'create_note',
+  'create_reminder',
+  'search',
+  'spotify_control',
+  'open_url',
+  'conversation',
+]);
+
+const AssistantContextSchema = z.object({
+  activeProjectId: z.string().nullable(),
+  activeProjectName: z.string().nullable(),
+  currentPage: z.string(),
+  todayDate: z.string(),
+});
+
+const AssistantResponseSchema = z.object({
+  type: z.enum(['text', 'action', 'error']),
+  content: z.string(),
+  intent: IntentTypeSchema.optional(),
+  action: AssistantActionSchema.optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+const CommandHistoryEntrySchema = z.object({
+  id: z.string(),
+  input: z.string(),
+  source: z.enum(['commandbar', 'slack', 'github']),
+  intent: IntentTypeSchema,
+  action: AssistantActionSchema.optional(),
+  responseSummary: z.string(),
+  timestamp: z.string(),
+});
+
+const WebhookCommandSourceContextSchema = z.object({
+  userId: z.string().optional(),
+  userName: z.string().optional(),
+  channelId: z.string().optional(),
+  channelName: z.string().optional(),
+  threadTs: z.string().optional(),
+  permalink: z.string().optional(),
+  repo: z.string().optional(),
+  prNumber: z.number().optional(),
+  prTitle: z.string().optional(),
+  prUrl: z.string().optional(),
+  commentAuthor: z.string().optional(),
+});
+
+const WebhookCommandSchema = z.object({
+  source: z.enum(['slack', 'github']),
+  commandText: z.string(),
+  sourceContext: WebhookCommandSourceContextSchema,
+});
+
+const WebhookConfigSchema = z.object({
+  slack: z.object({
+    botToken: z.string(),
+    signingSecret: z.string(),
+    configured: z.boolean(),
+  }),
+  github: z.object({
+    webhookSecret: z.string(),
+    configured: z.boolean(),
+  }),
+});
+
 // ─── IPC Contract Definition ──────────────────────────────────
 
 /**
@@ -574,6 +647,43 @@ export const ipcInvokeContract = {
   },
   'settings.setDefaultProfile': {
     input: z.object({ id: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'settings.getOAuthProviders': {
+    input: z.object({}),
+    output: z.array(
+      z.object({
+        name: z.string(),
+        hasCredentials: z.boolean(),
+      }),
+    ),
+  },
+  'settings.setOAuthProvider': {
+    input: z.object({
+      name: z.string(),
+      clientId: z.string(),
+      clientSecret: z.string(),
+    }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'settings.getWebhookConfig': {
+    input: z.object({}),
+    output: WebhookConfigSchema,
+  },
+  'settings.updateWebhookConfig': {
+    input: z.object({
+      slack: z
+        .object({
+          botToken: z.string().optional(),
+          signingSecret: z.string().optional(),
+        })
+        .optional(),
+      github: z
+        .object({
+          webhookSecret: z.string().optional(),
+        })
+        .optional(),
+    }),
     output: z.object({ success: z.boolean() }),
   },
 
@@ -921,25 +1031,19 @@ export const ipcInvokeContract = {
 
   // ── Assistant ──
   'assistant.sendCommand': {
-    input: z.object({ input: z.string(), context: z.string().optional() }),
-    output: z.object({
-      type: z.enum(['text', 'action', 'error']),
-      content: z.string(),
-      intent: z.enum(['quick_command', 'task_creation', 'conversation']).optional(),
-      metadata: z.record(z.string(), z.unknown()).optional(),
+    input: z.object({
+      input: z.string(),
+      context: AssistantContextSchema.optional(),
     }),
+    output: AssistantResponseSchema,
   },
   'assistant.getHistory': {
     input: z.object({ limit: z.number().optional() }),
-    output: z.array(
-      z.object({
-        id: z.string(),
-        input: z.string(),
-        intent: z.enum(['quick_command', 'task_creation', 'conversation']),
-        responseSummary: z.string(),
-        timestamp: z.string(),
-      }),
-    ),
+    output: z.array(CommandHistoryEntrySchema),
+  },
+  'assistant.clearHistory': {
+    input: z.object({}),
+    output: z.object({ success: z.boolean() }),
   },
 
   // ── Hub ──
@@ -1117,6 +1221,27 @@ export const ipcInvokeContract = {
     input: z.object({}),
     output: z.object({ version: z.string() }),
   },
+  'app.checkClaudeAuth': {
+    input: z.object({}),
+    output: z.object({
+      installed: z.boolean(),
+      authenticated: z.boolean(),
+      version: z.string().optional(),
+    }),
+  },
+  'app.getOAuthStatus': {
+    input: z.object({ provider: z.string() }),
+    output: z.object({
+      configured: z.boolean(),
+      authenticated: z.boolean(),
+    }),
+  },
+
+  // ── Agents (global) ──
+  'agents.listAll': {
+    input: z.object({}),
+    output: z.array(AgentSessionSchema),
+  },
 } as const;
 
 /**
@@ -1175,6 +1300,25 @@ export const ipcEventContract = {
   },
   'event:assistant.thinking': {
     payload: z.object({ isThinking: z.boolean() }),
+  },
+  'event:assistant.commandCompleted': {
+    payload: z.object({
+      id: z.string(),
+      source: z.enum(['commandbar', 'slack', 'github']),
+      action: z.string(),
+      summary: z.string(),
+      timestamp: z.string(),
+    }),
+  },
+
+  // ── Webhook Events ──
+  'event:webhook.received': {
+    payload: z.object({
+      source: z.enum(['slack', 'github']),
+      commandText: z.string(),
+      sourceContext: z.record(z.string(), z.string()),
+      timestamp: z.string(),
+    }),
   },
 
   // ── Git Events ──
@@ -1324,4 +1468,12 @@ export {
   GitHubPullRequestSchema,
   GitHubIssueSchema,
   GitHubNotificationSchema,
+  IntentTypeSchema,
+  AssistantActionSchema,
+  AssistantContextSchema,
+  AssistantResponseSchema,
+  CommandHistoryEntrySchema,
+  WebhookCommandSourceContextSchema,
+  WebhookCommandSchema,
+  WebhookConfigSchema,
 };

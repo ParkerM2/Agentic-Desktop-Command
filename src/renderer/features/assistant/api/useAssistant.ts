@@ -3,8 +3,12 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouterState } from '@tanstack/react-router';
 
 import { ipc } from '@renderer/shared/lib/ipc';
+import { useLayoutStore } from '@renderer/shared/stores';
+
+import { useProjects } from '@features/projects';
 
 import { useAssistantStore } from '../store';
 
@@ -19,14 +23,29 @@ export function useHistory(limit?: number) {
   });
 }
 
-/** Send a command to the assistant */
+/** Send a command to the assistant with full context */
 export function useSendCommand() {
   const queryClient = useQueryClient();
   const { setIsThinking, setCurrentResponse, clearCurrentResponse, addResponseEntry } =
     useAssistantStore();
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projects } = useProjects();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return useMutation({
-    mutationFn: (data: { input: string; context?: string }) => ipc('assistant.sendCommand', data),
+    mutationFn: (data: { input: string }) => {
+      const activeProject = projects?.find((p) => p.id === activeProjectId);
+
+      return ipc('assistant.sendCommand', {
+        input: data.input,
+        context: {
+          activeProjectId: activeProjectId ?? null,
+          activeProjectName: activeProject?.name ?? null,
+          currentPage: pathname,
+          todayDate: new Date().toISOString().slice(0, 10),
+        },
+      });
+    },
     onMutate: () => {
       setIsThinking(true);
       clearCurrentResponse();
@@ -43,6 +62,18 @@ export function useSendCommand() {
     },
     onSettled: () => {
       setIsThinking(false);
+    },
+  });
+}
+
+/** Clear assistant command history */
+export function useClearHistory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => ipc('assistant.clearHistory', {}),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
     },
   });
 }

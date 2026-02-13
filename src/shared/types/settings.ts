@@ -14,6 +14,7 @@ export interface AppSettings {
   seenVersionWarnings?: string[];
   fontFamily?: string;
   fontSize?: number;
+  anthropicApiKey?: string;
 }
 
 export interface CustomTheme {

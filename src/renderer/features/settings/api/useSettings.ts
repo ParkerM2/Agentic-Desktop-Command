@@ -11,6 +11,7 @@ export const settingsKeys = {
   all: ['settings'] as const,
   app: () => [...settingsKeys.all, 'app'] as const,
   profiles: () => [...settingsKeys.all, 'profiles'] as const,
+  webhookConfig: () => [...settingsKeys.all, 'webhookConfig'] as const,
 };
 
 /** Fetch app settings */
