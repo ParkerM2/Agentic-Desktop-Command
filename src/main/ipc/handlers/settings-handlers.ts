@@ -2,6 +2,8 @@
  * Settings IPC handlers
  */
 
+import type { AgentSettings } from '@shared/types';
+
 import {
   loadOAuthCredentials,
   saveOAuthCredentials,
@@ -11,10 +13,16 @@ import type { OAuthConfig } from '../../auth/types';
 import type { SettingsService } from '../../services/settings/settings-service';
 import type { IpcRouter } from '../router';
 
+export interface SettingsHandlerDeps {
+  dataDir: string;
+  providers: Map<string, OAuthConfig>;
+  onAgentSettingsChanged?: (settings: AgentSettings) => void;
+}
+
 export function registerSettingsHandlers(
   router: IpcRouter,
   service: SettingsService,
-  deps: { dataDir: string; providers: Map<string, OAuthConfig> },
+  deps: SettingsHandlerDeps,
 ): void {
   router.handle('settings.get', () => Promise.resolve(service.getSettings()));
 
@@ -51,6 +59,15 @@ export function registerSettingsHandlers(
       deps.providers.set(name, { ...existing, clientId, clientSecret });
     }
     return Promise.resolve({ success: true });
+  });
+
+  router.handle('settings.getAgentSettings', () => Promise.resolve(service.getAgentSettings()));
+
+  router.handle('settings.setAgentSettings', (settings) => {
+    const result = service.setAgentSettings(settings);
+    // Notify callback to sync queue with new settings
+    deps.onAgentSettingsChanged?.(service.getAgentSettings());
+    return Promise.resolve(result);
   });
 
   router.handle('app.getVersion', () => Promise.resolve(service.getAppVersion()));

@@ -34,6 +34,7 @@ import type { IpcRouter } from './router';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
+import type { AgentQueue } from '../services/agent/agent-queue';
 import type { AgentService } from '../services/agent/agent-service';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
@@ -64,6 +65,7 @@ export interface Services {
   terminalService: TerminalService;
   settingsService: SettingsService;
   agentService: AgentService;
+  agentQueue: AgentQueue;
   alertService: AlertService;
   assistantService: AssistantService;
   calendarService: CalendarService;
@@ -100,6 +102,9 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerSettingsHandlers(router, services.settingsService, {
     dataDir: services.dataDir,
     providers: services.providers,
+    onAgentSettingsChanged: (settings) => {
+      services.agentQueue.setMaxConcurrent(settings.maxConcurrentAgents);
+    },
   });
   registerAgentHandlers(router, services.agentService);
   registerAlertHandlers(router, services.alertService);

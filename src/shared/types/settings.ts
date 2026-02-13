@@ -4,6 +4,10 @@
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
+export interface AgentSettings {
+  maxConcurrentAgents: number;
+}
+
 export interface AppSettings {
   theme: ThemeMode;
   colorTheme: string;
@@ -15,6 +19,7 @@ export interface AppSettings {
   fontFamily?: string;
   fontSize?: number;
   anthropicApiKey?: string;
+  agentSettings?: AgentSettings;
 }
 
 export interface CustomTheme {

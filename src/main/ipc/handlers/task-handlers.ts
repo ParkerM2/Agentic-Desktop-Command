@@ -37,15 +37,20 @@ export function registerTaskHandlers(
   router.handle('tasks.listAll', () => Promise.resolve(service.listAllTasks()));
 
   router.handle('tasks.execute', ({ taskId, projectId }) => {
-    // Update task status to in_progress
-    service.updateTaskStatus(taskId, 'in_progress');
-
     // Get project path for the agent working directory
     const projectPath = projectService.getProjectPath(projectId);
 
-    // Start the agent
-    const session = agentService.startAgent(taskId, projectId, projectPath ?? '');
+    // Start or queue the agent
+    const result = agentService.startAgent(taskId, projectId, projectPath ?? '');
 
-    return Promise.resolve({ agentId: session.id });
+    if (result.session) {
+      // Agent started immediately
+      service.updateTaskStatus(taskId, 'in_progress');
+      return Promise.resolve({ agentId: result.session.id });
+    }
+
+    // Agent was queued — task stays in queue status
+    service.updateTaskStatus(taskId, 'queue');
+    return Promise.resolve({ agentId: result.queued?.id ?? '' });
   });
 }

@@ -690,6 +690,18 @@ export const ipcInvokeContract = {
     }),
     output: z.object({ success: z.boolean() }),
   },
+  'settings.getAgentSettings': {
+    input: z.object({}),
+    output: z.object({
+      maxConcurrentAgents: z.number(),
+    }),
+  },
+  'settings.setAgentSettings': {
+    input: z.object({
+      maxConcurrentAgents: z.number(),
+    }),
+    output: z.object({ success: z.boolean() }),
+  },
 
   // ── Notes ──
   'notes.list': {
@@ -1254,6 +1266,22 @@ export const ipcInvokeContract = {
     input: z.object({}),
     output: z.array(AgentSessionSchema),
   },
+  'agents.getQueueStatus': {
+    input: z.object({}),
+    output: z.object({
+      pending: z.array(
+        z.object({
+          id: z.string(),
+          taskId: z.string(),
+          projectId: z.string(),
+          priority: z.number(),
+          queuedAt: z.string(),
+        }),
+      ),
+      running: z.array(z.string()),
+      maxConcurrent: z.number(),
+    }),
+  },
 
   // ── Time Parser ──
   'time.parse': {
@@ -1332,6 +1360,13 @@ export const ipcEventContract = {
   },
   'event:agent.log': {
     payload: z.object({ agentId: z.string(), message: z.string() }),
+  },
+  'event:agent.queueChanged': {
+    payload: z.object({
+      pending: z.number(),
+      running: z.number(),
+      maxConcurrent: z.number(),
+    }),
   },
 
   // ── Project Events ──

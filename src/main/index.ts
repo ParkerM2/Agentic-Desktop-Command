@@ -21,6 +21,7 @@ import { registerAllHandlers } from './ipc';
 import { IpcRouter } from './ipc/router';
 import { createMcpManager } from './mcp/mcp-manager';
 import { createMcpRegistry } from './mcp/mcp-registry';
+import { createAgentQueue } from './services/agent/agent-queue';
 import { createAgentService } from './services/agent/agent-service';
 import { createAlertService } from './services/alerts/alert-service';
 import { createAssistantService } from './services/assistant/assistant-service';
@@ -109,8 +110,19 @@ function initializeApp(): void {
     () => projectService.listProjects().map((p) => ({ id: p.id, path: p.path })),
   );
 
-  // Agent service needs router for events and project resolver
-  const agentService = createAgentService(router, (id) => projectService.getProjectPath(id));
+  // Settings service provides configuration including agent settings
+  const settingsService = createSettingsService();
+
+  // Agent queue manages concurrency limits for agent execution
+  const agentSettings = settingsService.getAgentSettings();
+  const agentQueue = createAgentQueue(router, agentSettings.maxConcurrentAgents);
+
+  // Agent service needs router for events, project resolver, and queue
+  const agentService = createAgentService(
+    router,
+    (id) => projectService.getProjectPath(id),
+    agentQueue,
+  );
   agentServiceRef = agentService;
 
   // Notes service persists to user data directory
@@ -195,8 +207,9 @@ function initializeApp(): void {
     projectService,
     taskService,
     terminalService,
-    settingsService: createSettingsService(),
+    settingsService,
     agentService,
+    agentQueue,
     alertService,
     assistantService,
     calendarService,
