@@ -202,6 +202,7 @@ function initializeApp(): void {
     hubSyncService,
     ideasService,
     insightsService,
+    mcpManager,
     milestonesService,
     notesService,
     plannerService,

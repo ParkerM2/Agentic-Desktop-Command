@@ -410,7 +410,53 @@ Client connects to hub:
 
 ---
 
-## 9. Routing Data Flow
+## 9. MCP Tool Call Flow
+
+```
+User clicks action button in Communications panel
+  |
+  v
+SlackActionModal / DiscordActionModal opens
+  |
+  v
+ipc('mcp.listConnected', {})           Check which MCP servers are connected
+  |
+  v
+ipc('mcp.getConnectionState', {})      Get detailed connection state
+  |
+  v
+User fills in action form (channel, message, etc.)
+  |
+  v
+ipc('mcp.callTool', { serverId, toolName, args })
+  |
+  v
+McpManager.callTool(serverId, toolName, args)    mcp-manager.ts
+  |
+  v
+MCP Client sends tool call request               mcp-client.ts
+  |
+  v
+MCP Server executes tool (Slack API, Discord API, etc.)
+  |
+  v
+Result returned to renderer
+  |
+  v
+Toast notification shows success/failure
+```
+
+### MCP IPC Channels
+
+| Channel | Purpose |
+|---------|---------|
+| `mcp.callTool` | Execute a tool on a connected MCP server |
+| `mcp.listConnected` | List all connected MCP server IDs |
+| `mcp.getConnectionState` | Get connection state for all MCP servers |
+
+---
+
+## 10. Routing Data Flow
 
 ```
 User clicks sidebar nav item

@@ -1242,6 +1242,32 @@ export const ipcInvokeContract = {
     input: z.object({}),
     output: z.array(AgentSessionSchema),
   },
+
+  // ── MCP ──
+  'mcp.callTool': {
+    input: z.object({
+      server: z.string(),
+      tool: z.string(),
+      args: z.record(z.string(), z.unknown()),
+    }),
+    output: z.object({
+      content: z.array(
+        z.object({
+          type: z.string(),
+          text: z.string(),
+        }),
+      ),
+      isError: z.boolean(),
+    }),
+  },
+  'mcp.listConnected': {
+    input: z.object({}),
+    output: z.array(z.string()),
+  },
+  'mcp.getConnectionState': {
+    input: z.object({ server: z.string() }),
+    output: z.enum(['disconnected', 'connecting', 'connected', 'error']),
+  },
 } as const;
 
 /**

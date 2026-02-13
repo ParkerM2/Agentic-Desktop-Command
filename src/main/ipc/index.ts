@@ -17,6 +17,7 @@ import { registerGitHubHandlers } from './handlers/github-handlers';
 import { registerHubHandlers } from './handlers/hub-handlers';
 import { registerIdeasHandlers } from './handlers/ideas-handlers';
 import { registerInsightsHandlers } from './handlers/insights-handlers';
+import { registerMcpHandlers } from './handlers/mcp-handlers';
 import { registerMergeHandlers } from './handlers/merge-handlers';
 import { registerMilestonesHandlers } from './handlers/milestones-handlers';
 import { registerNotesHandlers } from './handlers/notes-handlers';
@@ -31,6 +32,7 @@ import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-han
 import type { IpcRouter } from './router';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
+import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentService } from '../services/agent/agent-service';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
@@ -69,6 +71,7 @@ export interface Services {
   hubSyncService: HubSyncService;
   ideasService: IdeasService;
   insightsService: InsightsService;
+  mcpManager: McpManager;
   milestonesService: MilestonesService;
   notesService: NotesService;
   plannerService: PlannerService;
@@ -114,6 +117,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerGitHandlers(router, services.gitService, services.worktreeService);
   registerGitHubHandlers(router, services.githubService);
   registerHubHandlers(router, services.hubConnectionManager, services.hubSyncService);
+  registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);
   registerWebhookSettingsHandlers(router, services.settingsService);
 }

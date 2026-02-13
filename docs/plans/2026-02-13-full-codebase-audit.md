@@ -118,12 +118,10 @@ These must be addressed before any public release or multi-user deployment.
 
 ## 3. HIGH — Wiring Gaps (Components Exist But Aren't Connected)
 
-### 3a. Communications — Action Buttons Are No-Ops
-- **Files**: `SlackPanel.tsx:40`, `DiscordPanel.tsx:40`
-- **Evidence**: `// TODO: Wire to MCP tool call` — `handleAction()` only logs a warning
-- **What exists**: MCP servers for both Slack and Discord with full tool definitions
-- **Fix**: Wire action buttons → MCP manager tool calls (send_message, read_channel, search, set_status)
-- **Scope**: ~100 lines per panel (modal UI + MCP call)
+### 3a. Communications — Action Buttons Are No-Ops — DONE
+- **Files**: `SlackPanel.tsx`, `DiscordPanel.tsx`, `SlackActionModal.tsx`, `DiscordActionModal.tsx`
+- **Status**: FIXED (2026-02-13)
+- **Implementation**: Added `SlackActionModal` and `DiscordActionModal` components that wire panel action buttons to real MCP tool calls via new IPC channels (`mcp.callTool`, `mcp.listConnected`, `mcp.getConnectionState`). Users can now send messages, read channels, search, and set status through the Communications panel.
 
 ### 3b. DailyStats — tasksCompleted Still Hardcoded to 0 — DONE
 - **File**: `DailyStats.tsx`
@@ -403,7 +401,7 @@ These must be addressed before any public release or multi-user deployment.
 6. ~~Fix WebSocket auth~~ **DONE** (2026-02-13)
 
 ### P1 — Wiring Gaps (Components Exist, Just Need Connection)
-7. Wire Slack/Discord action buttons to MCP tools
+7. ~~Wire Slack/Discord action buttons to MCP tools~~ **DONE** (2026-02-13)
 8. ~~Wire DailyStats tasksCompleted to real query~~ **DONE** (2026-02-13)
 9. ~~Wire Claude CLI auth check into app startup / RootLayout~~ **DONE** (2026-02-13) — already wired
 10. ~~Add listeners for 4 emitted-but-unlistened events (hub.connectionChanged, hub.syncCompleted, git.worktreeChanged, assistant.commandCompleted)~~ **DONE** (2026-02-13)
