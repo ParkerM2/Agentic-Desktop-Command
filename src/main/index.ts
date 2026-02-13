@@ -46,6 +46,7 @@ import { createProjectService } from './services/project/project-service';
 import { createTaskService } from './services/project/task-service';
 import { createSettingsService } from './services/settings/settings-service';
 import { createSpotifyService } from './services/spotify/spotify-service';
+import { createGithubImporter, createTaskDecomposer } from './services/tasks';
 import { createTerminalService } from './services/terminal/terminal-service';
 import { createTimeParserService } from './services/time-parser/time-parser-service';
 
@@ -210,6 +211,10 @@ function initializeApp(): void {
     getApiKey: () => settingsService.getSettings().anthropicApiKey,
   });
 
+  // Smart task creation services — decomposition + GitHub import
+  const taskDecomposer = createTaskDecomposer({ claudeClient });
+  const githubImporter = createGithubImporter({ githubService, taskService });
+
   const services = {
     projectService,
     taskService,
@@ -237,6 +242,8 @@ function initializeApp(): void {
     worktreeService,
     mergeService,
     timeParserService: createTimeParserService(),
+    taskDecomposer,
+    githubImporter,
     dataDir,
     providers,
     tokenStore,

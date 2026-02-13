@@ -75,6 +75,32 @@ const TaskDraftSchema = z.object({
   complexity: z.enum(['simple', 'standard', 'complex']).optional(),
 });
 
+// ── Smart Task Creation Schemas ───────────────────────────────
+
+const EstimatedEffortSchema = z.enum(['small', 'medium', 'large']);
+const SuggestedPrioritySchema = z.enum(['low', 'medium', 'high']);
+
+const TaskSuggestionSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  estimatedEffort: EstimatedEffortSchema,
+  suggestedPriority: SuggestedPrioritySchema,
+});
+
+const TaskDecompositionResultSchema = z.object({
+  originalDescription: z.string(),
+  suggestions: z.array(TaskSuggestionSchema),
+});
+
+const GithubIssueImportSchema = z.object({
+  issueNumber: z.number(),
+  issueUrl: z.string(),
+  title: z.string(),
+  body: z.string(),
+  labels: z.array(z.string()),
+  assignees: z.array(z.string()),
+});
+
 const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -641,6 +667,18 @@ export const ipcInvokeContract = {
   'tasks.listAll': {
     input: z.object({}),
     output: z.array(TaskSchema),
+  },
+  'tasks.decompose': {
+    input: z.object({ description: z.string().min(1) }),
+    output: TaskDecompositionResultSchema,
+  },
+  'tasks.importFromGithub': {
+    input: z.object({ url: z.string(), projectId: z.string() }),
+    output: TaskSchema,
+  },
+  'tasks.listGithubIssues': {
+    input: z.object({ owner: z.string(), repo: z.string() }),
+    output: z.array(GithubIssueImportSchema),
   },
 
   // ── Terminals ──
@@ -1649,6 +1687,11 @@ export {
   TaskSchema,
   TaskDraftSchema,
   TaskStatusSchema,
+  TaskSuggestionSchema,
+  TaskDecompositionResultSchema,
+  EstimatedEffortSchema,
+  SuggestedPrioritySchema,
+  GithubIssueImportSchema,
   ProjectSchema,
   TerminalSessionSchema,
   AppSettingsSchema,
