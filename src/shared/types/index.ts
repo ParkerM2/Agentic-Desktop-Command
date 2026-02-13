@@ -23,6 +23,7 @@ export type * from './settings';
 export type * from './task';
 export type * from './terminal';
 export type * from './voice';
+export type * from './screen';
 export * from './notifications';
 export { VOICE_LANGUAGES, DEFAULT_VOICE_CONFIG } from './voice';
 

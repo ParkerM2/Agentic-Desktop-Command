@@ -50,6 +50,7 @@ import {
 import { createPlannerService } from './services/planner/planner-service';
 import { createProjectService } from './services/project/project-service';
 import { createTaskService } from './services/project/task-service';
+import { createScreenCaptureService } from './services/screen/screen-capture-service';
 import { createSettingsService } from './services/settings/settings-service';
 import { createSpotifyService } from './services/spotify/spotify-service';
 import { createGithubImporter, createTaskDecomposer } from './services/tasks';
@@ -257,6 +258,9 @@ function initializeApp(): void {
   // Voice service — manages voice configuration
   const voiceService = createVoiceService();
 
+  // Screen capture service — uses Electron desktopCapturer
+  const screenCaptureService = createScreenCaptureService();
+
   const services = {
     projectService,
     taskService,
@@ -289,6 +293,7 @@ function initializeApp(): void {
     taskDecomposer,
     githubImporter,
     voiceService,
+    screenCaptureService,
     dataDir,
     providers,
     tokenStore,
