@@ -28,7 +28,7 @@ import { InsightsPage } from '@features/insights';
 import { KanbanBoard } from '@features/kanban';
 import { MyWorkPage } from '@features/my-work';
 import { NotesPage } from '@features/notes';
-import { PlannerPage } from '@features/planner';
+import { PlannerPage, WeeklyReviewPage } from '@features/planner';
 import { ProductivityPage } from '@features/productivity';
 import { ProjectListPage } from '@features/projects';
 import { RoadmapPage } from '@features/roadmap';
@@ -108,6 +108,12 @@ const plannerRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTES.PLANNER,
   component: PlannerPage,
+});
+
+const plannerWeeklyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTES.PLANNER_WEEKLY,
+  component: WeeklyReviewPage,
 });
 
 // ─── Productivity ────────────────────────────────────────────
@@ -216,6 +222,7 @@ const routeTree = rootRoute.addChildren([
   fitnessRoute,
   notesRoute,
   plannerRoute,
+  plannerWeeklyRoute,
   productivityRoute,
   projectsRoute,
   projectRoute,

@@ -23,4 +23,16 @@ export function registerPlannerHandlers(router: IpcRouter, service: PlannerServi
   router.handle('planner.removeTimeBlock', ({ date, blockId }) =>
     Promise.resolve(service.removeTimeBlock(date, blockId)),
   );
+
+  router.handle('planner.getWeek', ({ startDate }) =>
+    Promise.resolve(service.getWeek(startDate)),
+  );
+
+  router.handle('planner.generateWeeklyReview', ({ startDate }) =>
+    Promise.resolve(service.generateWeeklyReview(startDate)),
+  );
+
+  router.handle('planner.updateWeeklyReflection', ({ startDate, reflection }) =>
+    Promise.resolve(service.updateWeeklyReflection(startDate, reflection)),
+  );
 }

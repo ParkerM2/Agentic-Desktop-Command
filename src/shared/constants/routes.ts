@@ -16,6 +16,7 @@ export const ROUTES = {
   MY_WORK: '/my-work',
   NOTES: '/notes',
   PLANNER: '/planner',
+  PLANNER_WEEKLY: '/planner/weekly',
   PRODUCTIVITY: '/productivity',
   PROJECTS: '/projects',
   SETTINGS: '/settings',

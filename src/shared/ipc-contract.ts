@@ -152,6 +152,22 @@ const DailyPlanSchema = z.object({
   reflection: z.string().optional(),
 });
 
+const WeeklyReviewSummarySchema = z.object({
+  totalGoalsSet: z.number(),
+  totalGoalsCompleted: z.number(),
+  totalTimeBlocks: z.number(),
+  totalHoursPlanned: z.number(),
+  categoryBreakdown: z.record(z.string(), z.number()),
+});
+
+const WeeklyReviewSchema = z.object({
+  weekStartDate: z.string(),
+  weekEndDate: z.string(),
+  days: z.array(DailyPlanSchema),
+  summary: WeeklyReviewSummarySchema,
+  reflection: z.string().optional(),
+});
+
 const GitStatusSchema = z.object({
   branch: z.string(),
   isClean: z.boolean(),
@@ -781,6 +797,18 @@ export const ipcInvokeContract = {
   'planner.removeTimeBlock': {
     input: z.object({ date: z.string(), blockId: z.string() }),
     output: z.object({ success: z.boolean() }),
+  },
+  'planner.getWeek': {
+    input: z.object({ startDate: z.string() }),
+    output: WeeklyReviewSchema,
+  },
+  'planner.generateWeeklyReview': {
+    input: z.object({ startDate: z.string() }),
+    output: WeeklyReviewSchema,
+  },
+  'planner.updateWeeklyReflection': {
+    input: z.object({ startDate: z.string(), reflection: z.string() }),
+    output: WeeklyReviewSchema,
   },
 
   // ── Alerts ──
@@ -1518,6 +1546,8 @@ export {
   TimeBlockSchema,
   ScheduledTaskSchema,
   TimeBlockTypeSchema,
+  WeeklyReviewSchema,
+  WeeklyReviewSummarySchema,
   GitStatusSchema,
   GitBranchSchema,
   WorktreeSchema,
