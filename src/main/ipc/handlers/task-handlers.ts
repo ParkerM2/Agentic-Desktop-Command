@@ -34,6 +34,8 @@ export function registerTaskHandlers(
     return Promise.resolve({ success: true });
   });
 
+  router.handle('tasks.listAll', () => Promise.resolve(service.listAllTasks()));
+
   router.handle('tasks.execute', ({ taskId, projectId }) => {
     // Update task status to in_progress
     service.updateTaskStatus(taskId, 'in_progress');

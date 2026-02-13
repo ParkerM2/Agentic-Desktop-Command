@@ -103,7 +103,10 @@ function initializeApp(): void {
   terminalServiceRef = terminalService;
 
   // Task service resolves project IDs via projectService
-  const taskService = createTaskService((id) => projectService.getProjectPath(id));
+  const taskService = createTaskService(
+    (id) => projectService.getProjectPath(id),
+    () => projectService.listProjects().map((p) => ({ id: p.id, path: p.path })),
+  );
 
   // Agent service needs router for events and project resolver
   const agentService = createAgentService(router, (id) => projectService.getProjectPath(id));

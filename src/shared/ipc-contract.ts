@@ -564,6 +564,10 @@ export const ipcInvokeContract = {
     input: z.object({ taskId: z.string(), projectId: z.string() }),
     output: z.object({ agentId: z.string() }),
   },
+  'tasks.listAll': {
+    input: z.object({}),
+    output: z.array(TaskSchema),
+  },
 
   // ── Terminals ──
   'terminals.list': {

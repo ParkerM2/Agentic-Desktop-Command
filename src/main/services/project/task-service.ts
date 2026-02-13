@@ -69,6 +69,7 @@ function readJsonFile(filePath: string): unknown {
 
 export interface TaskService {
   listTasks: (projectId: string) => Task[];
+  listAllTasks: () => Task[];
   getTask: (projectId: string, taskId: string) => Task;
   createTask: (draft: TaskDraft) => Task;
   updateTask: (taskId: string, updates: Record<string, unknown>) => Task;
@@ -78,6 +79,7 @@ export interface TaskService {
 }
 
 type ProjectResolver = (projectId: string) => string | undefined;
+type ProjectsLister = () => Array<{ id: string; path: string }>;
 
 function getPhaseStatus(ph: PlanPhase): 'completed' | 'in_progress' | 'pending' {
   if (ph.completed === true) return 'completed';
@@ -164,7 +166,10 @@ function getNextNum(specsDir: string): number {
   return nums.length > 0 ? Math.max(...nums) + 1 : 1;
 }
 
-export function createTaskService(resolveProject: ProjectResolver): TaskService {
+export function createTaskService(
+  resolveProject: ProjectResolver,
+  listProjects?: ProjectsLister,
+): TaskService {
   // Cache: taskId → projectPath (populated on list/get/create)
   const taskProjectMap = new Map<string, string>();
 
@@ -196,6 +201,30 @@ export function createTaskService(resolveProject: ProjectResolver): TaskService 
         }
       }
       return tasks;
+    },
+
+    listAllTasks() {
+      if (!listProjects) return [];
+
+      const allTasks: Task[] = [];
+      for (const project of listProjects()) {
+        const specsDir = getSpecsDir(project.path);
+        if (!existsSync(specsDir)) continue;
+
+        for (const entry of readdirSync(specsDir, { withFileTypes: true })) {
+          if (!entry.isDirectory()) continue;
+          const task = readTask(join(specsDir, entry.name), entry.name);
+          if (task) {
+            taskProjectMap.set(entry.name, project.path);
+            // Add projectId to task metadata for grouping
+            allTasks.push({
+              ...task,
+              metadata: { ...task.metadata, projectId: project.id },
+            });
+          }
+        }
+      }
+      return allTasks;
     },
 
     getTask(projectId, taskId) {

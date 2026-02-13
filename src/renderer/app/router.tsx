@@ -26,6 +26,7 @@ import { GitHubPage } from '@features/github';
 import { IdeationPage } from '@features/ideation';
 import { InsightsPage } from '@features/insights';
 import { KanbanBoard } from '@features/kanban';
+import { MyWorkPage } from '@features/my-work';
 import { NotesPage } from '@features/notes';
 import { PlannerPage } from '@features/planner';
 import { ProductivityPage } from '@features/productivity';
@@ -59,6 +60,14 @@ const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTES.DASHBOARD,
   component: DashboardPage,
+});
+
+// ─── My Work ───────────────────────────────────────────────
+
+const myWorkRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROUTES.MY_WORK,
+  component: MyWorkPage,
 });
 
 // ─── Alerts ───────────────────────────────────────────────
@@ -201,6 +210,7 @@ const settingsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   dashboardRoute,
+  myWorkRoute,
   alertsRoute,
   communicationsRoute,
   fitnessRoute,
