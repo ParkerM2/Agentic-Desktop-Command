@@ -17,7 +17,7 @@
 | IPC Events (defined) | 23 | 7 | 0 | 30 |
 | Renderer Features | 18 | 1 | 3 | 22 |
 | Setup/Onboarding Flows | 2 | 3 | 4 | 9 |
-| Security Hardening | 3 | 2 | 4 | 9 |
+| Security Hardening | 5 | 2 | 2 | 9 |
 
 What works well: Core infrastructure is solid — IPC contract has 100% handler coverage, all 22 main services are real implementations (not stubs), 18/19 renderer features are fully wired to real data, and the MCP framework is complete.
 
@@ -39,14 +39,17 @@ These must be addressed before any public release or multi-user deployment.
 - **Status**: FIXED (2026-02-13)
 - **Implementation**: Webhook secrets (Slack bot token, Slack signing secret, GitHub webhook secret) are now encrypted using Electron `safeStorage`. Same encryption pattern as OAuth credentials with automatic migration of plaintext values.
 
-### 1c. Hub Bootstrap API Key Endpoint Unprotected
+### 1c. Hub Bootstrap API Key Endpoint Unprotected — DONE
 - **File**: `hub/src/routes/auth.ts`
-- **Risk**: HIGH — `POST /api/auth/generate-key` is callable by anyone when no keys exist
-- **Fix**: Require an environment variable seed or initial passphrase
+- **Status**: FIXED (2026-02-13)
+- **Implementation**: Bootstrap endpoint now requires `HUB_BOOTSTRAP_SECRET` environment variable. The secret is validated using `crypto.timingSafeEqual()` to prevent timing attacks. Returns 403 if secret is missing from env or doesn't match request header.
 
-### 1d. No Rate Limiting on Hub Endpoints
-- **Risk**: MEDIUM — All Hub API and webhook endpoints accept unlimited requests
-- **Fix**: Add `@fastify/rate-limit` plugin
+### 1d. No Rate Limiting on Hub Endpoints — DONE
+- **File**: `hub/src/app.ts`
+- **Status**: FIXED (2026-02-13)
+- **Implementation**: Added `@fastify/rate-limit` with two tiers:
+  - **Global**: 100 requests/minute per IP (all endpoints)
+  - **Auth routes**: 10 requests/minute per IP (stricter for bootstrap/key generation)
 
 ### 1e. CORS Allows All Origins
 - **File**: `hub/src/app.ts` — `origin: true`
@@ -392,8 +395,8 @@ These must be addressed before any public release or multi-user deployment.
 ### P0 — Security (Do Before Any Deployment)
 1. ~~Encrypt OAuth credentials via safeStorage~~ **DONE** (2026-02-13)
 2. ~~Encrypt webhook secrets via safeStorage~~ **DONE** (2026-02-13)
-3. Protect Hub bootstrap endpoint
-4. Add rate limiting to Hub
+3. ~~Protect Hub bootstrap endpoint~~ **DONE** (2026-02-13)
+4. ~~Add rate limiting to Hub~~ **DONE** (2026-02-13)
 5. Fix CORS to explicit origins
 6. Fix WebSocket auth
 

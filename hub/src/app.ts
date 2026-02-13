@@ -1,8 +1,9 @@
 import { join } from 'node:path';
 
-import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
+import Fastify from 'fastify';
 
 import { createDatabase } from './db/database.js';
 import { createApiKeyMiddleware } from './middleware/api-key.js';
@@ -36,6 +37,14 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
     origin: true,
   });
 
+  // Rate limiting — global limit: 100 requests/minute per IP
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+    // Skip rate limiting for WebSocket upgrade requests
+    keyGenerator: (request) => request.ip,
+  });
+
   // WebSocket
   await app.register(websocket);
 
@@ -56,8 +65,19 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   await app.register(plannerRoutes);
   await app.register(captureRoutes);
   await app.register(agentRoutes);
-  await app.register(authRoutes);
   await app.register(webhookRoutes);
+
+  // Auth routes with stricter rate limiting (10 requests/minute per IP)
+  await app.register(
+    async (authApp) => {
+      await authApp.register(rateLimit, {
+        max: 10,
+        timeWindow: '1 minute',
+        keyGenerator: (request) => request.ip,
+      });
+      await authApp.register(authRoutes);
+    },
+  );
 
   // Health check
   app.get('/api/health', async () => {

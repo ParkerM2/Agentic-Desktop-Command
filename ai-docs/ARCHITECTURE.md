@@ -217,6 +217,32 @@ function decryptSecret(entry: EncryptedSecretEntry): string {
 
 Both services automatically migrate plaintext secrets to encrypted format on first read. The `useSafeStorage` flag tracks whether real encryption was used, enabling graceful fallback in environments where safeStorage is unavailable.
 
+## Security — Hub API
+
+The Hub server (`hub/`) includes security hardening for its REST API.
+
+### Bootstrap Secret
+
+The `POST /api/auth/generate-key` endpoint (used to create the first API key) requires the `HUB_BOOTSTRAP_SECRET` environment variable:
+
+```bash
+# .env
+HUB_BOOTSTRAP_SECRET=your-random-secret-here
+```
+
+Clients must include the secret in the `X-Bootstrap-Secret` header. The server validates using `crypto.timingSafeEqual()` to prevent timing attacks.
+
+### Rate Limiting
+
+All Hub endpoints are protected by `@fastify/rate-limit`:
+
+| Scope | Limit | Window |
+|-------|-------|--------|
+| Global (all endpoints) | 100 requests | 1 minute |
+| Auth routes (`/api/auth/*`) | 10 requests | 1 minute |
+
+Rate limit headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`) are included in responses.
+
 ---
 
 ## Build System
