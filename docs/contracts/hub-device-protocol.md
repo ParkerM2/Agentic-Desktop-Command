@@ -1,19 +1,9 @@
 # Hub ↔ Device Communication Protocol
 
-**Version**: 1.1.0
-**Status**: DRAFT — PENDING MAJOR UPDATE
+**Version**: 2.0.0
+**Status**: IMPLEMENTED
 **Last Updated**: 2026-02-14
-**Updated By**: Claude + Parker
-
-> **⚠️ MAJOR UPDATE REQUIRED**: This protocol is being expanded to support:
-> - **User Authentication** (register, login, sessions)
-> - **Workspaces** (replaces "Computers" as logical execution environments)
-> - **Devices** (physical machines, separate from workspaces)
-> - **Projects** (with multi-repo support)
-> - **Sub-Projects** (child repos in multi-repo structures)
->
-> See `docs/plans/2026-02-14-workspace-project-management.md` for the new data model.
-> The sections below will be updated to reflect this new architecture.
+**Updated By**: Team Alpha (Claude)
 
 > **ENFORCEMENT**: This document is the source of truth. All Hub routes and client calls MUST match this spec exactly. Run `npm run validate:protocol` to verify compliance.
 
@@ -37,101 +27,54 @@
 
 ## Table of Contents
 
-1. [Authentication](#1-authentication) — **UPDATE: Add user auth (register, login)**
-2. [Devices](#2-devices) — **NEW: Physical device management**
-3. [Workspaces](#3-workspaces) — **NEW: Replaces "Computers"**
-4. [Projects](#4-projects) — **NEW: With multi-repo support**
-5. [Tasks](#5-tasks) — **UPDATE: Add workspace_id, sub_project_id**
-6. [Progress Updates](#6-progress-updates)
-7. [WebSocket Events](#7-websocket-events) — **UPDATE: New event types**
-8. [Error Handling](#8-error-handling)
-
----
-
-## New Endpoints Summary (To Be Implemented)
-
-### Authentication
-```
-POST   /api/auth/register          # Create user account
-POST   /api/auth/login             # Login, returns JWT
-POST   /api/auth/logout            # Invalidate session
-POST   /api/auth/refresh           # Refresh JWT
-GET    /api/auth/me                # Get current user
-```
-
-### Devices
-```
-POST   /api/devices                # Register device
-GET    /api/devices                # List user's devices
-PATCH  /api/devices/:id            # Update device
-DELETE /api/devices/:id            # Remove device
-```
-
-### Workspaces
-```
-GET    /api/workspaces             # List user's workspaces
-POST   /api/workspaces             # Create workspace
-GET    /api/workspaces/:id         # Get workspace
-PATCH  /api/workspaces/:id         # Update workspace (incl. rename)
-DELETE /api/workspaces/:id         # Delete workspace
-POST   /api/workspaces/:id/host    # Change host device
-```
-
-### Projects
-```
-GET    /api/workspaces/:wid/projects    # List projects in workspace
-POST   /api/workspaces/:wid/projects    # Create project
-POST   /api/projects/detect             # Detect repo type from path
-GET    /api/projects/:id                # Get project
-PATCH  /api/projects/:id                # Update project
-DELETE /api/projects/:id                # Delete project
-```
-
-### Sub-Projects
-```
-GET    /api/projects/:id/sub-projects        # List sub-projects
-POST   /api/projects/:id/sub-projects        # Add sub-project
-DELETE /api/projects/:pid/sub-projects/:sid  # Remove sub-project
-```
-
-### Tasks (Updated)
-```
-# Same CRUD endpoints, but with:
-# - workspace_id in task body
-# - optional sub_project_id for multi-repo targeting
-```
+1. [Authentication](#1-authentication)
+2. [Devices](#2-devices)
+3. [Workspaces](#3-workspaces)
+4. [Projects](#4-projects)
+5. [Sub-Projects](#5-sub-projects)
+6. [Tasks](#6-tasks)
+7. [Progress Updates](#7-progress-updates)
+8. [WebSocket Events](#8-websocket-events)
+9. [Error Handling](#9-error-handling)
 
 ---
 
 ## 1. Authentication
 
-### 1.1 Device → Hub: Register/Login
+All auth endpoints use JWT tokens. Access tokens expire in 15 minutes. Refresh tokens expire in 7 days.
+
+### 1.1 Register
 
 ```
-POST /api/auth/device
+POST /api/auth/register
 ```
 
 **Request:**
 ```typescript
-interface DeviceAuthRequest {
-  machineId: string;      // UUID generated on first run, stored locally
-  machineName: string;    // User-friendly name: "Work Laptop"
-  deviceType: 'desktop' | 'mobile' | 'web';
-  capabilities: {
-    canExecute: boolean;  // Has Claude CLI installed
-    repos: string[];      // List of repo paths (desktop only)
-  };
-  appVersion: string;     // "1.2.3"
+interface AuthRegisterRequest {
+  email: string;
+  password: string;           // Min 8 characters
+  displayName: string;
 }
 ```
 
 **Response:**
 ```typescript
-interface DeviceAuthResponse {
-  deviceId: string;       // Hub-assigned ID
-  token: string;          // JWT for subsequent requests
-  expiresAt: string;      // ISO timestamp
-  hubVersion: string;     // Hub server version
+interface AuthResponse {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;          // ISO timestamp
+}
+
+interface User {
+  id: string;
+  email: string;
+  displayName: string;
+  avatarUrl: string | null;
+  settings: Record<string, unknown> | null;
+  createdAt: string;
+  lastLoginAt: string | null;
 }
 ```
 
@@ -139,496 +82,512 @@ interface DeviceAuthResponse {
 | Code | Meaning |
 |------|---------|
 | 400 | Invalid request body |
-| 409 | Machine already registered with different name |
+| 409 | Email already registered |
 
----
-
-## 2. Computer Registration
-
-### 2.1 Device → Hub: Update Capabilities
+### 1.2 Login
 
 ```
-PATCH /api/computers/:deviceId
-Authorization: Bearer <token>
+POST /api/auth/login
 ```
 
 **Request:**
 ```typescript
-interface ComputerUpdateRequest {
-  machineName?: string;
-  capabilities?: {
-    canExecute?: boolean;
-    repos?: string[];
+interface AuthLoginRequest {
+  email: string;
+  password: string;
+  device?: {                  // Optional: register device on login
+    machineId: string;
+    deviceType: 'desktop' | 'mobile' | 'web';
+    deviceName: string;
+    capabilities: DeviceCapabilities;
+    appVersion?: string;
   };
-  isOnline?: boolean;
+}
+```
+
+**Response:** `AuthResponse` (same as register)
+
+**Errors:**
+| Code | Meaning |
+|------|---------|
+| 400 | Invalid request body |
+| 401 | Invalid email or password |
+
+### 1.3 Logout
+
+```
+POST /api/auth/logout
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ success: true }
+```
+
+### 1.4 Refresh Token
+
+```
+POST /api/auth/refresh
+```
+
+**Request:**
+```typescript
+interface AuthRefreshRequest {
+  refreshToken: string;
 }
 ```
 
 **Response:**
 ```typescript
-interface Computer {
-  id: string;
-  machineId: string;
-  machineName: string;
+interface AuthRefreshResponse {
+  accessToken: string;
+  expiresAt: string;
+}
+```
+
+**Errors:**
+| Code | Meaning |
+|------|---------|
+| 400 | Invalid request body |
+| 401 | Invalid or expired refresh token |
+
+### 1.5 Get Current User
+
+```
+GET /api/auth/me
+Authorization: Bearer <accessToken>
+```
+
+**Response:** `User`
+
+---
+
+## 2. Devices
+
+Physical machines that can connect to the Hub. Desktops can execute tasks.
+
+### 2.1 Register Device
+
+```
+POST /api/devices
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface DeviceRegisterRequest {
+  machineId?: string;         // UUID generated on first run
   deviceType: 'desktop' | 'mobile' | 'web';
-  capabilities: {
-    canExecute: boolean;
-    repos: string[];
-  };
+  deviceName: string;
+  capabilities: DeviceCapabilities;
+  appVersion?: string;
+}
+
+interface DeviceCapabilities {
+  canExecute: boolean;        // Has Claude CLI installed
+  repos: string[];            // List of repo paths (desktop only)
+}
+```
+
+**Response:**
+```typescript
+interface Device {
+  id: string;
+  machineId: string | null;
+  userId: string;
+  deviceType: 'desktop' | 'mobile' | 'web';
+  deviceName: string;
+  capabilities: DeviceCapabilities;
   isOnline: boolean;
-  lastSeen: string;       // ISO timestamp
+  lastSeen: string | null;
+  appVersion: string | null;
   createdAt: string;
 }
 ```
 
-### 2.2 Hub → Device: Computer List
+### 2.2 List Devices
 
 ```
-GET /api/computers
-Authorization: Bearer <token>
+GET /api/devices
+Authorization: Bearer <accessToken>
 ```
 
 **Response:**
 ```typescript
-interface ComputerListResponse {
-  computers: Computer[];
-}
+{ devices: Device[] }
 ```
 
----
-
-## 3. Tasks
-
-### 3.1 Device → Hub: Create Task
+### 2.3 Get Device
 
 ```
-POST /api/tasks
-Authorization: Bearer <token>
+GET /api/devices/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:** `Device`
+
+### 2.4 Update Device
+
+```
+PATCH /api/devices/:id
+Authorization: Bearer <accessToken>
 ```
 
 **Request:**
 ```typescript
-interface TaskCreateRequest {
-  title: string;
-  description: string;
-  projectId: string;            // Which project/repo
-  assignedComputerId?: string;  // Target execution machine (null = unassigned)
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  metadata?: Record<string, unknown>;
+interface DeviceUpdateRequest {
+  deviceName?: string;
+  capabilities?: Partial<DeviceCapabilities>;
+  appVersion?: string;
 }
+```
+
+**Response:** `Device`
+
+### 2.5 Delete Device
+
+```
+DELETE /api/devices/:id
+Authorization: Bearer <accessToken>
 ```
 
 **Response:**
 ```typescript
-interface Task {
+{ success: true }
+```
+
+### 2.6 Device Heartbeat
+
+```
+POST /api/devices/:id/heartbeat
+Authorization: Bearer <accessToken>
+```
+
+Updates `isOnline` to true and `lastSeen` to current timestamp.
+
+**Response:** `Device`
+
+---
+
+## 3. Workspaces
+
+Logical execution environments. Each workspace has a host device responsible for execution.
+
+### 3.1 List Workspaces
+
+```
+GET /api/workspaces
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ workspaces: Workspace[] }
+
+interface Workspace {
   id: string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  projectId: string;
-  assignedComputerId: string | null;
-  createdByDeviceId: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
-  executionSessionId: string | null;
-  progress: TaskProgress | null;
-  metadata: Record<string, unknown>;
+  userId: string;
+  name: string;
+  description: string | null;
+  hostDeviceId: string | null;
+  settings: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }
+```
 
-type TaskStatus =
-  | 'backlog'       // Not started, not queued
-  | 'queued'        // Ready to execute
-  | 'running'       // Currently executing
-  | 'paused'        // Execution paused
-  | 'review'        // Awaiting human review
-  | 'done'          // Completed successfully
-  | 'error';        // Failed
+### 3.2 Create Workspace
 
-interface TaskProgress {
-  phase: string;              // Current phase name
-  phaseIndex: number;         // 0-based
-  totalPhases: number;
-  currentAgent: string | null;
-  filesChanged: number;
-  lastActivity: string;       // ISO timestamp
-  logs: string[];             // Recent log lines (last 20)
+```
+POST /api/workspaces
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface WorkspaceCreateRequest {
+  name: string;
+  description?: string;
+  hostDeviceId?: string;      // Must be a desktop device
+  settings?: Record<string, unknown>;
 }
 ```
 
-### 3.2 Device → Hub: List Tasks
+**Response:** `Workspace`
+
+### 3.3 Get Workspace
+
+```
+GET /api/workspaces/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:** `Workspace`
+
+### 3.4 Update Workspace
+
+```
+PATCH /api/workspaces/:id
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface WorkspaceUpdateRequest {
+  name?: string;
+  description?: string;
+  settings?: Record<string, unknown>;
+}
+```
+
+**Response:** `Workspace`
+
+### 3.5 Delete Workspace
+
+```
+DELETE /api/workspaces/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ success: true }
+```
+
+### 3.6 Change Host Device
+
+```
+POST /api/workspaces/:id/host
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface WorkspaceHostRequest {
+  hostDeviceId: string | null;  // Must be a desktop device, or null to clear
+}
+```
+
+**Response:** `Workspace`
+
+**Errors:**
+| Code | Meaning |
+|------|---------|
+| 400 | Device not found or not a desktop |
+| 404 | Workspace not found |
+
+---
+
+## 4. Projects
+
+Projects belong to workspaces. Support single repo, monorepo, or multi-repo structures.
+
+### 4.1 List Projects in Workspace
+
+```
+GET /api/workspaces/:wid/projects
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ projects: Project[] }
+
+interface Project {
+  id: string;
+  name: string;
+  path: string;
+  workspaceId: string | null;
+  gitUrl: string | null;
+  repoStructure: 'single' | 'monorepo' | 'multi-repo';
+  defaultBranch: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### 4.2 Create Project in Workspace
+
+```
+POST /api/workspaces/:wid/projects
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface ProjectCreateRequest {
+  name: string;
+  path: string;
+  gitUrl?: string;
+  repoStructure?: 'single' | 'monorepo' | 'multi-repo';
+  defaultBranch?: string;
+  description?: string;
+  subProjects?: SubProjectCreateRequest[];  // For multi-repo
+}
+
+interface SubProjectCreateRequest {
+  name: string;
+  relativePath: string;
+  gitUrl?: string;
+  defaultBranch?: string;
+}
+```
+
+**Response:** `Project`
+
+### 4.3 Get Project
+
+```
+GET /api/projects/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+interface ProjectWithSubProjects extends Project {
+  subProjects: SubProject[];
+}
+```
+
+### 4.4 Update Project
+
+```
+PATCH /api/projects/:id
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface ProjectUpdateRequest {
+  name?: string;
+  path?: string;
+  gitUrl?: string;
+  repoStructure?: 'single' | 'monorepo' | 'multi-repo';
+  defaultBranch?: string;
+  description?: string;
+}
+```
+
+**Response:** `Project`
+
+### 4.5 Delete Project
+
+```
+DELETE /api/projects/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ success: true }
+```
+
+---
+
+## 5. Sub-Projects
+
+Child repositories within a multi-repo project.
+
+### 5.1 List Sub-Projects
+
+```
+GET /api/projects/:id/sub-projects
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ subProjects: SubProject[] }
+
+interface SubProject {
+  id: string;
+  projectId: string;
+  name: string;
+  relativePath: string;
+  gitUrl: string | null;
+  defaultBranch: string | null;
+  createdAt: string;
+}
+```
+
+### 5.2 Add Sub-Project
+
+```
+POST /api/projects/:id/sub-projects
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface SubProjectCreateRequest {
+  name: string;
+  relativePath: string;
+  gitUrl?: string;
+  defaultBranch?: string;
+}
+```
+
+**Response:** `SubProject`
+
+### 5.3 Delete Sub-Project
+
+```
+DELETE /api/projects/:pid/sub-projects/:sid
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ success: true }
+```
+
+---
+
+## 6. Tasks
+
+Tasks support workspace and sub-project targeting for multi-device, multi-repo execution.
+
+### 6.1 List Tasks
 
 ```
 GET /api/tasks
-Authorization: Bearer <token>
+Authorization: Bearer <accessToken>
 ```
 
 **Query Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
+| workspace_id | string | Filter by workspace |
+| project_id | string | Filter by project |
 | status | TaskStatus | Filter by status |
-| projectId | string | Filter by project |
-| assignedComputerId | string | Filter by assigned computer |
-| createdAfter | ISO date | Created after timestamp |
-| updatedAfter | ISO date | Updated after timestamp |
 | limit | number | Max results (default 100) |
 | offset | number | Pagination offset |
 
 **Response:**
 ```typescript
-interface TaskListResponse {
-  tasks: Task[];
-  total: number;
-  limit: number;
-  offset: number;
+{ tasks: Task[] }
+
+interface Task {
+  id: string;
+  projectId: string;
+  workspaceId: string | null;
+  subProjectId: string | null;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: number;
+  assignedDeviceId: string | null;
+  createdByDeviceId: string | null;
+  executionSessionId: string | null;
+  progress: TaskProgress | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
 }
-```
 
-### 3.3 Device → Hub: Get Single Task
-
-```
-GET /api/tasks/:taskId
-Authorization: Bearer <token>
-```
-
-**Response:** `Task`
-
-### 3.4 Device → Hub: Update Task
-
-```
-PATCH /api/tasks/:taskId
-Authorization: Bearer <token>
-```
-
-**Request:**
-```typescript
-interface TaskUpdateRequest {
-  title?: string;
-  description?: string;
-  status?: TaskStatus;
-  assignedComputerId?: string | null;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  metadata?: Record<string, unknown>;
-}
-```
-
-**Response:** `Task`
-
-**Errors:**
-| Code | Meaning |
-|------|---------|
-| 400 | Invalid status transition |
-| 403 | Cannot modify task owned by another device |
-| 404 | Task not found |
-
-### 3.5 Device → Hub: Delete Task
-
-```
-DELETE /api/tasks/:taskId
-Authorization: Bearer <token>
-```
-
-**Response:**
-```typescript
-interface DeleteResponse {
-  success: boolean;
-}
-```
-
-### 3.6 Device → Hub: Start Task Execution
-
-```
-POST /api/tasks/:taskId/execute
-Authorization: Bearer <token>
-```
-
-**Request:**
-```typescript
-interface TaskExecuteRequest {
-  // Empty - execution happens on the assigned computer
-}
-```
-
-**Response:**
-```typescript
-interface TaskExecuteResponse {
-  sessionId: string;          // Execution session ID
-  status: 'started' | 'queued';
-}
-```
-
-**Preconditions:**
-- Task must be in `backlog` or `queued` status
-- Requesting device must be the `assignedComputerId`
-- Device must have `canExecute: true`
-
-### 3.7 Device → Hub: Cancel Task Execution
-
-```
-POST /api/tasks/:taskId/cancel
-Authorization: Bearer <token>
-```
-
-**Response:**
-```typescript
-interface TaskCancelResponse {
-  success: boolean;
-  previousStatus: TaskStatus;
-}
-```
-
----
-
-## 4. Progress Updates
-
-### 4.1 Device → Hub: Push Progress
-
-```
-POST /api/tasks/:taskId/progress
-Authorization: Bearer <token>
-```
-
-**Request:**
-```typescript
-interface ProgressPushRequest {
-  phase: string;
-  phaseIndex: number;
-  totalPhases: number;
-  currentAgent: string | null;
-  filesChanged: number;
-  logLines: string[];         // New log lines to append
-  status?: TaskStatus;        // Optionally update status
-}
-```
-
-**Response:**
-```typescript
-interface ProgressPushResponse {
-  received: boolean;
-  taskId: string;
-  broadcastedTo: number;      // Number of connected devices notified
-}
-```
-
-### 4.2 Device → Hub: Mark Task Complete
-
-```
-POST /api/tasks/:taskId/complete
-Authorization: Bearer <token>
-```
-
-**Request:**
-```typescript
-interface TaskCompleteRequest {
-  result: 'success' | 'error';
-  prUrl?: string;             // If PR was created
-  errorMessage?: string;      // If result is 'error'
-  summary?: string;           // Completion summary
-}
-```
-
-**Response:** `Task` (with updated status)
-
----
-
-## 5. WebSocket Events
-
-### 5.1 Connection
-
-```
-WS /ws?token=<jwt>
-```
-
-**On Connect - Hub sends:**
-```typescript
-interface WsConnectedEvent {
-  type: 'connected';
-  deviceId: string;
-  connectedDevices: number;
-}
-```
-
-### 5.2 Heartbeat (Both Directions)
-
-**Device → Hub (every 30s):**
-```typescript
-interface WsHeartbeatPing {
-  type: 'ping';
-  timestamp: string;
-}
-```
-
-**Hub → Device:**
-```typescript
-interface WsHeartbeatPong {
-  type: 'pong';
-  timestamp: string;
-}
-```
-
-### 5.3 Hub → Device: Task Events
-
-**Task Created:**
-```typescript
-interface WsTaskCreatedEvent {
-  type: 'task:created';
-  task: Task;
-  createdByDeviceId: string;
-}
-```
-
-**Task Updated:**
-```typescript
-interface WsTaskUpdatedEvent {
-  type: 'task:updated';
-  taskId: string;
-  changes: Partial<Task>;
-  updatedByDeviceId: string;
-}
-```
-
-**Task Deleted:**
-```typescript
-interface WsTaskDeletedEvent {
-  type: 'task:deleted';
-  taskId: string;
-  deletedByDeviceId: string;
-}
-```
-
-**Task Progress:**
-```typescript
-interface WsTaskProgressEvent {
-  type: 'task:progress';
-  taskId: string;
-  progress: TaskProgress;
-}
-```
-
-**Task Completed:**
-```typescript
-interface WsTaskCompletedEvent {
-  type: 'task:completed';
-  taskId: string;
-  result: 'success' | 'error';
-  prUrl?: string;
-  summary?: string;
-}
-```
-
-### 5.4 Hub → Device: Computer Events
-
-**Computer Online:**
-```typescript
-interface WsComputerOnlineEvent {
-  type: 'computer:online';
-  computer: Computer;
-}
-```
-
-**Computer Offline:**
-```typescript
-interface WsComputerOfflineEvent {
-  type: 'computer:offline';
-  computerId: string;
-  lastSeen: string;
-}
-```
-
-### 5.5 Hub → Device: Execution Commands
-
-**Start Execution (sent to assigned computer only):**
-```typescript
-interface WsExecuteCommandEvent {
-  type: 'command:execute';
-  taskId: string;
-  task: Task;
-}
-```
-
-**Cancel Execution (sent to executing computer only):**
-```typescript
-interface WsCancelCommandEvent {
-  type: 'command:cancel';
-  taskId: string;
-  reason?: string;
-}
-```
-
-### 5.6 Device → Hub: Acknowledgments
-
-**Execution Started:**
-```typescript
-interface WsExecutionStartedEvent {
-  type: 'execution:started';
-  taskId: string;
-  sessionId: string;
-  pid?: number;
-}
-```
-
-**Execution Acknowledged:**
-```typescript
-interface WsExecutionAckEvent {
-  type: 'execution:ack';
-  taskId: string;
-  action: 'started' | 'cancelled' | 'failed';
-  error?: string;
-}
-```
-
----
-
-## 6. Error Handling
-
-### 6.1 REST API Errors
-
-All errors follow this format:
-
-```typescript
-interface ApiError {
-  error: {
-    code: string;           // Machine-readable: "TASK_NOT_FOUND"
-    message: string;        // Human-readable: "Task with ID xyz not found"
-    details?: unknown;      // Additional context
-  };
-}
-```
-
-**Standard Error Codes:**
-
-| HTTP | Code | Description |
-|------|------|-------------|
-| 400 | INVALID_REQUEST | Malformed request body |
-| 401 | UNAUTHORIZED | Missing or invalid token |
-| 403 | FORBIDDEN | Action not allowed for this device |
-| 404 | NOT_FOUND | Resource not found |
-| 409 | CONFLICT | State conflict (e.g., task already running) |
-| 422 | INVALID_TRANSITION | Invalid status transition |
-| 429 | RATE_LIMITED | Too many requests |
-| 500 | INTERNAL_ERROR | Server error |
-
-### 6.2 WebSocket Errors
-
-```typescript
-interface WsErrorEvent {
-  type: 'error';
-  code: string;
-  message: string;
-  relatedTo?: string;       // taskId, computerId, etc.
-}
-```
-
----
-
-## 7. Type Definitions (Shared)
-
-These types MUST be kept in `src/shared/types/hub-protocol.ts` and imported by both Hub and clients.
-
-```typescript
-// ─── Core Types ───────────────────────────────────────────
-
-export type TaskStatus =
+type TaskStatus =
   | 'backlog'
   | 'queued'
   | 'running'
@@ -637,45 +596,7 @@ export type TaskStatus =
   | 'done'
   | 'error';
 
-export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
-
-export type DeviceType = 'desktop' | 'mobile' | 'web';
-
-// ─── Entities ─────────────────────────────────────────────
-
-export interface Computer {
-  id: string;
-  machineId: string;
-  machineName: string;
-  deviceType: DeviceType;
-  capabilities: ComputerCapabilities;
-  isOnline: boolean;
-  lastSeen: string;
-  createdAt: string;
-}
-
-export interface ComputerCapabilities {
-  canExecute: boolean;
-  repos: string[];
-}
-
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  projectId: string;
-  assignedComputerId: string | null;
-  createdByDeviceId: string;
-  priority: TaskPriority;
-  executionSessionId: string | null;
-  progress: TaskProgress | null;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface TaskProgress {
+interface TaskProgress {
   phase: string;
   phaseIndex: number;
   totalPhases: number;
@@ -684,32 +605,314 @@ export interface TaskProgress {
   lastActivity: string;
   logs: string[];
 }
-
-// ─── WebSocket Event Union ────────────────────────────────
-
-export type WsEvent =
-  | WsConnectedEvent
-  | WsHeartbeatPing
-  | WsHeartbeatPong
-  | WsTaskCreatedEvent
-  | WsTaskUpdatedEvent
-  | WsTaskDeletedEvent
-  | WsTaskProgressEvent
-  | WsTaskCompletedEvent
-  | WsComputerOnlineEvent
-  | WsComputerOfflineEvent
-  | WsExecuteCommandEvent
-  | WsCancelCommandEvent
-  | WsExecutionStartedEvent
-  | WsExecutionAckEvent
-  | WsErrorEvent;
-
-// Full interface definitions in src/shared/types/hub-protocol.ts
 ```
+
+### 6.2 Create Task
+
+```
+POST /api/tasks
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface TaskCreateRequest {
+  projectId: string;
+  workspaceId?: string;
+  subProjectId?: string;
+  title: string;
+  description: string;
+  status?: TaskStatus;
+  priority?: number;
+  assignedDeviceId?: string;
+  metadata?: Record<string, unknown>;
+}
+```
+
+**Response:** `Task`
+
+### 6.3 Get Task
+
+```
+GET /api/tasks/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+interface TaskWithSubtasks extends Task {
+  subtasks: Subtask[];
+}
+
+interface Subtask {
+  id: string;
+  taskId: string;
+  title: string;
+  description: string;
+  status: string;
+  sortOrder: number;
+}
+```
+
+### 6.4 Update Task
+
+```
+PUT /api/tasks/:id
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface TaskUpdateRequest {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: number;
+  workspaceId?: string;
+  subProjectId?: string;
+  assignedDeviceId?: string | null;
+  metadata?: Record<string, unknown>;
+}
+```
+
+**Response:** `Task`
+
+### 6.5 Delete Task
+
+```
+DELETE /api/tasks/:id
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{ success: true }
+```
+
+### 6.6 Update Task Status
+
+```
+PATCH /api/tasks/:id/status
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+{ status: TaskStatus }
+```
+
+**Response:** `Task`
 
 ---
 
-## 8. State Machine: Task Status Transitions
+## 7. Progress Updates
+
+### 7.1 Push Progress
+
+```
+POST /api/tasks/:id/progress
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface ProgressPushRequest {
+  phase: string;
+  phaseIndex: number;
+  totalPhases: number;
+  currentAgent?: string;
+  filesChanged?: number;
+  logLines?: string[];
+}
+```
+
+**Response:**
+```typescript
+{
+  received: true;
+  taskId: string;
+}
+```
+
+Broadcasts `task:progress` WebSocket event to all connected clients.
+
+### 7.2 Mark Task Complete
+
+```
+POST /api/tasks/:id/complete
+Authorization: Bearer <accessToken>
+```
+
+**Request:**
+```typescript
+interface TaskCompleteRequest {
+  result: 'success' | 'error';
+  prUrl?: string;
+  errorMessage?: string;
+  summary?: string;
+}
+```
+
+**Response:** `Task` (with status updated to `done` or `error`)
+
+Broadcasts `task:completed` WebSocket event.
+
+### 7.3 Request Task Execution
+
+```
+POST /api/tasks/:id/execute
+Authorization: Bearer <accessToken>
+```
+
+Requests execution of a task. The workspace's host device must be online.
+
+**Response:**
+```typescript
+{
+  queued: true;
+  taskId: string;
+  hostDeviceId: string;
+}
+```
+
+**Errors:**
+| Code | Meaning |
+|------|---------|
+| 400 | Task not in workspace |
+| 400 | No host device assigned to workspace |
+| 400 | Host device is offline |
+| 404 | Task not found |
+
+Broadcasts `command:execute` WebSocket event to the host device.
+
+### 7.4 Cancel Task Execution
+
+```
+POST /api/tasks/:id/cancel
+Authorization: Bearer <accessToken>
+```
+
+**Response:**
+```typescript
+{
+  cancelled: true;
+  taskId: string;
+}
+```
+
+Broadcasts `command:cancel` WebSocket event.
+
+---
+
+## 8. WebSocket Events
+
+### 8.1 Connection
+
+```
+WS /ws
+```
+
+**First Message (Authentication):**
+```typescript
+{
+  type: 'auth';
+  apiKey: string;     // API key for authentication
+}
+```
+
+**Close Codes:**
+| Code | Meaning |
+|------|---------|
+| 4001 | Invalid API key |
+| 4002 | Auth timeout (5 seconds) |
+
+### 8.2 Event Format
+
+All events follow this structure:
+
+```typescript
+interface WsBroadcastMessage {
+  type: 'mutation';
+  entity: string;               // 'tasks', 'devices', 'workspaces', etc.
+  action: 'created' | 'updated' | 'deleted' | 'progress' | 'completed' | 'execute' | 'cancel';
+  id: string;                   // Entity ID
+  data: unknown;                // Entity data or event payload
+  timestamp: string;            // ISO timestamp
+}
+```
+
+### 8.3 Task Events
+
+| Entity | Action | When |
+|--------|--------|------|
+| tasks | created | Task created |
+| tasks | updated | Task updated |
+| tasks | deleted | Task deleted |
+| tasks | progress | Progress pushed |
+| tasks | completed | Task marked complete |
+| tasks | execute | Execution requested (command:execute) |
+| tasks | cancel | Execution cancelled (command:cancel) |
+
+### 8.4 Device Events
+
+| Entity | Action | When |
+|--------|--------|------|
+| devices | created | Device registered |
+| devices | updated | Device updated/heartbeat |
+| devices | deleted | Device removed |
+
+### 8.5 Workspace Events
+
+| Entity | Action | When |
+|--------|--------|------|
+| workspaces | created | Workspace created |
+| workspaces | updated | Workspace updated |
+| workspaces | deleted | Workspace deleted |
+
+### 8.6 Project Events
+
+| Entity | Action | When |
+|--------|--------|------|
+| projects | created | Project created |
+| projects | updated | Project updated |
+| projects | deleted | Project deleted |
+| sub_projects | created | Sub-project added |
+| sub_projects | deleted | Sub-project removed |
+
+---
+
+## 9. Error Handling
+
+### 9.1 REST API Errors
+
+All errors follow this format:
+
+```typescript
+interface ApiError {
+  error: string;              // Human-readable message
+}
+```
+
+**Standard HTTP Codes:**
+
+| HTTP | Code | Description |
+|------|------|-------------|
+| 400 | BAD_REQUEST | Invalid request body or parameters |
+| 401 | UNAUTHORIZED | Missing or invalid token |
+| 403 | FORBIDDEN | Action not allowed |
+| 404 | NOT_FOUND | Resource not found |
+| 409 | CONFLICT | State conflict (e.g., email already exists) |
+| 429 | RATE_LIMITED | Too many requests |
+| 500 | INTERNAL_ERROR | Server error |
+
+### 9.2 Rate Limits
+
+- **Global**: 100 requests/minute per IP
+- **Auth endpoints**: 10 requests/minute per IP
+
+---
+
+## 10. State Machine: Task Status Transitions
 
 ```
                     ┌─────────────────────────────────────┐
@@ -755,47 +958,6 @@ export type WsEvent =
 
 ---
 
-## 9. Enforcement
-
-### 9.1 Validation Script
-
-Create `scripts/validate-protocol.ts`:
-
-```typescript
-// Validates that:
-// 1. Hub routes match this spec
-// 2. Client API calls match this spec
-// 3. WebSocket handlers match event types
-// 4. Type definitions are in sync
-```
-
-### 9.2 Pre-Commit Hook
-
-Add to `.husky/pre-commit`:
-
-```bash
-npm run validate:protocol
-```
-
-### 9.3 CI Check
-
-Add to GitHub Actions:
-
-```yaml
-- name: Validate Hub Protocol
-  run: npm run validate:protocol
-```
-
----
-
-## 10. Changelog
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | 2026-02-13 | Initial draft |
-
----
-
 ## Appendix: Sequence Diagrams
 
 ### A.1 Task Creation from Mobile
@@ -805,7 +967,7 @@ Mobile              Hub                 Desktop
   │                  │                     │
   │──POST /tasks────▶│                     │
   │◄─────Task────────│                     │
-  │                  │──WS task:created───▶│
+  │                  │──WS tasks:created──▶│
   │                  │                     │
 ```
 
@@ -818,24 +980,38 @@ Mobile              Hub                 Desktop
   │◄───queued────────│                     │
   │                  │──WS command:execute▶│
   │                  │                     │──spawn claude
-  │                  │◄─WS execution:started│
-  │◄─WS task:updated─│                     │
-  │                  │                     │
-  │                  │◄─POST /progress─────│ (periodic)
+  │                  │◄─POST /progress─────│
   │◄─WS task:progress│                     │
   │                  │                     │
   │                  │◄─POST /complete─────│
   │◄─WS task:complete│                     │
 ```
 
-### A.3 Computer Goes Offline
+### A.3 Multi-Device Setup
 
 ```
-Desktop             Hub                 Mobile
-  │                  │                     │
-  │──(disconnect)───▶│                     │
-  │                  │──WS computer:offline▶│
-  │                  │                     │
-  │                  │  (30s timeout)      │
-  │                  │──mark offline───────│
+User                Hub                 Desktop 1       Desktop 2
+  │                  │                     │               │
+  │─register────────▶│                     │               │
+  │◄─user/tokens─────│                     │               │
+  │                  │                     │               │
+  │─POST /devices───▶│                     │               │
+  │◄─device 1────────│──WS devices:created▶│               │
+  │                  │                     │               │
+  │─POST /workspaces▶│                     │               │
+  │◄─workspace───────│                     │               │
+  │                  │                     │               │
+  │─POST /host──────▶│ (set Desktop 1)     │               │
+  │◄─workspace───────│──WS workspaces:updated─────────────▶│
+  │                  │                     │               │
 ```
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0.0 | 2026-02-14 | Major update: Added user auth, devices, workspaces, sub-projects, task execution |
+| 1.1.0 | 2026-02-14 | Draft for new architecture |
+| 1.0.0 | 2026-02-13 | Initial draft |

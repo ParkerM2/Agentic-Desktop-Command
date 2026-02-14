@@ -1,6 +1,6 @@
 # Team Alpha Progress — Hub/Backend Implementation
 
-**Status**: IN PROGRESS (Wave 3 Complete)
+**Status**: COMPLETE
 **Branch**: `feature/team-alpha-hub`
 **Started**: 2026-02-14
 **Last Updated**: 2026-02-14
@@ -29,11 +29,11 @@
 
 ---
 
-## Wave 4: Execution Commands (Final)
+## Wave 4: Documentation & Verification ✅
 
-### 4.1 Remaining Items
-- [ ] Update protocol documentation
-- [ ] Final verification build
+### 4.1 Completed Items
+- [x] Update protocol documentation (`docs/contracts/hub-device-protocol.md` v2.0.0)
+- [x] Final verification build (hub + main typecheck pass)
 
 ---
 
@@ -52,6 +52,9 @@
 - `hub/src/app.ts`
 - `hub/src/lib/types.ts`
 - `src/shared/types/hub-protocol.ts`
+
+### Wave 4
+- `docs/contracts/hub-device-protocol.md` — Updated to v2.0.0 with all new endpoints
 
 ---
 
