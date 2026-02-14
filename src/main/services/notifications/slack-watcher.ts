@@ -25,8 +25,6 @@ import type { OAuthManager } from '../../auth/oauth-manager';
 import type { IpcRouter } from '../../ipc/router';
 import type { SlackMessage } from '../../mcp-servers/slack/types';
 
-
-
 // ── Types ────────────────────────────────────────────────────
 
 interface SlackWatcherDeps {

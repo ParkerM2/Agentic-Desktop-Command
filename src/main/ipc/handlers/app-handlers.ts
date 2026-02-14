@@ -1,8 +1,10 @@
 /**
- * App IPC handlers — system-level checks (Claude CLI auth, OAuth status)
+ * App IPC handlers — system-level checks (Claude CLI auth, OAuth status, startup settings)
  */
 
 import { execFileSync } from 'node:child_process';
+
+import { app } from 'electron';
 
 import type { TokenStore } from '../../auth/token-store';
 import type { OAuthConfig } from '../../auth/types';
@@ -56,4 +58,14 @@ export function registerAppHandlers(router: IpcRouter, deps: AppHandlerDeps): vo
   router.handle('app.getOAuthStatus', ({ provider }) =>
     Promise.resolve(getOAuthStatus(provider, deps)),
   );
+
+  router.handle('app.setOpenAtLogin', ({ enabled }) => {
+    app.setLoginItemSettings({ openAtLogin: enabled });
+    return Promise.resolve({ success: true });
+  });
+
+  router.handle('app.getOpenAtLogin', () => {
+    const result = app.getLoginItemSettings();
+    return Promise.resolve({ enabled: result.openAtLogin });
+  });
 }

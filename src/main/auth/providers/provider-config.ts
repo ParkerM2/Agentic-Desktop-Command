@@ -159,11 +159,7 @@ function saveAllCredentials(dataDir: string, credentials: Map<string, OAuthCrede
   writeFileSync(filePath, JSON.stringify(encrypted, null, 2), 'utf-8');
 }
 
-export function saveOAuthCredentials(
-  dataDir: string,
-  name: string,
-  creds: OAuthCredentials,
-): void {
+export function saveOAuthCredentials(dataDir: string, name: string, creds: OAuthCredentials): void {
   const filePath = getCredentialsPath(dataDir);
   const existingEntries: EncryptedCredentialsFile = {};
 

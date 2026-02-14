@@ -1,7 +1,7 @@
 /**
  * OAuthProviderSettings — Configure OAuth provider credentials
  *
- * Lists all 5 providers with connected/not-configured status.
+ * Lists all 4 providers with connected/not-configured status.
  * Expandable form per provider to enter clientId + clientSecret.
  * Includes validation, developer console links, and required scopes.
  */
@@ -52,13 +52,6 @@ const PROVIDER_CONFIG: Partial<Record<string, ProviderConfig>> = {
     consoleName: 'Spotify Developer Dashboard',
     requiredScopes: ['user-read-email', 'user-read-private'],
     scopeDescription: 'Read user email and profile information',
-  },
-  withings: {
-    label: 'Withings',
-    consoleUrl: 'https://developer.withings.com/dashboard',
-    consoleName: 'Withings Developer Portal',
-    requiredScopes: ['user.info', 'user.metrics'],
-    scopeDescription: 'User information and health metrics',
   },
 };
 
@@ -220,7 +213,8 @@ function ProviderForm({ name, onSave, isPending }: ProviderFormProps) {
           value={clientId}
           className={cn(
             'border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none',
-            showClientIdError && 'border-destructive focus:border-destructive focus:ring-destructive',
+            showClientIdError &&
+              'border-destructive focus:border-destructive focus:ring-destructive',
           )}
           onChange={(e) => {
             handleClientIdChange(e.target.value);
@@ -254,7 +248,8 @@ function ProviderForm({ name, onSave, isPending }: ProviderFormProps) {
           value={clientSecret}
           className={cn(
             'border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none',
-            showClientSecretError && 'border-destructive focus:border-destructive focus:ring-destructive',
+            showClientSecretError &&
+              'border-destructive focus:border-destructive focus:ring-destructive',
           )}
           onChange={(e) => {
             handleClientSecretChange(e.target.value);
@@ -327,7 +322,7 @@ export function OAuthProviderSettings() {
           <div key={provider.name} className="border-border rounded-lg border">
             <button
               aria-expanded={isExpanded}
-              className="flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors hover:bg-accent"
+              className="hover:bg-accent flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors"
               type="button"
               onClick={() => {
                 setExpandedProvider(isExpanded ? null : provider.name);

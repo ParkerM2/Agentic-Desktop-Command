@@ -128,7 +128,10 @@ function getSettingsFilePath(): string {
 function loadSettingsFile(): { data: SettingsFile; needsMigration: boolean } {
   const filePath = getSettingsFilePath();
   if (!existsSync(filePath)) {
-    return { data: { settings: { ...DEFAULT_SETTINGS }, profiles: [...DEFAULT_PROFILES] }, needsMigration: false };
+    return {
+      data: { settings: { ...DEFAULT_SETTINGS }, profiles: [...DEFAULT_PROFILES] },
+      needsMigration: false,
+    };
   }
 
   try {
@@ -173,7 +176,10 @@ function loadSettingsFile(): { data: SettingsFile; needsMigration: boolean } {
       needsMigration,
     };
   } catch {
-    return { data: { settings: { ...DEFAULT_SETTINGS }, profiles: [...DEFAULT_PROFILES] }, needsMigration: false };
+    return {
+      data: { settings: { ...DEFAULT_SETTINGS }, profiles: [...DEFAULT_PROFILES] },
+      needsMigration: false,
+    };
   }
 }
 

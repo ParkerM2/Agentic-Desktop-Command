@@ -33,8 +33,7 @@ export function useAddChangelogEntry() {
       version: string;
       date: string;
       categories: Array<{ type: string; items: string[] }>;
-    }) =>
-      ipc('changelog.addEntry', params as Parameters<typeof ipc<'changelog.addEntry'>>[1]),
+    }) => ipc('changelog.addEntry', params as Parameters<typeof ipc<'changelog.addEntry'>>[1]),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: changelogKeys.list() });
     },

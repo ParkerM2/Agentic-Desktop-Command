@@ -59,6 +59,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "electron-log": "^5.4.3",
+    "electron-updater": "^6.7.3",
     "lucide-react": "^0.562.0",
     "nodemailer": "^8.0.1",
     "react": "^19.2.3",

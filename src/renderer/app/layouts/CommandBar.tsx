@@ -57,7 +57,9 @@ export function CommandBar() {
       setLastResponse(response);
       setProcessing(false);
       showToast();
-      toastTimerRef.current = setTimeout(() => { dismissToast(); }, 4000);
+      toastTimerRef.current = setTimeout(() => {
+        dismissToast();
+      }, 4000);
     },
     [setLastResponse, setProcessing, showToast, dismissToast],
   );
@@ -71,8 +73,12 @@ export function CommandBar() {
     sendCommand.mutate(
       { input: trimmed },
       {
-        onSuccess: (data) => { showResult(data); },
-        onError: () => { showResult({ type: 'error', content: 'Command failed' }); },
+        onSuccess: (data) => {
+          showResult(data);
+        },
+        onError: () => {
+          showResult({ type: 'error', content: 'Command failed' });
+        },
       },
     );
   }, [inputValue, isProcessing, setProcessing, addToHistory, sendCommand, showResult]);

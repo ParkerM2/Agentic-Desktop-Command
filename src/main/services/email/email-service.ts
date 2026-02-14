@@ -367,9 +367,7 @@ export function createEmailService(deps: EmailServiceDeps): EmailService {
         continue;
       }
 
-      const lastAttempt = queuedEmail.lastAttempt
-        ? new Date(queuedEmail.lastAttempt).getTime()
-        : 0;
+      const lastAttempt = queuedEmail.lastAttempt ? new Date(queuedEmail.lastAttempt).getTime() : 0;
 
       // Exponential backoff
       const delay = RETRY_DELAY_BASE_MS * Math.pow(2, queuedEmail.attempts - 1);

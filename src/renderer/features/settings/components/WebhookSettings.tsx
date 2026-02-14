@@ -320,7 +320,10 @@ export function WebhookSettings() {
         <h4 className="text-foreground mb-3 text-sm font-semibold">Slack Integration</h4>
         <div className="flex items-center gap-2">
           <span
-            className={cn('h-2 w-2 rounded-full', isSlackConfigured ? 'bg-success' : 'bg-muted-foreground')}
+            className={cn(
+              'h-2 w-2 rounded-full',
+              isSlackConfigured ? 'bg-success' : 'bg-muted-foreground',
+            )}
           />
           <span className="text-muted-foreground text-xs">
             {isSlackConfigured ? 'Configured' : 'Not configured'}
@@ -389,7 +392,10 @@ export function WebhookSettings() {
         <h4 className="text-foreground mb-3 text-sm font-semibold">GitHub Integration</h4>
         <div className="flex items-center gap-2">
           <span
-            className={cn('h-2 w-2 rounded-full', isGithubConfigured ? 'bg-success' : 'bg-muted-foreground')}
+            className={cn(
+              'h-2 w-2 rounded-full',
+              isGithubConfigured ? 'bg-success' : 'bg-muted-foreground',
+            )}
           />
           <span className="text-muted-foreground text-xs">
             {isGithubConfigured ? 'Configured' : 'Not configured'}

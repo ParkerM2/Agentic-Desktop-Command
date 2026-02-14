@@ -1,16 +1,18 @@
 /**
- * BackgroundSettings — Tray and background behavior settings
+ * BackgroundSettings -- Tray, startup, and background behavior settings
  *
- * Toggles for: minimize to tray, start minimized, keep running in background.
+ * Toggles for: launch at startup, minimize to tray, start minimized,
+ * keep running in background. Loads initial values from settings.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useUpdateSettings } from '../api/useSettings';
+import { useSettings, useUpdateSettings } from '../api/useSettings';
 
-// ── Types ────────────────────────────────────────────────────
+// -- Types --
 
 interface ToggleRowProps {
   checked: boolean;
@@ -19,7 +21,7 @@ interface ToggleRowProps {
   onChange: (checked: boolean) => void;
 }
 
-// ── Toggle Row ───────────────────────────────────────────────
+// -- Toggle Row --
 
 function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
   return (
@@ -50,14 +52,32 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
   );
 }
 
-// ── Component ────────────────────────────────────────────────
+// -- Component --
 
 export function BackgroundSettings() {
+  const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
+  const [openAtLogin, setOpenAtLogin] = useState(false);
   const [minimizeToTray, setMinimizeToTray] = useState(false);
   const [startMinimized, setStartMinimized] = useState(false);
   const [keepRunning, setKeepRunning] = useState(true);
+
+  // Hydrate from settings when data loads
+  useEffect(() => {
+    if (settings) {
+      setMinimizeToTray(settings.minimizeToTray ?? false);
+      setStartMinimized(settings.startMinimized ?? false);
+      setKeepRunning(settings.keepRunning ?? true);
+      setOpenAtLogin(settings.openAtLogin ?? false);
+    }
+  }, [settings]);
+
+  function handleOpenAtLogin(checked: boolean) {
+    setOpenAtLogin(checked);
+    void ipc('app.setOpenAtLogin', { enabled: checked });
+    updateSettings.mutate({ openAtLogin: checked });
+  }
 
   function handleMinimizeToTray(checked: boolean) {
     setMinimizeToTray(checked);
@@ -77,9 +97,15 @@ export function BackgroundSettings() {
   return (
     <section className="mb-8">
       <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-        Background
+        Background &amp; Startup
       </h2>
       <div className="border-border bg-card divide-border divide-y rounded-lg border px-4">
+        <ToggleRow
+          checked={openAtLogin}
+          description="Automatically launch the app when you log in to your computer"
+          label="Launch at system startup"
+          onChange={handleOpenAtLogin}
+        />
         <ToggleRow
           checked={minimizeToTray}
           description="Minimize to system tray instead of closing the window"

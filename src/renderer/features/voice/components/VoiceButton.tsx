@@ -66,14 +66,11 @@ export function VoiceButton({
   const isPushToTalk = config?.inputMode === 'push_to_talk';
   const language = config?.language ?? 'en-US';
 
-  const handleResult = useCallback(
-    (transcript: string, isFinal: boolean) => {
-      if (isFinal) {
-        finalTranscriptRef.current += transcript;
-      }
-    },
-    [],
-  );
+  const handleResult = useCallback((transcript: string, isFinal: boolean) => {
+    if (isFinal) {
+      finalTranscriptRef.current += transcript;
+    }
+  }, []);
 
   const handleEnd = useCallback(() => {
     if (finalTranscriptRef.current.trim().length > 0) {
@@ -89,22 +86,15 @@ export function VoiceButton({
     [onError],
   );
 
-  const {
-    isListening,
-    isSupported,
-    error,
-    interimTranscript,
-    start,
-    stop,
-    resetTranscript,
-  } = useSpeechRecognition({
-    language,
-    continuous: !isPushToTalk,
-    interimResults: true,
-    onResult: handleResult,
-    onError: handleError,
-    onEnd: handleEnd,
-  });
+  const { isListening, isSupported, error, interimTranscript, start, stop, resetTranscript } =
+    useSpeechRecognition({
+      language,
+      continuous: !isPushToTalk,
+      interimResults: true,
+      onResult: handleResult,
+      onError: handleError,
+      onEnd: handleEnd,
+    });
 
   // Handle push-to-talk mouse events
   const handleMouseDown = useCallback(() => {
@@ -221,10 +211,7 @@ export function VoiceButton({
         {isListening ? (
           <span
             aria-hidden="true"
-            className={cn(
-              'absolute inset-0 rounded-full',
-              'animate-ping bg-destructive/30',
-            )}
+            className={cn('absolute inset-0 rounded-full', 'bg-destructive/30 animate-ping')}
           />
         ) : null}
       </button>
@@ -244,10 +231,7 @@ export function VoiceButton({
 
       {/* Error message */}
       {hasError ? (
-        <div
-          className="text-destructive absolute top-full mt-2 max-w-xs text-xs"
-          role="alert"
-        >
+        <div className="text-destructive absolute top-full mt-2 max-w-xs text-xs" role="alert">
           {error}
         </div>
       ) : null}

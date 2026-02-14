@@ -44,8 +44,7 @@ export function useUpdateBriefingConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (updates: Partial<BriefingConfig>) =>
-      ipc('briefing.updateConfig', updates),
+    mutationFn: (updates: Partial<BriefingConfig>) => ipc('briefing.updateConfig', updates),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: briefingKeys.config() });
     },

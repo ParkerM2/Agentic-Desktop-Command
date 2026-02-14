@@ -1,7 +1,3 @@
--- NOTE: This file is for reference only.
--- Actual schema is managed by migrations in hub/src/db/migrations/
--- To add schema changes, create a new numbered migration file.
---
 -- Claude-UI Hub Database Schema
 
 CREATE TABLE IF NOT EXISTS projects (

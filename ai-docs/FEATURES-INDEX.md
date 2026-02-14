@@ -10,8 +10,8 @@
 | Category | Count |
 |----------|-------|
 | Renderer Features | 21 |
-| Main Process Services | 23 |
-| IPC Handler Files | 22 |
+| Main Process Services | 24 |
+| IPC Handler Files | 24 |
 | IPC Contract Lines | ~1500 |
 
 ---
@@ -71,10 +71,10 @@ Location: `src/main/services/`
 | **agent** | Claude CLI process management | spawnAgent, stopAgent, pauseAgent, resumeAgent | `event:agent.*` |
 | **alerts** | Reminder/alert CRUD + scheduling | list, create, update, delete, startChecking | `event:alert.changed` |
 | **assistant** | Built-in assistant (intent → action) | sendCommand, getHistory | `event:assistant.*` |
-| **background** | Background task manager | start, stop | - |
+| **app-update** | Electron auto-updater | checkForUpdates, downloadUpdate, quitAndInstall, getStatus | `event:app.updateAvailable`, `event:app.updateDownloaded` |
 | **calendar** | Google Calendar integration | listEvents, createEvent | - |
 | **changelog** | Project changelog CRUD | list, addEntry | - |
-| **fitness** | Health metrics (Withings, manual) | getMetrics, logWorkout, syncWithings | - |
+| **fitness** | Health metrics (manual) | getMetrics, logWorkout | - |
 | **git** | Git operations | getStatus, commit, listBranches, listWorktrees | `event:git.*` |
 | **github** | GitHub API integration | listPRs, listIssues, getRepo | - |
 | **hub** | Hub server connection | connect, disconnect, sync | `event:hub.*` |
@@ -100,7 +100,8 @@ Location: `src/main/ipc/handlers/`
 |--------------|-----------------|
 | `agent-handlers.ts` | agents.* |
 | `alert-handlers.ts` | alerts.* |
-| `app-handlers.ts` | app.* (version, auth checks) |
+| `app-handlers.ts` | app.* (version, auth checks, openAtLogin) |
+| `app-update-handlers.ts` | app.checkForUpdates, app.downloadUpdate, app.quitAndInstall, app.getUpdateStatus |
 | `assistant-handlers.ts` | assistant.* |
 | `calendar-handlers.ts` | calendar.* |
 | `changelog-handlers.ts` | changelog.* |
@@ -119,6 +120,7 @@ Location: `src/main/ipc/handlers/`
 | `spotify-handlers.ts` | spotify.* |
 | `task-handlers.ts` | tasks.* |
 | `terminal-handlers.ts` | terminals.* |
+| `hotkey-handlers.ts` | hotkeys.get, hotkeys.update, hotkeys.reset |
 | `webhook-settings-handlers.ts` | webhooks.* |
 
 ---

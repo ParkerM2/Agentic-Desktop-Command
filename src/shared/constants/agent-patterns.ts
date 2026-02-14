@@ -27,7 +27,10 @@ export const TOKEN_USAGE_PATTERNS = {
   /** Match "X output tokens" or "output: X" */
   outputTokens: [/(\d[\d,]*)\s*output\s*tokens?/i, /output[:\s]+(\d[\d,]*)/i],
   /** Match "tokens: X / Y" or "X in / Y out" format */
-  combined: [/tokens?[:\s]+(\d[\d,]*)\s*\/\s*(\d[\d,]*)/i, /(\d[\d,]*)\s*in\s*\/\s*(\d[\d,]*)\s*out/i],
+  combined: [
+    /tokens?[:\s]+(\d[\d,]*)\s*\/\s*(\d[\d,]*)/i,
+    /(\d[\d,]*)\s*in\s*\/\s*(\d[\d,]*)\s*out/i,
+  ],
   /** Match cost patterns like "$0.05" or "cost: $0.05" */
   cost: [/\$(\d+\.?\d*)/i, /cost[:\s]+\$?(\d+\.?\d*)/i],
 } as const;

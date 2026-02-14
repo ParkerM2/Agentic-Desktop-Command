@@ -63,15 +63,10 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
       {/* Enable/Disable Voice */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <label
-            className="text-foreground text-sm font-medium"
-            htmlFor="voice-enabled"
-          >
+          <label className="text-foreground text-sm font-medium" htmlFor="voice-enabled">
             Voice Input
           </label>
-          <p className="text-muted-foreground text-xs">
-            Enable voice commands and dictation
-          </p>
+          <p className="text-muted-foreground text-xs">Enable voice commands and dictation</p>
         </div>
         <button
           aria-checked={config.enabled}
@@ -111,10 +106,7 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
 
       {/* Language Selection */}
       <div className="space-y-2">
-        <label
-          className="text-foreground text-sm font-medium"
-          htmlFor="voice-language"
-        >
+        <label className="text-foreground text-sm font-medium" htmlFor="voice-language">
           Language
         </label>
         <select
@@ -123,7 +115,7 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
           value={config.language}
           className={cn(
             'border-input bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm',
-            'focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary',
+            'focus:border-primary focus:ring-primary focus:ring-1 focus:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
           onChange={handleLanguageChange}
@@ -199,9 +191,7 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
               <Volume2 className="h-4 w-4" />
               Test Voice
             </button>
-            <span className="text-muted-foreground text-xs">
-              {voices.length} voices available
-            </span>
+            <span className="text-muted-foreground text-xs">{voices.length} voices available</span>
           </div>
         </div>
       ) : null}
@@ -209,7 +199,7 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
       {/* Available Voices (collapsed by default) */}
       {showVoiceDetails ? (
         <details className="text-sm">
-          <summary className="text-muted-foreground cursor-pointer hover:text-foreground">
+          <summary className="text-muted-foreground hover:text-foreground cursor-pointer">
             Show available voices ({voices.length})
           </summary>
           <div className="mt-2 max-h-48 space-y-1 overflow-y-auto">
@@ -221,9 +211,7 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
                 <span className="font-medium">{voice.name}</span>
                 <span className="opacity-60">({voice.lang})</span>
                 {voice.default ? (
-                  <span className="bg-primary/10 text-primary rounded px-1 text-xs">
-                    default
-                  </span>
+                  <span className="bg-primary/10 text-primary rounded px-1 text-xs">default</span>
                 ) : null}
               </div>
             ))}

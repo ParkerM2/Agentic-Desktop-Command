@@ -119,10 +119,7 @@ function isRelativeExpression(text: string): boolean {
   return relativePatterns.some((pattern) => pattern.test(text.trim()));
 }
 
-function parseRecurringPattern(
-  input: string,
-  referenceDate: Date,
-): ParsedTimeWithRecurring | null {
+function parseRecurringPattern(input: string, referenceDate: Date): ParsedTimeWithRecurring | null {
   const normalized = input.toLowerCase().trim();
 
   // "every day at <time>"

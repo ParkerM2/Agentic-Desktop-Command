@@ -20,6 +20,8 @@ interface RegisteredHotkey {
 export interface HotkeyManager {
   /** Register default hotkeys (Quick Command, Quick Note, Quick Task) */
   registerDefaults: () => void;
+  /** Register hotkeys from a config map (unregisters all existing first) */
+  registerFromConfig: (config: Record<string, string>) => void;
   /** Register a custom hotkey with an accelerator string */
   registerCustom: (accelerator: string, label: string, callback: () => void) => boolean;
   /** Unregister all global shortcuts */
@@ -30,16 +32,16 @@ export interface HotkeyManager {
 
 interface HotkeyManagerDeps {
   quickInput: QuickInputWindow;
-  mainWindow: BrowserWindow;
+  getMainWindow: () => BrowserWindow | null;
 }
 
 // ── Constants ────────────────────────────────────────────────
 
-const DEFAULT_HOTKEYS = {
+export const DEFAULT_HOTKEYS: Record<string, string> = {
   quickCommand: 'CmdOrCtrl+Shift+Space',
   quickNote: 'CmdOrCtrl+Shift+N',
   quickTask: 'CmdOrCtrl+Shift+T',
-} as const;
+};
 
 // ── Factory ──────────────────────────────────────────────────
 
@@ -64,35 +66,68 @@ export function createHotkeyManager(deps: HotkeyManagerDeps): HotkeyManager {
   }
 
   function showMainWindow(): void {
-    if (deps.mainWindow.isMinimized()) {
-      deps.mainWindow.restore();
+    const win = deps.getMainWindow();
+    if (!win) return;
+    if (win.isMinimized()) {
+      win.restore();
     }
-    deps.mainWindow.show();
-    deps.mainWindow.focus();
+    win.show();
+    win.focus();
+  }
+
+  function getCallbackForAction(action: string): (() => void) | undefined {
+    switch (action) {
+      case 'quickCommand': {
+        return () => {
+          if (deps.quickInput.isVisible()) {
+            deps.quickInput.hide();
+          } else {
+            deps.quickInput.show();
+          }
+        };
+      }
+      case 'quickNote': {
+        return () => {
+          showMainWindow();
+          console.log('[HotkeyManager] Quick Note triggered');
+        };
+      }
+      case 'quickTask': {
+        return () => {
+          showMainWindow();
+          console.log('[HotkeyManager] Quick Task triggered');
+        };
+      }
+      default: {
+        return undefined;
+      }
+    }
   }
 
   return {
     registerDefaults() {
-      // Quick Command — opens the quick input popup
-      tryRegister(DEFAULT_HOTKEYS.quickCommand, 'Quick Command', () => {
-        if (deps.quickInput.isVisible()) {
-          deps.quickInput.hide();
-        } else {
-          deps.quickInput.show();
+      for (const [action, accelerator] of Object.entries(DEFAULT_HOTKEYS)) {
+        const callback = getCallbackForAction(action);
+        if (callback) {
+          tryRegister(accelerator, action, callback);
         }
-      });
+      }
+    },
 
-      // Quick Note — focuses main window for note taking
-      tryRegister(DEFAULT_HOTKEYS.quickNote, 'Quick Note', () => {
-        showMainWindow();
-        console.log('[HotkeyManager] Quick Note triggered');
-      });
+    registerFromConfig(config) {
+      // Unregister all existing hotkeys first
+      globalShortcut.unregisterAll();
+      registered.length = 0;
+      console.log('[HotkeyManager] Cleared all hotkeys for re-registration');
 
-      // Quick Task — focuses main window for task creation
-      tryRegister(DEFAULT_HOTKEYS.quickTask, 'Quick Task', () => {
-        showMainWindow();
-        console.log('[HotkeyManager] Quick Task triggered');
-      });
+      for (const [action, accelerator] of Object.entries(config)) {
+        const callback = getCallbackForAction(action);
+        if (callback) {
+          tryRegister(accelerator, action, callback);
+        } else {
+          console.warn(`[HotkeyManager] Unknown action: ${action}`);
+        }
+      }
     },
 
     registerCustom(accelerator, label, callback) {

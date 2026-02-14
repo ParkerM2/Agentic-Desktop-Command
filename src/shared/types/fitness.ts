@@ -6,7 +6,7 @@ export type WorkoutType = 'strength' | 'cardio' | 'flexibility' | 'sport';
 
 export type WeightUnit = 'lbs' | 'kg';
 
-export type MeasurementSource = 'manual' | 'withings';
+export type MeasurementSource = 'manual';
 
 export type FitnessGoalType = 'weight' | 'workout_frequency' | 'lift_target' | 'cardio_target';
 

@@ -128,6 +128,11 @@ const AppSettingsSchema = z.object({
   fontFamily: z.string().optional(),
   fontSize: z.number().optional(),
   anthropicApiKey: z.string().optional(),
+  hotkeys: z.record(z.string(), z.string()).optional(),
+  openAtLogin: z.boolean().optional(),
+  minimizeToTray: z.boolean().optional(),
+  startMinimized: z.boolean().optional(),
+  keepRunning: z.boolean().optional(),
 });
 
 const ProfileSchema = z.object({
@@ -347,7 +352,7 @@ const ProjectInsightsSchema = z.object({
 
 const WorkoutTypeSchema = z.enum(['strength', 'cardio', 'flexibility', 'sport']);
 const WeightUnitSchema = z.enum(['lbs', 'kg']);
-const MeasurementSourceSchema = z.enum(['manual', 'withings']);
+const MeasurementSourceSchema = z.enum(['manual']);
 const FitnessGoalTypeSchema = z.enum([
   'weight',
   'workout_frequency',
@@ -1021,6 +1026,22 @@ export const ipcInvokeContract = {
     output: z.object({ success: z.boolean() }),
   },
 
+  // ── Hotkeys ──
+  'hotkeys.get': {
+    input: z.object({}),
+    output: z.record(z.string(), z.string()),
+  },
+  'hotkeys.update': {
+    input: z.object({
+      hotkeys: z.record(z.string(), z.string()),
+    }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'hotkeys.reset': {
+    input: z.object({}),
+    output: z.record(z.string(), z.string()),
+  },
+
   // ── Notes ──
   'notes.list': {
     input: z.object({ projectId: z.string().optional(), tag: z.string().optional() }),
@@ -1590,6 +1611,40 @@ export const ipcInvokeContract = {
       authenticated: z.boolean(),
     }),
   },
+  'app.setOpenAtLogin': {
+    input: z.object({ enabled: z.boolean() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'app.getOpenAtLogin': {
+    input: z.object({}),
+    output: z.object({ enabled: z.boolean() }),
+  },
+  'app.checkForUpdates': {
+    input: z.object({}),
+    output: z.object({
+      updateAvailable: z.boolean(),
+      version: z.string().optional(),
+    }),
+  },
+  'app.downloadUpdate': {
+    input: z.object({}),
+    output: z.object({ success: z.boolean() }),
+  },
+  'app.quitAndInstall': {
+    input: z.object({}),
+    output: z.object({ success: z.boolean() }),
+  },
+  'app.getUpdateStatus': {
+    input: z.object({}),
+    output: z.object({
+      checking: z.boolean(),
+      updateAvailable: z.boolean(),
+      downloading: z.boolean(),
+      downloaded: z.boolean(),
+      version: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  },
 
   // ── Agents (global) ──
   'agents.listAll': {
@@ -1776,7 +1831,7 @@ export const ipcInvokeContract = {
     }),
   },
 
-// ── Voice ──
+  // ── Voice ──
   'voice.getConfig': {
     input: z.object({}),
     output: VoiceConfigSchema,
@@ -2055,7 +2110,7 @@ export const ipcEventContract = {
     }),
   },
 
-// ── Voice Events ──
+  // ── Voice Events ──
   'event:voice.transcript': {
     payload: z.object({
       transcript: z.string(),
@@ -2180,7 +2235,7 @@ export {
   NotificationWatcherConfigSchema,
   SlackWatcherConfigSchema,
   GitHubWatcherConfigSchema,
-VoiceInputModeSchema,
+  VoiceInputModeSchema,
   VoiceConfigSchema,
   ScreenSourceSchema,
   ScreenshotSchema,

@@ -6,12 +6,7 @@
 
 import { create } from 'zustand';
 
-export type OnboardingStep =
-  | 'welcome'
-  | 'claude-cli'
-  | 'api-key'
-  | 'integrations'
-  | 'complete';
+export type OnboardingStep = 'welcome' | 'claude-cli' | 'api-key' | 'integrations' | 'complete';
 
 const STEP_ORDER: OnboardingStep[] = [
   'welcome',

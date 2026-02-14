@@ -38,10 +38,7 @@ interface TasksByProject {
   tasks: Task[];
 }
 
-function groupTasksByProject(
-  tasks: Task[],
-  projectsMap: Map<string, string>,
-): TasksByProject[] {
+function groupTasksByProject(tasks: Task[], projectsMap: Map<string, string>): TasksByProject[] {
   const grouped = new Map<string, Task[]>();
 
   for (const task of tasks) {
@@ -196,7 +193,7 @@ export function MyWorkPage() {
             value={statusFilter}
             className={cn(
               'border-border bg-card text-foreground rounded-md border px-3 py-1.5 text-sm',
-              'focus:ring-primary focus:outline-none focus:ring-1',
+              'focus:ring-primary focus:ring-1 focus:outline-none',
             )}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
           >

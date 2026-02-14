@@ -112,9 +112,7 @@ function StatCard({ icon, label, value, subtext }: StatCardProps) {
       </div>
       <div className="mt-2">
         <span className="text-foreground text-2xl font-bold">{value}</span>
-        {subtext ? (
-          <span className="text-muted-foreground ml-1 text-sm">{subtext}</span>
-        ) : null}
+        {subtext ? <span className="text-muted-foreground ml-1 text-sm">{subtext}</span> : null}
       </div>
     </div>
   );
@@ -177,19 +175,11 @@ function DayCompact({ plan }: DayCompactProps) {
 
   return (
     <div
-      className={cn(
-        'bg-card border-border rounded-lg border p-3',
-        today && 'ring-primary ring-2',
-      )}
+      className={cn('bg-card border-border rounded-lg border p-3', today && 'ring-primary ring-2')}
     >
       <div className="mb-2 flex items-center justify-between">
         <span className="text-muted-foreground text-xs">{dayName}</span>
-        <span
-          className={cn(
-            'text-sm font-medium',
-            today ? 'text-primary' : 'text-foreground',
-          )}
-        >
+        <span className={cn('text-sm font-medium', today ? 'text-primary' : 'text-foreground')}>
           {dayNumber}
         </span>
       </div>
@@ -219,10 +209,7 @@ function DayCompact({ plan }: DayCompactProps) {
               {plan.timeBlocks.slice(0, 3).map((block) => (
                 <span
                   key={block.id}
-                  className={cn(
-                    'rounded px-1.5 py-0.5 text-[10px]',
-                    getBlockTypeColor(block.type),
-                  )}
+                  className={cn('rounded px-1.5 py-0.5 text-[10px]', getBlockTypeColor(block.type))}
                 >
                   {block.label.slice(0, 12)}
                   {block.label.length > 12 ? '...' : ''}
@@ -244,7 +231,9 @@ function DayCompact({ plan }: DayCompactProps) {
 }
 
 export function WeeklyReviewPage() {
-  const [weekStart, setWeekStart] = useState(() => getWeekMonday(new Date().toISOString().slice(0, 10)));
+  const [weekStart, setWeekStart] = useState(() =>
+    getWeekMonday(new Date().toISOString().slice(0, 10)),
+  );
   const [isEditingReflection, setIsEditingReflection] = useState(false);
   const [reflectionText, setReflectionText] = useState('');
 

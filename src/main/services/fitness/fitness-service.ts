@@ -158,15 +158,8 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
     },
 
     logMeasurement(data) {
-      // Deduplicate by date — prefer Withings data
+      // Deduplicate by date — keep latest entry
       const existingIndex = measurements.items.findIndex((m) => m.date === data.date);
-      if (existingIndex !== -1) {
-        const existing = measurements.items[existingIndex];
-        if (existing.source === 'withings' && data.source === 'manual') {
-          // Don't overwrite Withings with manual
-          return existing;
-        }
-      }
 
       const measurement: BodyMeasurement = {
         id: randomUUID(),

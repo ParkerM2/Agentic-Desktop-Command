@@ -52,15 +52,17 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
 
       // If project hasn't been updated in a while
       if (now - lastUpdated > staleThreshold) {
-        suggestions.push(createSuggestion('stale_project', {
-          title: `${project.name} hasn't been updated`,
-          description: `This project has been inactive for ${String(daysSinceUpdate)} days. Consider reviewing or archiving it.`,
-          action: {
-            label: 'View Project',
-            targetId: project.id,
-            targetType: 'project',
-          },
-        }));
+        suggestions.push(
+          createSuggestion('stale_project', {
+            title: `${project.name} hasn't been updated`,
+            description: `This project has been inactive for ${String(daysSinceUpdate)} days. Consider reviewing or archiving it.`,
+            action: {
+              label: 'View Project',
+              targetId: project.id,
+              targetType: 'project',
+            },
+          }),
+        );
       }
     }
 
@@ -85,29 +87,33 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
         const parallelizableCount = Math.min(queuedTasks.length, availableSlots);
 
         if (parallelizableCount > 0) {
-          suggestions.push(createSuggestion('parallel_tasks', {
-            title: `${String(parallelizableCount)} tasks can run in parallel`,
-            description: `${project.name} has ${String(queuedTasks.length)} queued tasks and ${String(availableSlots)} available agent slots. Consider starting more tasks in parallel.`,
-            action: {
-              label: 'View Tasks',
-              targetId: project.id,
-              targetType: 'project',
-            },
-          }));
+          suggestions.push(
+            createSuggestion('parallel_tasks', {
+              title: `${String(parallelizableCount)} tasks can run in parallel`,
+              description: `${project.name} has ${String(queuedTasks.length)} queued tasks and ${String(availableSlots)} available agent slots. Consider starting more tasks in parallel.`,
+              action: {
+                label: 'View Tasks',
+                targetId: project.id,
+                targetType: 'project',
+              },
+            }),
+          );
         }
       }
 
       // Also suggest if there are many queued tasks
       if (queuedTasks.length > 3 && runningTasks.length === 0) {
-        suggestions.push(createSuggestion('parallel_tasks', {
-          title: 'Multiple tasks waiting',
-          description: `${project.name} has ${String(queuedTasks.length)} tasks in queue but none running. Consider starting some tasks.`,
-          action: {
-            label: 'View Queue',
-            targetId: project.id,
-            targetType: 'project',
-          },
-        }));
+        suggestions.push(
+          createSuggestion('parallel_tasks', {
+            title: 'Multiple tasks waiting',
+            description: `${project.name} has ${String(queuedTasks.length)} tasks in queue but none running. Consider starting some tasks.`,
+            action: {
+              label: 'View Queue',
+              targetId: project.id,
+              targetType: 'project',
+            },
+          }),
+        );
       }
     }
 
@@ -124,15 +130,18 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
       // Find tasks in error state
       const errorTasks = tasks.filter((t) => t.status === 'error');
       for (const task of errorTasks) {
-        suggestions.push(createSuggestion('blocked_task', {
-          title: `Task "${task.title}" failed`,
-          description: 'This task encountered an error and needs attention. Check the logs for details.',
-          action: {
-            label: 'View Task',
-            targetId: task.id,
-            targetType: 'task',
-          },
-        }));
+        suggestions.push(
+          createSuggestion('blocked_task', {
+            title: `Task "${task.title}" failed`,
+            description:
+              'This task encountered an error and needs attention. Check the logs for details.',
+            action: {
+              label: 'View Task',
+              targetId: task.id,
+              targetType: 'task',
+            },
+          }),
+        );
       }
 
       // Find tasks stuck in human_review for too long (>24h)
@@ -143,15 +152,17 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
         const hoursSinceUpdate = (now - updatedAt) / (60 * 60 * 1000);
 
         if (hoursSinceUpdate > 24) {
-          suggestions.push(createSuggestion('blocked_task', {
-            title: `"${task.title}" awaiting review`,
-            description: `This task has been waiting for human review for ${String(Math.floor(hoursSinceUpdate))} hours.`,
-            action: {
-              label: 'Review Task',
-              targetId: task.id,
-              targetType: 'task',
-            },
-          }));
+          suggestions.push(
+            createSuggestion('blocked_task', {
+              title: `"${task.title}" awaiting review`,
+              description: `This task has been waiting for human review for ${String(Math.floor(hoursSinceUpdate))} hours.`,
+              action: {
+                label: 'Review Task',
+                targetId: task.id,
+                targetType: 'task',
+              },
+            }),
+          );
         }
       }
     }
@@ -180,9 +191,6 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
 }
 
 /** Helper to create a suggestion with proper typing */
-function createSuggestion(
-  type: SuggestionType,
-  data: Omit<Suggestion, 'type'>,
-): Suggestion {
+function createSuggestion(type: SuggestionType, data: Omit<Suggestion, 'type'>): Suggestion {
   return { type, ...data };
 }

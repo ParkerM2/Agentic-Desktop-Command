@@ -8,6 +8,7 @@
 import { registerAgentHandlers } from './handlers/agent-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
+import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
 import { registerAssistantHandlers } from './handlers/assistant-handlers';
 import { registerBriefingHandlers } from './handlers/briefing-handlers';
 import { registerCalendarHandlers } from './handlers/calendar-handlers';
@@ -17,6 +18,7 @@ import { registerEmailHandlers } from './handlers/email-handlers';
 import { registerFitnessHandlers } from './handlers/fitness-handlers';
 import { registerGitHandlers } from './handlers/git-handlers';
 import { registerGitHubHandlers } from './handlers/github-handlers';
+import { registerHotkeyHandlers } from './handlers/hotkey-handlers';
 import { registerHubHandlers } from './handlers/hub-handlers';
 import { registerIdeasHandlers } from './handlers/ideas-handlers';
 import { registerInsightsHandlers } from './handlers/insights-handlers';
@@ -43,6 +45,7 @@ import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentQueue } from '../services/agent/agent-queue';
 import type { AgentService } from '../services/agent/agent-service';
 import type { AlertService } from '../services/alerts/alert-service';
+import type { AppUpdateService } from '../services/app/app-update-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
 import type { BriefingService } from '../services/briefing/briefing-service';
 import type { CalendarService } from '../services/calendar/calendar-service';
@@ -72,6 +75,7 @@ import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
 import type { VoiceService } from '../services/voice/voice-service';
+import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
   projectService: ProjectService;
@@ -104,9 +108,11 @@ export interface Services {
   timeParserService: TimeParserService;
   taskDecomposer: TaskDecomposer;
   githubImporter: GithubTaskImporter;
-voiceService: VoiceService;
+  voiceService: VoiceService;
   screenCaptureService: ScreenCaptureService;
   briefingService: BriefingService;
+  hotkeyManager: HotkeyManager;
+  appUpdateService: AppUpdateService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -157,6 +163,8 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerTimeHandlers(router, services.timeParserService);
   registerVoiceHandlers(router, services.voiceService);
   registerWebhookSettingsHandlers(router, services.settingsService);
-registerScreenHandlers(router, services.screenCaptureService);
+  registerScreenHandlers(router, services.screenCaptureService);
   registerBriefingHandlers(router, services.briefingService);
+  registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
+  registerAppUpdateHandlers(router, services.appUpdateService);
 }

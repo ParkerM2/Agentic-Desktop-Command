@@ -15,7 +15,6 @@ import { GOOGLE_OAUTH_CONFIG } from './auth/providers/google';
 import { loadOAuthCredentials } from './auth/providers/provider-config';
 import { SLACK_OAUTH_CONFIG } from './auth/providers/slack';
 import { SPOTIFY_OAUTH_CONFIG } from './auth/providers/spotify';
-import { WITHINGS_OAUTH_CONFIG } from './auth/providers/withings';
 import { createTokenStore } from './auth/token-store';
 import { registerAllHandlers } from './ipc';
 import { IpcRouter } from './ipc/router';
@@ -24,6 +23,7 @@ import { createMcpRegistry } from './mcp/mcp-registry';
 import { createAgentQueue } from './services/agent/agent-queue';
 import { createAgentService } from './services/agent/agent-service';
 import { createAlertService } from './services/alerts/alert-service';
+import { createAppUpdateService } from './services/app/app-update-service';
 import { createAssistantService } from './services/assistant/assistant-service';
 import { createBriefingService } from './services/briefing/briefing-service';
 import { createSuggestionEngine } from './services/briefing/suggestion-engine';
@@ -59,9 +59,13 @@ import { createGithubImporter, createTaskDecomposer } from './services/tasks';
 import { createTerminalService } from './services/terminal/terminal-service';
 import { createTimeParserService } from './services/time-parser/time-parser-service';
 import { createVoiceService } from './services/voice/voice-service';
+import { createHotkeyManager } from './tray/hotkey-manager';
+import { createQuickInputWindow } from './tray/quick-input';
 
 import type { OAuthConfig } from './auth/types';
 import type { BriefingService } from './services/briefing/briefing-service';
+import type { SettingsService } from './services/settings/settings-service';
+import type { HotkeyManager } from './tray/hotkey-manager';
 
 let mainWindow: BrowserWindow | null = null;
 let terminalServiceRef: ReturnType<typeof createTerminalService> | null = null;
@@ -70,6 +74,8 @@ let alertServiceRef: ReturnType<typeof createAlertService> | null = null;
 let hubConnectionManagerRef: ReturnType<typeof createHubConnectionManager> | null = null;
 let notificationManagerRef: ReturnType<typeof createNotificationManager> | null = null;
 let briefingServiceRef: BriefingService | null = null;
+let hotkeyManagerRef: HotkeyManager | null = null;
+let settingsServiceRef: SettingsService | null = null;
 
 function getMainWindow(): BrowserWindow | null {
   return mainWindow;
@@ -95,7 +101,21 @@ function createWindow(): void {
     return { action: 'deny' };
   });
 
-  mainWindow.on('ready-to-show', () => mainWindow?.show());
+  mainWindow.on('ready-to-show', () => {
+    const startMin = settingsServiceRef?.getSettings().startMinimized;
+    if (!startMin) {
+      mainWindow?.show();
+    }
+  });
+
+  mainWindow.on('close', (event) => {
+    const minToTray = settingsServiceRef?.getSettings().minimizeToTray;
+    if (minToTray && mainWindow && !(app as unknown as Record<string, boolean>).isQuitting) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -127,6 +147,7 @@ function initializeApp(): void {
 
   // Settings service provides configuration including agent settings
   const settingsService = createSettingsService();
+  settingsServiceRef = settingsService;
 
   // Agent queue manages concurrency limits for agent execution
   const agentSettings = settingsService.getAgentSettings();
@@ -184,7 +205,6 @@ function initializeApp(): void {
     ['google', { ...GOOGLE_OAUTH_CONFIG, ...savedCreds.get('google') }],
     ['slack', { ...SLACK_OAUTH_CONFIG, ...savedCreds.get('slack') }],
     ['spotify', { ...SPOTIFY_OAUTH_CONFIG, ...savedCreds.get('spotify') }],
-    ['withings', { ...WITHINGS_OAUTH_CONFIG, ...savedCreds.get('withings') }],
   ]);
   const oauthManager = createOAuthManager({ tokenStore, providers });
   const mcpRegistry = createMcpRegistry();
@@ -259,7 +279,7 @@ function initializeApp(): void {
   const taskDecomposer = createTaskDecomposer({ claudeClient });
   const githubImporter = createGithubImporter({ githubService, taskService });
 
-// Voice service — manages voice configuration
+  // Voice service — manages voice configuration
   const voiceService = createVoiceService();
 
   // Screen capture service — uses Electron desktopCapturer
@@ -283,6 +303,32 @@ function initializeApp(): void {
   briefingServiceRef = briefingService;
   // Start the briefing scheduler
   briefingService.startScheduler();
+
+  // App update service — wraps electron-updater
+  const appUpdateService = createAppUpdateService(router);
+
+  // Hotkey manager and quick input — uses getMainWindow getter so hotkeys
+  // can reference the main window even though it's created after initializeApp()
+  const quickInput = createQuickInputWindow({
+    onCommand: (command) => {
+      console.log('[Main] Quick command received:', command);
+      void assistantService.sendCommand(command);
+    },
+  });
+
+  const hotkeyManager = createHotkeyManager({
+    quickInput,
+    getMainWindow,
+  });
+  hotkeyManagerRef = hotkeyManager;
+
+  // Register hotkeys from config or defaults
+  const customHotkeys = settingsService.getSettings().hotkeys;
+  if (customHotkeys) {
+    hotkeyManager.registerFromConfig(customHotkeys);
+  } else {
+    hotkeyManager.registerDefaults();
+  }
 
   const services = {
     projectService,
@@ -315,9 +361,11 @@ function initializeApp(): void {
     timeParserService: createTimeParserService(),
     taskDecomposer,
     githubImporter,
-voiceService,
+    voiceService,
     screenCaptureService,
     briefingService,
+    hotkeyManager,
+    appUpdateService,
     dataDir,
     providers,
     tokenStore,
@@ -343,6 +391,8 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  (app as unknown as Record<string, boolean>).isQuitting = true;
+  hotkeyManagerRef?.unregisterAll();
   terminalServiceRef?.dispose();
   agentServiceRef?.dispose();
   alertServiceRef?.stopChecking();

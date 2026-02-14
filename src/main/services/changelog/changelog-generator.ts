@@ -66,9 +66,7 @@ export async function getCommitsSinceTag(
   const git = simpleGit(repoPath);
 
   try {
-    const options = fromTag
-      ? { from: fromTag, to: 'HEAD' }
-      : { maxCount: 100 }; // Limit if no tag specified
+    const options = fromTag ? { from: fromTag, to: 'HEAD' } : { maxCount: 100 }; // Limit if no tag specified
 
     const log = await git.log(options);
 
@@ -196,7 +194,14 @@ export async function generateChangelogEntry(
   }
 
   // Build categories array in a consistent order
-  const categoryOrder: ChangeType[] = ['added', 'changed', 'fixed', 'removed', 'security', 'deprecated'];
+  const categoryOrder: ChangeType[] = [
+    'added',
+    'changed',
+    'fixed',
+    'removed',
+    'security',
+    'deprecated',
+  ];
   const categories: ChangeCategory[] = [];
 
   for (const type of categoryOrder) {
@@ -211,8 +216,18 @@ export async function generateChangelogEntry(
   // Format the date
   const now = new Date();
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   const date = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
 
