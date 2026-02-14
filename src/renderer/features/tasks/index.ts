@@ -3,7 +3,7 @@
  */
 
 // API hooks
-export { useTasks, useTask, useCreateTask } from './api/useTasks';
+export { useTasks, useTask, useAllTasks, useCreateTask } from './api/useTasks';
 export { useUpdateTaskStatus, useDeleteTask, useExecuteTask } from './api/useTaskMutations';
 export { taskKeys } from './api/queryKeys';
 
@@ -16,3 +16,7 @@ export { useTaskUI } from './store';
 // Components
 export { TaskCard } from './components/TaskCard';
 export { TaskStatusBadge } from './components/TaskStatusBadge';
+export { TaskTable } from './components/TaskTable';
+export { TaskTableFilters } from './components/TaskTableFilters';
+export { TaskTableHeader } from './components/TaskTableHeader';
+export { TaskTableRow } from './components/TaskTableRow';

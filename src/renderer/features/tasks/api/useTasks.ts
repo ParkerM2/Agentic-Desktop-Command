@@ -30,6 +30,15 @@ export function useTask(projectId: string | null, taskId: string | null) {
   });
 }
 
+/** Fetch all tasks across all projects */
+export function useAllTasks() {
+  return useQuery({
+    queryKey: taskKeys.lists(),
+    queryFn: () => ipc('tasks.listAll', {}),
+    staleTime: 30_000,
+  });
+}
+
 /** Create a new task */
 export function useCreateTask() {
   const queryClient = useQueryClient();

@@ -26,3 +26,20 @@ export interface ProjectEnvConfig {
   githubRepo?: string;
   githubAuthMethod?: 'oauth' | 'pat';
 }
+
+export interface ChildRepo {
+  name: string;
+  path: string;
+  relativePath: string;
+  gitUrl?: string;
+}
+
+export type RepoType = 'single' | 'monorepo' | 'multi-repo' | 'none';
+
+export interface RepoDetectionResult {
+  isGitRepo: boolean;
+  repoType: RepoType;
+  gitUrl?: string;
+  defaultBranch?: string;
+  childRepos: ChildRepo[];
+}

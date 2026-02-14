@@ -6,13 +6,15 @@ import websocket from '@fastify/websocket';
 import Fastify from 'fastify';
 
 import { createDatabase } from './db/database.js';
-import { hashKey } from './middleware/api-key.js';
-import { createApiKeyMiddleware } from './middleware/api-key.js';
+import { createApiKeyMiddleware, hashKey } from './middleware/api-key.js';
+import { createJwtAuthMiddleware } from './middleware/jwt-auth.js';
 import { agentRoutes } from './routes/agents.js';
 import { authRoutes } from './routes/auth.js';
 import { captureRoutes } from './routes/captures.js';
+import { deviceRoutes } from './routes/devices.js';
 import { plannerRoutes } from './routes/planner.js';
 import { projectRoutes } from './routes/projects.js';
+import { workspaceRoutes } from './routes/workspaces.js';
 import { settingsRoutes } from './routes/settings.js';
 import { taskRoutes } from './routes/tasks.js';
 import { webhookRoutes } from './routes/webhooks/index.js';
@@ -181,8 +183,11 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   // WebSocket
   await app.register(websocket);
 
-  // API key auth middleware
+  // API key auth middleware (for legacy/hybrid routes)
   app.addHook('onRequest', createApiKeyMiddleware(db));
+
+  // JWT auth middleware (for new user-based auth)
+  app.addHook('onRequest', createJwtAuthMiddleware());
 
   // WebSocket route with first-message auth protocol
   app.register(async (wsApp) => {
@@ -199,6 +204,8 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   await app.register(captureRoutes);
   await app.register(agentRoutes);
   await app.register(webhookRoutes);
+  await app.register(deviceRoutes);
+  await app.register(workspaceRoutes);
 
   // Auth routes with stricter rate limiting (10 requests/minute per IP)
   await app.register(

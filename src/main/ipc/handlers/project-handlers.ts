@@ -2,6 +2,8 @@
  * Project IPC handlers — thin layer between IPC router and project service
  */
 
+import { detectRepoStructure } from '../../services/project/project-detector';
+
 import type { ProjectService } from '../../services/project/project-service';
 import type { IpcRouter } from '../router';
 
@@ -21,4 +23,8 @@ export function registerProjectHandlers(router: IpcRouter, service: ProjectServi
   router.handle('projects.selectDirectory', async () => {
     return await service.selectDirectory();
   });
+
+  router.handle('projects.detectRepo', ({ path }) =>
+    Promise.resolve(detectRepoStructure(path)),
+  );
 }

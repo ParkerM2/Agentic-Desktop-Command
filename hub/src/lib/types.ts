@@ -1,20 +1,87 @@
 // Domain types for the Hub API
 
+export interface User {
+  id: string;
+  email: string;
+  password_hash: string;
+  display_name: string;
+  avatar_url: string | null;
+  settings: string | null;
+  created_at: string;
+  last_login_at: string | null;
+}
+
+export interface Session {
+  id: string;
+  user_id: string;
+  device_id: string | null;
+  refresh_token_hash: string;
+  expires_at: string;
+  created_at: string;
+  last_used_at: string;
+}
+
+export interface Device {
+  id: string;
+  machine_id: string | null;
+  user_id: string;
+  device_type: 'desktop' | 'mobile' | 'web';
+  device_name: string;
+  capabilities: string; // JSON
+  is_online: number; // SQLite boolean
+  last_seen: string | null;
+  app_version: string | null;
+  created_at: string;
+}
+
+export interface Workspace {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  host_device_id: string | null;
+  settings: string | null; // JSON
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   path: string;
+  workspace_id: string | null;
+  git_url: string | null;
+  repo_structure: 'single' | 'monorepo' | 'multi-repo';
+  default_branch: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface SubProject {
+  id: string;
+  project_id: string;
+  name: string;
+  relative_path: string;
+  git_url: string | null;
+  default_branch: string | null;
+  created_at: string;
 }
 
 export interface Task {
   id: string;
   project_id: string;
+  workspace_id: string | null;
+  sub_project_id: string | null;
   title: string;
   description: string;
   status: string;
   priority: number;
+  assigned_device_id: string | null;
+  created_by_device_id: string | null;
+  execution_session_id: string | null;
+  progress: string | null; // JSON
+  metadata: string | null; // JSON
   created_at: string;
   updated_at: string;
 }

@@ -7,6 +7,7 @@
 
 import { registerAgentHandlers } from './handlers/agent-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
+import { registerAuthHandlers } from './handlers/auth-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
 import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
 import { registerAssistantHandlers } from './handlers/assistant-handlers';
