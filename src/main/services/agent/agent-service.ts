@@ -1,6 +1,10 @@
 /**
  * Agent Service — Claude CLI Process Management
  *
+ * @deprecated Use workflow/task-launcher.ts instead. This legacy agent service
+ * spawns PTY-based agents. The new TaskLauncher uses detached child_process
+ * for simpler lifecycle management. Kept for backward compatibility.
+ *
  * Spawns and manages Claude CLI agents for task execution.
  * Agents run in dedicated terminals and their output is parsed
  * for status updates, progress, and logs.

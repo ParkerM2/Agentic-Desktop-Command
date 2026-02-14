@@ -1,6 +1,9 @@
 /**
  * Token Parser — Extract token usage from Claude CLI output
  *
+ * @deprecated Part of the legacy agent system. The new workflow/task-launcher.ts
+ * delegates token tracking to the Hub backend. Kept for backward compatibility.
+ *
  * Parses various output formats from Claude CLI to extract
  * input/output token counts and cost information.
  *

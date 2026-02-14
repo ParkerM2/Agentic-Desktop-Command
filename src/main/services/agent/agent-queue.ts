@@ -1,6 +1,9 @@
 /**
  * Agent Queue — Priority FIFO Queue for Agent Execution
  *
+ * @deprecated Part of the legacy agent system. The new workflow/task-launcher.ts
+ * handles session management directly. Kept for backward compatibility.
+ *
  * Manages queued agents with configurable max concurrency.
  * Agents are dequeued by priority (higher = more priority),
  * with FIFO ordering within the same priority level.
