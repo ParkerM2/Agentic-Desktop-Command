@@ -4,7 +4,12 @@
 
 // API hooks
 export { useTasks, useTask, useAllTasks, useCreateTask } from './api/useTasks';
-export { useUpdateTaskStatus, useDeleteTask, useExecuteTask } from './api/useTaskMutations';
+export {
+  useUpdateTaskStatus,
+  useDeleteTask,
+  useExecuteTask,
+  useCancelTask,
+} from './api/useTaskMutations';
 export { taskKeys } from './api/queryKeys';
 
 // Events

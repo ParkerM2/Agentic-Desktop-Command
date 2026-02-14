@@ -1,51 +1,63 @@
 /**
  * React Query hooks for task operations
+ *
+ * Routes through Hub API channels for multi-device sync.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import type { TaskDraft } from '@shared/types';
+import type { Task } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { taskKeys } from './queryKeys';
 
-/** Fetch all tasks for a project */
+/** Fetch all tasks for a project via Hub */
 export function useTasks(projectId: string | null) {
   return useQuery({
     queryKey: taskKeys.list(projectId ?? ''),
-    queryFn: () => ipc('tasks.list', { projectId: projectId ?? '' }),
+    queryFn: async () => {
+      const result = await ipc('hub.tasks.list', { projectId: projectId ?? '' });
+      return result.tasks as Task[];
+    },
     enabled: projectId !== null,
     staleTime: 30_000,
   });
 }
 
-/** Fetch a single task */
-export function useTask(projectId: string | null, taskId: string | null) {
+/** Fetch a single task via Hub */
+export function useTask(taskId: string | null) {
   return useQuery({
     queryKey: taskKeys.detail(taskId ?? ''),
-    queryFn: () => ipc('tasks.get', { projectId: projectId ?? '', taskId: taskId ?? '' }),
-    enabled: projectId !== null && taskId !== null,
+    queryFn: async () => {
+      const result = await ipc('hub.tasks.get', { taskId: taskId ?? '' });
+      return result as Task;
+    },
+    enabled: taskId !== null,
     staleTime: 10_000,
   });
 }
 
-/** Fetch all tasks across all projects */
+/** Fetch all tasks across all projects via Hub */
 export function useAllTasks() {
   return useQuery({
     queryKey: taskKeys.lists(),
-    queryFn: () => ipc('tasks.listAll', {}),
+    queryFn: async () => {
+      const result = await ipc('hub.tasks.list', {});
+      return result.tasks as Task[];
+    },
     staleTime: 30_000,
   });
 }
 
-/** Create a new task */
+/** Create a new task via Hub */
 export function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (draft: TaskDraft) => ipc('tasks.create', draft),
-    onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: taskKeys.list(variables.projectId) });
+    mutationFn: (data: { projectId: string; title: string; description?: string }) =>
+      ipc('hub.tasks.create', data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
   });
 }
