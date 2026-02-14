@@ -37,3 +37,6 @@ logs/security/
 .DS_Store
 Thumbs.db
 nul
+coverage/
+playwright-report/
+test-results/

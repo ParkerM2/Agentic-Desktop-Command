@@ -12,7 +12,11 @@ npm run lint         # ESLint (zero tolerance — must pass clean)
 npm run lint:fix     # Auto-fix ESLint violations
 npm run format       # Prettier format all files
 npm run typecheck    # tsc --noEmit
-npm run test         # vitest run
+npm run test         # Run unit + integration tests
+npm run test:unit    # Unit tests only (vitest)
+npm run test:integration  # Integration tests only (vitest)
+npm run test:e2e     # E2E tests (playwright + electron)
+npm run test:coverage    # Unit tests with coverage report
 ```
 
 ## Architecture Overview

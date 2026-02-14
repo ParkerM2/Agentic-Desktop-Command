@@ -370,13 +370,17 @@ export default tseslint.config(
 
   // ── Test file overrides ────────────────────────────────────────
   {
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/test/**/*.{ts,tsx}'],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/test/**/*.{ts,tsx}', '**/tests/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       'sonarjs/no-duplicate-string': 'off',
+      // Playwright fixtures use `use()` which triggers React hook detection
+      'react-hooks/rules-of-hooks': 'off',
+      // Playwright fixture pattern requires empty object destructuring
+      'no-empty-pattern': 'off',
     },
   },
 
