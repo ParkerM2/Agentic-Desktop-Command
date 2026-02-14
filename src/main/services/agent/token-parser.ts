@@ -3,6 +3,8 @@
  *
  * Parses various output formats from Claude CLI to extract
  * input/output token counts and cost information.
+ *
+ * @deprecated Part of the legacy agent service. Will be replaced by workflow launcher.
  */
 
 import { TOKEN_USAGE_PATTERNS, MODEL_PRICING } from '@shared/constants';

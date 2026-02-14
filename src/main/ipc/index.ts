@@ -38,6 +38,7 @@ import { registerTerminalHandlers } from './handlers/terminal-handlers';
 import { registerTimeHandlers } from './handlers/time-handlers';
 import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
+import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
 
 import type { IpcRouter } from './router';
@@ -58,6 +59,7 @@ import type { FitnessService } from '../services/fitness/fitness-service';
 import type { GitService } from '../services/git/git-service';
 import type { WorktreeService } from '../services/git/worktree-service';
 import type { GitHubService } from '../services/github/github-service';
+import type { HubApiClient } from '../services/hub/hub-api-client';
 import type { HubConnectionManager } from '../services/hub/hub-connection';
 import type { HubSyncService } from '../services/hub/hub-sync';
 import type { IdeasService } from '../services/ideas/ideas-service';
@@ -77,6 +79,7 @@ import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
 import type { VoiceService } from '../services/voice/voice-service';
+import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
@@ -115,6 +118,8 @@ export interface Services {
   briefingService: BriefingService;
   hotkeyManager: HotkeyManager;
   appUpdateService: AppUpdateService;
+  hubApiClient: HubApiClient | null;
+  taskLauncher: TaskLauncherService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -170,5 +175,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerBriefingHandlers(router, services.briefingService);
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
+  registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
   registerWorkspaceHandlers(router);
 }

@@ -912,7 +912,7 @@ body {
 }
 
 /* ============================================
-   KANBAN COLUMN STATUS COLORS
+   TASK STATUS COLORS
    ============================================ */
 .column-backlog {
   border-top-color: var(--muted-foreground);

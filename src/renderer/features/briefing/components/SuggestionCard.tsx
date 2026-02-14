@@ -35,7 +35,7 @@ export function SuggestionCard({ suggestion }: SuggestionCardProps) {
     if (targetId === undefined) return;
 
     if (targetType === 'project') {
-      void navigate({ to: '/projects/$projectId/kanban', params: { projectId: targetId } });
+      void navigate({ to: '/projects/$projectId/tasks', params: { projectId: targetId } });
     } else if (targetType === 'task') {
       // Navigate to the task — for now, navigate to my-work which shows all tasks
       void navigate({ to: '/my-work' });

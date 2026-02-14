@@ -4,6 +4,8 @@
  * Spawns and manages Claude CLI agents for task execution.
  * Agents run in dedicated terminals and their output is parsed
  * for status updates, progress, and logs.
+ *
+ * @deprecated Use TaskLauncherService from `services/workflow/task-launcher.ts` instead.
  */
 
 import { existsSync } from 'node:fs';

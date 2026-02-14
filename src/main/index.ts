@@ -59,6 +59,7 @@ import { createGithubImporter, createTaskDecomposer } from './services/tasks';
 import { createTerminalService } from './services/terminal/terminal-service';
 import { createTimeParserService } from './services/time-parser/time-parser-service';
 import { createVoiceService } from './services/voice/voice-service';
+import { createTaskLauncher } from './services/workflow/task-launcher';
 import { createHotkeyManager } from './tray/hotkey-manager';
 import { createQuickInputWindow } from './tray/quick-input';
 
@@ -330,6 +331,9 @@ function initializeApp(): void {
     hotkeyManager.registerDefaults();
   }
 
+  // Workflow task launcher — spawns Claude CLI sessions
+  const taskLauncher = createTaskLauncher();
+
   const services = {
     projectService,
     taskService,
@@ -366,6 +370,8 @@ function initializeApp(): void {
     briefingService,
     hotkeyManager,
     appUpdateService,
+    hubApiClient: null,
+    taskLauncher,
     dataDir,
     providers,
     tokenStore,

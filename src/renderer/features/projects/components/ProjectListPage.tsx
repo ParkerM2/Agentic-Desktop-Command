@@ -35,19 +35,19 @@ export function ProjectListPage() {
     if (result.path) {
       const project = await addProject.mutateAsync(result.path);
       addProjectTab(project.id);
-      void navigate({ to: projectViewPath(project.id, PROJECT_VIEWS.KANBAN) });
+      void navigate({ to: projectViewPath(project.id, PROJECT_VIEWS.TASKS) });
     }
   }
 
   function handleOpenProject(projectId: string) {
     addProjectTab(projectId);
-    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.KANBAN) });
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   function handleWizardComplete(projectId: string) {
     setWizardOpen(false);
     addProjectTab(projectId);
-    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.KANBAN) });
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   function handleRemoveProject(e: React.MouseEvent | React.KeyboardEvent, projectId: string) {

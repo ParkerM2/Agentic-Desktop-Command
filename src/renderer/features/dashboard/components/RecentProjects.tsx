@@ -19,7 +19,7 @@ export function RecentProjects() {
 
   function handleOpenProject(projectId: string) {
     addProjectTab(projectId);
-    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.KANBAN) });
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   if (isLoading) {

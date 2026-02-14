@@ -17,7 +17,6 @@ import {
   GitBranch,
   Headphones,
   Home,
-  LayoutDashboard,
   Lightbulb,
   ListTodo,
   Map,
@@ -62,7 +61,6 @@ const topLevelItems: NavItem[] = [
 
 /** Project-scoped nav items */
 const projectItems: NavItem[] = [
-  { label: 'Kanban', icon: LayoutDashboard, path: PROJECT_VIEWS.KANBAN },
   { label: 'Tasks', icon: ListTodo, path: PROJECT_VIEWS.TASKS },
   { label: 'Terminals', icon: Terminal, path: PROJECT_VIEWS.TERMINALS },
   { label: 'Agents', icon: Bot, path: PROJECT_VIEWS.AGENTS },

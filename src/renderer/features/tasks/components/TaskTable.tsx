@@ -4,6 +4,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
+import { useParams } from '@tanstack/react-router';
 import { Loader2, Trash2 } from 'lucide-react';
 
 import type { Task, TaskStatus } from '@shared/types';
@@ -12,6 +13,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { useDeleteTask, useExecuteTask, useUpdateTaskStatus } from '../api/useTaskMutations';
 import { useAllTasks, useTasks } from '../api/useTasks';
+import { useTaskEvents } from '../hooks/useTaskEvents';
 import { useTaskUI } from '../store';
 
 import { TaskTableFilters } from './TaskTableFilters';
@@ -60,11 +62,16 @@ function compareByColumn(a: Task, b: Task, column: SortColumn, direction: SortDi
   return direction === 'asc' ? comparison : -comparison;
 }
 
-export function TaskTable({ projectId, onTaskClick }: TaskTableProps) {
+export function TaskTable({ projectId: projectIdProp, onTaskClick }: TaskTableProps) {
+  const params = useParams({ strict: false });
+  const projectId: string | undefined = projectIdProp ?? (params as Record<string, string | undefined>).projectId;
+
+  useTaskEvents();
+
   // Determine which query to use
   const projectQuery = useTasks(projectId ?? null);
   const allQuery = useAllTasks();
-  const query = projectId === undefined ? allQuery : projectQuery;
+  const query = projectId ? projectQuery : allQuery;
 
   const tasks = useMemo(() => query.data ?? [], [query.data]);
   const { isLoading } = query;

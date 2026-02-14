@@ -1,5 +1,5 @@
 /**
- * TaskCard — Compact card for kanban board and task list
+ * TaskCard — Compact card for task list
  */
 
 import { Bot, Clock } from 'lucide-react';

@@ -31,7 +31,7 @@ export function TopBar() {
   // 3. Handlers
   function handleSelectProject(projectId: string) {
     setActiveProject(projectId);
-    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.KANBAN) });
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   function handleCloseTab(e: React.MouseEvent | React.KeyboardEvent, projectId: string) {

@@ -26,7 +26,6 @@ import { FitnessPage } from '@features/fitness';
 import { GitHubPage } from '@features/github';
 import { IdeationPage } from '@features/ideation';
 import { InsightsPage } from '@features/insights';
-import { KanbanBoard } from '@features/kanban';
 import { MyWorkPage } from '@features/my-work';
 import { NotesPage } from '@features/notes';
 import { PlannerPage, WeeklyReviewPage } from '@features/planner';
@@ -34,6 +33,7 @@ import { ProductivityPage } from '@features/productivity';
 import { ProjectListPage } from '@features/projects';
 import { RoadmapPage } from '@features/roadmap';
 import { SettingsPage } from '@features/settings';
+import { TaskTable } from '@features/tasks';
 import { TerminalGrid } from '@features/terminals';
 
 import { RootLayout } from './layouts/RootLayout';
@@ -148,17 +148,11 @@ const projectRoute = createRoute({
   path: ROUTE_PATTERNS.PROJECT,
   beforeLoad: ({ params }) => {
     // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
-    throw redirect({ to: ROUTE_PATTERNS.PROJECT_KANBAN, params });
+    throw redirect({ to: ROUTE_PATTERNS.PROJECT_TASKS, params });
   },
 });
 
 // ─── Project Views ──────────────────────────────────────────
-
-const kanbanRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: ROUTE_PATTERNS.PROJECT_KANBAN,
-  component: KanbanBoard,
-});
 
 const terminalsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -205,11 +199,7 @@ const insightsRoute = createRoute({
 const tasksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROUTE_PATTERNS.PROJECT_TASKS,
-  component: () => (
-    <div className="text-muted-foreground flex h-full items-center justify-center">
-      Task list view — coming soon
-    </div>
-  ),
+  component: TaskTable,
 });
 
 // ─── Settings ───────────────────────────────────────────────
@@ -236,7 +226,6 @@ const routeTree = rootRoute.addChildren([
   productivityRoute,
   projectsRoute,
   projectRoute,
-  kanbanRoute,
   terminalsRoute,
   agentsRoute,
   githubRoute,

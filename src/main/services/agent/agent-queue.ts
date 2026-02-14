@@ -4,6 +4,8 @@
  * Manages queued agents with configurable max concurrency.
  * Agents are dequeued by priority (higher = more priority),
  * with FIFO ordering within the same priority level.
+ *
+ * @deprecated Part of the legacy agent service. Will be replaced by workflow launcher.
  */
 
 import type { IpcRouter } from '../../ipc/router';

@@ -25,7 +25,6 @@ export const ROUTES = {
 
 /** Project sub-view path segments (appended to /projects/$projectId/) */
 export const PROJECT_VIEWS = {
-  KANBAN: 'kanban',
   TASKS: 'tasks',
   TERMINALS: 'terminals',
   AGENTS: 'agents',
@@ -39,7 +38,6 @@ export const PROJECT_VIEWS = {
 /** TanStack Router path patterns (use $projectId param syntax) */
 export const ROUTE_PATTERNS = {
   PROJECT: '/projects/$projectId',
-  PROJECT_KANBAN: '/projects/$projectId/kanban',
   PROJECT_TASKS: '/projects/$projectId/tasks',
   PROJECT_TERMINALS: '/projects/$projectId/terminals',
   PROJECT_AGENTS: '/projects/$projectId/agents',
