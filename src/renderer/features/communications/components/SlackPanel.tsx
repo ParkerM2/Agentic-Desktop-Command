@@ -82,9 +82,7 @@ export function SlackPanel() {
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-foreground text-sm font-semibold">Slack</h3>
-            <span
-              className={cn('inline-block h-2 w-2 rounded-full', STATUS_COLORS[slackStatus])}
-            />
+            <span className={cn('inline-block h-2 w-2 rounded-full', STATUS_COLORS[slackStatus])} />
             <span className="text-muted-foreground text-xs capitalize">{slackStatus}</span>
           </div>
           {slackStatus === 'disconnected' ? (

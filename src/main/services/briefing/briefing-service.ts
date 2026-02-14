@@ -124,7 +124,7 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     }
     try {
       const content = readFileSync(configPath, 'utf-8');
-      return { ...DEFAULT_CONFIG, ...JSON.parse(content) as Partial<BriefingConfig> };
+      return { ...DEFAULT_CONFIG, ...(JSON.parse(content) as Partial<BriefingConfig>) };
     } catch {
       return { ...DEFAULT_CONFIG };
     }
@@ -144,7 +144,10 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     return yesterday.toISOString().split('T')[0] ?? '';
   }
 
-  function isCompletedYesterday(task: { status: string; updatedAt: string }, yesterday: string): boolean {
+  function isCompletedYesterday(
+    task: { status: string; updatedAt: string },
+    yesterday: string,
+  ): boolean {
     if (task.status !== 'done') return false;
     const updatedDate = task.updatedAt.split('T')[0];
     return updatedDate === yesterday;
@@ -249,7 +252,8 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
       const conversationId = claudeClient.createConversation('Daily Briefing');
       const response = await claudeClient.sendMessage(conversationId, prompt, {
         maxTokens: 500,
-        systemPrompt: 'You are a helpful assistant that generates brief, actionable daily briefings for a developer. Keep summaries concise and focused on what matters most today.',
+        systemPrompt:
+          'You are a helpful assistant that generates brief, actionable daily briefings for a developer. Keep summaries concise and focused on what matters most today.',
       });
 
       // Clean up conversation after use
@@ -298,10 +302,14 @@ Focus on the most important action items for today.`;
 
     // Task summary
     if (taskSummary.inProgress > 0) {
-      parts.push(`${String(taskSummary.inProgress)} task${taskSummary.inProgress > 1 ? 's' : ''} in progress`);
+      parts.push(
+        `${String(taskSummary.inProgress)} task${taskSummary.inProgress > 1 ? 's' : ''} in progress`,
+      );
     }
     if (taskSummary.dueToday > 0) {
-      parts.push(`${String(taskSummary.dueToday)} task${taskSummary.dueToday > 1 ? 's' : ''} in queue`);
+      parts.push(
+        `${String(taskSummary.dueToday)} task${taskSummary.dueToday > 1 ? 's' : ''} in queue`,
+      );
     }
     if (taskSummary.overdue > 0) {
       parts.push(`${String(taskSummary.overdue)} overdue`);
@@ -309,10 +317,14 @@ Focus on the most important action items for today.`;
 
     // Agent summary
     if (agentActivity.runningCount > 0) {
-      parts.push(`${String(agentActivity.runningCount)} agent${agentActivity.runningCount > 1 ? 's' : ''} running`);
+      parts.push(
+        `${String(agentActivity.runningCount)} agent${agentActivity.runningCount > 1 ? 's' : ''} running`,
+      );
     }
     if (agentActivity.errorCount > 0) {
-      parts.push(`${String(agentActivity.errorCount)} agent error${agentActivity.errorCount > 1 ? 's' : ''}`);
+      parts.push(
+        `${String(agentActivity.errorCount)} agent error${agentActivity.errorCount > 1 ? 's' : ''}`,
+      );
     }
 
     // GitHub summary
@@ -322,7 +334,9 @@ Focus on the most important action items for today.`;
 
     // Suggestions
     if (suggestions.length > 0) {
-      parts.push(`${String(suggestions.length)} suggestion${suggestions.length > 1 ? 's' : ''} available`);
+      parts.push(
+        `${String(suggestions.length)} suggestion${suggestions.length > 1 ? 's' : ''} available`,
+      );
     }
 
     if (parts.length === 0) {
@@ -357,15 +371,22 @@ Focus on the most important action items for today.`;
   async function generateBriefing(): Promise<DailyBriefing> {
     const config = loadConfig();
     const taskSummary = getTaskSummary();
-    const agentActivity = config.includeAgentActivity ? getAgentActivitySummary() : {
-      runningCount: 0,
-      completedToday: 0,
-      errorCount: 0,
-    };
+    const agentActivity = config.includeAgentActivity
+      ? getAgentActivitySummary()
+      : {
+          runningCount: 0,
+          completedToday: 0,
+          errorCount: 0,
+        };
     const suggestions = suggestionEngine.getSuggestions();
     const githubNotifications = config.includeGitHub ? getGitHubNotificationCount() : 0;
 
-    const summary = await generateSummary(taskSummary, agentActivity, suggestions, githubNotifications);
+    const summary = await generateSummary(
+      taskSummary,
+      agentActivity,
+      suggestions,
+      githubNotifications,
+    );
 
     const briefing: DailyBriefing = {
       id: generateId(),

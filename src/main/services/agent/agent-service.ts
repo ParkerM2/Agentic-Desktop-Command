@@ -32,7 +32,6 @@ import {
 import type { AgentQueue, AgentQueueStatus, QueuedAgent } from './agent-queue';
 import type { IpcRouter } from '../../ipc/router';
 
-
 interface AgentProcess {
   session: AgentSession;
   pty: pty.IPty;
@@ -48,7 +47,12 @@ export interface StartAgentResult {
 export interface AgentService {
   listAgents: (projectId: string) => AgentSession[];
   listAllAgents: () => AgentSession[];
-  startAgent: (taskId: string, projectId: string, cwd: string, priority?: number) => StartAgentResult;
+  startAgent: (
+    taskId: string,
+    projectId: string,
+    cwd: string,
+    priority?: number,
+  ) => StartAgentResult;
   stopAgent: (agentId: string) => { success: boolean };
   pauseAgent: (agentId: string) => { success: boolean };
   resumeAgent: (agentId: string) => { success: boolean };
@@ -171,7 +175,11 @@ export function createAgentService(
         // Parse for token usage if line might contain it
         if (mightContainTokenInfo(line) && session.tokenUsage) {
           const tokenData = parseTokenLine(line);
-          if (tokenData.inputTokens !== undefined || tokenData.outputTokens !== undefined || tokenData.cost !== undefined) {
+          if (
+            tokenData.inputTokens !== undefined ||
+            tokenData.outputTokens !== undefined ||
+            tokenData.cost !== undefined
+          ) {
             session.tokenUsage = updateTokenUsage(session.tokenUsage, tokenData);
             router.emit('event:agent.tokenUsage', {
               agentId: id,

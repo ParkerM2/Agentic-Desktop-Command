@@ -141,7 +141,9 @@ export function createClaudeClient(deps: ClaudeClientDeps): ClaudeClient {
     return config?.defaultMaxTokens ?? DEFAULT_MAX_TOKENS;
   }
 
-  function buildMessages(conversationId: string): Array<{ role: 'user' | 'assistant'; content: string }> {
+  function buildMessages(
+    conversationId: string,
+  ): Array<{ role: 'user' | 'assistant'; content: string }> {
     const messages = conversationStore.getMessages(conversationId);
     return messages.map((msg) => ({
       role: msg.role,

@@ -20,6 +20,11 @@ export interface AppSettings {
   fontSize?: number;
   anthropicApiKey?: string;
   agentSettings?: AgentSettings;
+  hotkeys?: Record<string, string>;
+  openAtLogin?: boolean;
+  minimizeToTray?: boolean;
+  startMinimized?: boolean;
+  keepRunning?: boolean;
 }
 
 export interface CustomTheme {

@@ -1,19 +1,18 @@
 /**
- * HotkeySettings — Global hotkey configuration
+ * HotkeySettings -- Global hotkey configuration
  *
- * Displays current hotkey bindings and allows customization
- * via text input for Electron accelerator strings.
+ * Loads hotkey bindings from IPC, allows customization via text input
+ * for Electron accelerator strings, and supports resetting to defaults.
  */
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { Keyboard } from 'lucide-react';
+import { Keyboard, RotateCcw } from 'lucide-react';
 
+import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useUpdateSettings } from '../api/useSettings';
-
-// ── Types ────────────────────────────────────────────────────
+// -- Types --
 
 interface HotkeyBinding {
   id: string;
@@ -22,7 +21,7 @@ interface HotkeyBinding {
   defaultAccelerator: string;
 }
 
-// ── Constants ────────────────────────────────────────────────
+// -- Constants --
 
 const DEFAULT_HOTKEYS: HotkeyBinding[] = [
   {
@@ -45,7 +44,9 @@ const DEFAULT_HOTKEYS: HotkeyBinding[] = [
   },
 ];
 
-// ── Hotkey Row ───────────────────────────────────────────────
+const FEEDBACK_DISPLAY_MS = 2000;
+
+// -- Hotkey Row --
 
 interface HotkeyRowProps {
   binding: HotkeyBinding;
@@ -56,6 +57,13 @@ interface HotkeyRowProps {
 function HotkeyRow({ binding, currentValue, onSave }: HotkeyRowProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState(currentValue);
+
+  // Sync input value when external data changes (e.g. after reset)
+  useEffect(() => {
+    if (!editing) {
+      setInputValue(currentValue);
+    }
+  }, [currentValue, editing]);
 
   function handleSave() {
     const trimmed = inputValue.trim();
@@ -120,11 +128,9 @@ function HotkeyRow({ binding, currentValue, onSave }: HotkeyRowProps) {
   );
 }
 
-// ── Component ────────────────────────────────────────────────
+// -- Component --
 
 export function HotkeySettings() {
-  const updateSettings = useUpdateSettings();
-
   const [hotkeys, setHotkeys] = useState<Record<string, string>>(() => {
     const defaults: Record<string, string> = {};
     for (const binding of DEFAULT_HOTKEYS) {
@@ -133,17 +139,74 @@ export function HotkeySettings() {
     return defaults;
   });
 
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(
+    null,
+  );
+
+  // Load hotkeys from IPC on mount
+  useEffect(() => {
+    void (async () => {
+      try {
+        const loaded = await ipc('hotkeys.get', {});
+        if (Object.keys(loaded).length > 0) {
+          setHotkeys((previous) => ({ ...previous, ...loaded }));
+        }
+      } catch {
+        // Fall back to defaults silently
+      }
+    })();
+  }, []);
+
+  const showFeedback = useCallback((type: 'success' | 'error', message: string) => {
+    setFeedback({ type, message });
+    window.setTimeout(() => {
+      setFeedback(null);
+    }, FEEDBACK_DISPLAY_MS);
+  }, []);
+
   function handleSaveHotkey(id: string, accelerator: string) {
-    setHotkeys((previous) => ({ ...previous, [id]: accelerator }));
-    updateSettings.mutate({ hotkeys: { ...hotkeys, [id]: accelerator } });
+    const updated = { ...hotkeys, [id]: accelerator };
+    setHotkeys(updated);
+
+    void (async () => {
+      try {
+        await ipc('hotkeys.update', { hotkeys: updated });
+        showFeedback('success', 'Hotkey saved');
+      } catch {
+        showFeedback('error', 'Failed to save hotkey');
+      }
+    })();
+  }
+
+  function handleReset() {
+    void (async () => {
+      try {
+        const defaults = await ipc('hotkeys.reset', {});
+        setHotkeys(defaults);
+        showFeedback('success', 'Hotkeys reset to defaults');
+      } catch {
+        showFeedback('error', 'Failed to reset hotkeys');
+      }
+    })();
   }
 
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
-        <Keyboard className="h-4 w-4" />
-        Global Hotkeys
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-muted-foreground flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
+          <Keyboard className="h-4 w-4" />
+          Global Hotkeys
+        </h2>
+        <button
+          aria-label="Reset hotkeys to defaults"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
+          type="button"
+          onClick={handleReset}
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Reset to Defaults
+        </button>
+      </div>
       <div className="border-border bg-card divide-border divide-y rounded-lg border px-4">
         {DEFAULT_HOTKEYS.map((binding) => (
           <HotkeyRow
@@ -154,9 +217,21 @@ export function HotkeySettings() {
           />
         ))}
       </div>
-      <p className="text-muted-foreground mt-2 text-xs">
-        Use Electron accelerator format: Ctrl+Shift+Key, CmdOrCtrl+Key, Alt+Key
-      </p>
+      <div className="mt-2 flex items-center justify-between">
+        <p className="text-muted-foreground text-xs">
+          Use Electron accelerator format: Ctrl+Shift+Key, CmdOrCtrl+Key, Alt+Key
+        </p>
+        {feedback ? (
+          <p
+            className={cn(
+              'text-xs font-medium',
+              feedback.type === 'success' ? 'text-success' : 'text-destructive',
+            )}
+          >
+            {feedback.message}
+          </p>
+        ) : null}
+      </div>
     </section>
   );
 }

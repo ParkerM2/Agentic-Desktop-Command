@@ -195,7 +195,11 @@ function saveNotifications(notifications: Notification[]): void {
 
 function matchesFilter(notification: Notification, filter: NotificationFilter): boolean {
   // Source filter
-  if (filter.sources && filter.sources.length > 0 && !filter.sources.includes(notification.source)) {
+  if (
+    filter.sources &&
+    filter.sources.length > 0 &&
+    !filter.sources.includes(notification.source)
+  ) {
     return false;
   }
 
@@ -313,12 +317,14 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
       return {
         isWatching,
         activeWatchers,
-        lastPollTime: Object.keys(lastPollTime).length > 0
-          ? (lastPollTime as Record<NotificationSource, string>)
-          : undefined,
-        errors: Object.keys(errors).length > 0
-          ? (errors as Record<NotificationSource, string>)
-          : undefined,
+        lastPollTime:
+          Object.keys(lastPollTime).length > 0
+            ? (lastPollTime as Record<NotificationSource, string>)
+            : undefined,
+        errors:
+          Object.keys(errors).length > 0
+            ? (errors as Record<NotificationSource, string>)
+            : undefined,
       };
     },
 

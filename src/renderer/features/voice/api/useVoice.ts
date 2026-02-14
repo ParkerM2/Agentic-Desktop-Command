@@ -23,11 +23,8 @@ export function useVoiceConfig() {
 export function useUpdateVoiceConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (updates: {
-      enabled?: boolean;
-      language?: string;
-      inputMode?: VoiceInputMode;
-    }) => ipc('voice.updateConfig', updates),
+    mutationFn: (updates: { enabled?: boolean; language?: string; inputMode?: VoiceInputMode }) =>
+      ipc('voice.updateConfig', updates),
     onSuccess: (data) => {
       queryClient.setQueryData<VoiceConfig>(voiceKeys.config(), data);
     },

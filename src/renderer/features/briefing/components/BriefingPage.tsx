@@ -22,7 +22,12 @@ function formatTime(isoString: string): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function StatItem(props: { icon: React.ElementType; label: string; value: string | number; variant?: 'default' | 'success' | 'warning' | 'error' }) {
+function StatItem(props: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+  variant?: 'default' | 'success' | 'warning' | 'error';
+}) {
   const IconComponent = props.icon;
   const variant = props.variant ?? 'default';
 
@@ -226,7 +231,8 @@ export function BriefingPage() {
               <div className="flex items-center gap-2">
                 <GitBranch className="text-muted-foreground h-4 w-4" />
                 <span className="text-foreground text-sm font-medium">
-                  {String(briefing.githubNotifications)} unread GitHub notification{briefing.githubNotifications > 1 ? 's' : ''}
+                  {String(briefing.githubNotifications)} unread GitHub notification
+                  {briefing.githubNotifications > 1 ? 's' : ''}
                 </span>
               </div>
             </div>
@@ -241,7 +247,10 @@ export function BriefingPage() {
               </h3>
               <div className="space-y-3">
                 {displaySuggestions.map((suggestion, index) => (
-                  <SuggestionCard key={`${suggestion.type}-${String(index)}`} suggestion={suggestion} />
+                  <SuggestionCard
+                    key={`${suggestion.type}-${String(index)}`}
+                    suggestion={suggestion}
+                  />
                 ))}
               </div>
             </div>

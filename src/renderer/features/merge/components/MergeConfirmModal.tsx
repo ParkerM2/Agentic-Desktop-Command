@@ -162,7 +162,7 @@ export function MergeConfirmModal({
                 ) : null}
               </span>
               {activeTab === tab.id ? (
-                <div className="bg-primary absolute bottom-0 left-0 right-0 h-0.5" />
+                <div className="bg-primary absolute right-0 bottom-0 left-0 h-0.5" />
               ) : null}
             </button>
           ))}

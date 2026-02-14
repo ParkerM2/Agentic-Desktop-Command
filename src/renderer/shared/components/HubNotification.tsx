@@ -37,9 +37,7 @@ function getStatusIcon(status: HubNotificationItem['status']) {
   }
 }
 
-function getStatusMessage(
-  status: 'connected' | 'disconnected' | 'connecting' | 'error',
-): string {
+function getStatusMessage(status: 'connected' | 'disconnected' | 'connecting' | 'error'): string {
   switch (status) {
     case 'connected':
       return 'Hub connected';

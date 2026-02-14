@@ -5,7 +5,14 @@
 import { useState } from 'react';
 
 import { Link } from '@tanstack/react-router';
-import { Calendar, CalendarDays, ChevronLeft, ChevronRight, Loader2, MessageSquare } from 'lucide-react';
+import {
+  Calendar,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MessageSquare,
+} from 'lucide-react';
 
 import { ROUTES } from '@shared/constants';
 

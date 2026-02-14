@@ -3,12 +3,7 @@
  */
 
 // API hooks
-export {
-  useMergeDiff,
-  useMergeConflicts,
-  useMergeBranch,
-  useAbortMerge,
-} from './api/useMerge';
+export { useMergeDiff, useMergeConflicts, useMergeBranch, useAbortMerge } from './api/useMerge';
 export { mergeKeys } from './api/queryKeys';
 
 // Components

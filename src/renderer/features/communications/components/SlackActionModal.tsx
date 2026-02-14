@@ -281,7 +281,7 @@ export function SlackActionModal({ actionType, onClose }: SlackActionModalProps)
           {/* Result */}
           {result ? (
             <div className="bg-muted mx-4 max-h-40 overflow-y-auto rounded-md p-3">
-              <pre className="text-muted-foreground whitespace-pre-wrap text-xs">{result}</pre>
+              <pre className="text-muted-foreground text-xs whitespace-pre-wrap">{result}</pre>
             </div>
           ) : null}
 

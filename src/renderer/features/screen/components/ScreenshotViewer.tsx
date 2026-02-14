@@ -106,7 +106,7 @@ export function ScreenshotViewer({ screenshot, onClose, className }: ScreenshotV
       >
         <button
           aria-label="Close fullscreen"
-          className="bg-background/80 text-foreground hover:bg-accent absolute right-4 top-4 rounded-lg p-2 transition-colors"
+          className="bg-background/80 text-foreground hover:bg-accent absolute top-4 right-4 rounded-lg p-2 transition-colors"
           type="button"
           onClick={(e) => {
             e.stopPropagation();

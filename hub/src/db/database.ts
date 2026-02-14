@@ -1,9 +1,10 @@
-import { readFileSync } from 'node:fs';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import Database from 'better-sqlite3';
+
+import { runMigrations } from './migration-runner.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -18,15 +19,9 @@ export function createDatabase(dbPath: string): Database.Database {
   // Enable foreign keys
   db.pragma('foreign_keys = ON');
 
-  // Run schema migration
-  runMigrations(db);
+  // Run versioned schema migrations
+  const migrationsDir = join(__dirname, 'migrations');
+  runMigrations(db, migrationsDir);
 
   return db;
-}
-
-function runMigrations(db: Database.Database): void {
-  const schemaPath = join(__dirname, 'schema.sql');
-  const schema = readFileSync(schemaPath, 'utf-8');
-
-  db.exec(schema);
 }

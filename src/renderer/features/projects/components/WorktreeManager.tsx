@@ -30,7 +30,8 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
   const [selectedWorktreeBranch, setSelectedWorktreeBranch] = useState<string | null>(null);
 
   // Determine the main branch (main or master)
-  const mainBranch = branches?.find((b) => b.name === 'main' || b.name === 'master')?.name ?? 'main';
+  const mainBranch =
+    branches?.find((b) => b.name === 'main' || b.name === 'master')?.name ?? 'main';
 
   function handleOpenMerge(wtBranch: string) {
     setSelectedWorktreeBranch(wtBranch);

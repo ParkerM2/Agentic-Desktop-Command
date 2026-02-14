@@ -13,11 +13,7 @@ export function registerScreenHandlers(router: IpcRouter, service: ScreenCapture
     }),
   );
 
-  router.handle('screen.capture', (input) =>
-    service.capture(input.sourceId, input.options),
-  );
+  router.handle('screen.capture', (input) => service.capture(input.sourceId, input.options));
 
-  router.handle('screen.checkPermission', () =>
-    Promise.resolve(service.checkPermission()),
-  );
+  router.handle('screen.checkPermission', () => Promise.resolve(service.checkPermission()));
 }

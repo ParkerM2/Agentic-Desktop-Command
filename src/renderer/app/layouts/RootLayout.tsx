@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { Outlet } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 
+import { AppUpdateNotification } from '@renderer/shared/components/AppUpdateNotification';
 import { AuthNotification } from '@renderer/shared/components/AuthNotification';
 import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
@@ -60,6 +61,7 @@ export function RootLayout() {
           <Outlet />
         </main>
       </div>
+      <AppUpdateNotification />
       <AuthNotification />
       <HubNotification />
       <WebhookNotification />

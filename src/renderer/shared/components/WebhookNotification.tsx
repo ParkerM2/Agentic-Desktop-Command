@@ -89,7 +89,7 @@ export function WebhookNotification() {
     <div
       aria-label="Webhook notifications"
       aria-live="polite"
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
+      className="fixed right-4 bottom-4 z-50 flex flex-col gap-2"
       role="status"
     >
       {notifications.map((item) => (

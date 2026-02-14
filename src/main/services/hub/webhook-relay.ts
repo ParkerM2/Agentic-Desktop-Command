@@ -45,9 +45,7 @@ function isHubBroadcast(message: unknown): message is HubBroadcastMessage {
 
   const msg = message as Record<string, unknown>;
   return (
-    typeof msg.type === 'string' &&
-    typeof msg.entity === 'string' &&
-    typeof msg.action === 'string'
+    typeof msg.type === 'string' && typeof msg.entity === 'string' && typeof msg.action === 'string'
   );
 }
 
@@ -61,7 +59,7 @@ function extractWebhookCommand(data: unknown): WebhookCommand | null {
   }
 
   const raw = data as HubWebhookCommandData;
-  const {source} = raw;
+  const { source } = raw;
 
   if (source !== 'slack' && source !== 'github') {
     return null;

@@ -19,11 +19,9 @@ export function DailyStats() {
 
   // Count tasks completed today (status 'done' with updatedAt starting with today's date)
   const tasksCompleted =
-    tasks?.filter(
-      (task) => task.status === 'done' && task.updatedAt.startsWith(todayStr),
-    ).length ?? 0;
-  const agentsRan =
-    allAgents?.filter((agent) => agent.startedAt.startsWith(todayStr)).length ?? 0;
+    tasks?.filter((task) => task.status === 'done' && task.updatedAt.startsWith(todayStr)).length ??
+    0;
+  const agentsRan = allAgents?.filter((agent) => agent.startedAt.startsWith(todayStr)).length ?? 0;
 
   return (
     <div className="bg-card border-border rounded-lg border px-4 py-3">

@@ -1,6 +1,17 @@
 import { useState } from 'react';
 
-import { Edit, GitBranch, Plus, RefreshCw, Save, ScrollText, Shield, Trash2, Wrench, X } from 'lucide-react';
+import {
+  Edit,
+  GitBranch,
+  Plus,
+  RefreshCw,
+  Save,
+  ScrollText,
+  Shield,
+  Trash2,
+  Wrench,
+  X,
+} from 'lucide-react';
 
 import type { ChangeCategory, ChangelogEntry, ChangeType } from '@shared/types';
 
@@ -145,9 +156,7 @@ function GenerateForm({
       >
         {isPending ? 'Generating...' : 'Generate'}
       </button>
-      {errorMessage ? (
-        <p className="text-destructive text-sm">Error: {errorMessage}</p>
-      ) : null}
+      {errorMessage ? <p className="text-destructive text-sm">Error: {errorMessage}</p> : null}
     </div>
   );
 }
@@ -235,9 +244,7 @@ function EntryPreview({
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            No changes found in the commit history
-          </p>
+          <p className="text-muted-foreground text-sm">No changes found in the commit history</p>
         )}
       </div>
 
@@ -346,9 +353,7 @@ export function ChangelogPage() {
     setEditableCategories([]);
   }
 
-  const errorMessage = generateChangelog.isError
-    ? generateChangelog.error.message
-    : null;
+  const errorMessage = generateChangelog.isError ? generateChangelog.error.message : null;
 
   return (
     <div className="h-full overflow-y-auto p-6">

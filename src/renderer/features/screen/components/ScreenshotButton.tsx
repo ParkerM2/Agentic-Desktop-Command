@@ -10,7 +10,11 @@ import type { ScreenSource, Screenshot } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useAvailableSources, useCaptureScreen, useScreenPermission } from '../api/useScreenCapture';
+import {
+  useAvailableSources,
+  useCaptureScreen,
+  useScreenPermission,
+} from '../api/useScreenCapture';
 
 interface ScreenshotButtonProps {
   onCapture?: (screenshot: Screenshot) => void;
@@ -22,7 +26,11 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
   const [selectedSource, setSelectedSource] = useState<ScreenSource | null>(null);
 
   const { data: permission } = useScreenPermission();
-  const { data: sources, isLoading: sourcesLoading, refetch: refetchSources } = useAvailableSources({
+  const {
+    data: sources,
+    isLoading: sourcesLoading,
+    refetch: refetchSources,
+  } = useAvailableSources({
     types: ['screen', 'window'],
     thumbnailSize: { width: 150, height: 150 },
   });
@@ -100,13 +108,15 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
         aria-label="Select capture source"
         type="button"
         className={cn(
-          'bg-primary text-primary-foreground rounded-r-md border-l border-primary-foreground/20 px-2 py-2 transition-colors',
+          'bg-primary text-primary-foreground border-primary-foreground/20 rounded-r-md border-l px-2 py-2 transition-colors',
           'hover:bg-primary/90',
         )}
         onClick={handleDropdownToggle}
         onKeyDown={handleKeyDown}
       >
-        <ChevronDown className={cn('h-4 w-4 transition-transform', isDropdownOpen && 'rotate-180')} />
+        <ChevronDown
+          className={cn('h-4 w-4 transition-transform', isDropdownOpen && 'rotate-180')}
+        />
       </button>
 
       {/* Dropdown menu */}
@@ -114,7 +124,7 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
         <div
           role="listbox"
           className={cn(
-            'bg-popover border-border absolute right-0 top-full z-50 mt-1 w-72 rounded-lg border shadow-lg',
+            'bg-popover border-border absolute top-full right-0 z-50 mt-1 w-72 rounded-lg border shadow-lg',
             'max-h-80 overflow-y-auto',
           )}
         >
@@ -122,7 +132,8 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
             <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-2 border-b p-3">
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span className="text-xs">
-                Screen recording permission denied. Enable in System Preferences &gt; Security &amp; Privacy.
+                Screen recording permission denied. Enable in System Preferences &gt; Security &amp;
+                Privacy.
               </span>
             </div>
           ) : null}
@@ -206,11 +217,7 @@ function SourceOption({ source, icon, selected, onClick }: SourceOptionProps) {
     >
       {/* Thumbnail */}
       <div className="border-border h-10 w-14 shrink-0 overflow-hidden rounded border">
-        <img
-          alt={source.name}
-          className="h-full w-full object-cover"
-          src={source.thumbnail}
-        />
+        <img alt={source.name} className="h-full w-full object-cover" src={source.thumbnail} />
       </div>
 
       {/* Info */}

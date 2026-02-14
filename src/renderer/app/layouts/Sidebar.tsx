@@ -31,6 +31,7 @@ import {
 
 import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 
+import { HubConnectionIndicator } from '@renderer/shared/components/HubConnectionIndicator';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
@@ -155,8 +156,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Settings at bottom */}
+      {/* Footer: Hub indicator + Settings */}
       <div className="border-border border-t p-2">
+        <HubConnectionIndicator collapsed={sidebarCollapsed} />
         <button
           title={sidebarCollapsed ? 'Settings' : undefined}
           className={cn(

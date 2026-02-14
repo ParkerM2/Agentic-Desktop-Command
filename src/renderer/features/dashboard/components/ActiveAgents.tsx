@@ -59,9 +59,7 @@ export function ActiveAgents() {
                         agent.status === 'running' && 'animate-spin',
                       )}
                     />
-                    <span className="text-foreground text-xs font-medium">
-                      {agent.projectId}
-                    </span>
+                    <span className="text-foreground text-xs font-medium">{agent.projectId}</span>
                   </div>
                   <span className="text-muted-foreground text-xs">{agent.status}</span>
                 </div>

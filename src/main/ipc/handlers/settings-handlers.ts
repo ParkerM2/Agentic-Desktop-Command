@@ -4,10 +4,7 @@
 
 import type { AgentSettings } from '@shared/types';
 
-import {
-  loadOAuthCredentials,
-  saveOAuthCredentials,
-} from '../../auth/providers/provider-config';
+import { loadOAuthCredentials, saveOAuthCredentials } from '../../auth/providers/provider-config';
 
 import type { OAuthConfig } from '../../auth/types';
 import type { SettingsService } from '../../services/settings/settings-service';

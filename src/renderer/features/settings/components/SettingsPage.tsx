@@ -16,6 +16,8 @@ import { useThemeStore } from '@renderer/shared/stores';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
+import { BackgroundSettings } from './BackgroundSettings';
+import { HotkeySettings } from './HotkeySettings';
 import { HubSettings } from './HubSettings';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
@@ -154,6 +156,9 @@ export function SettingsPage() {
           ))}
         </div>
       </section>
+
+      {/* Background & Startup */}
+      <BackgroundSettings />
 
       {/* Profiles */}
       <ProfileSection />
@@ -327,6 +332,9 @@ export function SettingsPage() {
         </h2>
         <WebhookSettings />
       </section>
+
+      {/* ── Hotkeys ── */}
+      <HotkeySettings />
 
       {/* ── About ── */}
       <section className="mb-8">

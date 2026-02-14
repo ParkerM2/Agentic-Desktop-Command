@@ -3,7 +3,11 @@
  */
 
 // API hooks
-export { useCalendarEvents, useCalendarCreateEvent, useCalendarDeleteEvent } from './api/useCalendar';
+export {
+  useCalendarEvents,
+  useCalendarCreateEvent,
+  useCalendarDeleteEvent,
+} from './api/useCalendar';
 export { calendarKeys, spotifyKeys } from './api/queryKeys';
 
 // Components

@@ -25,8 +25,6 @@ import type { OAuthManager } from '../../auth/oauth-manager';
 import type { IpcRouter } from '../../ipc/router';
 import type { Notification as GitHubApiNotification } from '../../mcp-servers/github/types';
 
-
-
 // ── Types ────────────────────────────────────────────────────
 
 interface GitHubWatcherDeps {
@@ -116,9 +114,10 @@ function isRepoInFilter(owner: string, repo: string, repos: string[]): boolean {
   return repos.includes(fullName) || repos.includes(repo);
 }
 
-function extractNumberFromUrl(
-  url: string | null | undefined,
-): { prNumber?: number; issueNumber?: number } {
+function extractNumberFromUrl(url: string | null | undefined): {
+  prNumber?: number;
+  issueNumber?: number;
+} {
   if (url === null || url === undefined) {
     return {};
   }
@@ -159,12 +158,7 @@ function buildTitle(type: GitHubNotificationType, subjectTitle: string): string 
   }
 }
 
-function buildUrl(
-  owner: string,
-  repo: string,
-  prNumber?: number,
-  issueNumber?: number,
-): string {
+function buildUrl(owner: string, repo: string, prNumber?: number, issueNumber?: number): string {
   const base = `https://github.com/${owner}/${repo}`;
   if (prNumber !== undefined) {
     return `${base}/pull/${String(prNumber)}`;

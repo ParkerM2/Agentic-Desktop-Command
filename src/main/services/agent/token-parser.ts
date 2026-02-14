@@ -108,9 +108,10 @@ export function updateTokenUsage(
   const totalTokens = inputTokens + outputTokens;
 
   // Use parsed cost if available, otherwise estimate
-  const estimatedCostUsd = parsed.cost === undefined
-    ? estimateCost(inputTokens, outputTokens, model)
-    : current.estimatedCostUsd + parsed.cost;
+  const estimatedCostUsd =
+    parsed.cost === undefined
+      ? estimateCost(inputTokens, outputTokens, model)
+      : current.estimatedCostUsd + parsed.cost;
 
   return {
     inputTokens,
