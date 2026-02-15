@@ -398,3 +398,128 @@ function loadSecrets(): Map<string, Secret> {
 - **ALWAYS** provide base64 fallback for CI/testing environments
 - **ALWAYS** implement automatic migration from plaintext to encrypted
 - **ALWAYS** log a warning when falling back to base64 (indicates non-production environment)
+
+## Confirmation Dialog Pattern
+
+Use the shared `ConfirmDialog` for destructive actions (delete, remove, etc.):
+
+```typescript
+import { useState } from 'react';
+import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
+
+export function MyComponent() {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const deleteMutation = useDeleteThing();
+
+  function handleDelete() {
+    deleteMutation.mutate(
+      { id },
+      {
+        onSuccess: () => setConfirmOpen(false),
+      },
+    );
+  }
+
+  return (
+    <>
+      <button onClick={() => setConfirmOpen(true)}>Delete</button>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Delete Item"
+        description="Are you sure? This action cannot be undone."
+        variant="destructive"
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        loading={deleteMutation.isPending}
+      />
+    </>
+  );
+}
+```
+
+Key rules:
+- **Caller controls dialog close** — `onConfirm` does NOT auto-close; use `onSuccess` to close after mutation completes
+- **Loading state** — Pass `loading={mutation.isPending}` to disable buttons and show spinner during async operations
+- **Variant** — Use `"destructive"` for delete/remove actions (red confirm button), `"default"` for non-destructive confirmations
+
+## Mutation Error Toast Pattern
+
+Wire `onError` handlers to all user-facing mutations:
+
+```typescript
+import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
+
+export function useDeleteTask() {
+  const { onError } = useMutationErrorToast();
+
+  return useMutation({
+    mutationFn: ({ taskId, projectId }: { taskId: string; projectId: string }) =>
+      ipc('hub.tasks.delete', { taskId, projectId }),
+    onError: onError('delete task'),
+  });
+}
+```
+
+The `onError(action)` factory returns a callback that:
+1. Extracts the error message from the Error object
+2. Logs to console: `[Mutation Error] delete task: <message>`
+3. Adds a toast to the toast store (auto-dismisses after 5s, max 3 visible)
+
+Key rules:
+- **All user-facing mutations MUST have `onError` handlers** — silent failures are unacceptable
+- **Action string** — Use lowercase imperative: `'create task'`, `'delete project'`, `'update status'`
+- **Toast store** — `src/renderer/shared/stores/toast-store.ts` (Zustand, max 3 toasts, 5s auto-dismiss)
+- **Renderer** — `MutationErrorToast` mounted in `RootLayout.tsx` (fixed bottom-right)
+
+## Form Dialog Pattern
+
+For dialogs with form inputs (create, edit):
+
+```typescript
+export function CreateThingDialog() {
+  const store = useThingStore();
+  const createMutation = useCreateThing();
+  const [title, setTitle] = useState('');
+  const [error, setError] = useState('');
+
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (store.dialogOpen) {
+      setTitle('');
+      setError('');
+    }
+  }, [store.dialogOpen]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (title.trim().length === 0) {
+      setError('Title is required');
+      return;
+    }
+    createMutation.mutate(
+      { title: title.trim() },
+      {
+        onSuccess: () => store.setDialogOpen(false),
+        onError: (err) => setError(err instanceof Error ? err.message : 'Unknown error'),
+      },
+    );
+  }
+
+  return (
+    <Dialog open={store.dialogOpen} onOpenChange={store.setDialogOpen}>
+      <form onSubmit={handleSubmit}>
+        {/* form fields */}
+        {error && <p className="text-sm text-destructive">{error}</p>}
+      </form>
+    </Dialog>
+  );
+}
+```
+
+Key rules:
+- **Dialog open state in Zustand** — Store `dialogOpen` + `setDialogOpen` in the feature store
+- **Reset on open** — Clear form fields and errors when dialog opens
+- **Inline errors** — Show validation/mutation errors inside the dialog, not as toasts
+- **No autoFocus** — `jsx-a11y/no-autofocus` rule forbids `autoFocus` prop
+- **Form submit** — Use `<form onSubmit>` for Enter key support (except in textareas)

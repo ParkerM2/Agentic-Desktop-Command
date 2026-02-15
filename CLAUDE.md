@@ -305,6 +305,37 @@ Raw hex/rgb/hsl values are **ONLY** allowed inside theme variable definitions:
 | `ai-docs/DATA-FLOW.md` | Detailed data flow diagrams for all systems |
 | `ai-docs/CODEBASE-GUARDIAN.md` | File placement rules, naming conventions, import rules |
 | `ai-docs/LINTING.md` | ESLint rules reference and fix patterns |
+| `ai-docs/user-interface-flow.md` | UX flow map, gap analysis, component wiring |
 | `ai-docs/prompts/implementing-features/README.md` | Team workflow for multi-agent feature implementation |
 
 **Current gaps and priorities:** `docs/plans/2026-02-13-full-codebase-audit.md`
+
+## Documentation Update Requirement — MANDATORY
+
+**Every commit or push that changes code MUST include corresponding updates to the relevant architecture docs.**
+
+These docs are the source of truth for all Claude agents — planning agents, specialized engineers, and QA reviewers all read them to understand the system. If docs fall out of sync with code, agents will plan against stale context, produce incorrect implementations, and miss integration points.
+
+### What to Update
+
+| Change Type | Docs to Update |
+|-------------|----------------|
+| New component/hook/store | `FEATURES-INDEX.md` (inventory), `PATTERNS.md` (usage examples) |
+| New data flow or IPC wiring | `DATA-FLOW.md` (flow diagram), `ARCHITECTURE.md` (system overview) |
+| New shared utility | `FEATURES-INDEX.md` (shared sections), `CODEBASE-GUARDIAN.md` (placement rules) |
+| UI layout changes | `user-interface-flow.md` (UX flow sections), `FEATURES-INDEX.md` (layouts) |
+| New feature module | `FEATURES-INDEX.md` (feature table), `ARCHITECTURE.md` (system diagram if applicable) |
+| Gap resolution | `user-interface-flow.md` (mark gap RESOLVED with date and description) |
+| New pattern or convention | `PATTERNS.md` (pattern example with code) |
+
+### The Rule
+
+> **Code changes without doc updates are incomplete work.** Agents treating undocumented features as non-existent is correct behavior — if it's not in the docs, it doesn't exist for planning purposes.
+
+### Checklist Before Committing
+
+1. Did I add a new file? → Update `FEATURES-INDEX.md`
+2. Did I add a new data flow? → Update `DATA-FLOW.md`
+3. Did I introduce a new pattern? → Update `PATTERNS.md`
+4. Did I change the architecture? → Update `ARCHITECTURE.md`
+5. Did I change the UI layout or resolve a gap? → Update `user-interface-flow.md`

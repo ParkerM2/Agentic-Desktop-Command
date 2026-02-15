@@ -25,7 +25,7 @@ Location: `src/renderer/features/`
 | **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | CommandBar (TopBar) | `assistant.*` |
-| **auth** | User authentication | LoginPage, RegisterPage | `auth.*` |
+| **auth** | User authentication | LoginPage, RegisterPage, AuthGuard, UserMenu (in layouts) | `auth.*` |
 | **changelog** | Project changelog viewer | ChangelogPage, ChangelogEntry | `changelog.*` |
 | **communications** | Slack/Discord integration | SlackPanel, DiscordPanel | MCP tools |
 | **dashboard** | Home dashboard | DashboardPage, TodayView, DailyStats, ActiveAgents | multiple |
@@ -36,10 +36,10 @@ Location: `src/renderer/features/`
 | **notes** | Note-taking | NotesPage, NoteEditor, NoteList | `notes.*` |
 | **planner** | Daily planner | PlannerPage, TimeBlockGrid, TimeBlockCard | `planner.*` |
 | **productivity** | Productivity widgets | CalendarWidget, SpotifyWidget | `calendar.*`, `spotify.*` |
-| **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager | `projects.*` |
+| **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager, ProjectEditDialog | `projects.*` |
 | **roadmap** | Project roadmap | RoadmapPage, MilestoneCard | `milestones.*` |
 | **settings** | App settings | SettingsPage, HubSettings, OAuthProviderSettings, WebhookSettings | `settings.*` |
-| **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid, TaskFiltersToolbar, TaskDetailRow, TaskStatusBadge | `hub.tasks.*`, `tasks.*` |
+| **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid, TaskFiltersToolbar, TaskDetailRow, TaskStatusBadge, CreateTaskDialog | `hub.tasks.*`, `tasks.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions | BriefingPage, SuggestionCard | `briefing.*` |
 | **merge** | Branch merge workflow | ConflictResolver, MergeConfirmModal, MergePreviewPanel | `merge.*` |
@@ -253,6 +253,37 @@ Location: `src/renderer/app/layouts/`
 | `Sidebar.tsx` | Navigation sidebar |
 | `TopBar.tsx` | Top bar with assistant command input |
 | `CommandBar.tsx` | Global command palette (Cmd+K) |
+| `UserMenu.tsx` | Avatar + logout dropdown in sidebar footer |
+
+---
+
+## 6.5 Shared UI Components
+
+Location: `src/renderer/shared/components/`
+
+| Component | Purpose |
+|-----------|---------|
+| `ConfirmDialog.tsx` | Reusable confirmation dialog for destructive actions (delete task, delete project). Props: `open`, `onOpenChange`, `title`, `description`, `variant` ('destructive' | 'default'), `onConfirm`, `loading` |
+| `MutationErrorToast.tsx` | Error toast renderer, mounted in RootLayout. Reads from `useToastStore`, renders fixed bottom-right |
+
+## 6.6 Shared Hooks
+
+Location: `src/renderer/shared/hooks/`
+
+| Hook | Purpose |
+|------|---------|
+| `useIpcEvent.ts` | Subscribe to IPC events from main process |
+| `useMutationErrorToast.ts` | `onError(action)` factory for React Query mutation error handling → toast notifications |
+
+## 6.7 Shared Stores
+
+Location: `src/renderer/shared/stores/`
+
+| Store | Purpose |
+|-------|---------|
+| `layout-store.ts` | Sidebar state, active project, project tabs |
+| `theme-store.ts` | Dark/light mode, color theme, UI scale |
+| `toast-store.ts` | Toast notification queue (max 3, auto-dismiss 5s) |
 
 ---
 
