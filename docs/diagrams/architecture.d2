@@ -1,0 +1,289 @@
+# Claude UI Architecture Diagram
+# Compact vertical layout with animated data flow
+
+direction: down
+
+vars: {
+  d2-config: {
+    theme-id: 200
+    layout-engine: dagre
+  }
+}
+
+# ============================================
+# TOP ROW: Renderer + Main Process side by side
+# ============================================
+processes: "" {
+  direction: right
+  style.fill: transparent
+  style.stroke: transparent
+
+  # RENDERER PROCESS
+  renderer: Renderer Process {
+    style: {
+      fill: "#1a1a2e"
+      stroke: "#4f46e5"
+      stroke-width: 3
+      border-radius: 12
+    }
+
+    react: React 19 {
+      icon: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg
+      style.fill: "#16213e"
+      style.stroke: "#61DAFB"
+      style.border-radius: 8
+    }
+
+    router: TanStack Router {
+      style.fill: "#16213e"
+      style.stroke: "#FF4154"
+      style.border-radius: 8
+    }
+
+    query: React Query {
+      style.fill: "#16213e"
+      style.stroke: "#FF4154"
+      style.border-radius: 8
+    }
+
+    zustand: Zustand {
+      style.fill: "#16213e"
+      style.stroke: "#764ABC"
+      style.border-radius: 8
+    }
+
+    features: 25 Features {
+      style.fill: "#16213e"
+      style.stroke: "#22d3ee"
+      style.border-radius: 8
+    }
+  }
+
+  # MAIN PROCESS
+  main: Main Process {
+    style: {
+      fill: "#1a1a2e"
+      stroke: "#10b981"
+      stroke-width: 3
+      border-radius: 12
+    }
+
+    electron: Electron 39 {
+      icon: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/electron/electron-original.svg
+      style.fill: "#16213e"
+      style.stroke: "#47848F"
+      style.border-radius: 8
+    }
+
+    node: Node.js {
+      icon: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg
+      style.fill: "#16213e"
+      style.stroke: "#68A063"
+      style.border-radius: 8
+    }
+
+    ipc-router: IPC Router {
+      style.fill: "#16213e"
+      style.stroke: "#f59e0b"
+      style.border-radius: 8
+    }
+
+    services: 29 Services {
+      style.fill: "#16213e"
+      style.stroke: "#10b981"
+      style.border-radius: 8
+    }
+
+    oauth: OAuth {
+      style.fill: "#16213e"
+      style.stroke: "#a855f7"
+      style.border-radius: 8
+    }
+
+    mcp: MCP Servers {
+      style.fill: "#16213e"
+      style.stroke: "#ec4899"
+      style.border-radius: 8
+    }
+  }
+}
+
+# ============================================
+# MIDDLE: Preload Bridge (spans width)
+# ============================================
+bridge: Preload Bridge {
+  style: {
+    fill: "#0f3460"
+    stroke: "#e94560"
+    stroke-width: 3
+    border-radius: 12
+  }
+
+  context: Typed IPC Context {
+    style.fill: "#16213e"
+    style.stroke: "#e94560"
+    style.border-radius: 8
+  }
+
+  api: window.api {
+    style.fill: "#16213e"
+    style.stroke: "#e94560"
+    style.border-radius: 8
+  }
+
+  context -> api: expose {
+    style.stroke: "#e94560"
+    style.stroke-dash: 3
+  }
+}
+
+# ============================================
+# BOTTOM ROW: External Services + Data Layer
+# ============================================
+infra: "" {
+  direction: right
+  style.fill: transparent
+  style.stroke: transparent
+
+  # EXTERNAL SERVICES
+  external: External Services {
+    style: {
+      fill: "#1e1e30"
+      stroke: "#f59e0b"
+      stroke-width: 3
+      border-radius: 12
+    }
+
+    hub: Hub Server {
+      icon: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastify/fastify-original.svg
+      style.fill: "#16213e"
+      style.stroke: "#f59e0b"
+      style.border-radius: 8
+    }
+
+    github: GitHub {
+      icon: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg
+      style.fill: "#16213e"
+      style.stroke: "#ffffff"
+      style.border-radius: 8
+    }
+
+    anthropic: Anthropic {
+      style.fill: "#16213e"
+      style.stroke: "#D97706"
+      style.border-radius: 8
+    }
+
+    spotify: Spotify {
+      style.fill: "#16213e"
+      style.stroke: "#1DB954"
+      style.border-radius: 8
+    }
+
+    calendar: Calendar {
+      style.fill: "#16213e"
+      style.stroke: "#4285F4"
+      style.border-radius: 8
+    }
+  }
+
+  # DATA LAYER
+  storage: Data Layer {
+    style: {
+      fill: "#1e1e30"
+      stroke: "#8b5cf6"
+      stroke-width: 3
+      border-radius: 12
+    }
+
+    sqlite: SQLite {
+      icon: https://cdn.jsdelivr.net/gh/devicons/devicon/icons/sqlite/sqlite-original.svg
+      style.fill: "#16213e"
+      style.stroke: "#003B57"
+      style.border-radius: 8
+    }
+
+    json: JSON Files {
+      style.fill: "#16213e"
+      style.stroke: "#8b5cf6"
+      style.border-radius: 8
+    }
+
+    specs: Task Specs {
+      style.fill: "#16213e"
+      style.stroke: "#8b5cf6"
+      style.border-radius: 8
+    }
+  }
+}
+
+# ============================================
+# ANIMATED CONNECTIONS
+# ============================================
+
+# Renderer -> Bridge
+processes.renderer.query -> bridge.context: invoke() {
+  style.stroke: "#61DAFB"
+  style.stroke-width: 3
+  style.animated: true
+}
+
+# Bridge -> Main
+bridge.api -> processes.main.ipc-router: ipcMain.handle {
+  style.stroke: "#e94560"
+  style.stroke-width: 3
+  style.animated: true
+}
+
+# Main -> Bridge (response)
+processes.main.ipc-router -> bridge.api: IpcResult<T> {
+  style.stroke: "#10b981"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+# Bridge -> Renderer (events)
+bridge.context -> processes.renderer.features: events {
+  style.stroke: "#22d3ee"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+# Main -> External
+processes.main.services -> infra.external.hub: WebSocket {
+  style.stroke: "#f59e0b"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+processes.main.oauth -> infra.external.github: REST {
+  style.stroke: "#ffffff"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+processes.main.services -> infra.external.anthropic: SDK {
+  style.stroke: "#D97706"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+# Main -> Storage
+processes.main.services -> infra.storage.json: read/write {
+  style.stroke: "#8b5cf6"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+processes.main.services -> infra.storage.specs: tasks {
+  style.stroke: "#8b5cf6"
+  style.stroke-width: 2
+  style.animated: true
+}
+
+# External -> Storage
+infra.external.hub -> infra.storage.sqlite: persist {
+  style.stroke: "#003B57"
+  style.stroke-width: 2
+  style.animated: true
+}
