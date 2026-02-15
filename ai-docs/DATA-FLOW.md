@@ -690,3 +690,232 @@ heartbeatService.stop()
   v
 clearInterval(timer)
 ```
+
+---
+
+## 14. Proactive Token Refresh Flow
+
+```
+AuthGuard mounts
+  |
+  v
+useTokenRefresh()                              useTokenRefresh.ts
+  |
+  v
+Read expiresAt from useAuthStore
+  |
+  v
+Calculate: timeUntilRefresh = expiresAt - Date.now() - REFRESH_BUFFER_MS (2 min)
+  |
+  v
+setTimeout(refreshCallback, timeUntilRefresh)
+  |
+  v (timer fires)
+useRefreshToken().mutate()
+  |
+  v
+ipc('auth.refreshToken', { refreshToken })
+  |
+  v
+                              auth-handlers.ts → hubAuthService.refreshToken()
+                                |
+                                v
+                              POST /api/auth/refresh
+                                |
+                                v
+                              New { accessToken, refreshToken, expiresIn }
+                                |
+                                v
+                              tokenStore.setTokens(newTokens)
+  |
+  v
+onSuccess:
+  setExpiresAt(Date.now() + expiresIn * 1000)    auth store
+  updateTokens(newTokens)                          auth store
+  → Effect re-runs → new setTimeout scheduled
+  |
+  v
+onError:
+  clearAuth()                                     auth store
+  → Redirect to /login
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/renderer/features/auth/hooks/useTokenRefresh.ts` | Timer hook, mounts in AuthGuard |
+| `src/renderer/features/auth/store.ts` | `expiresAt` field, `setExpiresAt` action |
+| `src/renderer/features/auth/api/useAuth.ts` | Sets `expiresAt` on login/register/refresh |
+
+---
+
+## 15. Mutation Error Toast Flow
+
+```
+React mutation fires
+  |
+  v
+useMutation({ onError: onError('create task') })
+  |
+  v
+Mutation fails (Hub disconnect, network error, server error)
+  |
+  v
+onError callback fires                         useMutationErrorToast.ts
+  |
+  v
+Extract error message from Error object
+  |
+  v
+console.error('[Mutation Error]', action, error)
+  |
+  v
+useToastStore.getState().addToast({
+  id: crypto.randomUUID(),
+  message: `Failed to ${action}: ${errorMessage}`,
+  type: 'error'
+})
+  |
+  v
+toast-store.ts (Zustand)                       toast-store.ts
+  |
+  +--> Cap at 3 visible toasts (remove oldest if over)
+  |
+  +--> Schedule auto-dismiss: setTimeout(removeToast, 5000)
+  |
+  v
+MutationErrorToast component re-renders         MutationErrorToast.tsx
+  |  (mounted in RootLayout.tsx, fixed bottom-right)
+  v
+Renders toast with:
+  - AlertTriangle icon
+  - Error message text
+  - Dismiss (X) button
+  - role="alert" aria-live="assertive"
+  |
+  v (after 5s)
+Toast auto-removes from store → component re-renders → toast fades
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/renderer/shared/hooks/useMutationErrorToast.ts` | `onError(action)` factory hook |
+| `src/renderer/shared/stores/toast-store.ts` | Zustand store: addToast, removeToast |
+| `src/renderer/shared/components/MutationErrorToast.tsx` | Toast renderer in RootLayout |
+
+---
+
+## 16. Delete Confirmation Flow
+
+```
+User clicks delete button (task or project)
+  |
+  v
+Component sets confirmOpen = true              TaskControls.tsx / ActionsCell.tsx
+  |
+  v
+<ConfirmDialog
+  open={confirmOpen}
+  title="Delete Task"
+  description="Are you sure? This cannot be undone."
+  variant="destructive"
+  onConfirm={handleDelete}
+  loading={deleteMutation.isPending}
+/>
+  |
+  v
+ConfirmDialog renders modal overlay            ConfirmDialog.tsx
+  |
+  +--> Escape key → onOpenChange(false) → dialog closes, no action
+  +--> Backdrop click → onOpenChange(false) → dialog closes, no action
+  +--> Cancel button → onOpenChange(false) → dialog closes, no action
+  |
+  +--> Confirm button clicked:
+       |
+       v
+     onConfirm() fires
+       |
+       v
+     useDeleteTask().mutate({ taskId, projectId })
+       |
+       v
+     ipc('hub.tasks.delete', { taskId })
+       |
+       v
+     Loading spinner shown (loading={isPending})
+       |
+       v
+     onSuccess: setConfirmOpen(false) → dialog closes
+     onError: toast shown via useMutationErrorToast
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/renderer/shared/components/ConfirmDialog.tsx` | Reusable confirmation dialog |
+| `src/renderer/features/tasks/components/detail/TaskControls.tsx` | Task detail panel delete |
+| `src/renderer/features/tasks/components/cells/ActionsCell.tsx` | Grid row delete action |
+| `src/renderer/features/projects/components/ProjectEditDialog.tsx` | Project delete (nested confirm) |
+
+---
+
+## 17. Task Creation Dialog Flow
+
+```
+User clicks "New Task" button                  TaskFiltersToolbar.tsx
+  |
+  v
+useTaskStore.setCreateDialogOpen(true)         tasks/store.ts
+  |
+  v
+<CreateTaskDialog />                           CreateTaskDialog.tsx
+  |
+  v
+Dialog renders form:
+  - Title (required, text input)
+  - Description (optional, textarea)
+  - Priority (select: low/normal/high/urgent, default: normal)
+  |
+  v
+User fills form and clicks "Create Task"
+  |
+  v
+Validate: title is non-empty
+  |
+  v
+useCreateTask().mutate({
+  projectId: activeProjectId,
+  title, description, priority
+})
+  |
+  v
+ipc('hub.tasks.create', { projectId, title, description, priority })
+  |
+  v
+                              task-handlers.ts → hubApiClient.createTask(...)
+                                |
+                                v
+                              POST /api/tasks
+                                |
+                                v
+                              Hub creates task, WS broadcasts task.created
+  |
+  v
+onSuccess:
+  Reset form fields
+  setCreateDialogOpen(false)
+  React Query cache invalidated → grid refreshes → new task visible
+  |
+  v
+onError:
+  Show error message in dialog (inline, not toast)
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/renderer/features/tasks/components/CreateTaskDialog.tsx` | Task creation form dialog |
+| `src/renderer/features/tasks/components/TaskFiltersToolbar.tsx` | "New Task" button |
+| `src/renderer/features/tasks/store.ts` | `createDialogOpen` state |
+| `src/renderer/features/tasks/api/useTasks.ts` | `useCreateTask()` mutation |

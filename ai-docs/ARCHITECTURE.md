@@ -113,6 +113,47 @@ Pattern:
 - `useTaskMutations.ts` defines mutation hooks (write operations with optimistic updates)
 - `use<Feature>Events.ts` subscribes to IPC events and invalidates relevant queries
 
+## Mutation Error Handling
+
+All task and project mutations use `onError` callbacks to show user-facing error toasts:
+
+```typescript
+import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
+
+export function useCreateTask() {
+  const { onError } = useMutationErrorToast();
+  return useMutation({
+    mutationFn: (input) => ipc('hub.tasks.create', input),
+    onError: onError('create task'),
+  });
+}
+```
+
+The toast system uses a Zustand store (`src/renderer/shared/stores/toast-store.ts`) with auto-dismiss (5s) and max 3 visible toasts. The `MutationErrorToast` component renders in `RootLayout.tsx`.
+
+### Wired Mutations (11 total)
+- **Tasks**: createTask, updateTaskStatus, deleteTask, executeTask, cancelTask
+- **Projects**: addProject, removeProject, updateProject, createSubProject, deleteSubProject, selectDirectory (error only)
+
+## Proactive Token Refresh
+
+The auth system proactively refreshes JWT tokens before expiry rather than waiting for 401 responses:
+
+```
+AuthGuard mounts → useTokenRefresh() starts
+  → Reads expiresAt from auth store
+  → Sets setTimeout for (expiresAt - 2 minutes)
+  → On timer fire: calls useRefreshToken().mutate()
+    → Success: updates expiresAt, timer reschedules via effect
+    → Failure: clearAuth() → redirect to login
+  → Cleanup: clearTimeout on unmount/logout
+```
+
+Key files:
+- `src/renderer/features/auth/hooks/useTokenRefresh.ts` — Timer hook
+- `src/renderer/features/auth/store.ts` — `expiresAt` field + `setExpiresAt` action
+- `src/renderer/features/auth/components/AuthGuard.tsx` — Calls `useTokenRefresh()`
+
 ## Terminal System
 
 - **TerminalService** spawns real PTY processes via `@lydell/node-pty`
@@ -348,7 +389,7 @@ The Electron client connects to a self-hosted Hub server for multi-device sync.
 
 1. **Login**: `hub.auth.login` → Hub validates → returns access + refresh tokens
 2. **Token Storage**: Tokens encrypted with `safeStorage` in `hub-token-store.ts`
-3. **Auto-Refresh**: Token store checks expiry, refreshes when < 5 min remaining
+3. **Proactive Refresh**: `useTokenRefresh()` hook sets timer 2 min before `expiresAt`, refreshes automatically
 4. **Device Registration**: On startup, registers device with Hub + 30s heartbeat
 5. **WebSocket Auth**: First message after connect is `{ type: "auth", apiKey }`, validated within 5s
 
@@ -458,6 +499,19 @@ The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 - **Detail rows** — DIY master/detail via `isFullWidthRow` + `fullWidthCellRenderer` (Community workaround for Enterprise-only feature)
 - **TaskFiltersToolbar** — Filter controls above the grid
 - **TaskDetailRow** — Expanded row showing subtasks, execution log, PR status, and task controls
+
+### Shared UI Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `ConfirmDialog` | `src/renderer/shared/components/ConfirmDialog.tsx` | Reusable destructive-action confirmation (used by task delete, project delete) |
+| `MutationErrorToast` | `src/renderer/shared/components/MutationErrorToast.tsx` | Fixed bottom-right error toast renderer |
+
+### App Layout Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer |
 
 ## Build System
 

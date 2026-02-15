@@ -160,22 +160,32 @@ User opens app with stored session
 ### 2.5 Token Refresh
 
 - Access tokens expire after 15 minutes
-- Refresh handled by `useAuthInit()` on app start
+- **Proactive refresh**: `useTokenRefresh()` hook sets a `setTimeout` that fires 2 minutes before `expiresAt`
+- On timer fire: calls `useRefreshToken().mutate()` → updates `expiresAt` → timer reschedules
+- On refresh failure: `clearAuth()` → redirect to login
+- Hook mounted in `AuthGuard.tsx` (runs for all authenticated pages)
+- Fallback: `useAuthInit()` handles refresh on app start for expired tokens
 - Main process is authoritative token owner (stores in TokenStore via `hub-auth-service.ts`)
 - Renderer stores copy in localStorage for quick startup check
+
+**Key files**:
+- `src/renderer/features/auth/hooks/useTokenRefresh.ts` — proactive timer hook
+- `src/renderer/features/auth/store.ts` — `expiresAt` field, `setExpiresAt` action
 
 ### 2.6 Logout
 
 ```
-User clicks logout (location TBD — not currently in any visible UI element)
-  → useLogout() mutation
+User clicks avatar in sidebar footer → UserMenu dropdown opens
+  → Clicks "Log out" (destructive button with LogOut icon)
+  → useLogout().mutate()
   → ipc('auth.logout', {}) → hubAuthService.logout()
-  → clearAuth() → clears localStorage
+  → clearAuth() → clears localStorage + expiresAt
   → queryClient.clear() → wipes all React Query cache
-  → AuthGuard detects isAuthenticated = false → redirects to /login
+  → onSuccess → navigate to /login
 ```
 
 **Key files**:
+- `src/renderer/app/layouts/UserMenu.tsx` → avatar + logout dropdown in sidebar footer
 - `src/renderer/features/auth/api/useAuth.ts` → `useLogout()`
 - `src/main/ipc/handlers/auth-handlers.ts` → `auth.logout`
 - `src/renderer/features/auth/store.ts` → `clearAuth()`
@@ -252,6 +262,7 @@ After auth + onboarding, the user sees the main app shell:
 │ Changelog│                                          │
 │ Insights │                                          │
 │ ──────── │                                          │
+│ 👤 User  │  (UserMenu: avatar + logout dropdown)    │
 │ 🟢 Hub   │                                          │
 │ Settings │                                          │
 └──────────┴──────────────────────────────────────────┘
@@ -265,6 +276,7 @@ After auth + onboarding, the user sees the main app shell:
 | `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button + Hub status + command bar |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global assistant input (Cmd+K) |
+| `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |
 | `HubConnectionIndicator` | `src/renderer/shared/components/HubConnectionIndicator.tsx` | Shows connected/disconnected dot |
 | `ThemeHydrator` | `src/renderer/shared/stores/theme-store.ts` | Applies theme class + data attributes to `<html>` |
 
@@ -276,11 +288,12 @@ If `hubStatus.status === 'disconnected' || 'error'`:
 
 ### Notification Toasts
 
-Four notification components render in RootLayout:
+Five notification components render in RootLayout:
 - `AppUpdateNotification` — new version available
 - `AuthNotification` — auth errors/expiry
 - `HubNotification` — hub connection events
 - `WebhookNotification` — webhook execution results
+- `MutationErrorToast` — error toasts for failed mutations (fixed bottom-right, auto-dismiss 5s)
 
 ---
 
@@ -319,6 +332,7 @@ Four notification components render in RootLayout:
 - Last updated timestamp
 - "+" button to create new project
 - "Wand" button to open init wizard
+- **Pencil icon** per project to open `ProjectEditDialog` (edit name/description/branch/gitUrl, or delete with confirmation)
 - Trash icon per project to delete
 
 **Data flow**:
@@ -371,9 +385,23 @@ Once a project is active, these routes become available:
 | `/projects/$projectId/changelog` | `ChangelogPage` | `src/renderer/features/changelog/` |
 | `/projects/$projectId/insights` | `InsightsPage` | `src/renderer/features/insights/` |
 
+### 6.5 Editing a Project
+
+**Component**: `ProjectEditDialog`
+**File**: `src/renderer/features/projects/components/ProjectEditDialog.tsx`
+
+```
+User clicks pencil icon on project card
+  → ProjectEditDialog opens (pre-filled with current project data)
+  → Form fields: Name (required), Description, Default Branch, Git URL
+  → "Save" sends only changed fields via useUpdateProject().mutate()
+  → "Delete" button at bottom → opens nested ConfirmDialog
+    → On confirm: useRemoveProject().mutate() → project removed from list
+```
+
 **Key files**:
-- `src/renderer/features/projects/` — project list, init wizard, sub-project selector
-- `src/renderer/features/projects/api/useProjects.ts` — all project hooks
+- `src/renderer/features/projects/` — project list, init wizard, sub-project selector, edit dialog
+- `src/renderer/features/projects/api/useProjects.ts` — all project hooks (7 mutations with onError)
 - `src/renderer/features/projects/api/queryKeys.ts` — cache keys
 - `src/main/services/project/project-service.ts` — Hub API proxy service
 - `src/main/ipc/handlers/project-handlers.ts` — IPC handlers
@@ -401,13 +429,14 @@ Once a project is active, these routes become available:
 | Cost | `CostCell` | `cells/CostCell.tsx` | Token cost estimate ($) |
 | PR | `PrStatusCell` | `cells/PrStatusCell.tsx` | Pull request status with link |
 | Updated | `RelativeTimeCell` | `cells/RelativeTimeCell.tsx` | "2m ago", "1h ago" timestamps |
-| Actions | `ActionsCell` | `cells/ActionsCell.tsx` | Play/Stop/Delete action buttons |
+| Actions | `ActionsCell` | `cells/ActionsCell.tsx` | Play/Stop/Delete action buttons (delete opens `ConfirmDialog`) |
 
 ### 7.2 Task Filter Toolbar
 
 **Component**: `TaskFiltersToolbar`
 **File**: `src/renderer/features/tasks/components/TaskFiltersToolbar.tsx`
 
+- **"New Task" button** (primary, Plus icon) — opens `CreateTaskDialog` for task creation
 - Text search input (filters across all columns)
 - Status filter chips (queue, in_progress, completed, failed)
 - State stored in Zustand: `src/renderer/features/tasks/store.ts`
@@ -428,13 +457,18 @@ User clicks expand chevron
 | Subtasks | `SubtaskList` | `detail/SubtaskList.tsx` | Checklist of subtasks with completion status |
 | Execution Log | `ExecutionLog` | `detail/ExecutionLog.tsx` | Agent output/activity history |
 | PR Status | `PrStatusPanel` | `detail/PrStatusPanel.tsx` | Pull request details, review status |
-| Controls | `TaskControls` | `detail/TaskControls.tsx` | Start/Stop/Cancel/Delete buttons |
+| Controls | `TaskControls` | `detail/TaskControls.tsx` | Start/Stop/Cancel/Delete buttons (delete opens `ConfirmDialog`) |
 
 ### 7.4 Creating a Task
 
+**UI**: Click "New Task" in `TaskFiltersToolbar` → opens `CreateTaskDialog`
+**Dialog fields**: Title (required), Description (optional textarea), Priority (select: low/normal/high/urgent)
+**Component**: `src/renderer/features/tasks/components/CreateTaskDialog.tsx`
+**Dialog state**: `createDialogOpen` in `src/renderer/features/tasks/store.ts`
+
 **Process**:
-1. Create task form/dialog (via UI)
-2. `useMutation` → `ipc('tasks.create', { title, description, projectId, complexity })`
+1. User fills form in `CreateTaskDialog`, clicks "Create Task"
+2. `useMutation` → `ipc('hub.tasks.create', { title, description, projectId, priority })`
 3. Handler: `task-handlers.ts` → Hub API POST `/api/tasks`
 4. Hub creates task → broadcasts WebSocket event `task:created`
 5. Electron main receives WS → emits IPC event `event:hub.taskUpdated`
