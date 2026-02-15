@@ -20,17 +20,17 @@ interface TaskRow {
   execution_session_id: string | null;
   progress: string | null;
   metadata: string | null;
+  agent_name: string | null;
+  activity_history: string;
+  cost_tokens: number;
+  cost_usd: number;
+  pr_number: number | null;
+  pr_state: string | null;
+  pr_ci_status: string | null;
+  pr_url: string | null;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
-}
-
-interface TaskWithSubtasks extends TaskRow {
-  subtasks: Subtask[];
-}
-
-interface WorkspaceRow {
-  id: string;
-  user_id: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -50,6 +50,15 @@ function formatTask(row: TaskRow) {
     executionSessionId: row.execution_session_id ?? undefined,
     progress: row.progress ? JSON.parse(row.progress) : undefined,
     metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+    agentName: row.agent_name ?? undefined,
+    activityHistory: JSON.parse(row.activity_history),
+    costTokens: row.cost_tokens,
+    costUsd: row.cost_usd,
+    prNumber: row.pr_number ?? undefined,
+    prState: row.pr_state ?? undefined,
+    prCiStatus: row.pr_ci_status ?? undefined,
+    prUrl: row.pr_url ?? undefined,
+    completedAt: row.completed_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -120,6 +129,7 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       priority?: number;
       workspace_id?: string;
       sub_project_id?: string;
+      agent_name?: string;
       metadata?: Record<string, unknown>;
     };
   }>('/api/tasks', async (request, reply) => {
@@ -131,6 +141,7 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       priority,
       workspace_id,
       sub_project_id,
+      agent_name,
       metadata,
     } = request.body;
 
@@ -147,8 +158,8 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
     db.prepare(
       `INSERT INTO tasks (
         id, project_id, workspace_id, sub_project_id, title, description,
-        status, priority, created_by_device_id, metadata, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        status, priority, created_by_device_id, agent_name, metadata, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       id,
       project_id,
@@ -159,6 +170,7 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       status ?? 'backlog',
       priority ?? 0,
       createdByDeviceId,
+      agent_name ?? null,
       metadata ? JSON.stringify(metadata) : null,
       now,
       now,
@@ -206,6 +218,14 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       workspace_id: string | null;
       sub_project_id: string | null;
       assigned_device_id: string | null;
+      agent_name: string | null;
+      activity_history: unknown[];
+      cost_tokens: number;
+      cost_usd: number;
+      pr_number: number | null;
+      pr_state: string | null;
+      pr_ci_status: string | null;
+      pr_url: string | null;
       metadata: Record<string, unknown>;
     }>;
   }>('/api/tasks/:id', async (request, reply) => {
@@ -253,6 +273,38 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       updates.push('assigned_device_id = ?');
       values.push(request.body.assigned_device_id);
     }
+    if (request.body.agent_name !== undefined) {
+      updates.push('agent_name = ?');
+      values.push(request.body.agent_name);
+    }
+    if (request.body.activity_history !== undefined) {
+      updates.push('activity_history = ?');
+      values.push(JSON.stringify(request.body.activity_history));
+    }
+    if (request.body.cost_tokens !== undefined) {
+      updates.push('cost_tokens = ?');
+      values.push(request.body.cost_tokens);
+    }
+    if (request.body.cost_usd !== undefined) {
+      updates.push('cost_usd = ?');
+      values.push(request.body.cost_usd);
+    }
+    if (request.body.pr_number !== undefined) {
+      updates.push('pr_number = ?');
+      values.push(request.body.pr_number);
+    }
+    if (request.body.pr_state !== undefined) {
+      updates.push('pr_state = ?');
+      values.push(request.body.pr_state);
+    }
+    if (request.body.pr_ci_status !== undefined) {
+      updates.push('pr_ci_status = ?');
+      values.push(request.body.pr_ci_status);
+    }
+    if (request.body.pr_url !== undefined) {
+      updates.push('pr_url = ?');
+      values.push(request.body.pr_url);
+    }
     if (request.body.metadata !== undefined) {
       const existingMeta = existing.metadata ? JSON.parse(existing.metadata) : {};
       const merged = { ...existingMeta, ...request.body.metadata };
@@ -285,7 +337,10 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
     }
 
     db.prepare('DELETE FROM tasks WHERE id = ?').run(request.params.id);
-    broadcast('tasks', 'deleted', request.params.id, { id: request.params.id });
+    broadcast('tasks', 'deleted', request.params.id, {
+      id: request.params.id,
+      projectId: existing.project_id,
+    });
     return reply.status(204).send();
   });
 
@@ -336,6 +391,8 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       filesChanged: number;
       logLines: string[];
       status?: string;
+      cost_tokens?: number;
+      cost_usd?: number;
     };
   }>('/api/tasks/:id/progress', async (request, reply) => {
     const existing = db.prepare('SELECT * FROM tasks WHERE id = ?').get(request.params.id) as
@@ -346,7 +403,8 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(404).send({ error: 'Task not found' });
     }
 
-    const { phase, phaseIndex, totalPhases, currentAgent, filesChanged, logLines, status } = request.body;
+    const { phase, phaseIndex, totalPhases, currentAgent, filesChanged, logLines, status, cost_tokens, cost_usd } =
+      request.body;
 
     const now = new Date().toISOString();
 
@@ -361,13 +419,32 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       logs: logLines,
     };
 
-    const updates: string[] = ['progress = ?', 'updated_at = ?'];
-    const values: unknown[] = [JSON.stringify(progress), now];
+    // Append snapshot to activity_history
+    const existingHistory: unknown[] = JSON.parse(existing.activity_history);
+    existingHistory.push({
+      timestamp: now,
+      phase,
+      phaseIndex,
+      filesChanged,
+    });
+
+    const updates: string[] = ['progress = ?', 'activity_history = ?', 'updated_at = ?'];
+    const values: unknown[] = [JSON.stringify(progress), JSON.stringify(existingHistory), now];
 
     // Optionally update status
     if (status) {
       updates.push('status = ?');
       values.push(status);
+    }
+
+    // Update cost tracking
+    if (cost_tokens !== undefined) {
+      updates.push('cost_tokens = ?');
+      values.push(cost_tokens);
+    }
+    if (cost_usd !== undefined) {
+      updates.push('cost_usd = ?');
+      values.push(cost_usd);
     }
 
     values.push(request.params.id);
@@ -376,16 +453,17 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
     const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(request.params.id) as TaskRow;
     const formatted = formatTask(task);
 
-    // Broadcast progress event
+    // Broadcast progress event with projectId
     broadcast('tasks', 'progress', request.params.id, {
       taskId: request.params.id,
+      projectId: task.project_id,
       progress: formatted.progress,
     });
 
     return {
       received: true,
       taskId: request.params.id,
-      broadcastedTo: 1, // Placeholder - actual count would come from broadcaster
+      broadcastedTo: 1,
     };
   });
 
@@ -426,15 +504,16 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
     };
 
     db.prepare(
-      'UPDATE tasks SET status = ?, metadata = ?, updated_at = ?, progress = NULL WHERE id = ?',
-    ).run(newStatus, JSON.stringify(updatedMeta), now, request.params.id);
+      'UPDATE tasks SET status = ?, metadata = ?, completed_at = ?, updated_at = ?, progress = NULL WHERE id = ?',
+    ).run(newStatus, JSON.stringify(updatedMeta), now, now, request.params.id);
 
     const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(request.params.id) as TaskRow;
     const formatted = formatTask(task);
 
-    // Broadcast completion event
+    // Broadcast completion event with projectId
     broadcast('tasks', 'completed', request.params.id, {
       taskId: request.params.id,
+      projectId: task.project_id,
       result,
       prUrl,
       summary,
@@ -498,6 +577,7 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
     broadcast('tasks', 'execute', request.params.id, {
       type: 'command:execute',
       taskId: request.params.id,
+      projectId: task.project_id,
       task: formatted,
     });
 
@@ -541,6 +621,7 @@ export async function taskRoutes(app: FastifyInstance): Promise<void> {
       broadcast('tasks', 'cancel', request.params.id, {
         type: 'command:cancel',
         taskId: request.params.id,
+        projectId: task.project_id,
         reason: request.body.reason,
       });
     }

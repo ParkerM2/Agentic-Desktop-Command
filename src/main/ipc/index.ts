@@ -134,9 +134,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerProjectHandlers(router, services.projectService);
   registerTaskHandlers(
     router,
-    services.taskService,
-    services.agentService,
-    services.projectService,
+    services.hubApiClient,
     services.taskDecomposer,
     services.githubImporter,
   );

@@ -82,8 +82,30 @@ export interface Task {
   execution_session_id: string | null;
   progress: string | null; // JSON
   metadata: string | null; // JSON
+  agent_name: string | null;
+  activity_history: string; // JSON array for sparkline
+  cost_tokens: number;
+  cost_usd: number;
+  pr_number: number | null;
+  pr_state: string | null;
+  pr_ci_status: string | null;
+  pr_url: string | null;
+  completed_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface TaskSession {
+  id: string;
+  task_id: string;
+  device_id: string;
+  pid: number | null;
+  status: string;
+  started_at: string;
+  ended_at: string | null;
+  token_usage: number;
+  cost_usd: number;
+  error_message: string | null;
 }
 
 export interface TaskWithSubtasks extends Task {
