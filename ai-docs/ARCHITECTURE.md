@@ -29,7 +29,8 @@
 │                                          ├─ ProjectService      │
 │                                          ├─ TaskService         │
 │                                          ├─ TerminalService     │
-│                                          └─ SettingsService     │
+│                                          ├─ SettingsService     │
+│                                          └─ ... (30 total)      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -142,7 +143,7 @@ specs/
     └── ...
 ```
 
-The TaskService reads/writes these files. The Kanban board displays tasks grouped by status.
+The TaskService reads/writes these files. The Task Table displays tasks in a filterable, sortable dashboard view.
 
 ## Design System & Theme Architecture
 

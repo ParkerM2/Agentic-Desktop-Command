@@ -11,12 +11,17 @@ import { useRegister } from '../api/useAuth';
 const INPUT_CLASS =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
+const MIN_PASSWORD_LENGTH = 8;
+
 interface RegisterPageProps {
   onNavigateToLogin: () => void;
   onSuccess: () => void;
 }
 
 function getPasswordError(password: string, confirmPassword: string): string | null {
+  if (password.length > 0 && password.length < MIN_PASSWORD_LENGTH) {
+    return `Password must be at least ${String(MIN_PASSWORD_LENGTH)} characters`;
+  }
   if (confirmPassword.length > 0 && password !== confirmPassword) {
     return 'Passwords do not match';
   }
@@ -35,7 +40,7 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
   const isFormValid =
     displayName.length > 0 &&
     email.length > 0 &&
-    password.length > 0 &&
+    password.length >= MIN_PASSWORD_LENGTH &&
     confirmPassword.length > 0 &&
     passwordError === null;
 
@@ -52,6 +57,9 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md space-y-6 rounded-lg border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2 text-center">
+          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-lg bg-primary/10">
+            <span className="text-xl font-bold text-primary">C</span>
+          </div>
           <h1 className="text-2xl font-bold text-card-foreground">Create Account</h1>
           <p className="text-sm text-muted-foreground">
             Fill in the details to get started
@@ -64,6 +72,7 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
               Display Name
             </label>
             <input
+              required
               autoComplete="name"
               className={INPUT_CLASS}
               id="register-name"
@@ -79,6 +88,7 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
               Email
             </label>
             <input
+              required
               autoComplete="email"
               className={INPUT_CLASS}
               id="register-email"
@@ -94,10 +104,12 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
               Password
             </label>
             <input
+              required
               autoComplete="new-password"
               className={INPUT_CLASS}
               id="register-password"
-              placeholder="Choose a password"
+              minLength={MIN_PASSWORD_LENGTH}
+              placeholder="Choose a password (min 8 characters)"
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); }}
@@ -109,6 +121,7 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
               Confirm Password
             </label>
             <input
+              required
               autoComplete="new-password"
               id="register-confirm"
               placeholder="Re-enter your password"

@@ -15,7 +15,7 @@ Auto Claude is a desktop application (+ CLI) where users describe a goal and AI 
 **Main features:**
 
 - **Autonomous Tasks** — Multi-agent pipeline (planner, coder, QA) that builds features end-to-end
-- **Kanban Board** — Visual task management from planning through completion
+- **Task Dashboard** — Table-based task management with filtering, sorting, and live status updates
 - **Agent Terminals** — Up to 12 parallel AI-powered terminals with task context injection
 - **Insights** — AI chat interface for exploring and understanding your codebase
 - **Roadmap** — AI-assisted feature planning with strategic roadmap generation
@@ -215,7 +215,7 @@ All state lives in `src/renderer/stores/`. Key stores:
 - `terminal-store.ts` — Terminal sessions and state
 - `settings-store.ts` — User preferences
 - `github/issues-store.ts`, `github/pr-review-store.ts` — GitHub integration
-- `insights-store.ts`, `roadmap-store.ts`, `kanban-settings-store.ts`
+- `insights-store.ts`, `roadmap-store.ts`
 
 Main process also has stores: `src/main/project-store.ts`, `src/main/terminal-session-store.ts`
 

@@ -4,13 +4,11 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import type { InvokeInput } from '@shared/ipc-contract';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
-export const workspaceKeys = {
-  all: ['workspaces'] as const,
-  list: () => [...workspaceKeys.all, 'list'] as const,
-  devices: () => ['devices', 'list'] as const,
-};
+import { workspaceKeys } from './queryKeys';
 
 /** Fetch all workspaces */
 export function useWorkspaces() {
@@ -25,7 +23,7 @@ export function useWorkspaces() {
 export function useCreateWorkspace() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { name: string; description?: string }) =>
+    mutationFn: (data: InvokeInput<'workspaces.create'>) =>
       ipc('workspaces.create', data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
@@ -37,13 +35,8 @@ export function useCreateWorkspace() {
 export function useUpdateWorkspace() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      id: string;
-      name?: string;
-      description?: string;
-      hostDeviceId?: string;
-      settings?: { autoStart?: boolean; maxConcurrent?: number; defaultBranch?: string };
-    }) => ipc('workspaces.update', data),
+    mutationFn: (data: InvokeInput<'workspaces.update'>) =>
+      ipc('workspaces.update', data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
     },
@@ -58,14 +51,5 @@ export function useDeleteWorkspace() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
     },
-  });
-}
-
-/** Fetch all devices */
-export function useDevices() {
-  return useQuery({
-    queryKey: workspaceKeys.devices(),
-    queryFn: () => ipc('devices.list', {}),
-    staleTime: 30_000,
   });
 }

@@ -4,7 +4,7 @@
 **Author**: Claude + Parker
 **Created**: 2026-02-14
 **Priority**: HIGH
-**Related**: `2026-02-13-kanban-workflow-refactor.md`
+**Related**: `2026-02-13-kanban-workflow-refactor.md` (Task Dashboard & Multi-Device Workflow plan)
 
 ---
 

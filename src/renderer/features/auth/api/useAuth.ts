@@ -1,8 +1,10 @@
 /**
- * React Query hooks for auth
+ * React Query hooks for auth operations
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import type { LoginInput, RegisterInput } from '@shared/types/auth';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -10,36 +12,35 @@ import { useAuthStore } from '../store';
 
 import { authKeys } from './queryKeys';
 
-/** Login mutation — stores token + user on success */
+/** Login mutation — stores tokens + user on success */
 export function useLogin() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { email: string; password: string }) => ipc('auth.login', data),
+    mutationFn: (data: LoginInput) => ipc('auth.login', data),
     onSuccess: (result) => {
-      setAuth(result.user, result.token);
+      setAuth(result.user, result.tokens);
       void queryClient.invalidateQueries({ queryKey: authKeys.me() });
     },
   });
 }
 
-/** Register mutation — stores token + user on success */
+/** Register mutation — stores tokens + user on success */
 export function useRegister() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { email: string; password: string; displayName: string }) =>
-      ipc('auth.register', data),
+    mutationFn: (data: RegisterInput) => ipc('auth.register', data),
     onSuccess: (result) => {
-      setAuth(result.user, result.token);
+      setAuth(result.user, result.tokens);
       void queryClient.invalidateQueries({ queryKey: authKeys.me() });
     },
   });
 }
 
-/** Logout mutation — clears auth store */
+/** Logout mutation — clears auth store and all query cache */
 export function useLogout() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const queryClient = useQueryClient();
@@ -48,19 +49,32 @@ export function useLogout() {
     mutationFn: () => ipc('auth.logout', {}),
     onSuccess: () => {
       clearAuth();
-      queryClient.removeQueries({ queryKey: authKeys.me() });
+      queryClient.clear();
     },
   });
 }
 
-/** Fetch current user — only runs when a token is stored */
+/** Refresh token mutation — updates tokens in store */
+export function useRefreshToken() {
+  const updateTokens = useAuthStore((s) => s.updateTokens);
+  const refreshToken = useAuthStore((s) => s.refreshToken);
+
+  return useMutation({
+    mutationFn: () => ipc('auth.refresh', { refreshToken: refreshToken ?? '' }),
+    onSuccess: (result) => {
+      updateTokens(result.tokens);
+    },
+  });
+}
+
+/** Fetch current user — only runs when authenticated, staleTime: 5 minutes */
 export function useCurrentUser() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return useQuery({
     queryKey: authKeys.me(),
     queryFn: () => ipc('auth.me', {}),
-    enabled: token !== null,
+    enabled: isAuthenticated,
     staleTime: 300_000,
   });
 }

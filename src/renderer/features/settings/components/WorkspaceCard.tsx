@@ -10,7 +10,7 @@ import type { Device, Workspace } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useDeleteWorkspace } from '../api/useWorkspaces';
+import { useDeleteWorkspace } from '@features/workspaces';
 
 interface WorkspaceCardProps {
   workspace: Workspace;
@@ -23,7 +23,7 @@ export function WorkspaceCard({ workspace, devices, onEdit }: WorkspaceCardProps
   const deleteWorkspace = useDeleteWorkspace();
 
   const hostDevice = devices.find((d) => d.id === workspace.hostDeviceId);
-  const isOnline = hostDevice?.online ?? false;
+  const isOnline = hostDevice?.isOnline ?? false;
 
   function handleDelete() {
     if (confirmDelete) {
@@ -96,14 +96,10 @@ export function WorkspaceCard({ workspace, devices, onEdit }: WorkspaceCardProps
 
       <div className="text-muted-foreground flex items-center gap-4 text-xs">
         {hostDevice ? (
-          <span>Host: {hostDevice.name}</span>
+          <span>Host: {hostDevice.deviceName}</span>
         ) : (
           <span>No host assigned</span>
         )}
-        <span>
-          {String(workspace.projectIds.length)}{' '}
-          {workspace.projectIds.length === 1 ? 'project' : 'projects'}
-        </span>
       </div>
     </div>
   );

@@ -8,7 +8,8 @@ import { Loader2, Plus, Server } from 'lucide-react';
 
 import type { Workspace } from '@shared/types';
 
-import { useDevices, useWorkspaces } from '../api/useWorkspaces';
+import { useDevices } from '@features/devices';
+import { useWorkspaces } from '@features/workspaces';
 
 import { WorkspaceCard } from './WorkspaceCard';
 import { WorkspaceEditor } from './WorkspaceEditor';

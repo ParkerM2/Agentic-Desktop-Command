@@ -11,7 +11,7 @@
 - [x] Dashboard (GreetingHeader, TodayView, RecentProjects, ActiveAgents, QuickCapture, DailyStats)
 - [x] Project Management (CRUD, file persistence, directory picker)
 - [x] Task System (create, update, delete, execute, subtasks, progress)
-- [x] Kanban Board (drag-and-drop with dnd-kit, 7 status columns)
+- [x] Task Dashboard (table-based with filters, sorting, and status columns; replaced former Kanban board)
 - [x] Terminal Grid (xterm.js + node-pty, tabs, resize, PTY spawning)
 - [x] Agent Dashboard (spawn Claude CLI, stop/pause/resume, log parsing)
 - [x] Settings (theme, profiles, UI scale, font family/size, color themes)
@@ -59,7 +59,7 @@
 - [ ] Create `src/main/services/assistant/assistant-service.ts` — Main service
 - [ ] Create `src/main/services/assistant/intent-classifier.ts` — Classify: quick_command | task_creation | conversation
 - [ ] Create `src/main/services/assistant/command-executor.ts` — Route commands to MCP/service
-- [ ] Intent rules: note/remember → notes, create task/build → kanban, play → spotify, open → launcher, multi-sentence → conversation
+- [ ] Intent rules: note/remember → notes, create task/build → task dashboard, play → spotify, open → launcher, multi-sentence → conversation
 
 ### 1.3 Assistant IPC Channels
 - [ ] Add `assistant.sendCommand` to ipc-contract.ts

@@ -8,6 +8,8 @@
 /** Top-level routes */
 export const ROUTES = {
   INDEX: '/',
+  LOGIN: '/login',
+  REGISTER: '/register',
   ALERTS: '/alerts',
   ASSISTANT: '/assistant',
   BRIEFING: '/briefing',

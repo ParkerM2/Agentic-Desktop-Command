@@ -1,27 +1,98 @@
 /**
- * Auth UI state — Zustand store
+ * Auth Zustand store — manages JWT tokens, user, and isAuthenticated state.
+ *
+ * Persists tokens to localStorage for session restoration on app restart.
+ * isAuthenticated is derived: user !== null && accessToken !== null.
  */
 
 import { create } from 'zustand';
 
-interface AuthUser {
-  id: string;
-  email: string;
-  displayName: string;
+import type { AuthTokens, User } from '@shared/types/auth';
+
+const STORAGE_KEY = 'claude-ui-auth';
+
+interface StoredAuth {
+  accessToken: string;
+  refreshToken: string;
+  user: User;
+}
+
+function loadStoredAuth(): StoredAuth | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredAuth;
+  } catch {
+    return null;
+  }
+}
+
+function persistAuth(user: User, accessToken: string, refreshToken: string): void {
+  const data: StoredAuth = { accessToken, refreshToken, user };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function clearPersistedAuth(): void {
+  localStorage.removeItem(STORAGE_KEY);
 }
 
 interface AuthState {
-  user: AuthUser | null;
-  token: string | null;
+  user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
-  setAuth: (user: AuthUser, token: string) => void;
+  setAuth: (user: User, tokens: AuthTokens) => void;
   clearAuth: () => void;
+  setUser: (user: User) => void;
+  updateTokens: (tokens: AuthTokens) => void;
 }
 
+const stored = loadStoredAuth();
+
 export const useAuthStore = create<AuthState>()((set) => ({
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  setAuth: (user, token) => set({ user, token, isAuthenticated: true }),
-  clearAuth: () => set({ user: null, token: null, isAuthenticated: false }),
+  user: stored?.user ?? null,
+  accessToken: stored?.accessToken ?? null,
+  refreshToken: stored?.refreshToken ?? null,
+  isAuthenticated: stored !== null,
+
+  setAuth: (user, tokens) => {
+    persistAuth(user, tokens.accessToken, tokens.refreshToken);
+    set({
+      user,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      isAuthenticated: true,
+    });
+  },
+
+  clearAuth: () => {
+    clearPersistedAuth();
+    set({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+    });
+  },
+
+  setUser: (user) => {
+    set((state) => {
+      if (state.accessToken && state.refreshToken) {
+        persistAuth(user, state.accessToken, state.refreshToken);
+      }
+      return { user };
+    });
+  },
+
+  updateTokens: (tokens) => {
+    set((state) => {
+      if (state.user) {
+        persistAuth(state.user, tokens.accessToken, tokens.refreshToken);
+      }
+      return {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      };
+    });
+  },
 }));

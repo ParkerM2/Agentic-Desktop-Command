@@ -10,7 +10,7 @@ import type { Workspace } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useCreateWorkspace, useUpdateWorkspace } from '../api/useWorkspaces';
+import { useCreateWorkspace, useUpdateWorkspace } from '@features/workspaces';
 
 import { DeviceSelector } from './DeviceSelector';
 

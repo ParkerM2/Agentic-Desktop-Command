@@ -21,8 +21,7 @@
 | Comms (4 tabs) | Visited | No | Buttons disabled when disconnected, but **no onClick handlers** |
 | Projects | Visited | No | Real file-backed |
 | Settings | Visited | No | All sections functional, **UI Scale bug** |
-| Kanban | Blocked | N/A | Requires project — disabled in sidebar |
-| Tasks | Blocked | N/A | Requires project — disabled in sidebar |
+| Tasks (Table Dashboard) | Blocked | N/A | Requires project — disabled in sidebar |
 | Terminals | Blocked | N/A | Requires project — disabled in sidebar |
 | Agents | Blocked | N/A | Requires project — disabled in sidebar |
 | Roadmap | Blocked | N/A | Requires project — API-driven |

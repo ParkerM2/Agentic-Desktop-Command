@@ -62,7 +62,7 @@ const DEFAULT_ENTRIES: ChangelogEntry[] = [
         items: [
           'Terminal integration with xterm.js',
           'Agent management dashboard',
-          'Kanban board with drag-and-drop',
+          'Task management dashboard',
           'GitHub integration page',
           'Roadmap and Ideation views',
         ],
@@ -83,7 +83,7 @@ const DEFAULT_ENTRIES: ChangelogEntry[] = [
           'Initial project scaffold',
           'IPC contract system',
           'Project management',
-          'Task system with Kanban board',
+          'Task system with table-based dashboard',
           'Electron main process with services',
         ],
       },

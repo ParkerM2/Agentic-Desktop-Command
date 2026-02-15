@@ -8,7 +8,7 @@
 
 ### Working Features
 - **Project Management** — Add/remove projects by directory, tab-based multi-project switching
-- **Kanban Board** — Drag-and-drop task board with 7 status columns (backlog through PR created)
+- **Task Dashboard** — Table-based task management with filtering, sorting, and live status updates (replaced former Kanban board)
 - **Task System** — Create, update, delete tasks with subtasks, execution phases, and progress tracking
 - **Terminal Grid** — Tabbed xterm.js terminals with real PTY (PowerShell/bash), per-project
 - **Agent Dashboard** — Spawn Claude CLI agents per task, view status, stop/pause/resume
@@ -140,7 +140,7 @@
 
 **What you already have, but smarter.**
 
-#### Multi-Project Kanban
+#### Multi-Project Task Dashboard
 - Unified view across all projects — filter by project, priority, status
 - "My Work" view — all tasks assigned to you across every project, sorted by priority/deadline
 - Batch operations — move multiple tasks, bulk assign to agents
@@ -275,7 +275,7 @@ Each Electron app is a thin-ish client that:
 
 | Data | Where It Lives | Why |
 |------|---------------|-----|
-| Tasks, kanban state | Hub (SQLite) + local cache | Need it everywhere, hub is source of truth |
+| Tasks, task state | Hub (SQLite) + local cache | Need it everywhere, hub is source of truth |
 | Daily planner / calendar | Hub (SQLite) + local cache | Same schedule on both machines |
 | Settings / preferences | Hub (SQLite) + local cache | Theme, layout should follow you |
 | Project file paths | Local only | `/Users/parker/code` vs `C:\Users\Parke\code` — paths are machine-specific |

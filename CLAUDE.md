@@ -95,7 +95,7 @@ src/
 ├── main/           # Electron main process (Node.js)
 │   ├── index.ts    # App lifecycle, window creation
 │   ├── ipc/        # IPC router + handler registration
-│   └── services/   # Business logic (agent, project, task, terminal, settings)
+│   └── services/   # Business logic (30 services: agent, project, task, terminal, settings, and more)
 ├── preload/        # Context bridge (typed API exposed to renderer)
 ├── renderer/       # React app (browser context)
 │   ├── app/        # Router, providers, layouts

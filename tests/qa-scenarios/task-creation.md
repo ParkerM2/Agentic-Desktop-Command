@@ -2,20 +2,20 @@
 
 ## Objective
 
-Verify that users can create tasks through the kanban board UI with proper validation, feedback, and error handling.
+Verify that users can create tasks through the task dashboard UI with proper validation, feedback, and error handling.
 
 ## Preconditions
 
 - Application is running (`npm run dev`)
 - MCP Electron server is accessible (port 9222)
 - At least one project exists in the project list
-- User is on the kanban board view (or can navigate to it)
+- User is on the task dashboard view (or can navigate to it)
 
 ## Setup Steps
 
 1. Use `get_electron_window_info` to verify app is running
 2. Take baseline screenshot
-3. If not on kanban board, navigate there via sidebar
+3. If not on task dashboard, navigate there via sidebar
 
 ---
 
@@ -25,7 +25,7 @@ Verify that users can create tasks through the kanban board UI with proper valid
 
 | # | Action | Method | Expected Result |
 |---|--------|--------|-----------------|
-| 1 | Navigate to kanban board | `click_by_text` "Tasks" or sidebar navigation | Kanban board visible with columns |
+| 1 | Navigate to task dashboard | `click_by_text` "Tasks" or sidebar navigation | Task dashboard visible with columns |
 | 2 | Screenshot baseline | `take_screenshot` | Board shows existing tasks or empty state |
 | 3 | Click "New Task" button | `click_by_text` "New Task" or `click_by_selector` with button selector | Task creation modal/form opens |
 | 4 | Screenshot modal | `take_screenshot` | Modal visible with empty form fields |

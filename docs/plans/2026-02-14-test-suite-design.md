@@ -389,7 +389,7 @@ export { expect } from '@playwright/test';
 import { test, expect } from './electron.setup';
 
 test.describe('Task Creation', () => {
-  test('creates task via kanban board', async ({ mainWindow }) => {
+  test('creates task via task dashboard', async ({ mainWindow }) => {
     // Navigate to project
     await mainWindow.click('[data-testid="sidebar-projects"]');
     await mainWindow.click('[data-testid="project-card"]:first-child');
@@ -525,12 +525,12 @@ Generate reports in this structure:
 # QA Scenario: Task Creation Flow
 
 ## Objective
-Verify that users can create tasks through the kanban board UI.
+Verify that users can create tasks through the task dashboard UI.
 
 ## Preconditions
 - Application is running
 - At least one project exists
-- User is on the kanban board view
+- User is on the task dashboard view
 
 ## Happy Path
 

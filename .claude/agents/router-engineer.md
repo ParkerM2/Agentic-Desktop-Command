@@ -133,10 +133,10 @@ const navItems: NavItem[] = [
 path: ROUTES.DASHBOARD,
 
 // Project view: path string from ROUTE_PATTERNS constant
-path: ROUTE_PATTERNS.PROJECT_KANBAN,
+path: ROUTE_PATTERNS.PROJECT_TASKS,
 
 // NEVER hardcode path strings
-path: '/projects/$projectId/kanban',  // WRONG
+path: '/projects/$projectId/tasks',  // WRONG
 ```
 
 ### Redirect Pattern
@@ -147,7 +147,7 @@ const projectRoute = createRoute({
   path: ROUTE_PATTERNS.PROJECT,
   beforeLoad: ({ params }) => {
     // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
-    throw redirect({ to: ROUTE_PATTERNS.PROJECT_KANBAN, params });
+    throw redirect({ to: ROUTE_PATTERNS.PROJECT_TASKS, params });
   },
 });
 ```
@@ -156,7 +156,7 @@ const projectRoute = createRoute({
 ```typescript
 // ALWAYS use void for navigate calls
 void navigate({ to: ROUTES.DASHBOARD });
-void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.KANBAN) });
+void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
 
 // NEVER leave navigate as floating promise
 navigate({ to: ROUTES.DASHBOARD });  // WRONG — floating promise
@@ -186,7 +186,7 @@ import { PlannerPage } from '@features/planner/components/PlannerPage';
 // Common choices:
 import {
   Calendar,       // Planner, schedule
-  LayoutDashboard, // Kanban, board view
+  LayoutDashboard, // Dashboard, board view
   ListTodo,       // Task list
   Terminal,       // Terminal
   Bot,            // AI agents

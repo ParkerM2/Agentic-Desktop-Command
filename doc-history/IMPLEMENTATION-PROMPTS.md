@@ -10,7 +10,7 @@
 
 Claude-UI is being expanded from a coding-focused task manager into a comprehensive personal AI command center with:
 
-1. **Coding Workspace** (existing) - Task board, kanban, terminals, agents for development
+1. **Coding Workspace** (existing) - Task dashboard, terminals, agents for development
 2. **Assistant Mode** (new) - Persistent AI for quick commands, notes, reminders
 3. **Integrations Hub** (new) - Slack, Discord, GitHub, Spotify, Calendar, etc.
 4. **Fitness Dashboard** (new) - Withings scale integration, workout logging
@@ -68,7 +68,7 @@ Create: `src/main/services/assistant/`
 
 Intent classification rules:
 - "note: ..." or "remember ..." → quick_command (notes)
-- "create task: ..." or "build ..." → task_creation (add to kanban)
+- "create task: ..." or "build ..." → task_creation (add to task dashboard)
 - "play ..." → quick_command (spotify)
 - "open ..." → quick_command (app launcher)
 - Multi-sentence or ambiguous → conversation (send to Claude API)

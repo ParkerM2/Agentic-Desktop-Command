@@ -77,7 +77,7 @@ Claude-UI/
 │   │   │   ├── github/       # PRs, issues, notifications
 │   │   │   ├── ideation/     # Idea board
 │   │   │   ├── insights/     # Project metrics
-│   │   │   ├── kanban/       # Task board
+│   │   │   ├── tasks/        # Task dashboard (table-based)
 │   │   │   ├── notes/        # Quick notes
 │   │   │   ├── planner/      # Daily planner
 │   │   │   ├── productivity/ # Spotify + Calendar widgets

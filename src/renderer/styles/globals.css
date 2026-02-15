@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/* AG-Grid base styles */
+@import 'ag-grid-community/styles/ag-grid.css';
+@import 'ag-grid-community/styles/ag-theme-quartz.css';
+
+/* AG-Grid theme — custom overrides for task data grid */
+@import '../features/tasks/components/grid/ag-grid-theme.css';
+
 /* ============================================
    Claude-UI Design System
    Ported from Claude-Auto — Oscura Midnight Theme

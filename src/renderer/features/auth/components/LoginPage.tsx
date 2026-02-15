@@ -1,5 +1,5 @@
 /**
- * Login page — email/password form with remember-me and link to register
+ * Login page — full-page centered form with email/password and link to register
  */
 
 import { useState } from 'react';
@@ -19,7 +19,6 @@ interface LoginPageProps {
 export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const login = useLogin();
 
   function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
@@ -36,6 +35,9 @@ export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md space-y-6 rounded-lg border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2 text-center">
+          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-lg bg-primary/10">
+            <span className="text-xl font-bold text-primary">C</span>
+          </div>
           <h1 className="text-2xl font-bold text-card-foreground">Sign In</h1>
           <p className="text-sm text-muted-foreground">
             Enter your credentials to continue
@@ -48,6 +50,7 @@ export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
               Email
             </label>
             <input
+              required
               autoComplete="email"
               className={INPUT_CLASS}
               id="login-email"
@@ -63,6 +66,7 @@ export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
               Password
             </label>
             <input
+              required
               autoComplete="current-password"
               className={INPUT_CLASS}
               id="login-password"
@@ -71,19 +75,6 @@ export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
               value={password}
               onChange={(e) => { setPassword(e.target.value); }}
             />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              checked={rememberMe}
-              className="size-4 rounded border-input accent-primary"
-              id="login-remember"
-              type="checkbox"
-              onChange={(e) => { setRememberMe(e.target.checked); }}
-            />
-            <label className="text-sm text-muted-foreground" htmlFor="login-remember">
-              Remember me
-            </label>
           </div>
 
           {login.isError ? (
@@ -119,7 +110,7 @@ export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
             type="button"
             onClick={onNavigateToRegister}
           >
-            Create one
+            Sign up
           </button>
         </p>
       </div>

@@ -1,5 +1,5 @@
 /**
- * Tasks feature — public API
+ * Tasks feature -- public API
  */
 
 // API hooks
@@ -19,9 +19,6 @@ export { useTaskEvents } from './hooks/useTaskEvents';
 export { useTaskUI } from './store';
 
 // Components
-export { TaskCard } from './components/TaskCard';
+export { TaskDataGrid } from './components/grid/TaskDataGrid';
+export { TaskFiltersToolbar } from './components/TaskFiltersToolbar';
 export { TaskStatusBadge } from './components/TaskStatusBadge';
-export { TaskTable } from './components/TaskTable';
-export { TaskTableFilters } from './components/TaskTableFilters';
-export { TaskTableHeader } from './components/TaskTableHeader';
-export { TaskTableRow } from './components/TaskTableRow';

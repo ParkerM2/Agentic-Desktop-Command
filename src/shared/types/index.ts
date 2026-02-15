@@ -6,6 +6,7 @@
 export type * from './agent';
 export type * from './alert';
 export type * from './assistant';
+export type * from './auth';
 export type * from './claude';
 export type * from './changelog';
 export type * from './email';

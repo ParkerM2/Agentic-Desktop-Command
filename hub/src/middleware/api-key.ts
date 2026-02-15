@@ -7,11 +7,30 @@ function hashKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
 
+// Routes that use JWT auth (not API key auth)
+const JWT_AUTH_ROUTES = [
+  '/api/auth/register',
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/refresh',
+  '/api/auth/me',
+  '/api/health',
+];
+
+function isJwtAuthRoute(url: string): boolean {
+  return JWT_AUTH_ROUTES.some((route) => url.startsWith(route));
+}
+
 export function createApiKeyMiddleware(db: Database.Database) {
   return async function apiKeyMiddleware(
     request: FastifyRequest,
     reply: FastifyReply,
   ): Promise<void> {
+    // Skip for routes that use JWT auth instead of API keys
+    if (isJwtAuthRoute(request.url)) {
+      return;
+    }
+
     // Skip auth for the generate-key endpoint when no keys exist
     if (request.url === '/api/auth/generate-key' && request.method === 'POST') {
       const row = db.prepare('SELECT COUNT(*) as count FROM api_keys').get() as
@@ -24,6 +43,12 @@ export function createApiKeyMiddleware(db: Database.Database) {
 
     // Skip auth for WebSocket upgrade requests (they use query param auth)
     if (request.url.startsWith('/ws')) {
+      return;
+    }
+
+    // If request has Authorization header (Bearer token), skip API key check
+    // and let the JWT middleware handle authentication
+    if (request.headers.authorization?.startsWith('Bearer ')) {
       return;
     }
 

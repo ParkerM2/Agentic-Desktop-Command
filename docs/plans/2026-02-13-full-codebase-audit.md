@@ -21,7 +21,7 @@
 
 What works well: All P0-P4 audit items are complete. Core infrastructure is solid — IPC contract has 100% handler coverage, all 29 main services are real implementations, 25 renderer features are fully wired, security hardening is done, and onboarding is in place. New capabilities include persistent Claude sessions, voice interface, screen capture, email, notification watchers, smart task creation, and daily briefings.
 
-What remains: P5 polish items (Hub connection indicator, configurable hotkeys UI, auto-updater, database migrations, dead code cleanup) and the Kanban-to-TaskTable workflow refactor (see `docs/plans/2026-02-13-kanban-workflow-refactor.md`).
+What remains: P5 polish items (Hub connection indicator, configurable hotkeys UI, auto-updater, database migrations, dead code cleanup). The Kanban board has been removed and replaced with the Task Table dashboard. Further Task Dashboard enhancements (AG-Grid evaluation, Hub-first data, multi-device sync) are planned in `docs/plans/2026-02-13-kanban-workflow-refactor.md`.
 
 ---
 

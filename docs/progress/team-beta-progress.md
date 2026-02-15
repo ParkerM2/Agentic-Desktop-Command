@@ -55,7 +55,7 @@
 
 ### T6: Launcher & Cleanup [PENDING]
 - **Item**: Wave 4
-- **Scope**: task-launcher, remove Kanban, archive agent code
+- **Scope**: task-launcher, archive agent code (Kanban already removed)
 - **Blocked by**: T5
 
 ---

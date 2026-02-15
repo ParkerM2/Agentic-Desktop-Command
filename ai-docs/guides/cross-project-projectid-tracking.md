@@ -6,7 +6,7 @@ When running multiple projects simultaneously, agent events from one project can
 
 ## Severity
 
-**High** - Silent data corruption. Affected tasks show wrong status, wrong badges, land in wrong Kanban columns, and persist corrupted state to disk. On refresh, the corrupted state is reloaded, making the damage permanent until manually fixed.
+**High** - Silent data corruption. Affected tasks show wrong status, wrong badges, land in wrong Task Dashboard columns, and persist corrupted state to disk. On refresh, the corrupted state is reloaded, making the damage permanent until manually fixed.
 
 ## Affected Versions
 
@@ -18,7 +18,7 @@ All versions using the XState task state machine (PR #1575 and later).
 2. In Project A, create a task with a specific name (e.g., "write wtf to text file") - this generates specId `016-write-wtf-to-text-file`
 3. In Project B, create a task with the same name - this generates the same specId `016-write-wtf-to-text-file`
 4. Start both tasks simultaneously (or start Project A's task first, let it reach QA, then start Project B's task)
-5. Switch between projects and observe the Kanban board
+5. Switch between projects and observe the Task Dashboard board
 
 ## Expected Results
 
@@ -31,7 +31,7 @@ All versions using the XState task state machine (PR #1575 and later).
 ## Actual Results
 
 - Tasks in the non-active project show wrong status badges (e.g., "Coding" badge on a task still in the Planning column)
-- Tasks snap to the wrong Kanban column after refresh
+- Tasks snap to the wrong Task Dashboard column after refresh
 - Tasks get stuck in states they should have transitioned out of (e.g., permanently stuck in "Planning")
 - "Incomplete" badges appear on tasks that completed their phase successfully
 - QA tasks appear in "In Progress" column instead of "AI Review" column after switching projects

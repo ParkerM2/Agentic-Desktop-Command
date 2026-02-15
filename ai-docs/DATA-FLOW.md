@@ -466,15 +466,15 @@ handleNav(path)                            Sidebar.tsx
   |
   v
 navigate({ to: projectViewPath(id, path) })
-  |  e.g., '/projects/abc-123/kanban'
+  |  e.g., '/projects/abc-123/tasks'
   v
 TanStack Router matches route pattern
-  |  ROUTE_PATTERNS.PROJECT_KANBAN = '/projects/$projectId/kanban'
+  |  ROUTE_PATTERNS.PROJECT_TASKS = '/projects/$projectId/tasks'
   v
 Route component renders                   router.tsx
-  |  component: KanbanBoard
+  |  component: TaskTable
   v
-KanbanBoard mounts
+TaskTable mounts
   |
   v
 useTasks(projectId) fires query
@@ -486,7 +486,7 @@ ipc('tasks.list', { projectId })
 TaskService.listTasks(projectId)
   |
   v
-Tasks returned, KanbanBoard renders columns
+Tasks returned, TaskTable renders filterable/sortable rows
 ```
 
 ### Route Hierarchy
@@ -494,10 +494,18 @@ Tasks returned, KanbanBoard renders columns
 ```
 / (RootLayout)
 ├── /dashboard              -> DashboardPage
+├── /my-work                -> MyWorkPage
+├── /alerts                 -> AlertsPage
+├── /briefing               -> BriefingPage
+├── /communications         -> CommunicationsPage
+├── /fitness                -> FitnessPage
+├── /notes                  -> NotesPage
+├── /planner                -> PlannerPage
+├── /planner/weekly         -> WeeklyReviewPage
+├── /productivity           -> ProductivityPage
 ├── /projects               -> ProjectListPage
-├── /projects/$projectId    -> redirect to /kanban
-│   ├── /kanban             -> KanbanBoard
-│   ├── /tasks              -> TaskListView
+├── /projects/$projectId    -> redirect to /tasks
+│   ├── /tasks              -> TaskTable
 │   ├── /terminals          -> TerminalGrid
 │   ├── /agents             -> AgentDashboard
 │   ├── /roadmap            -> RoadmapPage

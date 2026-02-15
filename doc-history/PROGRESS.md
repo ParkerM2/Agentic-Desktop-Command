@@ -35,21 +35,19 @@
 - [x] `useProjectEvents` — cache invalidation on project updates
 - [x] `ProjectListPage` — full UI (list, add via directory picker, remove, open)
 
-### Tasks ✅ COMPLETE
-- [x] `useTasks`, `useTask`, `useCreateTask`
-- [x] `useUpdateTaskStatus`, `useDeleteTask`, `useExecuteTask` (with optimistic updates)
+### Tasks ✅ COMPLETE (Task Table Dashboard)
+- [x] `useTasks`, `useTask`, `useAllTasks`, `useCreateTask`
+- [x] `useUpdateTaskStatus`, `useDeleteTask`, `useExecuteTask`, `useCancelTask` (with optimistic updates)
 - [x] `taskKeys` factory
 - [x] `useTaskEvents` — status change, progress, log, plan events
-- [x] `useTaskUI` store — selections, filters, search, kanban column order
+- [x] `useTaskUI` store — selections, filters, search
+- [x] `TaskTable` — main table component with sortable columns
+- [x] `TaskTableRow` — individual row with inline actions
+- [x] `TaskTableHeader` — sortable column headers
+- [x] `TaskTableFilters` — status, project, date range filters
 - [x] `TaskCard` — progress bar, subtask count, relative time
 - [x] `TaskStatusBadge` — color-coded status chips
-
-### Kanban ✅ COMPLETE
-- [x] `KanbanBoard` — DndContext + SortableContext + DragOverlay
-- [x] `KanbanColumn` — useDroppable, isOver highlight
-- [x] `KanbanCard` — useSortable, CSS transform, drag opacity
-- [x] dnd-kit drag-and-drop between columns (status updates on drop)
-- [x] `TaskDetailModal` — slide-in panel with progress, subtasks, logs, actions
+- [x] Kanban board removed, replaced with table-based dashboard (see `docs/plans/2026-02-13-kanban-workflow-refactor.md`)
 
 ### Terminals ✅ UI COMPLETE
 - [x] `TerminalGrid` — tabs, create/close terminals, empty state
@@ -147,7 +145,7 @@
 
 ## Session Log
 - **2026-02-11 18:00** — Audited full codebase. Updated PROGRESS.md to reflect actual state.
-  Phase 3 UI is essentially complete (kanban dnd, xterm, task modal all done).
+  Phase 3 UI is essentially complete (task table, xterm, task modal all done).
   Starting Phase 4: real main process services.
   Priority: TerminalService (PTY) → ProjectService (persistence) → TaskService → AgentService
   
@@ -250,5 +248,6 @@
 - **2026-02-14** — Documentation refresh:
   - Pulled 29 commits from master
   - Updated all progress trackers and audit docs to reflect P4 completion
-  - Updated FEATURES-INDEX.md counts (21→25 features, 23→29 services, 22→30 handlers)
-  - Next: Kanban → Task Dashboard refactor (see docs/plans/2026-02-13-kanban-workflow-refactor.md)
+  - Updated FEATURES-INDEX.md counts (21→25 features, 23→30 services, 22→35 handlers)
+  - Kanban board removed and replaced with Task Table dashboard
+  - Task Dashboard refactor plan: `docs/plans/2026-02-13-kanban-workflow-refactor.md`

@@ -4,6 +4,11 @@
 **Author**: Research Analysis (Claude)
 **Status**: Complete
 
+> **NOTE (2026-02-15)**: The Kanban board discussed in this document has been **removed** from the codebase
+> and replaced with a table-based Task Dashboard. This document is preserved as historical research
+> that informed the decision to make that transition. See `docs/plans/2026-02-13-kanban-workflow-refactor.md`
+> for the Task Dashboard plan.
+
 ---
 
 ## Executive Summary

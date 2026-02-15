@@ -8,7 +8,7 @@ import { ChevronDown, Monitor } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useDevices } from '../api/useWorkspaces';
+import { useDevices } from '@features/devices';
 
 interface DeviceSelectorProps {
   value: string | undefined;
@@ -61,12 +61,12 @@ export function DeviceSelector({ value, onChange }: DeviceSelectorProps) {
       >
         <div className="flex items-center gap-2">
           <Monitor className="text-muted-foreground h-4 w-4" />
-          <span>{selected ? selected.name : 'Select device...'}</span>
+          <span>{selected ? selected.deviceName : 'Select device...'}</span>
           {selected ? (
             <span
               className={cn(
                 'inline-block h-2 w-2 rounded-full',
-                selected.online ? 'bg-success' : 'bg-muted-foreground',
+                selected.isOnline ? 'bg-success' : 'bg-muted-foreground',
               )}
             />
           ) : null}
@@ -100,13 +100,13 @@ export function DeviceSelector({ value, onChange }: DeviceSelectorProps) {
             >
               <div className="flex items-center gap-2">
                 <Monitor className="text-muted-foreground h-4 w-4" />
-                <span>{device.name}</span>
-                <span className="text-muted-foreground text-xs">({device.platform})</span>
+                <span>{device.deviceName}</span>
+                <span className="text-muted-foreground text-xs">({device.deviceType})</span>
               </div>
               <span
                 className={cn(
                   'inline-block h-2 w-2 rounded-full',
-                  device.online ? 'bg-success' : 'bg-muted-foreground',
+                  device.isOnline ? 'bg-success' : 'bg-muted-foreground',
                 )}
               />
             </div>

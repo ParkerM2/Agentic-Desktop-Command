@@ -15,6 +15,7 @@ import { registerBriefingHandlers } from './handlers/briefing-handlers';
 import { registerCalendarHandlers } from './handlers/calendar-handlers';
 import { registerChangelogHandlers } from './handlers/changelog-handlers';
 import { registerClaudeHandlers } from './handlers/claude-handlers';
+import { registerDeviceHandlers } from './handlers/device-handlers';
 import { registerEmailHandlers } from './handlers/email-handlers';
 import { registerFitnessHandlers } from './handlers/fitness-handlers';
 import { registerGitHandlers } from './handlers/git-handlers';
@@ -54,6 +55,7 @@ import type { BriefingService } from '../services/briefing/briefing-service';
 import type { CalendarService } from '../services/calendar/calendar-service';
 import type { ChangelogService } from '../services/changelog/changelog-service';
 import type { ClaudeClient } from '../services/claude';
+import type { DeviceService } from '../services/device/device-service';
 import type { EmailService } from '../services/email/email-service';
 import type { FitnessService } from '../services/fitness/fitness-service';
 import type { GitService } from '../services/git/git-service';
@@ -91,6 +93,7 @@ export interface Services {
   agentService: AgentService;
   agentQueue: AgentQueue;
   claudeClient: ClaudeClient;
+  deviceService: DeviceService;
   alertService: AlertService;
   assistantService: AssistantService;
   calendarService: CalendarService;
@@ -183,5 +186,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
   registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
-  registerWorkspaceHandlers(router);
+  registerWorkspaceHandlers(router, services.hubApiClient);
+  registerDeviceHandlers(router, services.deviceService);
 }

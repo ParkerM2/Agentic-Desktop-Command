@@ -116,7 +116,7 @@ Implementing audit items P3 (High-Value Missing Features) from the full codebase
 - **Steps**:
   - Step 1: Add tasks.listAll IPC channel (cross-project) ⬜
   - Step 2: Create My Work feature module structure ⬜
-  - Step 3: Build MyWorkPage with task table/kanban ⬜
+  - Step 3: Build MyWorkPage with task table ⬜
   - Step 4: Add route and sidebar navigation ⬜
   - Step 5: Add filtering by project/status ⬜
 - **QA Status**: NOT STARTED

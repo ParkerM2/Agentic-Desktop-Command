@@ -11,7 +11,7 @@
 You are Team Beta. You own the frontend UI, React components, and desktop app integration. Team Alpha (running in another terminal) is building the Hub backend simultaneously.
 
 **Your file ownership:**
-- `src/renderer/features/tasks/` — Task table (replaces Kanban)
+- `src/renderer/features/tasks/` — Task table dashboard
 - `src/renderer/features/settings/` — Workspaces tab
 - `src/renderer/features/projects/` — Project init wizard
 - `src/renderer/features/auth/` — Login/register UI
@@ -442,15 +442,11 @@ async function handleExecute(taskId: string) {
 }
 ```
 
-### 4.3 Remove Kanban Components
+### 4.3 Kanban Removal -- COMPLETED
 
-Delete:
-- `src/renderer/features/kanban/components/KanbanBoard.tsx`
-- `src/renderer/features/kanban/components/KanbanColumn.tsx`
-- `src/renderer/features/kanban/components/KanbanCard.tsx`
-- `src/renderer/features/kanban/` directory if empty
-
-Update router to use TaskTable instead of KanbanBoard.
+The Kanban board has been removed. The `src/renderer/features/kanban/` directory no longer exists.
+The router uses `TaskTable` from `@features/tasks` as the main task view component.
+Route `/projects/$projectId/tasks` renders the task table dashboard.
 
 ### 4.4 Archive Old Agent Code
 
@@ -465,7 +461,7 @@ Update imports in `src/main/index.ts` to remove agent service.
 
 - [ ] Execute button triggers workflow launch
 - [ ] Claude spawns with correct prompt
-- [ ] Kanban components deleted
+- [x] Kanban components deleted (completed)
 - [ ] Router updated to task table
 - [ ] Old agent code archived
 - [ ] App builds without errors
@@ -521,7 +517,7 @@ src/renderer/features/
 │       ├── RepoTypeSelector.tsx     # NEW
 │       ├── SubRepoDetector.tsx      # NEW
 │       └── SubRepoSelector.tsx      # NEW
-└── kanban/                      # DELETE
+└── kanban/                      # DELETED (already removed)
 
 src/main/services/
 ├── project/

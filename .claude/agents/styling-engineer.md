@@ -155,7 +155,7 @@ export const COLOR_THEME_LABELS: Record<ColorTheme, string> = {
   --primary: #06b6d4;  /* Raw hex is fine HERE */
 }
 
-/* OK — fixed semantic status colors (kanban column borders) */
+/* OK — fixed semantic status colors (task status borders) */
 .column-queue { border-top-color: #22d3ee; }
 
 /* WRONG — anywhere else */

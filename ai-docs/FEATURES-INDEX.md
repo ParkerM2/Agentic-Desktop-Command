@@ -10,9 +10,9 @@
 | Category | Count |
 |----------|-------|
 | Renderer Features | 25 |
-| Main Process Services | 33 |
-| IPC Handler Files | 31 |
-| IPC Contract Lines | ~2300 |
+| Main Process Services | 30 |
+| IPC Handler Files | 35 |
+| IPC Contract Lines | ~2500 |
 
 ---
 
@@ -25,6 +25,7 @@ Location: `src/renderer/features/`
 | **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | CommandBar (TopBar) | `assistant.*` |
+| **auth** | User authentication | LoginPage, RegisterPage | `auth.*` |
 | **changelog** | Project changelog viewer | ChangelogPage, ChangelogEntry | `changelog.*` |
 | **communications** | Slack/Discord integration | SlackPanel, DiscordPanel | MCP tools |
 | **dashboard** | Home dashboard | DashboardPage, TodayView, DailyStats, ActiveAgents | multiple |
@@ -32,14 +33,13 @@ Location: `src/renderer/features/`
 | **github** | GitHub integration | GitHubPage, PRList, IssueList | `github.*` |
 | **ideation** | Idea capture & tracking | IdeationPage, IdeaForm | `ideas.*` |
 | **insights** | Analytics dashboard | InsightsPage, MetricsCards, Charts | `insights.*` |
-| **kanban** | Task kanban board | KanbanBoard, KanbanColumn, TaskCard | `tasks.*` |
 | **notes** | Note-taking | NotesPage, NoteEditor, NoteList | `notes.*` |
 | **planner** | Daily planner | PlannerPage, TimeBlockGrid, TimeBlockCard | `planner.*` |
 | **productivity** | Productivity widgets | CalendarWidget, SpotifyWidget | `calendar.*`, `spotify.*` |
 | **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager | `projects.*` |
 | **roadmap** | Project roadmap | RoadmapPage, MilestoneCard | `milestones.*` |
 | **settings** | App settings | SettingsPage, HubSettings, OAuthProviderSettings, WebhookSettings | `settings.*` |
-| **tasks** | Task management | TaskCard, TaskStatusBadge, TaskForm | `tasks.*` |
+| **tasks** | Task management (table-based dashboard) | TaskTable, TaskTableRow, TaskTableHeader, TaskTableFilters, TaskCard, TaskStatusBadge | `tasks.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions | BriefingPage, SuggestionCard | `briefing.*` |
 | **merge** | Branch merge workflow | ConflictResolver, MergeConfirmModal, MergePreviewPanel | `merge.*` |
@@ -107,6 +107,7 @@ Location: `src/main/services/`
 | **tasks** | Smart task creation | decompose, importFromGithub | - |
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |
+| **workflow** | Workflow execution & progress | launchWorkflow, watchProgress | `event:workflow.*` |
 
 ---
 
@@ -148,6 +149,9 @@ Location: `src/main/ipc/handlers/`
 | `screen-handlers.ts` | screen.* |
 | `time-handlers.ts` | time.* |
 | `voice-handlers.ts` | voice.* |
+| `workflow-handlers.ts` | workflow.* |
+| `workspace-handlers.ts` | workspace.* |
+| `auth-handlers.ts` | auth.* |
 
 ---
 
@@ -176,6 +180,10 @@ Location: `src/main/ipc/handlers/`
 | `notifications.ts` | Notification, NotificationSource, WatcherConfig |
 | `screen.ts` | ScreenCapture, ScreenSource |
 | `voice.ts` | VoiceConfig, SpeechResult, VoiceState |
+| `workspace.ts` | Workspace, WorkspaceConfig |
+| `hub-connection.ts` | HubConnection types |
+| `hub-events.ts` | Hub event payload types |
+| `hub-protocol.ts` | Hub protocol contract types |
 
 ### Constants (`src/shared/constants/`)
 
@@ -265,7 +273,7 @@ Claude-UI/
 │   │   ├── ipc/                 # IPC router + handlers
 │   │   ├── mcp/                 # MCP client framework
 │   │   ├── mcp-servers/         # MCP server definitions
-│   │   ├── services/            # Business logic (29 services)
+│   │   ├── services/            # Business logic (30 services)
 │   │   └── tray/                # System tray + hotkeys
 │   ├── preload/                 # Context bridge
 │   ├── renderer/                # React app

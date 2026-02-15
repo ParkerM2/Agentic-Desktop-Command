@@ -1,87 +1,56 @@
 /**
- * Workspace IPC handlers — stub implementation with in-memory data
+ * Workspace IPC handlers — Proxies to Hub API via HubApiClient
  */
 
-import type { Device, Workspace } from '@shared/types';
+import type { Workspace } from '@shared/types';
 
+import type { HubApiClient } from '../../services/hub/hub-api-client';
 import type { IpcRouter } from '../router';
 
-const workspaces: Workspace[] = [
-  {
-    id: 'ws-1',
-    name: 'Personal Projects',
-    description: 'Side projects and experiments',
-    hostDeviceId: 'dev-1',
-    projectIds: [],
-    settings: { autoStart: false, maxConcurrent: 2, defaultBranch: 'main' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+export function registerWorkspaceHandlers(router: IpcRouter, hubApiClient: HubApiClient): void {
+  router.handle('workspaces.list', async () => {
+    const result = await hubApiClient.hubGet<{ workspaces: Workspace[] }>('/api/workspaces');
 
-const devices: Device[] = [
-  {
-    id: 'dev-1',
-    name: 'Desktop PC',
-    platform: 'win32',
-    online: true,
-    lastSeen: new Date().toISOString(),
-  },
-  {
-    id: 'dev-2',
-    name: 'Laptop',
-    platform: 'darwin',
-    online: false,
-    lastSeen: new Date(Date.now() - 86_400_000).toISOString(),
-  },
-];
+    if (!result.ok || !result.data) {
+      throw new Error(result.error ?? 'Failed to fetch workspaces');
+    }
 
-let nextWorkspaceId = 2;
+    return result.data.workspaces;
+  });
 
-export function registerWorkspaceHandlers(router: IpcRouter): void {
-  router.handle('workspaces.list', () => Promise.resolve([...workspaces]));
-
-  router.handle('workspaces.create', ({ name, description }) => {
-    const workspace: Workspace = {
-      id: `ws-${String(nextWorkspaceId++)}`,
+  router.handle('workspaces.create', async ({ name, description }) => {
+    const result = await hubApiClient.hubPost<Workspace>('/api/workspaces', {
       name,
       description,
-      projectIds: [],
-      settings: { autoStart: false, maxConcurrent: 2, defaultBranch: 'main' },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    workspaces.push(workspace);
-    return Promise.resolve(workspace);
-  });
+    });
 
-  router.handle('workspaces.update', ({ id, ...updates }) => {
-    const index = workspaces.findIndex((w) => w.id === id);
-    if (index === -1) {
-      return Promise.reject(new Error(`Workspace ${id} not found`));
+    if (!result.ok || !result.data) {
+      throw new Error(result.error ?? 'Failed to create workspace');
     }
-    const existing = workspaces[index];
-    const updated: Workspace = {
-      ...existing,
-      name: updates.name ?? existing.name,
-      description: updates.description ?? existing.description,
-      hostDeviceId: updates.hostDeviceId ?? existing.hostDeviceId,
-      settings: updates.settings
-        ? { ...existing.settings, ...updates.settings }
-        : existing.settings,
-      updatedAt: new Date().toISOString(),
-    };
-    workspaces[index] = updated;
-    return Promise.resolve(updated);
+
+    return result.data;
   });
 
-  router.handle('workspaces.delete', ({ id }) => {
-    const index = workspaces.findIndex((w) => w.id === id);
-    if (index !== -1) {
-      workspaces.splice(index, 1);
+  router.handle('workspaces.update', async ({ id, ...updates }) => {
+    const result = await hubApiClient.hubPatch<Workspace>(
+      `/api/workspaces/${encodeURIComponent(id)}`,
+      updates,
+    );
+
+    if (!result.ok || !result.data) {
+      throw new Error(result.error ?? `Failed to update workspace ${id}`);
     }
-    return Promise.resolve({ success: true });
+
+    return result.data;
   });
 
-  router.handle('devices.list', () => Promise.resolve([...devices]));
+  router.handle('workspaces.delete', async ({ id }) => {
+    const result = await hubApiClient.hubDelete(`/api/workspaces/${encodeURIComponent(id)}`);
+
+    if (!result.ok) {
+      throw new Error(result.error ?? `Failed to delete workspace ${id}`);
+    }
+
+    return { success: true };
+  });
 }

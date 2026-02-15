@@ -31,6 +31,7 @@ import { createSuggestionEngine } from './services/briefing/suggestion-engine';
 import { createCalendarService } from './services/calendar/calendar-service';
 import { createChangelogService } from './services/changelog/changelog-service';
 import { createClaudeClient } from './services/claude';
+import { createDeviceService } from './services/device/device-service';
 import { createEmailService } from './services/email/email-service';
 import { createFitnessService } from './services/fitness/fitness-service';
 import { createGitService } from './services/git/git-service';
@@ -234,6 +235,9 @@ function initializeApp(): void {
     () => hubAuthService.getAccessToken(),
   );
 
+  // Device service — manages device registration and status via Hub API
+  const deviceService = createDeviceService({ hubApiClient });
+
   // Device registration and heartbeat interval (30 seconds)
   const HEARTBEAT_INTERVAL_MS = 30_000;
 
@@ -415,6 +419,7 @@ function initializeApp(): void {
     agentService,
     agentQueue,
     claudeClient,
+    deviceService,
     alertService,
     assistantService,
     calendarService,

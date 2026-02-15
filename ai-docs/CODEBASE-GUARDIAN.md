@@ -70,7 +70,7 @@ import { TaskCard } from '@features/tasks'; // YES
 
 | Type | Convention | Example |
 |------|-----------|---------|
-| React component | PascalCase | `TaskCard.tsx`, `KanbanBoard.tsx` |
+| React component | PascalCase | `TaskCard.tsx`, `TaskTable.tsx` |
 | Hook | camelCase, prefix `use` | `useTasks.ts`, `useIpcEvent.ts` |
 | Store | kebab-case or camelCase | `layout-store.ts`, `store.ts` |
 | Service | kebab-case | `task-service.ts`, `agent-service.ts` |
@@ -347,7 +347,7 @@ src/renderer/   <-- can import shared, NEVER main/preload
 
 ### Commit Messages
 - Imperative mood: "Add task filtering" not "Added task filtering"
-- Prefix with scope: `feat(tasks):`, `fix(kanban):`, `refactor(ipc):`
+- Prefix with scope: `feat(tasks):`, `fix(tasks):`, `refactor(ipc):`
 - Max 72 characters for first line
 
 ### PR Requirements

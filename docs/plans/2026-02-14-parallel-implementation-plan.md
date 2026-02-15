@@ -318,9 +318,9 @@ Both teams start simultaneously on independent work.
    - `task-launcher.ts` — Spawn Claude with workflow skill
    - Wire to execute button in task table
 
-2. **Remove Old Kanban**
-   - Delete `KanbanBoard.tsx`, `KanbanColumn.tsx`, `KanbanCard.tsx`
-   - Update router to use task table
+2. **Kanban Removal -- COMPLETED**
+   - Kanban components already deleted
+   - Router already uses `TaskTable` from `@features/tasks`
 
 3. **Remove Broken Agent Service**
    - Archive `agent-service.ts`, `agent-queue.ts`, `token-parser.ts`
@@ -328,7 +328,7 @@ Both teams start simultaneously on independent work.
 
 **Success Criteria**:
 - [ ] Execute button launches Claude workflow
-- [ ] Kanban components removed
+- [x] Kanban components removed (completed)
 - [ ] Old agent code archived
 - [ ] App builds and runs
 
@@ -449,8 +449,8 @@ If integration fails at any sync point:
 - [ ] User can register/login from any device
 - [ ] Workspaces configurable in Settings
 - [ ] Projects support multi-repo with sub-projects
-- [ ] Task table replaces Kanban
+- [x] Task table replaces Kanban (completed)
 - [ ] Tasks sync through Hub in real-time
 - [ ] Execute launches Claude workflow on workspace host
-- [ ] Kanban and old agent code removed
+- [x] Kanban removed (completed); old agent code still to be archived
 - [ ] `npm run lint && npx tsc --noEmit && npm run build` passes

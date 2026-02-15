@@ -14,13 +14,16 @@ export {
 } from './api/useSettings';
 export { useWebhookConfig, useUpdateWebhookConfig } from './api/useWebhookConfig';
 export { SettingsPage } from './components/SettingsPage';
+export { WorkspacesTab } from './components/WorkspacesTab';
+export { DeviceCard } from './components/DeviceCard';
+
+// Re-export from dedicated feature modules for backward compatibility
 export {
   useWorkspaces,
   useCreateWorkspace,
   useUpdateWorkspace,
   useDeleteWorkspace,
-  useDevices,
   workspaceKeys,
-} from './api/useWorkspaces';
-export { useWorkspaceEvents } from './hooks/useWorkspaceEvents';
-export { WorkspacesTab } from './components/WorkspacesTab';
+  useWorkspaceEvents,
+} from '@features/workspaces';
+export { useDevices, deviceKeys, useDeviceEvents } from '@features/devices';

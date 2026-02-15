@@ -835,6 +835,52 @@ const BriefingConfigSchema = z.object({
   includeAgentActivity: z.boolean(),
 });
 
+// ─── Auth Schemas ─────────────────────────────────────────────
+
+const UserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  displayName: z.string(),
+  avatarUrl: z.string().nullable(),
+  createdAt: z.string(),
+  lastLoginAt: z.string().nullable(),
+});
+
+const AuthTokensSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string(),
+  expiresIn: z.number(),
+});
+
+const LoginInputSchema = z.object({
+  email: z.string(),
+  password: z.string(),
+});
+
+const LoginOutputSchema = z.object({
+  user: UserSchema,
+  tokens: AuthTokensSchema,
+});
+
+const RegisterInputSchema = z.object({
+  email: z.string(),
+  password: z.string(),
+  displayName: z.string(),
+});
+
+const RegisterOutputSchema = z.object({
+  user: UserSchema,
+  tokens: AuthTokensSchema,
+});
+
+const RefreshInputSchema = z.object({
+  refreshToken: z.string(),
+});
+
+const RefreshOutputSchema = z.object({
+  tokens: AuthTokensSchema,
+});
+
 // ─── Workspace Schemas ────────────────────────────────────────
 
 const WorkspaceSettingsSchema = z.object({
@@ -848,18 +894,29 @@ const WorkspaceSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   hostDeviceId: z.string().optional(),
-  projectIds: z.array(z.string()),
   settings: WorkspaceSettingsSchema,
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 
+const DeviceCapabilitiesSchema = z.object({
+  canExecute: z.boolean(),
+  repos: z.array(z.string()),
+});
+
+const DeviceTypeSchema = z.enum(['desktop', 'mobile', 'web']);
+
 const DeviceSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  platform: z.string(),
-  online: z.boolean(),
-  lastSeen: z.string(),
+  machineId: z.string().optional(),
+  userId: z.string(),
+  deviceType: DeviceTypeSchema,
+  deviceName: z.string(),
+  capabilities: DeviceCapabilitiesSchema,
+  isOnline: z.boolean(),
+  lastSeen: z.string().optional(),
+  appVersion: z.string().optional(),
+  createdAt: z.string(),
 });
 
 // ─── IPC Contract Definition ──────────────────────────────────
@@ -2051,37 +2108,51 @@ export const ipcInvokeContract = {
     input: z.object({}),
     output: z.array(DeviceSchema),
   },
+  'devices.register': {
+    input: z.object({
+      machineId: z.string(),
+      deviceName: z.string(),
+      deviceType: DeviceTypeSchema,
+      capabilities: DeviceCapabilitiesSchema,
+      appVersion: z.string(),
+    }),
+    output: DeviceSchema,
+  },
+  'devices.heartbeat': {
+    input: z.object({ deviceId: z.string() }),
+    output: z.object({ success: z.boolean(), lastSeen: z.string() }),
+  },
+  'devices.update': {
+    input: z.object({
+      deviceId: z.string(),
+      deviceName: z.string().optional(),
+      capabilities: DeviceCapabilitiesSchema.optional(),
+      isOnline: z.boolean().optional(),
+      appVersion: z.string().optional(),
+    }),
+    output: DeviceSchema,
+  },
 
   // ── Auth ──
-  'auth.login': {
-    input: z.object({ email: z.email(), password: z.string() }),
-    output: z.object({
-      token: z.string(),
-      user: z.object({ id: z.string(), email: z.string(), displayName: z.string() }),
-    }),
-  },
   'auth.register': {
-    input: z.object({
-      email: z.email(),
-      password: z.string(),
-      displayName: z.string(),
-    }),
-    output: z.object({
-      token: z.string(),
-      user: z.object({ id: z.string(), email: z.string(), displayName: z.string() }),
-    }),
+    input: RegisterInputSchema,
+    output: RegisterOutputSchema,
   },
-  'auth.me': {
-    input: z.object({}),
-    output: z.object({ id: z.string(), email: z.string(), displayName: z.string() }),
+  'auth.login': {
+    input: LoginInputSchema,
+    output: LoginOutputSchema,
   },
   'auth.logout': {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },
   'auth.refresh': {
+    input: RefreshInputSchema,
+    output: RefreshOutputSchema,
+  },
+  'auth.me': {
     input: z.object({}),
-    output: z.object({ token: z.string() }),
+    output: UserSchema,
   },
 
   // ── Workflow ──
@@ -2488,4 +2559,14 @@ export {
   WorkspaceSchema,
   WorkspaceSettingsSchema,
   DeviceSchema,
+  DeviceCapabilitiesSchema,
+  DeviceTypeSchema,
+  UserSchema,
+  AuthTokensSchema,
+  LoginInputSchema,
+  LoginOutputSchema,
+  RegisterInputSchema,
+  RegisterOutputSchema,
+  RefreshInputSchema,
+  RefreshOutputSchema,
 };

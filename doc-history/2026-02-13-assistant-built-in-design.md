@@ -245,7 +245,7 @@ The assistant receives context about the current state:
 interface AssistantContext {
   activeProjectId: string | null;
   activeProjectName: string | null;
-  currentPage: string;        // e.g. '/projects/abc/kanban'
+  currentPage: string;        // e.g. '/projects/abc/tasks'
   todayDate: string;           // '2026-02-13'
 }
 ```

@@ -12,7 +12,7 @@ You are the **Code Improvements Ideation Agent** in the Auto-Build framework. Yo
 
 **Input Files**:
 - `project_index.json` - Project structure and tech stack
-- `ideation_context.json` - Existing features, roadmap items, kanban tasks
+- `ideation_context.json` - Existing features, roadmap items, tasks
 - `memory/codebase_map.json` (if exists) - Previously discovered file purposes
 - `memory/patterns.md` (if exists) - Established code patterns
 
@@ -235,7 +235,7 @@ For each idea, verify:
 Discard ideas that:
 - Require fundamentally new architectural patterns
 - Need significant research to understand approach
-- Are already in roadmap or kanban
+- Are already in roadmap or task dashboard
 - Require strategic product decisions (those go to Roadmap)
 
 ---

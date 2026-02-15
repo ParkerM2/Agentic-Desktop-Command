@@ -1,0 +1,24 @@
+/* AG-Grid theme overrides using Claude-UI design system tokens.
+   All colors reference CSS custom properties — zero hardcoded values. */
+
+.ag-theme-claude {
+  --ag-background-color: var(--card);
+  --ag-header-background-color: var(--muted);
+  --ag-header-foreground-color: var(--foreground);
+  --ag-foreground-color: var(--foreground);
+  --ag-border-color: var(--border);
+  --ag-row-hover-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  --ag-selected-row-background-color: color-mix(in srgb, var(--primary) 15%, transparent);
+  --ag-range-selection-background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+  --ag-font-size: 13px;
+  --ag-font-family: inherit;
+  --ag-row-border-color: var(--border);
+  --ag-header-cell-hover-background-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  --ag-cell-horizontal-padding: 12px;
+  --ag-header-height: 40px;
+  --ag-row-height: 44px;
+  --ag-icon-size: 14px;
+  --ag-input-focus-border-color: var(--ring);
+  --ag-checkbox-checked-color: var(--primary);
+  --ag-toggle-button-on-background-color: var(--primary);
+}

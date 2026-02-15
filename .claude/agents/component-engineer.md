@@ -18,9 +18,9 @@ Before writing ANY component, read:
 4. `ai-docs/CODEBASE-GUARDIAN.md` — Section 4: Component Rules
 
 Then read existing components as reference:
-5. `src/renderer/features/kanban/components/KanbanBoard.tsx` — Complex component
-6. `src/renderer/features/kanban/components/KanbanCard.tsx` — Card component
-7. `src/renderer/features/kanban/components/TaskDetailModal.tsx` — Modal component
+5. `src/renderer/features/tasks/components/TaskTable.tsx` — Table component
+6. `src/renderer/features/tasks/components/TaskTableRow.tsx` — Row component
+7. `src/renderer/features/tasks/components/TaskCard.tsx` — Card component
 8. `src/renderer/features/projects/components/ProjectListPage.tsx` — Page component
 9. `src/renderer/features/agents/components/AgentDashboard.tsx` — Dashboard component
 10. `src/renderer/features/settings/components/SettingsPage.tsx` — Settings component

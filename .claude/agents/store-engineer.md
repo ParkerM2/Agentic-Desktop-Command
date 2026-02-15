@@ -148,7 +148,7 @@ settings: AppSettings;             // NO — use useQuery
 ```typescript
 // Feature store: use<Feature>UI
 export const usePlannerUI = create<PlannerUIState>()(...);
-export const useKanbanUI = create<KanbanUIState>()(...);
+export const useTaskUI = create<TaskUIState>()(...);
 
 // Shared store: use<Domain>Store
 export const useLayoutStore = create<LayoutState>()(...);
