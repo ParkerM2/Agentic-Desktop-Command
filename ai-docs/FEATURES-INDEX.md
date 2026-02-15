@@ -10,8 +10,8 @@
 | Category | Count |
 |----------|-------|
 | Renderer Features | 28 |
-| Main Process Services | 30 |
-| IPC Handler Files | 35 |
+| Main Process Services | 31 |
+| IPC Handler Files | 36 |
 | IPC Contract Lines | ~2500 |
 
 ---
@@ -24,7 +24,7 @@ Location: `src/renderer/features/`
 |---------|---------|----------------|--------------|
 | **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
-| **assistant** | Built-in Claude assistant | CommandBar (TopBar) | `assistant.*` |
+| **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea), AssistantPage, CommandBar (TopBar) | `assistant.*` |
 | **auth** | User authentication | LoginPage, RegisterPage, AuthGuard, UserMenu (in layouts) | `auth.*` |
 | **changelog** | Project changelog viewer | ChangelogPage, ChangelogEntry | `changelog.*` |
 | **communications** | Slack/Discord integration | SlackPanel, DiscordPanel | MCP tools |
@@ -249,10 +249,11 @@ Location: `src/renderer/app/layouts/`
 
 | Layout | Purpose |
 |--------|---------|
-| `RootLayout.tsx` | Root shell: sidebar + content area |
+| `RootLayout.tsx` | Root shell: sidebar + content area + notifications + AssistantWidget |
 | `Sidebar.tsx` | Navigation sidebar |
 | `TopBar.tsx` | Top bar with assistant command input |
 | `CommandBar.tsx` | Global command palette (Cmd+K) |
+| `ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu.tsx` | Avatar + logout dropdown in sidebar footer |
 
 ---
@@ -263,8 +264,15 @@ Location: `src/renderer/shared/components/`
 
 | Component | Purpose |
 |-----------|---------|
-| `ConfirmDialog.tsx` | Reusable confirmation dialog for destructive actions (delete task, delete project). Props: `open`, `onOpenChange`, `title`, `description`, `variant` ('destructive' | 'default'), `onConfirm`, `loading` |
+| `AppUpdateNotification.tsx` | App update available notification banner |
+| `AuthNotification.tsx` | Auth error/expiry notification |
+| `ConfirmDialog.tsx` | Reusable confirmation dialog for destructive actions. Props: `open`, `onOpenChange`, `title`, `description`, `variant`, `onConfirm`, `loading` |
+| `HubConnectionIndicator.tsx` | Hub connected/disconnected dot indicator |
+| `HubNotification.tsx` | Hub connection event notifications |
+| `HubStatus.tsx` | Hub status display component |
+| `IntegrationRequired.tsx` | Placeholder for features requiring external integration |
 | `MutationErrorToast.tsx` | Error toast renderer, mounted in RootLayout. Reads from `useToastStore`, renders fixed bottom-right |
+| `WebhookNotification.tsx` | Webhook execution result notifications |
 
 ## 6.6 Shared Hooks
 
@@ -272,8 +280,12 @@ Location: `src/renderer/shared/hooks/`
 
 | Hook | Purpose |
 |------|---------|
+| `useClaudeAuth.ts` | Check Claude CLI installation and authentication status |
+| `useHubEvents.ts` | Subscribe to Hub-specific IPC events (`useHubEvent`) |
 | `useIpcEvent.ts` | Subscribe to IPC events from main process |
+| `useIpcQuery.ts` | IPC-backed React Query hook factory (not exported from barrel) |
 | `useMutationErrorToast.ts` | `onError(action)` factory for React Query mutation error handling → toast notifications |
+| `useOAuthStatus.ts` | Check OAuth provider configuration status |
 
 ## 6.7 Shared Stores
 
@@ -281,9 +293,12 @@ Location: `src/renderer/shared/stores/`
 
 | Store | Purpose |
 |-------|---------|
+| `assistant-widget-store.ts` | Floating assistant widget open/close state (`useAssistantWidgetStore`) |
+| `command-bar-store.ts` | CommandBar processing state, input history, toast visibility |
 | `layout-store.ts` | Sidebar state, active project, project tabs |
 | `theme-store.ts` | Dark/light mode, color theme, UI scale |
 | `toast-store.ts` | Toast notification queue (max 3, auto-dismiss 5s) |
+| `ThemeHydrator.tsx` | Component that hydrates theme CSS vars on `<html>` (co-located with theme-store) |
 
 ---
 
@@ -299,6 +314,7 @@ Claude-UI/
 │   ├── CODEBASE-GUARDIAN.md     # Structural rules
 │   ├── LINTING.md               # ESLint rules
 │   ├── FEATURES-INDEX.md        # THIS FILE
+│   ├── user-interface-flow.md   # UX flow map + gap analysis
 │   └── prompts/implementing-features/
 ├── docs/
 │   ├── plans/                   # Design documents
@@ -311,13 +327,17 @@ Claude-UI/
 │   │   ├── ipc/                 # IPC router + handlers
 │   │   ├── mcp/                 # MCP client framework
 │   │   ├── mcp-servers/         # MCP server definitions
-│   │   ├── services/            # Business logic (30 services)
+│   │   ├── services/            # Business logic (31 services)
 │   │   └── tray/                # System tray + hotkeys
 │   ├── preload/                 # Context bridge
 │   ├── renderer/                # React app
 │   │   ├── app/                 # Router, providers, layouts
 │   │   ├── features/            # Feature modules (28 features)
-│   │   ├── shared/              # Shared hooks, stores, components
+│   │   ├── shared/              # Shared hooks, stores, lib, components
+│   │   │   ├── components/      # 9 shared UI components
+│   │   │   ├── hooks/           # 6 shared hooks
+│   │   │   ├── lib/             # Utilities (cn, ipc helper)
+│   │   │   └── stores/          # 5 Zustand stores + ThemeHydrator
 │   │   └── styles/globals.css   # Theme tokens + Tailwind
 │   └── shared/                  # Shared between main + renderer
 │       ├── ipc-contract.ts      # IPC channel definitions

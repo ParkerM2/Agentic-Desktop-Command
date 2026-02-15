@@ -30,7 +30,7 @@
 │                                          ├─ TaskService         │
 │                                          ├─ TerminalService     │
 │                                          ├─ SettingsService     │
-│                                          └─ ... (30 total)      │
+│                                          └─ ... (31 total)      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -87,9 +87,10 @@ export function createProjectService(/* deps */): ProjectService {
 ```
 
 Key rules:
-- Services return **synchronous values** (not Promises)
-- IPC handlers wrap sync returns with `Promise.resolve()`
-- Only exception: `selectDirectory()` uses Electron's async dialog API
+- **Local** services return **synchronous values** (not Promises)
+- **Hub API proxy** services ARE async (they call the Hub REST API via `hubApiClient`)
+- IPC handlers wrap sync returns with `Promise.resolve()`, or directly return the Promise from async Hub calls
+- Electron-specific async exception: `selectDirectory()` uses Electron dialog
 - Services emit events via `router.emit()` for real-time updates
 
 ## React Query Integration
@@ -504,14 +505,39 @@ The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `ConfirmDialog` | `src/renderer/shared/components/ConfirmDialog.tsx` | Reusable destructive-action confirmation (used by task delete, project delete) |
-| `MutationErrorToast` | `src/renderer/shared/components/MutationErrorToast.tsx` | Fixed bottom-right error toast renderer |
+| `AppUpdateNotification` | `src/renderer/shared/components/` | App update available notification banner |
+| `AuthNotification` | `src/renderer/shared/components/` | Auth error/expiry notification |
+| `ConfirmDialog` | `src/renderer/shared/components/` | Reusable destructive-action confirmation (task delete, project delete) |
+| `HubConnectionIndicator` | `src/renderer/shared/components/` | Hub connected/disconnected dot indicator |
+| `HubNotification` | `src/renderer/shared/components/` | Hub connection event notifications |
+| `HubStatus` | `src/renderer/shared/components/` | Hub status display component |
+| `IntegrationRequired` | `src/renderer/shared/components/` | Placeholder for features requiring external integration |
+| `MutationErrorToast` | `src/renderer/shared/components/` | Fixed bottom-right error toast renderer |
+| `WebhookNotification` | `src/renderer/shared/components/` | Webhook execution result notifications |
 
 ### App Layout Components
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
+| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: sidebar + TopBar + content + notification overlays + AssistantWidget |
+| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Navigation sidebar |
+| `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Top bar with CommandBar trigger |
+| `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global command palette (Cmd+K) |
+| `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer |
+
+### RootLayout Overlay Mount Order
+
+Components mounted after the main content area, in order:
+
+1. `AppUpdateNotification`
+2. `AuthNotification`
+3. `HubNotification`
+4. `MutationErrorToast` (fixed bottom-right, z-50)
+5. `WebhookNotification`
+6. `AssistantWidget` (FAB z-40 bottom-right, panel z-50)
+
+The `AssistantWidget` provides a floating chat interface accessible from any page via Ctrl+J (or Cmd+J on Mac). It complements the CommandBar (Cmd+K) with persistent conversational history.
 
 ## Build System
 

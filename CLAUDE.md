@@ -17,23 +17,27 @@ npm run test:unit    # Unit tests only (vitest)
 npm run test:integration  # Integration tests only (vitest)
 npm run test:e2e     # E2E tests (playwright + electron)
 npm run test:coverage    # Unit tests with coverage report
+npm run check:docs   # Verify docs updated for source changes
+npm run verify       # Run ALL 5 verification commands at once
 ```
 
-## Test Requirements — MANDATORY (Non-Skippable)
+## Verification Requirements — MANDATORY (Non-Skippable)
 
 **Before ANY work can be considered complete, ready for human review, or merged:**
 
 ```bash
-# ALL FOUR COMMANDS MUST PASS — NO EXCEPTIONS
+# ALL FIVE COMMANDS MUST PASS — NO EXCEPTIONS
 npm run lint         # Zero violations
 npm run typecheck    # Zero errors
 npm run test         # All tests pass
 npm run build        # Builds successfully
+npm run check:docs   # Documentation updated for source changes
 ```
 
 ### The Rule
 
-> **Claude agents CANNOT claim work is complete without running the full test suite and showing passing output.**
+> **Claude agents CANNOT claim work is complete without running the full verification suite and showing passing output.**
+> This includes documentation updates — code changes without doc updates are incomplete work.
 > This is not optional. This is not skippable. No excuses. Evidence before assertions.
 
 ### What This Means
@@ -54,14 +58,18 @@ These phrases without test evidence are **LIES**:
 - "The feature is complete"
 - "Ready for review"
 - "Code looks good"
+- "Docs can be updated later"
+- "This change doesn't need doc updates"
+- "I'll update docs in a follow-up"
 
 ### Correct Pattern
 
 ```
 1. Make code changes
-2. Run: npm run lint && npm run typecheck && npm run test && npm run build
-3. See: All 4 commands pass with zero errors
-4. ONLY THEN: "All verification passes. Ready for review."
+2. Update relevant ai-docs/ for your changes
+3. Run: npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs
+4. See: All 5 commands pass with zero errors
+5. ONLY THEN: "All verification passes. Ready for review."
 ```
 
 ### Test Suite Structure
@@ -88,6 +96,28 @@ If your changes affect:
 
 If tests don't exist for the area you're modifying, **that doesn't exempt you from running the existing suite**.
 
+### Documentation Update Mapping
+
+`npm run check:docs` enforces that source changes include doc updates. Use this mapping to know which docs to update:
+
+| Change Type | Docs to Update |
+|-------------|----------------|
+| New component/hook/store | `FEATURES-INDEX.md` (inventory), `PATTERNS.md` (usage examples) |
+| New data flow or IPC wiring | `DATA-FLOW.md` (flow diagram), `ARCHITECTURE.md` (system overview) |
+| New shared utility | `FEATURES-INDEX.md` (shared sections), `CODEBASE-GUARDIAN.md` (placement rules) |
+| UI layout changes | `user-interface-flow.md` (UX flow sections), `FEATURES-INDEX.md` (layouts) |
+| New feature module | `FEATURES-INDEX.md` (feature table), `ARCHITECTURE.md` (system diagram if applicable) |
+| Gap resolution | `user-interface-flow.md` (mark gap RESOLVED with date and description) |
+| New pattern or convention | `PATTERNS.md` (pattern example with code) |
+
+**Checklist before committing:**
+
+1. Did I add a new file? → Update `FEATURES-INDEX.md`
+2. Did I add a new data flow? → Update `DATA-FLOW.md`
+3. Did I introduce a new pattern? → Update `PATTERNS.md`
+4. Did I change the architecture? → Update `ARCHITECTURE.md`
+5. Did I change the UI layout or resolve a gap? → Update `user-interface-flow.md`
+
 ## Architecture Overview
 
 ```
@@ -95,7 +125,7 @@ src/
 ├── main/           # Electron main process (Node.js)
 │   ├── index.ts    # App lifecycle, window creation
 │   ├── ipc/        # IPC router + handler registration
-│   └── services/   # Business logic (30 services: agent, project, task, terminal, settings, and more)
+│   └── services/   # Business logic (31 services: agent, project, task, terminal, settings, and more)
 ├── preload/        # Context bridge (typed API exposed to renderer)
 ├── renderer/       # React app (browser context)
 │   ├── app/        # Router, providers, layouts
@@ -120,7 +150,7 @@ Data flow: `ipc-contract.ts` -> `IpcRouter` -> preload bridge -> `ipc()` helper 
 
 ## Service Pattern
 
-Main process services return **synchronous values** (not Promises). IPC handlers wrap them:
+**Local** services return **synchronous values** (not Promises). IPC handlers wrap them:
 ```typescript
 // Service method — sync
 listProjects(): Project[] { ... }
@@ -129,7 +159,9 @@ listProjects(): Project[] { ... }
 router.handle('projects.list', () => Promise.resolve(service.listProjects()));
 ```
 
-Exception: `projectService.selectDirectory()` is async (Electron dialog).
+Exceptions:
+- `projectService.selectDirectory()` is async (Electron dialog)
+- **Hub API proxy services** are async (they call the Hub REST API via `hubApiClient`)
 
 ## Feature Module Pattern
 
@@ -310,32 +342,3 @@ Raw hex/rgb/hsl values are **ONLY** allowed inside theme variable definitions:
 
 **Current gaps and priorities:** `docs/plans/2026-02-13-full-codebase-audit.md`
 
-## Documentation Update Requirement — MANDATORY
-
-**Every commit or push that changes code MUST include corresponding updates to the relevant architecture docs.**
-
-These docs are the source of truth for all Claude agents — planning agents, specialized engineers, and QA reviewers all read them to understand the system. If docs fall out of sync with code, agents will plan against stale context, produce incorrect implementations, and miss integration points.
-
-### What to Update
-
-| Change Type | Docs to Update |
-|-------------|----------------|
-| New component/hook/store | `FEATURES-INDEX.md` (inventory), `PATTERNS.md` (usage examples) |
-| New data flow or IPC wiring | `DATA-FLOW.md` (flow diagram), `ARCHITECTURE.md` (system overview) |
-| New shared utility | `FEATURES-INDEX.md` (shared sections), `CODEBASE-GUARDIAN.md` (placement rules) |
-| UI layout changes | `user-interface-flow.md` (UX flow sections), `FEATURES-INDEX.md` (layouts) |
-| New feature module | `FEATURES-INDEX.md` (feature table), `ARCHITECTURE.md` (system diagram if applicable) |
-| Gap resolution | `user-interface-flow.md` (mark gap RESOLVED with date and description) |
-| New pattern or convention | `PATTERNS.md` (pattern example with code) |
-
-### The Rule
-
-> **Code changes without doc updates are incomplete work.** Agents treating undocumented features as non-existent is correct behavior — if it's not in the docs, it doesn't exist for planning purposes.
-
-### Checklist Before Committing
-
-1. Did I add a new file? → Update `FEATURES-INDEX.md`
-2. Did I add a new data flow? → Update `DATA-FLOW.md`
-3. Did I introduce a new pattern? → Update `PATTERNS.md`
-4. Did I change the architecture? → Update `ARCHITECTURE.md`
-5. Did I change the UI layout or resolve a gap? → Update `user-interface-flow.md`

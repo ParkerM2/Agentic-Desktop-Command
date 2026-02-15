@@ -21,6 +21,7 @@ import { WebhookNotification } from '@renderer/shared/components/WebhookNotifica
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { ThemeHydrator } from '@renderer/shared/stores';
 
+import { AssistantWidget } from '@features/assistant';
 import { OnboardingWizard } from '@features/onboarding';
 import { useSettings } from '@features/settings';
 import { hubKeys, useHubStatus } from '@features/settings/api/useHub';
@@ -81,6 +82,7 @@ export function RootLayout() {
       <HubNotification />
       <MutationErrorToast />
       <WebhookNotification />
+      <AssistantWidget />
     </div>
   );
 }

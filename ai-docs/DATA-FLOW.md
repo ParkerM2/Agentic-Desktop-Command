@@ -206,20 +206,31 @@ components/
                     |   ZUSTAND             |
                     |   (UI State Only)     |
                     |                       |
+                    |   Shared stores:      |
                     |   layout-store:       |
                     |     sidebarCollapsed  |
                     |     activeProjectId   |
                     |     projectTabs       |
-                    |                       |
                     |   theme-store:        |
                     |     mode (light/dark) |
                     |     colorTheme        |
                     |     uiScale           |
+                    |   toast-store:        |
+                    |     toasts queue      |
+                    |   assistant-widget:   |
+                    |     isOpen (toggle)   |
+                    |   command-bar-store:  |
+                    |     isProcessing      |
+                    |     inputHistory      |
                     |                       |
-                    |   feature stores:     |
+                    |   Feature stores:     |
                     |     selectedTaskId    |
                     |     activeTerminalId  |
                     |     dragState         |
+                    |     assistantStore:   |
+                    |       responseHistory |
+                    |       isThinking      |
+                    |       unreadCount     |
                     +-----------------------+
 
 RULE: Zustand stores NEVER contain data from the server.
@@ -919,3 +930,95 @@ onError:
 | `src/renderer/features/tasks/components/TaskFiltersToolbar.tsx` | "New Task" button |
 | `src/renderer/features/tasks/store.ts` | `createDialogOpen` state |
 | `src/renderer/features/tasks/api/useTasks.ts` | `useCreateTask()` mutation |
+
+---
+
+## 18. Assistant Widget Data Flow
+
+```
+USER INPUT                        RENDERER                           MAIN PROCESS
+==========                        ========                           ============
+
+Types in WidgetInput
+  |
+  v
+handleSubmit(input)
+  |
+  v
+useSendCommand().mutate({ input })
+  |
+  v
+onMutate:
+  setIsThinking(true)
+  clearCurrentResponse()
+  |
+  v
+ipc('assistant.sendCommand', {
+  input,
+  context: { activeProjectId, currentPage, todayDate }
+})
+                                                                      |
+                                                                      v
+                                                                    assistant-handlers.ts
+                                                                      → assistantService.sendCommand()
+                                                                      → Intent classification
+                                                                      → Command execution
+                                                                      → Returns { content, type, intent }
+  |
+  v
+onSuccess:
+  setCurrentResponse(data.content)
+  addResponseEntry({ input, response, type, intent })
+  invalidateQueries(assistantKeys.history())
+  |
+  v
+onSettled:
+  setIsThinking(false)
+  |
+  v
+WidgetMessageArea re-renders with new entry
+```
+
+### Unread Tracking Flow
+
+```
+MAIN PROCESS                      RENDERER
+============                      ========
+
+event:assistant.response fires
+  |
+  v
+                                  useAssistantEvents() receives
+                                    |
+                                    v
+                                  Is widget open? (useAssistantWidgetStore)
+                                    |
+                                    ├─ YES → no action (user sees response live)
+                                    |
+                                    └─ NO → incrementUnread()
+                                              |
+                                              v
+                                            WidgetFab shows badge with count
+                                              |
+                                              v
+                                            User opens widget (click or Ctrl+J)
+                                              |
+                                              v
+                                            resetUnread()
+                                              |
+                                              v
+                                            Badge disappears
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/renderer/features/assistant/components/AssistantWidget.tsx` | Orchestrator: FAB + Panel + keyboard shortcuts |
+| `src/renderer/features/assistant/components/WidgetFab.tsx` | FAB button with unread badge |
+| `src/renderer/features/assistant/components/WidgetPanel.tsx` | Chat panel with header, messages, quick actions, input |
+| `src/renderer/features/assistant/components/WidgetMessageArea.tsx` | Message display with auto-scroll |
+| `src/renderer/features/assistant/components/WidgetInput.tsx` | Textarea input with send button |
+| `src/renderer/features/assistant/store.ts` | Response history, isThinking, unreadCount |
+| `src/renderer/shared/stores/assistant-widget-store.ts` | Widget open/close state |
+| `src/renderer/features/assistant/hooks/useAssistantEvents.ts` | IPC event → store updates + unread tracking |
+| `src/renderer/features/assistant/api/useAssistant.ts` | useSendCommand, useHistory, useClearHistory |

@@ -7,16 +7,21 @@
 import { useQueryClient } from '@tanstack/react-query';
 
 import { useIpcEvent } from '@renderer/shared/hooks/useIpcEvent';
+import { useAssistantWidgetStore } from '@renderer/shared/stores';
 
 import { assistantKeys } from '../api/queryKeys';
 import { useAssistantStore } from '../store';
 
 export function useAssistantEvents() {
   const queryClient = useQueryClient();
-  const { setCurrentResponse, setIsThinking } = useAssistantStore();
+  const { incrementUnread, setCurrentResponse, setIsThinking } = useAssistantStore();
+  const isWidgetOpen = useAssistantWidgetStore((s) => s.isOpen);
 
   useIpcEvent('event:assistant.response', (payload) => {
     setCurrentResponse(payload.content);
+    if (!isWidgetOpen) {
+      incrementUnread();
+    }
     void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
   });
 

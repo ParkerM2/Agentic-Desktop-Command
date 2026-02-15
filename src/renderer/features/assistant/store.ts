@@ -20,11 +20,14 @@ interface AssistantState {
   currentResponse: string;
   commandDraft: string;
   responseHistory: ResponseEntry[];
+  unreadCount: number;
   setIsThinking: (isThinking: boolean) => void;
   setCurrentResponse: (response: string) => void;
   clearCurrentResponse: () => void;
   setCommandDraft: (draft: string) => void;
   addResponseEntry: (entry: Omit<ResponseEntry, 'id' | 'timestamp'>) => void;
+  incrementUnread: () => void;
+  resetUnread: () => void;
 }
 
 export type { ResponseEntry };
@@ -34,6 +37,7 @@ export const useAssistantStore = create<AssistantState>((set) => ({
   currentResponse: '',
   commandDraft: '',
   responseHistory: [],
+  unreadCount: 0,
 
   setIsThinking: (isThinking) => set({ isThinking }),
 
@@ -54,4 +58,8 @@ export const useAssistantStore = create<AssistantState>((set) => ({
         },
       ],
     })),
+
+  incrementUnread: () => set((state) => ({ unreadCount: state.unreadCount + 1 })),
+
+  resetUnread: () => set({ unreadCount: 0 }),
 }));

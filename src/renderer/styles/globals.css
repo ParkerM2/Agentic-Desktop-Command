@@ -144,6 +144,21 @@
 }
 
 /* Animation utility classes (outside @theme for Tailwind v4 compatibility) */
+@keyframes slide-up-panel {
+  from {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up-panel {
+  animation: slide-up-panel 0.2s ease-out;
+}
+
 .animate-pulse-subtle {
   animation: pulse-subtle 2s ease-in-out infinite;
 }

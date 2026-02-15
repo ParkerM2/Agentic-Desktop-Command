@@ -48,6 +48,7 @@ Before ANY action, invoke the appropriate superpowers skill:
 - [ ] <criterion 2>
 - [ ] `npx tsc --noEmit` passes clean
 - [ ] `npm run lint` passes clean
+- [ ] `npm run check:docs` passes clean
 
 ## Files to Create
 - <path>
@@ -68,7 +69,8 @@ Before ANY action, invoke the appropriate superpowers skill:
 
 ## When Complete
 
-1. Run `npx tsc --noEmit` and `npm run lint` — both must pass clean
+1. Run all 5 verification commands — all must pass clean:
+   `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs`
 2. Spawn a QA Review agent (see below) to validate your work
 3. If QA passes: send the QA report + completion summary to the Team Lead
 4. If QA fails: fix the issues, re-run checks, spawn a NEW QA review agent (max 3 rounds)
@@ -140,6 +142,7 @@ Your job is to validate the work done for **Task #<N>: <task name>**.
 npm run lint          # Must be zero violations
 npx tsc --noEmit     # Must be zero errors
 npm run build         # Must succeed
+npm run check:docs    # Docs updated for source changes
 ```
 
 ### Phase 2: Code Diff Review
@@ -228,6 +231,7 @@ Automated Checks:
   - lint: PASS/FAIL (N violations)
   - typecheck: PASS/FAIL (N errors)
   - build: PASS/FAIL
+  - check:docs: PASS/FAIL
 
 Code Review: PASS/FAIL
   - TypeScript strictness: PASS/FAIL
@@ -265,54 +269,41 @@ If APPROVED: confirm all checklist items pass, no issues found.
 
 ---
 
-## Documentation Update Agent Spawn
+## Documentation Verification Agent Spawn
 
-The Team Lead spawns this AFTER all coding tasks and QA pass.
+Each coding agent is responsible for updating docs alongside their own code changes. The Team Lead spawns this agent ONLY if `npm run check:docs` reveals gaps after all tasks complete.
 
 ```
 Task tool parameters:
-  description: "Update docs for <feature>"
+  description: "Verify docs for <feature>"
   subagent_type: general-purpose
   team_name: "<team-name>"
-  name: "doc-updater"
+  name: "doc-verifier"
   mode: bypassPermissions
 
 Prompt:
 
-You are the **Documentation Agent** on team "<team-name>".
-Your job is to update all project documentation to reflect the changes made in this feature.
+You are the **Documentation Verification Agent** on team "<team-name>".
+Coding agents should have updated docs alongside their code. Your job is to verify completeness and fill any gaps.
 
 ## Initialization
 1. Read `CLAUDE.md`
-2. Read `ai-docs/ARCHITECTURE.md` — you will UPDATE this
-3. Read `ai-docs/PATTERNS.md` — you will UPDATE this if new patterns were introduced
-4. Read `ai-docs/DATA-FLOW.md` — you will UPDATE this if new IPC/events were added
-5. Read `ai-docs/prompts/implementing-features/README.md` — section 3 (Documentation Maintenance)
+2. Read `ai-docs/ARCHITECTURE.md` — verify it reflects current state
+3. Read `ai-docs/PATTERNS.md` — verify new patterns are documented
+4. Read `ai-docs/DATA-FLOW.md` — verify new IPC/events are documented
+5. Read `ai-docs/FEATURES-INDEX.md` — verify new features/services listed
 
 ## Files Changed in This Feature
 
 <list all files created/modified across all tasks>
 
-## What to Update
+## Your Protocol
 
-1. **`ai-docs/ARCHITECTURE.md`**:
-   - Add new services to the service list
-   - Add new feature modules to the features list
-   - Update the system diagram if architectural changes were made
-   - Update the file structure section
-
-2. **`ai-docs/DATA-FLOW.md`** (if IPC changes):
-   - Add new IPC channels to the channel table
-   - Add new event channels to the events table
-   - Document new data paths
-
-3. **`ai-docs/PATTERNS.md`** (if new patterns):
-   - Document any new code patterns established
-   - Update existing pattern descriptions if modified
-
-4. **`PROGRESS.md`**:
-   - Mark the feature as completed
-   - Add the date and brief description
+1. Run `npm run check:docs` — if it passes, verify doc CONTENT accuracy
+2. For each changed source file, check that the relevant doc reflects the change
+3. Fill any gaps found — add missing services, IPC channels, patterns, etc.
+4. Run `npm run check:docs` again to confirm PASS
+5. Report what was missing and what you added
 
 ## Rules
 - Do NOT invent information — only document what actually exists in the code
@@ -344,8 +335,8 @@ When starting a new feature, the Team Lead follows this sequence:
     c. If QA failed: agent handles re-work (up to 3 rounds)
     d. SPAWN next wave of unblocked agents
 12. When ALL tasks + QA complete:
-    a. SPAWN documentation update agent
-    b. RUN final verification: lint + typecheck + build
+    a. VERIFY all doc updates via `npm run check:docs`
+    b. RUN final verification: npm run lint && typecheck && test && build && check:docs
     c. UPDATE progress file status to COMPLETE
     d. UPDATE design doc status to IMPLEMENTED
     e. SHUT DOWN all agents
