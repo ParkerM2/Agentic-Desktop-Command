@@ -23,20 +23,23 @@
 [4. SELF-REVIEW] > Each specialist iterates on their own output (DRY, clean, perf)
   |
   v
-[5. QA REVIEW] --> QA Reviewer runs full compliance check
+[5. TEST GATE] --> MANDATORY: npm run lint && typecheck && test && build
+  |                (ALL MUST PASS — NO EXCEPTIONS)
+  v
+[6. QA REVIEW] --> QA Reviewer runs full compliance check + re-runs tests
   |
   v
-[6. GUARDIAN] ---> Codebase Guardian validates structural integrity
+[7. GUARDIAN] ---> Codebase Guardian validates structural integrity
   |
   v
-[7. TEST] -------> Test Engineer writes/runs tests
+[8. TEST FINAL] -> Test Engineer ensures all tests pass, writes new if needed
   |
   v
-[8. PERF] -------> Performance Auditor checks for regressions
+[9. PERF] -------> Performance Auditor checks for regressions
   |
   v
-[9. INTEGRATE] --> Team Leader coordinates merge + final verification
-  |
+[10. INTEGRATE] -> Team Leader coordinates merge + FINAL TEST GATE
+  |                (ALL 4 COMMANDS MUST PASS BEFORE COMMIT)
   v
  PRODUCTION
 ```
@@ -143,18 +146,63 @@
    - If any check fails, fix and re-check
    - Maximum 3 self-review iterations before escalating to QA
 
-**Output:** Self-reviewed code, ready for QA
+**Output:** Self-reviewed code, ready for Test Gate
 
 ---
 
-## Phase 5: QA Review
+## Phase 5: Test Gate — MANDATORY (Non-Skippable)
+
+**Owner:** The specialist who completed the work (before handing off to QA)
+
+> **⚠️ THIS PHASE CANNOT BE SKIPPED. ALL COMMANDS MUST PASS.**
+
+```bash
+# Run ALL of these. ALL must pass before proceeding.
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass (unit + integration)
+npm run build        # Builds successfully
+```
+
+### Rules
+
+1. **Run the actual commands** — don't assume they pass
+2. **Show the output** — evidence before claims
+3. **All 4 must pass** — one failure = cannot proceed
+4. **Fix and re-run** — if any fails, fix and run ALL 4 again
+5. **No shortcuts** — "probably passes" is not acceptable
+
+### Failure Protocol
+
+If ANY command fails:
+1. Document the exact error output
+2. Fix the issue
+3. Run ALL 4 commands again (not just the one that failed)
+4. Repeat until all pass
+5. ONLY THEN proceed to QA Review
+
+**Output:** Test gate passed (all 4 commands show zero errors/failures)
+
+---
+
+## Phase 6: QA Review
 
 **Owner:** QA Reviewer
 
-1. Run `npm run lint` — must pass with zero violations
-2. Run `npm run typecheck` — must pass with zero errors
-3. Run `npm run format:check` — must pass
-4. Run `npm run test` — all tests must pass
+### Automated Checks — MANDATORY (Run FIRST, before any code review)
+
+```bash
+# QA MUST run ALL of these independently. ALL must pass.
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass — THIS IS NOT OPTIONAL
+npm run build        # Builds successfully
+```
+
+**If ANY command fails, review is FAIL. Stop immediately.**
+
+### Manual Review (only after automated checks pass)
+
 5. Review every changed file against:
    - CLAUDE.md rules
    - ai-docs/CODEBASE-GUARDIAN.md structural rules
@@ -169,7 +217,7 @@
 
 ---
 
-## Phase 6: Codebase Guardian
+## Phase 7: Codebase Guardian
 
 **Owner:** Codebase Guardian
 
@@ -185,7 +233,7 @@
 
 ---
 
-## Phase 7: Testing
+## Phase 8: Testing
 
 **Owner:** Test Engineer
 
@@ -199,7 +247,7 @@
 
 ---
 
-## Phase 8: Performance Audit
+## Phase 9: Performance Audit
 
 **Owner:** Performance Auditor
 
@@ -213,19 +261,35 @@
 
 ---
 
-## Phase 9: Integration
+## Phase 10: Integration — FINAL TEST GATE
 
 **Owner:** Team Leader
+
+### Pre-Integration Checklist
 
 1. Verify all specialists completed their work
 2. Verify QA and Guardian passed
 3. Verify tests pass
+
+### FINAL TEST GATE — MANDATORY BEFORE ANY COMMIT
+
+```bash
+# Run ALL of these. ALL must pass BEFORE committing.
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass
+npm run build        # Builds successfully
+```
+
+**DO NOT COMMIT if any command fails. Fix first, test again.**
+
+### Git Operations (only after test gate passes)
+
 4. Coordinate git operations (branch, commit, PR)
 5. Create PR with summary of all changes
-6. Verify the app builds: `npm run build`
-7. Verify the app runs: `npm run dev`
+6. Verify the app runs: `npm run dev`
 
-**Output:** Merged code, closed task
+**Output:** Merged code with passing tests, closed task
 
 ---
 

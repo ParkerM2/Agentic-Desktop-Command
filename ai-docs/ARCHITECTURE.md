@@ -362,3 +362,126 @@ The Electron client connects to a self-hosted Hub server for multi-device sync.
 - Path aliases are configured in both `tsconfig.json` and `electron.vite.config.ts`
 - Tailwind v4 uses `@theme` directive in `globals.css` to register design tokens
 - PostCSS pipeline: `postcss.config.mjs` → `@tailwindcss/postcss` + `autoprefixer`
+
+---
+
+## Testing — MANDATORY VERIFICATION GATE
+
+> **⚠️ ALL code changes require passing the test suite. This is non-negotiable.**
+
+### Verification Commands (ALL MUST PASS)
+
+```bash
+# Run before ANY completion claim. All 4 must pass.
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass
+npm run build        # Builds successfully
+```
+
+**Skipping tests = work rejected. No exceptions.**
+
+---
+
+The project uses a 4-layer test pyramid for comprehensive coverage:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        CLAUDE-UI TEST PYRAMID                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│                         ┌─────────────────┐                                 │
+│                         │   AI QA AGENT   │  ← Claude + MCP Electron        │
+│                         │  (Exploratory)  │    Visual verification          │
+│                         └────────┬────────┘                                 │
+│                                  │                                          │
+│                    ┌─────────────┴─────────────┐                            │
+│                    │      E2E TESTS            │  ← Playwright + Electron   │
+│                    │   (Critical Journeys)     │    Scripted, deterministic │
+│                    └─────────────┬─────────────┘                            │
+│                                  │                                          │
+│          ┌───────────────────────┴───────────────────────┐                  │
+│          │              INTEGRATION TESTS                 │  ← Vitest       │
+│          └───────────────────────┬───────────────────────┘                  │
+│                                  │                                          │
+│  ┌───────────────────────────────┴───────────────────────────────────────┐  │
+│  │                         UNIT TESTS                                     │  │
+│  │        (Services, Utilities, Zod Schemas, Pure Functions)              │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Test Layers
+
+| Layer | Tool | Purpose | When to Run |
+|-------|------|---------|-------------|
+| Unit | Vitest | Services, utilities, pure functions | Every save, pre-commit |
+| Integration | Vitest | IPC handlers, React Query hooks | Pre-commit |
+| E2E | Playwright + Electron | Critical user journeys | Pre-push, CI |
+| AI QA | Claude + MCP Electron | Exploratory visual testing | PR review |
+
+### Test Directory Structure
+
+```
+tests/
+├── setup/
+│   ├── vitest.setup.ts          # Global test setup
+│   └── mocks/
+│       ├── electron.ts          # Mock app, dialog, safeStorage
+│       ├── node-fs.ts           # Mock file system (memfs)
+│       ├── node-pty.ts          # Mock PTY spawning
+│       └── ipc.ts               # Mock window.api.invoke
+│
+├── unit/                        # Unit tests (vitest.config.ts)
+│   └── services/
+│       ├── project-service.test.ts
+│       ├── task-service.test.ts
+│       └── hub-token-store.test.ts
+│
+├── integration/                 # Integration tests (vitest.integration.config.ts)
+│   └── ipc-handlers/
+│       ├── project-handlers.test.ts
+│       └── task-handlers.test.ts
+│
+├── e2e/                         # E2E tests (playwright.config.ts)
+│   ├── electron.setup.ts        # Electron launch fixtures
+│   ├── app-launch.spec.ts
+│   └── navigation.spec.ts
+│
+└── qa-scenarios/                # AI QA agent test scenarios
+    ├── README.md
+    ├── task-creation.md
+    └── project-management.md
+```
+
+### Test Commands
+
+```bash
+npm run test              # Run unit + integration tests
+npm run test:unit         # Unit tests only (fast, <1s)
+npm run test:unit:watch   # Unit tests in watch mode
+npm run test:integration  # Integration tests only (<10s)
+npm run test:e2e          # E2E tests with Playwright (<60s)
+npm run test:e2e:ui       # E2E tests with Playwright UI
+npm run test:coverage     # Unit tests with V8 coverage report
+```
+
+### Configuration Files
+
+| File | Purpose |
+|------|---------|
+| `vitest.config.ts` | Unit test configuration |
+| `vitest.integration.config.ts` | Integration test configuration |
+| `playwright.config.ts` | E2E test configuration |
+
+### AI QA Agent
+
+For exploratory testing, the AI QA agent uses MCP Electron tools to interact with the running app:
+
+- Takes screenshots for visual verification
+- Navigates UI elements via `send_command_to_electron`
+- Reads console logs for error detection
+- Follows natural language test scenarios in `tests/qa-scenarios/`
+
+See `docs/plans/2026-02-14-test-suite-design.md` for the full testing strategy.

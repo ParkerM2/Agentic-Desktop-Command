@@ -12,8 +12,81 @@ npm run lint         # ESLint (zero tolerance — must pass clean)
 npm run lint:fix     # Auto-fix ESLint violations
 npm run format       # Prettier format all files
 npm run typecheck    # tsc --noEmit
-npm run test         # vitest run
+npm run test         # Run unit + integration tests
+npm run test:unit    # Unit tests only (vitest)
+npm run test:integration  # Integration tests only (vitest)
+npm run test:e2e     # E2E tests (playwright + electron)
+npm run test:coverage    # Unit tests with coverage report
 ```
+
+## Test Requirements — MANDATORY (Non-Skippable)
+
+**Before ANY work can be considered complete, ready for human review, or merged:**
+
+```bash
+# ALL FOUR COMMANDS MUST PASS — NO EXCEPTIONS
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass
+npm run build        # Builds successfully
+```
+
+### The Rule
+
+> **Claude agents CANNOT claim work is complete without running the full test suite and showing passing output.**
+> This is not optional. This is not skippable. No excuses. Evidence before assertions.
+
+### What This Means
+
+| Situation | Required Action |
+|-----------|-----------------|
+| Implementing a new feature | Run full suite BEFORE claiming done |
+| Fixing a bug | Run full suite BEFORE claiming fixed |
+| Refactoring code | Run full suite BEFORE claiming complete |
+| Adding a new service/component | Run full suite BEFORE handoff |
+| ANY code change whatsoever | Run full suite BEFORE completion claims |
+
+### Violations
+
+These phrases without test evidence are **LIES**:
+- "This should work now"
+- "I've fixed the issue"
+- "The feature is complete"
+- "Ready for review"
+- "Code looks good"
+
+### Correct Pattern
+
+```
+1. Make code changes
+2. Run: npm run lint && npm run typecheck && npm run test && npm run build
+3. See: All 4 commands pass with zero errors
+4. ONLY THEN: "All verification passes. Ready for review."
+```
+
+### Test Suite Structure
+
+```
+tests/
+├── setup/                    # Test infrastructure
+│   ├── vitest.setup.ts       # Global test setup
+│   └── mocks/                # Electron, FS, PTY, IPC mocks
+├── unit/                     # Unit tests (vitest.config.ts)
+│   └── services/             # Service tests
+├── integration/              # Integration tests (vitest.integration.config.ts)
+│   └── ipc-handlers/         # IPC handler tests
+├── e2e/                      # E2E tests (playwright.config.ts)
+└── qa-scenarios/             # AI QA agent test scenarios
+```
+
+### When Writing New Code
+
+If your changes affect:
+- **Services** → Add/update tests in `tests/unit/services/`
+- **IPC Handlers** → Add/update tests in `tests/integration/ipc-handlers/`
+- **Components** → Add component tests co-located with source
+
+If tests don't exist for the area you're modifying, **that doesn't exempt you from running the existing suite**.
 
 ## Architecture Overview
 
