@@ -124,15 +124,17 @@ After each wave completes:
 
 ---
 
-## Phase 7: QA Verification (Per Task)
+## Phase 7: QA Verification (Per Task) — MANDATORY TEST SUITE
 
 Each coding agent is responsible for spawning its own QA Review agent:
 
 ```
 Coding Agent completes work
   → runs self-review checklist
+  → RUNS FULL TEST SUITE (NON-SKIPPABLE):
+      npm run lint && npm run typecheck && npm run test && npm run build
   → spawns QA Review Agent (same worktree)
-    → QA runs: lint, typecheck, build
+    → QA ALSO runs: lint, typecheck, test, build (independent verification)
     → QA reviews: code diff, data flow, error paths, docs
     → QA tests: starts Electron app, uses MCP electron tools
     → QA returns report: PASS or FAIL with issues
@@ -141,25 +143,46 @@ If FAIL: coding agent fixes issues, spawns NEW QA agent (max 3 rounds)
 If PASS: coding agent sends QA report to Team Lead
 ```
 
+### Test Suite Requirements — NO EXCEPTIONS
+
+**Before ANY agent can claim work is complete:**
+
+```bash
+# ALL FOUR MUST PASS — This is not optional
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass (unit + integration)
+npm run build        # Builds successfully
+```
+
+**Skipping tests = automatic FAIL. No excuses accepted.**
+
 The Team Lead does NOT run QA — the coding agents handle their own QA cycle.
 
 ---
 
-## Phase 8: Integration
+## Phase 8: Integration — FINAL TEST GATE
 
 When ALL tasks have QA PASS:
 
 1. Merge all worktrees to the feature branch (if using worktrees)
-2. Run final verification:
+2. **Run FULL verification suite (MANDATORY — all 4 must pass):**
    ```bash
-   npm run lint && npx tsc --noEmit && npm run build
+   npm run lint && npm run typecheck && npm run test && npm run build
    ```
+   **If ANY command fails, DO NOT proceed. Fix issues first.**
 3. Spawn a documentation update agent (see `AGENT-SPAWN-TEMPLATES.md`)
 4. Update progress file status to COMPLETE
 5. Update design doc status to IMPLEMENTED
 6. Shut down all remaining agents
 7. Delete the team (TeamDelete)
-8. Commit, push, create PR (if requested by user)
+8. **Run verification suite ONE MORE TIME before commit:**
+   ```bash
+   npm run lint && npm run typecheck && npm run test && npm run build
+   ```
+9. Commit, push, create PR (if requested by user)
+
+**NO COMMITS WITHOUT PASSING TEST SUITE. This is non-negotiable.**
 
 ---
 

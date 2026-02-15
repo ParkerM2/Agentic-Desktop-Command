@@ -17,12 +17,30 @@ Files Modified: ___
 
 ---
 
-## Automated Checks (QA Agent runs these)
+## Automated Checks — MANDATORY TEST GATE (QA Agent runs ALL of these)
+
+> **⚠️ ALL FOUR CHECKS MUST PASS. This is not optional. Skipping = automatic FAIL.**
 
 - [ ] `npm run lint` — zero violations
-- [ ] `npx tsc --noEmit` — zero errors
+- [ ] `npm run typecheck` — zero errors (equivalent to `npx tsc --noEmit`)
+- [ ] `npm run test` — **ALL tests pass (unit + integration) — NO SKIPPING**
 - [ ] `npm run build` — builds successfully
-- [ ] `npm run test` — all tests pass (if tests exist for this domain)
+
+### Test Verification Protocol
+
+```bash
+# Run this exact command sequence. All must pass.
+npm run lint && npm run typecheck && npm run test && npm run build
+```
+
+**If ANY command fails:**
+1. Stop immediately
+2. Document the failure
+3. Return to coding agent with exact error output
+4. DO NOT proceed to code review phase
+
+**"Tests don't exist for this area" is NOT an excuse to skip `npm run test`.**
+The existing test suite must still pass to verify no regressions.
 
 ---
 

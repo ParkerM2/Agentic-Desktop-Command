@@ -281,7 +281,23 @@ The client implementation (`hub-connection.ts`) sends the auth message immediate
 
 ---
 
-## Testing
+## Testing — MANDATORY VERIFICATION GATE
+
+> **⚠️ ALL code changes require passing the test suite. This is non-negotiable.**
+
+### Verification Commands (ALL MUST PASS)
+
+```bash
+# Run before ANY completion claim. All 4 must pass.
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass
+npm run build        # Builds successfully
+```
+
+**Skipping tests = work rejected. No exceptions.**
+
+---
 
 The project uses a 4-layer test pyramid for comprehensive coverage:
 

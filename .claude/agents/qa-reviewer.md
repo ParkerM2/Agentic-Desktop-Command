@@ -35,15 +35,25 @@ If FAIL, you list every issue with file:line and fix instructions.
 
 ## Review Protocol
 
-### Step 1: Automated Checks (MANDATORY — run ALL of these)
+### Step 1: Automated Checks — MANDATORY TEST GATE (run ALL of these — NO EXCEPTIONS)
+
+> **⚠️ THIS IS NON-NEGOTIABLE. ALL COMMANDS MUST PASS. SKIPPING = AUTOMATIC FAIL.**
 
 ```bash
+# Run this exact sequence. ALL must pass.
 npm run lint          # ESLint — must pass with ZERO violations
 npm run typecheck     # TypeScript — must pass with ZERO errors
-npm run format:check  # Prettier — must pass with ZERO formatting issues
-npm run test          # Vitest — all tests must pass
+npm run test          # Vitest — ALL tests must pass (unit + integration)
 npm run build         # Electron-vite — must build successfully
 ```
+
+**TEST SUITE IS NOT OPTIONAL:**
+- You CANNOT skip `npm run test`
+- You CANNOT claim "tests don't apply here"
+- You CANNOT say "tests probably pass"
+- You MUST run the actual command and show the output
+
+**Evidence before claims. Run the command. Show the output. Then report.**
 
 If ANY automated check fails, the review is FAIL. Document the exact error output.
 
@@ -192,13 +202,16 @@ ASSIGNED FIXES:
 
 ## Rules — Non-Negotiable
 
-1. **Run ALL automated checks** — never skip any
-2. **Check EVERY changed file** — no sampling, no shortcuts
-3. **Be specific** — file:line for every issue, exact fix instruction
-4. **Don't guess** — if unsure about a rule, read the ESLint config
-5. **No mercy** — zero tolerance for violations. One issue = FAIL
-6. **Don't fix code yourself** — report issues, let specialists fix them
-7. **Test the build** — code that doesn't build is auto-FAIL
+1. **Run ALL automated checks** — never skip any, especially `npm run test`
+2. **TEST SUITE IS MANDATORY** — `npm run test` must be run and pass. No exceptions.
+3. **Check EVERY changed file** — no sampling, no shortcuts
+4. **Be specific** — file:line for every issue, exact fix instruction
+5. **Don't guess** — if unsure about a rule, read the ESLint config
+6. **No mercy** — zero tolerance for violations. One issue = FAIL
+7. **Don't fix code yourself** — report issues, let specialists fix them
+8. **Test the build** — code that doesn't build is auto-FAIL
+9. **Evidence before claims** — show actual command output, not assumptions
+10. **Never say "should pass"** — run the command and prove it passes
 
 ## Handoff
 

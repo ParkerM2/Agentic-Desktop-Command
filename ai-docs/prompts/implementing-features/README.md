@@ -25,16 +25,19 @@ For Agent Spawn Templates, see: [`AGENT-SPAWN-TEMPLATES.md`](./AGENT-SPAWN-TEMPL
 Every feature passes through these phases. No phase may be skipped.
 
 ```
-PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD ──▶ QA ──▶ INTEGRATE ──▶ DOCUMENT
-  │         │         │          │        │         │             │
-  │         │         │          │        │         │             └─ Update ARCHITECTURE.md,
-  │         │         │          │        │         │                PATTERNS.md, DATA-FLOW.md
-  │         │         │          │        │         │
-  │         │         │          │        │         └─ Merge worktrees, lint, typecheck,
-  │         │         │          │        │            build, commit, push, PR
-  │         │         │          │        │
-  │         │         │          │        └─ Each coding agent spawns its own QA
-  │         │         │          │           review agent on the same worktree
+PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD ──▶ TEST ──▶ QA ──▶ INTEGRATE ──▶ DOCUMENT
+  │         │         │          │         │       │         │             │
+  │         │         │          │         │       │         │             └─ Update ARCHITECTURE.md,
+  │         │         │          │         │       │         │                PATTERNS.md, DATA-FLOW.md
+  │         │         │          │         │       │         │
+  │         │         │          │         │       │         └─ Merge worktrees, FULL TEST SUITE,
+  │         │         │          │         │       │            commit, push, PR
+  │         │         │          │         │       │
+  │         │         │          │         │       └─ QA agent verifies ALL tests pass,
+  │         │         │          │         │          then does visual testing
+  │         │         │          │         │
+  │         │         │          │         └─ MANDATORY: npm run lint && typecheck
+  │         │         │          │            && test && build — ALL MUST PASS
   │         │         │          │
   │         │         │          └─ Agents work in isolated worktrees,
   │         │         │             use superpowers plugin for every action
@@ -48,6 +51,20 @@ PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD ──▶ QA ──▶ INT
   └─ Read design doc, decompose into tasks,
      identify agent roles, map dependencies
 ```
+
+### TEST GATE — NON-NEGOTIABLE
+
+**At EVERY transition, the test suite MUST pass:**
+
+```bash
+# These 4 commands MUST pass before ANY completion claim
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All tests pass
+npm run build        # Builds successfully
+```
+
+**Skipping tests = automatic failure. No exceptions. No excuses.**
 
 ---
 
@@ -369,10 +386,17 @@ Every agent spawn MUST include:
 Coding Agent                    QA Review Agent
      │                               │
      ├─ completes work                │
+     ├─ RUNS FULL TEST SUITE:         │
+     │   npm run lint                 │
+     │   npm run typecheck            │
+     │   npm run test                 │   ◀── MANDATORY, NOT OPTIONAL
+     │   npm run build                │
+     │   (ALL MUST PASS)              │
      ├─ runs self-review checklist    │
      ├─ spawns QA Review Agent ──────▶│
-     │   (same worktree,              ├─ reads task description + QA checklist
-     │    includes QA checklist)       ├─ runs automated checks (lint, typecheck, build)
+     │   (same worktree,              ├─ RUNS FULL TEST SUITE AGAIN (independent verify)
+     │    includes QA checklist)       │   npm run lint && typecheck && test && build
+     │                                ├─ reads task description + QA checklist
      │                                ├─ reviews code diff
      │                                ├─ checks documentation additions
      │                                ├─ analyzes data flow + error paths
@@ -390,6 +414,7 @@ Coding Agent                    QA Review Agent
      │                                │
      ├─ if FAIL:                      │
      │   ├─ fix issues                │
+     │   ├─ RUN TEST SUITE AGAIN      │
      │   ├─ spawn NEW QA agent ──────▶│  (repeat, max 3 rounds)
      │                                │
      ├─ if PASS:                      │
@@ -398,6 +423,20 @@ Coding Agent                    QA Review Agent
      │   ├─ notify Team Lead ─────────┘
      │
      └─ Team Lead marks task complete
+```
+
+### TEST SUITE IS MANDATORY — NO EXCEPTIONS
+
+**Both the coding agent AND the QA agent must independently run the full test suite.**
+
+If either agent skips tests, the work is REJECTED.
+
+```bash
+# The test gate that must pass:
+npm run lint         # Zero violations
+npm run typecheck    # Zero errors
+npm run test         # All unit + integration tests pass
+npm run build        # Builds successfully
 ```
 
 ### Spawning the QA Review Agent (Coding Agent's Responsibility)
