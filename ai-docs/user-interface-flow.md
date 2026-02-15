@@ -1080,11 +1080,11 @@ Complete list of all registered IPC channels by domain:
 
 | # | Gap | Severity | Area | Details |
 |---|-----|----------|------|---------|
-| G-1 | No visible logout button | High | Auth | `useLogout()` hook exists but no UI element triggers it. Users cannot log out. |
-| G-2 | No task creation dialog | High | Tasks | `tasks.create` IPC exists but no visible "Create Task" button/form in TaskDataGrid or TaskFiltersToolbar |
-| G-3 | Duplicate task handlers | Medium | Tasks | Both `task-handlers.ts` (Hub proxy) and `hub-handlers.ts` register handlers for `hub.tasks.*` channels — potential conflict |
-| G-4 | No error UI for Hub disconnect during operation | Medium | Hub | If Hub disconnects mid-operation, user sees no feedback beyond the disconnected banner |
-| G-5 | Token refresh not proactive | Medium | Auth | Tokens only refresh on app start via `useAuthInit()`. No timer-based refresh before 15min expiry during active session |
+| G-1 | ~~No visible logout button~~ | High | Auth | **RESOLVED** (2026-02-15) — UserMenu with logout added to Sidebar footer |
+| G-2 | ~~No task creation dialog~~ | High | Tasks | **RESOLVED** (2026-02-15) — CreateTaskDialog + "New Task" button added to TaskFiltersToolbar |
+| G-3 | ~~Duplicate task handlers~~ | Medium | Tasks | **RESOLVED** (2026-02-15) — Removed 8 duplicate hub.tasks.* registrations from hub-handlers.ts |
+| G-4 | ~~No error UI for Hub disconnect during operation~~ | Medium | Hub | **RESOLVED** (2026-02-15) — Toast notification system + onError handlers on 11 mutations |
+| G-5 | ~~Token refresh not proactive~~ | Medium | Auth | **RESOLVED** (2026-02-15) — useTokenRefresh hook with 2-min pre-expiry timer in AuthGuard |
 | G-6 | Onboarding API key step disconnected | Low | Onboarding | `ApiKeyStep.tsx` collects API key but unclear if it's wired to `settings.createProfile` |
 | G-7 | Project delete confirmation | Low | Projects | Delete button exists but confirmation UX not verified — could accidentally delete |
 | G-8 | Workspace assignment in project wizard | Low | Projects | Workspace dropdown shown in wizard but may not persist `workspaceId` to project on create |
@@ -1094,8 +1094,8 @@ Complete list of all registered IPC channels by domain:
 | G-12 | Voice feature no UI | Low | Voice | `voice.*` IPC channels exist but no visible microphone UI in any page |
 | G-13 | `/assistant` route defined but not wired | Low | Navigation | `ROUTES.ASSISTANT` constant exists in `routes.ts` but no route is registered in `router.tsx` — dead constant |
 | G-14 | `/briefing` not in sidebar | Low | Navigation | `BriefingPage` has a registered route but is not listed in the sidebar `topLevelItems` array — only accessible via direct URL |
-| G-15 | No project edit/settings page | Medium | Projects | `projects.update` IPC exists and `useUpdateProject()` hook works, but no dedicated UI for editing project name/description/gitUrl after creation |
-| G-16 | No delete confirmation dialogs | Medium | Projects | Project and sub-project delete actions fire immediately with no "Are you sure?" prompt — accidental data loss risk |
+| G-15 | ~~No project edit/settings page~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ProjectEditDialog with edit buttons on project cards |
+| G-16 | ~~No delete confirmation dialogs~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ConfirmDialog component + wired to task/project deletes |
 | G-17 | `projects.initialize` is a skeleton | Low | Projects | Handler returns hardcoded `{ success: true }` — not wired to any real initialization logic |
 | G-18 | No project description field in wizard | Low | Projects | Project type supports `description` but the init wizard never asks for one |
 | G-19 | Workspace assignment not editable | Low | Projects | Workspace set during creation but no UI to change it afterward |
