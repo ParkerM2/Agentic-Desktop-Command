@@ -95,7 +95,7 @@ src/
 ├── main/           # Electron main process (Node.js)
 │   ├── index.ts    # App lifecycle, window creation
 │   ├── ipc/        # IPC router + handler registration
-│   └── services/   # Business logic (30 services: agent, project, task, terminal, settings, and more)
+│   └── services/   # Business logic (31 services: agent, project, task, terminal, settings, and more)
 ├── preload/        # Context bridge (typed API exposed to renderer)
 ├── renderer/       # React app (browser context)
 │   ├── app/        # Router, providers, layouts
@@ -120,7 +120,7 @@ Data flow: `ipc-contract.ts` -> `IpcRouter` -> preload bridge -> `ipc()` helper 
 
 ## Service Pattern
 
-Main process services return **synchronous values** (not Promises). IPC handlers wrap them:
+**Local** services return **synchronous values** (not Promises). IPC handlers wrap them:
 ```typescript
 // Service method — sync
 listProjects(): Project[] { ... }
@@ -129,7 +129,9 @@ listProjects(): Project[] { ... }
 router.handle('projects.list', () => Promise.resolve(service.listProjects()));
 ```
 
-Exception: `projectService.selectDirectory()` is async (Electron dialog).
+Exceptions:
+- `projectService.selectDirectory()` is async (Electron dialog)
+- **Hub API proxy services** are async (they call the Hub REST API via `hubApiClient`)
 
 ## Feature Module Pattern
 

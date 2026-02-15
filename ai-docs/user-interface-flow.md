@@ -276,14 +276,16 @@ After auth + onboarding, the user sees the main app shell:
 | `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button + Hub status + command bar |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global assistant input (Cmd+K) |
+| `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |
+| `AssistantWidget` | `src/renderer/features/assistant/components/AssistantWidget.tsx` | Floating chat widget (Ctrl+J toggle), renders WidgetFab + WidgetPanel |
 | `HubConnectionIndicator` | `src/renderer/shared/components/HubConnectionIndicator.tsx` | Shows connected/disconnected dot |
-| `ThemeHydrator` | `src/renderer/shared/stores/theme-store.ts` | Applies theme class + data attributes to `<html>` |
+| `ThemeHydrator` | `src/renderer/shared/stores/ThemeHydrator.tsx` | Applies theme class + data attributes to `<html>` |
 
 ### Hub Disconnected Banner
 
 If `hubStatus.status === 'disconnected' || 'error'`:
-- Yellow banner: "Hub disconnected. Some features may be unavailable."
+- Destructive-styled banner (`bg-destructive/10 text-destructive`): "Hub disconnected. Some features may be unavailable."
 - Rendered inside RootLayout above the main content
 
 ### Notification Toasts
@@ -294,6 +296,45 @@ Five notification components render in RootLayout:
 - `HubNotification` — hub connection events
 - `WebhookNotification` — webhook execution results
 - `MutationErrorToast` — error toasts for failed mutations (fixed bottom-right, auto-dismiss 5s)
+
+### Floating Assistant Widget
+
+A floating chat widget (Intercom/Drift style) is mounted in RootLayout after all notification components:
+
+- **`AssistantWidget`** (`src/renderer/features/assistant/components/AssistantWidget.tsx`) — Orchestrator that renders the FAB + conditional panel
+- **`WidgetFab`** — Fixed-position circular button (bottom-right, z-40). Icon morphs between MessageSquare and X. Unread badge with pulse animation.
+- **`WidgetPanel`** — Expandable chat panel (380px wide, max 70vh tall, z-50). Contains header, message area, quick action chips, and input.
+
+**Keyboard shortcuts**:
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+J` (or `Cmd+J`) | Toggle widget open/closed |
+| `Escape` | Close panel (when open) |
+| `Enter` | Send message (in widget input) |
+| `Shift+Enter` | New line (in widget input) |
+
+**Quick action chips**: New Note, New Task, Run Agent, Remind Me
+
+**Unread tracking**: When `event:assistant.response` fires while the widget is closed, `incrementUnread()` is called. Opening the widget calls `resetUnread()`.
+
+**Key files**:
+- `src/renderer/features/assistant/components/AssistantWidget.tsx` — Orchestrator
+- `src/renderer/features/assistant/components/WidgetFab.tsx` — FAB button
+- `src/renderer/features/assistant/components/WidgetPanel.tsx` — Chat panel
+- `src/renderer/features/assistant/components/WidgetMessageArea.tsx` — Message display
+- `src/renderer/features/assistant/components/WidgetInput.tsx` — Chat input
+- `src/renderer/shared/stores/assistant-widget-store.ts` — Widget open/close state
+- `src/renderer/features/assistant/store.ts` — Response history, unread count
+
+**IPC channels used**:
+- `assistant.sendCommand` — Send a command to the assistant
+- `assistant.getHistory` — Fetch command history
+- `assistant.clearHistory` — Clear history
+
+**Events consumed**:
+- `event:assistant.response` — New response from assistant
+- `event:assistant.thinking` — Assistant processing state
+- `event:assistant.commandCompleted` — Command execution finished
 
 ---
 
@@ -1012,7 +1053,7 @@ Complete list of all registered IPC channels by domain:
 `app.checkForUpdates` · `app.downloadUpdate` · `app.quitAndInstall` · `app.getUpdateStatus`
 
 ### Assistant (3)
-`assistant.getHistory` · `assistant.clearHistory`
+`assistant.sendCommand` · `assistant.getHistory` · `assistant.clearHistory`
 
 ### Briefing (5)
 `briefing.getDaily` · `briefing.generate` · `briefing.getConfig` · `briefing.updateConfig` · `briefing.getSuggestions`
@@ -1126,7 +1167,7 @@ Complete list of all registered IPC channels by domain:
 | G-10 | CommandBar not wired | Low | Navigation | `CommandBar.tsx` renders in TopBar but may not be connected to assistant functionality |
 | G-11 | Calendar feature no OAuth | Low | Calendar | `calendar.*` IPC channels exist but no OAuth setup for Google Calendar in settings |
 | G-12 | Voice feature no UI | Low | Voice | `voice.*` IPC channels exist but no visible microphone UI in any page |
-| G-13 | `/assistant` route defined but not wired | Low | Navigation | `ROUTES.ASSISTANT` constant exists in `routes.ts` but no route is registered in `router.tsx` — dead constant |
+| G-13 | ~~`/assistant` route defined but not wired~~ | Low | Navigation | **RESOLVED** (2026-02-15) — Assistant is now globally accessible via floating `AssistantWidget` (Ctrl+J toggle). Route constant remains for potential future full-page view. |
 | G-14 | `/briefing` not in sidebar | Low | Navigation | `BriefingPage` has a registered route but is not listed in the sidebar `topLevelItems` array — only accessible via direct URL |
 | G-15 | ~~No project edit/settings page~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ProjectEditDialog with edit buttons on project cards |
 | G-16 | ~~No delete confirmation dialogs~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ConfirmDialog component + wired to task/project deletes |

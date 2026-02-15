@@ -21,6 +21,7 @@
 | `src/preload/` | Context bridge (`api.invoke`, `api.on`) | Business logic, React code, service code |
 | `src/renderer/features/` | Feature modules (self-contained) | Shared utilities, cross-feature imports |
 | `src/renderer/shared/` | Shared hooks, stores, lib, UI components | Feature-specific code |
+| `src/renderer/shared/stores/` | Cross-feature Zustand stores (layout, theme, toast, widget visibility) + `ThemeHydrator.tsx` | Feature-specific stores (those go in `features/<name>/store.ts`) |
 | `src/renderer/app/` | Router, providers, layouts | Feature components, business logic |
 | `src/renderer/styles/` | Global CSS, theme definitions | Component-specific styles (use Tailwind classes) |
 

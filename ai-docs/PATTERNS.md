@@ -523,3 +523,87 @@ Key rules:
 - **Inline errors** — Show validation/mutation errors inside the dialog, not as toasts
 - **No autoFocus** — `jsx-a11y/no-autofocus` rule forbids `autoFocus` prop
 - **Form submit** — Use `<form onSubmit>` for Enter key support (except in textareas)
+
+## Floating Widget Pattern
+
+For persistent overlay components accessible from any page (like the assistant chat widget):
+
+```typescript
+// 1. Shared store for visibility state (in shared/stores/)
+export const useWidgetStore = create<WidgetState>((set) => ({
+  isOpen: false,
+  toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+  open: () => set({ isOpen: true }),
+  close: () => set({ isOpen: false }),
+}));
+
+// 2. Orchestrator component (mounted in RootLayout)
+export function MyWidget() {
+  const { close, isOpen, toggle } = useWidgetStore();
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Save/restore focus on open/close
+  const handleToggle = useCallback(() => {
+    if (!isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement | null;
+    }
+    toggle();
+  }, [isOpen, toggle]);
+
+  const handleClose = useCallback(() => {
+    close();
+    previousFocusRef.current?.focus();
+  }, [close]);
+
+  // Global keyboard shortcut
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
+        e.preventDefault();
+        handleToggle();
+      }
+      if (e.key === 'Escape' && isOpen) {
+        e.preventDefault();
+        handleClose();
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, handleToggle, handleClose]);
+
+  return (
+    <>
+      <FloatingButton isOpen={isOpen} onClick={handleToggle} />
+      {isOpen ? <Panel onClose={handleClose} /> : null}
+    </>
+  );
+}
+```
+
+Key rules:
+- **Visibility store in `shared/stores/`** — Consumed by both the feature and RootLayout
+- **Domain state in feature store** — Unread counts, history, etc. stay in `features/<name>/store.ts`
+- **Focus management** — Save active element on open, restore on close
+- **Global keyboard shortcuts** — `useEffect` + `document.addEventListener` + cleanup
+- **Mount in RootLayout** — After notification components
+- **z-index layering** — FAB at `z-40`, panel at `z-50`
+- **Animation** — Panel entry animation via custom CSS class in `globals.css`
+
+## Custom CSS Animations
+
+Custom animation utility classes live **outside** the `@theme` block in `globals.css`:
+
+```css
+/* Outside @theme — utility class approach */
+@keyframes slide-up-panel {
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+.animate-slide-up-panel {
+  animation: slide-up-panel 0.2s ease-out;
+}
+```
+
+- Tailwind v4 animations registered inside `@theme` (e.g., `--animate-slide-up`) use the `animate-*` utility directly
+- Custom animations outside `@theme` need explicit `.animate-*` class definitions
+- Always use `color-mix(in srgb, var(--token), transparent)` for semi-transparent effects in animations

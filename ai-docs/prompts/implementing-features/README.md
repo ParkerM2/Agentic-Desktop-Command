@@ -165,10 +165,13 @@ When a Team Lead agent starts and detects existing progress:
 
 | Document | Location | Update When |
 |----------|----------|-------------|
+| `ai-docs/FEATURES-INDEX.md` | Feature/service/component inventory | New feature module, new service, new shared component/hook/store |
 | `ai-docs/ARCHITECTURE.md` | System diagram, service list, IPC flow | New service, new IPC channel, new feature module, architectural change |
 | `ai-docs/PATTERNS.md` | Code patterns and conventions | New pattern established, existing pattern modified |
 | `ai-docs/DATA-FLOW.md` | Data flow diagrams | New data path, new event, new store, new IPC channel |
 | `ai-docs/LINTING.md` | ESLint rules and fix patterns | New eslint-disable justification, new rule exception |
+| `ai-docs/user-interface-flow.md` | UX flow map, component wiring | New user-facing feature, UI layout change, gap resolution |
+| `ai-docs/CODEBASE-GUARDIAN.md` | File placement and naming rules | New directory, new structural pattern |
 | `CLAUDE.md` | AI agent guidelines | New path alias, new tech stack entry, new convention |
 | `PROGRESS.md` | Build progress tracker | Feature completed or milestone reached |
 
@@ -196,9 +199,12 @@ Claude-UI/
 ├── PROGRESS.md                        # Build tracker (update on milestones)
 ├── ai-docs/
 │   ├── ARCHITECTURE.md                # System architecture (update for new services/features)
-│   ├── PATTERNS.md                    # Code patterns (update for new conventions)
+│   ├── CODEBASE-GUARDIAN.md           # File placement + naming rules
 │   ├── DATA-FLOW.md                   # Data flow diagrams (update for new IPC/events)
+│   ├── FEATURES-INDEX.md              # Feature/service/component inventory
 │   ├── LINTING.md                     # ESLint rules (update for new exceptions)
+│   ├── PATTERNS.md                    # Code patterns (update for new conventions)
+│   ├── user-interface-flow.md         # UX flow map + gap analysis
 │   └── prompts/
 │       └── implementing-features/     # THIS PLAYBOOK
 ├── docs/

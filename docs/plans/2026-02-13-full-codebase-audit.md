@@ -384,11 +384,12 @@ These must be addressed before any public release or multi-user deployment.
 - **Rule**: External API services MUST validate OAuth tokens before making calls
 - **Rule**: All file I/O MUST be in services, never in components or handlers
 
-### 7g. Testing (Currently Zero Tests)
-- **Current state**: `vitest` is configured but no test files exist
+### 7g. Testing
+- **Current state**: 137 tests passing (75 unit + 62 integration), added during Task Dashboard Refactor (2026-02-16)
+- **Test infrastructure**: vitest (unit + integration configs) + playwright (e2e) + AI QA agent scenarios
+- **Coverage**: Services (project-service, task-service, hub-token-store), IPC handlers (project-handlers, task-handlers)
+- **Rule**: New services and handlers SHOULD have corresponding tests
 - **Rule**: Critical services (assistant, agent, task, planner) SHOULD have unit tests
-- **Rule**: IPC handlers SHOULD have integration tests
-- **Minimum**: Test intent classifier patterns, command executor routing, service CRUD operations
 
 ---
 
