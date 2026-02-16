@@ -1,6 +1,6 @@
 # Data Flow Reference
 
-> Complete data flow diagrams for every system in Claude-UI.
+> Complete data flow diagrams for every system in ADC.
 > Reference this when designing new features or debugging data issues.
 
 ---
@@ -1022,3 +1022,219 @@ event:assistant.response fires
 | `src/renderer/shared/stores/assistant-widget-store.ts` | Widget open/close state |
 | `src/renderer/features/assistant/hooks/useAssistantEvents.ts` | IPC event → store updates + unread tracking |
 | `src/renderer/features/assistant/api/useAssistant.ts` | useSendCommand, useHistory, useClearHistory |
+
+---
+
+## 19. Agent Orchestrator Lifecycle Flow
+
+```
+User triggers agent spawn (via task launcher or assistant)
+  |
+  v
+agentOrchestrator.spawnSession(taskId, projectPath, options)
+  |  src/main/services/agent-orchestrator/agent-orchestrator.ts
+  v
+Spawn Claude CLI as child process
+  |
+  v
+Session state: 'spawned' → 'active'
+  |
+  +--> onSessionEvent('spawned') fires
+  |     |
+  |     v
+  |   index.ts wiring → router.emit('event:agent.orchestrator.heartbeat')
+  |
+  +--> JSONL Progress Watcher monitors {dataDir}/progress/{taskId}.jsonl
+  |     |  src/main/services/agent-orchestrator/jsonl-progress-watcher.ts
+  |     v
+  |   Debounced tail parser reads new lines (500ms debounce)
+  |     |
+  |     +--> type: 'tool_use' → emit progress + heartbeat events
+  |     +--> type: 'phase_change' → emit progress event
+  |     +--> type: 'plan_ready' → emit planReady event
+  |     +--> type: 'agent_stopped' → emit stopped event
+  |     +--> type: 'error' → emit error event
+  |
+  +--> On process exit:
+        |
+        +--> exitCode === 0: session state → 'completed'
+        |     router.emit('event:agent.orchestrator.stopped', { reason: 'completed' })
+        |
+        +--> exitCode !== 0: session state → 'error'
+              router.emit('event:agent.orchestrator.error', { error: '...' })
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Session lifecycle management |
+| `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Incremental JSONL tail parser |
+| `src/main/services/agent-orchestrator/agent-watchdog.ts` | Health monitoring |
+| `src/main/index.ts` (lines 442-546) | Event forwarding wiring |
+
+---
+
+## 20. QA Runner Flow
+
+```
+Agent completes task
+  |
+  v
+QA runner triggered (quiet or full mode)
+  |  src/main/services/qa/qa-runner.ts
+  v
+┌─────────────────────────────┐
+│ Quiet Mode (automated)      │
+│ - Run: npm run lint          │
+│ - Run: npm run typecheck     │
+│ - Run: npm run test          │
+│ - Run: npm run build         │
+│ - Collect results            │
+└─────────┬───────────────────┘
+          |
+          v
+    Pass? ──── YES → Report: QA PASS
+          |
+          NO
+          |
+          v
+    notificationManager.notify(...)
+      |
+      v
+    router.emit('event:assistant.proactive', {
+      content: 'QA failed: ...',
+      source: 'qa',
+      taskId
+    })
+      |
+      v
+    WidgetFab shows unread badge
+    WidgetMessageArea shows proactive notification
+```
+
+---
+
+## 21. Watch Subscription Flow
+
+```
+User says "tell me when task 123 is done"
+  |
+  v
+Assistant classifies intent: type='subscription', action='watch_create'
+  |
+  v
+Command executor calls watchStore.add({
+  type: 'task_completed',
+  targetId: '123',
+  condition: { field: 'status', operator: 'equals', value: 'done' },
+  action: 'notify'
+})
+  |  src/main/services/assistant/watch-store.ts
+  v
+Watch persisted to userData/assistant-watches.json
+  |
+  v
+WatchEvaluator is already listening to IPC events:
+  - event:hub.tasks.updated
+  - event:hub.tasks.completed
+  - event:task.statusChanged
+  - event:hub.devices.online/offline
+  - event:agent.orchestrator.error/stopped
+  |  src/main/services/assistant/watch-evaluator.ts
+  v
+When matching event fires:
+  |
+  v
+watchStore.markTriggered(watchId)
+  |
+  v
+onTrigger callback fires (registered in index.ts)
+  |
+  v
+router.emit('event:assistant.proactive', {
+  content: 'Watch triggered: task_completed watch on 123',
+  source: 'watch',
+  taskId: '123'
+})
+  |
+  v
+Renderer: WidgetFab unread badge + WidgetMessageArea proactive entry
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/main/services/assistant/watch-store.ts` | JSON persistence for watches |
+| `src/main/services/assistant/watch-evaluator.ts` | IPC event matching engine |
+| `src/main/index.ts` (lines 450-460) | Trigger → proactive event wiring |
+| `src/shared/types/assistant-watch.ts` | Watch type definitions |
+
+---
+
+## 22. Cross-Device Query Flow
+
+```
+User asks "what's running on my MacBook?"
+  |
+  v
+Assistant classifies intent: type='cross_device'
+  |
+  v
+Command executor calls crossDeviceQuery.query('MacBook')
+  |  src/main/services/assistant/cross-device-query.ts
+  v
+hubApiClient.hubGet('/devices')
+  |
+  v
+Filter devices by name match (case-insensitive)
+  |
+  v
+For each online device:
+  hubApiClient.hubGet('/tasks?assignedDeviceId={id}')
+  |
+  v
+Format response:
+  "[online] MacBook Pro (last seen just now)
+      - Implement auth [in_progress]
+      - Fix sidebar bug [completed]"
+  |
+  v
+Return formatted string as assistant response
+```
+
+---
+
+## 23. Insights Data Wiring Flow
+
+```
+Renderer requests metrics
+  |
+  v
+ipc('insights.getMetrics', { projectId })
+  |
+  v
+insightsService.getMetrics(projectId)
+  |  src/main/services/insights/insights-service.ts
+  v
+┌───────────────────────────────┐
+│ Aggregate from multiple sources│
+│                               │
+│ taskService.listTasks()       │─── totalTasks, completedTasks, completionRate
+│ agentService.listAgents()     │─── agentRunCount, agentSuccessRate, activeAgents
+│ agentOrchestrator?.getSessions│─── orchestratorSessionsToday, orchestratorSuccessRate
+│                               │    averageAgentDuration
+│ qaRunner?.getReports()        │─── qaPassRate
+│                               │
+└───────────────┬───────────────┘
+                |
+                v
+Return InsightMetrics {
+  totalTasks, completedTasks, completionRate,
+  agentRunCount, agentSuccessRate, activeAgents,
+  orchestratorSessionsToday?,    // NEW — from orchestrator
+  orchestratorSuccessRate?,       // NEW — from orchestrator
+  averageAgentDuration?,          // NEW — from orchestrator
+  qaPassRate?,                    // NEW — from QA runner
+  totalTokenCost?                 // NEW — from orchestrator
+}
+```

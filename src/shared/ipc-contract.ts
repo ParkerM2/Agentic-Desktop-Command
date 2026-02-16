@@ -103,7 +103,7 @@ const GithubIssueImportSchema = z.object({
 
 // ── Hub Task Schemas (Hub API shape — distinct from legacy TaskSchema) ──
 
-const HubTaskStatusSchema = z.enum(['backlog', 'queued', 'running', 'paused', 'review', 'done', 'error']);
+const HubTaskStatusSchema = z.enum(['backlog', 'planning', 'plan_ready', 'queued', 'running', 'paused', 'review', 'done', 'error']);
 
 const HubTaskPrioritySchema = z.enum(['low', 'normal', 'high', 'urgent']);
 
@@ -586,7 +586,24 @@ const GitHubNotificationSchema = z.object({
 
 // ─── Assistant Schemas ────────────────────────────────────────
 
-const IntentTypeSchema = z.enum(['quick_command', 'task_creation', 'conversation']);
+const IntentTypeSchema = z.enum([
+  'quick_command',
+  'task_creation',
+  'conversation',
+  'watch',
+  'device_query',
+  'fitness',
+  'calendar',
+  'briefing',
+  'insights',
+  'ideation',
+  'milestones',
+  'email',
+  'github',
+  'planner',
+  'notes',
+  'changelog',
+]);
 
 const AssistantActionSchema = z.enum([
   'create_task',
@@ -597,6 +614,30 @@ const AssistantActionSchema = z.enum([
   'spotify_control',
   'open_url',
   'conversation',
+  'watch_create',
+  'watch_remove',
+  'watch_list',
+  'device_query',
+  'fitness_log',
+  'fitness_query',
+  'fitness_measurements',
+  'calendar_query',
+  'calendar_create',
+  'briefing_get',
+  'insights_query',
+  'ideation_create',
+  'ideation_query',
+  'milestones_query',
+  'email_send',
+  'email_queue',
+  'github_prs',
+  'github_issues',
+  'github_notifications',
+  'planner_today',
+  'planner_weekly',
+  'notes_search',
+  'notes_list',
+  'changelog_generate',
 ]);
 
 const AssistantContextSchema = z.object({
@@ -818,6 +859,85 @@ const NotificationWatcherConfigSchema = z.object({
   github: GitHubWatcherConfigSchema,
 });
 
+// ─── Agent Orchestrator Schemas ─────────────────────────────────
+
+const AgentPhaseSchema = z.enum(['planning', 'executing', 'qa']);
+
+const AgentSessionStatusSchema = z.enum(['spawning', 'active', 'completed', 'error', 'killed']);
+
+const OrchestratorSessionSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  pid: z.number(),
+  status: AgentSessionStatusSchema,
+  phase: AgentPhaseSchema,
+  spawnedAt: z.string(),
+  lastHeartbeat: z.string(),
+  progressFile: z.string(),
+  logFile: z.string(),
+  hooksConfigPath: z.string(),
+  exitCode: z.number().nullable(),
+  projectPath: z.string(),
+  command: z.string(),
+});
+
+// ─── QA System Schemas ──────────────────────────────────────────
+
+const QaModeSchema = z.enum(['quiet', 'full']);
+
+const QaSessionStatusSchema = z.enum(['building', 'launching', 'testing', 'completed', 'error']);
+
+const QaVerificationResultSchema = z.enum(['pass', 'fail']);
+
+const QaVerificationSuiteSchema = z.object({
+  lint: QaVerificationResultSchema,
+  typecheck: QaVerificationResultSchema,
+  test: QaVerificationResultSchema,
+  build: QaVerificationResultSchema,
+  docs: QaVerificationResultSchema,
+});
+
+const QaIssueSeveritySchema = z.enum(['critical', 'major', 'minor', 'cosmetic']);
+
+const QaIssueSchema = z.object({
+  severity: QaIssueSeveritySchema,
+  category: z.string(),
+  description: z.string(),
+  screenshot: z.string().optional(),
+  location: z.string().optional(),
+});
+
+const QaScreenshotSchema = z.object({
+  label: z.string(),
+  path: z.string(),
+  timestamp: z.string(),
+  annotated: z.boolean(),
+});
+
+const QaResultSchema = z.enum(['pass', 'fail', 'warnings']);
+
+const QaReportSchema = z.object({
+  result: QaResultSchema,
+  checksRun: z.number(),
+  checksPassed: z.number(),
+  issues: z.array(QaIssueSchema),
+  verificationSuite: QaVerificationSuiteSchema,
+  screenshots: z.array(QaScreenshotSchema),
+  duration: z.number(),
+});
+
+const QaSessionSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  mode: QaModeSchema,
+  status: QaSessionStatusSchema,
+  startedAt: z.string(),
+  completedAt: z.string().optional(),
+  report: QaReportSchema.optional(),
+  screenshots: z.array(z.string()),
+  agentSessionId: z.string().optional(),
+});
+
 // ─── Voice Schemas ─────────────────────────────────────────────
 
 const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
@@ -973,6 +1093,7 @@ const DeviceSchema = z.object({
   userId: z.string(),
   deviceType: DeviceTypeSchema,
   deviceName: z.string(),
+  nickname: z.string().optional(),
   capabilities: DeviceCapabilitiesSchema,
   isOnline: z.boolean(),
   lastSeen: z.string().optional(),
@@ -2215,6 +2336,7 @@ export const ipcInvokeContract = {
     input: z.object({
       deviceId: z.string(),
       deviceName: z.string().optional(),
+      nickname: z.string().optional(),
       capabilities: DeviceCapabilitiesSchema.optional(),
       isOnline: z.boolean().optional(),
       appVersion: z.string().optional(),
@@ -2268,6 +2390,65 @@ export const ipcInvokeContract = {
   'workflow.stop': {
     input: z.object({ sessionId: z.string() }),
     output: z.object({ stopped: z.boolean() }),
+  },
+
+  // ── Agent Orchestrator ──
+  'agent.startPlanning': {
+    input: z.object({
+      taskId: z.string(),
+      projectPath: z.string(),
+      taskDescription: z.string(),
+      subProjectPath: z.string().optional(),
+    }),
+    output: z.object({ sessionId: z.string(), status: z.literal('spawned') }),
+  },
+  'agent.startExecution': {
+    input: z.object({
+      taskId: z.string(),
+      projectPath: z.string(),
+      taskDescription: z.string(),
+      planRef: z.string().optional(),
+      subProjectPath: z.string().optional(),
+    }),
+    output: z.object({ sessionId: z.string(), status: z.literal('spawned') }),
+  },
+  'agent.killSession': {
+    input: z.object({ sessionId: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'agent.restartFromCheckpoint': {
+    input: z.object({ taskId: z.string(), projectPath: z.string() }),
+    output: z.object({ sessionId: z.string(), status: z.literal('spawned') }),
+  },
+  'agent.getOrchestratorSession': {
+    input: z.object({ taskId: z.string() }),
+    output: OrchestratorSessionSchema.nullable(),
+  },
+  'agent.listOrchestratorSessions': {
+    input: z.object({}),
+    output: z.array(OrchestratorSessionSchema),
+  },
+
+  // ── QA ──
+  'qa.startQuiet': {
+    input: z.object({ taskId: z.string() }),
+    output: z.object({ sessionId: z.string() }),
+  },
+  'qa.startFull': {
+    input: z.object({ taskId: z.string() }),
+    output: z.object({ sessionId: z.string() }),
+  },
+  'qa.getReport': {
+    input: z.object({ taskId: z.string() }),
+    output: QaReportSchema.nullable(),
+  },
+  'qa.getSession': {
+    input: z.object({ taskId: z.string() }),
+    output: QaSessionSchema.nullable(),
+  },
+  'qa.cancel': {
+    input: z.object({ sessionId: z.string() }),
+    output: z.object({ success: z.boolean() }),
   },
 } as const;
 
@@ -2348,6 +2529,14 @@ export const ipcEventContract = {
       action: z.string(),
       summary: z.string(),
       timestamp: z.string(),
+    }),
+  },
+  'event:assistant.proactive': {
+    payload: z.object({
+      content: z.string(),
+      source: z.enum(['watch', 'qa', 'agent']),
+      taskId: z.string().optional(),
+      followUp: z.string().optional(),
     }),
   },
 
@@ -2521,6 +2710,75 @@ export const ipcEventContract = {
       date: z.string(),
     }),
   },
+
+  // ── Agent Orchestrator Events ──
+  'event:agent.orchestrator.progress': {
+    payload: z.object({
+      taskId: z.string(),
+      type: z.string(),
+      data: z.record(z.string(), z.unknown()),
+      timestamp: z.string(),
+    }),
+  },
+  'event:agent.orchestrator.planReady': {
+    payload: z.object({
+      taskId: z.string(),
+      planSummary: z.string(),
+      planFilePath: z.string(),
+    }),
+  },
+  'event:agent.orchestrator.stopped': {
+    payload: z.object({
+      taskId: z.string(),
+      reason: z.string(),
+      exitCode: z.number(),
+    }),
+  },
+  'event:agent.orchestrator.error': {
+    payload: z.object({
+      taskId: z.string(),
+      error: z.string(),
+    }),
+  },
+  'event:agent.orchestrator.heartbeat': {
+    payload: z.object({
+      taskId: z.string(),
+      timestamp: z.string(),
+    }),
+  },
+  'event:agent.orchestrator.watchdogAlert': {
+    payload: z.object({
+      type: z.enum(['warning', 'stale', 'dead', 'auth_failed']),
+      sessionId: z.string(),
+      taskId: z.string(),
+      message: z.string(),
+      suggestedAction: z.enum(['restart_checkpoint', 'restart_fresh', 'mark_error', 'retry_auth']),
+      timestamp: z.string(),
+    }),
+  },
+
+  // ── QA Events ──
+  'event:qa.started': {
+    payload: z.object({
+      taskId: z.string(),
+      mode: QaModeSchema,
+    }),
+  },
+  'event:qa.progress': {
+    payload: z.object({
+      taskId: z.string(),
+      step: z.string(),
+      total: z.number(),
+      current: z.number(),
+    }),
+  },
+  'event:qa.completed': {
+    payload: z.object({
+      taskId: z.string(),
+      result: QaResultSchema,
+      issueCount: z.number(),
+    }),
+  },
 } as const;
 
 // ─── Type Utilities ───────────────────────────────────────────
@@ -2636,6 +2894,9 @@ export {
   NotificationWatcherConfigSchema,
   SlackWatcherConfigSchema,
   GitHubWatcherConfigSchema,
+  AgentPhaseSchema,
+  AgentSessionStatusSchema,
+  OrchestratorSessionSchema,
   VoiceInputModeSchema,
   VoiceConfigSchema,
   ScreenSourceSchema,
@@ -2663,4 +2924,14 @@ export {
   RegisterOutputSchema,
   RefreshInputSchema,
   RefreshOutputSchema,
+  QaModeSchema,
+  QaSessionStatusSchema,
+  QaVerificationResultSchema,
+  QaVerificationSuiteSchema,
+  QaIssueSeveritySchema,
+  QaIssueSchema,
+  QaScreenshotSchema,
+  QaResultSchema,
+  QaReportSchema,
+  QaSessionSchema,
 };

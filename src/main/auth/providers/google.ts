@@ -6,7 +6,7 @@ export const GOOGLE_OAUTH_CONFIG: OAuthConfig = {
   clientSecret: '',
   authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
   tokenUrl: 'https://oauth2.googleapis.com/token',
-  redirectUri: 'claude-ui://oauth/callback',
+  redirectUri: 'adc://oauth/callback',
   scopes: [
     'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/calendar.readonly',

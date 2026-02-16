@@ -114,8 +114,8 @@ test.describe('Navigation', () => {
     // Find the collapse toggle button (contains PanelLeftClose icon when expanded)
     const collapseButton = mainWindow.locator('aside button').first();
 
-    // Verify sidebar is initially expanded (shows "Claude UI" text)
-    const sidebarTitle = mainWindow.locator('text=Claude UI');
+    // Verify sidebar is initially expanded (shows "ADC" text)
+    const sidebarTitle = mainWindow.locator('text=ADC');
     await expect(sidebarTitle).toBeVisible();
 
     // Click to collapse

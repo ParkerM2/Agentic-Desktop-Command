@@ -1,51 +1,62 @@
 /**
- * ActionsCell — AG-Grid cell renderer with row action buttons.
- * Play/Stop toggle and Delete (with confirmation). Icon-only with aria-labels.
+ * ActionsCell — AG-Grid cell renderer with context-sensitive action buttons.
+ * Actions vary by task status: planning/execution/kill/restart/delete.
  */
 
 import { useState } from 'react';
 
-import { Play, Square, Trash2 } from 'lucide-react';
-
-import type { TaskStatus } from '@shared/types';
+import {
+  Brain,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Square,
+  Trash2,
+  X,
+} from 'lucide-react';
 
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useDeleteTask } from '../../api/useTaskMutations';
+import { useDeleteTask, useUpdateTaskStatus } from '../../api/useTaskMutations';
 
 import type { CustomCellRendererProps } from 'ag-grid-react';
 
 interface ActionsCellData {
   id: string;
-  status: TaskStatus;
+  status: string;
+  title: string;
+  description: string;
+  projectId: string;
 }
 
 interface ActionsCellProps extends CustomCellRendererProps {
-  onPlay?: (taskId: string) => void;
-  onStop?: (taskId: string) => void;
-  onDelete?: (taskId: string) => void;
+  onStartPlanning?: (taskId: string) => void;
+  onStartExecution?: (taskId: string) => void;
+  onKillAgent?: (taskId: string) => void;
+  onRestartCheckpoint?: (taskId: string) => void;
 }
+
+const ICON_BUTTON =
+  'rounded p-1.5 transition-colors hover:bg-accent';
+const ICON_SIZE = 'h-3.5 w-3.5';
 
 export function ActionsCell(props: ActionsCellProps) {
   const data = props.data as ActionsCellData | undefined;
   const deleteTask = useDeleteTask();
+  const updateStatus = useUpdateTaskStatus();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [killConfirmOpen, setKillConfirmOpen] = useState(false);
 
   if (!data) {
     return null;
   }
 
-  const taskId = data.id;
-  const isRunning = data.status === 'in_progress';
+  const { id: taskId, status } = data;
 
-  function handlePlayStop(event: React.MouseEvent) {
+  function handleClick(event: React.MouseEvent, handler?: (id: string) => void) {
     event.stopPropagation();
-    if (isRunning) {
-      props.onStop?.(taskId);
-    } else {
-      props.onPlay?.(taskId);
-    }
+    handler?.(taskId);
   }
 
   function handleDeleteClick(event: React.MouseEvent) {
@@ -53,25 +64,108 @@ export function ActionsCell(props: ActionsCellProps) {
     setDeleteConfirmOpen(true);
   }
 
+  function handleKillClick(event: React.MouseEvent) {
+    event.stopPropagation();
+    setKillConfirmOpen(true);
+  }
+
+  function handleReject(event: React.MouseEvent) {
+    event.stopPropagation();
+    updateStatus.mutate({ taskId, status: 'backlog' });
+  }
+
   return (
     <div className="flex items-center gap-1 py-1">
-      <button
-        aria-label={isRunning ? 'Stop task' : 'Run task'}
-        className={cn(
-          'hover:bg-accent rounded p-1.5 transition-colors',
-          isRunning ? 'text-warning' : 'text-muted-foreground hover:text-foreground',
-        )}
-        onClick={handlePlayStop}
-      >
-        {isRunning ? <Square className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-      </button>
-      <button
-        aria-label="Delete task"
-        className="text-muted-foreground hover:bg-accent hover:text-destructive rounded p-1.5 transition-colors"
-        onClick={handleDeleteClick}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
+      {/* Planning action — available for backlog tasks */}
+      {status === 'backlog' ? (
+        <button
+          aria-label="Start planning"
+          className={cn(ICON_BUTTON, 'text-info hover:text-info')}
+          onClick={(event) => {
+            handleClick(event, props.onStartPlanning);
+          }}
+        >
+          <Brain className={ICON_SIZE} />
+        </button>
+      ) : null}
+
+      {/* Execute action — available for backlog and plan_ready */}
+      {status === 'backlog' || status === 'plan_ready' ? (
+        <button
+          aria-label={status === 'plan_ready' ? 'Approve and execute' : 'Implement feature'}
+          className={cn(ICON_BUTTON, 'text-success hover:text-success')}
+          onClick={(event) => {
+            handleClick(event, props.onStartExecution);
+          }}
+        >
+          <Play className={ICON_SIZE} />
+        </button>
+      ) : null}
+
+      {/* Kill action — available during planning and running */}
+      {status === 'planning' || status === 'running' || status === 'in_progress' ? (
+        <button
+          aria-label="Kill agent"
+          className={cn(ICON_BUTTON, 'text-warning hover:text-warning')}
+          onClick={handleKillClick}
+        >
+          <Square className={ICON_SIZE} />
+        </button>
+      ) : null}
+
+      {/* Reject plan — move back to backlog */}
+      {status === 'plan_ready' ? (
+        <button
+          aria-label="Reject plan"
+          className={cn(ICON_BUTTON, 'text-muted-foreground hover:text-foreground')}
+          onClick={handleReject}
+        >
+          <X className={ICON_SIZE} />
+        </button>
+      ) : null}
+
+      {/* Restart from checkpoint — available on error */}
+      {status === 'error' ? (
+        <button
+          aria-label="Restart from checkpoint"
+          className={cn(ICON_BUTTON, 'text-info hover:text-info')}
+          onClick={(event) => {
+            handleClick(event, props.onRestartCheckpoint);
+          }}
+        >
+          <RotateCcw className={ICON_SIZE} />
+        </button>
+      ) : null}
+
+      {/* Restart fresh — available on error */}
+      {status === 'error' ? (
+        <button
+          aria-label="Restart fresh"
+          className={cn(ICON_BUTTON, 'text-muted-foreground hover:text-foreground')}
+          onClick={(event) => {
+            handleClick(event, props.onStartPlanning);
+          }}
+        >
+          <RefreshCw className={ICON_SIZE} />
+        </button>
+      ) : null}
+
+      {/* Delete — available for backlog, plan_ready, done, error */}
+      {status === 'backlog' ||
+      status === 'plan_ready' ||
+      status === 'done' ||
+      status === 'error' ? (
+        <button
+          aria-label="Delete task"
+          className={cn(
+            ICON_BUTTON,
+            'text-muted-foreground hover:text-destructive',
+          )}
+          onClick={handleDeleteClick}
+        >
+          <Trash2 className={ICON_SIZE} />
+        </button>
+      ) : null}
 
       <ConfirmDialog
         confirmLabel="Delete"
@@ -90,6 +184,19 @@ export function ActionsCell(props: ActionsCellProps) {
               },
             },
           );
+        }}
+      />
+
+      <ConfirmDialog
+        confirmLabel="Kill"
+        description="Are you sure you want to kill the running agent? Progress up to the last checkpoint will be preserved."
+        open={killConfirmOpen}
+        title="Kill Agent"
+        variant="destructive"
+        onOpenChange={setKillConfirmOpen}
+        onConfirm={() => {
+          setKillConfirmOpen(false);
+          props.onKillAgent?.(taskId);
         }}
       />
     </div>

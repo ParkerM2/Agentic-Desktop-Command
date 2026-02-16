@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1280px;
+    height: 640px;
+    overflow: hidden;
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: #0b0b0f;
+    position: relative;
+  }
+
+  /* === Background layers === */
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(35,35,35,0.4) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(35,35,35,0.4) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .bg-glow1 {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 75% 35%, rgba(214,216,118,0.08) 0%, transparent 60%);
+  }
+  .bg-glow2 {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 70%, rgba(71,159,250,0.05) 0%, transparent 55%);
+  }
+  .top-line {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(214,216,118,0.6);
+  }
+  .bottom-line {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: rgba(214,216,118,0.3);
+  }
+
+  /* === Left branding === */
+  .branding {
+    position: absolute;
+    left: 100px;
+    top: 0;
+    bottom: 0;
+    width: 450px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 2;
+  }
+  .logo {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 64px;
+    font-weight: 700;
+    color: #d6d876;
+    line-height: 1;
+    margin-bottom: 4px;
+    text-shadow: 0 0 20px rgba(214,216,118,0.3);
+    letter-spacing: -2px;
+  }
+  .logo .cursor {
+    display: inline-block;
+    width: 18px;
+    height: 4px;
+    background: #d6d876;
+    margin-left: 2px;
+    vertical-align: middle;
+    border-radius: 2px;
+    animation: blink 1.2s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  .title {
+    font-size: 56px;
+    font-weight: 700;
+    color: #e6e6e6;
+    letter-spacing: -1.5px;
+    margin-top: 12px;
+    line-height: 1.1;
+  }
+  .subtitle {
+    font-size: 20px;
+    color: #868f97;
+    margin-top: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Tech pills */
+  .pills {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+  }
+  .pill {
+    padding: 6px 18px;
+    border-radius: 16px;
+    background: #1a1a1f;
+    border: 1px solid #232323;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .pill.electron { color: #d6d876; }
+  .pill.react { color: #61dafb; }
+  .pill.ts { color: #3178c6; }
+  .pill.tw { color: #38bdf8; }
+
+  /* Features */
+  .features {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #868f97;
+  }
+  .feature-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d6d876;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  .footer-text {
+    margin-top: 28px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    color: #868f97;
+    opacity: 0.5;
+  }
+  .license {
+    margin-top: 8px;
+    display: inline-block;
+    padding: 2px 12px;
+    border: 1px solid #232323;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 9px;
+    color: #868f97;
+  }
+
+  /* === Right: App mockup === */
+  .mockup {
+    position: absolute;
+    right: 100px;
+    top: 80px;
+    width: 560px;
+    height: 480px;
+    background: #121216;
+    border-radius: 12px;
+    border: 1px solid #232323;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    z-index: 2;
+  }
+
+  /* Title bar */
+  .titlebar {
+    height: 40px;
+    background: #0e0e12;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    position: relative;
+  }
+  .dots { display: flex; gap: 8px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ff5c5c; opacity: 0.8; }
+  .dot.y { background: #ffbd2e; opacity: 0.8; }
+  .dot.g { background: #28c840; opacity: 0.8; }
+  .titlebar-text {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 500;
+    color: #868f97;
+  }
+
+  /* Layout */
+  .app-body { display: flex; height: 440px; }
+
+  /* ============================================
+     COLLAPSED SIDEBAR — icon-only, settings at bottom
+     ============================================ */
+  .sidebar {
+    width: 48px;
+    background: #0e0e12;
+    padding: 12px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border-right: 1px solid #232323;
+  }
+  .nav-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #868f97;
+    cursor: pointer;
+    position: relative;
+  }
+  .nav-icon.active {
+    background: #1a1a1f;
+    color: #d6d876;
+  }
+  .nav-icon.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: #d6d876;
+  }
+  .nav-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .sidebar-spacer { flex: 1; }
+  .nav-icon.settings {
+    margin-top: auto;
+  }
+
+  /* Main content */
+  .main {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  .main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .main-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e6e6e6;
+  }
+  .btn-new {
+    background: #d6d876;
+    color: #0b0b0f;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 6px;
+    border: none;
+  }
+
+  /* ============================================
+     Data grid — TASK | STATUS | PROGRESS | AGENT TEAM | QA REVIEW
+     ============================================ */
+  .grid { flex: 1; }
+  .grid-header {
+    display: grid;
+    grid-template-columns: 1fr 58px 60px 76px 68px;
+    padding: 8px 10px;
+    background: #1a1a1f;
+    font-family: 'Consolas', monospace;
+    font-size: 9.5px;
+    font-weight: 500;
+    color: #868f97;
+    gap: 6px;
+    align-items: center;
+  }
+  .grid-row {
+    display: grid;
+    grid-template-columns: 1fr 58px 60px 76px 68px;
+    padding: 8px 10px;
+    align-items: center;
+    border-bottom: 1px solid rgba(35,35,35,0.5);
+    gap: 6px;
+    position: relative;
+  }
+  .grid-row:nth-child(odd) { background: #121216; }
+  .grid-row:nth-child(even) { background: #0f0f13; }
+
+  .cell-task {
+    font-size: 11px;
+    color: #e6e6e6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cell-mono {
+    font-family: 'Consolas', monospace;
+    font-size: 10px;
+    color: #868f97;
+  }
+
+  /* ============================================
+     STATUS badges — subtle: dark bg, colored border + text
+     ============================================ */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 6px;
+    border-radius: 7px;
+    font-size: 9px;
+    font-weight: 500;
+    width: fit-content;
+    background: #121216;
+    border: 1px solid;
+  }
+  .badge.running  { border-color: #4ade80; color: #4ade80; }
+  .badge.queued   { border-color: #38bdf8; color: #38bdf8; }
+  .badge.complete { border-color: #d6d876; color: #d6d876; }
+  .badge.error    { border-color: #ff5c5c; color: #ff5c5c; }
+
+  /* ============================================
+     PROGRESS column
+     ============================================ */
+  .progress-cell {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .progress-track {
+    flex: 1;
+    height: 5px;
+    background: #1a1a1f;
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 9999px;
+  }
+  .progress-label {
+    font-family: 'Consolas', monospace;
+    font-size: 9px;
+    color: #868f97;
+    min-width: 22px;
+    text-align: right;
+  }
+
+  .progress-fill.tier-success { background: #4ade80; }
+  .progress-fill.tier-error   { background: #ff5c5c; }
+
+  /* Indeterminate loading bar */
+  .progress-fill.indeterminate {
+    width: 30% !important;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      #d6d876 50%,
+      transparent 100%
+    );
+    animation: indeterminate 3.5s ease-in-out infinite;
+    opacity: 0.9;
+  }
+  @keyframes indeterminate {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(400%); }
+  }
+
+  .progress-track.is-loading {
+    box-shadow: 0 0 6px 1px rgba(214,216,118,0.12);
+    animation: trackGlow 3.5s ease-in-out infinite;
+  }
+  @keyframes trackGlow {
+    0%, 100% { box-shadow: 0 0 4px 0px rgba(214,216,118,0.08); }
+    50%      { box-shadow: 0 0 8px 2px rgba(214,216,118,0.18); }
+  }
+
+  .progress-track.is-queued {
+    animation: queuedPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes queuedPulse {
+    0%, 100% { background: #1a1a1f; }
+    50%      { background: #1e1e28; }
+  }
+
+  /* ============================================
+     AGENT TEAM column — count + "..." button
+     ============================================ */
+  .agent-team {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .agent-count {
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    color: #e6e6e6;
+    font-weight: 600;
+    min-width: 12px;
+    text-align: center;
+  }
+  .agent-label {
+    font-size: 9px;
+    color: #868f97;
+  }
+  .agent-more {
+    width: 20px;
+    height: 16px;
+    border-radius: 4px;
+    background: #1a1a1f;
+    border: 1px solid #232323;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #868f97;
+    letter-spacing: 1px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  /* ============================================
+     QA REVIEW column
+     ============================================ */
+  .qa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 500;
+  }
+  .qa-badge.pass {
+    background: rgba(74,222,128,0.1);
+    color: #4ade80;
+  }
+  .qa-badge.fail {
+    background: rgba(255,92,92,0.1);
+    color: #ff5c5c;
+  }
+  .qa-badge.pending {
+    color: #868f97;
+  }
+  .qa-badge svg {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  /* ============================================
+     ROW PULSE for in-progress rows
+     ============================================ */
+  .grid-row.is-running {
+    animation: rowPulse 2.5s ease-in-out infinite;
+  }
+  @keyframes rowPulse {
+    0%, 100% { background: #121216; }
+    50%      { background: #161a14; }
+  }
+  .grid-row.is-running:nth-child(even) {
+    animation: rowPulseAlt 2.5s ease-in-out infinite;
+  }
+  @keyframes rowPulseAlt {
+    0%, 100% { background: #0f0f13; }
+    50%      { background: #131710; }
+  }
+
+  /* ============================================
+     Stats bar
+     ============================================ */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    background: #0e0e12;
+    border: 1px solid rgba(35,35,35,0.5);
+    border-radius: 8px;
+    padding: 14px 0;
+    margin-top: 10px;
+  }
+  .stat { text-align: center; }
+  .stat + .stat { border-left: 1px solid rgba(35,35,35,0.5); }
+  .stat-value {
+    font-family: 'Consolas', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .stat-value.primary { color: #d6d876; }
+  .stat-value.green   { color: #4ade80; }
+  .stat-value.blue    { color: #38bdf8; }
+  .stat-value.white   { color: #e6e6e6; }
+  .stat-label {
+    font-size: 10px;
+    color: #868f97;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow1"></div>
+  <div class="bg-glow2"></div>
+  <div class="top-line"></div>
+  <div class="bottom-line"></div>
+
+  <!-- Left branding -->
+  <div class="branding">
+    <div class="logo">[&gt;_]</div>
+    <div class="title">ADC</div>
+    <div class="subtitle">Agentic Desktop Command</div>
+    <div class="pills">
+      <span class="pill electron">Electron</span>
+      <span class="pill react">React</span>
+      <span class="pill ts">TypeScript</span>
+      <span class="pill tw">Tailwind</span>
+    </div>
+    <div class="features">
+      <div class="feature"><span class="feature-dot"></span>Agent team orchestration &amp; control</div>
+      <div class="feature"><span class="feature-dot"></span>Automated QA loops &amp; code review</div>
+      <div class="feature"><span class="feature-dot"></span>Multi-project management</div>
+    </div>
+    <div class="footer-text">github.com/ParkerM2/Agentic-Desktop-Command</div>
+    <span class="license">AGPL-3.0</span>
+  </div>
+
+  <!-- Right app mockup -->
+  <div class="mockup">
+    <div class="titlebar">
+      <div class="dots">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+      </div>
+      <span class="titlebar-text">ADC</span>
+    </div>
+    <div class="app-body">
+
+      <!-- COLLAPSED SIDEBAR — icons only, settings at bottom -->
+      <div class="sidebar">
+        <!-- Tasks (active) -->
+        <div class="nav-icon active">
+          <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+        </div>
+        <!-- Projects -->
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        </div>
+        <!-- Devices -->
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <!-- Workspaces -->
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+
+        <!-- Spacer pushes settings to bottom -->
+        <div class="sidebar-spacer"></div>
+
+        <!-- Settings (pinned bottom) -->
+        <div class="nav-icon settings">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        </div>
+      </div>
+
+      <div class="main">
+        <div class="main-header">
+          <span class="main-title">Task Dashboard</span>
+          <span class="btn-new">+ New Task</span>
+        </div>
+        <div class="grid">
+          <div class="grid-header">
+            <span>TASK</span>
+            <span>STATUS</span>
+            <span>PROGRESS</span>
+            <span>AGENT TEAM</span>
+            <span>QA REVIEW</span>
+          </div>
+
+          <!-- Row 1: Running -->
+          <div class="grid-row is-running">
+            <span class="cell-task">Add auth middleware</span>
+            <span class="badge running">Running</span>
+            <div class="progress-cell">
+              <div class="progress-track is-loading">
+                <div class="progress-fill indeterminate"></div>
+              </div>
+            </div>
+            <div class="agent-team">
+              <span class="agent-count">3</span>
+              <span class="agent-more">...</span>
+            </div>
+            <span class="qa-badge pending">--</span>
+          </div>
+
+          <!-- Row 2: Queued -->
+          <div class="grid-row">
+            <span class="cell-task">Refactor API layer</span>
+            <span class="badge queued">Queued</span>
+            <div class="progress-cell">
+              <div class="progress-track is-queued">
+                <div class="progress-fill" style="width: 0%;"></div>
+              </div>
+              <span class="progress-label">0%</span>
+            </div>
+            <div class="agent-team">
+              <span class="agent-count">1</span>
+              <span class="agent-more">...</span>
+            </div>
+            <span class="qa-badge pending">--</span>
+          </div>
+
+          <!-- Row 3: Complete -->
+          <div class="grid-row">
+            <span class="cell-task">Fix login redirect</span>
+            <span class="badge complete">Done</span>
+            <div class="progress-cell">
+              <div class="progress-track">
+                <div class="progress-fill tier-success" style="width: 100%;"></div>
+              </div>
+              <span class="progress-label">100%</span>
+            </div>
+            <div class="agent-team">
+              <span class="agent-count">2</span>
+              <span class="agent-more">...</span>
+            </div>
+            <span class="qa-badge pass">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Pass
+            </span>
+          </div>
+
+          <!-- Row 4: Running -->
+          <div class="grid-row is-running">
+            <span class="cell-task">Write unit tests</span>
+            <span class="badge running">Running</span>
+            <div class="progress-cell">
+              <div class="progress-track is-loading">
+                <div class="progress-fill indeterminate" style="animation-delay: -0.7s;"></div>
+              </div>
+            </div>
+            <div class="agent-team">
+              <span class="agent-count">1</span>
+              <span class="agent-more">...</span>
+            </div>
+            <span class="qa-badge pending">--</span>
+          </div>
+
+          <!-- Row 5: Error -->
+          <div class="grid-row">
+            <span class="cell-task">Deploy staging</span>
+            <span class="badge error">Error</span>
+            <div class="progress-cell">
+              <div class="progress-track">
+                <div class="progress-fill tier-error" style="width: 62%;"></div>
+              </div>
+              <span class="progress-label">62%</span>
+            </div>
+            <div class="agent-team">
+              <span class="agent-count">2</span>
+              <span class="agent-more">...</span>
+            </div>
+            <span class="qa-badge fail">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Fail
+            </span>
+          </div>
+
+          <!-- Row 6: Complete -->
+          <div class="grid-row">
+            <span class="cell-task">Setup CI pipeline</span>
+            <span class="badge complete">Done</span>
+            <div class="progress-cell">
+              <div class="progress-track">
+                <div class="progress-fill tier-success" style="width: 100%;"></div>
+              </div>
+              <span class="progress-label">100%</span>
+            </div>
+            <div class="agent-team">
+              <span class="agent-count">4</span>
+              <span class="agent-more">...</span>
+            </div>
+            <span class="qa-badge pass">
+              <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              Pass
+            </span>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value primary">12</div>
+            <div class="stat-label">Active Tasks</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value green">4</div>
+            <div class="stat-label">Agent Teams</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value blue">87%</div>
+            <div class="stat-label">QA Pass Rate</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value white">$5.51</div>
+            <div class="stat-label">Total Cost</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 
 export const app = {
   getPath: vi.fn((name: string) => `/mock/${name}`),
-  getName: vi.fn(() => 'claude-ui-test'),
+  getName: vi.fn(() => 'adc-test'),
   getVersion: vi.fn(() => '1.0.0'),
   quit: vi.fn(),
   on: vi.fn(),

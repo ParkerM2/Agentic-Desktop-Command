@@ -1,6 +1,6 @@
 # Codebase Guardian Rules
 
-> Structural integrity rules for Claude-UI.
+> Structural integrity rules for ADC.
 > Every file, every pattern, every boundary — codified.
 > Agents MUST check their work against these rules before submission.
 
@@ -16,6 +16,9 @@
 | `src/shared/ipc-contract.ts` | Zod schemas, channel definitions, type utilities | Business logic, React imports, Node.js imports |
 | `src/shared/constants/` | Constant values, enums, config objects | Functions with side effects, mutable state |
 | `src/main/services/` | Business logic, data persistence, PTY management | React code, browser APIs, UI logic |
+| `src/main/services/agent-orchestrator/` | Agent orchestrator, JSONL progress watcher, agent watchdog | React code, renderer imports, UI logic |
+| `src/main/services/qa/` | QA runner (quiet + full mode), QA report types | React code, renderer imports |
+| `src/main/services/assistant/` | Intent classifier, command executor, watch store, watch evaluator, cross-device query, history store | React code, renderer imports |
 | `src/main/ipc/handlers/` | Thin IPC handler functions that call services | Business logic (belongs in services) |
 | `src/main/ipc/router.ts` | IPC routing infrastructure | Domain-specific handler code |
 | `src/preload/` | Context bridge (`api.invoke`, `api.on`) | Business logic, React code, service code |
@@ -242,6 +245,34 @@ export function registerTaskHandlers(router: IpcRouter, service: TaskService) {
 - Handlers are thin: call service method, wrap in `Promise.resolve()`
 - Handlers NEVER contain business logic
 - One handler file per domain: `task-handlers.ts`, `project-handlers.ts`
+
+### Multi-File Service Pattern
+
+Some services consist of multiple cooperating files in a single directory:
+
+```
+services/assistant/
+├── assistant-service.ts    # Main service factory (public API)
+├── intent-classifier.ts    # Intent classification (regex + Claude API fallback)
+├── command-executor.ts     # Routes intents to service methods
+├── history-store.ts        # Command history persistence
+├── watch-store.ts          # Persistent watch subscription storage
+├── watch-evaluator.ts      # IPC event → watch matching engine
+└── cross-device-query.ts   # Hub API device queries
+
+services/agent-orchestrator/
+├── agent-orchestrator.ts   # Session lifecycle management
+├── jsonl-progress-watcher.ts  # Incremental JSONL tail parser
+└── agent-watchdog.ts       # Health monitoring
+
+services/qa/
+└── qa-runner.ts            # Two-tier QA system (quiet + full)
+```
+
+**Rules:**
+- Main service file (`assistant-service.ts`, `agent-orchestrator.ts`) is the public API
+- Sub-files are internal implementation details — only the main service imports them
+- Exception: `index.ts` may import sub-file factories directly for wiring (e.g., `createWatchStore()`)
 
 ---
 

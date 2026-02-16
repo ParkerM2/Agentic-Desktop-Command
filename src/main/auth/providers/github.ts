@@ -6,6 +6,6 @@ export const GITHUB_OAUTH_CONFIG: OAuthConfig = {
   clientSecret: '',
   authorizationUrl: 'https://github.com/login/oauth/authorize',
   tokenUrl: 'https://github.com/login/oauth/access_token',
-  redirectUri: 'claude-ui://oauth/callback',
+  redirectUri: 'adc://oauth/callback',
   scopes: ['repo', 'read:user', 'notifications'],
 };

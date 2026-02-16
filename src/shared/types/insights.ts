@@ -9,6 +9,11 @@ export interface InsightMetrics {
   agentRunCount: number;
   agentSuccessRate: number;
   activeAgents: number;
+  orchestratorSessionsToday?: number;
+  orchestratorSuccessRate?: number;
+  averageAgentDuration?: number;
+  qaPassRate?: number;
+  totalTokenCost?: number;
 }
 
 export interface InsightTimeSeries {

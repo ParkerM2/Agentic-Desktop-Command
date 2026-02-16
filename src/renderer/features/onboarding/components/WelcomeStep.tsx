@@ -42,7 +42,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         <Sparkles className="text-primary h-10 w-10" />
       </div>
 
-      <h1 className="text-foreground mb-3 text-3xl font-bold">Welcome to Claude UI</h1>
+      <h1 className="text-foreground mb-3 text-3xl font-bold">Welcome to ADC</h1>
 
       <p className="text-muted-foreground mb-8 max-w-md text-lg">
         Your desktop companion for managing Claude autonomous coding agents.

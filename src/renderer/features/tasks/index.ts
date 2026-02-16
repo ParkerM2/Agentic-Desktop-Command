@@ -10,10 +10,17 @@ export {
   useExecuteTask,
   useCancelTask,
 } from './api/useTaskMutations';
+export {
+  useStartPlanning,
+  useStartExecution,
+  useKillAgent,
+  useRestartFromCheckpoint,
+} from './api/useAgentMutations';
 export { taskKeys } from './api/queryKeys';
 
 // Events
 export { useTaskEvents } from './hooks/useTaskEvents';
+export { useAgentEvents } from './hooks/useAgentEvents';
 
 // Store
 export { useTaskUI } from './store';

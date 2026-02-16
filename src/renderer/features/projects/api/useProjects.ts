@@ -46,7 +46,7 @@ export function useRemoveProject() {
   });
 }
 
-/** Initialize a project (set up .claude-ui folder, etc.) */
+/** Initialize a project (set up .adc folder, etc.) */
 export function useInitializeProject() {
   const { onError } = useMutationErrorToast();
   return useMutation({

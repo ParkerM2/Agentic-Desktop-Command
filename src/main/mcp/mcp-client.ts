@@ -302,7 +302,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         protocolVersion: '2024-11-05',
         capabilities: {},
         clientInfo: {
-          name: 'claude-ui',
+          name: 'adc',
           version: '1.0.0',
         },
       });

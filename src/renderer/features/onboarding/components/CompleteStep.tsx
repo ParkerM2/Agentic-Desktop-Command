@@ -47,7 +47,7 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
       <h2 className="text-foreground mb-3 text-3xl font-bold">You&apos;re All Set!</h2>
 
       <p className="text-muted-foreground mb-8 max-w-md text-lg">
-        Claude UI is ready to help you manage your coding projects with AI-powered agents.
+        ADC is ready to help you manage your coding projects with AI-powered agents.
       </p>
 
       {/* Quick tips */}
@@ -85,7 +85,7 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
         ) : (
           <>
             <Rocket className="h-4 w-4" />
-            Launch Claude UI
+            Launch ADC
           </>
         )}
       </button>

@@ -10,9 +10,10 @@ interface ResponseEntry {
   id: string;
   input: string;
   response: string;
-  type: 'text' | 'action' | 'error';
+  type: 'text' | 'action' | 'error' | 'proactive';
   intent?: IntentType;
   timestamp: string;
+  source?: 'user' | 'watch' | 'qa' | 'agent';
 }
 
 interface AssistantState {

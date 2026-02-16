@@ -13,8 +13,10 @@ import type {
 } from '@shared/types';
 
 import type { AgentService } from '../agent/agent-service';
+import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
+import type { QaRunner } from '../qa/qa-types';
 
 export interface InsightsService {
   getMetrics: (projectId?: string) => InsightMetrics;
@@ -27,8 +29,67 @@ export function createInsightsService(deps: {
   taskService: TaskService;
   agentService: AgentService;
   projectService: ProjectService;
+  agentOrchestrator?: AgentOrchestrator;
+  qaRunner?: QaRunner;
 }): InsightsService {
-  const { taskService, agentService, projectService } = deps;
+  const { taskService, agentService, projectService, agentOrchestrator, qaRunner } = deps;
+
+  function getOrchestratorMetrics(): {
+    sessionsToday: number;
+    successRate: number;
+    avgDuration: number;
+  } {
+    if (!agentOrchestrator) {
+      return { sessionsToday: 0, successRate: 0, avgDuration: 0 };
+    }
+
+    const today = new Date().toISOString().split('T')[0] ?? '';
+    const allSessions = [...agentOrchestrator.listActiveSessions()];
+
+    const sessionsToday = allSessions.filter(
+      (s) => s.spawnedAt.startsWith(today),
+    ).length;
+
+    const finished = allSessions.filter(
+      (s) => s.status === 'completed' || s.status === 'error',
+    );
+    const successCount = finished.filter((s) => s.status === 'completed').length;
+    const successRate =
+      finished.length > 0 ? Math.round((successCount / finished.length) * 100) : 0;
+
+    const completed = finished.filter((s) => s.status === 'completed');
+    let avgDuration = 0;
+    if (completed.length > 0) {
+      let totalDuration = 0;
+      for (const s of completed) {
+        totalDuration += Date.now() - Date.parse(s.spawnedAt);
+      }
+      avgDuration = Math.round(totalDuration / completed.length);
+    }
+
+    return { sessionsToday, successRate, avgDuration };
+  }
+
+  function getQaPassRate(projectIds: string[]): number {
+    if (!qaRunner) {
+      return 0;
+    }
+    let qaTotal = 0;
+    let qaPassed = 0;
+    for (const pid of projectIds) {
+      const tasks = taskService.listTasks(pid);
+      for (const task of tasks) {
+        const report = qaRunner.getReportForTask(task.id);
+        if (report) {
+          qaTotal++;
+          if (report.result === 'pass') {
+            qaPassed++;
+          }
+        }
+      }
+    }
+    return qaTotal > 0 ? Math.round((qaPassed / qaTotal) * 100) : 0;
+  }
 
   return {
     getMetrics(projectId) {
@@ -54,6 +115,10 @@ export function createInsightsService(deps: {
       const agentSuccessRate =
         agents.length > 0 ? Math.round((completedAgents / agents.length) * 100) : 0;
 
+      // Orchestrator and QA metrics
+      const orchMetrics = getOrchestratorMetrics();
+      const qaPassRate = getQaPassRate(projectIds);
+
       return {
         totalTasks,
         completedTasks,
@@ -61,6 +126,11 @@ export function createInsightsService(deps: {
         agentRunCount: agents.length,
         agentSuccessRate,
         activeAgents,
+        orchestratorSessionsToday: orchMetrics.sessionsToday,
+        orchestratorSuccessRate: orchMetrics.successRate,
+        averageAgentDuration: orchMetrics.avgDuration,
+        qaPassRate,
+        totalTokenCost: 0,
       };
     },
 
@@ -82,10 +152,19 @@ export function createInsightsService(deps: {
           ).length;
         }
 
+        // Count orchestrator sessions spawned on this date
+        let agentRuns = 0;
+        if (agentOrchestrator) {
+          const activeSessions = agentOrchestrator.listActiveSessions();
+          agentRuns = activeSessions.filter(
+            (s) => s.spawnedAt.startsWith(dateStr),
+          ).length;
+        }
+
         result.push({
           date: dateStr,
           tasksCompleted,
-          agentRuns: 0,
+          agentRuns,
         });
       }
 

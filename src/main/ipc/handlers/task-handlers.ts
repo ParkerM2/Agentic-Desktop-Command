@@ -24,6 +24,8 @@ type LegacyTaskList = InvokeOutput<'tasks.list'>;
 /** Maps Hub task statuses to local (legacy) task statuses */
 const HUB_TO_LOCAL_STATUS: Partial<Record<string, string>> = {
   backlog: 'backlog',
+  planning: 'in_progress',
+  plan_ready: 'ai_review',
   queued: 'queue',
   running: 'in_progress',
   paused: 'in_progress',

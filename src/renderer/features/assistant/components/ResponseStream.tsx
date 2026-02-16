@@ -4,7 +4,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import { AlertCircle, Loader2, Zap } from 'lucide-react';
+import { AlertCircle, Bell, Loader2, Zap } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -16,6 +16,7 @@ const RESPONSE_STYLES: Record<ResponseEntry['type'], string> = {
   text: 'bg-muted/50',
   action: 'bg-primary/10 border border-primary/20',
   error: 'bg-destructive/10 border border-destructive/20',
+  proactive: 'bg-info/10 border border-info/20',
 };
 
 function ResponseIcon({ type }: { type: ResponseEntry['type'] }) {
@@ -24,6 +25,9 @@ function ResponseIcon({ type }: { type: ResponseEntry['type'] }) {
   }
   if (type === 'error') {
     return <AlertCircle className="text-destructive mt-0.5 h-4 w-4 shrink-0" />;
+  }
+  if (type === 'proactive') {
+    return <Bell className="text-info mt-0.5 h-4 w-4 shrink-0" />;
   }
   return null;
 }

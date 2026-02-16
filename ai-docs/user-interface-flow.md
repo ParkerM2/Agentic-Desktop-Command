@@ -91,7 +91,7 @@ User opens app
   → Router resolves / → redirect to /dashboard
   → AuthGuard.tsx renders (wraps all authenticated routes)
   → useAuthInit() runs (src/renderer/features/auth/hooks/useAuthEvents.ts)
-    → Checks localStorage for stored auth (key: "claude-ui-auth")
+    → Checks localStorage for stored auth (key: "adc-auth")
     → Nothing found → setInitializing(false)
   → isAuthenticated = false, isInitializing = false
   → AuthGuard redirects to /login
@@ -335,6 +335,9 @@ A floating chat widget (Intercom/Drift style) is mounted in RootLayout after all
 - `event:assistant.response` — New response from assistant
 - `event:assistant.thinking` — Assistant processing state
 - `event:assistant.commandCompleted` — Command execution finished
+
+**Proactive notification events**:
+- `event:assistant.proactive` — Watch trigger, QA failure, or agent alert. Shown as proactive entry in WidgetMessageArea (Bell icon, info style). Source types: `'watch'`, `'qa'`, `'agent'`.
 
 ---
 
@@ -688,6 +691,15 @@ Hub broadcasts WebSocket event
 | Task distribution | `insights.getTaskDistribution` | By status, by priority |
 | Project breakdown | `insights.getProjectBreakdown` | Cross-project comparison |
 
+**Enhanced metrics (from agent orchestrator + QA runner)**:
+| Metric | Source | Description |
+|--------|--------|-------------|
+| `orchestratorSessionsToday` | AgentOrchestrator | Number of orchestrator sessions today |
+| `orchestratorSuccessRate` | AgentOrchestrator | Percentage of sessions completed successfully |
+| `averageAgentDuration` | AgentOrchestrator | Average session duration in seconds |
+| `qaPassRate` | QaRunner | Percentage of QA runs that passed |
+| `totalTokenCost` | AgentOrchestrator | Aggregated token cost across all sessions |
+
 ---
 
 ## 15. My Work
@@ -716,6 +728,9 @@ Shows the user's assigned tasks across all projects with `TaskStatusBadge` indic
 | Get suggestions | `briefing.getSuggestions` |
 
 **Service**: `src/main/services/briefing/briefing-service.ts`
+
+**Enhanced briefing data sources**:
+The briefing service now aggregates data from the agent orchestrator (session counts, success rates) in addition to the existing task/agent/notification sources. This provides orchestrator activity summaries in daily briefings.
 
 ---
 
@@ -1052,6 +1067,9 @@ Complete list of all registered IPC channels by domain:
 ### App Update (4)
 `app.checkForUpdates` · `app.downloadUpdate` · `app.quitAndInstall` · `app.getUpdateStatus`
 
+### Agent Orchestrator (6)
+`orchestrator.spawn` · `orchestrator.stop` · `orchestrator.list` · `orchestrator.getSession` · `orchestrator.getProgress` · `orchestrator.approvePlan`
+
 ### Assistant (3)
 `assistant.sendCommand` · `assistant.getHistory` · `assistant.clearHistory`
 
@@ -1109,6 +1127,9 @@ Complete list of all registered IPC channels by domain:
 ### Notes (5)
 `notes.list` · `notes.create` · `notes.update` · `notes.delete` · `notes.search`
 
+### QA (3)
+`qa.runQuiet` · `qa.runFull` · `qa.getReports`
+
 ### Notifications (7)
 `notifications.list` · `notifications.markRead` · `notifications.markAllRead` · `notifications.getConfig` · `notifications.updateConfig` · `notifications.startWatching` · `notifications.stopWatching` · `notifications.getWatcherStatus`
 
@@ -1146,6 +1167,20 @@ Complete list of all registered IPC channels by domain:
 `workspaces.list` · `workspaces.create` · `workspaces.update` · `workspaces.delete`
 
 **Total**: ~200 IPC channels
+
+### Event Channels — Agent Orchestrator
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:agent.orchestrator.heartbeat` | `{ taskId, timestamp }` | Session activity detected |
+| `event:agent.orchestrator.stopped` | `{ taskId, reason, exitCode }` | Session completed or killed |
+| `event:agent.orchestrator.error` | `{ taskId, error }` | Session encountered error |
+| `event:agent.orchestrator.progress` | `{ taskId, type, data, timestamp }` | Tool use, phase change |
+| `event:agent.orchestrator.planReady` | `{ taskId, planSummary, planFilePath }` | Plan file detected |
+
+### Event Channels — Assistant Proactive
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:assistant.proactive` | `{ content, source, taskId?, followUp? }` | Watch triggered, QA failed, or agent alert |
 
 ---
 

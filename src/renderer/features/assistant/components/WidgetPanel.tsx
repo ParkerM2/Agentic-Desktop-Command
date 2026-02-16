@@ -1,15 +1,17 @@
 /**
  * WidgetPanel — Assembled floating chat panel for the assistant widget
  *
- * Contains header (title + clear + close), message area, quick action chips, and input.
+ * Contains header (title + voice toggle + clear + close), message area,
+ * quick action chips, and input with voice button.
  * Focuses input on mount and restores focus on close.
  */
 
 import { useEffect, useRef } from 'react';
 
-import { Bell, ClipboardList, Play, StickyNote, Trash2, X } from 'lucide-react';
+import { Bell, ClipboardList, Play, StickyNote, Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
+import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
@@ -33,6 +35,8 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const sendCommand = useSendCommand();
   const clearHistory = useClearHistory();
   const responseHistory = useAssistantStore((s) => s.responseHistory);
+  const voiceOutputEnabled = useAssistantWidgetStore((s) => s.voiceOutputEnabled);
+  const toggleVoiceOutput = useAssistantWidgetStore((s) => s.toggleVoiceOutput);
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -66,6 +70,22 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
       <div className="border-border flex items-center justify-between border-b px-3 py-2">
         <h2 className="text-foreground text-sm font-semibold">Assistant</h2>
         <div className="flex items-center gap-1">
+          <button
+            aria-label={voiceOutputEnabled ? 'Disable voice output' : 'Enable voice output'}
+            className={cn(
+              'rounded-md p-1 transition-colors',
+              voiceOutputEnabled
+                ? 'text-primary hover:bg-primary/10'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+            )}
+            onClick={toggleVoiceOutput}
+          >
+            {voiceOutputEnabled ? (
+              <Volume2 className="h-3.5 w-3.5" />
+            ) : (
+              <VolumeX className="h-3.5 w-3.5" />
+            )}
+          </button>
           {responseHistory.length > 0 ? (
             <button
               aria-label="Clear history"

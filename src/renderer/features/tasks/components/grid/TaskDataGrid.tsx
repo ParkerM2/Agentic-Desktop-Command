@@ -12,9 +12,13 @@ import { Loader2 } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
+import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useCancelTask, useDeleteTask, useExecuteTask } from '../../api/useTaskMutations';
+import { useProjects } from '@features/projects';
+
+import { useKillAgent, useRestartFromCheckpoint, useStartExecution, useStartPlanning } from '../../api/useAgentMutations';
+import { useUpdateTaskStatus } from '../../api/useTaskMutations';
 import { useAllTasks, useTasks } from '../../api/useTasks';
 import { useTaskEvents } from '../../hooks/useTaskEvents';
 import { useTaskUI } from '../../store';
@@ -68,10 +72,15 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
   const tasks = useMemo(() => query.data ?? [], [query.data]);
   const { isLoading } = query;
 
-  // Mutations
-  const executeTask = useExecuteTask();
-  const cancelTask = useCancelTask();
-  const deleteTask = useDeleteTask();
+  // Mutations — agent orchestrator
+  const startPlanning = useStartPlanning();
+  const startExecution = useStartExecution();
+  const killAgent = useKillAgent();
+  const restartCheckpoint = useRestartFromCheckpoint();
+  const updateStatus = useUpdateTaskStatus();
+
+  // Project data for resolving projectPath
+  const { data: projects } = useProjects();
 
   // Store
   const expandedRowIds = useTaskUI((s) => s.expandedRowIds);
@@ -115,30 +124,84 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
     return rows;
   }, [tasks, expandedRowIds, gridSearchText, filterStatuses]);
 
-  // Callbacks
+  // ── Helper: resolve project path from projectId ──
+  const resolveProjectPath = useCallback(
+    (taskProjectId: string): string => {
+      if (!projects) {
+        return '';
+      }
+      const project = projects.find((p) => p.id === taskProjectId);
+      return project?.path ?? '';
+    },
+    [projects],
+  );
+
+  // ── Callbacks ──
   function handleToggleExpand(rowId: string) {
     toggleRowExpansion(rowId);
   }
 
-  const handlePlay = useCallback(
+  const handleStartPlanning = useCallback(
     (taskId: string) => {
-      executeTask.mutate({ taskId });
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const taskProjectId = (task as unknown as { projectId?: string }).projectId ?? projectId ?? '';
+      const path = resolveProjectPath(taskProjectId);
+      if (path.length === 0) return;
+      startPlanning.mutate({
+        taskId,
+        projectPath: path,
+        taskDescription: task.description,
+      });
     },
-    [executeTask],
+    [tasks, projectId, resolveProjectPath, startPlanning],
   );
 
-  const handleStop = useCallback(
+  const handleStartExecution = useCallback(
     (taskId: string) => {
-      cancelTask.mutate({ taskId });
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const taskProjectId = (task as unknown as { projectId?: string }).projectId ?? projectId ?? '';
+      const path = resolveProjectPath(taskProjectId);
+      if (path.length === 0) return;
+      startExecution.mutate({
+        taskId,
+        projectPath: path,
+        taskDescription: task.description,
+      });
     },
-    [cancelTask],
+    [tasks, projectId, resolveProjectPath, startExecution],
   );
 
-  const handleDelete = useCallback(
+  const handleKillAgent = useCallback(
     (taskId: string) => {
-      deleteTask.mutate({ taskId });
+      void (async () => {
+        const session = await ipc('agent.getOrchestratorSession', { taskId });
+        if (session) {
+          killAgent.mutate({ sessionId: session.id });
+        }
+      })();
     },
-    [deleteTask],
+    [killAgent],
+  );
+
+  const handleRestartCheckpoint = useCallback(
+    (taskId: string) => {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const taskProjectId = (task as unknown as { projectId?: string }).projectId ?? projectId ?? '';
+      const path = resolveProjectPath(taskProjectId);
+      if (path.length === 0) return;
+      restartCheckpoint.mutate({ taskId, projectPath: path });
+    },
+    [tasks, projectId, resolveProjectPath, restartCheckpoint],
+  );
+
+  const handleRejectPlan = useCallback(
+    (taskId: string) => {
+      updateStatus.mutate({ taskId, status: 'backlog' });
+    },
+    [updateStatus],
   );
 
   const getRowId = useCallback(
@@ -314,9 +377,10 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
         width: 120,
         cellRenderer: ActionsCell,
         cellRendererParams: {
-          onDelete: handleDelete,
-          onPlay: handlePlay,
-          onStop: handleStop,
+          onStartPlanning: handleStartPlanning,
+          onStartExecution: handleStartExecution,
+          onKillAgent: handleKillAgent,
+          onRestartCheckpoint: handleRestartCheckpoint,
         },
         filter: false,
         resizable: false,
@@ -324,7 +388,7 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- expandedRowIds is a Set; must re-render column defs when it changes
-    [expandedRowIds, handlePlay, handleStop, handleDelete],
+    [expandedRowIds, handleStartPlanning, handleStartExecution, handleKillAgent, handleRestartCheckpoint],
   );
 
   // Full-width cell renderer for detail rows
@@ -332,11 +396,19 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
     (params: ICellRendererParams<TaskOrDetail>) => {
       const detailData = params.data;
       if (detailData?.isDetailRow === true && detailData.parentTask) {
-        return <TaskDetailRow task={detailData.parentTask} />;
+        return (
+          <TaskDetailRow
+            task={detailData.parentTask}
+            onApproveAndExecute={handleStartExecution}
+            onKillAgent={handleKillAgent}
+            onRejectPlan={handleRejectPlan}
+            onRestartCheckpoint={handleRestartCheckpoint}
+          />
+        );
       }
       return null;
     },
-    [],
+    [handleStartExecution, handleKillAgent, handleRejectPlan, handleRestartCheckpoint],
   );
 
   if (isLoading) {

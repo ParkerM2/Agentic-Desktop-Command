@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 
-const STORAGE_KEY = 'claude-ui-workspace';
+const STORAGE_KEY = 'adc-workspace';
 
 function loadPersistedWorkspaceId(): string | null {
   try {
