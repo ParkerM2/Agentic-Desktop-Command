@@ -371,7 +371,7 @@
   .progress-fill.tier-success { background: #4ade80; }
   .progress-fill.tier-error   { background: #ff5c5c; }
 
-  /* Indeterminate loading bar */
+  /* Indeterminate loading bar — full-width sweep */
   .progress-fill.indeterminate {
     width: 30% !important;
     background: linear-gradient(
@@ -386,6 +386,45 @@
   @keyframes indeterminate {
     0%   { transform: translateX(-120%); }
     100% { transform: translateX(400%); }
+  }
+
+  /* Half-progress: solid fill at 50%, indeterminate sweep over remaining half */
+  .progress-half-wrapper {
+    display: flex;
+    height: 100%;
+    width: 100%;
+  }
+  .progress-fill.half-solid {
+    width: 50%;
+    height: 100%;
+    background: #d6d876;
+    border-radius: 9999px 0 0 9999px;
+    opacity: 0.85;
+  }
+  .progress-half-track {
+    width: 50%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+  .progress-fill.half-indeterminate {
+    width: 40% !important;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      #d6d876 50%,
+      transparent 100%
+    );
+    animation: halfIndeterminate 3.5s ease-in-out infinite;
+    opacity: 0.9;
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  @keyframes halfIndeterminate {
+    0%   { transform: translateX(-120%); }
+    100% { transform: translateX(350%); }
   }
 
   .progress-track.is-loading {
@@ -658,14 +697,20 @@
             </span>
           </div>
 
-          <!-- Row 4: Running -->
+          <!-- Row 4: Running at 50% -->
           <div class="grid-row is-running">
             <span class="cell-task">Write unit tests</span>
             <span class="badge running">Running</span>
             <div class="progress-cell">
               <div class="progress-track is-loading">
-                <div class="progress-fill indeterminate" style="animation-delay: -0.7s;"></div>
+                <div class="progress-half-wrapper">
+                  <div class="progress-fill half-solid"></div>
+                  <div class="progress-half-track">
+                    <div class="progress-fill half-indeterminate" style="animation-delay: -0.7s;"></div>
+                  </div>
+                </div>
               </div>
+              <span class="progress-label">50%</span>
             </div>
             <div class="agent-team">
               <span class="agent-count">1</span>
