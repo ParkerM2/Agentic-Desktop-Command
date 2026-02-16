@@ -11,7 +11,16 @@
 
 // ─── Enums & Literals ─────────────────────────────────────────
 
-export type TaskStatus = 'backlog' | 'queued' | 'running' | 'paused' | 'review' | 'done' | 'error';
+export type TaskStatus =
+  | 'backlog'
+  | 'planning'
+  | 'plan_ready'
+  | 'queued'
+  | 'running'
+  | 'paused'
+  | 'review'
+  | 'done'
+  | 'error';
 
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 
@@ -44,6 +53,7 @@ export interface Device {
   userId: string;
   deviceType: DeviceType;
   deviceName: string;
+  nickname?: string;
   capabilities: DeviceCapabilities;
   isOnline: boolean;
   lastSeen?: string;
@@ -590,13 +600,15 @@ export function isWsExecutionEvent(
 // ─── Status Transition Validation ─────────────────────────────
 
 const VALID_TRANSITIONS: Record<TaskStatus, TaskStatus[]> = {
-  backlog: ['queued', 'running'],
+  backlog: ['planning', 'queued', 'running'],
+  planning: ['plan_ready', 'error', 'backlog'],
+  plan_ready: ['queued', 'running', 'backlog'],
   queued: ['backlog', 'running'],
   running: ['paused', 'done', 'error', 'review'],
   paused: ['running', 'queued'],
-  review: ['done', 'error'],
+  review: ['done', 'error', 'running'],
   done: [], // Terminal state
-  error: ['queued', 'backlog'],
+  error: ['queued', 'backlog', 'planning'],
 };
 
 export function isValidStatusTransition(from: TaskStatus, to: TaskStatus): boolean {

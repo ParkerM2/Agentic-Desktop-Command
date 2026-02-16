@@ -122,14 +122,14 @@ export function createTrayManager(deps: TrayManagerDeps): TrayManager {
       },
       { type: 'separator' },
       {
-        label: 'Quit Claude-UI',
+        label: 'Quit ADC',
         click: deps.onQuit,
       },
     ]);
   }
 
   function getTooltipText(): string {
-    const base = `Claude-UI v${app.getVersion() || '0.1.0'}`;
+    const base = `ADC v${app.getVersion() || '0.1.0'}`;
     if (currentStatus === 'working') return `${base} — Working...`;
     if (currentStatus === 'notification') return `${base} — New notification`;
     return base;

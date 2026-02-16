@@ -347,7 +347,7 @@ export function SettingsPage() {
         <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           About
         </h2>
-        <p className="text-muted-foreground text-sm">Claude UI v0.1.0</p>
+        <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
       </section>
     </div>
   );

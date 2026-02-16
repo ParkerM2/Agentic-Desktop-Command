@@ -24,7 +24,7 @@ export const useGitHubStore = create<GitHubUIState>()((set) => ({
   activeTab: 'prs',
   selectedPrNumber: null,
   owner: 'ParkerM2',
-  repo: 'Claude-UI',
+  repo: 'Agentic-Desktop-Command',
   setActiveTab: (tab) => set({ activeTab: tab }),
   selectPr: (prNumber) => set({ selectedPrNumber: prNumber }),
   setRepo: (owner, repo) => set({ owner, repo }),

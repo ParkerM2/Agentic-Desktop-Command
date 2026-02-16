@@ -1,5 +1,8 @@
 /**
  * TaskControls -- Action buttons for task detail: Run, Stop, Retry, Delete
+ *
+ * Run/Stop/Retry delegate to orchestrator callbacks from the parent.
+ * Delete is handled directly via useDeleteTask.
  */
 
 import { useState } from 'react';
@@ -11,36 +14,26 @@ import type { Task } from '@shared/types';
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useCancelTask, useDeleteTask, useExecuteTask } from '../../api/useTaskMutations';
+import { useDeleteTask } from '../../api/useTaskMutations';
 
 interface TaskControlsProps {
   task: Task;
+  onRun?: (taskId: string) => void;
+  onStop?: (taskId: string) => void;
+  onRetry?: (taskId: string) => void;
 }
 
 const CONTROL_BUTTON_BASE =
   'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors';
 
-export function TaskControls({ task }: TaskControlsProps) {
-  const executeTask = useExecuteTask();
-  const cancelTask = useCancelTask();
+export function TaskControls({ task, onRun, onStop, onRetry }: TaskControlsProps) {
   const deleteTask = useDeleteTask();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  const isRunning = task.status === 'in_progress';
-  const isDone = task.status === 'done';
-  const isError = task.status === 'error';
-
-  function handleRun() {
-    executeTask.mutate({ taskId: task.id });
-  }
-
-  function handleStop() {
-    cancelTask.mutate({ taskId: task.id });
-  }
-
-  function handleRetry() {
-    executeTask.mutate({ taskId: task.id });
-  }
+  const status = task.status as string;
+  const isRunning = status === 'in_progress' || status === 'running' || status === 'planning';
+  const isDone = status === 'done';
+  const isError = status === 'error';
 
   return (
     <div className="flex items-center gap-2">
@@ -48,7 +41,9 @@ export function TaskControls({ task }: TaskControlsProps) {
         <button
           aria-label="Stop task"
           className={cn('bg-warning/10 text-warning hover:bg-warning/20', CONTROL_BUTTON_BASE)}
-          onClick={handleStop}
+          onClick={() => {
+            onStop?.(task.id);
+          }}
         >
           <Square className="h-3.5 w-3.5" />
           Stop
@@ -62,7 +57,9 @@ export function TaskControls({ task }: TaskControlsProps) {
             CONTROL_BUTTON_BASE,
             'disabled:cursor-not-allowed disabled:opacity-50',
           )}
-          onClick={handleRun}
+          onClick={() => {
+            onRun?.(task.id);
+          }}
         >
           <Play className="h-3.5 w-3.5" />
           Run
@@ -73,7 +70,9 @@ export function TaskControls({ task }: TaskControlsProps) {
         <button
           aria-label="Retry task"
           className={cn('bg-info/10 text-info hover:bg-info/20', CONTROL_BUTTON_BASE)}
-          onClick={handleRetry}
+          onClick={() => {
+            onRetry?.(task.id);
+          }}
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Retry

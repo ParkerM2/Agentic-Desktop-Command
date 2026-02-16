@@ -27,6 +27,7 @@ import type {
 import type { SuggestionEngine } from './suggestion-engine';
 import type { IpcRouter } from '../../ipc/router';
 import type { AgentService } from '../agent/agent-service';
+import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
 import type { ProjectService } from '../project/project-service';
@@ -70,6 +71,7 @@ export interface BriefingServiceDeps {
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
+  agentOrchestrator?: AgentOrchestrator;
 }
 
 interface BriefingsStore {
@@ -88,6 +90,7 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     claudeClient,
     notificationManager,
     suggestionEngine,
+    agentOrchestrator,
   } = deps;
 
   const dataDir = app.getPath('userData');
@@ -190,6 +193,27 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     return { dueToday, completedYesterday, overdue, inProgress };
   }
 
+  function getOrchestratorCounts(today: string): AgentActivitySummary {
+    if (!agentOrchestrator) {
+      return { runningCount: 0, completedToday: 0, errorCount: 0 };
+    }
+    let runningCount = 0;
+    let completedToday = 0;
+    let errorCount = 0;
+    for (const session of agentOrchestrator.listActiveSessions()) {
+      if (session.status === 'active' || session.status === 'spawning') {
+        runningCount++;
+      }
+      if (session.status === 'completed' && session.spawnedAt.startsWith(today)) {
+        completedToday++;
+      }
+      if (session.status === 'error') {
+        errorCount++;
+      }
+    }
+    return { runningCount, completedToday, errorCount };
+  }
+
   function getAgentActivitySummary(): AgentActivitySummary {
     const agents = agentService.listAllAgents();
     const today = getTodayDate();
@@ -214,6 +238,12 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
         errorCount++;
       }
     }
+
+    // Include orchestrator sessions if available
+    const orchCounts = getOrchestratorCounts(today);
+    runningCount += orchCounts.runningCount;
+    completedToday += orchCounts.completedToday;
+    errorCount += orchCounts.errorCount;
 
     return { runningCount, completedToday, errorCount };
   }
@@ -272,6 +302,24 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     suggestions: Suggestion[],
     githubCount: number,
   ): string {
+    let orchestratorSection = '';
+    if (agentOrchestrator) {
+      const orchSessions = agentOrchestrator.listActiveSessions();
+      const orchActive = orchSessions.filter(
+        (s) => s.status === 'active' || s.status === 'spawning',
+      ).length;
+      const orchCompletedToday = orchSessions.filter(
+        (s) => s.status === 'completed' && s.spawnedAt.startsWith(getTodayDate()),
+      ).length;
+      const orchErrors = orchSessions.filter((s) => s.status === 'error').length;
+      orchestratorSection = `
+Orchestrator:
+- ${String(orchActive)} headless agent sessions active
+- ${String(orchCompletedToday)} completed today
+- ${String(orchErrors)} failed
+`;
+    }
+
     return `Generate a brief daily briefing summary (2-3 sentences) based on this data:
 
 Tasks:
@@ -284,12 +332,49 @@ Agents:
 - ${String(agentActivity.runningCount)} currently running
 - ${String(agentActivity.completedToday)} completed today
 - ${String(agentActivity.errorCount)} with errors
-
+${orchestratorSection}
 GitHub: ${String(githubCount)} unread notifications
 
 Suggestions: ${suggestions.map((s) => s.title).join(', ') || 'None'}
 
 Focus on the most important action items for today.`;
+  }
+
+  function pluralize(count: number, singular: string, plural: string): string {
+    return count > 1 ? plural : singular;
+  }
+
+  function buildFallbackParts(
+    taskSummary: TaskSummary,
+    agentActivity: AgentActivitySummary,
+    githubCount: number,
+    suggestions: Suggestion[],
+  ): string[] {
+    const parts: string[] = [];
+
+    if (taskSummary.inProgress > 0) {
+      parts.push(`${String(taskSummary.inProgress)} ${pluralize(taskSummary.inProgress, 'task', 'tasks')} in progress`);
+    }
+    if (taskSummary.dueToday > 0) {
+      parts.push(`${String(taskSummary.dueToday)} ${pluralize(taskSummary.dueToday, 'task', 'tasks')} in queue`);
+    }
+    if (taskSummary.overdue > 0) {
+      parts.push(`${String(taskSummary.overdue)} overdue`);
+    }
+    if (agentActivity.runningCount > 0) {
+      parts.push(`${String(agentActivity.runningCount)} ${pluralize(agentActivity.runningCount, 'agent', 'agents')} running`);
+    }
+    if (agentActivity.errorCount > 0) {
+      parts.push(`${String(agentActivity.errorCount)} agent ${pluralize(agentActivity.errorCount, 'error', 'errors')}`);
+    }
+    if (githubCount > 0) {
+      parts.push(`${String(githubCount)} GitHub ${pluralize(githubCount, 'notification', 'notifications')}`);
+    }
+    if (suggestions.length > 0) {
+      parts.push(`${String(suggestions.length)} ${pluralize(suggestions.length, 'suggestion', 'suggestions')} available`);
+    }
+
+    return parts;
   }
 
   function generateFallbackSummary(
@@ -298,45 +383,18 @@ Focus on the most important action items for today.`;
     suggestions: Suggestion[],
     githubCount: number,
   ): string {
-    const parts: string[] = [];
+    const parts = buildFallbackParts(taskSummary, agentActivity, githubCount, suggestions);
 
-    // Task summary
-    if (taskSummary.inProgress > 0) {
-      parts.push(
-        `${String(taskSummary.inProgress)} task${taskSummary.inProgress > 1 ? 's' : ''} in progress`,
-      );
-    }
-    if (taskSummary.dueToday > 0) {
-      parts.push(
-        `${String(taskSummary.dueToday)} task${taskSummary.dueToday > 1 ? 's' : ''} in queue`,
-      );
-    }
-    if (taskSummary.overdue > 0) {
-      parts.push(`${String(taskSummary.overdue)} overdue`);
-    }
-
-    // Agent summary
-    if (agentActivity.runningCount > 0) {
-      parts.push(
-        `${String(agentActivity.runningCount)} agent${agentActivity.runningCount > 1 ? 's' : ''} running`,
-      );
-    }
-    if (agentActivity.errorCount > 0) {
-      parts.push(
-        `${String(agentActivity.errorCount)} agent error${agentActivity.errorCount > 1 ? 's' : ''}`,
-      );
-    }
-
-    // GitHub summary
-    if (githubCount > 0) {
-      parts.push(`${String(githubCount)} GitHub notification${githubCount > 1 ? 's' : ''}`);
-    }
-
-    // Suggestions
-    if (suggestions.length > 0) {
-      parts.push(
-        `${String(suggestions.length)} suggestion${suggestions.length > 1 ? 's' : ''} available`,
-      );
+    // Orchestrator summary
+    if (agentOrchestrator) {
+      const orchActive = agentOrchestrator.listActiveSessions().filter(
+        (s) => s.status === 'active' || s.status === 'spawning',
+      ).length;
+      if (orchActive > 0) {
+        parts.push(
+          `${String(orchActive)} headless agent ${pluralize(orchActive, 'session', 'sessions')}`,
+        );
+      }
     }
 
     if (parts.length === 0) {

@@ -3,6 +3,7 @@
  *
  * Single-line textarea that auto-grows to max-h-20.
  * Enter sends, Shift+Enter adds a newline.
+ * Includes a mic button for voice input via VoiceButton.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -10,6 +11,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import { VoiceButton } from '@features/voice';
 
 interface WidgetInputProps {
   onSubmit: (input: string) => void;
@@ -46,6 +49,13 @@ export function WidgetInput({ disabled, onSubmit }: WidgetInputProps) {
     }
   }
 
+  function handleVoiceTranscript(text: string) {
+    const trimmed = text.trim();
+    if (trimmed.length > 0) {
+      onSubmit(trimmed);
+    }
+  }
+
   return (
     <div className="border-border flex items-end gap-2 border-t p-2.5">
       <textarea
@@ -63,6 +73,11 @@ export function WidgetInput({ disabled, onSubmit }: WidgetInputProps) {
         )}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={handleKeyDown}
+      />
+      <VoiceButton
+        disabled={disabled}
+        size="sm"
+        onTranscript={handleVoiceTranscript}
       />
       <button
         aria-label="Send message"

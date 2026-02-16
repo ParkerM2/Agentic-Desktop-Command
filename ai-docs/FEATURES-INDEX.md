@@ -1,6 +1,6 @@
 # Features Index
 
-> Quick reference for all features, services, and file locations in Claude-UI.
+> Quick reference for all features, services, and file locations in ADC.
 > Use this as a starting point to understand what exists and where.
 
 ---
@@ -10,9 +10,9 @@
 | Category | Count |
 |----------|-------|
 | Renderer Features | 28 |
-| Main Process Services | 31 |
+| Main Process Services | 37 |
 | IPC Handler Files | 36 |
-| IPC Contract Lines | ~2500 |
+| IPC Contract Lines | ~2600 |
 
 ---
 
@@ -113,6 +113,13 @@ Location: `src/main/services/`
 | **workflow** | Workflow execution & progress | launchWorkflow, watchProgress | `event:workflow.*` |
 | **device** | Device registration & heartbeat via Hub API | registerDevice, updateDevice, sendHeartbeat | `event:hub.devices.*` |
 | **device/heartbeat** | Periodic heartbeat pings to Hub | start, stop | - |
+| **agent-orchestrator** | Headless Claude agent lifecycle management | spawnSession, stopSession, listSessions, onSessionEvent | `event:agent.orchestrator.*` |
+| **agent-orchestrator/jsonl-progress-watcher** | JSONL progress file watcher (debounced tail parsing) | start, stop, onProgress | `event:agent.orchestrator.progress`, `event:agent.orchestrator.planReady` |
+| **agent-orchestrator/agent-watchdog** | Health monitoring for active agent sessions | createAgentWatchdog | - |
+| **qa** | Two-tier automated QA system (quiet + full) | runQuiet, runFull, getReports | `event:assistant.proactive` (on failure) |
+| **assistant/watch-store** | Persistent watch subscription storage (JSON file) | add, remove, getActive, getAll, markTriggered, clear | - |
+| **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
+| **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 
 ---
 
@@ -158,6 +165,8 @@ Location: `src/main/ipc/handlers/`
 | `workspace-handlers.ts` | workspace.* |
 | `auth-handlers.ts` | auth.* |
 | `device-handlers.ts` | devices.* |
+| `orchestrator-handlers.ts` | orchestrator.* (spawn, stop, list sessions, get progress) |
+| `qa-handlers.ts` | qa.* (run quiet, run full, get reports) |
 
 ---
 
@@ -169,10 +178,13 @@ Location: `src/main/ipc/handlers/`
 |------|---------------|
 | `agent.ts` | AgentSession, AgentStatus, AgentLog |
 | `alert.ts` | Alert, AlertType, AlertPriority |
-| `assistant.ts` | AssistantCommand, AssistantResponse, Intent |
+| `assistant.ts` | AssistantCommand, AssistantResponse, IntentType (16 types), AssistantAction (30+ actions), AssistantContext |
+| `assistant-watch.ts` | AssistantWatch, WatchType, WatchOperator, WatchAction, WatchCondition |
+| `agent-orchestrator.ts` | OrchestratorSession, SessionEvent, SessionStatus (if exists) |
+| `qa.ts` | QaReport, QaResult, QaTier (if exists) |
 | `fitness.ts` | FitnessMetrics, Workout, HealthData |
 | `ideas.ts` | Idea, IdeaCategory |
-| `insights.ts` | InsightsMetrics, TimeSeriesData |
+| `insights.ts` | InsightMetrics (with orchestrator/QA fields), InsightTimeSeries, TaskDistribution, ProjectInsights |
 | `milestones.ts` | Milestone, MilestoneStatus |
 | `notes.ts` | Note, NoteFolder |
 | `planner.ts` | TimeBlock, PlannerDay |
@@ -305,7 +317,7 @@ Location: `src/renderer/shared/stores/`
 ## 7. File Tree Summary
 
 ```
-Claude-UI/
+ADC/
 ├── CLAUDE.md                    # AI agent guidelines
 ├── ai-docs/                     # Documentation for AI agents
 │   ├── ARCHITECTURE.md          # System architecture
@@ -327,7 +339,7 @@ Claude-UI/
 │   │   ├── ipc/                 # IPC router + handlers
 │   │   ├── mcp/                 # MCP client framework
 │   │   ├── mcp-servers/         # MCP server definitions
-│   │   ├── services/            # Business logic (31 services)
+│   │   ├── services/            # Business logic (37 services)
 │   │   └── tray/                # System tray + hotkeys
 │   ├── preload/                 # Context bridge
 │   ├── renderer/                # React app

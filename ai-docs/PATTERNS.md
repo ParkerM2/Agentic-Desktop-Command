@@ -607,3 +607,149 @@ Custom animation utility classes live **outside** the `@theme` block in `globals
 - Tailwind v4 animations registered inside `@theme` (e.g., `--animate-slide-up`) use the `animate-*` utility directly
 - Custom animations outside `@theme` need explicit `.animate-*` class definitions
 - Always use `color-mix(in srgb, var(--token), transparent)` for semi-transparent effects in animations
+
+## Agent Orchestrator Pattern
+
+For headless Claude agent lifecycle management with event-driven status updates:
+
+```typescript
+// Interface defines session lifecycle
+export interface AgentOrchestrator {
+  spawnSession: (taskId: string, projectPath: string, options?: SpawnOptions) => OrchestratorSession;
+  stopSession: (taskId: string) => void;
+  listSessions: () => OrchestratorSession[];
+  onSessionEvent: (handler: (event: SessionEvent) => void) => void;
+  dispose: () => void;
+}
+
+// Factory creates orchestrator with dependencies
+export function createAgentOrchestrator(dataDir: string, milestonesService: MilestonesService): AgentOrchestrator {
+  const sessions = new Map<string, OrchestratorSession>();
+  const eventHandlers: Array<(event: SessionEvent) => void> = [];
+
+  return {
+    spawnSession(taskId, projectPath, options) {
+      // Spawn child process, register event listeners
+      // Emit 'spawned' event, then 'active' on first output
+    },
+    onSessionEvent(handler) {
+      eventHandlers.push(handler);
+    },
+    dispose() {
+      // Kill all active sessions
+    },
+  };
+}
+```
+
+Key rules:
+- **Event-driven**: Use `onSessionEvent()` callback pattern for status updates
+- **Wiring in index.ts**: Map session events to IPC events for renderer consumption
+- **Cleanup**: Always implement `dispose()` and call it in `app.on('before-quit')`
+
+## QA Runner Pattern
+
+For two-tier automated quality assurance with notification integration:
+
+```typescript
+export function createQaRunner(
+  orchestrator: AgentOrchestrator,
+  dataDir: string,
+  notificationManager?: NotificationManager,
+): QaRunner {
+  return {
+    async runQuiet(taskId, projectPath) {
+      // Run lint, typecheck, test, build
+      // On failure: notify via notificationManager
+    },
+    async runFull(taskId, projectPath) {
+      // Launch Claude agent with QA prompt
+      // Interactive review with MCP Electron tools
+    },
+  };
+}
+```
+
+Key rules:
+- **Notification on failure**: Pass optional `notificationManager` to emit proactive alerts
+- **Two tiers**: Quiet mode is fast/automated, Full mode is Claude-powered
+- **Orchestrator reference**: QA runner needs orchestrator context for session info
+
+## Watch/Subscription Pattern
+
+For persistent user-defined triggers with IPC event matching:
+
+```typescript
+// 1. Store — JSON persistence
+export function createWatchStore(): WatchStore {
+  let watches = loadFromDisk();
+  return {
+    add(partial) { /* persist to userData/assistant-watches.json */ },
+    getActive() { return watches.filter(w => !w.triggered); },
+    markTriggered(id) { /* mark and persist */ },
+  };
+}
+
+// 2. Evaluator — event matching engine
+export function createWatchEvaluator(watchStore: WatchStore): WatchEvaluator {
+  return {
+    start() {
+      // Subscribe to IPC events via ipcMain.on()
+      // On each event: check all active watches for matches
+      // On match: markTriggered + fire onTrigger handlers
+    },
+    stop() { /* remove all ipcMain listeners */ },
+    onTrigger(handler) { /* register callback */ },
+  };
+}
+
+// 3. Wiring in index.ts
+watchEvaluator.onTrigger((watch) => {
+  router.emit('event:assistant.proactive', {
+    content: `Watch triggered: ${description}`,
+    source: 'watch',
+    taskId: watch.targetId === '*' ? undefined : watch.targetId,
+  });
+});
+watchEvaluator.start();
+```
+
+Key rules:
+- **Store + Evaluator separation**: Store handles persistence, Evaluator handles event matching
+- **One-shot by default**: Watches are marked triggered after firing (not recurring)
+- **Cleanup**: Stop evaluator in `app.on('before-quit')` to remove ipcMain listeners
+- **IPC event map**: Evaluator maps watch types to specific IPC channels
+
+## JSONL Progress Watcher Pattern
+
+For efficient incremental tail parsing of append-only log files:
+
+```typescript
+export function createJsonlProgressWatcher(progressDir: string) {
+  const filePositions = new Map<string, number>(); // Track read position per file
+
+  function readNewEntries(filePath: string): ProgressEntry[] {
+    const lastPos = filePositions.get(filePath) ?? 0;
+    // Read from lastPos to end of file
+    // Parse each line as JSON
+    // Update filePositions with new end position
+    return entries;
+  }
+
+  return {
+    start() {
+      // Use fs.watch() on progressDir
+      // On change: debounce 500ms, then readNewEntries()
+      // Emit onProgress with { taskId, entries }
+    },
+    stop() { /* close watcher */ },
+    onProgress(handler) { /* register callback */ },
+  };
+}
+```
+
+Key rules:
+- **Track file positions**: Use a Map to remember the last read byte offset per file
+- **Debounce**: 500ms debounce on file change events to batch rapid writes
+- **Incremental**: Never re-read the entire file — only read from the last known position
+- **Type-safe entries**: Parse each line and emit typed events (tool_use, phase_change, plan_ready, etc.)

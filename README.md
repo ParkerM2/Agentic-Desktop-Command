@@ -1,8 +1,8 @@
 <div align="center">
 
-# Claude UI
+# ADC — Agentic Desktop Command
 
-### Desktop Command Center for Autonomous AI Agent Teams
+### Desktop UI for multi-project management with agent team orchestration, automated QA loops, and agentic local software testing
 
 [![Electron](https://img.shields.io/badge/Electron-39-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
@@ -13,11 +13,11 @@
 
 ---
 
-## What is Claude UI?
+## What is ADC?
 
-Claude UI is a desktop application for orchestrating fleets of autonomous Claude coding agents. It provides a unified interface to spawn, monitor, and coordinate AI agents across multiple projects — with workflow-driven task boards, integrated terminals, git workflows, and productivity tools.
+ADC is a desktop application for orchestrating teams of autonomous coding agents across multiple projects. It provides a unified command center to spawn, monitor, and coordinate AI agent teams — with automated QA review loops, workflow-driven task boards, integrated terminals, git workflows, and productivity tools.
 
-**User Story**: *"As a developer managing multiple codebases, I want to delegate tasks to AI agents and track their progress visually, so I can ship features faster while maintaining oversight of what's being built."*
+**User Story**: *"As a developer managing multiple codebases, I want to delegate tasks to AI agent teams and track their progress visually, so I can ship features faster while maintaining oversight and quality through automated QA."*
 
 ---
 
@@ -27,7 +27,7 @@ Claude UI is a desktop application for orchestrating fleets of autonomous Claude
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/images/architecture.svg">
-    <img alt="Claude UI Architecture" src="docs/images/architecture.svg" width="100%">
+    <img alt="ADC Architecture" src="docs/images/architecture.svg" width="100%">
   </picture>
 </div>
 
@@ -50,17 +50,26 @@ Claude UI is a desktop application for orchestrating fleets of autonomous Claude
 
 ## Features
 
-### Agent & Workflow Management
+### Agent Team Orchestration & Control
 
 | Feature | Description |
 |---------|-------------|
-| **Agent Orchestration** | Spawn, pause, resume, and terminate multiple Claude CLI agents simultaneously |
+| **Agent Team Management** | Spawn, pause, resume, and terminate multiple Claude CLI agents simultaneously |
 | **Workflow-Driven Task Table** | Sortable, filterable task table with customizable agent workflows and `/implement-feature` skill integration |
 | **Agent Queue** | Queue tasks for sequential agent execution with dependency management |
 | **Progress Watching** | Real-time sync of `docs/progress/*.md` files to Hub for crash-safe tracking |
 | **Task Launcher** | Launch Claude CLI sessions directly from task rows with project context |
 
-### Project & Workspace Management
+### Automated QA Loops & Testing
+
+| Feature | Description |
+|---------|-------------|
+| **QA Review Pipeline** | Automated quality gates — every task reviewed by QA agents before merge |
+| **Codebase Guardian** | Structural integrity checks for architecture compliance, import health, and type safety |
+| **Test Gate Enforcement** | Mandatory test suite runs before any work is claimed complete |
+| **QA Agents** | AI-powered code review, regression detection, and standards enforcement |
+
+### Multi-Project Management
 
 | Feature | Description |
 |---------|-------------|
@@ -150,8 +159,8 @@ graph LR
 ## Quick Start
 
 ```bash
-git clone https://github.com/ParkerM2/Claude-UI.git
-cd Claude-UI
+git clone https://github.com/ParkerM2/Agentic-Desktop-Command.git
+cd Agentic-Desktop-Command
 npm install
 npm run dev
 ```

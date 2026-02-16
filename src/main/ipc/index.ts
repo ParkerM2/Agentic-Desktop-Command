@@ -6,6 +6,7 @@
  */
 
 import { registerAgentHandlers } from './handlers/agent-handlers';
+import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
 import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
@@ -31,6 +32,7 @@ import { registerNotesHandlers } from './handlers/notes-handlers';
 import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerPlannerHandlers } from './handlers/planner-handlers';
 import { registerProjectHandlers } from './handlers/project-handlers';
+import { registerQaHandlers } from './handlers/qa-handlers';
 import { registerScreenHandlers } from './handlers/screen-handlers';
 import { registerSettingsHandlers } from './handlers/settings-handlers';
 import { registerSpotifyHandlers } from './handlers/spotify-handlers';
@@ -48,6 +50,7 @@ import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentQueue } from '../services/agent/agent-queue';
 import type { AgentService } from '../services/agent/agent-service';
+import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AppUpdateService } from '../services/app/app-update-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
@@ -74,6 +77,7 @@ import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
 import type { ProjectService } from '../services/project/project-service';
 import type { TaskService } from '../services/project/task-service';
+import type { QaRunner } from '../services/qa/qa-types';
 import type { ScreenCaptureService } from '../services/screen/screen-capture-service';
 import type { SettingsService } from '../services/settings/settings-service';
 import type { SpotifyService } from '../services/spotify/spotify-service';
@@ -86,6 +90,7 @@ import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
+  agentOrchestrator: AgentOrchestrator;
   projectService: ProjectService;
   taskService: TaskService;
   terminalService: TerminalService;
@@ -124,6 +129,7 @@ export interface Services {
   appUpdateService: AppUpdateService;
   hubApiClient: HubApiClient;
   hubAuthService: HubAuthService;
+  qaRunner: QaRunner;
   taskLauncher: TaskLauncherService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
@@ -186,4 +192,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
   registerWorkspaceHandlers(router, services.hubApiClient);
   registerDeviceHandlers(router, services.deviceService);
+  registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.hubApiClient);
+  registerQaHandlers(router, services.qaRunner, services.agentOrchestrator, services.hubApiClient);
 }

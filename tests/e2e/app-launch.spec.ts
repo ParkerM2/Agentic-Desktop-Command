@@ -19,17 +19,17 @@ test.describe('App Launch', () => {
     expect(bodyLength).toBeGreaterThan(0);
   });
 
-  test('app title contains Claude-UI', async ({ electronApp }) => {
+  test('app title contains ADC', async ({ electronApp }) => {
     // Get the app name from Electron
     const appName = await electronApp.evaluate(({ app }) => app.getName());
 
-    // App name should contain claude-ui (case-insensitive)
-    expect(appName.toLowerCase()).toContain('claude');
+    // App name should contain adc (case-insensitive)
+    expect(appName.toLowerCase()).toContain('adc');
   });
 
   test('app shows sidebar', async ({ mainWindow }) => {
-    // The sidebar contains "Claude UI" text in its header
-    const sidebarHeader = mainWindow.locator('text=Claude UI');
+    // The sidebar contains "ADC" text in its header
+    const sidebarHeader = mainWindow.locator('text=ADC');
     await expect(sidebarHeader).toBeVisible({ timeout: 10_000 });
 
     // Also verify the aside element exists (sidebar container)

@@ -1,52 +1,113 @@
 /**
  * StatusBadgeCell — AG-Grid cell renderer for task status with colored badge.
- * Shows a pulsing dot for "in_progress" status.
+ * Shows a pulsing dot for active statuses (in_progress, planning).
+ * Supports both local TaskStatus and Hub TaskStatus values.
+ * Shows watchdog alert overlay when an active alert exists for the task.
  */
 
-import type { TaskStatus } from '@shared/types';
+import type { EventPayload } from '@shared/ipc-contract';
 
+import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { useUpdateTaskStatus } from '../../api/useTaskMutations';
+import { useTaskUI } from '../../store';
+
+import { WatchdogDropdown } from './WatchdogDropdown';
 
 import type { CustomCellRendererProps } from 'ag-grid-react';
 
-const STATUS_CONFIG: Record<TaskStatus, { label: string; className: string }> = {
-  backlog: {
-    label: 'Backlog',
-    className: 'bg-muted text-muted-foreground border-border',
-  },
-  queue: {
-    label: 'Queue',
-    className: 'bg-info/15 text-info border-info/30',
-  },
-  in_progress: {
-    label: 'In Progress',
-    className: 'bg-primary/15 text-primary border-primary/30',
-  },
-  ai_review: {
-    label: 'AI Review',
-    className: 'bg-warning/15 text-warning border-warning/30',
-  },
-  human_review: {
-    label: 'Review',
-    className: 'bg-warning/15 text-warning border-warning/30',
-  },
-  done: {
-    label: 'Done',
-    className: 'bg-success/15 text-success border-success/30',
-  },
-  pr_created: {
-    label: 'PR Created',
-    className: 'bg-info/15 text-info border-info/30',
-  },
-  error: {
-    label: 'Error',
-    className: 'bg-destructive/15 text-destructive border-destructive/30',
-  },
+type WatchdogAlertPayload = EventPayload<'event:agent.orchestrator.watchdogAlert'>;
+
+interface StatusConfig {
+  label: string;
+  className: string;
+  pulsing?: boolean;
+}
+
+interface StatusBadgeRowData {
+  watchdogAlert?: WatchdogAlertPayload | null;
+  id?: string;
+}
+
+const STYLE_MUTED = 'bg-muted text-muted-foreground border-border';
+const STYLE_INFO = 'bg-info/15 text-info border-info/30';
+const STYLE_WARNING = 'bg-warning/15 text-warning border-warning/30';
+const STYLE_PRIMARY = 'bg-primary/15 text-primary border-primary/30';
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
+  backlog: { label: 'Backlog', className: STYLE_MUTED },
+  planning: { label: 'Planning...', className: STYLE_INFO, pulsing: true },
+  plan_ready: { label: 'Plan Ready', className: STYLE_WARNING },
+  queue: { label: 'Queue', className: STYLE_INFO },
+  queued: { label: 'Queued', className: STYLE_INFO },
+  in_progress: { label: 'In Progress', className: STYLE_PRIMARY, pulsing: true },
+  running: { label: 'Running', className: STYLE_PRIMARY, pulsing: true },
+  ai_review: { label: 'AI Review', className: STYLE_WARNING },
+  human_review: { label: 'Review', className: STYLE_WARNING },
+  review: { label: 'Review', className: STYLE_WARNING },
+  paused: { label: 'Paused', className: STYLE_MUTED },
+  done: { label: 'Done', className: 'bg-success/15 text-success border-success/30' },
+  pr_created: { label: 'PR Created', className: STYLE_INFO },
+  error: { label: 'Error', className: 'bg-destructive/15 text-destructive border-destructive/30' },
+};
+
+const FALLBACK_CONFIG: StatusConfig = {
+  label: 'Unknown',
+  className: 'bg-muted text-muted-foreground border-border',
 };
 
 export function StatusBadgeCell(props: CustomCellRendererProps) {
-  const status = (props.value as TaskStatus | undefined) ?? 'backlog';
-  const config = STATUS_CONFIG[status];
+  const status = (props.value as string | undefined) ?? 'backlog';
+  const config = STATUS_CONFIG[status] ?? FALLBACK_CONFIG;
+  const rowData = props.data as StatusBadgeRowData | undefined;
+  const alert = rowData?.watchdogAlert ?? null;
+  const taskId = rowData?.id ?? '';
+
+  const updateStatus = useUpdateTaskStatus();
+  const toggleRowExpansion = useTaskUI((s) => s.toggleRowExpansion);
+
+  /** Kill existing session + restart from last checkpoint via orchestrator */
+  function handleRestartCheckpoint() {
+    if (!alert) return;
+    void (async () => {
+      const session = await ipc('agent.getOrchestratorSession', { taskId: alert.taskId });
+      if (session) {
+        await ipc('agent.restartFromCheckpoint', {
+          taskId: alert.taskId,
+          projectPath: session.projectPath,
+        });
+      }
+    })();
+  }
+
+  /** Kill current session + spawn a fresh execution agent */
+  function handleRestartFresh() {
+    if (!alert) return;
+    void (async () => {
+      const session = await ipc('agent.getOrchestratorSession', { taskId: alert.taskId });
+      await ipc('agent.killSession', { sessionId: alert.sessionId });
+      if (session) {
+        await ipc('agent.startExecution', {
+          taskId: alert.taskId,
+          projectPath: session.projectPath,
+          taskDescription: session.command,
+        });
+      }
+    })();
+  }
+
+  /** Toggle the detail row expansion to reveal the execution log panel */
+  function handleViewLogs() {
+    if (taskId.length === 0) return;
+    toggleRowExpansion(taskId);
+  }
+
+  /** Mark task status as error via Hub API */
+  function handleMarkError() {
+    if (!alert) return;
+    updateStatus.mutate({ taskId: alert.taskId, status: 'error' });
+  }
 
   return (
     <div className="flex items-center py-1">
@@ -56,11 +117,21 @@ export function StatusBadgeCell(props: CustomCellRendererProps) {
           config.className,
         )}
       >
-        {status === 'in_progress' ? (
+        {config.pulsing === true ? (
           <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
         ) : null}
         {config.label}
       </span>
+
+      {alert ? (
+        <WatchdogDropdown
+          alert={alert}
+          onMarkError={handleMarkError}
+          onRestartCheckpoint={handleRestartCheckpoint}
+          onRestartFresh={handleRestartFresh}
+          onViewLogs={handleViewLogs}
+        />
+      ) : null}
     </div>
   );
 }

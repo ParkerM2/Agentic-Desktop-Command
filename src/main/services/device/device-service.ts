@@ -21,6 +21,7 @@ export interface DeviceRegisterInput {
 
 export interface DeviceUpdateInput {
   deviceName?: string;
+  nickname?: string;
   capabilities?: DeviceCapabilities;
   isOnline?: boolean;
   appVersion?: string;

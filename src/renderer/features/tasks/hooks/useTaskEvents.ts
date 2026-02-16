@@ -10,10 +10,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@shared/types';
 
 import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
+import { useToastStore } from '@renderer/shared/stores';
 
 import { taskKeys } from '../api/queryKeys';
 
+import { useAgentEvents } from './useAgentEvents';
+
 export function useTaskEvents() {
+  // Agent orchestrator events (planning, execution, watchdog)
+  useAgentEvents();
   const queryClient = useQueryClient();
 
   // ── Local task events ──
@@ -80,10 +85,11 @@ export function useTaskEvents() {
     void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });
 
-  // Task completed on another device → invalidate lists and detail
-  // TODO: Add toast notification when sonner is installed
+  // Task completed on another device → invalidate lists, detail, and show toast
+  const addToast = useToastStore((s) => s.addToast);
   useHubEvent('event:hub.tasks.completed', ({ taskId, projectId, result: _result }) => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
     void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+    addToast(`Task ${taskId} completed`, 'success');
   });
 }

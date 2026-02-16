@@ -23,9 +23,14 @@ import { createMcpManager } from './mcp/mcp-manager';
 import { createMcpRegistry } from './mcp/mcp-registry';
 import { createAgentQueue } from './services/agent/agent-queue';
 import { createAgentService } from './services/agent/agent-service';
+import { createAgentOrchestrator } from './services/agent-orchestrator/agent-orchestrator';
+import { createJsonlProgressWatcher } from './services/agent-orchestrator/jsonl-progress-watcher';
 import { createAlertService } from './services/alerts/alert-service';
 import { createAppUpdateService } from './services/app/app-update-service';
 import { createAssistantService } from './services/assistant/assistant-service';
+import { createCrossDeviceQuery } from './services/assistant/cross-device-query';
+import { createWatchEvaluator } from './services/assistant/watch-evaluator';
+import { createWatchStore } from './services/assistant/watch-store';
 import { createBriefingService } from './services/briefing/briefing-service';
 import { createSuggestionEngine } from './services/briefing/suggestion-engine';
 import { createCalendarService } from './services/calendar/calendar-service';
@@ -56,6 +61,7 @@ import {
 import { createPlannerService } from './services/planner/planner-service';
 import { createProjectService } from './services/project/project-service';
 import { createTaskService } from './services/project/task-service';
+import { createQaRunner } from './services/qa/qa-runner';
 import { createScreenCaptureService } from './services/screen/screen-capture-service';
 import { createSettingsService } from './services/settings/settings-service';
 import { createSpotifyService } from './services/spotify/spotify-service';
@@ -76,10 +82,13 @@ import type { HotkeyManager } from './tray/hotkey-manager';
 let mainWindow: BrowserWindow | null = null;
 let terminalServiceRef: ReturnType<typeof createTerminalService> | null = null;
 let agentServiceRef: ReturnType<typeof createAgentService> | null = null;
+let agentOrchestratorRef: ReturnType<typeof createAgentOrchestrator> | null = null;
+let jsonlProgressWatcherRef: ReturnType<typeof createJsonlProgressWatcher> | null = null;
 let alertServiceRef: ReturnType<typeof createAlertService> | null = null;
 let hubConnectionManagerRef: ReturnType<typeof createHubConnectionManager> | null = null;
 let notificationManagerRef: ReturnType<typeof createNotificationManager> | null = null;
 let briefingServiceRef: BriefingService | null = null;
+let watchEvaluatorRef: ReturnType<typeof createWatchEvaluator> | null = null;
 let hotkeyManagerRef: HotkeyManager | null = null;
 let settingsServiceRef: SettingsService | null = null;
 let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -230,13 +239,6 @@ function initializeApp(): void {
   // Email service — SMTP-based email sending with queue support
   const emailService = createEmailService({ router });
 
-  // Insights — aggregates data from tasks, agents, projects
-  const insightsService = createInsightsService({
-    taskService,
-    agentService,
-    projectService,
-  });
-
   // Device service — manages device registration and status via Hub API
   const deviceService = createDeviceService({ hubApiClient });
 
@@ -304,23 +306,6 @@ function initializeApp(): void {
   // Calendar service — wraps Google Calendar API with OAuth tokens
   const calendarService = createCalendarService({ oauthManager });
 
-  // Assistant service — intent classification + direct service routing
-  const assistantService = createAssistantService({
-    router,
-    mcpManager,
-    notesService,
-    alertService,
-    spotifyService,
-    taskService,
-    plannerService,
-  });
-
-  // Webhook relay — forward Hub WebSocket messages to assistant service
-  const webhookRelay = createWebhookRelay({ assistantService, router });
-  hubConnectionManager.onWebSocketMessage((data) => {
-    webhookRelay.handleHubMessage(data);
-  });
-
   // Claude client — wraps Anthropic SDK with conversation management
   const claudeClient = createClaudeClient({
     router,
@@ -365,24 +350,12 @@ function initializeApp(): void {
   // Screen capture service — uses Electron desktopCapturer
   const screenCaptureService = createScreenCaptureService();
 
-  // Briefing service — daily briefings with suggestions
+  // Suggestion engine — for briefings
   const suggestionEngine = createSuggestionEngine({
     projectService,
     taskService,
     agentService,
   });
-  const briefingService = createBriefingService({
-    router,
-    projectService,
-    taskService,
-    agentService,
-    claudeClient,
-    notificationManager,
-    suggestionEngine,
-  });
-  briefingServiceRef = briefingService;
-  // Start the briefing scheduler
-  briefingService.startScheduler();
 
   // App update service — wraps electron-updater
   const appUpdateService = createAppUpdateService(router);
@@ -413,7 +386,193 @@ function initializeApp(): void {
   // Workflow task launcher — spawns Claude CLI sessions
   const taskLauncher = createTaskLauncher();
 
+  // Agent orchestrator — headless Claude agent lifecycle management
+  const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService);
+  agentOrchestratorRef = agentOrchestrator;
+
+  // QA runner — two-tier automated QA system
+  const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
+
+  // Insights — aggregates data from tasks, agents, projects, orchestrator, QA
+  const insightsService = createInsightsService({
+    taskService,
+    agentService,
+    projectService,
+    agentOrchestrator,
+    qaRunner,
+  });
+
+  // Briefing service — daily briefings with suggestions (needs orchestrator)
+  const briefingService = createBriefingService({
+    router,
+    projectService,
+    taskService,
+    agentService,
+    claudeClient,
+    notificationManager,
+    suggestionEngine,
+    agentOrchestrator,
+  });
+  briefingServiceRef = briefingService;
+  // Start the briefing scheduler
+  briefingService.startScheduler();
+
+  // Watch store + evaluator — persistent assistant watches that trigger proactive notifications
+  const watchStore = createWatchStore();
+  const watchEvaluator = createWatchEvaluator(watchStore);
+  watchEvaluatorRef = watchEvaluator;
+
+  // Cross-device query — query other ADC instances via Hub API
+  const crossDeviceQuery = createCrossDeviceQuery(hubApiClient);
+
+  // Assistant service — intent classification + direct service routing
+  const assistantService = createAssistantService({
+    router,
+    mcpManager,
+    notesService,
+    alertService,
+    spotifyService,
+    taskService,
+    plannerService,
+    watchStore,
+    crossDeviceQuery,
+    fitnessService,
+    calendarService,
+    briefingService,
+    insightsService,
+    ideasService,
+    milestonesService,
+    emailService,
+    githubService,
+    changelogService,
+  });
+
+  // Wire watch evaluator to emit proactive notifications when watches trigger
+  watchEvaluator.onTrigger((watch) => {
+    const description = watch.followUp ?? `${watch.type} watch on ${watch.targetId}`;
+    router.emit('event:assistant.proactive', {
+      content: `Watch triggered: ${description}`,
+      source: 'watch',
+      taskId: watch.targetId === '*' ? undefined : watch.targetId,
+      followUp: watch.followUp,
+    });
+  });
+  watchEvaluator.start();
+
+  // Webhook relay — forward Hub WebSocket messages to assistant service
+  const webhookRelay = createWebhookRelay({ assistantService, router });
+  hubConnectionManager.onWebSocketMessage((data) => {
+    webhookRelay.handleHubMessage(data);
+  });
+
+  // Wire orchestrator session events to IPC events for renderer updates
+  const HEARTBEAT_EVENT = 'event:agent.orchestrator.heartbeat' as const;
+  agentOrchestrator.onSessionEvent((event) => {
+    switch (event.type) {
+      case 'spawned':
+      case 'active':
+        router.emit(HEARTBEAT_EVENT, {
+          taskId: event.session.taskId,
+          timestamp: event.timestamp,
+        });
+        break;
+      case 'completed':
+        router.emit('event:agent.orchestrator.stopped', {
+          taskId: event.session.taskId,
+          reason: 'completed',
+          exitCode: event.exitCode ?? 0,
+        });
+        break;
+      case 'error':
+        router.emit('event:agent.orchestrator.error', {
+          taskId: event.session.taskId,
+          error: event.error ?? `Agent exited with code ${String(event.exitCode ?? -1)}`,
+        });
+        break;
+      case 'killed':
+        router.emit('event:agent.orchestrator.stopped', {
+          taskId: event.session.taskId,
+          reason: 'killed',
+          exitCode: event.exitCode ?? -1,
+        });
+        break;
+      case 'heartbeat':
+        router.emit(HEARTBEAT_EVENT, {
+          taskId: event.session.taskId,
+          timestamp: event.timestamp,
+        });
+        break;
+    }
+  });
+
+  // JSONL progress watcher — watches per-task progress files for real-time UI updates
+  const progressDir = join(dataDir, 'progress');
+  const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
+  jsonlProgressWatcherRef = jsonlProgressWatcher;
+
+  jsonlProgressWatcher.onProgress(({ taskId, entries }) => {
+    for (const entry of entries) {
+      // Emit granular typed events based on entry type
+      switch (entry.type) {
+        case 'tool_use':
+          router.emit('event:agent.orchestrator.progress', {
+            taskId,
+            type: 'tool_use',
+            data: { tool: entry.tool },
+            timestamp: entry.timestamp,
+          });
+          // Also emit heartbeat on any activity
+          router.emit(HEARTBEAT_EVENT, {
+            taskId,
+            timestamp: entry.timestamp,
+          });
+          break;
+        case 'phase_change':
+          router.emit('event:agent.orchestrator.progress', {
+            taskId,
+            type: 'phase_change',
+            data: {
+              phase: entry.phase,
+              phaseIndex: String(entry.phaseIndex),
+              totalPhases: String(entry.totalPhases),
+            },
+            timestamp: entry.timestamp,
+          });
+          break;
+        case 'plan_ready':
+          router.emit('event:agent.orchestrator.planReady', {
+            taskId,
+            planSummary: entry.planSummary,
+            planFilePath: entry.planFilePath,
+          });
+          break;
+        case 'agent_stopped':
+          router.emit('event:agent.orchestrator.stopped', {
+            taskId,
+            reason: entry.reason,
+            exitCode: 0,
+          });
+          break;
+        case 'error':
+          router.emit('event:agent.orchestrator.error', {
+            taskId,
+            error: entry.error,
+          });
+          break;
+        case 'heartbeat':
+          router.emit(HEARTBEAT_EVENT, {
+            taskId,
+            timestamp: entry.timestamp,
+          });
+          break;
+      }
+    }
+  });
+
+  jsonlProgressWatcher.start();
+
   const services = {
+    agentOrchestrator,
     projectService,
     taskService,
     terminalService,
@@ -452,6 +611,7 @@ function initializeApp(): void {
     appUpdateService,
     hubApiClient,
     hubAuthService,
+    qaRunner,
     taskLauncher,
     dataDir,
     providers,
@@ -482,10 +642,13 @@ app.on('before-quit', () => {
   hotkeyManagerRef?.unregisterAll();
   terminalServiceRef?.dispose();
   agentServiceRef?.dispose();
+  agentOrchestratorRef?.dispose();
+  jsonlProgressWatcherRef?.stop();
   alertServiceRef?.stopChecking();
   hubConnectionManagerRef?.dispose();
   notificationManagerRef?.dispose();
   briefingServiceRef?.stopScheduler();
+  watchEvaluatorRef?.stop();
   // Clear device heartbeat interval
   if (heartbeatIntervalId !== null) {
     clearInterval(heartbeatIntervalId);

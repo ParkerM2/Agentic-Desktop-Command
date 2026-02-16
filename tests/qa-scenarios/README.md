@@ -1,6 +1,6 @@
-# QA Scenarios — Claude-UI
+# QA Scenarios — ADC
 
-This directory contains test scenarios for the AI QA Agent to execute exploratory visual testing of the Claude-UI application.
+This directory contains test scenarios for the AI QA Agent to execute exploratory visual testing of the ADC application.
 
 ## Overview
 

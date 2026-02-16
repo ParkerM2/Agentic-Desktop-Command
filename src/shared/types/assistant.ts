@@ -2,7 +2,23 @@
  * Assistant-related types
  */
 
-export type IntentType = 'quick_command' | 'task_creation' | 'conversation';
+export type IntentType =
+  | 'quick_command'
+  | 'task_creation'
+  | 'conversation'
+  | 'watch'
+  | 'device_query'
+  | 'fitness'
+  | 'calendar'
+  | 'briefing'
+  | 'insights'
+  | 'ideation'
+  | 'milestones'
+  | 'email'
+  | 'github'
+  | 'planner'
+  | 'notes'
+  | 'changelog';
 
 /** Expanded action types for Claude API classification */
 export type AssistantAction =
@@ -13,7 +29,31 @@ export type AssistantAction =
   | 'search'
   | 'spotify_control'
   | 'open_url'
-  | 'conversation';
+  | 'conversation'
+  | 'watch_create'
+  | 'watch_remove'
+  | 'watch_list'
+  | 'device_query'
+  | 'fitness_log'
+  | 'fitness_query'
+  | 'fitness_measurements'
+  | 'calendar_query'
+  | 'calendar_create'
+  | 'briefing_get'
+  | 'insights_query'
+  | 'ideation_create'
+  | 'ideation_query'
+  | 'milestones_query'
+  | 'email_send'
+  | 'email_queue'
+  | 'github_prs'
+  | 'github_issues'
+  | 'github_notifications'
+  | 'planner_today'
+  | 'planner_weekly'
+  | 'notes_search'
+  | 'notes_list'
+  | 'changelog_generate';
 
 export interface AssistantContext {
   activeProjectId: string | null;

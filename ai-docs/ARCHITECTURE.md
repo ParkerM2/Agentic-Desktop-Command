@@ -30,7 +30,7 @@
 │                                          ├─ TaskService         │
 │                                          ├─ TerminalService     │
 │                                          ├─ SettingsService     │
-│                                          └─ ... (31 total)      │
+│                                          └─ ... (37 total)      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -57,8 +57,8 @@
 
 | Data | Storage | Location |
 |------|---------|----------|
-| Projects | JSON file | `{appData}/claude-ui/projects.json` |
-| Settings | JSON file | `{appData}/claude-ui/settings.json` |
+| Projects | JSON file | `{appData}/adc/projects.json` |
+| Settings | JSON file | `{appData}/adc/settings.json` |
 | Tasks | File directories | `{projectPath}/.auto-claude/specs/{taskId}/` |
 | Task specs | JSON files | `requirements.json`, `implementation_plan.json`, `task_metadata.json` |
 | Terminals | In-memory only | PTY processes managed by TerminalService |
@@ -170,6 +170,47 @@ Key files:
 - Emits `event:agent.statusChanged` and `event:agent.log` events
 - Agents are linked to tasks via `taskId` and projects via `projectId`
 - Task spec files in `.auto-claude/specs/` provide context to the CLI
+
+## Agent Orchestrator System
+
+The Agent Orchestrator manages headless Claude agent sessions:
+- **AgentOrchestrator** (`agent-orchestrator.ts`) — Session lifecycle: spawn, monitor, stop
+- **JsonlProgressWatcher** (`jsonl-progress-watcher.ts`) — Watches `.claude/progress/**/*.jsonl` files for real-time status
+- **AgentWatchdog** (`agent-watchdog.ts`) — Health monitoring for active sessions
+
+Session events are forwarded to the renderer via IPC:
+- `event:agent.orchestrator.heartbeat` — Session activity heartbeat
+- `event:agent.orchestrator.stopped` — Session completed/killed
+- `event:agent.orchestrator.error` — Session error
+- `event:agent.orchestrator.progress` — Tool use, phase change events
+- `event:agent.orchestrator.planReady` — Plan file detected
+
+The JSONL progress watcher uses debounced incremental tail parsing to efficiently
+read new entries from per-task progress files without re-reading entire files.
+
+## QA System
+
+Two-tier automated QA system:
+- **Quiet mode**: Fast automated checks (lint, typecheck, tests)
+- **Full mode**: Interactive Claude-powered review with MCP Electron
+
+The QA runner (`qa-runner.ts`) accepts an orchestrator reference for session context
+and an optional notification manager to emit proactive alerts on QA failures.
+
+QA failures trigger `event:assistant.proactive` with `source: 'qa'` for watch system integration.
+
+## Assistant Watch System
+
+Persistent subscription system for proactive notifications:
+- **WatchStore** (`watch-store.ts`) — JSON persistence at `userData/assistant-watches.json`
+- **WatchEvaluator** (`watch-evaluator.ts`) — Subscribes to IPC events, matches against active watches
+- **CrossDeviceQuery** (`cross-device-query.ts`) — Queries other ADC instances via Hub API
+
+Watch types: task_status, task_completed, agent_error, qa_result, device_status
+Operators: equals, changes, any
+
+When a watch triggers, the evaluator fires a callback that emits `event:assistant.proactive`
+with source 'watch', enabling the assistant widget to show proactive notifications.
 
 ## Task System
 
@@ -558,11 +599,12 @@ The `AssistantWidget` provides a floating chat interface accessible from any pag
 ### Verification Commands (ALL MUST PASS)
 
 ```bash
-# Run before ANY completion claim. All 4 must pass.
+# Run before ANY completion claim. All 5 must pass.
 npm run lint         # Zero violations
 npm run typecheck    # Zero errors
 npm run test         # All tests pass
 npm run build        # Builds successfully
+npm run check:docs   # Documentation updated for source changes
 ```
 
 **Skipping tests = work rejected. No exceptions.**
@@ -573,7 +615,7 @@ The project uses a 4-layer test pyramid for comprehensive coverage:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        CLAUDE-UI TEST PYRAMID                               │
+│                        ADC TEST PYRAMID                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │                         ┌─────────────────┐                                 │

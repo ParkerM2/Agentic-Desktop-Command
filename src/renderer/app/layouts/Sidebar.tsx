@@ -95,7 +95,7 @@ export function Sidebar() {
       {/* Header */}
       <div className="border-border flex h-12 items-center justify-between border-b px-3">
         {!sidebarCollapsed && (
-          <span className="text-foreground text-sm font-semibold">Claude UI</span>
+          <span className="text-foreground text-sm font-semibold">ADC</span>
         )}
         <button
           className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5"

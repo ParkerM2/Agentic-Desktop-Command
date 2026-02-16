@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 
-const STORAGE_KEY = 'claude-ui-device';
+const STORAGE_KEY = 'adc-device';
 
 function loadPersistedDeviceId(): string | null {
   try {

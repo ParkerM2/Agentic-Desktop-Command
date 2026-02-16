@@ -9,7 +9,7 @@ import { create } from 'zustand';
 
 import type { AuthTokens, User } from '@shared/types/auth';
 
-const STORAGE_KEY = 'claude-ui-auth';
+const STORAGE_KEY = 'adc-auth';
 
 interface StoredAuth {
   accessToken: string;

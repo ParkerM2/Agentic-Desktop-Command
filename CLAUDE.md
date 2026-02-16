@@ -1,4 +1,4 @@
-# Claude-UI — AI Agent Guidelines
+# ADC — Agentic Desktop Command Guidelines
 
 > Desktop UI for managing Claude autonomous coding agents.
 > Electron 39 + React 19 + TypeScript strict + Tailwind v4 + Zustand 5

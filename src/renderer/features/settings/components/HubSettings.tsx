@@ -266,7 +266,7 @@ export function HubSettings() {
       <div>
         <h3 className="text-foreground text-lg font-semibold">Hub Connection</h3>
         <p className="text-muted-foreground text-sm">
-          Connect to a Claude-UI Hub server for cross-device sync and centralized data.
+          Connect to an ADC Hub server for cross-device sync and centralized data.
         </p>
       </div>
 

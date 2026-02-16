@@ -24,9 +24,20 @@ import { createHistoryStore } from './history-store';
 import { classifyIntentAsync } from './intent-classifier';
 
 import type { CommandExecutor } from './command-executor';
+import type { CrossDeviceQuery } from './cross-device-query';
 import type { HistoryStore } from './history-store';
+import type { WatchStore } from './watch-store';
 import type { IpcRouter } from '../../ipc/router';
 import type { AlertService } from '../alerts/alert-service';
+import type { BriefingService } from '../briefing/briefing-service';
+import type { CalendarService } from '../calendar/calendar-service';
+import type { ChangelogService } from '../changelog/changelog-service';
+import type { EmailService } from '../email/email-service';
+import type { FitnessService } from '../fitness/fitness-service';
+import type { GitHubService } from '../github/github-service';
+import type { IdeasService } from '../ideas/ideas-service';
+import type { InsightsService } from '../insights/insights-service';
+import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
 import type { PlannerService } from '../planner/planner-service';
 import type { TaskService } from '../project/task-service';
@@ -51,6 +62,17 @@ export interface AssistantServiceDeps {
   spotifyService?: SpotifyService;
   taskService?: TaskService;
   plannerService?: PlannerService;
+  watchStore?: WatchStore;
+  crossDeviceQuery?: CrossDeviceQuery;
+  fitnessService?: FitnessService;
+  calendarService?: CalendarService;
+  briefingService?: BriefingService;
+  insightsService?: InsightsService;
+  ideasService?: IdeasService;
+  milestonesService?: MilestonesService;
+  emailService?: EmailService;
+  githubService?: GitHubService;
+  changelogService?: ChangelogService;
 }
 
 function buildHistoryEntry(
@@ -81,6 +103,17 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
     spotifyService: deps.spotifyService,
     taskService: deps.taskService,
     plannerService: deps.plannerService,
+    watchStore: deps.watchStore,
+    crossDeviceQuery: deps.crossDeviceQuery,
+    fitnessService: deps.fitnessService,
+    calendarService: deps.calendarService,
+    briefingService: deps.briefingService,
+    insightsService: deps.insightsService,
+    ideasService: deps.ideasService,
+    milestonesService: deps.milestonesService,
+    emailService: deps.emailService,
+    githubService: deps.githubService,
+    changelogService: deps.changelogService,
   });
 
   async function processInput(

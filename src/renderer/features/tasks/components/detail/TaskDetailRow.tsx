@@ -1,22 +1,63 @@
 /**
- * TaskDetailRow -- Full-width expanded view with subtasks, logs, PR info, and controls.
+ * TaskDetailRow -- Full-width expanded view with subtasks, logs, PR info, plan, and controls.
  * Rendered as a full-width row below the parent task row in the grid.
  */
 
 import type { Task } from '@shared/types';
 
 import { ExecutionLog } from './ExecutionLog';
+import { PlanViewer } from './PlanViewer';
 import { PRStatusPanel } from './PrStatusPanel';
+import { QaReportViewer } from './QaReportViewer';
 import { SubtaskList } from './SubtaskList';
 import { TaskControls } from './TaskControls';
 
 interface TaskDetailRowProps {
   task: Task;
+  onApproveAndExecute?: (taskId: string) => void;
+  onRejectPlan?: (taskId: string) => void;
+  onKillAgent?: (taskId: string) => void;
+  onRestartCheckpoint?: (taskId: string) => void;
 }
 
-export function TaskDetailRow({ task }: TaskDetailRowProps) {
+/** Check if a task has a plan based on status or metadata */
+function hasPlan(task: Task): boolean {
+  const hubStatus = task.status as string;
+  const planStatuses = new Set(['plan_ready', 'queued', 'running', 'in_progress', 'paused', 'review', 'done']);
+  return planStatuses.has(hubStatus) || typeof task.metadata?.planContent === 'string';
+}
+
+export function TaskDetailRow({ task, onApproveAndExecute, onRejectPlan, onKillAgent, onRestartCheckpoint }: TaskDetailRowProps) {
+  const showPlan = hasPlan(task);
+  const planContent = (task.metadata?.planContent as string | undefined) ?? null;
+
+  // Show QA report tab for review/done statuses or if metadata indicates QA ran
+  const qaRelevantStatuses = new Set(['review', 'ai_review', 'human_review', 'done']);
+  const showQa = qaRelevantStatuses.has(task.status as string);
+
   return (
     <div className="bg-card/50 border-border border-b px-6 py-4">
+      {/* Plan section — shown when plan exists */}
+      {showPlan ? (
+        <div className="border-border mb-4 border-b pb-4">
+          <PlanViewer
+            planContent={planContent}
+            status={task.status as string}
+            taskId={task.id}
+            onApproveAndExecute={onApproveAndExecute}
+            onReject={onRejectPlan}
+          />
+        </div>
+      ) : null}
+
+      {/* QA Report section — shown for review/done statuses */}
+      {showQa ? (
+        <div className="border-border mb-4 border-b pb-4">
+          <div className="text-muted-foreground mb-2 text-xs font-medium">QA Report</div>
+          <QaReportViewer taskId={task.id} />
+        </div>
+      ) : null}
+
       {/* Three-column layout: Subtasks | Logs | PR Status */}
       <div className="mb-4 grid grid-cols-3 gap-6">
         {/* Left: Subtasks */}
@@ -40,7 +81,12 @@ export function TaskDetailRow({ task }: TaskDetailRowProps) {
 
       {/* Bottom: Controls */}
       <div className="border-border border-t pt-3">
-        <TaskControls task={task} />
+        <TaskControls
+          task={task}
+          onRetry={onRestartCheckpoint}
+          onRun={onApproveAndExecute}
+          onStop={onKillAgent}
+        />
       </div>
     </div>
   );
