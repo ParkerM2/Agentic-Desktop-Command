@@ -27,6 +27,7 @@ export type * from './terminal';
 export type * from './voice';
 export type * from './screen';
 export type * from './briefing';
+export type * from './health';
 export type * from './workspace';
 export type * from './hub-events';
 export * from './notifications';

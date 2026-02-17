@@ -14,6 +14,7 @@ import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
+import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
 
 import { CommandBar } from './CommandBar';
@@ -90,8 +91,9 @@ export function TopBar() {
         </button>
       </div>
 
-      {/* Right: Hub status + Command bar */}
+      {/* Right: Health + Hub status + Command bar */}
       <div className="ml-2 flex shrink-0 items-center gap-2">
+        <HealthIndicator />
         <HubStatus />
         <div className="w-80">
           <CommandBar />

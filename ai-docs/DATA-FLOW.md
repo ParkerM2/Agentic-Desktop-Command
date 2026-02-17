@@ -282,34 +282,117 @@ xterm.write(data)                          TerminalInstance.tsx
 
 ---
 
-## 6. Agent Execution Flow
+## 6. Agent Orchestrator Execution Flow
+
+Two agent systems coexist: the legacy PTY-based `AgentService` and the newer headless `AgentOrchestrator`.
+The orchestrator is the primary system for task planning and execution.
 
 ```
-User clicks "Execute Task"
+User clicks "Start Planning" / "Implement Feature" (ActionsCell)
   |
   v
-ipc('tasks.execute', { taskId, projectId })
+useStartPlanning / useStartExecution mutation     useAgentMutations.ts
   |
   v
-AgentService.spawnAgent(taskId, projectId)   agent-service.ts
+ipc('agent.startPlanning', { taskId, projectPath, taskDescription })
   |
   v
-Create PTY with Claude CLI command
-  |  Shell: claude --task-file <spec-path>
-  v
-PTY starts running
+hubApiClient.updateTaskStatus(taskId, 'planning')   agent-orchestrator-handlers.ts
   |
-  +--> Parse stdout for status patterns
-  |     |
-  |     v
-  |   router.emit('event:agent.statusChanged', ...)
-  |   router.emit('event:agent.log', ...)
+  v
+agentOrchestrator.spawn({ taskId, projectPath, prompt, phase })
+  |
+  v
+child_process.spawn('claude', ['-p', prompt])     agent-orchestrator.ts
+  |  Detached, stdio: 'pipe', stdout/stderr piped to log files
+  |  Claude hooks config installed for progress tracking
+  v
+Agent runs (writes JSONL progress to {dataDir}/progress/{taskId}.jsonl)
+  |
+  +--> onSessionEvent('spawned')
+  |      |
+  |      v
+  |    router.emit('event:agent.orchestrator.heartbeat')   index.ts
+  |      |
+  |      v
+  |    useAgentEvents → optimistic cache update             useAgentEvents.ts
+  |
+  +--> JSONL entries written by Claude hooks
+  |      |
+  |      v
+  |    jsonlProgressWatcher.onProgress({ taskId, entries })   index.ts
+  |      |
+  |      +--> tool_use → router.emit('event:agent.orchestrator.progress')
+  |      +--> phase_change → router.emit('event:agent.orchestrator.progress')
+  |      +--> plan_ready → router.emit('event:agent.orchestrator.planReady')
+  |      +--> heartbeat → router.emit('event:agent.orchestrator.heartbeat')
+  |      +--> error → router.emit('event:agent.orchestrator.error')
+  |      +--> agent_stopped → router.emit('event:agent.orchestrator.stopped')
+  |
+  +--> agentWatchdog checks every 30s                        agent-watchdog.ts
+  |      |
+  |      +--> PID alive check (process.kill(pid, 0))
+  |      +--> Heartbeat age > 5min → warning alert
+  |      +--> Heartbeat age > 15min → stale alert
+  |      +--> PID dead → dead alert
+  |      |
+  |      v
+  |    router.emit('event:agent.orchestrator.watchdogAlert')   index.ts
+  |      |
+  |      v
+  |    useAgentEvents → invalidate task caches                 useAgentEvents.ts
   |
   +--> On completion/error:
         |
         v
-      Update agent session status
-      router.emit('event:agent.statusChanged', { status: 'completed' })
+      onSessionEvent('completed' | 'error')
+        |
+        v
+      router.emit('event:agent.orchestrator.stopped' | 'error')
+        |
+        v
+      useAgentEvents → full task cache invalidation
+```
+
+### QA Runner Flow
+
+```
+After agent completion (or manual trigger via UI):
+  |
+  v
+useStartQuietQa / useStartFullQa mutation         useQaMutations.ts
+  |
+  v
+ipc('qa.startQuiet', { taskId })                   qa-handlers.ts
+  |
+  v
+qaRunner.startQuiet(taskId, context)                qa-runner.ts
+  |
+  v
+orchestrator.spawn({ taskId: 'qa-{taskId}', prompt, phase: 'qa' })
+  |
+  v
+QA agent runs (lint, typecheck, test, build, check:docs)
+  |
+  +--> qaRunner emits session events
+  |      |
+  |      v
+  |    router.emit('event:qa.started')              qa-handlers.ts
+  |    router.emit('event:qa.progress')
+  |    router.emit('event:qa.completed')
+  |      |
+  |      v
+  |    useQaEvents → invalidate QA caches + toast   useQaEvents.ts
+  |
+  +--> On completion:
+        |
+        v
+      Parse QA report JSON from agent log file
+        |
+        v
+      Store report in memory (qaRunner.getReportForTask)
+        |
+        +--> If fail: notificationManager.onNotification()
 ```
 
 ---
@@ -1037,14 +1120,17 @@ event:assistant.response fires
 ## 19. Agent Orchestrator Lifecycle Flow
 
 ```
-User triggers agent spawn (via task launcher or assistant)
+User triggers agent spawn (via ActionsCell → useAgentMutations)
   |
   v
-agentOrchestrator.spawnSession(taskId, projectPath, options)
+ipc('agent.startPlanning' | 'agent.startExecution', { taskId, ... })
+  |
+  v
+agent-orchestrator-handlers.ts → hubApiClient.updateTaskStatus() → orchestrator.spawn()
   |  src/main/services/agent-orchestrator/agent-orchestrator.ts
   v
-Spawn Claude CLI as child process
-  |
+child_process.spawn('claude', ['-p', prompt], { detached: true, stdio: 'pipe' })
+  |  Claude hooks config installed (PostToolUse + Stop hooks write JSONL)
   v
 Session state: 'spawned' → 'active'
   |
@@ -1056,13 +1142,26 @@ Session state: 'spawned' → 'active'
   +--> JSONL Progress Watcher monitors {dataDir}/progress/{taskId}.jsonl
   |     |  src/main/services/agent-orchestrator/jsonl-progress-watcher.ts
   |     v
-  |   Debounced tail parser reads new lines (500ms debounce)
+  |   Debounced tail parser reads new lines (100ms debounce)
   |     |
   |     +--> type: 'tool_use' → emit progress + heartbeat events
   |     +--> type: 'phase_change' → emit progress event
   |     +--> type: 'plan_ready' → emit planReady event
   |     +--> type: 'agent_stopped' → emit stopped event
   |     +--> type: 'error' → emit error event
+  |     +--> type: 'heartbeat' → emit heartbeat event
+  |
+  +--> Agent Watchdog checks every 30s        agent-watchdog.ts
+  |     |
+  |     +--> process.kill(pid, 0) — PID alive check
+  |     +--> heartbeatAge > 5min → 'warning' alert
+  |     +--> heartbeatAge > 15min → 'stale' alert
+  |     +--> PID dead → 'dead' alert
+  |     +--> exitCode 2 + autoRestart → restart from checkpoint
+  |     |
+  |     v
+  |   index.ts wiring → router.emit('event:agent.orchestrator.watchdogAlert')
+  |     → useAgentEvents → invalidate task caches → StatusBadgeCell shows alert
   |
   +--> On process exit:
         |
@@ -1073,53 +1172,77 @@ Session state: 'spawned' → 'active'
               router.emit('event:agent.orchestrator.error', { error: '...' })
 ```
 
+### Renderer Event Subscription Chain
+
+```
+TaskDataGrid mounts
+  → useTaskEvents()
+    → useAgentEvents()    — subscribes to 6 orchestrator event channels
+    → useQaEvents()       — subscribes to 3 QA event channels
+```
+
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Session lifecycle management |
-| `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Incremental JSONL tail parser |
-| `src/main/services/agent-orchestrator/agent-watchdog.ts` | Health monitoring |
-| `src/main/index.ts` (lines 442-546) | Event forwarding wiring |
+| `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Session lifecycle (spawn, kill, getSession, listActive) |
+| `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Incremental JSONL tail parser (100ms debounce) |
+| `src/main/services/agent-orchestrator/agent-watchdog.ts` | Health monitoring (30s interval, PID + heartbeat checks) |
+| `src/main/services/agent-orchestrator/hooks-template.ts` | Claude hooks config generator (PostToolUse + Stop) |
+| `src/main/services/agent-orchestrator/types.ts` | AgentSession, SpawnOptions, ProgressEntry types |
+| `src/main/ipc/handlers/agent-orchestrator-handlers.ts` | 6 IPC channels (start/kill/restart/get/list) |
+| `src/main/index.ts` | Event forwarding + watchdog wiring |
+| `src/renderer/features/tasks/hooks/useAgentEvents.ts` | 6 orchestrator event listeners → cache updates |
+| `src/renderer/features/tasks/api/useAgentMutations.ts` | 4 mutation hooks (planning/execution/kill/restart) |
 
 ---
 
 ## 20. QA Runner Flow
 
 ```
-Agent completes task
+User triggers QA (via QaReportViewer or automatic after agent completion)
   |
   v
-QA runner triggered (quiet or full mode)
-  |  src/main/services/qa/qa-runner.ts
+useStartQuietQa / useStartFullQa mutation      useQaMutations.ts
+  |
   v
-┌─────────────────────────────┐
-│ Quiet Mode (automated)      │
-│ - Run: npm run lint          │
-│ - Run: npm run typecheck     │
-│ - Run: npm run test          │
-│ - Run: npm run build         │
-│ - Collect results            │
-└─────────┬───────────────────┘
-          |
-          v
-    Pass? ──── YES → Report: QA PASS
-          |
-          NO
-          |
-          v
-    notificationManager.notify(...)
-      |
-      v
-    router.emit('event:assistant.proactive', {
-      content: 'QA failed: ...',
-      source: 'qa',
-      taskId
-    })
-      |
-      v
-    WidgetFab shows unread badge
-    WidgetMessageArea shows proactive notification
+ipc('qa.startQuiet', { taskId })                qa-handlers.ts
+  |
+  v
+qaRunner.startQuiet(taskId, context)             qa-runner.ts
+  |  Spawns a Claude agent via orchestrator.spawn({ phase: 'qa' })
+  v
+QA agent runs verification suite:
+  |  npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs
+  |
+  +--> router.emit('event:qa.started', { taskId, mode })
+  |      → useQaEvents → invalidate session cache
+  |
+  +--> router.emit('event:qa.progress', { taskId, step, total, current })
+  |      → useQaEvents → invalidate session cache
+  |
+  +--> On completion:
+        |
+        v
+      Parse QA report JSON from agent log file
+        |
+        v
+      router.emit('event:qa.completed', { taskId, result, issueCount })
+        → useQaEvents → invalidate report + session + task caches + toast
+        |
+        +--> If fail: notificationManager.onNotification()
+              → WidgetFab shows unread badge
 ```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/main/services/qa/qa-runner.ts` | QA session orchestration (quiet + full modes) |
+| `src/main/services/qa/qa-report-parser.ts` | Parse QA report JSON from agent output |
+| `src/main/services/qa/qa-types.ts` | QaRunner, QaSession, QaReport types |
+| `src/main/ipc/handlers/qa-handlers.ts` | 5 IPC channels + event wiring |
+| `src/renderer/features/tasks/api/useQaMutations.ts` | Query + mutation hooks (report, session, start, cancel) |
+| `src/renderer/features/tasks/hooks/useQaEvents.ts` | 3 QA event listeners → cache + toast updates |
+| `src/renderer/features/tasks/components/detail/QaReportViewer.tsx` | QA report display + trigger buttons |
 
 ---
 
@@ -1247,3 +1370,33 @@ Return InsightMetrics {
   totalTokenCost?                 // NEW — from orchestrator
 }
 ```
+
+## 24. Error & Health Monitoring Flow
+
+### IPC Invoke Channels
+
+| Channel | Input | Output | Purpose |
+|---------|-------|--------|---------|
+| `app.getErrorLog` | `{ since?: string }` | `{ entries: ErrorEntry[] }` | Fetch error log entries |
+| `app.getErrorStats` | `{}` | `ErrorStats` | Aggregated error statistics |
+| `app.clearErrorLog` | `{}` | `{ success: boolean }` | Clear the error log |
+| `app.reportRendererError` | `{ severity, tier, category, message, stack?, route?, routeHistory?, projectId? }` | `{ success: boolean }` | Report an error from the renderer process |
+| `app.getHealthStatus` | `{}` | `HealthStatus` | Get health status of all services |
+
+### IPC Event Channels
+
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:app.error` | `ErrorEntry` | New error collected |
+| `event:app.dataRecovery` | `{ store, recoveredFrom, message }` | JSON store recovered from backup or defaults |
+| `event:app.capacityAlert` | `{ count, message }` | Error log nearing capacity |
+| `event:app.serviceUnhealthy` | `{ serviceName, missedCount }` | Service missed health pulses |
+
+### Types
+
+Defined in `src/shared/types/health.ts`:
+- `ErrorSeverity`, `ErrorTier`, `ErrorCategory` — union type enums
+- `ErrorContext` — route, project, task, and agent context at time of error
+- `ErrorEntry` — single error log entry with id, timestamp, severity, tier, category, message, stack, context
+- `ErrorStats` — aggregated counts by tier, severity, and last 24h
+- `ServiceHealthStatus`, `ServiceHealth`, `HealthStatus` — service pulse monitoring

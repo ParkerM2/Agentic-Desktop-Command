@@ -15,10 +15,13 @@ import { useToastStore } from '@renderer/shared/stores';
 import { taskKeys } from '../api/queryKeys';
 
 import { useAgentEvents } from './useAgentEvents';
+import { useQaEvents } from './useQaEvents';
 
 export function useTaskEvents() {
   // Agent orchestrator events (planning, execution, watchdog)
   useAgentEvents();
+  // QA session events (started, progress, completed)
+  useQaEvents();
   const queryClient = useQueryClient();
 
   // ── Local task events ──

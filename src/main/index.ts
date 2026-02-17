@@ -7,7 +7,7 @@
 
 import { join } from 'node:path';
 
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell } from 'electron';
 
 import {
   createServiceRegistry,
@@ -20,6 +20,10 @@ import type { SettingsService } from './services/settings/settings-service';
 
 let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
+
+// Renderer crash tracking
+let rendererCrashCount = 0;
+let lastRendererCrashTime = 0;
 
 function getMainWindow(): BrowserWindow | null {
   return mainWindow;
@@ -62,6 +66,40 @@ function createWindow(): void {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+
+  // Renderer crash recovery — auto-recreate up to 3 times within 60s
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[Main] Renderer process gone:', details.reason);
+
+    const now = Date.now();
+    if (now - lastRendererCrashTime > 60_000) {
+      rendererCrashCount = 0;
+    }
+    rendererCrashCount += 1;
+    lastRendererCrashTime = now;
+
+    const MAX_CONSECUTIVE_CRASHES = 3;
+    if (rendererCrashCount >= MAX_CONSECUTIVE_CRASHES) {
+      const choice = dialog.showMessageBoxSync({
+        type: 'error',
+        title: 'ADC — Renderer Crashed',
+        message: 'The app keeps crashing. Would you like to restart or quit?',
+        buttons: ['Restart', 'Quit'],
+        defaultId: 0,
+        cancelId: 1,
+      });
+      if (choice === 0) {
+        rendererCrashCount = 0;
+        createWindow();
+      } else {
+        app.quit();
+      }
+    } else {
+      setTimeout(() => {
+        createWindow();
+      }, 1000);
+    }
   });
 
   if (process.env.ELECTRON_RENDERER_URL) {
@@ -110,6 +148,24 @@ function initializeApp(): void {
 }
 
 void (async () => {
+  // Global exception handlers — registered before app.whenReady() for maximum coverage
+  process.on('uncaughtException', (error) => {
+    console.error('[Main] Uncaught exception:', error);
+    dialog.showErrorBox(
+      'ADC Error',
+      `An unexpected error occurred:\n\n${error.message}`,
+    );
+    // Trigger graceful cleanup via before-quit handler
+    app.quit();
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    console.error('[Main] Unhandled rejection:', message);
+    // TODO: Report to ErrorCollector once health monitoring is added to bootstrap
+    // Do NOT quit — unhandled rejections are recoverable
+  });
+
   await app.whenReady();
   initializeApp();
   createWindow();

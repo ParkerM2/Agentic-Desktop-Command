@@ -16,11 +16,19 @@ export {
   useKillAgent,
   useRestartFromCheckpoint,
 } from './api/useAgentMutations';
+export {
+  useQaReport,
+  useQaSession,
+  useStartQuietQa,
+  useStartFullQa,
+  useCancelQa,
+} from './api/useQaMutations';
 export { taskKeys } from './api/queryKeys';
 
 // Events
 export { useTaskEvents } from './hooks/useTaskEvents';
 export { useAgentEvents } from './hooks/useAgentEvents';
+export { useQaEvents } from './hooks/useQaEvents';
 
 // Store
 export { useTaskUI } from './store';

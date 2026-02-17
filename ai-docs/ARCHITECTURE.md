@@ -217,41 +217,84 @@ Key files:
 - Input flows: xterm.onData() → `terminals.sendInput` IPC call → PTY stdin
 - Resize syncs between xterm FitAddon and PTY process
 
-## Agent System
+## Agent System (Legacy)
 
-- **AgentService** spawns Claude CLI as PTY processes
+- **AgentService** spawns Claude CLI as PTY processes (legacy, still active for basic agent management)
 - Parses CLI output for status indicators (starting, completed, error)
 - Emits `event:agent.statusChanged` and `event:agent.log` events
 - Agents are linked to tasks via `taskId` and projects via `projectId`
-- Task spec files in `.auto-claude/specs/` provide context to the CLI
 
-## Agent Orchestrator System
+## Agent Orchestrator System (Primary)
 
-The Agent Orchestrator manages headless Claude agent sessions:
-- **AgentOrchestrator** (`agent-orchestrator.ts`) — Session lifecycle: spawn, monitor, stop
-- **JsonlProgressWatcher** (`jsonl-progress-watcher.ts`) — Watches `.claude/progress/**/*.jsonl` files for real-time status
-- **AgentWatchdog** (`agent-watchdog.ts`) — Health monitoring for active sessions
+The Agent Orchestrator is the primary system for task planning and execution.
+It manages headless Claude agent sessions via `child_process.spawn`:
 
-Session events are forwarded to the renderer via IPC:
-- `event:agent.orchestrator.heartbeat` — Session activity heartbeat
-- `event:agent.orchestrator.stopped` — Session completed/killed
-- `event:agent.orchestrator.error` — Session error
-- `event:agent.orchestrator.progress` — Tool use, phase change events
-- `event:agent.orchestrator.planReady` — Plan file detected
+- **AgentOrchestrator** (`agent-orchestrator.ts`) — Session lifecycle: spawn, kill, getSession, listActive, dispose
+- **JsonlProgressWatcher** (`jsonl-progress-watcher.ts`) — Watches `{dataDir}/progress/*.jsonl` files using incremental tail parsing (100ms debounce)
+- **AgentWatchdog** (`agent-watchdog.ts`) — Health monitoring: 30s check interval, PID alive checks, heartbeat age thresholds (5min warn, 15min stale), auto-restart on context overflow (exit code 2)
+- **HooksTemplate** (`hooks-template.ts`) — Generates Claude hooks config (PostToolUse writes tool_use entries, Stop writes agent_stopped entries to JSONL)
+- **Types** (`types.ts`) — AgentSession, SpawnOptions, ProgressEntry (6 entry types)
 
-The JSONL progress watcher uses debounced incremental tail parsing to efficiently
-read new entries from per-task progress files without re-reading entire files.
+### Session Lifecycle
+
+```
+spawn() → 'spawned' → 'active' → 'completed' | 'error' | 'killed'
+```
+
+### IPC Event Channels (6 events)
+
+- `event:agent.orchestrator.heartbeat` — Session activity heartbeat (from spawn, JSONL heartbeat, tool_use)
+- `event:agent.orchestrator.stopped` — Session completed or killed (with reason + exitCode)
+- `event:agent.orchestrator.error` — Session error (with error message)
+- `event:agent.orchestrator.progress` — Tool use or phase change data
+- `event:agent.orchestrator.planReady` — Plan file detected (with summary + path)
+- `event:agent.orchestrator.watchdogAlert` — Watchdog alert (type, sessionId, taskId, message, suggestedAction)
+
+### Wiring Chain (index.ts)
+
+1. `createAgentOrchestrator(dataDir, milestonesService)` — creates orchestrator
+2. `createAgentWatchdog(orchestrator, {}, notificationManager)` — creates watchdog
+3. `agentWatchdog.onAlert()` → `router.emit('event:agent.orchestrator.watchdogAlert')` — alert forwarding
+4. `agentWatchdog.start()` — starts 30s health check loop
+5. `agentOrchestrator.onSessionEvent()` → `router.emit(...)` — event forwarding
+6. `createJsonlProgressWatcher(progressDir)` → `onProgress()` → typed `router.emit(...)` — progress forwarding
+7. `jsonlProgressWatcher.start()` — starts file watching
+8. Both cleaned up in `before-quit` handler
+
+### Renderer Integration
+
+- **useAgentMutations** — 4 mutation hooks (startPlanning, startExecution, killAgent, restartFromCheckpoint)
+- **useAgentEvents** — 6 event listeners → optimistic cache updates + full invalidation
+- **useTaskEvents** — orchestrates useAgentEvents + useQaEvents, called by TaskDataGrid
+- **ActionsCell** — context-sensitive buttons wired to mutations
+- **StatusBadgeCell** — supports all statuses including `planning`, `plan_ready` with pulsing indicators
+- **TaskDetailRow** — expandable row with PlanViewer, QaReportViewer, SubtaskList, ExecutionLog, PRStatusPanel
 
 ## QA System
 
-Two-tier automated QA system:
-- **Quiet mode**: Fast automated checks (lint, typecheck, tests)
-- **Full mode**: Interactive Claude-powered review with MCP Electron
+Two-tier automated QA system that spawns Claude agents via the orchestrator:
+- **Quiet mode**: Fast automated checks (lint, typecheck, tests, build, check:docs)
+- **Full mode**: Interactive Claude-powered review with screenshots and accessibility testing
 
-The QA runner (`qa-runner.ts`) accepts an orchestrator reference for session context
-and an optional notification manager to emit proactive alerts on QA failures.
+### Architecture
 
-QA failures trigger `event:assistant.proactive` with `source: 'qa'` for watch system integration.
+- **QaRunner** (`qa-runner.ts`) — Session management, uses `orchestrator.spawn()` with `phase: 'qa'`
+- **QaReportParser** (`qa-report-parser.ts`) — Parses structured JSON report from agent output
+- **QaHandlers** (`qa-handlers.ts`) — 5 IPC channels (startQuiet, startFull, getReport, getSession, cancel)
+
+### IPC Event Channels (3 events)
+
+- `event:qa.started` — QA session started (taskId, mode)
+- `event:qa.progress` — QA progress step (taskId, step, total, current)
+- `event:qa.completed` — QA completed (taskId, result, issueCount)
+
+### Renderer Integration
+
+- **useQaMutations** — Query hooks (useQaReport, useQaSession) + mutation hooks (startQuietQa, startFullQa, cancelQa)
+- **useQaEvents** — 3 event listeners → cache invalidation + toast notifications
+- **QaReportViewer** — Displays QA report with trigger buttons, shown in TaskDetailRow for review/done tasks
+
+QA failures trigger `notificationManager.onNotification()` for proactive alerts.
 
 ## Assistant Watch System
 

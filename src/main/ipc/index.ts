@@ -18,6 +18,7 @@ import { registerChangelogHandlers } from './handlers/changelog-handlers';
 import { registerClaudeHandlers } from './handlers/claude-handlers';
 import { registerDeviceHandlers } from './handlers/device-handlers';
 import { registerEmailHandlers } from './handlers/email-handlers';
+import { registerErrorHandlers } from './handlers/error-handlers';
 import { registerFitnessHandlers } from './handlers/fitness-handlers';
 import { registerGitHandlers } from './handlers/git-handlers';
 import { registerGitHubHandlers } from './handlers/github-handlers';
@@ -48,6 +49,7 @@ import type { IpcRouter } from './router';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
+import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
 import type { AgentQueue } from '../services/agent/agent-queue';
 import type { AgentService } from '../services/agent/agent-service';
 import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
@@ -101,20 +103,22 @@ export interface Services {
   deviceService: DeviceService;
   alertService: AlertService;
   assistantService: AssistantService;
-  calendarService: CalendarService;
-  changelogService: ChangelogService;
+  calendarService: CalendarService | null;
+  changelogService: ChangelogService | null;
   emailService: EmailService;
-  fitnessService: FitnessService;
+  errorCollector: ErrorCollectorHandler;
+  fitnessService: FitnessService | null;
+  healthRegistry: HealthRegistryHandler;
   hubConnectionManager: HubConnectionManager;
   hubSyncService: HubSyncService;
-  ideasService: IdeasService;
+  ideasService: IdeasService | null;
   insightsService: InsightsService;
   mcpManager: McpManager;
-  milestonesService: MilestonesService;
+  milestonesService: MilestonesService | null;
   notesService: NotesService;
   notificationManager: NotificationManager;
   plannerService: PlannerService;
-  spotifyService: SpotifyService;
+  spotifyService: SpotifyService | null;
   gitService: GitService;
   githubService: GitHubService;
   worktreeService: WorktreeService;
@@ -122,8 +126,8 @@ export interface Services {
   timeParserService: TimeParserService;
   taskDecomposer: TaskDecomposer;
   githubImporter: GithubTaskImporter;
-  voiceService: VoiceService;
-  screenCaptureService: ScreenCaptureService;
+  voiceService: VoiceService | null;
+  screenCaptureService: ScreenCaptureService | null;
   briefingService: BriefingService;
   hotkeyManager: HotkeyManager;
   appUpdateService: AppUpdateService;
@@ -160,17 +164,30 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     providers: services.providers,
   });
   registerAssistantHandlers(router, services.assistantService);
-  registerCalendarHandlers(router, services.calendarService);
+  if (services.calendarService) {
+    registerCalendarHandlers(router, services.calendarService);
+  }
   registerClaudeHandlers(router, services.claudeClient);
-  registerChangelogHandlers(router, services.changelogService);
+  if (services.changelogService) {
+    registerChangelogHandlers(router, services.changelogService);
+  }
   registerEmailHandlers(router, services.emailService);
-  registerFitnessHandlers(router, services.fitnessService);
-  registerIdeasHandlers(router, services.ideasService);
+  registerErrorHandlers(router, services.errorCollector, services.healthRegistry);
+  if (services.fitnessService) {
+    registerFitnessHandlers(router, services.fitnessService);
+  }
+  if (services.ideasService) {
+    registerIdeasHandlers(router, services.ideasService);
+  }
   registerInsightsHandlers(router, services.insightsService);
-  registerMilestonesHandlers(router, services.milestonesService);
+  if (services.milestonesService) {
+    registerMilestonesHandlers(router, services.milestonesService);
+  }
   registerNotesHandlers(router, services.notesService);
   registerPlannerHandlers(router, services.plannerService);
-  registerSpotifyHandlers(router, services.spotifyService);
+  if (services.spotifyService) {
+    registerSpotifyHandlers(router, services.spotifyService);
+  }
   registerGitHandlers(router, services.gitService, services.worktreeService);
   registerGitHubHandlers(router, services.githubService);
   registerHubHandlers(
@@ -183,9 +200,13 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerMergeHandlers(router, services.mergeService);
   registerNotificationHandlers(router, services.notificationManager);
   registerTimeHandlers(router, services.timeParserService);
-  registerVoiceHandlers(router, services.voiceService);
+  if (services.voiceService) {
+    registerVoiceHandlers(router, services.voiceService);
+  }
   registerWebhookSettingsHandlers(router, services.settingsService);
-  registerScreenHandlers(router, services.screenCaptureService);
+  if (services.screenCaptureService) {
+    registerScreenHandlers(router, services.screenCaptureService);
+  }
   registerBriefingHandlers(router, services.briefingService);
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
