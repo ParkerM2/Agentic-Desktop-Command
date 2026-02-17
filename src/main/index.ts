@@ -65,6 +65,7 @@ import { createPlannerService } from './services/planner/planner-service';
 import { createProjectService } from './services/project/project-service';
 import { createTaskService } from './services/project/task-service';
 import { createQaRunner } from './services/qa/qa-runner';
+import { createQaTrigger } from './services/qa/qa-trigger';
 import { createScreenCaptureService } from './services/screen/screen-capture-service';
 import { createSettingsService } from './services/settings/settings-service';
 import { createSpotifyService } from './services/spotify/spotify-service';
@@ -97,6 +98,7 @@ let hubConnectionManagerRef: ReturnType<typeof createHubConnectionManager> | nul
 let notificationManagerRef: ReturnType<typeof createNotificationManager> | null = null;
 let briefingServiceRef: BriefingService | null = null;
 let watchEvaluatorRef: ReturnType<typeof createWatchEvaluator> | null = null;
+let qaTriggerRef: ReturnType<typeof createQaTrigger> | null = null;
 let hotkeyManagerRef: HotkeyManager | null = null;
 let settingsServiceRef: SettingsService | null = null;
 let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -509,6 +511,10 @@ function initializeApp(): void {
   // QA runner — two-tier automated QA system
   const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
 
+  // QA auto-trigger — starts quiet QA when an execution agent completes
+  const qaTrigger = createQaTrigger({ qaRunner, orchestrator: agentOrchestrator, hubApiClient, router });
+  qaTriggerRef = qaTrigger;
+
   // Insights — aggregates data from tasks, agents, projects, orchestrator, QA
   const insightsService = createInsightsService({
     taskService,
@@ -797,6 +803,7 @@ app.on('before-quit', () => {
   notificationManagerRef?.dispose();
   briefingServiceRef?.stopScheduler();
   watchEvaluatorRef?.stop();
+  qaTriggerRef?.dispose();
   // Clear device heartbeat interval
   if (heartbeatIntervalId !== null) {
     clearInterval(heartbeatIntervalId);

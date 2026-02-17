@@ -347,6 +347,28 @@ Agent runs (writes JSONL progress to {dataDir}/progress/{taskId}.jsonl)
       useAgentEvents → full task cache invalidation
 ```
 
+### QA Auto-Trigger Flow
+
+```
+Agent execution completes (orchestrator session event):
+  |
+  v
+qaTrigger listens for session completion              qa-trigger.ts
+  where event.type === 'completed'
+  and event.session.phase === 'executing'
+  |
+  v
+Wait 2 seconds (status propagation delay)
+  |
+  v
+Check: task status === 'review'?
+  Yes → qaRunner.startQuiet(taskId, context)
+  No  → skip (task may have been manually updated)
+  |
+  (guards: skip if already triggered for this taskId,
+   skip if QA session already active)
+```
+
 ### QA Runner Flow
 
 ```

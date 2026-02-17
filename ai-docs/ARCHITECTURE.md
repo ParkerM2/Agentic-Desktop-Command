@@ -227,6 +227,7 @@ Two-tier automated QA system that spawns Claude agents via the orchestrator:
 - **QaRunner** (`qa-runner.ts`) — Session management, uses `orchestrator.spawn()` with `phase: 'qa'`
 - **QaReportParser** (`qa-report-parser.ts`) — Parses structured JSON report from agent output
 - **QaHandlers** (`qa-handlers.ts`) — 5 IPC channels (startQuiet, startFull, getReport, getSession, cancel)
+- **QaTrigger** (`qa-trigger.ts`) — Auto-starts quiet QA when an execution agent completes; listens for orchestrator session completion events where `phase === 'executing'`, waits 2s for status propagation, then starts quiet QA if task is in 'review' status. Guards against re-triggering via taskId tracking.
 
 ### IPC Event Channels (3 events)
 
