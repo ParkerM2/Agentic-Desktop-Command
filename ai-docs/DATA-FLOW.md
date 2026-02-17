@@ -55,7 +55,10 @@ Component re-renders with new data
 
 | Step | File | Purpose |
 |------|------|---------|
-| Contract | `src/shared/ipc-contract.ts` | Defines channel name, input Zod schema, output Zod schema |
+| Domain contracts | `src/shared/ipc/<domain>/contract.ts` | Domain-specific channel definitions with Zod schemas |
+| Domain schemas | `src/shared/ipc/<domain>/schemas.ts` | Zod schemas for the domain |
+| Root barrel | `src/shared/ipc/index.ts` | Merges all 23 domain contracts into unified objects |
+| Compat re-export | `src/shared/ipc-contract.ts` | Thin re-export from `src/shared/ipc/` (backward compat) |
 | Renderer helper | `src/renderer/shared/lib/ipc.ts` | Typed wrapper: `ipc(channel, input) -> Promise<Output>` |
 | Preload bridge | `src/preload/index.ts` | Context bridge: `api.invoke()`, `api.on()` |
 | Router | `src/main/ipc/router.ts` | Routes channel to handler, validates input with Zod |
@@ -65,12 +68,16 @@ Component re-renders with new data
 ### Type Flow (Compile-Time)
 
 ```
-ipc-contract.ts defines:
-  ipcInvokeContract['projects.list'].input  -> z.object({})
-  ipcInvokeContract['projects.list'].output -> z.array(ProjectSchema)
+Domain contract (src/shared/ipc/projects/contract.ts) defines:
+  projectsInvoke['projects.list'].input  -> z.object({})
+  projectsInvoke['projects.list'].output -> z.array(ProjectSchema)
 
-InvokeInput<'projects.list'>  = {}
-InvokeOutput<'projects.list'> = Project[]
+Root barrel (src/shared/ipc/index.ts) merges:
+  ipcInvokeContract = { ...projectsInvoke, ...tasksInvoke, ... }
+
+Type utilities (src/shared/ipc/types.ts) derive:
+  InvokeInput<'projects.list'>  = {}
+  InvokeOutput<'projects.list'> = Project[]
 
 ipc('projects.list', {})  -> Promise<Project[]>   // Fully typed, no manual wiring
 ```
@@ -117,8 +124,8 @@ BrowserWindow.webContents.send(ch, payload)
 ### Event Contract
 
 ```typescript
-// Defined in ipc-contract.ts
-ipcEventContract['event:task.statusChanged'] = {
+// Defined in src/shared/ipc/tasks/contract.ts (merged into ipcEventContract by root barrel)
+tasksEvents['event:task.statusChanged'] = {
   payload: z.object({
     taskId: z.string(),
     status: TaskStatusSchema,
@@ -607,9 +614,11 @@ Tasks returned, TaskTable renders filterable/sortable rows
 
 ### Route Hierarchy
 
+Routes are defined across 8 route group files in `src/renderer/app/routes/` and assembled in `routes/index.ts`.
+
 ```
 / (RootLayout)
-├── /dashboard              -> DashboardPage
+├── /dashboard              -> DashboardPage          (dashboard.routes.ts)
 ├── /my-work                -> MyWorkPage
 ├── /alerts                 -> AlertsPage
 ├── /briefing               -> BriefingPage
@@ -1386,6 +1395,106 @@ Return InsightMetrics {
 
 ## 24. Error & Health Monitoring Flow
 
+### Error Collection Flow
+
+```
+Service throws error (or initNonCritical catches factory failure)
+  |
+  v
+errorCollector.report({ severity, tier, category, message, stack? })
+  |  src/main/services/health/error-collector.ts
+  v
+Append entry to in-memory log + persist to {userData}/error-log.json
+  |
+  +--> Prune entries older than 7 days on load
+  |
+  +--> router.emit('event:app.error', entry)
+  |      |
+  |      v
+  |    Renderer receives via useIpcEvent → error dashboard / notification
+  |
+  +--> If log count > capacity threshold:
+        |
+        v
+      router.emit('event:app.capacityAlert', { count, message })
+        |
+        v
+      Renderer receives → capacity warning notification
+```
+
+### Health Registry Flow
+
+```
+Service performs periodic work (e.g., Hub heartbeat, WebSocket message)
+  |
+  v
+healthRegistry.pulse('hubHeartbeat')
+  |  src/main/services/health/health-registry.ts
+  v
+Updates lastPulse timestamp for the named service
+  |
+  v
+Background sweep (runs on interval):
+  |
+  +--> For each registered service:
+  |      Check: Date.now() - lastPulse > expectedInterval
+  |      |
+  |      +--> Within threshold → healthy, reset missedCount
+  |      |
+  |      +--> Exceeds threshold → increment missedCount
+  |           |
+  |           v
+  |         onUnhealthy(serviceName, missedCount)
+  |           |
+  |           v
+  |         router.emit('event:app.serviceUnhealthy', { serviceName, missedCount })
+  |           |
+  |           v
+  |         Renderer receives → service health dashboard / alert
+  |
+  v
+Renderer queries status via ipc('app.getHealthStatus', {})
+  |
+  v
+Returns HealthStatus: { services: ServiceHealth[], overall: 'healthy' | 'degraded' | 'unhealthy' }
+```
+
+### Agent Watchdog Flow
+
+```
+agentWatchdog.start()                      agent-watchdog.ts
+  |  Created in service-registry.ts, started immediately
+  v
+setInterval(checkNow, 30_000)
+  |
+  v (every 30 seconds)
+  +--- For each active session in orchestrator.listActive():
+  |      |
+  |      +--> process.kill(pid, 0) — PID alive check
+  |      |      |
+  |      |      +--> Throws → 'dead' alert (process exited unexpectedly)
+  |      |      |
+  |      |      +--> OK → check heartbeat age
+  |      |             |
+  |      |             +--> heartbeatAge > 15min → 'stale' alert
+  |      |             +--> heartbeatAge > 5min → 'warning' alert
+  |      |             +--> Otherwise → healthy
+  |      |
+  |      +--> exitCode === 2 + autoRestart enabled → restart from checkpoint
+  |
+  v
+onAlert callback fires (registered in service-registry.ts):
+  |
+  v
+router.emit('event:agent.orchestrator.watchdogAlert', {
+  type: 'dead' | 'stale' | 'warning',
+  sessionId, taskId, message, suggestedAction
+})
+  |
+  v
+useAgentEvents → invalidate task caches → StatusBadgeCell shows alert
+```
+
 ### IPC Invoke Channels
 
 | Channel | Input | Output | Purpose |
@@ -1413,3 +1522,16 @@ Defined in `src/shared/types/health.ts`:
 - `ErrorEntry` — single error log entry with id, timestamp, severity, tier, category, message, stack, context
 - `ErrorStats` — aggregated counts by tier, severity, and last 24h
 - `ServiceHealthStatus`, `ServiceHealth`, `HealthStatus` — service pulse monitoring
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/main/services/health/error-collector.ts` | Error log persistence + pruning + capacity alerts |
+| `src/main/services/health/health-registry.ts` | Service pulse monitoring + unhealthy callbacks |
+| `src/main/services/agent-orchestrator/agent-watchdog.ts` | Agent process health (PID + heartbeat) |
+| `src/main/services/qa/qa-trigger.ts` | Automatic QA on task status change to review |
+| `src/main/bootstrap/service-registry.ts` | Wires all monitoring services + initNonCritical wrapper |
+| `src/main/bootstrap/lifecycle.ts` | Graceful shutdown (disposes health + error last) |
+| `src/shared/ipc/health/contract.ts` | IPC contract for error/health channels |
+| `src/shared/ipc/health/schemas.ts` | Zod schemas for error/health payloads |
+| `src/shared/types/health.ts` | TypeScript types for error entries + service health |

@@ -123,30 +123,37 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 ```
 src/
 ├── main/           # Electron main process (Node.js)
-│   ├── index.ts    # App lifecycle, window creation
+│   ├── index.ts    # App entry (delegates to bootstrap/)
+│   ├── bootstrap/  # App init: lifecycle, service-registry, ipc-wiring, event-wiring
 │   ├── ipc/        # IPC router + handler registration
-│   └── services/   # Business logic (31 services: agent, project, task, terminal, settings, and more)
+│   │   └── handlers/tasks/  # Split task handlers (5 files)
+│   └── services/   # Business logic (37 services, each with focused sub-modules)
 ├── preload/        # Context bridge (typed API exposed to renderer)
 ├── renderer/       # React app (browser context)
 │   ├── app/        # Router, providers, layouts
+│   │   └── routes/ # Route groups (8 files, one per domain)
 │   ├── features/   # Feature modules (each self-contained)
 │   └── shared/     # Shared hooks, stores, lib, components
 └── shared/         # Code shared between main + renderer
-    ├── ipc-contract.ts   # THE source of truth for all IPC
+    ├── ipc-contract.ts   # Thin re-export from ipc/ barrel
+    ├── ipc/              # Domain-based IPC contracts (22 folders)
+    │   └── <domain>/     # contract.ts + schemas.ts + index.ts
     └── types/            # Domain type definitions
+        └── hub/          # Hub protocol types (12 modules)
 ```
 
 ## Critical Pattern: IPC Contract
 
-**`src/shared/ipc-contract.ts` is the single source of truth for all IPC communication.**
+**`src/shared/ipc/` (23 domain folders) is the source of truth for all IPC communication.** The root barrel at `src/shared/ipc/index.ts` merges all domain contracts into the unified `ipcInvokeContract` and `ipcEventContract`. The original `src/shared/ipc-contract.ts` is a thin backward-compatible re-export.
 
 To add a new IPC operation:
-1. Define input/output Zod schemas in `ipc-contract.ts`
-2. Add handler in `src/main/ipc/handlers/<domain>-handlers.ts`
-3. Implement logic in `src/main/services/<domain>/<domain>-service.ts`
-4. Call from renderer via `ipc('<channel>', input)` — types flow automatically
+1. Find or create the domain folder in `src/shared/ipc/<domain>/`
+2. Add Zod schemas to `schemas.ts`, contract entries to `contract.ts`
+3. Add handler in `src/main/ipc/handlers/<domain>-handlers.ts`
+4. Implement logic in `src/main/services/<domain>/<domain>-service.ts`
+5. Call from renderer via `ipc('<channel>', input)` — types flow automatically
 
-Data flow: `ipc-contract.ts` -> `IpcRouter` -> preload bridge -> `ipc()` helper -> React Query hooks
+Data flow: `ipc/<domain>/contract.ts` -> root barrel -> `IpcRouter` -> preload bridge -> `ipc()` helper -> React Query hooks
 
 ## Service Pattern
 

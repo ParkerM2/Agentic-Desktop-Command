@@ -26,6 +26,13 @@ logs/security/
 # Runtime data
 .auto-claude/
 
+# Claude Code session artifacts (local-only, events sync to Hub)
+.claude/progress/
+.claude/teams/
+.claude/tasks/
+.claude/settings.json
+.playwright-mcp/
+
 # Logs
 *.log
 

@@ -2,11 +2,11 @@
  * AgentDashboard — Shows running agents for the active project
  */
 
-import { useParams } from '@tanstack/react-router';
 import { Bot, Pause, Play, Square, Loader2, Clock } from 'lucide-react';
 
 import type { AgentSession } from '@shared/types';
 
+import { useLooseParams } from '@renderer/shared/hooks';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
 import { useAgents, useStopAgent, usePauseAgent, useResumeAgent } from '../api/useAgents';
@@ -21,8 +21,8 @@ const statusColors: Record<string, string> = {
 };
 
 export function AgentDashboard() {
-  const { projectId } = useParams({ strict: false });
-  const { data: agents, isLoading } = useAgents(projectId ?? null);
+  const params = useLooseParams();
+  const { data: agents, isLoading } = useAgents(params.projectId ?? null);
   const stopAgent = useStopAgent();
   const pauseAgent = usePauseAgent();
   const resumeAgent = useResumeAgent();

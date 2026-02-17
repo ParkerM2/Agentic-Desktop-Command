@@ -6,9 +6,9 @@
 
 import { useEffect } from 'react';
 
-import { useParams } from '@tanstack/react-router';
 import { Plus, X, Terminal as TerminalIcon, Loader2 } from 'lucide-react';
 
+import { useLooseParams } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { useTerminals, useCreateTerminal, useCloseTerminal } from '../api/useTerminals';
@@ -18,7 +18,7 @@ import { useTerminalUI } from '../store';
 import { TerminalInstance } from './TerminalInstance';
 
 export function TerminalGrid() {
-  const { projectId } = useParams({ strict: false });
+  const params = useLooseParams();
   const { data: terminals, isLoading } = useTerminals();
   const createTerminal = useCreateTerminal();
   const closeTerminal = useCloseTerminal();
@@ -37,7 +37,7 @@ export function TerminalGrid() {
   function handleCreateTerminal() {
     createTerminal.mutate({
       cwd: '~',
-      projectPath: projectId,
+      projectPath: params.projectId,
     });
   }
 

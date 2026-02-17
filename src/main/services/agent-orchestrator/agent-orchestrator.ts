@@ -60,6 +60,18 @@ export function createAgentOrchestrator(
     }
   }
 
+  function cleanupProgressFiles(session: AgentSession): void {
+    // Remove JSONL progress file and log file after session ends.
+    // Final status is already emitted via events (and synced to Hub).
+    for (const filePath of [session.progressFile, session.logFile]) {
+      try {
+        unlinkSync(filePath);
+      } catch {
+        // File may already be gone — ignore
+      }
+    }
+  }
+
   function tryUpdateMilestones(taskId: string): void {
     if (!milestonesService) {
       return;
@@ -167,6 +179,7 @@ export function createAgentOrchestrator(
         processes.delete(sessionId);
         cleanupLogStream(sessionId);
         cleanupHooksConfig(session);
+        cleanupProgressFiles(session);
 
         const updatedSession = sessions.get(sessionId);
         if (updatedSession) {
@@ -189,6 +202,7 @@ export function createAgentOrchestrator(
         processes.delete(sessionId);
         cleanupLogStream(sessionId);
         cleanupHooksConfig(session);
+        cleanupProgressFiles(session);
 
         const updatedSession = sessions.get(sessionId);
         if (updatedSession) {

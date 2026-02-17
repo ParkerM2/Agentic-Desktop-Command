@@ -6,12 +6,12 @@
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { useParams } from '@tanstack/react-router';
 import { AgGridReact } from 'ag-grid-react';
 import { Loader2 } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
+import { useLooseParams } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -59,9 +59,8 @@ interface TaskDataGridProps {
 }
 
 export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
-  const params = useParams({ strict: false });
-  const projectId: string | undefined =
-    projectIdProp ?? (params as Record<string, string | undefined>).projectId;
+  const params = useLooseParams();
+  const projectId: string | undefined = projectIdProp ?? params.projectId;
 
   useTaskEvents();
 

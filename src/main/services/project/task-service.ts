@@ -9,63 +9,22 @@
  *   - task_logs.json — execution logs (optional)
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  AUTO_CLAUDE_DIR,
-  SPECS_DIR,
-  REQUIREMENTS_FILENAME,
-  PLAN_FILENAME,
-  METADATA_FILENAME,
-  LOGS_FILENAME,
-} from '@shared/constants';
-import type { ExecutionPhase, Task, TaskDraft, TaskStatus, Subtask } from '@shared/types';
+import { REQUIREMENTS_FILENAME, PLAN_FILENAME, METADATA_FILENAME } from '@shared/constants';
+import type { Task, TaskDraft, TaskStatus } from '@shared/types';
 
-/* ------------------------------------------------------------------ */
-/*  Interfaces for on-disk JSON structures                            */
-/* ------------------------------------------------------------------ */
+import { getNextNum, slugify } from './task-slug';
+import { getSpecsDir, getTaskDir, listTaskDirs, readJsonFile, readTask } from './task-store';
 
-interface RequirementsJson {
-  task_description?: string;
-  workflow_type?: string;
-}
-
-interface PlanPhase {
-  name?: string;
-  title?: string;
-  description?: string;
-  completed?: boolean;
-  started?: boolean;
-  files?: string[];
-}
-
-interface ImplementationPlanJson {
-  feature?: string;
-  description?: string;
-  status?: TaskStatus;
-  xstateState?: TaskStatus;
-  created_at?: string;
-  updated_at?: string;
-  phases?: PlanPhase[];
-  executionPhase?: ExecutionPhase;
-  completedPhases?: ExecutionPhase[];
-  planStatus?: string;
-  [key: string]: unknown;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                           */
-/* ------------------------------------------------------------------ */
-
-function readJsonFile(filePath: string): unknown {
-  const raw = readFileSync(filePath, 'utf-8');
-  return JSON.parse(raw) as unknown;
-}
+import type { ImplementationPlanJson } from './task-spec-parser';
 
 /* ------------------------------------------------------------------ */
 /*  Public interface                                                   */
 /* ------------------------------------------------------------------ */
+
+export type { ImplementationPlanJson, PlanPhase, RequirementsJson } from './task-spec-parser';
 
 export interface TaskService {
   listTasks: (projectId: string) => Task[];
@@ -80,91 +39,6 @@ export interface TaskService {
 
 type ProjectResolver = (projectId: string) => string | undefined;
 type ProjectsLister = () => Array<{ id: string; path: string }>;
-
-function getPhaseStatus(ph: PlanPhase): 'completed' | 'in_progress' | 'pending' {
-  if (ph.completed === true) return 'completed';
-  if (ph.started === true) return 'in_progress';
-  return 'pending';
-}
-
-function getSpecsDir(p: string): string {
-  return join(p, AUTO_CLAUDE_DIR, SPECS_DIR);
-}
-function getTaskDir(p: string, id: string): string {
-  return join(getSpecsDir(p), id);
-}
-
-function readTask(taskDir: string, taskId: string): Task | null {
-  try {
-    const reqPath = join(taskDir, REQUIREMENTS_FILENAME);
-    const planPath = join(taskDir, PLAN_FILENAME);
-    if (!existsSync(reqPath)) return null;
-
-    const req = readJsonFile(reqPath) as RequirementsJson;
-    const plan: ImplementationPlanJson = existsSync(planPath)
-      ? (readJsonFile(planPath) as ImplementationPlanJson)
-      : {};
-
-    let logs: string[] = [];
-    const logsPath = join(taskDir, LOGS_FILENAME);
-    if (existsSync(logsPath)) {
-      try {
-        logs = readJsonFile(logsPath) as string[];
-      } catch {
-        /* corrupted logs file */
-      }
-    }
-
-    const status: TaskStatus = plan.status ?? plan.xstateState ?? 'backlog';
-    const subtasks: Subtask[] = (plan.phases ?? []).map((ph: PlanPhase, i: number) => ({
-      id: `${taskId}-phase-${i}`,
-      title: ph.name ?? ph.title ?? `Phase ${i + 1}`,
-      description: ph.description ?? '',
-      status: getPhaseStatus(ph),
-      files: ph.files ?? [],
-    }));
-
-    return {
-      id: taskId,
-      specId: taskId,
-      title: plan.feature ?? req.task_description ?? taskId,
-      description: req.task_description ?? plan.description ?? '',
-      status,
-      subtasks,
-      executionProgress: plan.executionPhase
-        ? {
-            phase: plan.executionPhase,
-            phaseProgress: 0,
-            overallProgress: plan.executionPhase === 'complete' ? 100 : 0,
-            completedPhases: plan.completedPhases,
-          }
-        : undefined,
-      logs,
-      createdAt: plan.created_at ?? new Date().toISOString(),
-      updatedAt: plan.updated_at ?? new Date().toISOString(),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function slugify(title: string, num: number): string {
-  const slug = title
-    .toLowerCase()
-    .replaceAll(/[^a-z0-9]+/g, '-')
-    .replaceAll(/^-|-$/g, '')
-    .slice(0, 50);
-  return `${num}-${slug || 'task'}`;
-}
-
-function getNextNum(specsDir: string): number {
-  if (!existsSync(specsDir)) return 1;
-  const nums = readdirSync(specsDir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => Number.parseInt(d.name.split('-')[0] ?? '', 10))
-    .filter((n) => !Number.isNaN(n));
-  return nums.length > 0 ? Math.max(...nums) + 1 : 1;
-}
 
 export function createTaskService(
   resolveProject: ProjectResolver,
@@ -189,14 +63,11 @@ export function createTaskService(
     listTasks(projectId) {
       const projectPath = resolve(projectId);
       const specsDir = getSpecsDir(projectPath);
-      if (!existsSync(specsDir)) return [];
-
       const tasks: Task[] = [];
-      for (const entry of readdirSync(specsDir, { withFileTypes: true })) {
-        if (!entry.isDirectory()) continue;
-        const task = readTask(join(specsDir, entry.name), entry.name);
+      for (const name of listTaskDirs(specsDir)) {
+        const task = readTask(join(specsDir, name), name);
         if (task) {
-          taskProjectMap.set(entry.name, projectPath);
+          taskProjectMap.set(name, projectPath);
           tasks.push(task);
         }
       }
@@ -209,14 +80,10 @@ export function createTaskService(
       const allTasks: Task[] = [];
       for (const project of listProjects()) {
         const specsDir = getSpecsDir(project.path);
-        if (!existsSync(specsDir)) continue;
-
-        for (const entry of readdirSync(specsDir, { withFileTypes: true })) {
-          if (!entry.isDirectory()) continue;
-          const task = readTask(join(specsDir, entry.name), entry.name);
+        for (const name of listTaskDirs(specsDir)) {
+          const task = readTask(join(specsDir, name), name);
           if (task) {
-            taskProjectMap.set(entry.name, project.path);
-            // Add projectId to task metadata for grouping
+            taskProjectMap.set(name, project.path);
             allTasks.push({
               ...task,
               metadata: { ...task.metadata, projectId: project.id },
@@ -248,10 +115,7 @@ export function createTaskService(
       writeFileSync(
         join(taskDir, REQUIREMENTS_FILENAME),
         JSON.stringify(
-          {
-            task_description: draft.description || draft.title,
-            workflow_type: 'feature',
-          },
+          { task_description: draft.description || draft.title, workflow_type: 'feature' },
           null,
           2,
         ),
@@ -340,8 +204,6 @@ export function createTaskService(
     },
 
     executeTask(projectId, taskId) {
-      // Placeholder — real execution will be handled by AgentService
-      // which spawns a Claude CLI process and monitors it
       const projectPath = resolve(projectId);
       const planPath = join(getTaskDir(projectPath, taskId), PLAN_FILENAME);
       if (existsSync(planPath)) {
@@ -352,7 +214,6 @@ export function createTaskService(
         plan.updated_at = new Date().toISOString();
         writeFileSync(planPath, JSON.stringify(plan, null, 2));
       }
-      // Return a placeholder agentId — AgentService will generate the real one
       return { agentId: `agent-${taskId}-${Date.now()}` };
     },
   };

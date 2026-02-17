@@ -13,19 +13,25 @@
 | Directory | What Goes Here | What NEVER Goes Here |
 |-----------|---------------|---------------------|
 | `src/shared/types/` | Domain type interfaces (`Task`, `Project`, etc.) | Implementation code, React components, service logic |
-| `src/shared/ipc-contract.ts` | Zod schemas, channel definitions, type utilities | Business logic, React imports, Node.js imports |
+| `src/shared/types/hub/` | Hub protocol domain types (12 modules: auth, devices, enums, errors, events, guards, tasks, etc.) | Service logic, renderer imports |
+| `src/shared/ipc-contract.ts` | Thin re-export barrel from `src/shared/ipc/` | New contract definitions (add to domain folders) |
+| `src/shared/ipc/<domain>/` | Domain-specific Zod schemas (`schemas.ts`), invoke/event contracts (`contract.ts`), barrel (`index.ts`) | Cross-domain imports, business logic |
+| `src/shared/ipc/index.ts` | Root barrel merging all 23 domain contracts into unified objects | Domain-specific code |
 | `src/shared/constants/` | Constant values, enums, config objects | Functions with side effects, mutable state |
+| `src/main/bootstrap/` | App initialization modules: lifecycle, service-registry, ipc-wiring, event-wiring | Business logic, feature code |
 | `src/main/services/` | Business logic, data persistence, PTY management | React code, browser APIs, UI logic |
 | `src/main/services/agent-orchestrator/` | Agent orchestrator, JSONL progress watcher, agent watchdog | React code, renderer imports, UI logic |
-| `src/main/services/qa/` | QA runner (quiet + full mode), QA report types | React code, renderer imports |
-| `src/main/services/assistant/` | Intent classifier, command executor, watch store, watch evaluator, cross-device query, history store | React code, renderer imports |
+| `src/main/services/qa/` | QA runner (quiet + full mode) + sub-modules (7 files) | React code, renderer imports |
+| `src/main/services/assistant/` | Intent classifier (`intent-classifier/`, 16 files), command executors (`executors/`, 22 files), watch store, watch evaluator, cross-device query, history store | React code, renderer imports |
 | `src/main/ipc/handlers/` | Thin IPC handler functions that call services | Business logic (belongs in services) |
+| `src/main/ipc/handlers/tasks/` | Split task handlers: hub-task, legacy-task, status-mapping, task-transform | Business logic (belongs in services) |
 | `src/main/ipc/router.ts` | IPC routing infrastructure | Domain-specific handler code |
 | `src/preload/` | Context bridge (`api.invoke`, `api.on`) | Business logic, React code, service code |
 | `src/renderer/features/` | Feature modules (self-contained) | Shared utilities, cross-feature imports |
 | `src/renderer/shared/` | Shared hooks, stores, lib, UI components | Feature-specific code |
 | `src/renderer/shared/stores/` | Cross-feature Zustand stores (layout, theme, toast, widget visibility) + `ThemeHydrator.tsx` | Feature-specific stores (those go in `features/<name>/store.ts`) |
 | `src/renderer/app/` | Router, providers, layouts | Feature components, business logic |
+| `src/renderer/app/routes/` | Route group files (8 files, one per domain: auth, dashboard, project, settings, etc.) | Business logic, component definitions |
 | `src/renderer/styles/` | Global CSS, theme definitions | Component-specific styles (use Tailwind classes) |
 
 ### Feature Module Structure (MANDATORY)
@@ -248,31 +254,66 @@ export function registerTaskHandlers(router: IpcRouter, service: TaskService) {
 
 ### Multi-File Service Pattern
 
-Some services consist of multiple cooperating files in a single directory:
+Services are split into focused sub-modules within their directory. Examples of the refactored structure:
 
 ```
 services/assistant/
-├── assistant-service.ts    # Main service factory (public API)
-├── intent-classifier.ts    # Intent classification (regex + Claude API fallback)
-├── command-executor.ts     # Routes intents to service methods
-├── history-store.ts        # Command history persistence
-├── watch-store.ts          # Persistent watch subscription storage
-├── watch-evaluator.ts      # IPC event → watch matching engine
-└── cross-device-query.ts   # Hub API device queries
+├── assistant-service.ts       # Main service factory (public API)
+├── history-store.ts           # Command history persistence
+├── watch-store.ts             # Persistent watch subscription storage
+├── watch-evaluator.ts         # IPC event → watch matching engine
+├── cross-device-query.ts      # Hub API device queries
+├── executors/                 # 22 domain executor files
+│   ├── router.ts              # Routes intents to correct executor
+│   ├── types.ts               # Shared executor types
+│   ├── response-builders.ts   # Response formatting helpers
+│   ├── task.executor.ts       # Task operations
+│   ├── planner.executor.ts    # Planner operations
+│   └── ... (19 more)          # One executor per domain
+└── intent-classifier/         # 16 intent classification files
+    ├── classifier.ts          # Main classifier (regex + Claude API fallback)
+    ├── helpers.ts              # Classification helpers
+    ├── types.ts                # Classifier types
+    └── patterns/               # 13 domain pattern files
+        ├── task.patterns.ts
+        ├── planner.patterns.ts
+        └── ... (11 more)
 
-services/agent-orchestrator/
-├── agent-orchestrator.ts   # Session lifecycle management
-├── jsonl-progress-watcher.ts  # Incremental JSONL tail parser
-└── agent-watchdog.ts       # Health monitoring
+services/agent/
+├── agent-service.ts           # Main service factory
+├── agent-spawner.ts           # PTY spawn logic
+├── agent-output-parser.ts     # CLI output parsing
+├── agent-queue.ts             # Agent execution queue
+└── token-parser.ts            # Token usage extraction
 
-services/qa/
-└── qa-runner.ts            # Two-tier QA system (quiet + full)
+services/hub/
+├── hub-api-client.ts          # REST API calls
+├── hub-auth-service.ts        # Login/register/token refresh
+├── hub-client.ts              # Client orchestration
+├── hub-config-store.ts        # Hub config persistence
+├── hub-connection.ts          # Connection lifecycle
+├── hub-errors.ts              # Standardized error classes
+├── hub-event-mapper.ts        # WS event → IPC event mapping
+├── hub-sync.ts                # Data synchronization
+├── hub-ws-client.ts           # WebSocket client
+└── webhook-relay.ts           # Webhook event relay
+
+services/briefing/             # 6 files: cache, config, generator, summary, suggestion-engine
+services/email/                # 7 files: config, encryption, queue, store, smtp-transport
+services/notifications/        # 7 files: slack-watcher, github-watcher, filter, manager, store
+services/settings/             # 4 files: defaults, encryption, store
+services/project/              # 6 files: detector, task-service, slug, spec-parser, store
+services/qa/                   # 7 files: poller, prompt, report-parser, session-store, trigger, types
+services/tasks/                # 3 files: decomposer, github-importer (barrel: index.ts)
 ```
 
 **Rules:**
-- Main service file (`assistant-service.ts`, `agent-orchestrator.ts`) is the public API
+- Main service file (`assistant-service.ts`, `agent-service.ts`, etc.) is the public API
 - Sub-files are internal implementation details — only the main service imports them
-- Exception: `index.ts` may import sub-file factories directly for wiring (e.g., `createWatchStore()`)
+- Exception: `index.ts` barrels may import sub-file factories directly for wiring
+- Each sub-module should have a focused, single responsibility
+- New IPC domain executors go in `assistant/executors/<domain>.executor.ts`
+- New intent patterns go in `assistant/intent-classifier/patterns/<domain>.patterns.ts`
 
 ---
 
@@ -280,16 +321,28 @@ services/qa/
 
 ### Adding a New Channel
 
-1. Add to `ipcInvokeContract` in `src/shared/ipc-contract.ts`
-2. Define both `input` and `output` Zod schemas
-3. Schemas must reference existing shared Zod schemas (don't duplicate)
-4. Channel name format: `domain.action` (e.g., `tasks.create`, `settings.update`)
+1. Find or create the domain folder under `src/shared/ipc/<domain>/`
+2. Add Zod schemas to `schemas.ts`
+3. Add the invoke contract entry to `contract.ts`
+4. Export from the domain's `index.ts`
+5. The root barrel (`src/shared/ipc/index.ts`) auto-merges it if the domain is already imported
+6. For a new domain: add the import + spread to the root barrel
+7. Channel name format: `domain.action` (e.g., `tasks.create`, `settings.update`)
+
+**Note:** Do NOT edit `src/shared/ipc-contract.ts` directly — it is a backward-compatible re-export.
 
 ### Adding a New Event
 
-1. Add to `ipcEventContract` in `src/shared/ipc-contract.ts`
-2. Define `payload` Zod schema
+1. Add to the domain's `contract.ts` in `src/shared/ipc/<domain>/`
+2. Define `payload` Zod schema in `schemas.ts`
 3. Channel name format: `event:domain.eventName` (e.g., `event:task.statusChanged`)
+
+### IPC Domain Folder Structure
+
+Each folder in `src/shared/ipc/<domain>/` MUST contain:
+- `schemas.ts` — All Zod schemas for the domain
+- `contract.ts` — `<domain>Invoke` and `<domain>Events` objects with contract entries
+- `index.ts` — Barrel re-export of schemas + contract objects
 
 ### Rules
 

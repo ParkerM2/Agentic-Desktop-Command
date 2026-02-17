@@ -1,9 +1,11 @@
 # Feature Design: Codebase Separation of Concerns
 
-**Author**: /create-feature-plan (brainstorming session)
+**Author**: /create-feature-plan (brainstorming + deep analysis)
 **Created**: 2026-02-16
+**Updated**: 2026-02-16
 **Status**: READY FOR IMPLEMENTATION
 **Workflow Mode**: standard
+**Team Lead**: Orchestrator (delegates to parallel agents per wave)
 
 ---
 
@@ -60,932 +62,882 @@ separate build targets). Within each root, organize by domain using folders with
 - Mixing process targets in one folder requires major build config rework
 - Risk of breaking the build system outweighs the co-location benefit
 
-### File Ownership Matrix — Summary
+### Barrel Re-export Strategy
 
-Every new file maps to exactly one domain. No file is shared between two agents working on different domains.
+The root barrel (`src/shared/ipc/index.ts`) merges all domain contracts via spread:
+```typescript
+export const ipcInvokeContract = { ...tasksInvoke, ...projectsInvoke, ... } as const;
+export const ipcEventContract = { ...tasksEvents, ...projectsEvents, ... } as const;
+```
+
+The old `src/shared/ipc-contract.ts` becomes a thin re-export during migration, then is deleted.
+
+### Path Alias Update
+Add `@shared/ipc` alias in electron-vite config pointing to `src/shared/ipc/`.
+Keep `@shared/ipc-contract` as backward-compat alias to `src/shared/ipc/index.ts`.
 
 ---
 
 ## 4. Task Breakdown
 
-### Tier 1 — Critical (Merge-Conflict Bottlenecks)
+### Wave 1: Foundation — 5 parallel tasks (no blockers)
+
+> **All Wave 1 tasks run simultaneously.** Each agent works on a completely separate folder.
 
 ---
 
-#### Task #1: Split ipc-contract.ts into domain folders
+#### Task #1A: Split ipc-contract.ts — Core domains (schemas + contracts)
 
+**Agent**: `schema-designer`
 **Wave**: 1
 **Blocked by**: none
 **Estimated complexity**: HIGH
-**Current file**: `src/shared/ipc-contract.ts` (2,937 lines, 348 channels, ~88 Zod schemas)
+**Context budget**: ~18,000 tokens (files: 10)
 
-**Target structure**:
-```
-src/shared/ipc/
-├── index.ts              # Root barrel — merges all domain contracts + re-exports types
-├── types.ts              # InvokeInput<T>, InvokeOutput<T>, EventPayload<T> utility types
-├── common/
-│   ├── index.ts
-│   └── schemas.ts        # Shared Zod primitives reused across domains
-│
-├── tasks/
-│   ├── index.ts          # Barrel: exports tasksInvoke, tasksEvents, all schemas
-│   ├── contract.ts       # tasks.* + hub.tasks.* invoke channels + event channels
-│   └── schemas.ts        # TaskStatusSchema, SubtaskSchema, TaskSchema, HubTaskSchema,
-│                          #   ExecutionProgressSchema, TaskDraftSchema, TaskSuggestionSchema,
-│                          #   TaskDecompositionResultSchema, GithubIssueImportSchema,
-│                          #   HubTaskStatusSchema, HubTaskPrioritySchema, HubTaskProgressSchema
-│
-├── projects/
-│   ├── index.ts
-│   ├── contract.ts       # projects.* invoke + event channels
-│   └── schemas.ts        # ProjectSchema, SubProjectSchema, RepoTypeSchema,
-│                          #   RepoStructureSchema, ChildRepoSchema, RepoDetectionResultSchema
-│
-├── planner/
-│   ├── index.ts
-│   ├── contract.ts       # planner.* invoke + event channels
-│   └── schemas.ts        # TimeBlockTypeSchema, TimeBlockSchema, ScheduledTaskSchema,
-│                          #   DailyPlanSchema, WeeklyReviewSummarySchema, WeeklyReviewSchema
-│
-├── fitness/
-│   ├── index.ts
-│   ├── contract.ts       # fitness.* invoke + event channels
-│   └── schemas.ts        # WorkoutTypeSchema, WeightUnitSchema, ExerciseSetSchema,
-│                          #   ExerciseSchema, WorkoutSchema, BodyMeasurementSchema,
-│                          #   FitnessGoalSchema, FitnessStatsSchema
-│
-├── settings/
-│   ├── index.ts
-│   ├── contract.ts       # settings.* invoke + event channels
-│   └── schemas.ts        # AppSettingsSchema, ProfileSchema, WebhookConfigSchema,
-│                          #   WebhookCommandSchema, WebhookCommandSourceContextSchema
-│
-├── assistant/
-│   ├── index.ts
-│   ├── contract.ts       # assistant.* invoke + event channels
-│   └── schemas.ts        # IntentTypeSchema, AssistantActionSchema, AssistantContextSchema,
-│                          #   AssistantResponseSchema, CommandHistoryEntrySchema
-│
-├── agents/
-│   ├── index.ts
-│   ├── contract.ts       # agents.* + agent.* invoke + event channels
-│   └── schemas.ts        # AgentSessionSchema, TokenUsageSchema, AggregatedTokenUsageSchema,
-│                          #   OrchestratorSessionSchema
-│
-├── auth/
-│   ├── index.ts
-│   ├── contract.ts       # auth.* invoke channels
-│   └── schemas.ts        # (auth schemas if any exist in contract)
-│
-├── hub/
-│   ├── index.ts
-│   ├── contract.ts       # hub.* (connection/sync, non-task) invoke + event channels
-│   └── schemas.ts        # Hub connection schemas
-│
-├── git/
-│   ├── index.ts
-│   ├── contract.ts       # git.* invoke + event channels
-│   └── schemas.ts        # GitStatusSchema, GitBranchSchema, WorktreeSchema,
-│                          #   MergeResultSchema, MergeDiffFileSchema, MergeDiffSummarySchema
-│
-├── github/
-│   ├── index.ts
-│   ├── contract.ts       # github.* invoke channels
-│   └── schemas.ts        # GitHubLabelSchema, GitHubPullRequestSchema,
-│                          #   GitHubIssueSchema, GitHubNotificationSchema
-│
-├── notifications/
-│   ├── index.ts
-│   ├── contract.ts       # notifications.* invoke + event channels
-│   └── schemas.ts        # NotificationSourceSchema, NotificationSchema,
-│                          #   SlackWatcherConfigSchema, GitHubWatcherConfigSchema,
-│                          #   NotificationFilterSchema
-│
-├── email/
-│   ├── index.ts
-│   ├── contract.ts       # email.* invoke + event channels
-│   └── schemas.ts        # EmailAttachmentSchema, EmailSchema, SmtpConfigSchema,
-│                          #   EmailSendResultSchema, QueuedEmailSchema
-│
-├── claude/
-│   ├── index.ts
-│   ├── contract.ts       # claude.* invoke + event channels
-│   └── schemas.ts        # ClaudeMessageSchema, ClaudeConversationSchema,
-│                          #   ClaudeTokenUsageSchema, ClaudeSendMessageResponseSchema
-│
-├── terminals/
-│   ├── index.ts
-│   ├── contract.ts       # terminals.* invoke + event channels
-│   └── schemas.ts        # TerminalSessionSchema
-│
-├── spotify/
-│   ├── index.ts
-│   ├── contract.ts       # spotify.* invoke channels
-│   └── schemas.ts        # (spotify-specific schemas)
-│
-├── workflow/
-│   ├── index.ts
-│   ├── contract.ts       # workflow.* invoke + event channels
-│   └── schemas.ts
-│
-├── qa/
-│   ├── index.ts
-│   ├── contract.ts       # qa.* invoke + event channels
-│   └── schemas.ts
-│
-├── briefing/
-│   ├── index.ts
-│   ├── contract.ts       # briefing.* invoke + event channels
-│   └── schemas.ts
-│
-├── app/
-│   ├── index.ts
-│   ├── contract.ts       # app.* invoke + event channels
-│   └── schemas.ts
-│
-├── misc/
-│   ├── index.ts          # Barrel for all small domains
-│   ├── voice/
-│   │   ├── index.ts
-│   │   └── contract.ts   # voice.* channels
-│   ├── screen/
-│   │   ├── index.ts
-│   │   └── contract.ts   # screen.* channels
-│   ├── notes/
-│   │   ├── index.ts
-│   │   ├── contract.ts   # notes.* channels
-│   │   └── schemas.ts    # NoteSchema
-│   ├── ideas/
-│   │   ├── index.ts
-│   │   ├── contract.ts   # ideas.* channels
-│   │   └── schemas.ts    # IdeaSchema, IdeaStatusSchema, IdeaCategorySchema
-│   ├── milestones/
-│   │   ├── index.ts
-│   │   ├── contract.ts   # milestones.* channels
-│   │   └── schemas.ts    # MilestoneSchema, MilestoneStatusSchema, MilestoneTaskSchema
-│   ├── merge/
-│   │   ├── index.ts
-│   │   └── contract.ts   # merge.* channels
-│   ├── insights/
-│   │   ├── index.ts
-│   │   ├── contract.ts   # insights.* channels
-│   │   └── schemas.ts    # InsightMetricsSchema, InsightTimeSeriesSchema, etc.
-│   ├── changelog/
-│   │   ├── index.ts
-│   │   ├── contract.ts   # changelog.* channels
-│   │   └── schemas.ts    # ChangeTypeSchema, ChangeCategorySchema, ChangelogEntrySchema
-│   ├── alerts/
-│   │   ├── index.ts
-│   │   ├── contract.ts   # alerts.* channels
-│   │   └── schemas.ts    # AlertTypeSchema, AlertSchema, RecurringConfigSchema
-│   ├── devices/
-│   │   ├── index.ts
-│   │   └── contract.ts   # devices.* channels
-│   ├── workspaces/
-│   │   ├── index.ts
-│   │   └── contract.ts   # workspaces.* channels
-│   ├── mcp/
-│   │   ├── index.ts
-│   │   └── contract.ts   # mcp.* channels
-│   ├── hotkeys/
-│   │   ├── index.ts
-│   │   └── contract.ts   # hotkeys.* channels
-│   └── time/
-│       ├── index.ts
-│       └── contract.ts   # time.* channels
-```
+**Description**:
+Extract the following domains from `src/shared/ipc-contract.ts` into `src/shared/ipc/<domain>/`:
+tasks, projects, planner, fitness, settings, assistant, agents, auth.
+Each domain gets a folder with `index.ts` (barrel), `contract.ts` (channels), `schemas.ts` (Zod schemas).
 
-**Root barrel pattern** (`src/shared/ipc/index.ts`):
-```typescript
-// Import domain contracts
-import { tasksInvoke, tasksEvents } from './tasks';
-import { projectsInvoke, projectsEvents } from './projects';
-import { plannerInvoke, plannerEvents } from './planner';
-// ... all domains
+**Files to Create**:
+- `src/shared/ipc/types.ts` — InvokeInput, InvokeOutput, EventPayload utility types
+- `src/shared/ipc/common/index.ts` — Barrel for shared primitives
+- `src/shared/ipc/common/schemas.ts` — Shared Zod primitives (z.string().uuid() patterns)
+- `src/shared/ipc/tasks/index.ts` — Barrel
+- `src/shared/ipc/tasks/contract.ts` — tasks.* + hub.tasks.* invoke + event channels
+- `src/shared/ipc/tasks/schemas.ts` — TaskSchema, SubtaskSchema, HubTaskSchema, ExecutionProgressSchema, etc.
+- `src/shared/ipc/projects/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/planner/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/fitness/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/settings/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/assistant/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/agents/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/auth/index.ts`, `contract.ts`, `schemas.ts`
 
-// Merge into single contracts (backward compat)
-export const ipcInvokeContract = {
-  ...tasksInvoke,
-  ...projectsInvoke,
-  ...plannerInvoke,
-  // ... spread all domains
-} as const;
-
-export const ipcEventContract = {
-  ...tasksEvents,
-  ...projectsEvents,
-  ...plannerEvents,
-  // ... spread all domains
-} as const;
-
-// Re-export type utilities
-export type { InvokeInput, InvokeOutput, EventPayload } from './types';
-
-// Re-export schemas for direct imports
-export * from './tasks';
-export * from './projects';
-// ... all domains
-```
-
-**Domain contract file pattern** (e.g., `src/shared/ipc/tasks/contract.ts`):
-```typescript
-import { z } from 'zod';
-import { TaskSchema, HubTaskSchema, ... } from './schemas';
-
-export const tasksInvoke = {
-  'tasks.list': { input: z.object({ projectId: z.string() }), output: z.array(TaskSchema) },
-  'tasks.get': { ... },
-  'hub.tasks.list': { ... },
-  // ... all tasks.* and hub.tasks.* channels
-} as const;
-
-export const tasksEvents = {
-  'event:task.statusChanged': { payload: z.object({ taskId: z.string(), projectId: z.string() }) },
-  // ... all task event channels
-} as const;
-```
-
-**Migration path**:
-1. Create `src/shared/ipc/` folder structure
-2. Extract schemas domain by domain into `schemas.ts` files
-3. Extract channels domain by domain into `contract.ts` files
-4. Create barrels for each domain
-5. Create root barrel that merges all and re-exports
-6. Update the single import in existing code: `from '@shared/ipc-contract'` → `from '@shared/ipc'`
-7. Optionally keep `ipc-contract.ts` as a thin re-export for gradual migration
-8. Run full verification suite
+**Files to Read for Context**:
+- `src/shared/ipc-contract.ts` — Source file (lines 1-1500 for schemas, relevant channel sections)
+- `CLAUDE.md` — ESLint rules, import order
 
 **Acceptance Criteria**:
-- [ ] All 348 IPC channels accounted for in domain files
-- [ ] All ~88 Zod schemas extracted to domain schema files
-- [ ] Root barrel produces identical merged contracts
-- [ ] All existing `import from '@shared/ipc-contract'` still works (via alias or re-export)
-- [ ] `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs` passes
+- [ ] All schemas for the 8 domains extracted to domain `schemas.ts` files
+- [ ] All invoke + event channels for the 8 domains extracted to `contract.ts` files
+- [ ] Each domain barrel exports `<domain>Invoke`, `<domain>Events`, and all schemas
+- [ ] Types utility file exports InvokeInput, InvokeOutput, EventPayload
+- [ ] `npm run typecheck` passes (schemas referenced correctly)
+
+---
+
+#### Task #1B: Split ipc-contract.ts — Remaining domains
+
+**Agent**: `schema-designer`
+**Wave**: 1
+**Blocked by**: none
+**Estimated complexity**: HIGH
+**Context budget**: ~18,000 tokens (files: 10)
+
+**Description**:
+Extract remaining domains from `src/shared/ipc-contract.ts` into `src/shared/ipc/<domain>/`:
+hub, git, github, notifications, email, claude, terminals, spotify, workflow, qa, briefing, app.
+Also create `src/shared/ipc/misc/` for small domains: voice, screen, notes, ideas, milestones, merge,
+insights, changelog, alerts, devices, workspaces, mcp, hotkeys, time.
+
+**Files to Create**:
+- `src/shared/ipc/hub/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/git/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/github/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/notifications/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/email/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/claude/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/terminals/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/spotify/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/workflow/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/qa/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/briefing/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/app/index.ts`, `contract.ts`, `schemas.ts`
+- `src/shared/ipc/misc/` — subdirs for voice, screen, notes, ideas, milestones, merge, insights, changelog, alerts, devices, workspaces, mcp, hotkeys, time (each with index.ts + contract.ts, schemas.ts if needed)
+- `src/shared/ipc/misc/index.ts` — Barrel for all misc domains
+
+**Files to Read for Context**:
+- `src/shared/ipc-contract.ts` — Source file (lines 1500-2937 for remaining channels)
+
+**Acceptance Criteria**:
+- [ ] All remaining schemas and channels extracted to domain folders
+- [ ] Every misc domain has its own subfolder with barrel
+- [ ] All 348 IPC channels accounted for across #1A + #1B files
+- [ ] `npm run typecheck` passes
+
+---
+
+#### Task #1C: Create ipc-contract root barrel + migrate imports
+
+**Agent**: `schema-designer`
+**Wave**: 1 (start after #1A and #1B complete, or run late in Wave 1)
+**Blocked by**: #1A, #1B
+**Estimated complexity**: MEDIUM
+**Context budget**: ~15,000 tokens (files: 7)
+
+**Description**:
+Create the root barrel `src/shared/ipc/index.ts` that merges all domain contracts.
+Update `src/shared/ipc-contract.ts` to be a thin re-export from the new barrel.
+Update electron-vite config to add `@shared/ipc` path alias.
+
+**Files to Create**:
+- `src/shared/ipc/index.ts` — Root barrel merging all domain contracts + re-exporting types
+
+**Files to Modify**:
+- `src/shared/ipc-contract.ts` — Replace with thin re-export: `export * from './ipc';`
+- `electron.vite.config.ts` — Add `@shared/ipc` path alias
+
+**Files to Read for Context**:
+- `src/shared/ipc/tasks/index.ts` — Example of domain barrel (from #1A)
+- `src/shared/ipc/hub/index.ts` — Example of domain barrel (from #1B)
+- `electron.vite.config.ts` — Current alias configuration
+- `tsconfig.json` or `tsconfig.*.json` — Path mapping
+
+**Acceptance Criteria**:
+- [ ] Root barrel merges all domain invoke + event contracts into single objects
+- [ ] `ipcInvokeContract` and `ipcEventContract` types are identical to original
+- [ ] `import from '@shared/ipc-contract'` still works (backward compat re-export)
+- [ ] `import from '@shared/ipc'` works (new path)
+- [ ] All 5 verification commands pass: `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs`
 
 ---
 
 #### Task #2: Split command-executor.ts into domain executors
 
-**Wave**: 1 (parallel with Task #1)
+**Agent**: `assistant-engineer`
+**Wave**: 1 (parallel with #1A, #1B, #3)
 **Blocked by**: none
 **Estimated complexity**: HIGH
-**Current file**: `src/main/services/assistant/command-executor.ts` (1,100 lines, 20+ handler functions)
+**Context budget**: ~18,000 tokens (files: 10)
 
-**Target structure**:
-```
-src/main/services/assistant/executors/
-├── index.ts               # Barrel: exports executeCommand()
-├── router.ts              # Routes ClassifiedIntent → domain executor (~80 lines)
-├── response-builders.ts   # buildErrorResponse, buildTextResponse, buildActionResponse (~40 lines)
-├── task.executor.ts       # handleCreateTask (~60 lines)
-├── planner.executor.ts    # handleCreateTimeBlock, executePlanner (~80 lines)
-├── notes.executor.ts      # handleNotes, handleStandup, executeNotes (~80 lines)
-├── fitness.executor.ts    # executeFitness (~60 lines)
-├── email.executor.ts      # executeEmail (~60 lines)
-├── github.executor.ts     # executeGitHub (~60 lines)
-├── spotify.executor.ts    # handleSpotify (~50 lines)
-├── calendar.executor.ts   # executeCalendar (~60 lines)
-├── briefing.executor.ts   # executeBriefing (~40 lines)
-├── insights.executor.ts   # executeInsights (~30 lines)
-├── ideation.executor.ts   # executeIdeation (~40 lines)
-├── milestones.executor.ts # executeMilestones (~40 lines)
-├── watch.executor.ts      # handleWatchCreate/Remove/List, executeWatch (~100 lines)
-├── device.executor.ts     # executeDeviceQuery (~30 lines)
-├── reminder.executor.ts   # handleReminder (~20 lines)
-├── search.executor.ts     # handleSearch (~40 lines)
-└── launcher.executor.ts   # handleLauncher (~30 lines)
-```
+**Description**:
+Extract all 20+ handler functions from `src/main/services/assistant/command-executor.ts` into
+domain-specific executor files in `src/main/services/assistant/executors/`. Create a router that
+dispatches classified intents to the appropriate domain executor.
 
-**Router pattern** (`router.ts`):
-```typescript
-import type { ClassifiedIntent } from '../intent-classifier';
-import type { CommandExecutorDeps } from './types';
-import { executeTask } from './task.executor';
-import { executePlanner } from './planner.executor';
-// ... all domain executors
+**Files to Create**:
+- `src/main/services/assistant/executors/index.ts` — Barrel: exports executeCommand()
+- `src/main/services/assistant/executors/types.ts` — CommandExecutorDeps interface
+- `src/main/services/assistant/executors/router.ts` — Intent → executor routing (~80 lines)
+- `src/main/services/assistant/executors/response-builders.ts` — buildErrorResponse, buildTextResponse, buildActionResponse
+- `src/main/services/assistant/executors/task.executor.ts` — handleCreateTask
+- `src/main/services/assistant/executors/planner.executor.ts` — handleCreateTimeBlock, executePlanner
+- `src/main/services/assistant/executors/notes.executor.ts` — handleNotes, handleStandup, executeNotes
+- `src/main/services/assistant/executors/fitness.executor.ts` — executeFitness
+- `src/main/services/assistant/executors/email.executor.ts` — executeEmail
+- `src/main/services/assistant/executors/github.executor.ts` — executeGitHub
+- `src/main/services/assistant/executors/spotify.executor.ts` — handleSpotify
+- `src/main/services/assistant/executors/calendar.executor.ts` — executeCalendar
+- `src/main/services/assistant/executors/briefing.executor.ts` — executeBriefing
+- `src/main/services/assistant/executors/insights.executor.ts` — executeInsights
+- `src/main/services/assistant/executors/ideation.executor.ts` — executeIdeation
+- `src/main/services/assistant/executors/milestones.executor.ts` — executeMilestones
+- `src/main/services/assistant/executors/watch.executor.ts` — handleWatchCreate/Remove/List
+- `src/main/services/assistant/executors/device.executor.ts` — executeDeviceQuery
+- `src/main/services/assistant/executors/reminder.executor.ts` — handleReminder
+- `src/main/services/assistant/executors/search.executor.ts` — handleSearch
+- `src/main/services/assistant/executors/launcher.executor.ts` — handleLauncher
 
-export async function executeCommand(
-  intent: ClassifiedIntent,
-  deps: CommandExecutorDeps,
-  context?: AssistantContext,
-): Promise<AssistantResponse> {
-  switch (intent.type) {
-    case 'task_creation': return executeTask(intent, deps, context);
-    case 'planner': return executePlanner(intent, deps, context);
-    // ... all intent types
-    default: return buildErrorResponse(`Unknown intent: ${intent.type}`);
-  }
-}
-```
+**Files to Modify**:
+- `src/main/services/assistant/command-executor.ts` — Replace with thin import from `./executors`
+
+**Files to Read for Context**:
+- `src/main/services/assistant/command-executor.ts` — Full source (1,100 lines)
+- `src/shared/types/assistant.ts` — AssistantResponse, AssistantContext types
 
 **Acceptance Criteria**:
 - [ ] All 20+ handler functions extracted to domain executor files
 - [ ] Router dispatches to correct executor for every intent type
-- [ ] Response builder functions shared via import
-- [ ] CommandExecutorDeps type extracted to shared types file
-- [ ] Full verification suite passes
+- [ ] CommandExecutorDeps interface extracted to types.ts
+- [ ] Response builder functions shared via import (not duplicated)
+- [ ] Each executor file < 120 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #3: Split intent-classifier.ts into domain patterns
 
-**Wave**: 1 (parallel with Tasks #1 and #2)
+**Agent**: `assistant-engineer`
+**Wave**: 1 (parallel with #1A, #1B, #2)
 **Blocked by**: none
 **Estimated complexity**: MEDIUM
-**Current file**: `src/main/services/assistant/intent-classifier.ts` (721 lines)
+**Context budget**: ~15,000 tokens (files: 8)
 
-**Target structure**:
-```
-src/main/services/assistant/intent-classifier/
-├── index.ts              # Barrel: exports classifyIntent, ClassifiedIntent
-├── classifier.ts         # Main classifyIntent() + actionToIntentType() (~120 lines)
-├── helpers.ts            # extractTaskId, stripPrefix, resolveWatchCondition, getTimeParser (~60 lines)
-├── types.ts              # ClassifiedIntent interface + related types (~30 lines)
-├── patterns/
-│   ├── index.ts          # Barrel: exports all pattern match functions
-│   ├── task.patterns.ts
-│   ├── planner.patterns.ts
-│   ├── fitness.patterns.ts
-│   ├── notes.patterns.ts
-│   ├── email.patterns.ts
-│   ├── github.patterns.ts
-│   ├── spotify.patterns.ts
-│   ├── calendar.patterns.ts
-│   ├── watch.patterns.ts
-│   ├── device.patterns.ts
-│   └── misc.patterns.ts   # All remaining small-domain patterns
-```
+**Description**:
+Extract pattern matching logic from `src/main/services/assistant/intent-classifier.ts` into
+domain-specific pattern files in `src/main/services/assistant/intent-classifier/patterns/`.
+
+**Files to Create**:
+- `src/main/services/assistant/intent-classifier/index.ts` — Barrel: exports classifyIntent, ClassifiedIntent
+- `src/main/services/assistant/intent-classifier/classifier.ts` — Main classifyIntent() + actionToIntentType()
+- `src/main/services/assistant/intent-classifier/helpers.ts` — extractTaskId, stripPrefix, resolveWatchCondition, getTimeParser
+- `src/main/services/assistant/intent-classifier/types.ts` — ClassifiedIntent interface
+- `src/main/services/assistant/intent-classifier/patterns/index.ts` — Barrel
+- `src/main/services/assistant/intent-classifier/patterns/task.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/planner.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/fitness.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/notes.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/email.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/github.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/spotify.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/calendar.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/watch.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/device.patterns.ts`
+- `src/main/services/assistant/intent-classifier/patterns/misc.patterns.ts`
+
+**Files to Modify**:
+- `src/main/services/assistant/intent-classifier.ts` — Replace with thin re-export from `./intent-classifier/`
+
+**Files to Read for Context**:
+- `src/main/services/assistant/intent-classifier.ts` — Full source (721 lines)
 
 **Acceptance Criteria**:
 - [ ] Pattern matching logic separated by domain
-- [ ] classifyIntent() delegates to domain pattern matchers
-- [ ] Helper functions extracted and shared
+- [ ] classifyIntent() in classifier.ts delegates to domain pattern matchers
+- [ ] Helper functions extracted and imported by patterns that need them
 - [ ] ClassifiedIntent type exported from types.ts
-- [ ] Full verification suite passes
+- [ ] Each pattern file < 80 lines
+- [ ] All 5 verification commands pass
 
 ---
 
-### Tier 2 — High (Infrastructure Files)
+### Wave 2: Infrastructure — 4 parallel tasks
+
+> **Blocked by Wave 1 completion.** All Wave 2 tasks run simultaneously.
 
 ---
 
 #### Task #4: Split main/index.ts into bootstrap modules
 
+**Agent**: `service-engineer`
 **Wave**: 2
-**Blocked by**: Task #1 (IPC contract split affects import paths)
+**Blocked by**: #1C (import paths updated)
 **Estimated complexity**: MEDIUM
-**Current file**: `src/main/index.ts` (657 lines)
+**Context budget**: ~15,000 tokens (files: 7)
 
-**Target structure**:
-```
-src/main/
-├── index.ts                   # Slim entry: createWindow + app.whenReady (~100 lines)
-├── bootstrap/
-│   ├── index.ts               # Barrel
-│   ├── service-registry.ts    # Creates all ~40 services, returns typed registry (~200 lines)
-│   ├── ipc-wiring.ts          # Registers all IPC handlers with router (~80 lines)
-│   ├── event-wiring.ts        # Wires inter-service events (watchdog, progress, watch evaluator) (~120 lines)
-│   └── lifecycle.ts           # app.on('before-quit'), cleanup, window focus events (~80 lines)
-```
+**Description**:
+Extract service creation, IPC handler registration, event wiring, and lifecycle management
+from `src/main/index.ts` into focused modules in `src/main/bootstrap/`.
 
-**Service registry pattern**:
-```typescript
-export interface ServiceRegistry {
-  settingsService: SettingsService;
-  taskService: TaskService;
-  agentService: AgentService;
-  // ... all 40 services typed
-}
+**Files to Create**:
+- `src/main/bootstrap/index.ts` — Barrel
+- `src/main/bootstrap/service-registry.ts` — Creates all ~40 services, returns typed ServiceRegistry
+- `src/main/bootstrap/ipc-wiring.ts` — Registers all IPC handlers with router
+- `src/main/bootstrap/event-wiring.ts` — Wires inter-service events (watchdog, progress, watch evaluator)
+- `src/main/bootstrap/lifecycle.ts` — app.on('before-quit'), cleanup, window focus events
 
-export function createServiceRegistry(dataDir: string, router: IpcRouter): ServiceRegistry {
-  const settingsService = createSettingsService();
-  const hubApiClient = createHubApiClient(settingsService);
-  // ... all service creation in dependency order
-  return { settingsService, hubApiClient, ... };
-}
-```
+**Files to Modify**:
+- `src/main/index.ts` — Slim down to ~100 lines: createWindow + app.whenReady + imports from bootstrap/
+
+**Files to Read for Context**:
+- `src/main/index.ts` — Full source (657 lines)
+- `src/main/ipc/index.ts` — Handler registration pattern
 
 **Acceptance Criteria**:
-- [ ] `index.ts` reduced to ~100 lines (window creation + app lifecycle)
-- [ ] All service creation in `service-registry.ts`
-- [ ] All IPC handler registration in `ipc-wiring.ts`
-- [ ] All event wiring in `event-wiring.ts`
-- [ ] App lifecycle (before-quit, cleanup) in `lifecycle.ts`
-- [ ] Full verification suite passes
+- [ ] `index.ts` reduced to ~100 lines
+- [ ] ServiceRegistry interface typed with all ~40 services
+- [ ] All IPC handler registration in ipc-wiring.ts
+- [ ] All event wiring in event-wiring.ts
+- [ ] Lifecycle management in lifecycle.ts
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #5: Split hub-protocol.ts into domain types
 
-**Wave**: 2 (parallel with Task #4)
+**Agent**: `schema-designer`
+**Wave**: 2 (parallel with #4, #6, #7)
 **Blocked by**: none
 **Estimated complexity**: MEDIUM
-**Current file**: `src/shared/types/hub-protocol.ts` (621 lines)
+**Context budget**: ~12,000 tokens (files: 5)
 
-**Target structure**:
-```
-src/shared/types/hub/
-├── index.ts             # Barrel: re-exports everything
-├── enums.ts             # TaskStatus, TaskPriority, DeviceStatus, etc. (~30 lines)
-├── auth.ts              # HubUser, AuthTokens, LoginRequest, RegisterRequest (~60 lines)
-├── devices.ts           # HubDevice, DeviceHeartbeat, DeviceRequest (~60 lines)
-├── workspaces.ts        # HubWorkspace, WorkspaceRequest, WorkspaceResponse (~50 lines)
-├── projects.ts          # HubProject, ProjectRequest, ProjectResponse (~60 lines)
-├── tasks.ts             # HubTask, TaskRequest, TaskResponse, TaskProgress (~100 lines)
-├── events.ts            # WebSocket event types, WsMessage unions (~80 lines)
-├── errors.ts            # HubApiError, ErrorResponse (~30 lines)
-├── guards.ts            # Type guard functions (isWsTaskEvent, isWsDeviceEvent, etc.) (~60 lines)
-├── transitions.ts       # VALID_TRANSITIONS, isValidTransition() (~40 lines)
-└── legacy.ts            # Deprecated types (Computer*, DeviceAuth*) — marked for removal (~50 lines)
-```
+**Description**:
+Extract all types from `src/shared/types/hub-protocol.ts` into domain-specific type files
+in `src/shared/types/hub/`.
+
+**Files to Create**:
+- `src/shared/types/hub/index.ts` — Barrel re-exporting everything
+- `src/shared/types/hub/enums.ts` — TaskStatus, TaskPriority, DeviceStatus enums
+- `src/shared/types/hub/auth.ts` — HubUser, AuthTokens, LoginRequest, RegisterRequest
+- `src/shared/types/hub/devices.ts` — HubDevice, DeviceHeartbeat, DeviceRequest
+- `src/shared/types/hub/workspaces.ts` — HubWorkspace, WorkspaceRequest
+- `src/shared/types/hub/projects.ts` — HubProject, ProjectRequest
+- `src/shared/types/hub/tasks.ts` — HubTask, TaskRequest, TaskResponse, TaskProgress
+- `src/shared/types/hub/events.ts` — WebSocket event types, WsMessage unions
+- `src/shared/types/hub/errors.ts` — HubApiError, ErrorResponse
+- `src/shared/types/hub/guards.ts` — Type guard functions
+- `src/shared/types/hub/transitions.ts` — VALID_TRANSITIONS, isValidTransition()
+- `src/shared/types/hub/legacy.ts` — Deprecated types (Computer*, DeviceAuth*)
+
+**Files to Modify**:
+- `src/shared/types/hub-protocol.ts` — Replace with thin re-export from `./hub/`
+- `src/shared/types/index.ts` — Update barrel if needed
+
+**Files to Read for Context**:
+- `src/shared/types/hub-protocol.ts` — Full source (621 lines)
 
 **Acceptance Criteria**:
-- [ ] All types from hub-protocol.ts accounted for in domain files
+- [ ] All types accounted for in domain files
 - [ ] Barrel re-exports all types under same names
-- [ ] Legacy/deprecated types isolated in `legacy.ts`
-- [ ] All imports from `@shared/types/hub-protocol` updated or barrel re-exports
-- [ ] Full verification suite passes
+- [ ] Legacy/deprecated types isolated in legacy.ts
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #6: Split task-handlers.ts
 
-**Wave**: 2 (parallel with Tasks #4, #5)
-**Blocked by**: Task #1 (depends on new IPC contract imports)
+**Agent**: `ipc-handler-engineer`
+**Wave**: 2 (parallel)
+**Blocked by**: #1C (import paths)
 **Estimated complexity**: LOW
-**Current file**: `src/main/ipc/handlers/task-handlers.ts` (331 lines)
+**Context budget**: ~10,000 tokens (files: 4)
 
-**Target structure**:
-```
-src/main/ipc/handlers/tasks/
-├── index.ts               # Barrel: exports registerTaskHandlers
-├── hub-task-handlers.ts   # hub.tasks.* handlers (~120 lines)
-├── legacy-task-handlers.ts # tasks.* (forwarding to Hub) handlers (~120 lines)
-├── status-mapping.ts      # STATUS_MAP, mapHubStatusToLocal, mapLocalStatusToHub (~40 lines)
-└── task-transform.ts      # transformHubTask() hub→local Task mapping (~60 lines)
-```
+**Description**:
+Split `src/main/ipc/handlers/task-handlers.ts` into focused files in `src/main/ipc/handlers/tasks/`.
+
+**Files to Create**:
+- `src/main/ipc/handlers/tasks/index.ts` — Barrel: exports registerTaskHandlers
+- `src/main/ipc/handlers/tasks/hub-task-handlers.ts` — hub.tasks.* handlers
+- `src/main/ipc/handlers/tasks/legacy-task-handlers.ts` — tasks.* (forwarding to Hub)
+- `src/main/ipc/handlers/tasks/status-mapping.ts` — STATUS_MAP, mapping functions
+- `src/main/ipc/handlers/tasks/task-transform.ts` — transformHubTask()
+
+**Files to Modify**:
+- `src/main/ipc/handlers/task-handlers.ts` — Replace with re-export from `./tasks/`
+- `src/main/ipc/index.ts` — Update import path if needed
+
+**Files to Read for Context**:
+- `src/main/ipc/handlers/task-handlers.ts` — Full source (331 lines)
 
 **Acceptance Criteria**:
-- [ ] Hub task handlers and legacy handlers in separate files
-- [ ] Status mapping and transform functions extracted as shared utilities
-- [ ] `registerTaskHandlers` function exported from barrel
-- [ ] Full verification suite passes
+- [ ] Hub and legacy handlers in separate files
+- [ ] Status mapping and transform extracted as utilities
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #7: Split router.tsx into route groups
 
+**Agent**: `router-engineer`
 **Wave**: 2 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/renderer/app/router.tsx` (336 lines)
+**Context budget**: ~10,000 tokens (files: 4)
 
-**Target structure**:
-```
-src/renderer/app/
-├── router.tsx             # Root tree assembly only (~60 lines)
-├── routes/
-│   ├── index.ts           # Barrel
-│   ├── auth.routes.ts     # Login, register, redirect-if-authenticated (~30 lines)
-│   ├── dashboard.routes.ts # Dashboard, my-work routes (~30 lines)
-│   ├── project.routes.ts  # Project list + nested project views (~70 lines)
-│   ├── productivity.routes.ts # Planner, notes, alerts, calendar (~40 lines)
-│   ├── communication.routes.ts # Communications, GitHub (~20 lines)
-│   ├── settings.routes.ts # Settings page route (~15 lines)
-│   └── misc.routes.ts     # Fitness, briefing, roadmap, onboarding, etc. (~50 lines)
-```
+**Description**:
+Split `src/renderer/app/router.tsx` into route group files in `src/renderer/app/routes/`.
+
+**Files to Create**:
+- `src/renderer/app/routes/index.ts` — Barrel
+- `src/renderer/app/routes/auth.routes.ts` — Login, register, redirect-if-authenticated
+- `src/renderer/app/routes/dashboard.routes.ts` — Dashboard, my-work
+- `src/renderer/app/routes/project.routes.ts` — Project list + nested project views
+- `src/renderer/app/routes/productivity.routes.ts` — Planner, notes, alerts, calendar
+- `src/renderer/app/routes/communication.routes.ts` — Communications, GitHub
+- `src/renderer/app/routes/settings.routes.ts` — Settings page
+- `src/renderer/app/routes/misc.routes.ts` — Fitness, briefing, roadmap, onboarding, etc.
+
+**Files to Modify**:
+- `src/renderer/app/router.tsx` — Slim to ~60 lines: imports route groups, assembles tree
+
+**Files to Read for Context**:
+- `src/renderer/app/router.tsx` — Full source (336 lines)
+- `src/shared/constants/routes.ts` — Route constants
 
 **Acceptance Criteria**:
 - [ ] Each route group in its own file
-- [ ] `router.tsx` only assembles the tree from imported route groups
-- [ ] All route paths still work identically
-- [ ] Full verification suite passes
+- [ ] router.tsx only assembles the tree
+- [ ] All route paths work identically
+- [ ] All 5 verification commands pass
 
 ---
 
-### Tier 3 — Medium (Large Services)
+### Wave 3: Services — 8 parallel tasks
+
+> **No blockers — can run in parallel with Wave 2.** Each task touches a different service folder.
 
 ---
 
 #### Task #8: Split briefing-service.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/briefing/briefing-service.ts` (511 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/briefing/
-├── index.ts                # Barrel
-├── briefing-service.ts     # Main service orchestrator (~150 lines)
-├── briefing-generator.ts   # generateBriefing logic (~150 lines)
-├── suggestion-engine.ts    # Already exists — may need more extraction
-├── briefing-cache.ts       # Daily cache logic (~80 lines)
-└── briefing-config.ts      # Config loading/saving (~60 lines)
-```
+**Description**: Split `src/main/services/briefing/briefing-service.ts` (511 lines).
+
+**Files to Create**:
+- `src/main/services/briefing/index.ts` — Barrel
+- `src/main/services/briefing/briefing-generator.ts` — generateBriefing logic
+- `src/main/services/briefing/briefing-cache.ts` — Daily cache logic
+- `src/main/services/briefing/briefing-config.ts` — Config loading/saving
+
+**Files to Modify**:
+- `src/main/services/briefing/briefing-service.ts` — Slim to orchestrator (~150 lines)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 150 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #9: Split email-service.ts
 
-**Wave**: 3 (parallel with Task #8)
+**Agent**: `service-engineer`
+**Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/email/email-service.ts` (502 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/email/
-├── index.ts               # Barrel
-├── email-service.ts       # Main service API (~150 lines)
-├── smtp-transport.ts      # SMTP connection, createTransporter, sendMail (~120 lines)
-├── email-queue.ts         # Queue management, processQueue, scheduling (~100 lines)
-├── email-encryption.ts    # encryptSecret, decryptSecret, isEncryptedEntry (~80 lines)
-└── email-store.ts         # loadEmailStore, saveEmailStore, file I/O (~80 lines)
-```
+**Description**: Split `src/main/services/email/email-service.ts` (502 lines).
+
+**Files to Create**:
+- `src/main/services/email/index.ts` — Barrel
+- `src/main/services/email/smtp-transport.ts` — SMTP connection + sendMail
+- `src/main/services/email/email-queue.ts` — Queue management
+- `src/main/services/email/email-encryption.ts` — Secret encryption/decryption
+- `src/main/services/email/email-store.ts` — JSON file I/O
+
+**Files to Modify**:
+- `src/main/services/email/email-service.ts` — Slim to public API (~150 lines)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 120 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #10: Split notification-watcher.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/notifications/notification-watcher.ts` (458 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/notifications/
-├── index.ts                  # Barrel
-├── notification-manager.ts   # Manager/orchestrator, start/stop (~100 lines)
-├── notification-store.ts     # JSON persistence, load/save (~80 lines)
-├── notification-filter.ts    # matchesFilter, config defaults (~80 lines)
-├── slack-watcher.ts          # Already separate (342 lines)
-└── github-watcher.ts         # Already separate (355 lines)
-```
+**Description**: Split `src/main/services/notifications/notification-watcher.ts` (458 lines).
+
+**Files to Create**:
+- `src/main/services/notifications/index.ts` — Barrel
+- `src/main/services/notifications/notification-manager.ts` — Manager/orchestrator
+- `src/main/services/notifications/notification-store.ts` — JSON persistence
+- `src/main/services/notifications/notification-filter.ts` — matchesFilter + config
+
+**Files to Modify**:
+- `src/main/services/notifications/notification-watcher.ts` — Slim or remove (replaced by manager)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 100 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #11: Split settings-service.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/settings/settings-service.ts` (362 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/settings/
-├── index.ts                 # Barrel
-├── settings-service.ts      # Public API (~120 lines)
-├── settings-store.ts        # File I/O: loadSettingsFile, saveSettingsFile (~100 lines)
-├── settings-encryption.ts   # Webhook secret encryption/decryption (~80 lines)
-└── settings-defaults.ts     # Default values, schema validation (~60 lines)
-```
+**Description**: Split `src/main/services/settings/settings-service.ts` (362 lines).
+
+**Files to Create**:
+- `src/main/services/settings/index.ts` — Barrel
+- `src/main/services/settings/settings-store.ts` — File I/O: loadSettingsFile, saveSettingsFile
+- `src/main/services/settings/settings-encryption.ts` — Webhook secret encryption
+- `src/main/services/settings/settings-defaults.ts` — Default values
+
+**Files to Modify**:
+- `src/main/services/settings/settings-service.ts` — Slim to public API (~120 lines)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 100 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #12: Split hub-connection.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/hub/hub-connection.ts` (426 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/hub/
-├── index.ts                # Barrel (already exists — update)
-├── hub-connection.ts       # Manager/facade (~150 lines)
-├── hub-ws-client.ts        # WebSocket client + reconnect logic (~120 lines)
-├── hub-config-store.ts     # Encrypted config persistence, load/save (~80 lines)
-├── hub-event-mapper.ts     # configToConnection, emitTaskEvent helpers (~80 lines)
-├── hub-api-client.ts       # Already exists (290 lines)
-├── hub-auth-service.ts     # Already exists (298 lines)
-├── hub-sync.ts             # Already exists (260 lines)
-└── webhook-relay.ts        # Already exists
-```
+**Description**: Split `src/main/services/hub/hub-connection.ts` (426 lines).
+
+**Files to Create**:
+- `src/main/services/hub/hub-ws-client.ts` — WebSocket client + reconnect
+- `src/main/services/hub/hub-config-store.ts` — Encrypted config persistence
+- `src/main/services/hub/hub-event-mapper.ts` — configToConnection, emitTaskEvent helpers
+
+**Files to Modify**:
+- `src/main/services/hub/hub-connection.ts` — Slim to manager/facade (~150 lines)
+- `src/main/services/hub/index.ts` — Update barrel (if exists)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 120 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #13: Split agent-service.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/agent/agent-service.ts` (396 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/agent/
-├── index.ts              # Barrel
-├── agent-service.ts      # Public API + orchestration (~150 lines)
-├── agent-spawner.ts      # spawnAgent, process management, shell detection (~120 lines)
-├── agent-output-parser.ts # parseClaudeOutput, matchesAny (~40 lines)
-├── agent-queue.ts        # Already exists — processQueueInternal logic
-└── agent-types.ts        # AgentSession-related types (~30 lines)
-```
+**Description**: Split `src/main/services/agent/agent-service.ts` (396 lines).
+
+**Files to Create**:
+- `src/main/services/agent/index.ts` — Barrel
+- `src/main/services/agent/agent-spawner.ts` — spawnAgent, process management, shell detection
+- `src/main/services/agent/agent-output-parser.ts` — parseClaudeOutput, matchesAny
+
+**Files to Modify**:
+- `src/main/services/agent/agent-service.ts` — Slim to public API + orchestration (~150 lines)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 120 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #14: Split task-service.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/project/task-service.ts` (359 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/project/
-├── index.ts             # Barrel
-├── task-service.ts      # Public API (~120 lines)
-├── task-store.ts        # readTask, readJsonFile, file I/O (~80 lines)
-├── task-spec-parser.ts  # Plan/spec parsing, getPhaseStatus (~80 lines)
-├── task-slug.ts         # slugify, getNextNum (~30 lines)
-└── project-service.ts   # Already exists (separate file)
-```
+**Description**: Split `src/main/services/project/task-service.ts` (359 lines).
+
+**Files to Create**:
+- `src/main/services/project/index.ts` — Barrel
+- `src/main/services/project/task-store.ts` — readTask, readJsonFile, file I/O
+- `src/main/services/project/task-spec-parser.ts` — Plan/spec parsing, getPhaseStatus
+- `src/main/services/project/task-slug.ts` — slugify, getNextNum
+
+**Files to Modify**:
+- `src/main/services/project/task-service.ts` — Slim to public API (~120 lines)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 80 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #15: Split qa-runner.ts
 
+**Agent**: `service-engineer`
 **Wave**: 3 (parallel)
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/main/services/qa/qa-runner.ts` (332 lines)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/main/services/qa/
-├── index.ts             # Barrel
-├── qa-runner.ts         # Public API + orchestration (~100 lines)
-├── qa-quiet.ts          # Quiet/background QA tier logic (~100 lines)
-├── qa-full.ts           # Full/interactive QA tier logic (~100 lines)
-└── qa-report.ts         # Report generation, storage (~60 lines)
-```
+**Description**: Split `src/main/services/qa/qa-runner.ts` (332 lines).
+
+**Files to Create**:
+- `src/main/services/qa/index.ts` — Barrel (update if exists)
+- `src/main/services/qa/qa-quiet.ts` — Quiet/background QA tier logic
+- `src/main/services/qa/qa-full.ts` — Full/interactive QA tier logic
+- `src/main/services/qa/qa-report.ts` — Report generation, storage
+
+**Files to Modify**:
+- `src/main/services/qa/qa-runner.ts` — Slim to orchestrator (~100 lines)
+
+**Acceptance Criteria**:
+- [ ] Each extracted file < 100 lines
+- [ ] All 5 verification commands pass
 
 ---
 
-### Tier 4 — Polish (Large Components)
+### Wave 4: Components — 6 parallel tasks
+
+> **No blockers — can run in parallel with Waves 2-3.** Each task touches a different component folder.
 
 ---
 
 #### Task #16: Split ChangelogPage.tsx
 
+**Agent**: `component-engineer`
 **Wave**: 4
 **Blocked by**: none
 **Estimated complexity**: LOW
-**Current file**: `src/renderer/features/changelog/components/ChangelogPage.tsx` (447 lines, 6 inline components)
+**Context budget**: ~8,000 tokens (files: 3)
 
-**Target structure**:
-```
-src/renderer/features/changelog/components/
-├── ChangelogPage.tsx       # Main page (~120 lines)
-├── VersionCard.tsx         # Single version entry display (~80 lines)
-├── CategorySection.tsx     # Category grouping component (~40 lines)
-├── GenerateForm.tsx        # AI changelog generation form (~80 lines)
-├── EditableCategory.tsx    # Edit mode category component (~60 lines)
-└── EntryPreview.tsx        # Preview/edit mode component (~60 lines)
-```
+**Description**: Extract 5 inline sub-components from `src/renderer/features/changelog/components/ChangelogPage.tsx` (447 lines).
+
+**Files to Create**:
+- `src/renderer/features/changelog/components/VersionCard.tsx`
+- `src/renderer/features/changelog/components/CategorySection.tsx`
+- `src/renderer/features/changelog/components/GenerateForm.tsx`
+- `src/renderer/features/changelog/components/EditableCategory.tsx`
+- `src/renderer/features/changelog/components/EntryPreview.tsx`
+
+**Files to Modify**:
+- `src/renderer/features/changelog/components/ChangelogPage.tsx` — Import extracted components
+
+**Acceptance Criteria**:
+- [ ] Each extracted component < 100 lines
+- [ ] ChangelogPage.tsx < 150 lines
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #17: Split SettingsPage.tsx
 
-**Wave**: 4 (parallel with Task #16)
+**Agent**: `component-engineer`
+**Wave**: 4 (parallel)
 **Blocked by**: none
-**Estimated complexity**: LOW
-**Current file**: `src/renderer/features/settings/components/SettingsPage.tsx` (354 lines)
+**Context budget**: ~8,000 tokens
 
-Likely contains inline sub-components for different settings sections.
+**Files to Read**: `src/renderer/features/settings/components/SettingsPage.tsx` (354 lines)
+**Files to Modify**: Same — extract inline sub-components
 
 ---
 
 #### Task #18: Split WeeklyReviewPage.tsx
 
+**Agent**: `component-engineer`
 **Wave**: 4 (parallel)
 **Blocked by**: none
-**Estimated complexity**: LOW
-**Current file**: `src/renderer/features/planner/components/WeeklyReviewPage.tsx` (462 lines)
+**Context budget**: ~8,000 tokens
+
+**Files to Read**: `src/renderer/features/planner/components/WeeklyReviewPage.tsx` (462 lines)
+**Files to Modify**: Same — extract inline sub-components
 
 ---
 
 #### Task #19: Split ProjectInitWizard.tsx
 
+**Agent**: `component-engineer`
 **Wave**: 4 (parallel)
 **Blocked by**: none
-**Estimated complexity**: LOW
-**Current file**: `src/renderer/features/projects/components/ProjectInitWizard.tsx` (466 lines)
+**Context budget**: ~8,000 tokens
+
+**Files to Read**: `src/renderer/features/projects/components/ProjectInitWizard.tsx` (466 lines)
+**Files to Modify**: Same — extract wizard step components
 
 ---
 
 #### Task #20: Split WebhookSettings.tsx
 
+**Agent**: `component-engineer`
 **Wave**: 4 (parallel)
 **Blocked by**: none
-**Estimated complexity**: LOW
-**Current file**: `src/renderer/features/settings/components/WebhookSettings.tsx` (452 lines)
+**Context budget**: ~8,000 tokens
+
+**Files to Read**: `src/renderer/features/settings/components/WebhookSettings.tsx` (452 lines)
+**Files to Modify**: Same — extract inline sub-components
 
 ---
 
 #### Task #21: Split OAuthProviderSettings.tsx
 
+**Agent**: `component-engineer`
 **Wave**: 4 (parallel)
 **Blocked by**: none
-**Estimated complexity**: LOW
-**Current file**: `src/renderer/features/settings/components/OAuthProviderSettings.tsx` (375 lines)
+**Context budget**: ~8,000 tokens
+
+**Files to Read**: `src/renderer/features/settings/components/OAuthProviderSettings.tsx` (375 lines)
+**Files to Modify**: Same — extract inline sub-components
 
 ---
 
-### Tier 5 — Documentation
+### Wave 5: Documentation — 2 parallel tasks
+
+> **Blocked by all code tasks.** Both doc tasks run simultaneously.
 
 ---
 
 #### Task #22: Add FEATURE.md to every feature domain
 
+**Agent**: `architect`
 **Wave**: 5
-**Blocked by**: Tasks #1-#21 (structure must be finalized)
+**Blocked by**: #1-#21 (structure finalized)
 **Estimated complexity**: MEDIUM
+**Context budget**: ~10,000 tokens
 
-Add a `FEATURE.md` to each feature's primary folder explaining:
-- What the feature does
-- Folder structure with file descriptions
-- Data flow (user action → IPC → service → response → cache → UI)
-- How to add a new channel/command/component
-- Key types and where they live
-- Cross-references to related features
+**Description**:
+Add a `FEATURE.md` to each restructured feature folder documenting structure, data flow,
+how to add new items, key types, and cross-references.
 
-**Files to create** (one per major feature):
-- `src/shared/ipc/FEATURE.md` — IPC contract overview
-- `src/shared/ipc/tasks/FEATURE.md` — Tasks domain
-- `src/main/services/assistant/FEATURE.md` — Assistant system
-- `src/main/services/hub/FEATURE.md` — Hub connection system
-- `src/main/services/agent-orchestrator/FEATURE.md` — Agent orchestrator
-- `src/main/services/notifications/FEATURE.md` — Notification watchers
-- `src/main/services/email/FEATURE.md` — Email system
-- `src/main/services/briefing/FEATURE.md` — Briefing system
-- `src/main/bootstrap/FEATURE.md` — Service bootstrap/wiring
-- `src/renderer/features/tasks/FEATURE.md` — Task UI
-- `src/renderer/features/settings/FEATURE.md` — Settings UI
-- `src/renderer/features/planner/FEATURE.md` — Planner UI
-- `src/renderer/features/changelog/FEATURE.md` — Changelog UI
-- `src/renderer/app/routes/FEATURE.md` — Router structure
+**Files to Create** (14 FEATURE.md files):
+- `src/shared/ipc/FEATURE.md`
+- `src/shared/ipc/tasks/FEATURE.md`
+- `src/main/services/assistant/FEATURE.md`
+- `src/main/services/hub/FEATURE.md`
+- `src/main/services/agent-orchestrator/FEATURE.md`
+- `src/main/services/notifications/FEATURE.md`
+- `src/main/services/email/FEATURE.md`
+- `src/main/services/briefing/FEATURE.md`
+- `src/main/bootstrap/FEATURE.md`
+- `src/renderer/features/tasks/FEATURE.md`
+- `src/renderer/features/settings/FEATURE.md`
+- `src/renderer/features/planner/FEATURE.md`
+- `src/renderer/features/changelog/FEATURE.md`
+- `src/renderer/app/routes/FEATURE.md`
 
-**FEATURE.md template**:
-```markdown
-# <Feature Name>
-
-## Purpose
-<One-paragraph description>
-
-## Structure
-| File | Purpose | Lines |
-|------|---------|-------|
-| `contract.ts` | IPC channel definitions | ~80 |
-| `schemas.ts` | Zod validation schemas | ~60 |
-| ... | ... | ... |
-
-## Data Flow
-1. <Step 1>
-2. <Step 2>
-3. ...
-
-## How to Add a New <X>
-1. <Step 1>
-2. <Step 2>
-3. ...
-
-## Key Types
-- `TypeName` — `path/to/file.ts` — Description
-- ...
-
-## Related Features
-- [Feature B](../path/) — How they interact
-```
+**Acceptance Criteria**:
+- [ ] Every FEATURE.md follows the template (Purpose, Structure table, Data Flow, How to Add, Key Types, Related Features)
+- [ ] File paths in FEATURE.md match actual structure
+- [ ] All 5 verification commands pass
 
 ---
 
 #### Task #23: Update ai-docs for new structure
 
-**Wave**: 5 (parallel with Task #22)
-**Blocked by**: Tasks #1-#21
+**Agent**: `architect`
+**Wave**: 5 (parallel with #22)
+**Blocked by**: #1-#21
 
-Update these documentation files:
+**Description**: Update all ai-docs to reflect the new folder structure.
+
+**Files to Modify**:
 - `ai-docs/FEATURES-INDEX.md` — Update file paths and counts
 - `ai-docs/ARCHITECTURE.md` — Update folder structure diagram
 - `ai-docs/CODEBASE-GUARDIAN.md` — Update file placement rules
 - `ai-docs/DATA-FLOW.md` — Update import paths in examples
 - `CLAUDE.md` — Update quick reference paths
 
+**Acceptance Criteria**:
+- [ ] All file paths in docs match new structure
+- [ ] Feature counts updated
+- [ ] All 5 verification commands pass
+
 ---
 
 ## 5. Wave Plan
 
-### Wave 1: Foundation (no blockers) — 3 tasks, all parallel
-- **Task #1**: Split `ipc-contract.ts` into domain folders
-- **Task #2**: Split `command-executor.ts` into domain executors
-- **Task #3**: Split `intent-classifier.ts` into domain patterns
+### Wave 1: Foundation (no blockers) — 5 tasks
+- **#1A**: IPC contract — core domains (schema-designer)
+- **#1B**: IPC contract — remaining domains (schema-designer)
+- **#1C**: IPC root barrel + migration (schema-designer) — starts after #1A+#1B
+- **#2**: Command executor split (assistant-engineer)
+- **#3**: Intent classifier split (assistant-engineer)
+
+> #1A and #1B can run in parallel. #2 and #3 can run in parallel with each other and with #1A/#1B.
+> #1C depends on #1A + #1B completing first.
 
 ### Wave 2: Infrastructure (blocked by Wave 1) — 4 tasks, all parallel
-- **Task #4**: Split `main/index.ts` into bootstrap modules
-- **Task #5**: Split `hub-protocol.ts` into domain types
-- **Task #6**: Split `task-handlers.ts` into domain handlers
-- **Task #7**: Split `router.tsx` into route groups
+- **#4**: Bootstrap modules (service-engineer)
+- **#5**: Hub protocol types (schema-designer)
+- **#6**: Task handlers (ipc-handler-engineer)
+- **#7**: Router split (router-engineer)
 
 ### Wave 3: Services (no blockers) — 8 tasks, all parallel
-- **Task #8**: Split `briefing-service.ts`
-- **Task #9**: Split `email-service.ts`
-- **Task #10**: Split `notification-watcher.ts`
-- **Task #11**: Split `settings-service.ts`
-- **Task #12**: Split `hub-connection.ts`
-- **Task #13**: Split `agent-service.ts`
-- **Task #14**: Split `task-service.ts`
-- **Task #15**: Split `qa-runner.ts`
+- **#8**: Briefing service (service-engineer)
+- **#9**: Email service (service-engineer)
+- **#10**: Notification watcher (service-engineer)
+- **#11**: Settings service (service-engineer)
+- **#12**: Hub connection (service-engineer)
+- **#13**: Agent service (service-engineer)
+- **#14**: Task service (service-engineer)
+- **#15**: QA runner (service-engineer)
+
+> Wave 3 CAN run in parallel with Wave 2 — no dependencies between them.
 
 ### Wave 4: Components (no blockers) — 6 tasks, all parallel
-- **Task #16**: Split `ChangelogPage.tsx`
-- **Task #17**: Split `SettingsPage.tsx`
-- **Task #18**: Split `WeeklyReviewPage.tsx`
-- **Task #19**: Split `ProjectInitWizard.tsx`
-- **Task #20**: Split `WebhookSettings.tsx`
-- **Task #21**: Split `OAuthProviderSettings.tsx`
+- **#16**: ChangelogPage (component-engineer)
+- **#17**: SettingsPage (component-engineer)
+- **#18**: WeeklyReviewPage (component-engineer)
+- **#19**: ProjectInitWizard (component-engineer)
+- **#20**: WebhookSettings (component-engineer)
+- **#21**: OAuthProviderSettings (component-engineer)
 
-### Wave 5: Documentation (blocked by all above) — 2 tasks, parallel
-- **Task #22**: Add FEATURE.md to every domain folder
-- **Task #23**: Update ai-docs for new structure
+> Wave 4 CAN run in parallel with Waves 2-3 — no dependencies.
+
+### Wave 5: Documentation (blocked by all code tasks) — 2 tasks, parallel
+- **#22**: FEATURE.md files (architect)
+- **#23**: ai-docs updates (architect)
 
 ### Dependency Graph
 
 ```
-Wave 1:  #1 IPC ──────────┐
-         #2 Executor ──────┤──> Wave 2:  #4 Bootstrap
-         #3 Classifier ────┘             #5 Hub Protocol
-                                         #6 Task Handlers
-                                         #7 Router
+Wave 1 (parallel):
+  #1A IPC core ─────┐
+  #1B IPC remaining ─┤──> #1C IPC barrel ──> Wave 2: #4 Bootstrap, #6 Task Handlers
+  #2 Executor ───────┤                       Wave 2: #5 Hub Protocol, #7 Router
+  #3 Classifier ─────┘
 
-Wave 3:  #8 Briefing ─────┐
-         #9 Email ─────────┤
-         #10 Notifications ┤
-         #11 Settings ─────┤──> (all independent, no blockers)
-         #12 Hub Connection┤
-         #13 Agent Service ┤
-         #14 Task Service ─┤
-         #15 QA Runner ────┘
+Wave 3 (independent, can overlap Wave 2):
+  #8-#15 Services (all parallel, no dependencies)
 
-Wave 4:  #16-#21 Components ──> (all independent)
+Wave 4 (independent, can overlap Waves 2-3):
+  #16-#21 Components (all parallel, no dependencies)
 
-Wave 5:  #22 FEATURE.md ──────> (blocked by ALL above)
-         #23 ai-docs update ──> (blocked by ALL above)
+Wave 5 (after all code complete):
+  #22 FEATURE.md + #23 ai-docs (parallel)
 ```
 
-**Note**: Waves 3 and 4 can actually run in parallel with Wave 2, since they don't
-depend on index.ts or hub-protocol changes. The Team Leader can optimize this.
+### Maximum Parallelism
+
+At peak, the Team Leader can have **up to 12 agents running simultaneously** (Wave 3 + Wave 4 overlapping).
+More conservatively, 4-6 agents per wave is practical.
 
 ---
 
 ## 6. File Ownership Matrix
 
-### New files created (by task):
+| Task | Folder(s) Owned | Agent |
+|------|----------------|-------|
+| #1A | `src/shared/ipc/{tasks,projects,planner,fitness,settings,assistant,agents,auth,common}/` | schema-designer |
+| #1B | `src/shared/ipc/{hub,git,github,notifications,email,claude,terminals,spotify,workflow,qa,briefing,app,misc}/` | schema-designer |
+| #1C | `src/shared/ipc/index.ts`, `src/shared/ipc-contract.ts`, `electron.vite.config.ts` | schema-designer |
+| #2 | `src/main/services/assistant/executors/` | assistant-engineer |
+| #3 | `src/main/services/assistant/intent-classifier/` | assistant-engineer |
+| #4 | `src/main/bootstrap/`, `src/main/index.ts` | service-engineer |
+| #5 | `src/shared/types/hub/` | schema-designer |
+| #6 | `src/main/ipc/handlers/tasks/` | ipc-handler-engineer |
+| #7 | `src/renderer/app/routes/` | router-engineer |
+| #8 | `src/main/services/briefing/` | service-engineer |
+| #9 | `src/main/services/email/` | service-engineer |
+| #10 | `src/main/services/notifications/` | service-engineer |
+| #11 | `src/main/services/settings/` | service-engineer |
+| #12 | `src/main/services/hub/` (connection only) | service-engineer |
+| #13 | `src/main/services/agent/` | service-engineer |
+| #14 | `src/main/services/project/` | service-engineer |
+| #15 | `src/main/services/qa/` | service-engineer |
+| #16 | `src/renderer/features/changelog/components/` | component-engineer |
+| #17 | `src/renderer/features/settings/components/` (SettingsPage only) | component-engineer |
+| #18 | `src/renderer/features/planner/components/` | component-engineer |
+| #19 | `src/renderer/features/projects/components/` | component-engineer |
+| #20 | `src/renderer/features/settings/components/` (WebhookSettings only) | component-engineer |
+| #21 | `src/renderer/features/settings/components/` (OAuthProvider only) | component-engineer |
+| #22 | FEATURE.md files across codebase | architect |
+| #23 | `ai-docs/`, `CLAUDE.md` | architect |
 
-| Task | Files Created | Domain |
-|------|--------------|--------|
-| #1 | ~70 files in `src/shared/ipc/` | IPC contracts |
-| #2 | ~20 files in `src/main/services/assistant/executors/` | Assistant executors |
-| #3 | ~15 files in `src/main/services/assistant/intent-classifier/` | Intent classification |
-| #4 | 5 files in `src/main/bootstrap/` | Bootstrap modules |
-| #5 | 11 files in `src/shared/types/hub/` | Hub protocol types |
-| #6 | 5 files in `src/main/ipc/handlers/tasks/` | Task handlers |
-| #7 | 8 files in `src/renderer/app/routes/` | Route groups |
-| #8-#15 | 3-5 files each in respective service dirs | Service splits |
-| #16-#21 | 3-6 files each in respective component dirs | Component splits |
-| #22 | ~14 FEATURE.md files | Documentation |
-| #23 | 5 updated docs | Documentation |
-
-**No two tasks create files in the same folder** — maximum parallel safety.
+**Conflict check**: Tasks #17, #20, #21 all touch `src/renderer/features/settings/components/` but
+each modifies a DIFFERENT file within that folder. No conflict.
 
 ---
 
 ## 7. Context Budget
 
-| Task | Estimated | Files | Notes |
-|------|-----------|-------|-------|
-| #1 | HIGH (~30K) | ~70 new files | Largest task — may need splitting into sub-tasks per domain group |
-| #2 | MEDIUM (~18K) | ~20 new files | Extract functions, create router |
-| #3 | MEDIUM (~15K) | ~15 new files | Extract pattern matches |
-| #4 | MEDIUM (~15K) | 5 new files | Restructure index.ts |
-| #5 | MEDIUM (~12K) | 11 new files | Extract types |
-| #6 | LOW (~10K) | 5 new files | Split handler file |
-| #7 | LOW (~10K) | 8 new files | Split route definitions |
-| #8-#15 | LOW (~8K each) | 3-5 each | Service decomposition |
-| #16-#21 | LOW (~8K each) | 3-6 each | Component extraction |
-| #22-#23 | LOW (~10K each) | Documentation | Writing, not code |
+| Task | Tokens | Files | Notes |
+|------|--------|-------|-------|
+| #1A | ~18K | ~24 new | Core domains — within threshold |
+| #1B | ~18K | ~40 new | Remaining domains — within threshold |
+| #1C | ~15K | 3 | Root barrel + migration |
+| #2 | ~18K | ~20 new | Extract functions, create router |
+| #3 | ~15K | ~16 new | Extract pattern matches |
+| #4 | ~15K | 5 new | Restructure index.ts |
+| #5 | ~12K | 12 new | Extract types |
+| #6 | ~10K | 5 new | Split handler file |
+| #7 | ~10K | 8 new | Split route definitions |
+| #8-#15 | ~8K each | 3-5 each | Service decomposition |
+| #16-#21 | ~8K each | 3-6 each | Component extraction |
+| #22-#23 | ~10K each | Docs only | Documentation |
 
-**Task #1 may need splitting** — 2,937 lines across 30 domains is a lot for one context window.
-Suggested sub-split: Group A (tasks, projects, planner, fitness, settings) and
-Group B (remaining domains) + Group C (root barrel + types).
+All tasks under 18K threshold. No further splitting needed.
 
 ---
 
@@ -995,26 +947,24 @@ Group B (remaining domains) + Group C (root barrel + types).
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| Barrel re-exports don't produce identical contract types | Medium | High | TypeScript strict mode catches type mismatches; test existing consumers |
-| Import path changes break 200+ files | Low | High | Use `@shared/ipc` alias + keep `ipc-contract.ts` as thin re-export during migration |
-| Circular dependencies in domain schema imports | Medium | Medium | `common/schemas.ts` for truly shared primitives; lint rule to prevent cross-domain schema imports |
-| electron-vite tree-shaking breaks with barrel pattern | Low | Low | Vite handles barrel re-exports well; verify bundle size stays same |
+| Barrel re-exports don't produce identical contract types | Medium | High | TypeScript strict catches mismatches; test with `npm run typecheck` |
+| Import path changes break 200+ files | Low | High | Keep `ipc-contract.ts` as thin re-export during migration |
+| Circular deps in domain schema imports | Medium | Medium | `common/schemas.ts` for shared primitives; no cross-domain imports |
+| electron-vite tree-shaking breaks with barrels | Low | Low | Vite handles barrels well; verify bundle size |
 
 ### Scope Risks
 
 | Risk | Mitigation |
 |------|----------|
-| Task #1 too large for one agent context | Split into sub-tasks by domain groups |
-| Refactor accidentally changes behavior | Zero logic changes — pure structural moves; diff review shows only file moves |
-| FEATURE.md becomes stale | `check:docs` script can be extended to verify FEATURE.md freshness |
+| Refactor accidentally changes behavior | Zero logic changes — pure structural moves |
+| FEATURE.md becomes stale | `check:docs` can be extended to verify freshness |
 
 ### Integration Risks
 
 | Risk | Mitigation |
 |------|----------|
-| Two agents split the same file differently | File ownership matrix ensures no overlaps |
-| Barrel imports increase bundle size | Vite tree-shakes unused re-exports; verify with `npm run build` |
-| Tests reference old file paths | Tests import from barrel (public API), not internal files |
+| Two agents edit same file | File ownership matrix verified — no overlaps |
+| Tests reference old paths | Tests import from barrels, not internals |
 
 ---
 
@@ -1029,37 +979,38 @@ npm run lint && npm run typecheck && npm run test && npm run build && npm run ch
 ### Feature-Specific QA Checks
 - [ ] All 348 IPC channels accounted for (count check)
 - [ ] All ~88 Zod schemas accounted for (count check)
-- [ ] Merged `ipcInvokeContract` and `ipcEventContract` produce identical TypeScript types
-- [ ] Bundle size delta < 5% (barrel overhead)
-- [ ] No circular dependency warnings from ESLint
-- [ ] All FEATURE.md files follow template structure
-- [ ] `import from '@shared/ipc-contract'` still works (backward compat)
+- [ ] Merged contracts produce identical TypeScript types
+- [ ] Bundle size delta < 5%
+- [ ] No circular dependency warnings
+- [ ] `import from '@shared/ipc-contract'` still works
 
 ### Guardian Focus Areas
-- No files in wrong process root (main code in renderer, etc.)
-- No cross-domain imports within IPC domain folders (tasks/ should not import from planner/)
-- Barrel exports match file contents (nothing missing)
+- No files in wrong process root
+- No cross-domain imports within IPC domain folders
+- Barrel exports match file contents
 
 ---
 
 ## 10. Implementation Notes
 
-### Path Alias Update
-Add `@shared/ipc` alias pointing to `src/shared/ipc/` in electron-vite config.
-Keep `@shared/ipc-contract` as alias to `src/shared/ipc/index.ts` for backward compat.
+### Execution Model
+- **Team Lead** orchestrates all waves, delegates to specialist agents
+- **Agents work in parallel** within each wave on their own workbranches
+- **QA reviewer** validates each task before merge to feature branch
+- **Codebase Guardian** runs final structural check before PR
 
-### Gradual Migration Strategy
-1. Create new structure alongside old `ipc-contract.ts`
-2. Have new barrel re-export everything old file exported
-3. Update `ipc-contract.ts` to just re-export from new barrel
-4. Gradually update imports across codebase to use new paths
-5. Delete `ipc-contract.ts` when all imports are migrated
+### Gradual Migration Strategy (Task #1C)
+1. Create new `src/shared/ipc/` structure alongside old `ipc-contract.ts`
+2. Root barrel re-exports everything the old file exported
+3. Update `ipc-contract.ts` to thin re-export: `export * from './ipc';`
+4. All existing imports continue to work unchanged
+5. Future work can use `@shared/ipc/tasks` for domain-specific imports
 
 ### Existing Patterns to Follow
-- **Barrel exports**: Every existing feature module uses `index.ts` barrels — follow same pattern
-- **Zod schemas**: Keep `z.object()` / `z.enum()` pattern — don't switch to different validation
-- **Service factory**: Keep `createXxxService()` factory function pattern
-- **Handler registration**: Keep `router.handle()` pattern in handler files
+- **Barrel exports**: Every feature module uses `index.ts` barrels
+- **Zod schemas**: Keep `z.object()` / `z.enum()` pattern
+- **Service factory**: Keep `createXxxService()` pattern
+- **Handler registration**: Keep `router.handle()` pattern
 
 ### What NOT to Change
 - Business logic inside any function
