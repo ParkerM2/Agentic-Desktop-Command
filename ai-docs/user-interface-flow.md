@@ -61,7 +61,7 @@ Electron main process starts
 | 1 | `src/main/index.ts` | Electron `app.whenReady()` → creates window, initializes services |
 | 2 | `src/main/ipc/index.ts` | `registerAllHandlers()` wires 200+ IPC channels to service methods |
 | 3 | `src/main/services/hub/hub-connection.ts` | Auto-loads saved hub config from `userData/hub-config.json` |
-| 4 | `src/main/services/device/heartbeat.ts` | Starts 30s heartbeat if device previously registered |
+| 4 | `src/main/services/device/` | Starts 30s heartbeat if device previously registered |
 | 5 | `src/renderer/main.tsx` | React app mounts with QueryClientProvider + AppRouter |
 | 6 | `src/renderer/app/router.tsx` | TanStack Router resolves `/` → redirects to `/dashboard` |
 | 7 | `src/renderer/features/auth/components/AuthGuard.tsx` | Intercepts — checks `isAuthenticated` from store |
@@ -952,7 +952,6 @@ DeviceSelector.tsx lets user switch between registered devices.
 - `src/renderer/features/settings/components/DeviceSelector.tsx`
 - `src/renderer/features/devices/api/useDevices.ts`
 - `src/main/services/device/device-service.ts`
-- `src/main/services/device/heartbeat.ts`
 
 ---
 
@@ -991,7 +990,7 @@ Hub server broadcasts event (e.g., task:updated)
 | `src/main/services/hub/hub-api-client.ts` | HTTP client for Hub API calls |
 | `src/main/services/hub/hub-auth-service.ts` | Auth API (login, register, refresh, logout) |
 | `src/main/services/hub/hub-client.ts` | Low-level HTTP client factory |
-| `src/main/services/device/heartbeat.ts` | 30s heartbeat timer |
+| `src/main/services/device/` | Device service + heartbeat |
 | `src/shared/types/hub-protocol.ts` | Hub API response types |
 | `hub/src/app.ts` | Hub Fastify server + WebSocket setup |
 | `hub/src/middleware/api-key.ts` | API key auth middleware |
@@ -1029,22 +1028,9 @@ User launches a task
 | Check session running | `workflow.isRunning` |
 | Stop session | `workflow.stop` |
 
-### Cost Tracker
-
-**File**: `src/main/services/workflow/cost-tracker.ts`
-
-| Model | Input (per 1M tokens) | Output (per 1M tokens) |
-|-------|----------------------|------------------------|
-| Opus | $15.00 | $75.00 |
-| Sonnet | $3.00 | $15.00 |
-| Haiku | $0.25 | $1.25 |
-
 **Key files**:
-- `src/renderer/features/workflow/api/useWorkflow.ts`
-- `src/renderer/features/workflow/hooks/useWorkflowEvents.ts`
-- `src/renderer/features/workflow/store.ts`
 - `src/main/ipc/handlers/workflow-handlers.ts`
-- `src/main/services/workflow/cost-tracker.ts`
+- `src/main/services/workflow/workflow-service.ts`
 
 ---
 

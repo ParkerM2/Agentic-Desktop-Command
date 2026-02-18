@@ -68,7 +68,7 @@ function fileExists(path: string): boolean {
 
 const PROJECT_ID = 'test-project';
 const PROJECT_PATH = '/mock/projects/my-app';
-const SPECS_DIR = `${PROJECT_PATH}/.auto-claude/specs`;
+const SPECS_DIR = `${PROJECT_PATH}/.adc/specs`;
 
 interface RequirementsData {
   task_description: string;

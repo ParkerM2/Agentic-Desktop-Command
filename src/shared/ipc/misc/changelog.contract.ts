@@ -48,5 +48,3 @@ export const changelogInvoke = {
     output: ChangelogEntrySchema,
   },
 } as const;
-
-export const changelogEvents = {} as const;

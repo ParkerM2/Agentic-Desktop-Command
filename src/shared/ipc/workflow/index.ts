@@ -1,5 +1,5 @@
 /**
- * Workflow IPC — Barrel Export
+ * Workflow IPC -- Barrel Export
  */
 
-export { workflowEvents, workflowInvoke } from './contract';
+export { workflowInvoke } from './contract';

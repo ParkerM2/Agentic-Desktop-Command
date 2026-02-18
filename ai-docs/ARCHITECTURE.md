@@ -19,7 +19,7 @@
 ├──────────────────────────────────────────────────┼──────────────┤
 │  PRELOAD (Context Bridge)                        │              │
 │  ┌─────────────────────────────────────────────┐ │              │
-│  │ api.invoke(channel, input) → IpcResult<T>   │─┤              │
+│  │ api.invoke(channel, input) → Promise<T>     │─┤              │
 │  │ api.on(channel, handler) → unsubscribe      │◁┘              │
 │  └─────────────────────────────────────────────┘                │
 ├─────────────────────────────────────────────────────────────────┤
@@ -35,9 +35,9 @@
 │  └──────────────┘                        ├─ AssistantService    │
 │                                          │   ├─ executors/ (22) │
 │                                          │   └─ classifier/(16) │
-│                                          ├─ HubService (10)     │
+│                                          ├─ HubService (9)     │
 │                                          ├─ ProjectService (6)  │
-│                                          └─ ... (37 total)      │
+│                                          └─ ... (32 total)      │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
 │  │ IPC Contract: src/shared/ipc/ (23 domain folders)            ││
@@ -56,7 +56,7 @@
    - Validates input against Zod schema from `ipc-contract.ts`
    - Calls the registered handler function
    - Wraps result in `{ success: true, data }` or `{ success: false, error }`
-5. Result returns to renderer as `IpcResult<T>`
+5. Result returns to renderer as `{ success: true, data: T }` or `{ success: false, error }`
 
 ## IPC Flow (Events — Main → Renderer)
 
@@ -94,7 +94,7 @@ The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modu
 
 - **ErrorCollector** — Created first in `service-registry.ts`. Captures service errors to file-based log with capacity alerts. Reports errors via `event:app.error` IPC event. Used by `initNonCritical()` to record initialization failures.
 - **HealthRegistry** — Created early. Monitors service liveness via periodic pulses. Services call `healthRegistry.pulse(name)` during normal operation; the registry emits `event:app.serviceUnhealthy` when pulses are missed.
-- **initNonCritical()** — Wrapper function in `service-registry.ts`. Non-essential services (milestones, ideas, changelog, fitness, spotify, calendar, voice, screen) are wrapped so that if their factory throws, the app continues running with `null` for that service. Failures are reported to ErrorCollector.
+- **initNonCritical()** — Wrapper function in `service-registry.ts`. Non-essential services (milestones, ideas, changelog, fitness, spotify, calendar, voice) are wrapped so that if their factory throws, the app continues running with `null` for that service. Failures are reported to ErrorCollector.
 - **AgentWatchdog** — Created after the orchestrator. Monitors active agent sessions for dead/stale processes (30s interval, PID checks, heartbeat age thresholds). Alerts are forwarded to the renderer via `event:agent.orchestrator.watchdogAlert`.
 - **QaTrigger** — Created after QA runner. Listens for task status changes to `review` and automatically starts quiet QA sessions. Disposed in `lifecycle.ts` during shutdown.
 
@@ -106,7 +106,7 @@ This replaces the previous monolithic `index.ts` where all initialization lived 
 |------|---------|----------|
 | Projects | JSON file | `{appData}/adc/projects.json` |
 | Settings | JSON file | `{appData}/adc/settings.json` |
-| Tasks | File directories | `{projectPath}/.auto-claude/specs/{taskId}/` |
+| Tasks | File directories | `{projectPath}/.adc/specs/{taskId}/` |
 | Task specs | JSON files | `requirements.json`, `implementation_plan.json`, `task_metadata.json` |
 | Terminals | In-memory only | PTY processes managed by TerminalService |
 | Agents | In-memory only | PTY processes managed by AgentService |
@@ -147,7 +147,7 @@ Large services have been split into focused sub-modules within their directory. 
 Key refactored services:
 - **assistant/** — 22 domain executors in `executors/`, 16 intent classifier files in `intent-classifier/`
 - **agent/** — `agent-spawner.ts`, `agent-output-parser.ts`, `agent-queue.ts`, `token-parser.ts`
-- **hub/** — 10 files: api-client, auth, ws-client, connection, sync, events, config, errors, webhook-relay
+- **hub/** — 9 files: api-client, auth, ws-client, connection, sync, events, config, webhook-relay
 - **briefing/** — 6 files: cache, config, generator, summary, suggestion-engine
 - **email/** — 7 files: config, encryption, queue, store, smtp-transport
 - **notifications/** — 7 files: slack-watcher, github-watcher, filter, manager, store
@@ -320,7 +320,7 @@ with source 'watch', enabling the assistant widget to show proactive notificatio
 
 ## Task System
 
-Tasks are stored as file-system directories under `{project}/.auto-claude/specs/`:
+Tasks are stored as file-system directories under `{project}/.adc/specs/`:
 
 ```
 specs/
@@ -505,13 +505,11 @@ The Electron client connects to a self-hosted Hub server for multi-device sync.
 | `hub-auth-service.ts` | `src/main/services/hub/` | Login/register/logout + token refresh |
 | `hub-token-store.ts` | `src/main/services/hub/` | safeStorage encrypted token persistence |
 | `hub-websocket.ts` | `src/main/services/hub/` | WebSocket with auto-reconnect |
-| `hub-errors.ts` | `src/main/services/hub/` | Standardized error classes |
 
 ### IPC Channels
 
 | Channel | Purpose |
 |---------|---------|
-| `hub.ws.status` | Get WebSocket connection status |
 | `hub.tasks.list` | List tasks from Hub |
 | `hub.tasks.get` | Get single task |
 | `hub.tasks.create` | Create task on Hub |

@@ -57,5 +57,3 @@ export const screenInvoke = {
     }),
   },
 } as const;
-
-export const screenEvents = {} as const;

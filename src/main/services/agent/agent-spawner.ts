@@ -12,7 +12,7 @@ import { join } from 'node:path';
 
 import * as pty from '@lydell/node-pty';
 
-import { AUTO_CLAUDE_DIR, SPECS_DIR } from '@shared/constants';
+import { ADC_DIR, SPECS_DIR } from '@shared/constants';
 import type { AgentSession, AgentStatus, TokenUsage } from '@shared/types';
 
 import { parseClaudeOutput } from './agent-output-parser';
@@ -155,7 +155,7 @@ export function spawnAgent(
   // Send the claude command after a brief delay for shell init
   setTimeout(() => {
     // Construct the claude command with the task context
-    const specDir = join(workDir, AUTO_CLAUDE_DIR, SPECS_DIR, taskId);
+    const specDir = join(workDir, ADC_DIR, SPECS_DIR, taskId);
     const claudeCmd = existsSync(specDir) ? `claude --task "${taskId}"\r` : `claude\r`;
     ptyProcess.write(claudeCmd);
     session.status = 'running';

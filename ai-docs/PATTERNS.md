@@ -13,7 +13,7 @@
 
 ## Adding a New IPC Channel
 
-1. **Define contract** in `src/shared/ipc-contract.ts`:
+1. **Define contract** in `src/shared/ipc/<domain>/contract.ts` (or create a new domain folder):
    ```typescript
    'myFeature.doThing': {
      input: z.object({ id: z.string() }),

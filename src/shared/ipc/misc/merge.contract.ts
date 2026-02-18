@@ -59,5 +59,3 @@ export const mergeInvoke = {
     output: SuccessResponseSchema,
   },
 } as const;
-
-export const mergeEvents = {} as const;

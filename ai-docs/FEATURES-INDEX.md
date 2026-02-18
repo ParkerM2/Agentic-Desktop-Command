@@ -9,11 +9,11 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 28 |
-| Main Process Services | 37 |
-| IPC Handler Files | 36 |
+| Renderer Features | 27 |
+| Main Process Services | 32 |
+| IPC Handler Files | 40 |
 | IPC Domain Folders | 23 |
-| Hub Type Modules | 12 |
+| Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
 
@@ -27,7 +27,7 @@ Location: `src/renderer/features/`
 |---------|---------|----------------|--------------|
 | **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
-| **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea), AssistantPage, CommandBar (TopBar) | `assistant.*` |
+| **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea), CommandBar (TopBar) | `assistant.*` |
 | **auth** | User authentication | LoginPage, RegisterPage, AuthGuard, UserMenu (in layouts) | `auth.*` |
 | **changelog** | Project changelog viewer | ChangelogPage, ChangelogEntry | `changelog.*` |
 | **communications** | Slack/Discord integration | SlackPanel, DiscordPanel | MCP tools |
@@ -45,12 +45,10 @@ Location: `src/renderer/features/`
 | **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid, TaskFiltersToolbar, TaskDetailRow, TaskStatusBadge, CreateTaskDialog; **Hooks**: useTaskEvents (→ useAgentEvents + useQaEvents), useAgentMutations, useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*`, `qa.*`, `event:agent.orchestrator.*`, `event:qa.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions | BriefingPage, SuggestionCard | `briefing.*` |
-| **merge** | Branch merge workflow | ConflictResolver, MergeConfirmModal, MergePreviewPanel | `merge.*` |
+| **merge** | Branch merge workflow | MergeConfirmModal | `merge.*` |
 | **my-work** | Cross-project task view | MyWorkPage | `tasks.*` |
 | **onboarding** | First-run setup wizard | OnboardingWizard, ClaudeCliStep, ApiKeyStep | `app.*`, `settings.*` |
-| **screen** | Screen capture | ScreenshotButton, ScreenshotViewer | `screen.*` |
 | **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings | `voice.*` |
-| **workflow** | Task execution & progress watching | (hooks only — no UI components) | `workflow.*` |
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 
@@ -89,12 +87,11 @@ Location: `src/main/services/`
 | **fitness** | Health metrics (manual) | getMetrics, logWorkout | - |
 | **git** | Git operations | getStatus, commit, listBranches, listWorktrees | `event:git.*` |
 | **github** | GitHub API integration | listPRs, listIssues, getRepo | - |
-| **hub** | Hub server connection. Sub-modules: `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-errors.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` | connect, disconnect, sync | `event:hub.*` |
+| **hub** | Hub server connection. Sub-modules: `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` | connect, disconnect, sync | `event:hub.*` |
 | **ideas** | Idea CRUD | list, create, update, delete | - |
 | **insights** | Analytics aggregation | getMetrics, getTimeSeries | - |
 | **merge** | Branch merge operations | previewDiff, checkConflicts, mergeBranch | - |
 | **milestones** | Milestone CRUD | list, create, update, delete | - |
-| **nlp** | Natural language parsing | parseTimeExpression, extractEntities | - |
 | **notes** | Note CRUD | list, create, update, delete | - |
 | **planner** | Daily time blocks | listBlocks, createBlock, updateBlock | `event:planner.*` |
 | **project** | Project management. Sub-modules: `project-detector.ts`, `task-service.ts`, `task-slug.ts`, `task-spec-parser.ts`, `task-store.ts` | list, add, remove, selectDirectory | `event:project.*` |
@@ -105,13 +102,10 @@ Location: `src/main/services/`
 | **claude** | Persistent Claude sessions (Anthropic SDK) | sendMessage, getConversation, listConversations | `event:claude.*` |
 | **email** | Email sending (SMTP). Sub-modules: `email-config.ts`, `email-encryption.ts`, `email-queue.ts`, `email-store.ts`, `smtp-transport.ts` (barrel: `index.ts`) | sendEmail, getConfig, testConnection | - |
 | **notifications** | Background Slack/GitHub watchers. Sub-modules: `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (barrel: `index.ts`) | startWatching, stopWatching, getNotifications | `event:notification.*` |
-| **screen** | Screen capture (desktopCapturer) | captureScreen, getSources | - |
 | **tasks** | Smart task creation. Sub-modules: `task-decomposer.ts`, `github-importer.ts` (barrel: `index.ts`) | decompose, importFromGithub | - |
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |
-| **workflow** | Workflow execution & progress | launchWorkflow, watchProgress | `event:workflow.*` |
 | **device** | Device registration & heartbeat via Hub API | registerDevice, updateDevice, sendHeartbeat | `event:hub.devices.*` |
-| **device/heartbeat** | Periodic heartbeat pings to Hub | start, stop | - |
 | **agent-orchestrator** | Headless Claude agent lifecycle management | spawnSession, stopSession, listSessions, onSessionEvent | `event:agent.orchestrator.*` |
 | **agent-orchestrator/jsonl-progress-watcher** | JSONL progress file watcher (debounced tail parsing) | start, stop, onProgress | `event:agent.orchestrator.progress`, `event:agent.orchestrator.planReady` |
 | **agent-orchestrator/agent-watchdog** | Health monitoring for active agent sessions (PID checks, heartbeat age, auto-restart on overflow) | start, stop, checkNow, onAlert, dispose | `event:agent.orchestrator.watchdogAlert` (wired in index.ts) |
@@ -149,7 +143,9 @@ Location: `src/main/ipc/handlers/`
 | `settings-handlers.ts` | settings.* |
 | `spotify-handlers.ts` | spotify.* |
 | `tasks/` (directory) | tasks.* — Split into: `hub-task-handlers.ts`, `legacy-task-handlers.ts`, `status-mapping.ts`, `task-transform.ts`, `index.ts` (barrel) |
+| `task-handlers.ts` | tasks.* (single-file handler, coexists with `tasks/` split handlers) |
 | `terminal-handlers.ts` | terminals.* |
+| `error-handlers.ts` | app.getErrorLog, app.getErrorStats, etc. |
 | `hotkey-handlers.ts` | hotkeys.get, hotkeys.update, hotkeys.reset |
 | `webhook-settings-handlers.ts` | webhooks.* |
 | `briefing-handlers.ts` | briefing.* |
@@ -157,10 +153,8 @@ Location: `src/main/ipc/handlers/`
 | `email-handlers.ts` | email.* |
 | `mcp-handlers.ts` | mcp.* |
 | `notification-handlers.ts` | notifications.* |
-| `screen-handlers.ts` | screen.* |
 | `time-handlers.ts` | time.* |
 | `voice-handlers.ts` | voice.* |
-| `workflow-handlers.ts` | workflow.* |
 | `workspace-handlers.ts` | workspace.* |
 | `auth-handlers.ts` | auth.* |
 | `device-handlers.ts` | devices.* |
@@ -195,7 +189,6 @@ Location: `src/main/ipc/handlers/`
 | `claude.ts` | ClaudeConversation, ClaudeMessage, ClaudeConfig |
 | `email.ts` | EmailConfig, EmailMessage, SmtpSettings |
 | `notifications.ts` | Notification, NotificationSource, WatcherConfig |
-| `screen.ts` | ScreenCapture, ScreenSource |
 | `voice.ts` | VoiceConfig, SpeechResult, VoiceState |
 | `workspace.ts` | Workspace, WorkspaceConfig |
 | `hub-connection.ts` | HubConnection types |
@@ -260,7 +253,7 @@ The IPC contract has been split from a single monolithic file into **23 domain f
 | `git` | Git status, branches, worktrees |
 | `github` | GitHub PRs, issues, notifications |
 | `hub` | Hub connection, sync, config |
-| `misc` | Alerts, calendar, changelog, devices, hotkeys, ideas, insights, merge, milestones, notes, screen, time, voice, webhooks, workspaces |
+| `misc` | Alerts, calendar, changelog, devices, hotkeys, ideas, insights, merge, milestones, notes, screen, time, voice, webhooks, workspaces (18 contract files) |
 | `notifications` | Notification watchers (Slack, GitHub) |
 | `planner` | Time blocks, daily plans, weekly review |
 | `projects` | Project CRUD, sub-projects, repo detection |
@@ -284,7 +277,7 @@ Additional files: `src/shared/ipc/types.ts` (type utilities: `InvokeInput`, `Inv
 
 ### Hub Type Modules (`src/shared/types/hub/`)
 
-Hub protocol types have been split from a single `hub-protocol.ts` into **12 focused modules**:
+Hub protocol types have been split from a single `hub-protocol.ts` into **9 focused modules**:
 
 | File | Types Defined |
 |------|---------------|
@@ -293,12 +286,9 @@ Hub protocol types have been split from a single `hub-protocol.ts` into **12 foc
 | `enums.ts` | Hub-specific enums (status, priority) |
 | `errors.ts` | Hub error types |
 | `events.ts` | Hub WebSocket event payload types |
-| `guards.ts` | Type guard functions |
 | `index.ts` | Barrel re-export |
-| `legacy.ts` | Deprecated types (backward compat) |
 | `projects.ts` | Hub project types |
 | `tasks.ts` | Hub task types |
-| `transitions.ts` | Status transition types |
 | `workspaces.ts` | Hub workspace types |
 
 ### FEATURE.md Documentation Files
@@ -399,7 +389,6 @@ Location: `src/renderer/shared/hooks/`
 | `useClaudeAuth.ts` | Check Claude CLI installation and authentication status |
 | `useHubEvents.ts` | Subscribe to Hub-specific IPC events (`useHubEvent`) |
 | `useIpcEvent.ts` | Subscribe to IPC events from main process |
-| `useIpcQuery.ts` | IPC-backed React Query hook factory (not exported from barrel) |
 | `useMutationErrorToast.ts` | `onError(action)` factory for React Query mutation error handling → toast notifications |
 | `useLooseParams.ts` | Loose route params hook — reads `$projectId` without strict route context |
 | `useOAuthStatus.ts` | Check OAuth provider configuration status |
@@ -451,12 +440,12 @@ ADC/
 │   │   │   └── handlers/tasks/  # Split task handlers (5 files)
 │   │   ├── mcp/                 # MCP client framework
 │   │   ├── mcp-servers/         # MCP server definitions
-│   │   ├── services/            # Business logic (37 services)
+│   │   ├── services/            # Business logic (32 services)
 │   │   │   ├── agent/           # 5 files (spawner, parser, queue, tokens)
 │   │   │   ├── assistant/       # Intent classifier (16 files), executors (22 files)
 │   │   │   ├── briefing/        # 6 files (cache, config, generator, summary, suggestions)
 │   │   │   ├── email/           # 7 files (config, encryption, queue, store, smtp)
-│   │   │   ├── hub/             # 10 files (api-client, auth, ws, sync, events)
+│   │   │   ├── hub/             # 9 files (api-client, auth, ws, sync, events)
 │   │   │   ├── notifications/   # 7 files (slack, github, filter, manager, store)
 │   │   │   ├── project/         # 6 files (detector, tasks, slug, spec-parser, store)
 │   │   │   ├── qa/              # 7 files (poller, prompt, parser, session, trigger, types)
@@ -468,14 +457,14 @@ ADC/
 │   ├── renderer/                # React app
 │   │   ├── app/                 # Router, providers, layouts
 │   │   │   └── routes/          # Route groups (8 files)
-│   │   ├── features/            # Feature modules (28 features)
+│   │   ├── features/            # Feature modules (27 features)
 │   │   │   ├── changelog/components/  # 7 files (split from monolithic)
 │   │   │   ├── planner/components/    # 12 files (split from monolithic)
 │   │   │   ├── projects/components/   # 10+ files + wizard-steps/ (6 files)
 │   │   │   └── settings/components/   # 28 files (split from monolithic)
 │   │   ├── shared/              # Shared hooks, stores, lib, components
 │   │   │   ├── components/      # 9 shared UI components
-│   │   │   ├── hooks/           # 7 shared hooks (+ useLooseParams)
+│   │   │   ├── hooks/           # 6 shared hooks (+ useLooseParams)
 │   │   │   ├── lib/             # Utilities (cn, ipc helper)
 │   │   │   └── stores/          # 5 Zustand stores + ThemeHydrator
 │   │   └── styles/globals.css   # Theme tokens + Tailwind
@@ -487,7 +476,7 @@ ADC/
 │       │   └── types.ts         # Type utilities
 │       ├── constants/           # Routes, themes
 │       └── types/               # Domain types
-│           └── hub/             # Hub protocol types (12 modules)
+│           └── hub/             # Hub protocol types (9 modules)
 └── .claude/agents/              # Agent prompt definitions
 ```
 

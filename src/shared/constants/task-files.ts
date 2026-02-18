@@ -1,14 +1,14 @@
 /**
  * Task spec file names and directory conventions.
  *
- * Tasks are stored as directories inside `<project>/.auto-claude/specs/`.
+ * Tasks are stored as directories inside `<project>/.adc/specs/`.
  * Each task directory contains these JSON files.
  */
 
-/** Root directory name for auto-claude configuration */
-export const AUTO_CLAUDE_DIR = '.auto-claude';
+/** Root directory name for ADC configuration */
+export const ADC_DIR = '.adc';
 
-/** Subdirectory within .auto-claude that holds task specs */
+/** Subdirectory within .adc that holds task specs */
 export const SPECS_DIR = 'specs';
 
 /** Task description and workflow type */

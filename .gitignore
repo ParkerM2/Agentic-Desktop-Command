@@ -24,7 +24,7 @@ certs/
 logs/security/
 
 # Runtime data
-.auto-claude/
+.adc/
 
 # Claude Code session artifacts (local-only, events sync to Hub)
 .claude/progress/

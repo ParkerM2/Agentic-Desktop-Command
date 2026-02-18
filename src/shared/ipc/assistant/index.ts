@@ -1,8 +1,10 @@
 /**
  * Assistant IPC — Barrel Export
  *
- * Re-exports all assistant-related schemas (command bar, Claude SDK,
- * email, notifications, GitHub, briefings, webhooks) and contract definitions.
+ * Re-exports assistant command bar schemas and contract definitions.
+ * Note: Claude SDK, email, notification, briefing, and GitHub schemas
+ * are also defined in this domain's schemas.ts for backward compatibility,
+ * but the root barrel imports them from their dedicated domain folders.
  */
 
 export {
@@ -48,21 +50,4 @@ export {
   WebhookCommandSourceContextSchema,
 } from './schemas';
 
-export {
-  assistantEvents,
-  assistantInvoke,
-  briefingEvents,
-  briefingInvoke,
-  calendarInvoke,
-  claudeInvoke,
-  emailEvents,
-  emailInvoke,
-  githubEvents,
-  githubInvoke,
-  mcpInvoke,
-  notificationEvents,
-  notificationsInvoke,
-  rateLimitEvents,
-  spotifyInvoke,
-  timeInvoke,
-} from './contract';
+export { assistantEvents, assistantInvoke } from './contract';

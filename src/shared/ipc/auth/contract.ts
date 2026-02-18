@@ -40,6 +40,3 @@ export const authInvoke = {
     output: UserSchema,
   },
 } as const;
-
-/** Auth has no event channels currently */
-export const authEvents = {} as const;

@@ -24,5 +24,3 @@ export const hotkeysInvoke = {
     output: z.record(z.string(), z.string()),
   },
 } as const;
-
-export const hotkeysEvents = {} as const;

@@ -48,13 +48,11 @@ Each row traces a domain from shared types through to the rendered route.
 | projects | `types/project.ts` | `ipc/projects/` | `services/project/` | `handlers/project-handlers.ts` | `features/projects/` | `project.routes.ts` |
 | qa | -- | `ipc/qa/` | `services/qa/` | `handlers/qa-handlers.ts` | `features/tasks/` (`useQaMutations`) | -- |
 | roadmap | `types/milestone.ts` (shared) | `ipc/misc/milestones.contract.ts` (shared) | `services/milestones/` (shared) | `handlers/milestones-handlers.ts` (shared) | `features/roadmap/` | `project.routes.ts` |
-| screen | `types/screen.ts` | `ipc/misc/screen.contract.ts` | `services/screen/` | `handlers/screen-handlers.ts` | `features/screen/` | -- |
 | settings | `types/settings.ts` | `ipc/settings/` | `services/settings/` | `handlers/settings-handlers.ts`, `webhook-settings-handlers.ts` | `features/settings/` | `settings.routes.ts` |
 | spotify | -- | `ipc/spotify/` | `services/spotify/` | `handlers/spotify-handlers.ts` | `features/productivity/` | `productivity.routes.ts` |
 | tasks | `types/task.ts` | `ipc/tasks/` | `services/project/task-service.ts`, `services/tasks/` | `handlers/tasks/` (5 files) | `features/tasks/` | `project.routes.ts` |
 | terminals | `types/terminal.ts` | `ipc/terminals/` | `services/terminal/` | `handlers/terminal-handlers.ts` | `features/terminals/` | `project.routes.ts` |
 | voice | `types/voice.ts` | `ipc/misc/voice.contract.ts` | `services/voice/` | `handlers/voice-handlers.ts` | `features/voice/` | -- |
-| workflow | -- | `ipc/workflow/` | `services/workflow/` | `handlers/workflow-handlers.ts` | `features/workflow/` | -- (hooks only) |
 | workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspaces/` | -- |
 
 ---
@@ -161,7 +159,7 @@ Built-in Claude assistant — natural language commands, intent classification, 
 | Query Keys | `renderer/features/assistant/api/queryKeys.ts` |
 | Event Hook | `renderer/features/assistant/hooks/useAssistantEvents.ts` |
 | Store | `renderer/features/assistant/store.ts` |
-| Components | `AssistantWidget`, `AssistantPage`, `CommandBar` (in layouts) |
+| Components | `AssistantWidget`, `CommandBar` (in layouts) |
 | Shared Store | `renderer/shared/stores/assistant-widget-store.ts`, `command-bar-store.ts` |
 
 FEATURE.md files:
@@ -420,10 +418,10 @@ Hub server connection, sync, config, WebSocket.
 | Layer | Path |
 |-------|------|
 | Types | `shared/types/hub-protocol.ts`, `shared/types/hub-connection.ts`, `shared/types/hub-events.ts` |
-| Hub Types | `shared/types/hub/` (12 modules — see FEATURE.md index below) |
+| Hub Types | `shared/types/hub/` (9 modules — see FEATURE.md index below) |
 | IPC Contract | `shared/ipc/hub/` (contract.ts + schemas.ts) |
 | Service | `main/services/hub/` |
-| Service Sub-modules | `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-errors.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` |
+| Service Sub-modules | `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` |
 | Handler | `main/ipc/handlers/hub-handlers.ts` |
 | Event Wiring | `event:hub.*` |
 | Feature Module | `renderer/features/settings/` (HubSettings component) |
@@ -486,7 +484,7 @@ Branch merge workflow — diff preview, conflict detection.
 | Feature Module | `renderer/features/merge/` |
 | API Hooks | `renderer/features/merge/api/useMerge.ts` |
 | Query Keys | `renderer/features/merge/api/queryKeys.ts` |
-| Components | `ConflictResolver`, `MergeConfirmModal`, `MergePreviewPanel` |
+| Components | `MergeConfirmModal` |
 
 ---
 
@@ -652,23 +650,6 @@ Automated QA system — quiet + full tiers.
 
 ---
 
-### screen
-
-Screen capture via desktopCapturer.
-
-| Layer | Path |
-|-------|------|
-| Types | `shared/types/screen.ts` |
-| IPC Contract | `shared/ipc/misc/screen.contract.ts` |
-| Service | `main/services/screen/` |
-| Handler | `main/ipc/handlers/screen-handlers.ts` |
-| Feature Module | `renderer/features/screen/` |
-| API Hooks | `renderer/features/screen/api/useScreenCapture.ts` |
-| Query Keys | `renderer/features/screen/api/queryKeys.ts` |
-| Components | `ScreenshotButton`, `ScreenshotViewer` |
-
----
-
 ### settings
 
 App settings persistence — profiles, encryption, webhooks.
@@ -765,27 +746,7 @@ Voice interface — STT/TTS via Web Speech API.
 | Feature Module | `renderer/features/voice/` |
 | API Hooks | `renderer/features/voice/api/useVoice.ts` |
 | Query Keys | `renderer/features/voice/api/queryKeys.ts` |
-| Components | `VoiceButton`, `VoiceSettings` |
-
----
-
-### workflow
-
-Workflow execution & progress watching.
-
-| Layer | Path |
-|-------|------|
-| Types | -- |
-| IPC Contract | `shared/ipc/workflow/` (contract.ts) |
-| Service | `main/services/workflow/` |
-| Handler | `main/ipc/handlers/workflow-handlers.ts` |
-| Event Wiring | `event:workflow.*` |
-| Feature Module | `renderer/features/workflow/` |
-| API Hooks | `renderer/features/workflow/api/useWorkflow.ts` |
-| Query Keys | `renderer/features/workflow/api/queryKeys.ts` |
-| Event Hook | `renderer/features/workflow/hooks/useWorkflowEvents.ts` |
-| Store | `renderer/features/workflow/store.ts` |
-| Components | -- (hooks only, no UI components) |
+| Components | `VoiceButton` |
 
 ---
 
@@ -846,13 +807,11 @@ Shows which layers exist for each domain. `Y` = exists, `-` = not applicable or 
 | productivity | - | - | - | - | - | Y | Y | Y | Y | Y |
 | projects | Y | Y | Y | Y | Y | Y | Y | - | Y | Y |
 | qa | - | Y | Y | Y | Y | Y | - | - | - | - |
-| screen | Y | Y | Y | Y | - | Y | Y | - | Y | - |
 | settings | Y | Y | Y | Y | Y | Y | - | - | Y | Y |
 | spotify | - | Y | Y | Y | - | Y | - | - | Y | Y |
 | tasks | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
 | terminals | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
 | voice | Y | Y | Y | Y | Y | Y | Y | - | Y | - |
-| workflow | - | Y | Y | Y | Y | Y | Y | Y | - | - |
 | workspaces | Y | Y | - | Y | - | Y | Y | Y | Y | - |
 
 **Fully wired domains** (all applicable layers present): agents, alerts, notes, planner, tasks, terminals.
@@ -867,8 +826,8 @@ Shows which layers exist for each domain. `Y` = exists, `-` = not applicable or 
 
 | Path | Describes |
 |------|-----------|
-| `src/shared/ipc/FEATURE.md` | 22 IPC domain contract folders — structure, root files, domain list |
-| `src/shared/types/hub/FEATURE.md` | 12 Hub protocol type modules — auth, devices, events, tasks, etc. |
+| `src/shared/ipc/FEATURE.md` | 23 IPC domain contract folders — structure, root files, domain list |
+| `src/shared/types/hub/FEATURE.md` | 9 Hub protocol type modules — auth, devices, events, tasks, etc. |
 | `src/main/bootstrap/FEATURE.md` | 5 bootstrap modules — service-registry, ipc-wiring, event-wiring, lifecycle |
 | `src/main/services/assistant/executors/FEATURE.md` | 22 domain command executors — how intents route to actions |
 | `src/main/services/assistant/intent-classifier/FEATURE.md` | Two-tier intent classifier — regex patterns + Claude API fallback |
@@ -886,7 +845,6 @@ Cross-cutting utilities used by all domains.
 | Hook | Purpose | Used By |
 |------|---------|---------|
 | `useIpcEvent` | Subscribe to IPC events from main process | All `use*Events.ts` hooks |
-| `useIpcQuery` | IPC-backed React Query hook factory | Not exported from barrel — internal use |
 | `useHubEvents` | Subscribe to Hub-specific IPC events | Hub-connected features |
 | `useClaudeAuth` | Check Claude CLI auth status | Onboarding, dashboard |
 | `useOAuthStatus` | Check OAuth provider config status | Settings, integrations |
@@ -930,7 +888,7 @@ Cross-cutting utilities used by all domains.
 
 | Module | Purpose |
 |--------|---------|
-| `service-registry.ts` | Instantiates all 37 services with dependency wiring |
+| `service-registry.ts` | Instantiates all 32 services with dependency wiring |
 | `ipc-wiring.ts` | Registers all IPC handlers on the router |
 | `event-wiring.ts` | Forwards service events to renderer via IPC |
 | `lifecycle.ts` | Electron app lifecycle handlers |
@@ -939,7 +897,7 @@ Cross-cutting utilities used by all domains.
 
 | File | Purpose |
 |------|---------|
-| `src/shared/ipc/index.ts` | Root barrel — merges all 22 domain contracts into unified objects |
+| `src/shared/ipc/index.ts` | Root barrel — merges all 23 domain contracts into unified objects |
 | `src/shared/ipc/types.ts` | Type utilities: `InvokeChannel`, `InvokeInput`, `InvokeOutput`, `EventChannel`, `EventPayload` |
 | `src/shared/ipc-contract.ts` | Thin backward-compatible re-export of the barrel |
 | `src/shared/ipc/common/schemas.ts` | Shared Zod schemas: `SuccessResponse`, `TokenUsage` |

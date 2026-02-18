@@ -6,7 +6,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
-  AUTO_CLAUDE_DIR,
+  ADC_DIR,
   SPECS_DIR,
   REQUIREMENTS_FILENAME,
   PLAN_FILENAME,
@@ -24,7 +24,7 @@ export function readJsonFile(filePath: string): unknown {
 }
 
 export function getSpecsDir(projectPath: string): string {
-  return join(projectPath, AUTO_CLAUDE_DIR, SPECS_DIR);
+  return join(projectPath, ADC_DIR, SPECS_DIR);
 }
 
 export function getTaskDir(projectPath: string, taskId: string): string {

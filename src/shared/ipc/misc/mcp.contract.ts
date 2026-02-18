@@ -32,5 +32,3 @@ export const mcpInvoke = {
     output: z.enum(['disconnected', 'connecting', 'connected', 'error']),
   },
 } as const;
-
-export const mcpEvents = {} as const;

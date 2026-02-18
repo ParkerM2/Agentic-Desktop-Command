@@ -1,5 +1,5 @@
 /**
- * Misc IPC — Barrel Export
+ * Misc IPC -- Barrel Export
  *
  * Small domain contracts that don't warrant their own top-level folder.
  * Each domain has a single <name>.contract.ts file.
@@ -16,12 +16,11 @@ export {
 } from './alerts.contract';
 
 // ── Calendar ──
-export { calendarEvents, calendarInvoke } from './calendar.contract';
+export { calendarInvoke } from './calendar.contract';
 
 // ── Changelog ──
 export {
   ChangeCategorySchema,
-  changelogEvents,
   changelogInvoke,
   ChangelogEntrySchema,
   ChangeTypeSchema,
@@ -31,13 +30,12 @@ export {
 export {
   DeviceCapabilitiesSchema,
   DeviceSchema,
-  devicesEvents,
   devicesInvoke,
   DeviceTypeSchema,
 } from './devices.contract';
 
 // ── Hotkeys ──
-export { hotkeysEvents, hotkeysInvoke } from './hotkeys.contract';
+export { hotkeysInvoke } from './hotkeys.contract';
 
 // ── Ideas ──
 export {
@@ -50,7 +48,6 @@ export {
 
 // ── Insights ──
 export {
-  insightsEvents,
   insightsInvoke,
   InsightMetricsSchema,
   InsightTimeSeriesSchema,
@@ -59,13 +56,12 @@ export {
 } from './insights.contract';
 
 // ── MCP ──
-export { mcpEvents, mcpInvoke } from './mcp.contract';
+export { mcpInvoke } from './mcp.contract';
 
 // ── Merge ──
 export {
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
-  mergeEvents,
   mergeInvoke,
   MergeResultSchema,
 } from './merge.contract';
@@ -87,7 +83,6 @@ export { rateLimitEvents, rateLimitInvoke } from './rate-limit.contract';
 
 // ── Screen ──
 export {
-  screenEvents,
   screenInvoke,
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
@@ -95,7 +90,7 @@ export {
 } from './screen.contract';
 
 // ── Time ──
-export { timeEvents, timeInvoke } from './time.contract';
+export { timeInvoke } from './time.contract';
 
 // ── Voice ──
 export {
@@ -110,7 +105,6 @@ export { webhookEvents, webhookInvoke } from './webhook.contract';
 
 // ── Workspaces ──
 export {
-  workspacesEvents,
   workspacesInvoke,
   WorkspaceSchema,
   WorkspaceSettingsSchema,

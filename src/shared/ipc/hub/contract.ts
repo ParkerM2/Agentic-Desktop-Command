@@ -15,7 +15,6 @@ import {
   HubConnectionStatusSchema,
   HubStatusOutputSchema,
   HubSyncOutputSchema,
-  HubWsStatusOutputSchema,
 } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
@@ -44,10 +43,6 @@ export const hubInvoke = {
   'hub.removeConfig': {
     input: z.object({}),
     output: SuccessResponseSchema,
-  },
-  'hub.ws.status': {
-    input: z.object({}),
-    output: HubWsStatusOutputSchema,
   },
 } as const;
 

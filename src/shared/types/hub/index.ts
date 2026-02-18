@@ -104,17 +104,3 @@ export {
 
 // Status transitions
 export { getValidNextStatuses, isValidStatusTransition } from './transitions';
-
-/* eslint-disable @typescript-eslint/no-deprecated -- barrel must re-export deprecated types */
-export type {
-  Computer,
-  ComputerCapabilities,
-  ComputerListResponse,
-  ComputerUpdateRequest,
-  DeviceAuthRequest,
-  DeviceAuthResponse,
-  WsComputerOfflineEvent,
-  WsComputerOnlineEvent,
-} from './legacy';
-export { isWsComputerEvent } from './legacy';
-/* eslint-enable @typescript-eslint/no-deprecated */

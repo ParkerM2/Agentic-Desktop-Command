@@ -58,5 +58,3 @@ export const devicesInvoke = {
     output: DeviceSchema,
   },
 } as const;
-
-export const devicesEvents = {} as const;

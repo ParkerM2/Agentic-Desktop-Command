@@ -54,5 +54,3 @@ export const insightsInvoke = {
     output: z.array(ProjectInsightsSchema),
   },
 } as const;
-
-export const insightsEvents = {} as const;

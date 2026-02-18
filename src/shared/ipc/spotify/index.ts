@@ -1,5 +1,5 @@
 /**
- * Spotify IPC — Barrel Export
+ * Spotify IPC -- Barrel Export
  */
 
-export { spotifyEvents, spotifyInvoke } from './contract';
+export { spotifyInvoke } from './contract';

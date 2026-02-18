@@ -21,5 +21,3 @@ export const timeInvoke = {
       .nullable(),
   },
 } as const;
-
-export const timeEvents = {} as const;

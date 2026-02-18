@@ -10,7 +10,7 @@
 
 import { agentsEvents, agentsInvoke, orchestratorEvents, orchestratorInvoke } from './agents';
 import { appEvents, appInvoke } from './app';
-import { assistantEvents, assistantInvoke, rateLimitEvents } from './assistant';
+import { assistantEvents, assistantInvoke } from './assistant';
 import { authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { claudeEvents, claudeInvoke } from './claude';
@@ -36,6 +36,7 @@ import {
   milestonesInvoke,
   notesEvents,
   notesInvoke,
+  rateLimitEvents,
   screenInvoke,
   timeInvoke,
   voiceEvents,

@@ -37,7 +37,3 @@ export const workflowInvoke = {
     output: z.object({ stopped: z.boolean() }),
   },
 } as const;
-
-// ─── Event Channels ───────────────────────────────────────────
-
-export const workflowEvents = {} as const;

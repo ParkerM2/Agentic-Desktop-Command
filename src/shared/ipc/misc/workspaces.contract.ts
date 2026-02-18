@@ -48,5 +48,3 @@ export const workspacesInvoke = {
     output: SuccessResponseSchema,
   },
 } as const;
-
-export const workspacesEvents = {} as const;

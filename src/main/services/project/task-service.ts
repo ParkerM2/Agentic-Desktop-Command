@@ -1,7 +1,7 @@
 /**
  * Task Service — Spec file based task management
  *
- * Tasks are stored as directories inside `<project>/.auto-claude/specs/`.
+ * Tasks are stored as directories inside `<project>/.adc/specs/`.
  * Each task directory contains:
  *   - requirements.json  — title, description, workflow type
  *   - task_metadata.json — model config, branch info

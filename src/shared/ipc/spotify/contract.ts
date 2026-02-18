@@ -66,7 +66,3 @@ export const spotifyInvoke = {
     output: SuccessResponseSchema,
   },
 } as const;
-
-// ─── Event Channels ───────────────────────────────────────────
-
-export const spotifyEvents = {} as const;

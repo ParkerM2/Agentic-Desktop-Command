@@ -14,7 +14,6 @@
  * @see ./hub/errors.ts — ApiError, ApiErrorCode
  * @see ./hub/guards.ts — Type guard functions
  * @see ./hub/transitions.ts — Status transition validation
- * @see ./hub/legacy.ts — Deprecated compatibility types
  */
 
 export type {
@@ -90,20 +89,6 @@ export type {
   WsEventFromDevice,
   WsEvent,
 } from './hub';
-
-/* eslint-disable @typescript-eslint/no-deprecated -- re-export deprecated types for backward compatibility */
-export type {
-  ComputerCapabilities,
-  Computer,
-  DeviceAuthRequest,
-  DeviceAuthResponse,
-  ComputerUpdateRequest,
-  ComputerListResponse,
-  WsComputerOnlineEvent,
-  WsComputerOfflineEvent,
-} from './hub';
-export { isWsComputerEvent } from './hub';
-/* eslint-enable @typescript-eslint/no-deprecated */
 
 export {
   // Guards

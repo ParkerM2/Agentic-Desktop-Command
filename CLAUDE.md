@@ -127,7 +127,7 @@ src/
 │   ├── bootstrap/  # App init: lifecycle, service-registry, ipc-wiring, event-wiring
 │   ├── ipc/        # IPC router + handler registration
 │   │   └── handlers/tasks/  # Split task handlers (5 files)
-│   └── services/   # Business logic (37 services, each with focused sub-modules)
+│   └── services/   # Business logic (32 services, each with focused sub-modules)
 ├── preload/        # Context bridge (typed API exposed to renderer)
 ├── renderer/       # React app (browser context)
 │   ├── app/        # Router, providers, layouts
@@ -136,10 +136,10 @@ src/
 │   └── shared/     # Shared hooks, stores, lib, components
 └── shared/         # Code shared between main + renderer
     ├── ipc-contract.ts   # Thin re-export from ipc/ barrel
-    ├── ipc/              # Domain-based IPC contracts (22 folders)
+    ├── ipc/              # Domain-based IPC contracts (23 folders)
     │   └── <domain>/     # contract.ts + schemas.ts + index.ts
     └── types/            # Domain type definitions
-        └── hub/          # Hub protocol types (12 modules)
+        └── hub/          # Hub protocol types (9 modules)
 ```
 
 ## Critical Pattern: IPC Contract

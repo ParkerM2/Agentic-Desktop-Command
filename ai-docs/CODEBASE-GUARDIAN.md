@@ -13,7 +13,7 @@
 | Directory | What Goes Here | What NEVER Goes Here |
 |-----------|---------------|---------------------|
 | `src/shared/types/` | Domain type interfaces (`Task`, `Project`, etc.) | Implementation code, React components, service logic |
-| `src/shared/types/hub/` | Hub protocol domain types (12 modules: auth, devices, enums, errors, events, guards, tasks, etc.) | Service logic, renderer imports |
+| `src/shared/types/hub/` | Hub protocol domain types (9 modules: auth, devices, enums, errors, events, projects, tasks, workspaces) | Service logic, renderer imports |
 | `src/shared/ipc-contract.ts` | Thin re-export barrel from `src/shared/ipc/` | New contract definitions (add to domain folders) |
 | `src/shared/ipc/<domain>/` | Domain-specific Zod schemas (`schemas.ts`), invoke/event contracts (`contract.ts`), barrel (`index.ts`) | Cross-domain imports, business logic |
 | `src/shared/ipc/index.ts` | Root barrel merging all 23 domain contracts into unified objects | Domain-specific code |
@@ -292,7 +292,6 @@ services/hub/
 ├── hub-client.ts              # Client orchestration
 ├── hub-config-store.ts        # Hub config persistence
 ├── hub-connection.ts          # Connection lifecycle
-├── hub-errors.ts              # Standardized error classes
 ├── hub-event-mapper.ts        # WS event → IPC event mapping
 ├── hub-sync.ts                # Data synchronization
 ├── hub-ws-client.ts           # WebSocket client

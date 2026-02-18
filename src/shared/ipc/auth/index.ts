@@ -1,5 +1,5 @@
 /**
- * Auth IPC — Barrel Export
+ * Auth IPC -- Barrel Export
  *
  * Re-exports all auth-related schemas and contract definitions.
  */
@@ -15,4 +15,4 @@ export {
   UserSchema,
 } from './schemas';
 
-export { authEvents, authInvoke } from './contract';
+export { authInvoke } from './contract';

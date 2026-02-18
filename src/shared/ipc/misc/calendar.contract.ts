@@ -51,5 +51,3 @@ export const calendarInvoke = {
     output: SuccessResponseSchema,
   },
 } as const;
-
-export const calendarEvents = {} as const;
