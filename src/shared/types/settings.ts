@@ -8,6 +8,8 @@ export interface AgentSettings {
   maxConcurrentAgents: number;
 }
 
+export type LogLevel = 'error' | 'warn' | 'info' | 'verbose' | 'debug';
+
 export interface AppSettings {
   theme: ThemeMode;
   colorTheme: string;
@@ -25,6 +27,7 @@ export interface AppSettings {
   minimizeToTray?: boolean;
   startMinimized?: boolean;
   keepRunning?: boolean;
+  logLevel?: LogLevel;
 }
 
 export interface CustomTheme {

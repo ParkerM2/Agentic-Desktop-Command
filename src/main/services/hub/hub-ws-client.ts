@@ -7,6 +7,8 @@
 
 import type { HubConnection } from '@shared/types';
 
+import { hubLogger } from '@main/lib/logger';
+
 import { routeWebSocketEvent } from './hub-event-mapper';
 
 import type { WsEventData } from './hub-event-mapper';
@@ -70,7 +72,7 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
       wsConnection = new WebSocket(wsUrl);
 
       wsConnection.addEventListener('open', () => {
-        console.log('[Hub] WebSocket connected, sending auth message');
+        hubLogger.info('[Hub] WebSocket connected, sending auth message');
         // Send auth message as first message (required by hub's first-message auth protocol)
         if (wsConnection?.readyState === WebSocket.OPEN) {
           const authMessage = JSON.stringify({
@@ -84,7 +86,7 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
       wsConnection.addEventListener('message', (event) => {
         try {
           const data = JSON.parse(String(event.data)) as WsEventData;
-          console.log(`[Hub] WS event: ${data.entity}.${data.action} (${data.id})`);
+          hubLogger.info(`[Hub] WS event: ${data.entity}.${data.action} (${data.id})`);
 
           // Emit entity-specific IPC events for query invalidation
           routeWebSocketEvent(router, data);
@@ -99,7 +101,7 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
       });
 
       wsConnection.addEventListener('close', () => {
-        console.log('[Hub] WebSocket disconnected');
+        hubLogger.info('[Hub] WebSocket disconnected');
         wsConnection = null;
         if (isEnabledAndConnected()) {
           scheduleReconnect();
@@ -107,12 +109,12 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
       });
 
       wsConnection.addEventListener('error', () => {
-        console.error('[Hub] WebSocket error');
+        hubLogger.error('[Hub] WebSocket error');
         wsConnection = null;
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'WebSocket error';
-      console.error('[Hub] Failed to create WebSocket:', message);
+      hubLogger.error('[Hub] Failed to create WebSocket:', message);
     }
   }
 

@@ -11,6 +11,8 @@ import { join } from 'node:path';
 
 import type { CodebaseAnalysis } from '@shared/types/project-setup';
 
+import { serviceLogger } from '@main/lib/logger';
+
 // ─── Constants ──────────────────────────────────────────────
 
 const AI_DOCS_DIR = 'ai-docs';
@@ -249,7 +251,7 @@ export function createDocGenerator(): DocGeneratorService {
       if (!existsSync(architecturePath)) {
         const content = buildArchitectureDoc(projectName, projectPath, analysis);
         writeFileSync(architecturePath, content, 'utf-8');
-        console.log(
+        serviceLogger.info(
           '[DocGenerator] Created ARCHITECTURE.md for',
           projectName,
         );
@@ -260,7 +262,7 @@ export function createDocGenerator(): DocGeneratorService {
       if (!existsSync(patternsPath)) {
         const content = buildPatternsDoc(projectName);
         writeFileSync(patternsPath, content, 'utf-8');
-        console.log('[DocGenerator] Created PATTERNS.md for', projectName);
+        serviceLogger.info('[DocGenerator] Created PATTERNS.md for', projectName);
       }
 
       // Generate FEATURES-INDEX.md (skip if exists)
@@ -268,7 +270,7 @@ export function createDocGenerator(): DocGeneratorService {
       if (!existsSync(featuresIndexPath)) {
         const content = buildFeaturesIndexDoc(projectName);
         writeFileSync(featuresIndexPath, content, 'utf-8');
-        console.log(
+        serviceLogger.info(
           '[DocGenerator] Created FEATURES-INDEX.md for',
           projectName,
         );

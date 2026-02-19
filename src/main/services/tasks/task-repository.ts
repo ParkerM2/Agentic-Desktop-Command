@@ -9,6 +9,8 @@
 import type { Task as HubTask } from '@shared/types/hub-protocol';
 import type { Task as LocalTask } from '@shared/types/task';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import type { TaskRepository, TaskRepositoryDeps } from './types';
 
 // ── Conversion ─────────────────────────────────────────────────
@@ -38,7 +40,7 @@ export function createTaskRepository(deps: TaskRepositoryDeps): TaskRepository {
     if (!hubConnectionManager.isAvailable()) return;
     void action().catch((error: unknown) => {
       const msg = error instanceof Error ? error.message : String(error);
-      console.warn('[TaskRepository] Hub mirror failed:', msg);
+      serviceLogger.warn('[TaskRepository] Hub mirror failed:', msg);
     });
   }
 

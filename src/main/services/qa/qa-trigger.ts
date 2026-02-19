@@ -8,6 +8,8 @@
 
 import { readFileSync } from 'node:fs';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import type { QaContext, QaRunner } from './qa-types';
 import type { IpcRouter } from '../../ipc/router';
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
@@ -90,7 +92,7 @@ export function createQaTrigger(deps: {
       try {
         task = await taskRepository.getTask(taskId);
       } catch {
-        console.warn(`[QaTrigger] Task ${taskId} not found, skipping QA`);
+        serviceLogger.warn(`[QaTrigger] Task ${taskId} not found, skipping QA`);
         return;
       }
 
@@ -99,7 +101,7 @@ export function createQaTrigger(deps: {
       const projectPath = agentSession?.projectPath ?? '';
 
       if (projectPath.length === 0) {
-        console.warn(`[QaTrigger] No project path for task ${taskId}, skipping QA`);
+        serviceLogger.warn(`[QaTrigger] No project path for task ${taskId}, skipping QA`);
         return;
       }
 
@@ -114,7 +116,7 @@ export function createQaTrigger(deps: {
       await qaRunner.startQuiet(taskId, context);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[QaTrigger] Failed to start QA for task ${taskId}:`, message);
+      serviceLogger.error(`[QaTrigger] Failed to start QA for task ${taskId}:`, message);
       triggeredTasks.delete(taskId);
     }
   }

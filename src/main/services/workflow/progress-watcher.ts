@@ -9,6 +9,8 @@
 import { existsSync, readdirSync, readFileSync, watch } from 'node:fs';
 import { join } from 'node:path';
 
+import { watcherLogger } from '@main/lib/logger';
+
 import type { FSWatcher } from 'node:fs';
 
 // ─── Types ──────────────────────────────────────────────────
@@ -141,7 +143,7 @@ export function createProgressWatcher(projectPath: string): ProgressWatcher {
         }
       }
     } catch {
-      console.error('[ProgressWatcher] Failed to scan existing files');
+      watcherLogger.error('[ProgressWatcher] Failed to scan existing files');
     }
   }
 
@@ -152,11 +154,11 @@ export function createProgressWatcher(projectPath: string): ProgressWatcher {
       }
 
       if (!existsSync(progressDir)) {
-        console.log(`[ProgressWatcher] Progress dir does not exist: ${progressDir}`);
+        watcherLogger.info(`[ProgressWatcher] Progress dir does not exist: ${progressDir}`);
         return;
       }
 
-      console.log(`[ProgressWatcher] Watching ${progressDir}`);
+      watcherLogger.info(`[ProgressWatcher] Watching ${progressDir}`);
 
       // Scan existing files on start
       scanExistingFiles();
@@ -167,11 +169,11 @@ export function createProgressWatcher(projectPath: string): ProgressWatcher {
         });
 
         watcher.on('error', (err) => {
-          console.error('[ProgressWatcher] Watch error:', err.message);
+          watcherLogger.error('[ProgressWatcher] Watch error:', err.message);
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error('[ProgressWatcher] Failed to start watching:', message);
+        watcherLogger.error('[ProgressWatcher] Failed to start watching:', message);
       }
     },
 
@@ -179,7 +181,7 @@ export function createProgressWatcher(projectPath: string): ProgressWatcher {
       if (watcher) {
         watcher.close();
         watcher = null;
-        console.log('[ProgressWatcher] Stopped watching');
+        watcherLogger.info('[ProgressWatcher] Stopped watching');
       }
     },
 

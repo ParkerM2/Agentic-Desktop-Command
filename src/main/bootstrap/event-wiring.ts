@@ -12,6 +12,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { appLogger } from '../lib/logger';
+
 import type { IpcRouter } from '../ipc/router';
 import type { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import type { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -144,7 +146,7 @@ export function wireEventForwarding(deps: EventWiringDeps): void {
               }
             } catch (error) {
               const message = error instanceof Error ? error.message : 'Unknown error';
-              console.warn('[EventWiring] Planning completion handler error:', message);
+              appLogger.warn('[EventWiring] Planning completion handler error:', message);
             }
           })();
         }

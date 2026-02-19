@@ -18,6 +18,8 @@ import type {
   ErrorTier,
 } from '@shared/types/health';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import { safeWriteJson } from '../../lib/safe-write-json';
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -98,7 +100,7 @@ export function createErrorCollector(
         entries = parsed;
       }
     } catch {
-      console.warn('[ErrorCollector] Corrupted log file — starting fresh');
+      serviceLogger.warn('[ErrorCollector] Corrupted log file — starting fresh');
       entries = [];
       callbacks?.onDataRecovery?.(
         'error-log',
@@ -112,7 +114,7 @@ export function createErrorCollector(
   const beforePrune = entries.length;
   entries = entries.filter((e) => new Date(e.timestamp).getTime() > pruneThreshold);
   if (entries.length < beforePrune) {
-    console.log(
+    serviceLogger.info(
       `[ErrorCollector] Pruned ${String(beforePrune - entries.length)} entries older than 7 days`,
     );
     safeWriteJson(filePath, entries);

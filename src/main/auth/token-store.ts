@@ -11,6 +11,8 @@ import { join } from 'node:path';
 
 import { safeStorage } from 'electron';
 
+import { authLogger } from '@main/lib/logger';
+
 import type { OAuthTokens } from './types';
 
 export interface TokenStore {
@@ -40,7 +42,7 @@ function encryptValue(value: string): EncryptedTokenEntry {
     };
   }
 
-  console.warn('safeStorage not available — falling back to base64 encoding');
+  authLogger.warn('safeStorage not available — falling back to base64 encoding');
   return {
     encrypted: Buffer.from(value, 'utf-8').toString('base64'),
     useSafeStorage: false,
@@ -70,7 +72,7 @@ function loadTokenFile(dataDir: string): TokenFileData {
     const raw = readFileSync(filePath, 'utf-8');
     return JSON.parse(raw) as TokenFileData;
   } catch {
-    console.error('Failed to read token file — returning empty store');
+    authLogger.error('Failed to read token file — returning empty store');
     return {};
   }
 }
@@ -104,7 +106,7 @@ export function createTokenStore(deps: { dataDir: string }): TokenStore {
         const decrypted = decryptValue(entry);
         return JSON.parse(decrypted) as OAuthTokens;
       } catch {
-        console.error(`Failed to decrypt tokens for provider: ${provider}`);
+        authLogger.error(`Failed to decrypt tokens for provider: ${provider}`);
         return;
       }
     },

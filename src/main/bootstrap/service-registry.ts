@@ -18,6 +18,7 @@ import { SLACK_OAUTH_CONFIG } from '../auth/providers/slack';
 import { SPOTIFY_OAUTH_CONFIG } from '../auth/providers/spotify';
 import { createTokenStore } from '../auth/token-store';
 import { IpcRouter } from '../ipc/router';
+import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
@@ -141,7 +142,7 @@ export function createServiceRegistry(
       return factory();
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      console.warn(`[Bootstrap] Non-critical service "${name}" failed to init: ${msg}`);
+      appLogger.warn(`[Bootstrap] Non-critical service "${name}" failed to init: ${msg}`);
       errorCollector.report({
         severity: 'warning', tier: 'app', category: 'service',
         message: `Service initialization failed: ${name} - ${msg}`,
@@ -169,13 +170,13 @@ export function createServiceRegistry(
   // Auto-connect if Hub was previously configured and enabled
   const savedHubConfig = hubConnectionManager.getConnection();
   if (savedHubConfig?.enabled) {
-    console.log('[Hub] Auto-connecting to saved Hub:', savedHubConfig.hubUrl);
+    appLogger.info('[Hub] Auto-connecting to saved Hub:', savedHubConfig.hubUrl);
     void (async () => {
       const result = await hubConnectionManager.connect();
       if (result.success) {
-        console.log('[Hub] Auto-connect succeeded');
+        appLogger.info('[Hub] Auto-connect succeeded');
       } else {
-        console.warn('[Hub] Auto-connect failed:', result.error);
+        appLogger.warn('[Hub] Auto-connect failed:', result.error);
       }
     })();
   }
@@ -276,7 +277,7 @@ export function createServiceRegistry(
 
       if (result.ok && result.data) {
         registeredDeviceId = result.data.id;
-        console.log(`[Hub] Device registered: ${result.data.id}`);
+        appLogger.info(`[Hub] Device registered: ${result.data.id}`);
 
         if (heartbeatIntervalId !== null) {
           clearInterval(heartbeatIntervalId);
@@ -287,20 +288,20 @@ export function createServiceRegistry(
             healthRegistry.pulse('hubHeartbeat');
             void client.heartbeat(registeredDeviceId).then((res) => {
               if (!res.ok) {
-                console.warn('[Hub] Heartbeat failed:', res.error);
+                appLogger.warn('[Hub] Heartbeat failed:', res.error);
               }
               return res;
             });
           }
         }, HEARTBEAT_INTERVAL_MS);
 
-        console.log('[Hub] Heartbeat interval started (30s)');
+        appLogger.info('[Hub] Heartbeat interval started (30s)');
       } else {
-        console.warn('[Hub] Device registration failed:', result.error);
+        appLogger.warn('[Hub] Device registration failed:', result.error);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[Hub] Device registration error:', message);
+      appLogger.error('[Hub] Device registration error:', message);
     }
   }
 
@@ -364,7 +365,7 @@ export function createServiceRegistry(
   let assistantServiceRef: ReturnType<typeof createAssistantService> | null = null;
   const quickInput = createQuickInputWindow({
     onCommand: (command) => {
-      console.log('[Main] Quick command received:', command);
+      appLogger.info('[Main] Quick command received:', command);
       if (assistantServiceRef) {
         void assistantServiceRef.sendCommand(command);
       }

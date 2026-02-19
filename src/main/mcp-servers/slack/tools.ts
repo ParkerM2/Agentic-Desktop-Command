@@ -5,6 +5,8 @@
  * with Slack. Each tool maps to a SlackClient method.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { SlackClient } from './slack-client';
 import type { StandupEntry } from './types';
 import type { McpToolDefinition, McpToolResult } from '../../mcp/types';
@@ -205,7 +207,7 @@ export async function executeSlackTool(
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[Slack] Tool "${toolName}" failed: ${message}`);
+    mcpLogger.error(`[Slack] Tool "${toolName}" failed: ${message}`);
     return errorResult(`Slack API error: ${message}`);
   }
 }

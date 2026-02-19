@@ -7,6 +7,8 @@
 
 import { shell } from 'electron';
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { McpToolDefinition, McpToolResult } from '../../mcp/types';
 
 // ── Tool Definitions ─────────────────────────────────────────
@@ -121,7 +123,7 @@ export async function executeBrowserTool(
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[Browser] Tool "${toolName}" failed: ${message}`);
+    mcpLogger.error(`[Browser] Tool "${toolName}" failed: ${message}`);
     return errorResult(`Browser error: ${message}`);
   }
 }

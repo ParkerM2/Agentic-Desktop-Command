@@ -117,6 +117,14 @@ Location: `src/main/services/`
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
 | **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 
+### Main Process Libraries
+
+Location: `src/main/lib/`
+
+| Library | Purpose | Key Exports |
+|---------|---------|-------------|
+| **logger** | Structured logging via electron-log. Scoped loggers with rotation, level control, and file output. All main-process code uses scoped loggers instead of `console.*`. | `initLogger`, `setLogLevel`, `createScopedLogger`, `getLogFilePath`, pre-built scoped loggers: `appLogger`, `ipcLogger`, `hubLogger`, `agentLogger`, `serviceLogger`, `watcherLogger`, `authLogger`, `mcpLogger`, `fsLogger` |
+
 ---
 
 ## 3. IPC Handler Files

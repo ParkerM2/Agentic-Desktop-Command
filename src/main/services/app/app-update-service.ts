@@ -5,6 +5,8 @@
  * return no-op/stub values so the app continues to function.
  */
 
+import { appLogger } from '@main/lib/logger';
+
 import type { IpcRouter } from '../../ipc/router';
 
 // ── Types ────────────────────────────────────────────────────
@@ -44,10 +46,10 @@ function loadAutoUpdater(): AutoUpdaterLike | null {
     const updaterModule = require('electron-updater') as {
       autoUpdater: AutoUpdaterLike;
     };
-    console.log('[AppUpdateService] electron-updater loaded successfully');
+    appLogger.info('[AppUpdateService] electron-updater loaded successfully');
     return updaterModule.autoUpdater;
   } catch {
-    console.warn('[AppUpdateService] electron-updater not available — updates disabled');
+    appLogger.warn('[AppUpdateService] electron-updater not available — updates disabled');
     return null;
   }
 }
@@ -69,7 +71,7 @@ export function createAppUpdateService(router: IpcRouter): AppUpdateService {
     updater.on('checking-for-update', () => {
       status.checking = true;
       status.error = undefined;
-      console.log('[AppUpdateService] Checking for updates...');
+      appLogger.info('[AppUpdateService] Checking for updates...');
     });
 
     updater.on('update-available', (...args: unknown[]) => {
@@ -77,14 +79,14 @@ export function createAppUpdateService(router: IpcRouter): AppUpdateService {
       status.updateAvailable = true;
       const info = args[0] as { version?: string } | undefined;
       status.version = info?.version;
-      console.log('[AppUpdateService] Update available:', status.version ?? 'unknown');
+      appLogger.info('[AppUpdateService] Update available:', status.version ?? 'unknown');
       router.emit('event:app.updateAvailable', { version: status.version ?? 'unknown' });
     });
 
     updater.on('update-not-available', () => {
       status.checking = false;
       status.updateAvailable = false;
-      console.log('[AppUpdateService] No update available');
+      appLogger.info('[AppUpdateService] No update available');
     });
 
     updater.on('download-progress', () => {
@@ -96,7 +98,7 @@ export function createAppUpdateService(router: IpcRouter): AppUpdateService {
       status.downloaded = true;
       const info = args[0] as { version?: string } | undefined;
       status.version = info?.version;
-      console.log('[AppUpdateService] Update downloaded:', status.version ?? 'unknown');
+      appLogger.info('[AppUpdateService] Update downloaded:', status.version ?? 'unknown');
       router.emit('event:app.updateDownloaded', { version: status.version ?? 'unknown' });
     });
 
@@ -105,7 +107,7 @@ export function createAppUpdateService(router: IpcRouter): AppUpdateService {
       status.downloading = false;
       const error = args[0] as Error | undefined;
       status.error = error?.message ?? 'Unknown update error';
-      console.error('[AppUpdateService] Error:', status.error);
+      appLogger.error('[AppUpdateService] Error:', status.error);
     });
   }
 

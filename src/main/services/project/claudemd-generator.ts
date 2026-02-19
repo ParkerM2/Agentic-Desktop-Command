@@ -12,6 +12,8 @@ import { join } from 'node:path';
 
 import type { CodebaseAnalysis } from '@shared/types/project-setup';
 
+import { serviceLogger } from '@main/lib/logger';
+
 // ─── Constants ──────────────────────────────────────────────
 
 const MAX_TREE_DEPTH = 2;
@@ -358,7 +360,7 @@ export function createClaudeMdGenerator(): ClaudeMdGeneratorService {
           return existingContent + APPEND_MARKER + generatedContent;
         } catch {
           // Cannot read existing file — return generated content only
-          console.error(
+          serviceLogger.error(
             '[ClaudeMdGenerator] Failed to read existing CLAUDE.md, returning generated content only',
           );
           return generatedContent;

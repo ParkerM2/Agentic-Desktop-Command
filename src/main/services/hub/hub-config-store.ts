@@ -10,6 +10,8 @@ import { join } from 'node:path';
 
 import { app, safeStorage } from 'electron';
 
+import { hubLogger } from '@main/lib/logger';
+
 export interface PersistedHubConfig {
   hubUrl: string;
   /** Base64-encoded encrypted API key. */
@@ -51,7 +53,7 @@ export function loadConfig(): PersistedHubConfig | null {
     const raw = readFileSync(configPath, 'utf-8');
     return JSON.parse(raw) as PersistedHubConfig;
   } catch {
-    console.error('[Hub] Failed to load hub config');
+    hubLogger.error('[Hub] Failed to load hub config');
     return null;
   }
 }

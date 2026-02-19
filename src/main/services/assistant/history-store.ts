@@ -13,6 +13,8 @@ import { app } from 'electron';
 
 import type { CommandHistoryEntry } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 const MAX_HISTORY_ENTRIES = 1000;
 
 export interface HistoryStore {
@@ -42,7 +44,7 @@ function loadHistory(): CommandHistoryEntry[] {
     }
     return [];
   } catch {
-    console.error('[HistoryStore] Failed to load history, starting fresh');
+    serviceLogger.error('[HistoryStore] Failed to load history, starting fresh');
     return [];
   }
 }

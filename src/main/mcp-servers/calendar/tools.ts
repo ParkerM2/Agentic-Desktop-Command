@@ -5,6 +5,8 @@
  * with Google Calendar. Each tool maps to a CalendarClient method.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { CalendarClient } from './calendar-client';
 import type { McpToolDefinition, McpToolResult } from '../../mcp/types';
 
@@ -244,7 +246,7 @@ export async function executeCalendarTool(
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[Calendar] Tool "${toolName}" failed: ${message}`);
+    mcpLogger.error(`[Calendar] Tool "${toolName}" failed: ${message}`);
     return errorResult(`Google Calendar API error: ${message}`);
   }
 }

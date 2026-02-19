@@ -4,6 +4,8 @@
 
 import type { AssistantContext, AssistantResponse } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import { buildActionResponse, buildErrorResponse, UNKNOWN_ERROR } from './response-builders';
 
 import type { ClassifiedIntent } from '../intent-classifier';
@@ -43,7 +45,7 @@ export function handleCreateTask(
         });
       } catch {
         // Non-critical — time block creation failure shouldn't fail task creation
-        console.warn('[CommandExecutor] Failed to add time block for task');
+        serviceLogger.warn('[CommandExecutor] Failed to add time block for task');
       }
     }
 

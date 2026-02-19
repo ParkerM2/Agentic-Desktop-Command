@@ -5,6 +5,8 @@
  * via POST /api/tasks/:id/progress using the hub-api-client.
  */
 
+import { watcherLogger } from '@main/lib/logger';
+
 import type { ProgressData } from './progress-watcher';
 import type { HubApiClient } from '../hub/hub-api-client';
 
@@ -26,18 +28,18 @@ export function createProgressSyncer(hubClient: HubApiClient): ProgressSyncer {
         });
 
         if (!result.ok) {
-          console.error(
+          watcherLogger.error(
             `[ProgressSyncer] Failed to sync progress for task ${taskId}:`,
             result.error,
           );
           return false;
         }
 
-        console.log(`[ProgressSyncer] Synced progress for task ${taskId}: ${progressData.phase}`);
+        watcherLogger.info(`[ProgressSyncer] Synced progress for task ${taskId}: ${progressData.phase}`);
         return true;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error(`[ProgressSyncer] Error syncing progress for task ${taskId}:`, message);
+        watcherLogger.error(`[ProgressSyncer] Error syncing progress for task ${taskId}:`, message);
         return false;
       }
     },

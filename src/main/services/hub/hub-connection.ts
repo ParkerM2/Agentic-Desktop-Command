@@ -9,6 +9,8 @@
 
 import type { HubConnection, HubConnectionStatus } from '@shared/types';
 
+import { hubLogger } from '@main/lib/logger';
+
 import { createHubClient } from './hub-client';
 import {
   deleteConfig,
@@ -70,7 +72,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
     }
     status = newStatus;
     router.emit('event:hub.connectionChanged', { status: newStatus });
-    console.log(`[Hub] Connection status: ${newStatus}`);
+    hubLogger.info(`[Hub] Connection status: ${newStatus}`);
   }
 
   async function performConnect(): Promise<{ success: boolean; error?: string }> {
@@ -115,7 +117,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
     messageListeners,
     scheduleConnect: () => {
       if (persistedConfig?.enabled) {
-        console.log('[Hub] Attempting reconnect...');
+        hubLogger.info('[Hub] Attempting reconnect...');
         void performConnect();
       }
     },
@@ -140,7 +142,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
       };
 
       saveConfig(persistedConfig);
-      console.log(`[Hub] Configured hub: ${trimmedUrl}`);
+      hubLogger.info(`[Hub] Configured hub: ${trimmedUrl}`);
 
       return configToConnection(persistedConfig, status);
     },
@@ -190,7 +192,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
       deleteConfig();
       persistedConfig = null;
       setStatus('disconnected');
-      console.log('[Hub] Configuration removed');
+      hubLogger.info('[Hub] Configuration removed');
     },
 
     onWebSocketMessage(callback) {

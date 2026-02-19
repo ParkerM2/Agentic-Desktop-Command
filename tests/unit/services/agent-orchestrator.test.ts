@@ -65,6 +65,22 @@ vi.mock('@main/services/agent-orchestrator/hooks-template', () => ({
   writeHooksConfig: (...args: unknown[]) => mockWriteHooksConfig(...args),
 }));
 
+// ── Mock logger ──────────────────────────────────────────────────
+
+const mockLoggerError = vi.fn((..._args: unknown[]) => undefined);
+
+vi.mock('@main/lib/logger', () => ({
+  agentLogger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: (...args: unknown[]) => mockLoggerError(...args),
+    debug: vi.fn(),
+    verbose: vi.fn(),
+    silly: vi.fn(),
+    log: vi.fn(),
+  },
+}));
+
 // ── Import after mocks ─────────────────────────────────────────
 
 const { createAgentOrchestrator } = await import(
@@ -308,7 +324,7 @@ describe('AgentOrchestrator', () => {
     });
 
     it('catches and logs errors thrown by event handlers', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockLoggerError.mockClear();
       const orchestrator = createAgentOrchestrator(PROGRESS_BASE_DIR);
 
       orchestrator.onSessionEvent(() => {
@@ -317,12 +333,11 @@ describe('AgentOrchestrator', () => {
 
       await orchestrator.spawn(makeSpawnOptions());
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLoggerError).toHaveBeenCalledWith(
         '[AgentOrchestrator] Event handler error:',
         'handler error',
       );
 
-      consoleSpy.mockRestore();
       orchestrator.dispose();
     });
   });

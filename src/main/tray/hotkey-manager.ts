@@ -8,6 +8,8 @@
 import { globalShortcut } from 'electron';
 import type { BrowserWindow } from 'electron';
 
+import { appLogger } from '@main/lib/logger';
+
 import type { QuickInputWindow } from './quick-input';
 
 // ── Types ────────────────────────────────────────────────────
@@ -50,16 +52,16 @@ export function createHotkeyManager(deps: HotkeyManagerDeps): HotkeyManager {
 
   function tryRegister(accelerator: string, label: string, callback: () => void): boolean {
     if (globalShortcut.isRegistered(accelerator)) {
-      console.warn(`[HotkeyManager] Hotkey already registered: ${accelerator}`);
+      appLogger.warn(`[HotkeyManager] Hotkey already registered: ${accelerator}`);
       return false;
     }
 
     const success = globalShortcut.register(accelerator, callback);
     if (success) {
       registered.push({ accelerator, label });
-      console.log(`[HotkeyManager] Registered: ${accelerator} (${label})`);
+      appLogger.info(`[HotkeyManager] Registered: ${accelerator} (${label})`);
     } else {
-      console.warn(`[HotkeyManager] Failed to register: ${accelerator}`);
+      appLogger.warn(`[HotkeyManager] Failed to register: ${accelerator}`);
     }
 
     return success;
@@ -89,13 +91,13 @@ export function createHotkeyManager(deps: HotkeyManagerDeps): HotkeyManager {
       case 'quickNote': {
         return () => {
           showMainWindow();
-          console.log('[HotkeyManager] Quick Note triggered');
+          appLogger.info('[HotkeyManager] Quick Note triggered');
         };
       }
       case 'quickTask': {
         return () => {
           showMainWindow();
-          console.log('[HotkeyManager] Quick Task triggered');
+          appLogger.info('[HotkeyManager] Quick Task triggered');
         };
       }
       default: {
@@ -118,14 +120,14 @@ export function createHotkeyManager(deps: HotkeyManagerDeps): HotkeyManager {
       // Unregister all existing hotkeys first
       globalShortcut.unregisterAll();
       registered.length = 0;
-      console.log('[HotkeyManager] Cleared all hotkeys for re-registration');
+      appLogger.info('[HotkeyManager] Cleared all hotkeys for re-registration');
 
       for (const [action, accelerator] of Object.entries(config)) {
         const callback = getCallbackForAction(action);
         if (callback) {
           tryRegister(accelerator, action, callback);
         } else {
-          console.warn(`[HotkeyManager] Unknown action: ${action}`);
+          appLogger.warn(`[HotkeyManager] Unknown action: ${action}`);
         }
       }
     },
@@ -138,7 +140,7 @@ export function createHotkeyManager(deps: HotkeyManagerDeps): HotkeyManager {
       globalShortcut.unregisterAll();
       const count = registered.length;
       registered.length = 0;
-      console.log(`[HotkeyManager] Unregistered ${String(count)} hotkeys`);
+      appLogger.info(`[HotkeyManager] Unregistered ${String(count)} hotkeys`);
     },
 
     getRegistered() {

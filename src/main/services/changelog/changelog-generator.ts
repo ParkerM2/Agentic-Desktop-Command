@@ -10,6 +10,8 @@ import simpleGit from 'simple-git';
 
 import type { ChangeCategory, ChangelogEntry, ChangeType, CommitInfo } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 /**
  * Get sorted list of git tags (most recent first)
  */
@@ -50,7 +52,7 @@ export async function getCommitsBetweenTags(
     }));
   } catch (error) {
     // If range fails, try getting all commits from the tag
-    console.warn(`[ChangelogGenerator] Failed to get commits for range ${range}:`, error);
+    serviceLogger.warn(`[ChangelogGenerator] Failed to get commits for range ${range}:`, error);
     return [];
   }
 }
@@ -77,7 +79,7 @@ export async function getCommitsSinceTag(
       date: commit.date,
     }));
   } catch (error) {
-    console.warn('[ChangelogGenerator] Failed to get commits:', error);
+    serviceLogger.warn('[ChangelogGenerator] Failed to get commits:', error);
     return [];
   }
 }

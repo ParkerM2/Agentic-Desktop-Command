@@ -12,6 +12,8 @@ import { join } from 'node:path';
 
 import { app } from 'electron';
 
+import { hubLogger } from '@main/lib/logger';
+
 import type { HubClient } from './hub-client';
 import type { HubConnectionManager } from './hub-connection';
 
@@ -61,7 +63,7 @@ function loadQueue(): PendingMutation[] {
     }
     return [];
   } catch {
-    console.error('[HubSync] Failed to load sync queue');
+    hubLogger.error('[HubSync] Failed to load sync queue');
     return [];
   }
 }
@@ -183,13 +185,13 @@ async function syncMutation(client: HubClient, mutation: PendingMutation): Promi
         return result.success;
       }
       default: {
-        console.log(`[HubSync] Unknown entity: ${entity}`);
+        hubLogger.info(`[HubSync] Unknown entity: ${entity}`);
         return false;
       }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Sync error';
-    console.error(`[HubSync] Failed to sync ${entity}.${action}:`, message);
+    hubLogger.error(`[HubSync] Failed to sync ${entity}.${action}:`, message);
     return false;
   }
 }
@@ -208,7 +210,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
       };
       queue.push(mutation);
       saveQueue(queue);
-      console.log(`[HubSync] Queued ${entity}.${action} (${String(queue.length)} pending)`);
+      hubLogger.info(`[HubSync] Queued ${entity}.${action} (${String(queue.length)} pending)`);
     },
 
     async syncPending() {
@@ -217,7 +219,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
       }
 
       if (!connectionManager.isAvailable()) {
-        console.log('[HubSync] Hub not available, skipping sync');
+        hubLogger.info('[HubSync] Hub not available, skipping sync');
         return 0;
       }
 
@@ -237,7 +239,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
       queue = failedMutations;
       saveQueue(queue);
 
-      console.log(
+      hubLogger.info(
         `[HubSync] Synced ${String(syncedCount)} mutations, ${String(queue.length)} remaining`,
       );
       return syncedCount;
@@ -250,7 +252,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
     clearPending() {
       queue = [];
       saveQueue(queue);
-      console.log('[HubSync] Cleared sync queue');
+      hubLogger.info('[HubSync] Cleared sync queue');
     },
 
     shouldSync() {

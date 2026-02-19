@@ -18,6 +18,8 @@ import type {
   SlackWatcherConfig,
 } from '@shared/types';
 
+import { watcherLogger } from '@main/lib/logger';
+
 import { createSlackClient } from '../../mcp-servers/slack/slack-client';
 
 import type { NotificationManager, NotificationWatcher } from './notification-watcher';
@@ -238,7 +240,7 @@ export function createSlackWatcher(deps: SlackWatcherDeps): NotificationWatcher 
           notifications.push(...channelNotifications);
         } catch (channelError) {
           // Log but continue with other channels
-          console.warn(
+          watcherLogger.warn(
             `[SlackWatcher] Error reading channel ${channel.name}:`,
             channelError instanceof Error ? channelError.message : 'Unknown error',
           );
@@ -273,7 +275,7 @@ export function createSlackWatcher(deps: SlackWatcherDeps): NotificationWatcher 
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       lastError = message;
-      console.error('[SlackWatcher] Poll error:', message);
+      watcherLogger.error('[SlackWatcher] Poll error:', message);
 
       router.emit('event:notifications.watcherError', {
         source: 'slack',
@@ -306,7 +308,7 @@ export function createSlackWatcher(deps: SlackWatcherDeps): NotificationWatcher 
       void pollForNotifications();
     }, intervalMs);
 
-    console.log(`[SlackWatcher] Started with ${String(intervalMs)}ms interval`);
+    watcherLogger.info(`[SlackWatcher] Started with ${String(intervalMs)}ms interval`);
   }
 
   function stop(): void {
@@ -314,7 +316,7 @@ export function createSlackWatcher(deps: SlackWatcherDeps): NotificationWatcher 
       clearInterval(pollInterval);
       pollInterval = null;
     }
-    console.log('[SlackWatcher] Stopped');
+    watcherLogger.info('[SlackWatcher] Stopped');
   }
 
   return {

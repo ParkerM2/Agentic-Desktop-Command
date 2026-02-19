@@ -4,6 +4,8 @@
  * Manages in-memory session and report storage, event emission, and session lifecycle.
  */
 
+import { serviceLogger } from '@main/lib/logger';
+
 import type {
   QaMode,
   QaReport,
@@ -38,7 +40,7 @@ export function createQaSessionStore(): QaSessionStore {
         handler(event);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[QaRunner] Event handler error:', message);
+        serviceLogger.error('[QaRunner] Event handler error:', message);
       }
     }
   }

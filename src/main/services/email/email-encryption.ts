@@ -8,6 +8,8 @@
 
 import { safeStorage } from 'electron';
 
+import { fsLogger } from '@main/lib/logger';
+
 export interface EncryptedSecretEntry {
   encrypted: string;
   useSafeStorage: boolean;
@@ -36,7 +38,7 @@ export function encryptSecret(value: string): EncryptedSecretEntry {
     };
   }
 
-  console.warn('[Email] safeStorage not available - falling back to base64 encoding');
+  fsLogger.warn('[Email] safeStorage not available - falling back to base64 encoding');
   return {
     encrypted: Buffer.from(value, 'utf-8').toString('base64'),
     useSafeStorage: false,
@@ -66,7 +68,7 @@ export function getDecryptedPassword(storedPass: EncryptedSecretEntry | string):
     try {
       return decryptSecret(storedPass);
     } catch {
-      console.error('[Email] Failed to decrypt password');
+      fsLogger.error('[Email] Failed to decrypt password');
       return '';
     }
   }

@@ -10,6 +10,8 @@
  * Optionally auto-restarts on context overflow (exit code 2).
  */
 
+import { agentLogger } from '@main/lib/logger';
+
 import type { AgentOrchestrator, AgentSession } from './types';
 import type { NotificationManager } from '../notifications';
 
@@ -102,7 +104,7 @@ export function createAgentWatchdog(
         handler(alert);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[AgentWatchdog] Alert handler error:', message);
+        agentLogger.error('[AgentWatchdog] Alert handler error:', message);
       }
     }
 

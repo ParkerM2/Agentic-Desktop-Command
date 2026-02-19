@@ -17,6 +17,7 @@ import type {
 } from '@shared/types/hub-protocol';
 
 import type { TokenStore } from '@main/auth/token-store';
+import { hubLogger } from '@main/lib/logger';
 
 // ─── Result type ────────────────────────────────────────────
 
@@ -226,7 +227,7 @@ export function createHubAuthService(deps: HubAuthServiceDeps): HubAuthService {
           );
         }
       } catch {
-        console.warn('[HubAuth] Server logout failed, clearing local tokens anyway');
+        hubLogger.warn('[HubAuth] Server logout failed, clearing local tokens anyway');
       }
 
       tokenStore.deleteTokens(HUB_PROVIDER);

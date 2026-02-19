@@ -17,6 +17,7 @@ import type {
   WebhookCommand,
 } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
 import type { McpManager } from '@main/mcp/mcp-manager';
 
 import { createCommandExecutor } from './command-executor';
@@ -135,7 +136,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
     try {
       // Classify the intent (async — tries regex first, then Claude API)
       const intent = await classifyIntentAsync(trimmedInput);
-      console.log(
+      serviceLogger.info(
         `[Assistant] Classified "${trimmedInput}" as ${intent.type}/${intent.subtype ?? 'none'} (confidence: ${String(intent.confidence)})`,
       );
 
@@ -170,7 +171,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
       return response;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[Assistant] Command processing failed:', message);
+      serviceLogger.error('[Assistant] Command processing failed:', message);
 
       const errorResponse: AssistantResponse = {
         type: 'error',

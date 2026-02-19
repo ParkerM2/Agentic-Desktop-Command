@@ -8,6 +8,8 @@
 
 import type { WebhookCommand } from '@shared/types';
 
+import { hubLogger } from '@main/lib/logger';
+
 import type { IpcRouter } from '../../ipc/router';
 import type { AssistantService } from '../assistant/assistant-service';
 
@@ -96,11 +98,11 @@ export function createWebhookRelay(deps: WebhookRelayDeps): WebhookRelay {
 
         const command = extractWebhookCommand(message.data);
         if (!command) {
-          console.warn('[WebhookRelay] Could not extract command from broadcast data');
+          hubLogger.warn('[WebhookRelay] Could not extract command from broadcast data');
           return;
         }
 
-        console.log(
+        hubLogger.info(
           `[WebhookRelay] Received ${command.source} webhook: "${command.commandText.slice(0, 80)}"`,
         );
 
@@ -119,7 +121,7 @@ export function createWebhookRelay(deps: WebhookRelayDeps): WebhookRelay {
         void assistantService.processWebhookCommand(command);
       } catch (error) {
         const message2 = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[WebhookRelay] Error handling hub message:', message2);
+        hubLogger.error('[WebhookRelay] Error handling hub message:', message2);
       }
     },
   };

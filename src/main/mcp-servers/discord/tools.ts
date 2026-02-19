@@ -5,6 +5,8 @@
  * with Discord. Each tool maps to a DiscordClient method.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { DiscordClient } from './discord-client';
 import type { DiscordStatusType } from './types';
 import type { McpToolDefinition, McpToolResult } from '../../mcp/types';
@@ -154,7 +156,7 @@ export async function executeDiscordTool(
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[Discord] Tool "${toolName}" failed: ${message}`);
+    mcpLogger.error(`[Discord] Tool "${toolName}" failed: ${message}`);
     return errorResult(`Discord API error: ${message}`);
   }
 }

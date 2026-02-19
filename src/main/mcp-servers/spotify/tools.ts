@@ -5,6 +5,8 @@
  * Spotify playback. Each tool maps to a SpotifyClient method.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { SpotifyClient } from './spotify-client';
 import type { McpToolDefinition, McpToolResult } from '../../mcp/types';
 
@@ -217,7 +219,7 @@ export async function executeSpotifyTool(
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[Spotify] Tool "${toolName}" failed: ${message}`);
+    mcpLogger.error(`[Spotify] Tool "${toolName}" failed: ${message}`);
     return errorResult(`Spotify API error: ${message}`);
   }
 }

@@ -12,6 +12,8 @@ import { EventEmitter } from 'node:events';
 import http from 'node:http';
 import https from 'node:https';
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type {
   McpConnectionState,
   McpServerConfig,
@@ -122,7 +124,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     }
 
     if (!childProcess?.stdin?.writable) {
-      console.error(`[MCP] Cannot send request to ${config.name}: stdin not writable`);
+      mcpLogger.error(`[MCP] Cannot send request to ${config.name}: stdin not writable`);
       return;
     }
     const message = JSON.stringify(request);
@@ -155,7 +157,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
 
   function handleInitializeResponse(response: JsonRpcResponse): void {
     if (response.error) {
-      console.error(`[MCP] Initialize failed for ${config.name}:`, response.error.message);
+      mcpLogger.error(`[MCP] Initialize failed for ${config.name}:`, response.error.message);
       setState('error');
       events.emit('error', config.name, new Error(response.error.message));
       return;
@@ -168,7 +170,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     // Store a handler to process the tools/list response
     const timeoutId = setTimeout(() => {
       pendingRequests.delete(listRequest.id);
-      console.error(`[MCP] tools/list timed out for ${config.name}`);
+      mcpLogger.error(`[MCP] tools/list timed out for ${config.name}`);
     }, TOOL_CALL_TIMEOUT_MS);
 
     pendingRequests.set(listRequest.id, {
@@ -176,7 +178,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         // tools/list response is handled specially below
       },
       reject: (error) => {
-        console.error(`[MCP] tools/list failed for ${config.name}:`, error.message);
+        mcpLogger.error(`[MCP] tools/list failed for ${config.name}:`, error.message);
       },
       timeoutId,
     });
@@ -288,17 +290,17 @@ export function createMcpClient(config: McpServerConfig): McpClient {
       childProcess.stdout?.on('data', handleStdout);
 
       childProcess.stderr?.on('data', (data: Buffer) => {
-        console.error(`[MCP] ${config.name} stderr:`, String(data));
+        mcpLogger.error(`[MCP] ${config.name} stderr:`, String(data));
       });
 
       childProcess.on('error', (error) => {
-        console.error(`[MCP] ${config.name} process error:`, error.message);
+        mcpLogger.error(`[MCP] ${config.name} process error:`, error.message);
         setState('error');
         events.emit('error', config.name, error);
       });
 
       childProcess.on('exit', (code) => {
-        console.log(`[MCP] ${config.name} process exited with code ${String(code)}`);
+        mcpLogger.info(`[MCP] ${config.name} process exited with code ${String(code)}`);
         // Clean up pending requests
         for (const [id, pending] of pendingRequests) {
           clearTimeout(pending.timeoutId);
@@ -324,7 +326,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
       handleInitializeResponse({ jsonrpc: '2.0', id: initRequest.id, result: {} });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown spawn error';
-      console.error(`[MCP] Failed to spawn ${config.name}:`, errorMessage);
+      mcpLogger.error(`[MCP] Failed to spawn ${config.name}:`, errorMessage);
       setState('error');
       events.emit('error', config.name, new Error(errorMessage));
     }
@@ -381,7 +383,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
 
   function sendSseRequest(request: JsonRpcRequest): void {
     if (!ssePostEndpoint) {
-      console.error(`[MCP] Cannot send SSE request to ${config.name}: no POST endpoint`);
+      mcpLogger.error(`[MCP] Cannot send SSE request to ${config.name}: no POST endpoint`);
       return;
     }
 
@@ -403,7 +405,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         }
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown POST error';
-        console.error(`[MCP] SSE POST failed for ${config.name}:`, message);
+        mcpLogger.error(`[MCP] SSE POST failed for ${config.name}:`, message);
 
         // Reject the pending request if it exists
         const pending = pendingRequests.get(request.id);
@@ -502,7 +504,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     // Register a pending request for the initialize response
     const timeoutId = setTimeout(() => {
       pendingRequests.delete(initRequest.id);
-      console.error(`[MCP] SSE initialize timed out for ${config.name}`);
+      mcpLogger.error(`[MCP] SSE initialize timed out for ${config.name}`);
       setState('error');
       events.emit('error', config.name, new Error('SSE initialize timed out'));
     }, TOOL_CALL_TIMEOUT_MS);
@@ -513,7 +515,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         const listRequest = buildJsonRpcRequest('tools/list');
         const listTimeoutId = setTimeout(() => {
           pendingRequests.delete(listRequest.id);
-          console.error(`[MCP] SSE tools/list timed out for ${config.name}`);
+          mcpLogger.error(`[MCP] SSE tools/list timed out for ${config.name}`);
         }, TOOL_CALL_TIMEOUT_MS);
 
         pendingRequests.set(listRequest.id, {
@@ -521,7 +523,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
             // tools/list handled specially in processLine
           },
           reject: (error) => {
-            console.error(`[MCP] SSE tools/list failed for ${config.name}:`, error.message);
+            mcpLogger.error(`[MCP] SSE tools/list failed for ${config.name}:`, error.message);
           },
           timeoutId: listTimeoutId,
         });
@@ -529,7 +531,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         sendSseRequest(listRequest);
       },
       reject: (error) => {
-        console.error(`[MCP] SSE initialize failed for ${config.name}:`, error.message);
+        mcpLogger.error(`[MCP] SSE initialize failed for ${config.name}:`, error.message);
         setState('error');
         events.emit('error', config.name, error);
       },
@@ -550,12 +552,12 @@ export function createMcpClient(config: McpServerConfig): McpClient {
       // The server tells us where to POST JSON-RPC requests
       const endpointPath = sseEvent.data.trim();
       if (endpointPath.length === 0) {
-        console.error(`[MCP] SSE endpoint event with empty data for ${config.name}`);
+        mcpLogger.error(`[MCP] SSE endpoint event with empty data for ${config.name}`);
         return;
       }
 
       ssePostEndpoint = resolveEndpointUrl(endpointPath, config.url ?? '');
-      console.log(`[MCP] SSE POST endpoint for ${config.name}: ${ssePostEndpoint}`);
+      mcpLogger.info(`[MCP] SSE POST endpoint for ${config.name}: ${ssePostEndpoint}`);
 
       // Send initialize handshake
       sseInitialize();
@@ -569,7 +571,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     }
 
     // Unknown event types are ignored per the SSE spec
-    console.log(`[MCP] SSE unknown event type "${eventType}" for ${config.name}`);
+    mcpLogger.info(`[MCP] SSE unknown event type "${eventType}" for ${config.name}`);
   }
 
   function connectSse(): void {
@@ -583,7 +585,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     sseAbortController = new AbortController();
     let sseBuffer = '';
 
-    console.log(`[MCP] SSE transport for ${config.name} connecting to ${config.url}`);
+    mcpLogger.info(`[MCP] SSE transport for ${config.name} connecting to ${config.url}`);
 
     const sseUrl = new URL(config.url);
     const transport = sseUrl.protocol === 'https:' ? https : http;
@@ -603,7 +605,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         (res.statusCode < 200 || res.statusCode >= 300)
       ) {
         const errorMsg = `SSE connection to ${config.url ?? 'unknown'} returned status ${String(res.statusCode)}`;
-        console.error(`[MCP] ${config.name}: ${errorMsg}`);
+        mcpLogger.error(`[MCP] ${config.name}: ${errorMsg}`);
         setState('error');
         events.emit('error', config.name, new Error(errorMsg));
         return;
@@ -636,7 +638,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
           return;
         }
 
-        console.log(`[MCP] SSE connection ended for ${config.name}`);
+        mcpLogger.info(`[MCP] SSE connection ended for ${config.name}`);
 
         // Process any remaining buffer content
         if (sseBuffer.trim().length > 0) {
@@ -658,7 +660,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
           return;
         }
 
-        console.error(`[MCP] SSE stream error for ${config.name}:`, error.message);
+        mcpLogger.error(`[MCP] SSE stream error for ${config.name}:`, error.message);
         setState('error');
         events.emit('error', config.name, error);
       });
@@ -669,7 +671,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         return;
       }
 
-      console.error(`[MCP] SSE request error for ${config.name}:`, error.message);
+      mcpLogger.error(`[MCP] SSE request error for ${config.name}:`, error.message);
       setState('error');
       events.emit('error', config.name, error);
     });

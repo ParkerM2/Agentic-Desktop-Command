@@ -5,6 +5,8 @@
  * Handles rate limiting with exponential backoff.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type {
   SlackChannel,
   SlackChannelListResponse,
@@ -100,7 +102,7 @@ async function fetchWithRetry(
       const retryAfter = response.headers.get('retry-after');
       const waitMs = retryAfter ? Number(retryAfter) * 1000 : INITIAL_BACKOFF_MS * 2 ** attempt;
 
-      console.warn(`[SlackClient] Rate limited, retrying in ${String(waitMs)}ms`);
+      mcpLogger.warn(`[SlackClient] Rate limited, retrying in ${String(waitMs)}ms`);
       await sleep(waitMs);
       continue;
     }

@@ -12,6 +12,8 @@ import { platform } from 'node:os';
 
 import type { AssistantAction } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 const CLASSIFIER_TIMEOUT_MS = 10_000;
 const CLASSIFIER_MAX_BUFFER = 262_144; // 256 KB
 
@@ -127,11 +129,11 @@ export async function classifyWithClaude(input: string): Promise<ClaudeClassific
     const result = parseClassification(raw);
 
     if (result) {
-      console.log(
+      serviceLogger.info(
         `[ClaudeClassifier] Classified "${input}" as ${result.action} (confidence: ${String(result.confidence)})`,
       );
     } else {
-      console.warn(
+      serviceLogger.warn(
         `[ClaudeClassifier] Failed to parse response for "${input}":`,
         raw.slice(0, 200),
       );
@@ -140,7 +142,7 @@ export async function classifyWithClaude(input: string): Promise<ClaudeClassific
     return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[ClaudeClassifier] Classification failed:', message);
+    serviceLogger.error('[ClaudeClassifier] Classification failed:', message);
     return null;
   }
 }

@@ -8,6 +8,8 @@
 
 import { EventEmitter } from 'node:events';
 
+import { mcpLogger } from '@main/lib/logger';
+
 import { createMcpClient } from './mcp-client';
 
 import type { McpClient } from './mcp-client';
@@ -102,7 +104,7 @@ export function createMcpManager(deps: McpManagerDeps, config?: McpManagerConfig
     }
 
     const delay = getReconnectDelay(entry.reconnectAttempts);
-    console.log(
+    mcpLogger.info(
       `[MCP Manager] Scheduling reconnect for ${serverName} in ${String(delay)}ms (attempt ${String(entry.reconnectAttempts + 1)})`,
     );
 
@@ -112,11 +114,11 @@ export function createMcpManager(deps: McpManagerDeps, config?: McpManagerConfig
 
       const serverConfig = registry.getServer(serverName);
       if (!serverConfig) {
-        console.log(`[MCP Manager] Server ${serverName} no longer registered, skipping reconnect`);
+        mcpLogger.info(`[MCP Manager] Server ${serverName} no longer registered, skipping reconnect`);
         return;
       }
 
-      console.log(`[MCP Manager] Reconnecting to ${serverName}...`);
+      mcpLogger.info(`[MCP Manager] Reconnecting to ${serverName}...`);
       entry.client.connect();
     }, delay);
   }
@@ -128,12 +130,12 @@ export function createMcpManager(deps: McpManagerDeps, config?: McpManagerConfig
         entry.reconnectAttempts = 0;
       }
       events.emit('connection-state-changed', serverName, 'connected');
-      console.log(`[MCP Manager] ${serverName} connected`);
+      mcpLogger.info(`[MCP Manager] ${serverName} connected`);
     });
 
     client.events.on('disconnected', () => {
       events.emit('connection-state-changed', serverName, 'disconnected');
-      console.log(`[MCP Manager] ${serverName} disconnected`);
+      mcpLogger.info(`[MCP Manager] ${serverName} disconnected`);
 
       if (mergedConfig.autoReconnect && clients.has(serverName)) {
         scheduleReconnect(serverName);
@@ -142,7 +144,7 @@ export function createMcpManager(deps: McpManagerDeps, config?: McpManagerConfig
 
     client.events.on('error', (_name: string, error: Error) => {
       events.emit('connection-state-changed', serverName, 'error');
-      console.error(`[MCP Manager] ${serverName} error:`, error.message);
+      mcpLogger.error(`[MCP Manager] ${serverName} error:`, error.message);
 
       if (mergedConfig.autoReconnect && clients.has(serverName)) {
         scheduleReconnect(serverName);
@@ -166,7 +168,7 @@ export function createMcpManager(deps: McpManagerDeps, config?: McpManagerConfig
 
     const serverConfig = registry.getServer(serverName);
     if (!serverConfig) {
-      console.error(`[MCP Manager] Server "${serverName}" not found in registry`);
+      mcpLogger.error(`[MCP Manager] Server "${serverName}" not found in registry`);
       return;
     }
 
@@ -221,7 +223,7 @@ export function createMcpManager(deps: McpManagerDeps, config?: McpManagerConfig
       if (!entry.client.isConnected()) {
         const error = new Error(`Health check: ${serverName} is not connected`);
         events.emit('health-check-failed', serverName, error);
-        console.log(`[MCP Manager] Health check failed for ${serverName}`);
+        mcpLogger.info(`[MCP Manager] Health check failed for ${serverName}`);
       }
     }
   }

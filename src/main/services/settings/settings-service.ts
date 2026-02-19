@@ -12,6 +12,8 @@ import { app } from 'electron';
 
 import type { AgentSettings, AppSettings, Profile, WebhookConfig } from '@shared/types';
 
+import { fsLogger } from '@main/lib/logger';
+
 import { DEFAULT_AGENT_SETTINGS } from './settings-defaults';
 import { loadSettingsFile, saveSettingsFile } from './settings-store';
 
@@ -45,7 +47,7 @@ export function createSettingsService(): SettingsService {
 
   // Migrate plaintext secrets to encrypted format on first load
   if (needsMigration) {
-    console.log('[Settings] Migrating plaintext secrets to encrypted format');
+    fsLogger.info('[Settings] Migrating plaintext secrets to encrypted format');
     persist();
   }
 

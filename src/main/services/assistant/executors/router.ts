@@ -8,6 +8,8 @@
 
 import type { AssistantContext, AssistantResponse } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import { executeBriefing } from './briefing.executor';
 import { executeCalendar } from './calendar.executor';
 import { executeChangelog } from './changelog.executor';
@@ -87,7 +89,7 @@ async function executeDirectQuickCommand(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : UNKNOWN_ERROR;
-    console.error(`[CommandExecutor] Direct command failed (${subtype}):`, message);
+    serviceLogger.error(`[CommandExecutor] Direct command failed (${subtype}):`, message);
     return buildErrorResponse(`Failed to execute ${subtype} command: ${message}`);
   }
 }
@@ -139,7 +141,7 @@ async function executeQuickCommand(
     return buildActionResponse(responseText, intent);
   } catch (error) {
     const message = error instanceof Error ? error.message : UNKNOWN_ERROR;
-    console.error(`[CommandExecutor] MCP tool call failed:`, message);
+    serviceLogger.error(`[CommandExecutor] MCP tool call failed:`, message);
     return buildErrorResponse(`Failed to execute ${subtype} command: ${message}`);
   }
 }
@@ -199,7 +201,7 @@ export async function routeIntent(
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : UNKNOWN_ERROR;
-    console.error('[CommandExecutor] Unexpected error:', message);
+    serviceLogger.error('[CommandExecutor] Unexpected error:', message);
     return buildErrorResponse(`Something went wrong: ${message}`);
   }
 }

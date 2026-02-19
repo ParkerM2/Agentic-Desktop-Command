@@ -7,6 +7,8 @@
 
 import { BrowserWindow, screen } from 'electron';
 
+import { appLogger } from '@main/lib/logger';
+
 // ── Types ────────────────────────────────────────────────────
 
 export interface QuickInputWindow {
@@ -145,7 +147,7 @@ export function createQuickInputWindow(deps: QuickInputDeps): QuickInputWindow {
     // Listen for messages from the inline HTML
     win.webContents.on('console-message', (_event, _level, message) => {
       // Messages come through postMessage -> we catch them via did-create-window or IPC
-      console.log('[QuickInput] Console:', message);
+      appLogger.info('[QuickInput] Console:', message);
     });
 
     // Handle postMessage from the inline HTML via the preload-less approach
@@ -205,7 +207,7 @@ export function createQuickInputWindow(deps: QuickInputDeps): QuickInputWindow {
         `document.getElementById('cmd')?.focus(); document.getElementById('cmd').value = '';`,
       );
 
-      console.log('[QuickInput] Shown');
+      appLogger.info('[QuickInput] Shown');
     },
 
     hide() {
@@ -224,7 +226,7 @@ export function createQuickInputWindow(deps: QuickInputDeps): QuickInputWindow {
         win.destroy();
       }
       win = null;
-      console.log('[QuickInput] Destroyed');
+      appLogger.info('[QuickInput] Destroyed');
     },
   };
 }

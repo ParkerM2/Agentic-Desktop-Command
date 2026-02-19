@@ -6,6 +6,8 @@
  * Consumes tokens from the OAuth token store.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type {
   SpotifyPlaybackState,
   SpotifyPlaylist,
@@ -93,7 +95,7 @@ async function fetchWithRetry(
       const retryAfter = response.headers.get('retry-after');
       const waitMs = retryAfter ? Number(retryAfter) * 1000 : INITIAL_BACKOFF_MS * 2 ** attempt;
 
-      console.warn(`[SpotifyClient] Rate limited, retrying in ${String(waitMs)}ms`);
+      mcpLogger.warn(`[SpotifyClient] Rate limited, retrying in ${String(waitMs)}ms`);
       await sleep(waitMs);
       continue;
     }

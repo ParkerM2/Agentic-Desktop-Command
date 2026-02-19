@@ -9,6 +9,8 @@ import { randomUUID } from 'node:crypto';
 
 import type { ClaudeConversation, ClaudeMessage } from '@shared/types';
 
+import { fsLogger } from '@main/lib/logger';
+
 /** Internal conversation state including full message history. */
 interface ConversationState {
   id: string;
@@ -189,7 +191,7 @@ export function createConversationStore(config?: ConversationStoreConfig): Conve
 
       if (prunedCount > 0) {
         conv.updatedAt = new Date().toISOString();
-        console.log(
+        fsLogger.info(
           `[ConversationStore] Pruned ${String(prunedCount)} messages from ${conversationId}`,
         );
       }

@@ -13,6 +13,8 @@ import { join } from 'node:path';
 
 import { safeStorage } from 'electron';
 
+import { authLogger } from '@main/lib/logger';
+
 export interface OAuthCredentials {
   clientId: string;
   clientSecret: string;
@@ -45,7 +47,7 @@ function encryptCredentials(creds: OAuthCredentials): EncryptedCredentialsEntry 
     };
   }
 
-  console.warn('[OAuth] safeStorage not available — falling back to base64 encoding');
+  authLogger.warn('[OAuth] safeStorage not available — falling back to base64 encoding');
   return {
     encrypted: Buffer.from(serialized, 'utf-8').toString('base64'),
     useSafeStorage: false,
@@ -123,18 +125,18 @@ export function loadOAuthCredentials(dataDir: string): Map<string, OAuthCredenti
           const creds = decryptCredentials(entry);
           result.set(name, creds);
         } catch {
-          console.error(`[OAuth] Failed to decrypt credentials for provider: ${name}`);
+          authLogger.error(`[OAuth] Failed to decrypt credentials for provider: ${name}`);
         }
       }
     }
 
     // Re-save with encryption if we found legacy entries
     if (needsMigration) {
-      console.log('[OAuth] Migrating plaintext credentials to encrypted format');
+      authLogger.info('[OAuth] Migrating plaintext credentials to encrypted format');
       saveAllCredentials(dataDir, result);
     }
   } catch {
-    console.error('[OAuth] Failed to load provider credentials');
+    authLogger.error('[OAuth] Failed to load provider credentials');
   }
 
   return result;

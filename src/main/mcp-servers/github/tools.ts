@@ -5,6 +5,8 @@
  * with GitHub. Each tool maps to a GitHubClient method.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { GitHubClient } from './github-client';
 import type { McpToolDefinition, McpToolResult } from '../../mcp/types';
 
@@ -246,7 +248,7 @@ export async function executeGitHubTool(
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[GitHub] Tool "${toolName}" failed: ${message}`);
+    mcpLogger.error(`[GitHub] Tool "${toolName}" failed: ${message}`);
     return errorResult(`GitHub API error: ${message}`);
   }
 }

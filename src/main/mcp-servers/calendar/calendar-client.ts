@@ -6,6 +6,8 @@
  * Consumes tokens from the OAuth token store.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type {
   CalendarEvent,
   CalendarEventListResponse,
@@ -109,7 +111,7 @@ async function fetchWithRetry(
       const retryAfter = response.headers.get('retry-after');
       const waitMs = retryAfter ? Number(retryAfter) * 1000 : INITIAL_BACKOFF_MS * 2 ** attempt;
 
-      console.warn(
+      mcpLogger.warn(
         `[CalendarClient] Rate limited (${String(response.status)}), retrying in ${String(waitMs)}ms`,
       );
       await sleep(waitMs);

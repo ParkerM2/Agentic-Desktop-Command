@@ -16,6 +16,9 @@ import {
   type EventPayload,
 } from '@shared/ipc-contract';
 
+import { ipcLogger } from '@main/lib/logger';
+
+
 type InvokeHandler<T extends InvokeChannel> = (input: InvokeInput<T>) => Promise<InvokeOutput<T>>;
 
 export class IpcRouter {
@@ -38,7 +41,7 @@ export class IpcRouter {
         return { success: true, data: result };
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`[IPC] Error in ${channel}:`, message);
+        ipcLogger.error(`[IPC] Error in ${channel}:`, message);
         return { success: false, error: message };
       }
     });

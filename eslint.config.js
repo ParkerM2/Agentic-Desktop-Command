@@ -296,7 +296,7 @@ export default tseslint.config(
   {
     rules: {
       // Error prevention
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-alert': 'error',
       'no-eval': 'error',
@@ -339,7 +339,7 @@ export default tseslint.config(
       },
     },
     rules: {
-      'no-console': 'off', // Main process can use console for logging
+      'no-console': ['error', { allow: ['warn', 'error'] }], // Use structured logger instead of console
       'unicorn/prefer-top-level-await': 'off', // Electron main doesn't support TLA
     },
   },

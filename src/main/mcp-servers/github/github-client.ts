@@ -6,6 +6,8 @@
  * Consumes tokens from the OAuth token store.
  */
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { Issue, Notification, PullRequest, PullRequestReview } from './types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -102,7 +104,7 @@ async function fetchWithRetry(
       const retryAfter = response.headers.get('retry-after');
       const waitMs = retryAfter ? Number(retryAfter) * 1000 : INITIAL_BACKOFF_MS * 2 ** attempt;
 
-      console.warn(
+      mcpLogger.warn(
         `[GitHubClient] Rate limited (${String(response.status)}), retrying in ${String(waitMs)}ms`,
       );
       await sleep(waitMs);

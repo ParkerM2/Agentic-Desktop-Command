@@ -9,6 +9,8 @@
 
 import { safeStorage } from 'electron';
 
+import { fsLogger } from '@main/lib/logger';
+
 const WEBHOOK_SECRET_KEYS = [
   'webhookSlackBotToken',
   'webhookSlackSigningSecret',
@@ -49,7 +51,7 @@ export function encryptSecret(value: string): EncryptedSecretEntry {
     };
   }
 
-  console.warn('[Settings] safeStorage not available — falling back to base64 encoding');
+  fsLogger.warn('[Settings] safeStorage not available — falling back to base64 encoding');
   return {
     encrypted: Buffer.from(value, 'utf-8').toString('base64'),
     useSafeStorage: false,

@@ -11,6 +11,8 @@ import { basename, join } from 'node:path';
 
 import type { CodebaseAnalysis, CreateProjectInput, SetupStepStatus } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import type { ClaudeMdGeneratorService } from './claudemd-generator';
 import type { CodebaseAnalyzerService } from './codebase-analyzer';
 import type { DocGeneratorService } from './doc-generator';
@@ -67,7 +69,7 @@ async function runSteps(steps: PipelineStep[], emitProgress: () => void): Promis
     } catch (error: unknown) {
       step.status = 'error';
       step.error = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`[SetupPipeline] Step "${step.id}" failed:`, step.error);
+      serviceLogger.error(`[SetupPipeline] Step "${step.id}" failed:`, step.error);
     }
     emitProgress();
   }
@@ -196,7 +198,7 @@ export function createSetupPipeline(deps: SetupPipelineDeps): SetupPipelineServi
     async runForExisting(projectId) {
       const projectPath = projectService.getProjectPath(projectId);
       if (!projectPath) {
-        console.error(`[SetupPipeline] Cannot find path for project ${projectId}`);
+        serviceLogger.error(`[SetupPipeline] Cannot find path for project ${projectId}`);
         return;
       }
 
@@ -209,9 +211,9 @@ export function createSetupPipeline(deps: SetupPipelineDeps): SetupPipelineServi
 
       const emitProgress = createEmitter(steps, projectId, analysisRef);
 
-      console.log(`[SetupPipeline] Running setup for existing project: ${projectName}`);
+      serviceLogger.info(`[SetupPipeline] Running setup for existing project: ${projectName}`);
       await runSteps(steps, emitProgress);
-      console.log(`[SetupPipeline] Setup complete for existing project: ${projectName}`);
+      serviceLogger.info(`[SetupPipeline] Setup complete for existing project: ${projectName}`);
     },
 
     async runForNew(input) {
@@ -275,9 +277,9 @@ export function createSetupPipeline(deps: SetupPipelineDeps): SetupPipelineServi
       const allSteps = [...prefixSteps, ...existingSteps, ...suffixSteps];
       const emitProgress = createEmitter(allSteps, projectId, analysisRef);
 
-      console.log(`[SetupPipeline] Running setup for new project: ${input.name}`);
+      serviceLogger.info(`[SetupPipeline] Running setup for new project: ${input.name}`);
       await runSteps(allSteps, emitProgress);
-      console.log(`[SetupPipeline] Setup complete for new project: ${input.name}`);
+      serviceLogger.info(`[SetupPipeline] Setup complete for new project: ${input.name}`);
     },
   };
 }

@@ -15,6 +15,7 @@ import {
   wireEventForwarding,
   wireIpcHandlers,
 } from './bootstrap';
+import { appLogger } from './lib/logger';
 
 import type { ErrorCollector } from './services/health/error-collector';
 import type { SettingsService } from './services/settings/settings-service';
@@ -72,7 +73,7 @@ function createWindow(): void {
 
   // Renderer crash recovery — auto-recreate up to 3 times within 60s
   mainWindow.webContents.on('render-process-gone', (_event, details) => {
-    console.error('[Main] Renderer process gone:', details.reason);
+    appLogger.error('[Main] Renderer process gone:', details.reason);
 
     const now = Date.now();
     if (now - lastRendererCrashTime > 60_000) {
@@ -157,7 +158,7 @@ function initializeApp(): void {
 void (async () => {
   // Global exception handlers — registered before app.whenReady() for maximum coverage
   process.on('uncaughtException', (error) => {
-    console.error('[Main] Uncaught exception:', error);
+    appLogger.error('[Main] Uncaught exception:', error);
     dialog.showErrorBox(
       'ADC Error',
       `An unexpected error occurred:\n\n${error.message}`,
@@ -168,7 +169,7 @@ void (async () => {
 
   process.on('unhandledRejection', (reason) => {
     const message = reason instanceof Error ? reason.message : String(reason);
-    console.error('[Main] Unhandled rejection:', message);
+    appLogger.error('[Main] Unhandled rejection:', message);
     errorCollectorRef?.report({
       severity: 'error',
       tier: 'app',

@@ -7,6 +7,8 @@ import { platform } from 'node:os';
 
 import type { AssistantResponse } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import { buildErrorResponse, buildTextResponse, UNKNOWN_ERROR } from './response-builders';
 
 import type { ClassifiedIntent } from '../intent-classifier';
@@ -42,7 +44,7 @@ export async function executeConversation(intent: ClassifiedIntent): Promise<Ass
     return buildTextResponse(response);
   } catch (error) {
     const message = error instanceof Error ? error.message : UNKNOWN_ERROR;
-    console.error('[CommandExecutor] Claude CLI error:', message);
+    serviceLogger.error('[CommandExecutor] Claude CLI error:', message);
     return buildErrorResponse(`Claude CLI error: ${message}`);
   }
 }

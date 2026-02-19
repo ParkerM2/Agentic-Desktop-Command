@@ -8,6 +8,8 @@
 
 import { shell } from 'electron';
 
+import { mcpLogger } from '@main/lib/logger';
+
 import type { DiscordChannel, DiscordGuild, DiscordMessage, DiscordStatusType } from './types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -84,7 +86,7 @@ async function fetchWithRetry(
           ? retryAfter * 1000
           : INITIAL_BACKOFF_MS * 2 ** attempt;
 
-      console.warn(`[DiscordClient] Rate limited, retrying in ${String(waitMs)}ms`);
+      mcpLogger.warn(`[DiscordClient] Rate limited, retrying in ${String(waitMs)}ms`);
       await sleep(waitMs);
       continue;
     }
@@ -151,7 +153,7 @@ export function createDiscordClient(token: string): DiscordClient {
     setStatus({ status, activityName }) {
       // Discord bot presence requires gateway, not REST.
       // For user accounts, we store the preference locally.
-      console.log(
+      mcpLogger.info(
         `[Discord] Status update requested: ${status}${activityName ? ` (${activityName})` : ''}`,
       );
       return Promise.resolve({ ok: true });

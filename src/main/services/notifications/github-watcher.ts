@@ -18,6 +18,8 @@ import type {
   NotificationMetadata,
 } from '@shared/types';
 
+import { watcherLogger } from '@main/lib/logger';
+
 import { createGitHubClient } from '../../mcp-servers/github/github-client';
 
 import type { NotificationManager, NotificationWatcher } from './notification-watcher';
@@ -286,7 +288,7 @@ export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatche
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       lastError = message;
-      console.error('[GitHubWatcher] Poll error:', message);
+      watcherLogger.error('[GitHubWatcher] Poll error:', message);
 
       router.emit('event:notifications.watcherError', {
         source: 'github',
@@ -319,7 +321,7 @@ export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatche
       void pollForNotifications();
     }, intervalMs);
 
-    console.log(`[GitHubWatcher] Started with ${String(intervalMs)}ms interval`);
+    watcherLogger.info(`[GitHubWatcher] Started with ${String(intervalMs)}ms interval`);
   }
 
   function stop(): void {
@@ -327,7 +329,7 @@ export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatche
       clearInterval(pollInterval);
       pollInterval = null;
     }
-    console.log('[GitHubWatcher] Stopped');
+    watcherLogger.info('[GitHubWatcher] Stopped');
   }
 
   return {

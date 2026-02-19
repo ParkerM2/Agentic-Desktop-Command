@@ -10,6 +10,8 @@ import { join } from 'node:path';
 import { app, Menu, nativeImage, Tray } from 'electron';
 import type { BrowserWindow, MenuItemConstructorOptions, NativeImage } from 'electron';
 
+import { appLogger } from '@main/lib/logger';
+
 // ── Types ────────────────────────────────────────────────────
 
 type TrayStatus = 'idle' | 'notification' | 'working';
@@ -148,7 +150,7 @@ export function createTrayManager(deps: TrayManagerDeps): TrayManager {
         deps.onShowWindow();
       });
 
-      console.log('[TrayManager] Tray initialized');
+      appLogger.info('[TrayManager] Tray initialized');
     },
 
     setStatus(status) {
@@ -175,7 +177,7 @@ export function createTrayManager(deps: TrayManagerDeps): TrayManager {
 
       tray.destroy();
       tray = null;
-      console.log('[TrayManager] Tray destroyed');
+      appLogger.info('[TrayManager] Tray destroyed');
     },
   };
 }

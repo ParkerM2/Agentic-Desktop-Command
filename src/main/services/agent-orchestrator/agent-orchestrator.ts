@@ -10,6 +10,8 @@ import { spawn } from 'node:child_process';
 import { createWriteStream, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { agentLogger } from '@main/lib/logger';
+
 import { writeHooksConfig } from './hooks-template';
 
 import type {
@@ -40,7 +42,7 @@ export function createAgentOrchestrator(
         handler(event);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        console.error('[AgentOrchestrator] Event handler error:', message);
+        agentLogger.error('[AgentOrchestrator] Event handler error:', message);
       }
     }
   }
@@ -105,7 +107,7 @@ export function createAgentOrchestrator(
     } catch (milestoneError) {
       const milestoneMessage =
         milestoneError instanceof Error ? milestoneError.message : 'Unknown error';
-      console.warn('[AgentOrchestrator] Milestone update failed:', milestoneMessage);
+      agentLogger.warn('[AgentOrchestrator] Milestone update failed:', milestoneMessage);
     }
   }
 

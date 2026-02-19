@@ -9,6 +9,8 @@
 import { existsSync, readFileSync, statSync, watch } from 'node:fs';
 import { basename, join } from 'node:path';
 
+import { agentLogger } from '@main/lib/logger';
+
 import type { ProgressEntry } from './types';
 import type { FSWatcher } from 'node:fs';
 
@@ -82,7 +84,7 @@ export function createJsonlProgressWatcher(progressDir: string): JsonlProgressWa
           entries.push(entry);
         } catch {
           // Malformed line — skip
-          console.warn(`[JsonlProgressWatcher] Malformed JSONL line for task ${taskId}`);
+          agentLogger.warn(`[JsonlProgressWatcher] Malformed JSONL line for task ${taskId}`);
         }
       }
     } catch {
@@ -132,11 +134,11 @@ export function createJsonlProgressWatcher(progressDir: string): JsonlProgressWa
       }
 
       if (!existsSync(progressDir)) {
-        console.log(`[JsonlProgressWatcher] Progress dir does not exist yet: ${progressDir}`);
+        agentLogger.info(`[JsonlProgressWatcher] Progress dir does not exist yet: ${progressDir}`);
         return;
       }
 
-      console.log(`[JsonlProgressWatcher] Watching ${progressDir}`);
+      agentLogger.info(`[JsonlProgressWatcher] Watching ${progressDir}`);
 
       try {
         watcher = watch(progressDir, (_eventType, filename) => {
@@ -144,11 +146,11 @@ export function createJsonlProgressWatcher(progressDir: string): JsonlProgressWa
         });
 
         watcher.on('error', (err) => {
-          console.error('[JsonlProgressWatcher] Watch error:', err.message);
+          agentLogger.error('[JsonlProgressWatcher] Watch error:', err.message);
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error('[JsonlProgressWatcher] Failed to start watching:', message);
+        agentLogger.error('[JsonlProgressWatcher] Failed to start watching:', message);
       }
     },
 
@@ -165,7 +167,7 @@ export function createJsonlProgressWatcher(progressDir: string): JsonlProgressWa
       debounceTimers.clear();
       filePositions.clear();
 
-      console.log('[JsonlProgressWatcher] Stopped watching');
+      agentLogger.info('[JsonlProgressWatcher] Stopped watching');
     },
 
     onProgress(callback) {

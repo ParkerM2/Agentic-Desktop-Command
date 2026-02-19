@@ -7,6 +7,8 @@ import { app } from 'electron';
 
 import type { AppSettings, Profile } from '@shared/types';
 
+import { fsLogger } from '@main/lib/logger';
+
 import { DEFAULT_PROFILES, DEFAULT_SETTINGS } from './settings-defaults';
 import {
   decryptSecret,
@@ -46,7 +48,7 @@ export function loadSettingsFile(): { data: SettingsFile; needsMigration: boolea
           try {
             settings[key] = decryptSecret(value);
           } catch {
-            console.error(`[Settings] Failed to decrypt ${key}`);
+            fsLogger.error(`[Settings] Failed to decrypt ${key}`);
             settings[key] = '';
           }
         } else if (typeof value === 'string' && value.length > 0) {
@@ -74,7 +76,7 @@ export function loadSettingsFile(): { data: SettingsFile; needsMigration: boolea
             try {
               decrypted[key] = decryptSecret(value);
             } catch {
-              console.error(`[Settings] Failed to decrypt profile ${key}`);
+              fsLogger.error(`[Settings] Failed to decrypt profile ${key}`);
               decrypted[key] = '';
             }
           } else if (typeof value === 'string' && value.length > 0) {

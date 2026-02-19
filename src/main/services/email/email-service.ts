@@ -11,6 +11,7 @@
 import type { Email, EmailSendResult, QueuedEmail, SmtpConfig } from '@shared/types';
 
 import type { IpcRouter } from '@main/ipc/router';
+import { serviceLogger } from '@main/lib/logger';
 
 import { getDecryptedPassword } from './email-encryption';
 import { addToQueue, processRetryQueue, retryQueuedEmail } from './email-queue';
@@ -55,7 +56,7 @@ export function createEmailService(deps: EmailServiceDeps): EmailService {
 
   // Migrate plaintext password to encrypted format on first load
   if (needsMigration && currentConfig) {
-    console.log('[Email] Migrating plaintext password to encrypted format');
+    serviceLogger.info('[Email] Migrating plaintext password to encrypted format');
     persist();
   }
 

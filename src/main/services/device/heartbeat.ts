@@ -5,6 +5,8 @@
  * interval (default 30 seconds). Handles errors gracefully without crashing.
  */
 
+import { serviceLogger } from '@main/lib/logger';
+
 import type { DeviceService } from './device-service';
 
 const DEFAULT_INTERVAL_MS = 30_000;
@@ -27,7 +29,7 @@ export function createHeartbeatService(deps: {
 
     deviceService.sendHeartbeat(currentDeviceId).catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
-      console.warn('[HeartbeatService] Heartbeat failed:', message);
+      serviceLogger.warn('[HeartbeatService] Heartbeat failed:', message);
     });
   }
 
@@ -41,7 +43,7 @@ export function createHeartbeatService(deps: {
       currentDeviceId = deviceId;
       timer = setInterval(tick, intervalMs);
 
-      console.log(
+      serviceLogger.info(
         `[HeartbeatService] Started heartbeat for device ${deviceId} (interval: ${String(intervalMs)}ms)`,
       );
     },
@@ -53,7 +55,7 @@ export function createHeartbeatService(deps: {
       }
       currentDeviceId = null;
 
-      console.log('[HeartbeatService] Stopped');
+      serviceLogger.info('[HeartbeatService] Stopped');
     },
   };
 }
