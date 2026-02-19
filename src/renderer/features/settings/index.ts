@@ -12,6 +12,7 @@ export {
   useSetDefaultProfile,
   settingsKeys,
 } from './api/useSettings';
+export { useOAuthStatus, useOAuthAuthorize, useOAuthRevoke, oauthKeys } from './api/useOAuth';
 export { useWebhookConfig, useUpdateWebhookConfig } from './api/useWebhookConfig';
 export { SettingsPage } from './components/SettingsPage';
 export { WorkspacesTab } from './components/WorkspacesTab';

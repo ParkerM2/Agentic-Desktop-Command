@@ -31,6 +31,7 @@ import { registerMergeHandlers } from './handlers/merge-handlers';
 import { registerMilestonesHandlers } from './handlers/milestones-handlers';
 import { registerNotesHandlers } from './handlers/notes-handlers';
 import { registerNotificationHandlers } from './handlers/notification-handlers';
+import { registerOAuthHandlers } from './handlers/oauth-handlers';
 import { registerPlannerHandlers } from './handlers/planner-handlers';
 import { registerProjectHandlers } from './handlers/project-handlers';
 import { registerQaHandlers } from './handlers/qa-handlers';
@@ -46,6 +47,7 @@ import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
 
 import type { IpcRouter } from './router';
+import type { OAuthManager } from '../auth/oauth-manager';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
@@ -135,6 +137,7 @@ export interface Services {
   qaRunner: QaRunner;
   taskLauncher: TaskLauncherService;
   dashboardService: DashboardService;
+  oauthManager: OAuthManager;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -194,6 +197,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);
+  registerOAuthHandlers(router, services.oauthManager);
   registerNotificationHandlers(router, services.notificationManager);
   registerTimeHandlers(router, services.timeParserService);
   if (services.voiceService) {

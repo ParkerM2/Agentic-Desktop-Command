@@ -1521,7 +1521,123 @@ Return InsightMetrics {
 }
 ```
 
-## 24. Error & Health Monitoring Flow
+## 24. Merge Diff Flow
+
+```
+WorktreeManager → MergeConfirmModal → MergePreviewPanel
+  → useMergeDiff() → merge.previewDiff → mergeService.previewDiff()
+  → [user clicks file] → useFileDiff() → merge.getFileDiff → mergeService.getFileDiff()
+  → @git-diff-view/react renders unified/split diff with ADC theme overrides
+```
+
+### Component Wiring
+
+```
+MergeConfirmModal.tsx (near-fullscreen, tabs, loading states)
+  |
+  v
+MergePreviewPanel.tsx (file list + inline diff viewer)
+  |
+  +--> useMergeDiff(projectId, sourceBranch, targetBranch)
+  |      → ipc('merge.previewDiff', { projectId, sourceBranch, targetBranch })
+  |      → Returns { files: MergeDiffFile[], conflicts: string[] }
+  |
+  +--> [user selects file from list]
+  |      → useFileDiff(projectId, filePath, sourceBranch, targetBranch)
+  |        → ipc('merge.getFileDiff', { projectId, filePath, sourceBranch, targetBranch })
+  |        → Returns raw unified diff string
+  |
+  +--> FileDiffViewer.tsx
+         → @git-diff-view/react DiffView component
+         → Theme integration via .diff-viewer-adc-theme CSS class (globals.css)
+         → Supports unified and split view modes
+
+ConflictResolver.tsx
+  → Inline diff display for conflicting files
+  → Accept Ours / Accept Theirs buttons per conflict
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/renderer/features/merge/components/MergeConfirmModal.tsx` | Near-fullscreen merge dialog with tabs and loading states |
+| `src/renderer/features/merge/components/MergePreviewPanel.tsx` | File list + diff viewer orchestration |
+| `src/renderer/features/merge/components/FileDiffViewer.tsx` | @git-diff-view/react wrapper with ADC theme |
+| `src/renderer/features/merge/components/ConflictResolver.tsx` | Inline diff + accept ours/theirs |
+| `src/renderer/features/merge/api/useMerge.ts` | useFileDiff hook |
+| `src/renderer/features/merge/api/queryKeys.ts` | fileDiff cache key |
+| `src/main/services/merge/merge-service.ts` | getFileDiff method |
+| `src/main/ipc/handlers/merge-handlers.ts` | merge.getFileDiff handler |
+| `src/shared/ipc/misc/merge.contract.ts` | merge.getFileDiff contract |
+| `src/renderer/styles/globals.css` | .diff-viewer-adc-theme CSS overrides |
+
+---
+
+## 25. OAuth Authorization Flow
+
+```
+Settings → OAuthProviderSettings → OAuthConnectionStatus
+  → useOAuthStatus() → oauth.isAuthenticated → oauthManager.isAuthenticated()
+  → [user clicks Connect] → useOAuthAuthorize() → oauth.authorize → oauthManager.authorize()
+    → BrowserWindow opens consent page → code exchange → token stored
+  → [user clicks Disconnect] → useOAuthRevoke() → oauth.revoke → oauthManager.revoke()
+```
+
+### Component Wiring
+
+```
+SettingsPage.tsx
+  |
+  v
+OAuthProviderSettings.tsx (client ID/secret configuration)
+  |
+  v
+OAuthConnectionStatus.tsx (Connect/Disconnect buttons per provider)
+  |
+  +--> useOAuthStatus(provider)
+  |      → ipc('oauth.isAuthenticated', { provider })
+  |      → Returns { authenticated: boolean }
+  |
+  +--> [user clicks "Connect"]
+  |      → useOAuthAuthorize().mutate({ provider })
+  |        → ipc('oauth.authorize', { provider })
+  |        → oauthManager.authorize(provider)
+  |          → Opens BrowserWindow with provider consent URL
+  |          → User grants access → redirect with auth code
+  |          → Code exchanged for tokens → stored in tokenStore
+  |        → Returns { success: true }
+  |        → Query invalidation → status refreshes to "Connected"
+  |
+  +--> [user clicks "Disconnect"]
+         → useOAuthRevoke().mutate({ provider })
+           → ipc('oauth.revoke', { provider })
+           → oauthManager.revoke(provider)
+             → Clears stored tokens for provider
+           → Query invalidation → status refreshes to "Disconnected"
+```
+
+### IPC Channels
+
+| Channel | Input | Output | Purpose |
+|---------|-------|--------|---------|
+| `oauth.authorize` | `{ provider: string }` | `{ success: boolean }` | Trigger OAuth consent flow in BrowserWindow |
+| `oauth.isAuthenticated` | `{ provider: string }` | `{ authenticated: boolean }` | Check if provider has valid tokens |
+| `oauth.revoke` | `{ provider: string }` | `{ success: boolean }` | Revoke/clear stored tokens |
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `src/shared/ipc/oauth/schemas.ts` | Zod schemas for OAuth channels |
+| `src/shared/ipc/oauth/contract.ts` | OAuth IPC contract (3 channels) |
+| `src/shared/ipc/oauth/index.ts` | OAuth barrel export |
+| `src/main/ipc/handlers/oauth-handlers.ts` | OAuth handler registration |
+| `src/renderer/features/settings/api/useOAuth.ts` | React Query hooks (useOAuthStatus, useOAuthAuthorize, useOAuthRevoke) |
+| `src/renderer/features/settings/components/OAuthConnectionStatus.tsx` | Connect/Disconnect UI per provider |
+| `src/renderer/features/settings/components/OAuthProviderSettings.tsx` | Provider configuration + OAuthConnectionStatus |
+
+---
+
+## 26. Error & Health Monitoring Flow
 
 ### Error Collection Flow
 

@@ -11,8 +11,8 @@
 |----------|-------|
 | Renderer Features | 27 |
 | Main Process Services | 32 |
-| IPC Handler Files | 40 |
-| IPC Domain Folders | 23 |
+| IPC Handler Files | 41 |
+| IPC Domain Folders | 24 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -41,11 +41,11 @@ Location: `src/renderer/features/`
 | **productivity** | Productivity widgets | CalendarWidget, SpotifyWidget | `calendar.*`, `spotify.*` |
 | **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager, ProjectEditDialog | `projects.*` |
 | **roadmap** | Project roadmap | RoadmapPage, MilestoneCard | `milestones.*` |
-| **settings** | App settings | SettingsPage, HubSettings, OAuthProviderSettings, WebhookSettings | `settings.*` |
+| **settings** | App settings | SettingsPage, HubSettings, OAuthProviderSettings, OAuthConnectionStatus, WebhookSettings | `settings.*`, `oauth.*` |
 | **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid, TaskFiltersToolbar, TaskDetailRow, TaskStatusBadge, CreateTaskDialog, PlanFeedbackDialog; **Hooks**: useTaskEvents (→ useAgentEvents + useQaEvents), useAgentMutations (useStartPlanning, useStartExecution, useReplanWithFeedback, useKillAgent, useRestartFromCheckpoint), useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*` (incl. `agent.replanWithFeedback`), `qa.*`, `event:agent.orchestrator.*`, `event:qa.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions | BriefingPage, SuggestionCard | `briefing.*` |
-| **merge** | Branch merge workflow | MergeConfirmModal | `merge.*` |
+| **merge** | Branch merge workflow | MergeConfirmModal, MergePreviewPanel, ConflictResolver, FileDiffViewer (`@git-diff-view/react`) | `merge.*` |
 | **my-work** | Cross-project task view | MyWorkPage | `tasks.*` |
 | **onboarding** | First-run setup wizard | OnboardingWizard, ClaudeCliStep, ApiKeyStep | `app.*`, `settings.*` |
 | **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings (mounted in SettingsPage) | `voice.*` |
@@ -91,7 +91,7 @@ Location: `src/main/services/`
 | **hub** | Hub server connection. Sub-modules: `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` | connect, disconnect, sync | `event:hub.*` |
 | **ideas** | Idea CRUD | list, create, update, delete | - |
 | **insights** | Analytics aggregation | getMetrics, getTimeSeries | - |
-| **merge** | Branch merge operations | previewDiff, checkConflicts, mergeBranch | - |
+| **merge** | Branch merge operations | previewDiff, checkConflicts, mergeBranch, getFileDiff | - |
 | **milestones** | Milestone CRUD | list, create, update, delete | - |
 | **notes** | Note CRUD | list, create, update, delete | - |
 | **planner** | Daily time blocks | listBlocks, createBlock, updateBlock | `event:planner.*` |
@@ -139,6 +139,7 @@ Location: `src/main/ipc/handlers/`
 | `merge-handlers.ts` | merge.* |
 | `milestones-handlers.ts` | milestones.* |
 | `notes-handlers.ts` | notes.* |
+| `oauth-handlers.ts` | oauth.authorize, oauth.isAuthenticated, oauth.revoke |
 | `planner-handlers.ts` | planner.* |
 | `project-handlers.ts` | projects.* |
 | `settings-handlers.ts` | settings.* |
@@ -236,7 +237,7 @@ The main process `index.ts` has been split into **5 focused bootstrap modules**:
 
 ### IPC Contract (Domain-Based Structure)
 
-The IPC contract has been split from a single monolithic file into **23 domain folders** under `src/shared/ipc/`. The root barrel at `src/shared/ipc/index.ts` merges all domain contracts back into the unified `ipcInvokeContract` and `ipcEventContract` objects. The original `src/shared/ipc-contract.ts` is now a thin backward-compatible re-export.
+The IPC contract has been split from a single monolithic file into **24 domain folders** under `src/shared/ipc/`. The root barrel at `src/shared/ipc/index.ts` merges all domain contracts back into the unified `ipcInvokeContract` and `ipcEventContract` objects. The original `src/shared/ipc-contract.ts` is now a thin backward-compatible re-export.
 
 **Domain folders** (`src/shared/ipc/<domain>/`):
 
@@ -255,6 +256,7 @@ The IPC contract has been split from a single monolithic file into **23 domain f
 | `github` | GitHub PRs, issues, notifications |
 | `hub` | Hub connection, sync, config |
 | `misc` | Alerts, calendar, changelog, devices, hotkeys, ideas, insights, merge, milestones, notes, screen, time, voice, webhooks, workspaces (18 contract files) |
+| `oauth` | OAuth authorization, authentication status, token revocation (3 channels) |
 | `notifications` | Notification watchers (Slack, GitHub) |
 | `planner` | Time blocks, daily plans, weekly review |
 | `projects` | Project CRUD, sub-projects, repo detection |

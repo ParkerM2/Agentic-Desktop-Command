@@ -17,7 +17,7 @@ const WEBHOOK_SECRET_KEYS = [
 
 export type WebhookSecretKey = (typeof WEBHOOK_SECRET_KEYS)[number];
 
-const PROFILE_SECRET_KEYS = ['apiKey'] as const;
+const PROFILE_SECRET_KEYS = ['apiKey', 'oauthToken'] as const;
 
 export type ProfileSecretKey = (typeof PROFILE_SECRET_KEYS)[number];
 

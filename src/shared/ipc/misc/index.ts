@@ -62,6 +62,8 @@ export { mcpInvoke } from './mcp.contract';
 export {
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
+  MergeFileDiffInputSchema,
+  MergeFileDiffOutputSchema,
   mergeInvoke,
   MergeResultSchema,
 } from './merge.contract';

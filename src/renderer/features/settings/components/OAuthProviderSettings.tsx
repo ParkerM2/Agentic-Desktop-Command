@@ -12,6 +12,7 @@ import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { ICON_SIZE, PROVIDER_CONFIG, useOAuthProviders, useSaveOAuthProvider } from './oauth-provider-constants';
+import { OAuthConnectionStatus } from './OAuthConnectionStatus';
 import { OAuthProviderForm } from './OAuthProviderForm';
 
 export function OAuthProviderSettings() {
@@ -88,6 +89,10 @@ export function OAuthProviderSettings() {
                       },
                     );
                   }}
+                />
+                <OAuthConnectionStatus
+                  hasCredentials={provider.hasCredentials}
+                  provider={provider.name}
                 />
               </div>
             ) : null}

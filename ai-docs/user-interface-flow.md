@@ -3,7 +3,7 @@
 > Every screen, every click, every process chain — documented from a brand new user's perspective.
 > Designed for: automated MCP-based testing, gap analysis, and investor demo readiness.
 
-**Last Updated**: 2026-02-16
+**Last Updated**: 2026-02-18
 
 ---
 
@@ -1105,8 +1105,11 @@ Complete list of all registered IPC channels by domain:
 ### MCP (3)
 `mcp.callTool` · `mcp.listConnected` · `mcp.getConnectionState`
 
-### Merge (4)
-`merge.previewDiff` · `merge.checkConflicts` · `merge.mergeBranch` · `merge.abort`
+### Merge (5)
+`merge.previewDiff` · `merge.getFileDiff` · `merge.checkConflicts` · `merge.mergeBranch` · `merge.abort`
+
+### OAuth (3)
+`oauth.authorize` · `oauth.isAuthenticated` · `oauth.revoke`
 
 ### Milestones (6)
 `milestones.list` · `milestones.create` · `milestones.update` · `milestones.delete` · `milestones.addTask` · `milestones.toggleTask`
@@ -1187,10 +1190,10 @@ Complete list of all registered IPC channels by domain:
 | G-8 | Workspace assignment in project wizard | Low | Projects | Workspace dropdown shown in wizard but may not persist `workspaceId` to project on create |
 | G-9 | Device selector unused | Low | Settings | `DeviceSelector.tsx` exists but unclear when/where users would switch devices |
 | G-10 | CommandBar not wired | Low | Navigation | `CommandBar.tsx` renders in TopBar but may not be connected to assistant functionality |
-| G-11 | Calendar feature no OAuth | Low | Calendar | `calendar.*` IPC channels exist but no OAuth setup for Google Calendar in settings |
+| G-11 | ~~Calendar feature no OAuth~~ | Low | Calendar | **RESOLVED** (2026-02-18) — OAuth IPC channels added (`oauth.authorize`, `oauth.isAuthenticated`, `oauth.revoke`). OAuthConnectionStatus component provides Connect/Disconnect buttons per provider in Settings → OAuth Providers. |
 | G-12 | ~~Voice feature no UI~~ | Low | Voice | **RESOLVED** (2026-02-18) — VoiceSettings mounted in Settings page (after Hotkeys, before About). ScreenshotButton mounted in TopBar. |
 | G-13 | ~~`/assistant` route defined but not wired~~ | Low | Navigation | **RESOLVED** (2026-02-15) — Assistant is now globally accessible via floating `AssistantWidget` (Ctrl+J toggle). Route constant remains for potential future full-page view. |
-| G-14 | `/briefing` not in sidebar | Low | Navigation | `BriefingPage` has a registered route but is not listed in the sidebar `topLevelItems` array — only accessible via direct URL |
+| G-14 | ~~`/briefing` not in sidebar~~ | Low | Navigation | **RESOLVED** (2026-02-18) — Briefing added to Sidebar `topLevelItems` array (second item, with Newspaper icon). |
 | G-15 | ~~No project edit/settings page~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ProjectEditDialog with edit buttons on project cards |
 | G-16 | ~~No delete confirmation dialogs~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ConfirmDialog component + wired to task/project deletes |
 | G-17 | `projects.initialize` is a skeleton | Low | Projects | Handler returns hardcoded `{ success: true }` — not wired to any real initialization logic |

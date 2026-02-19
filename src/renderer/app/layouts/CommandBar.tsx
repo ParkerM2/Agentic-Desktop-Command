@@ -15,6 +15,7 @@ import { cn } from '@renderer/shared/lib/utils';
 import { useCommandBarStore } from '@renderer/shared/stores';
 
 import { useAssistantEvents, useSendCommand } from '@features/assistant';
+import { VoiceButton } from '@features/voice';
 
 export function CommandBar() {
   // 1. Hooks
@@ -62,6 +63,28 @@ export function CommandBar() {
       }, 4000);
     },
     [setLastResponse, setProcessing, showToast, dismissToast],
+  );
+
+  // Voice transcript handler — auto-submit transcribed text as a command
+  const handleVoiceTranscript = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (trimmed.length === 0 || isProcessing) return;
+      setProcessing(true);
+      addToHistory(trimmed);
+      sendCommand.mutate(
+        { input: trimmed },
+        {
+          onSuccess: (data) => {
+            showResult(data);
+          },
+          onError: () => {
+            showResult({ type: 'error', content: 'Command failed' });
+          },
+        },
+      );
+    },
+    [isProcessing, setProcessing, addToHistory, sendCommand, showResult],
   );
 
   const handleSubmit = useCallback(() => {
@@ -163,6 +186,12 @@ export function CommandBar() {
           onChange={(e) => {
             setInputValue(e.target.value);
           }}
+        />
+        <VoiceButton
+          className="h-6 w-6"
+          disabled={isProcessing}
+          size="sm"
+          onTranscript={handleVoiceTranscript}
         />
         <button
           aria-label="Send command"

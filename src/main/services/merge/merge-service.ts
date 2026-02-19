@@ -32,6 +32,13 @@ export interface MergeService {
     sourceBranch: string,
     targetBranch: string,
   ) => Promise<MergeDiffSummary>;
+  /** Get raw unified diff for a single file between two branches */
+  getFileDiff: (
+    repoPath: string,
+    sourceBranch: string,
+    targetBranch: string,
+    filePath: string,
+  ) => Promise<{ diff: string; filePath: string }>;
   /** Check if a merge would have conflicts without actually merging */
   checkConflicts: (
     repoPath: string,
@@ -73,6 +80,13 @@ export function createMergeService(): MergeService {
         deletions: diffSummary.deletions,
         changedFiles: diffSummary.changed,
       };
+    },
+
+    async getFileDiff(repoPath, sourceBranch, targetBranch, filePath) {
+      validateRepoPath(repoPath);
+      const git = simpleGit(repoPath);
+      const diff = await git.diff([`${targetBranch}...${sourceBranch}`, '--', filePath]);
+      return { diff, filePath };
     },
 
     async checkConflicts(repoPath, sourceBranch, targetBranch) {

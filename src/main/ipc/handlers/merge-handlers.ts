@@ -12,6 +12,10 @@ export function registerMergeHandlers(router: IpcRouter, mergeService: MergeServ
     mergeService.previewDiff(repoPath, sourceBranch, targetBranch),
   );
 
+  router.handle('merge.getFileDiff', ({ repoPath, sourceBranch, targetBranch, filePath }) =>
+    mergeService.getFileDiff(repoPath, sourceBranch, targetBranch, filePath),
+  );
+
   router.handle('merge.checkConflicts', ({ repoPath, sourceBranch, targetBranch }) =>
     mergeService.checkConflicts(repoPath, sourceBranch, targetBranch),
   );

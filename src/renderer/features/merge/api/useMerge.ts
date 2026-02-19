@@ -37,6 +37,26 @@ export function useMergeDiff(
   });
 }
 
+/** Fetch diff for a single file between branches */
+export function useFileDiff(
+  repoPath: string,
+  sourceBranch: string,
+  targetBranch: string,
+  filePath: string,
+) {
+  return useQuery({
+    queryKey: mergeKeys.fileDiff(repoPath, sourceBranch, targetBranch, filePath),
+    queryFn: () =>
+      ipc('merge.getFileDiff', { repoPath, sourceBranch, targetBranch, filePath }),
+    enabled:
+      repoPath.length > 0 &&
+      sourceBranch.length > 0 &&
+      targetBranch.length > 0 &&
+      filePath.length > 0,
+    staleTime: 30_000,
+  });
+}
+
 /** Check for merge conflicts between branches */
 export function useMergeConflicts(
   repoPath: string | null,

@@ -1,10 +1,13 @@
 /**
- * MergeConfirmModal — Confirms merge execution with preview
+ * MergeConfirmModal — Full-featured merge dialog with diff preview
+ *
+ * Near full-screen modal with tabbed Changes/Conflicts views.
+ * The Changes tab houses MergePreviewPanel with the full diff viewer.
  */
 
 import { useState } from 'react';
 
-import { AlertTriangle, GitMerge, Loader2, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, GitMerge, Loader2, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -38,12 +41,12 @@ export function MergeConfirmModal({
   const [mergeError, setMergeError] = useState<string | null>(null);
 
   const mergeBranch = useMergeBranch();
-  const { data: conflicts } = useMergeConflicts(
+  const { data: conflicts, isLoading: isConflictsLoading } = useMergeConflicts(
     isOpen ? repoPath : null,
     isOpen ? sourceBranch : null,
     isOpen ? targetBranch : null,
   );
-  const { data: diff } = useMergeDiff(
+  const { data: diff, isLoading: isDiffLoading } = useMergeDiff(
     isOpen ? repoPath : null,
     isOpen ? sourceBranch : null,
     isOpen ? targetBranch : null,
@@ -51,8 +54,17 @@ export function MergeConfirmModal({
 
   const hasConflicts = (conflicts?.length ?? 0) > 0;
   const hasChanges = (diff?.changedFiles ?? 0) > 0;
+  const isDataLoading = isConflictsLoading || isDiffLoading;
 
   function getFooterMessage(): React.ReactNode {
+    if (isDataLoading) {
+      return (
+        <span className="text-muted-foreground flex items-center gap-1.5">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Loading merge details...
+        </span>
+      );
+    }
     if (hasConflicts) {
       return (
         <span className="flex items-center gap-1 text-amber-400">
@@ -80,8 +92,8 @@ export function MergeConfirmModal({
             setMergeError(result.message);
           }
         },
-        onError: (error) => {
-          setMergeError(error instanceof Error ? error.message : 'Merge failed');
+        onError: (err) => {
+          setMergeError(err instanceof Error ? err.message : 'Merge failed');
         },
       },
     );
@@ -102,7 +114,7 @@ export function MergeConfirmModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         aria-label="Close modal"
@@ -115,26 +127,36 @@ export function MergeConfirmModal({
         }}
       />
 
-      {/* Modal */}
-      <div className="bg-card border-border relative z-10 w-full max-w-2xl rounded-lg border shadow-xl">
+      {/* Modal — near full-screen for diff viewing */}
+      <div className="bg-card border-border relative z-10 flex h-[85vh] w-[90vw] max-w-7xl flex-col rounded-lg border shadow-xl">
         {/* Header */}
-        <div className="border-border flex items-center justify-between border-b px-6 py-4">
+        <div className="border-border flex shrink-0 items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-3">
             <GitMerge className="text-primary h-5 w-5" />
             <div>
               <h2 className="text-foreground text-lg font-semibold">Merge Branch</h2>
-              <p className="text-muted-foreground text-sm">
-                {sourceBranch} <span className="mx-1">-&gt;</span> {targetBranch}
-              </p>
+              <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
+                <span className="text-foreground font-mono text-xs font-medium">
+                  {sourceBranch}
+                </span>
+                <ArrowRight className="h-3.5 w-3.5" />
+                <span className="text-foreground font-mono text-xs font-medium">
+                  {targetBranch}
+                </span>
+              </div>
             </div>
           </div>
-          <button className="text-muted-foreground hover:text-foreground" onClick={handleClose}>
+          <button
+            aria-label="Close"
+            className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
+            onClick={handleClose}
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="border-border flex gap-1 border-b px-6">
+        <div className="border-border flex shrink-0 gap-1 border-b px-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -168,8 +190,8 @@ export function MergeConfirmModal({
           ))}
         </div>
 
-        {/* Content */}
-        <div className="max-h-96 overflow-y-auto p-6">
+        {/* Content — fills remaining space */}
+        <div className="min-h-0 flex-1 overflow-hidden">
           {activeTab === 'preview' ? (
             <MergePreviewPanel
               repoPath={repoPath}
@@ -177,12 +199,14 @@ export function MergeConfirmModal({
               targetBranch={targetBranch}
             />
           ) : (
-            <ConflictResolver
-              repoPath={repoPath}
-              sourceBranch={sourceBranch}
-              targetBranch={targetBranch}
-              onOpenTerminal={onOpenTerminal}
-            />
+            <div className="h-full overflow-y-auto p-6">
+              <ConflictResolver
+                repoPath={repoPath}
+                sourceBranch={sourceBranch}
+                targetBranch={targetBranch}
+                onOpenTerminal={onOpenTerminal}
+              />
+            </div>
           )}
         </div>
 
@@ -197,7 +221,7 @@ export function MergeConfirmModal({
         )}
 
         {/* Footer */}
-        <div className="border-border flex items-center justify-between border-t px-6 py-4">
+        <div className="border-border flex shrink-0 items-center justify-between border-t px-6 py-4">
           <div className="text-muted-foreground text-xs">{getFooterMessage()}</div>
 
           <div className="flex gap-2">

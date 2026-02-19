@@ -468,6 +468,7 @@ export function createServiceRegistry(
     hubAuthService,
     qaRunner,
     taskLauncher,
+    oauthManager,
     dataDir,
     providers,
     tokenStore,

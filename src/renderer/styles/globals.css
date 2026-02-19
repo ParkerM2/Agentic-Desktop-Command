@@ -1376,3 +1376,55 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================
+   @git-diff-view THEME OVERRIDES
+   Maps diff viewer colors to ADC theme variables
+   ============================================ */
+
+/* ADC-themed diff viewer wrapper */
+.diff-viewer-adc-theme [data-component='git-diff-view'][data-theme='light'] {
+  --diff-border--: var(--border);
+  --diff-plain-content--: var(--background);
+  --diff-expand-content--: var(--muted);
+  --diff-plain-lineNumber--: var(--muted);
+  --diff-expand-lineNumber--: var(--muted);
+  --diff-plain-lineNumber-color--: var(--muted-foreground);
+  --diff-expand-lineNumber-color--: var(--muted-foreground);
+  --diff-hunk-content--: color-mix(in srgb, var(--info) 10%, transparent);
+  --diff-hunk-lineNumber--: color-mix(in srgb, var(--info) 20%, transparent);
+  --diff-hunk-lineNumber-hover--: var(--primary);
+  --diff-hunk-content-color--: var(--muted-foreground);
+  --diff-empty-content--: var(--muted);
+  --diff-add-widget--: var(--primary);
+  --diff-add-widget-color--: var(--primary-foreground);
+  --diff-add-content--: color-mix(in srgb, var(--success) 12%, transparent);
+  --diff-del-content--: color-mix(in srgb, var(--destructive) 12%, transparent);
+  --diff-add-lineNumber--: color-mix(in srgb, var(--success) 20%, transparent);
+  --diff-del-lineNumber--: color-mix(in srgb, var(--destructive) 20%, transparent);
+  --diff-add-content-highlight--: color-mix(in srgb, var(--success) 30%, transparent);
+  --diff-del-content-highlight--: color-mix(in srgb, var(--destructive) 30%, transparent);
+}
+
+.diff-viewer-adc-theme [data-component='git-diff-view'][data-theme='dark'] {
+  --diff-border--: var(--border);
+  --diff-plain-content--: var(--background);
+  --diff-expand-content--: var(--muted);
+  --diff-plain-lineNumber--: var(--muted);
+  --diff-expand-lineNumber--: var(--muted);
+  --diff-plain-lineNumber-color--: var(--muted-foreground);
+  --diff-expand-lineNumber-color--: var(--muted-foreground);
+  --diff-hunk-content--: color-mix(in srgb, var(--info) 8%, transparent);
+  --diff-hunk-lineNumber--: color-mix(in srgb, var(--info) 15%, transparent);
+  --diff-hunk-lineNumber-hover--: var(--primary);
+  --diff-hunk-content-color--: var(--muted-foreground);
+  --diff-empty-content--: var(--muted);
+  --diff-add-widget--: var(--primary);
+  --diff-add-widget-color--: var(--primary-foreground);
+  --diff-add-content--: color-mix(in srgb, var(--success) 10%, transparent);
+  --diff-del-content--: color-mix(in srgb, var(--destructive) 10%, transparent);
+  --diff-add-lineNumber--: color-mix(in srgb, var(--success) 18%, transparent);
+  --diff-del-lineNumber--: color-mix(in srgb, var(--destructive) 18%, transparent);
+  --diff-add-content-highlight--: color-mix(in srgb, var(--success) 25%, transparent);
+  --diff-del-content-highlight--: color-mix(in srgb, var(--destructive) 25%, transparent);
+}

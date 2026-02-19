@@ -45,6 +45,7 @@ import {
   workspacesInvoke,
 } from './misc';
 import { notificationsEvents, notificationsInvoke } from './notifications';
+import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
@@ -93,6 +94,7 @@ export const ipcInvokeContract = {
   ...workspacesInvoke,
   ...devicesInvoke,
   ...authInvoke,
+  ...oauthInvoke,
   ...workflowInvoke,
   ...dashboardInvoke,
 } as const;
@@ -252,6 +254,8 @@ export {
   InsightTimeSeriesSchema,
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
+  MergeFileDiffInputSchema,
+  MergeFileDiffOutputSchema,
   MergeResultSchema,
   MilestoneSchema,
   MilestoneStatusSchema,
@@ -281,6 +285,13 @@ export {
   SlackNotificationTypeSchema,
   SlackWatcherConfigSchema,
 } from './notifications';
+
+export {
+  OAuthAuthStatusOutputSchema,
+  OAuthAuthorizeOutputSchema,
+  OAuthProviderInputSchema,
+  OAuthRevokeOutputSchema,
+} from './oauth';
 
 export {
   DailyPlanSchema,

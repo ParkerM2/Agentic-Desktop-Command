@@ -29,6 +29,18 @@ export const MergeResultSchema = z.object({
   message: z.string(),
 });
 
+export const MergeFileDiffInputSchema = z.object({
+  repoPath: z.string(),
+  sourceBranch: z.string(),
+  targetBranch: z.string(),
+  filePath: z.string(),
+});
+
+export const MergeFileDiffOutputSchema = z.object({
+  diff: z.string(),
+  filePath: z.string(),
+});
+
 export const mergeInvoke = {
   'merge.previewDiff': {
     input: z.object({
@@ -37,6 +49,10 @@ export const mergeInvoke = {
       targetBranch: z.string(),
     }),
     output: MergeDiffSummarySchema,
+  },
+  'merge.getFileDiff': {
+    input: MergeFileDiffInputSchema,
+    output: MergeFileDiffOutputSchema,
   },
   'merge.checkConflicts': {
     input: z.object({

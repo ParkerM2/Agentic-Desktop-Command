@@ -40,7 +40,7 @@
 │                                          └─ ... (32 total)      │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
-│  │ IPC Contract: src/shared/ipc/ (23 domain folders)            ││
+│  │ IPC Contract: src/shared/ipc/ (24 domain folders)            ││
 │  │ Each folder: contract.ts + schemas.ts + index.ts             ││
 │  │ Root barrel merges all into ipcInvokeContract/ipcEventContract││
 │  └──────────────────────────────────────────────────────────────┘│
@@ -68,7 +68,7 @@
 
 ## Domain-Based IPC Structure
 
-The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 23 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
+The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 24 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
 
 - `schemas.ts` — Zod schemas for the domain
 - `contract.ts` — Invoke and event contract entries using those schemas
@@ -85,8 +85,8 @@ The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modu
 | Module | Responsibility |
 |--------|---------------|
 | `lifecycle.ts` | Electron app lifecycle events, BrowserWindow creation, graceful shutdown (disposes all services including HealthRegistry + ErrorCollector last) |
-| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Creates `taskRepository` (local-first with Hub mirror) wired to TaskService + HubApiClient + HubConnectionManager. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient` and `taskRepository` in registry result for use by event-wiring and IPC handlers. |
-| `ipc-wiring.ts` | Registers all IPC handlers (connects handler files to router) |
+| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Creates `taskRepository` (local-first with Hub mirror) wired to TaskService + HubApiClient + HubConnectionManager. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient`, `taskRepository`, and `oauthManager` in registry result for use by event-wiring, IPC handlers, and OAuth handler registration. |
+| `ipc-wiring.ts` | Registers all IPC handlers (connects handler files to router). Includes OAuth handlers (`oauth-handlers.ts`) for `oauth.authorize`, `oauth.isAuthenticated`, and `oauth.revoke` channels. |
 | `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via `taskRepository` (local-first). |
 | `index.ts` | Barrel re-export |
 
@@ -404,6 +404,7 @@ All sensitive credentials are encrypted using Electron's `safeStorage` API, whic
 | Secret Type | Storage Location | Service |
 |-------------|-----------------|---------|
 | OAuth client credentials | `<userData>/oauth-providers.json` | `provider-config.ts` |
+| Profile OAuth tokens | `<userData>/settings.json` | `settings-encryption.ts` (via `PROFILE_SECRET_KEYS`) |
 | Webhook secrets (Slack, GitHub) | `<userData>/settings.json` | `settings-service.ts` |
 
 ### Encryption Pattern
