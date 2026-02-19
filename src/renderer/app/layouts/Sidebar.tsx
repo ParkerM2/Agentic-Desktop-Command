@@ -27,6 +27,7 @@ import {
   Settings,
   StickyNote,
   Terminal,
+  Workflow,
 } from 'lucide-react';
 
 import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
@@ -68,6 +69,7 @@ const projectItems: NavItem[] = [
   { label: 'Tasks', icon: ListTodo, path: PROJECT_VIEWS.TASKS },
   { label: 'Terminals', icon: Terminal, path: PROJECT_VIEWS.TERMINALS },
   { label: 'Agents', icon: Bot, path: PROJECT_VIEWS.AGENTS },
+  { label: 'Pipeline', icon: Workflow, path: PROJECT_VIEWS.WORKFLOW },
   { label: 'Roadmap', icon: Map, path: PROJECT_VIEWS.ROADMAP },
   { label: 'Ideation', icon: Lightbulb, path: PROJECT_VIEWS.IDEATION },
   { label: 'GitHub', icon: GitBranch, path: PROJECT_VIEWS.GITHUB },
