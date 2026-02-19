@@ -20,9 +20,13 @@ Before writing ANY store, read:
 Then read existing stores as reference:
 5. `src/renderer/shared/stores/layout-store.ts` — Layout/navigation state
 6. `src/renderer/shared/stores/theme-store.ts` — Theme management with DOM side effects
-7. `src/renderer/features/tasks/store.ts` — Feature-specific UI state
-8. `src/renderer/features/terminals/store.ts` — Terminal tab state
-9. `src/renderer/shared/stores/index.ts` — Shared stores barrel
+7. `src/renderer/shared/stores/assistant-widget-store.ts` — Assistant FAB + panel state
+8. `src/renderer/shared/stores/command-bar-store.ts` — Command palette open/search state
+9. `src/renderer/shared/stores/route-history-store.ts` — Navigation history tracking
+10. `src/renderer/shared/stores/toast-store.ts` — Toast notification queue (auto-dismiss, max 3)
+11. `src/renderer/features/tasks/store.ts` — Feature-specific UI state
+12. `src/renderer/features/terminals/store.ts` — Terminal tab state
+13. `src/renderer/shared/stores/index.ts` — Shared stores barrel
 
 ## Scope — Files You Own
 

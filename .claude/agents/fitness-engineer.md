@@ -16,21 +16,16 @@ Before writing ANY fitness code, read:
 2. `ai-docs/PATTERNS.md` — Service patterns
 3. `ai-docs/LINTING.md` — Main process overrides
 4. `src/main/services/settings/settings-service.ts` — Simple service pattern (reference)
-5. `src/main/services/nlp/workout-parser.ts` — Workout parser (your consumer)
 
 ## Scope — Files You Own
 
 ```
 ONLY create/modify these files:
-  src/main/services/fitness/fitness-service.ts    — Main fitness service
-  src/main/services/fitness/workout-store.ts      — Workout persistence
-  src/main/services/fitness/goals-store.ts        — Goal tracking
-  src/main/services/fitness/models.ts             — Types (Workout, Exercise, Set)
-  src/main/services/fitness/stats-calculator.ts   — Statistics computation
+  src/main/services/fitness/fitness-service.ts    — Main fitness service (CRUD, goals, measurements)
+  src/main/services/fitness/stats-calculator.ts   — Statistics computation (volume, streaks, averages)
 
 NEVER modify:
   src/main/mcp-servers/**    — Integration Engineer's domain
-  src/main/services/nlp/**   — NLP Engineer's domain
   src/shared/**              — Schema Designer's domain
   src/renderer/**            — Renderer agents' domain
 ```
@@ -42,69 +37,6 @@ NEVER modify:
 
 ### External (skills.sh)
 - `vercel-labs/agent-skills:vercel-react-best-practices` — React 19 patterns and best practices
-
-## Data Models (MANDATORY)
-
-```typescript
-// File: src/main/services/fitness/models.ts
-
-export interface Workout {
-  id: string;
-  date: string; // YYYY-MM-DD
-  type: 'strength' | 'cardio' | 'flexibility' | 'sport';
-  duration: number; // minutes
-  exercises: Exercise[];
-  notes?: string;
-  createdAt: string;
-}
-
-export interface Exercise {
-  name: string;
-  sets: ExerciseSet[];
-  muscleGroup?: string;
-}
-
-export interface ExerciseSet {
-  reps?: number;
-  weight?: number;
-  unit?: 'lbs' | 'kg';
-  duration?: number; // seconds (for timed exercises)
-  distance?: number; // meters (for cardio)
-}
-
-export interface BodyMeasurement {
-  id: string;
-  date: string;
-  weight?: number; // kg
-  bodyFat?: number; // percentage
-  muscleMass?: number; // kg
-  boneMass?: number; // kg
-  waterPercentage?: number;
-  visceralFat?: number; // index
-  source: 'manual' | 'withings';
-  createdAt: string;
-}
-
-export interface FitnessGoal {
-  id: string;
-  type: 'weight' | 'workout_frequency' | 'lift_target' | 'cardio_target';
-  target: number;
-  current: number;
-  unit: string;
-  deadline?: string;
-  createdAt: string;
-}
-
-export interface FitnessStats {
-  totalWorkouts: number;
-  workoutsThisWeek: number;
-  totalVolume: number; // total weight lifted
-  currentStreak: number; // consecutive days
-  longestStreak: number;
-  favoriteExercise?: string;
-  averageWorkoutDuration: number; // minutes
-}
-```
 
 ## Fitness Service Pattern
 

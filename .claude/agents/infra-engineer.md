@@ -12,8 +12,8 @@ You are the Infrastructure Engineer for Claude-UI. You configure Docker containe
 
 Before writing ANY infrastructure config, read:
 
-1. `VISION.md` — Network Architecture section (Docker hub, nginx, TLS, mDNS)
-2. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow
+1. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow
+2. `ai-docs/ARCHITECTURE.md` — Hub Connection Layer, Security — Hub API sections
 
 Then read existing infrastructure (if present):
 3. `hub/Dockerfile` — Container definition

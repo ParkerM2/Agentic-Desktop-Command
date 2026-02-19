@@ -12,27 +12,29 @@ You are the API Engineer for the Claude-UI Hub server. You implement Fastify rou
 
 Before writing ANY route, read:
 
-1. `VISION.md` — Network Architecture section (hub + client model)
-2. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow
-3. `ai-docs/CODEBASE-GUARDIAN.md` — General coding rules
+1. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow
+2. `ai-docs/CODEBASE-GUARDIAN.md` — General coding rules
+3. `ai-docs/ARCHITECTURE.md` — Hub Connection Layer section
 
-Then read existing hub code (if present):
-4. `hub/src/server.ts` — Fastify instance setup
-5. `hub/src/routes/*.ts` — Existing route handlers
+Then read existing hub code:
+4. `hub/src/app.ts` — Fastify instance setup + plugin/route registration
+5. `hub/src/routes/*.ts` — Existing route handlers (agents, auth, captures, devices, planner, projects, settings, tasks, webhooks, workspaces)
 6. `hub/src/db/schema.sql` — Database schema (what data is available)
-7. `hub/src/auth/api-key.ts` — Auth middleware
+7. `hub/src/middleware/api-key.ts` — API key auth middleware
+8. `hub/src/middleware/jwt-auth.ts` — JWT auth middleware
 
 ## Scope — Files You Own
 
 ```
 ONLY modify these files:
   hub/src/routes/*.ts              — Route handlers
-  hub/src/server.ts                — Plugin/route registration (add new routes)
+  hub/src/app.ts                   — Plugin/route registration (add new routes)
 
 NEVER modify:
   hub/src/db/**                    — Database Engineer's domain
   hub/src/ws/**                    — WebSocket Engineer's domain
-  hub/src/auth/**                  — Shared infrastructure
+  hub/src/middleware/**             — Shared auth infrastructure
+  hub/src/lib/**                   — Shared library utilities
   src/**                           — Electron app (completely separate)
 ```
 
@@ -212,7 +214,7 @@ db.prepare(`SELECT * FROM entries WHERE id = '${id}'`).get();  // WRONG — SQL 
 
 ### Route Registration
 ```typescript
-// In hub/src/server.ts
+// In hub/src/app.ts
 import { plannerRoutes } from './routes/planner';
 
 // Register with options
@@ -246,7 +248,7 @@ Before marking work complete:
 - [ ] WebSocket broadcast called after mutations
 - [ ] Proper HTTP status codes (200, 201, 400, 404, 500)
 - [ ] Route typed with Fastify generics (Params, Body, Querystring)
-- [ ] Route registered in `server.ts`
+- [ ] Route registered in `app.ts`
 - [ ] RESTful naming convention followed
 - [ ] No `any` types — use specific interfaces
 - [ ] Error responses include descriptive messages

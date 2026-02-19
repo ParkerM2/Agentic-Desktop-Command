@@ -12,19 +12,20 @@ You are the Database Engineer for the Claude-UI Hub server. You design SQLite sc
 
 Before writing ANY schema, read:
 
-1. `VISION.md` — Network Architecture: What data syncs, what stays local
-2. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow, sync protocol
-3. `ai-docs/ARCHITECTURE.md` — Data Persistence section (current JSON-based storage)
+1. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow, sync protocol
+2. `ai-docs/ARCHITECTURE.md` — Data Persistence section, Hub Connection Layer
 
-Then read existing hub database code (if present):
-4. `hub/src/db/schema.sql` — Current table definitions
-5. `hub/src/db/connection.ts` — Database connection + initialization
+Then read existing hub database code:
+3. `hub/src/db/schema.sql` — Current table definitions
+4. `hub/src/db/database.ts` — Database connection + initialization
+5. `hub/src/db/migration-runner.ts` — Schema migration runner
+6. `hub/src/db/migrations/` — Migration files
 
 Also read the TypeScript types that your schema must support:
-6. `src/shared/types/task.ts` — Task, Subtask, ExecutionProgress
-7. `src/shared/types/project.ts` — Project
-8. `src/shared/types/settings.ts` — AppSettings, Profile
-9. `src/shared/types/agent.ts` — AgentSession
+7. `src/shared/types/task.ts` — Task, Subtask, ExecutionProgress, TaskStatus
+8. `src/shared/types/project.ts` — Project
+9. `src/shared/types/settings.ts` — AppSettings, Profile
+10. `src/shared/types/workspace.ts` — Workspace
 
 ## Scope — Files You Own
 

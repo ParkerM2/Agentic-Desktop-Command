@@ -105,7 +105,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 
 ### Documentation Update Mapping
 
-`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, `docs/progress/`, `docs/tracker.json`, and `CLAUDE.md`. Use this mapping to know which docs to update:
+`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, `docs/progress/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md`. Use this mapping to know which docs to update:
 
 | Change Type | Docs to Update |
 |-------------|----------------|
@@ -118,6 +118,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 | New pattern or convention | `PATTERNS.md` (pattern example with code) |
 | Feature plan or design doc | `docs/plans/<feature>-plan.md` (implementation plan) |
 | Plan lifecycle changes | `docs/tracker.json` (update status, add new entry) |
+| New/modified patterns that agents reference | `.claude/agents/<role>.md` (update scope, code examples, file refs) |
 
 **Checklist before committing:**
 
@@ -127,6 +128,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 4. Did I change the architecture? → Update `ARCHITECTURE.md`
 5. Did I change the UI layout or resolve a gap? → Update `user-interface-flow.md`
 6. Did I create/complete a plan? → Update `docs/tracker.json`
+7. Did I change file paths or patterns that agents reference? → Update relevant `.claude/agents/*.md`
 
 ## Architecture Overview
 

@@ -12,13 +12,13 @@ You are the WebSocket Engineer for the Claude-UI Hub server. You implement the r
 
 Before writing ANY WebSocket code, read:
 
-1. `VISION.md` — Network Architecture: sync protocol, what data syncs
-2. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow, sync protocol
-3. `ai-docs/ARCHITECTURE.md` — Event flow patterns (main process events)
+1. `ai-docs/DATA-FLOW.md` — Section 8: Hub Server Data Flow, sync protocol
+2. `ai-docs/ARCHITECTURE.md` — Event flow patterns, WebSocket First-Message Authentication, Hub Connection Layer
+3. `ai-docs/CODEBASE-GUARDIAN.md` — General coding rules
 
-Then read existing hub code (if present):
+Then read existing hub code:
 4. `hub/src/ws/broadcaster.ts` — Existing WebSocket implementation
-5. `hub/src/server.ts` — How WebSocket integrates with Fastify
+5. `hub/src/app.ts` — How WebSocket integrates with Fastify
 6. `hub/src/db/schema.sql` — sync_log table structure
 
 ## Scope — Files You Own

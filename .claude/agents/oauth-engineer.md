@@ -24,12 +24,17 @@ Before writing ANY auth code, read:
 ONLY create/modify these files:
   src/main/auth/oauth-manager.ts          — Generic OAuth2 flow handler
   src/main/auth/token-store.ts            — Secure token storage
-  src/main/auth/providers/<name>.ts        — Provider-specific configs
-  src/main/auth/types.ts                   — Auth types
+  src/main/auth/providers/*.ts            — Provider-specific configs
+  src/main/auth/types.ts                  — Auth types
+
+IPC contracts (coordinate with Schema Designer):
+  src/shared/ipc/auth/contract.ts         — Auth IPC channel definitions
+  src/shared/ipc/auth/schemas.ts          — Auth Zod schemas
+  src/shared/ipc/oauth/contract.ts        — OAuth IPC channel definitions
+  src/shared/ipc/oauth/schemas.ts         — OAuth Zod schemas
 
 NEVER modify:
   src/main/mcp-servers/**   — Integration Engineer's domain
-  src/shared/**             — Schema Designer's domain
   src/renderer/**           — Renderer agents' domain
   src/main/services/**      — Service Engineer's domain
 ```

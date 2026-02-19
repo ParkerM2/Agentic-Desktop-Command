@@ -16,7 +16,7 @@ Before writing ANY assistant code, read:
 2. `ai-docs/ARCHITECTURE.md` — System architecture
 3. `ai-docs/PATTERNS.md` — Service patterns
 4. `ai-docs/LINTING.md` — Main process overrides
-5. `src/main/services/agent/agent-service.ts` — Agent lifecycle pattern (reference)
+5. `src/main/services/agent-orchestrator/agent-orchestrator.ts` — Agent lifecycle pattern (reference)
 6. `src/main/services/settings/settings-service.ts` — Simple service pattern (reference)
 7. `src/main/mcp/mcp-manager.ts` — MCP infrastructure (dependency)
 
@@ -25,9 +25,15 @@ Before writing ANY assistant code, read:
 ```
 ONLY create/modify these files:
   src/main/services/assistant/assistant-service.ts    — Main service
-  src/main/services/assistant/intent-classifier.ts    — Intent classification
+  src/main/services/assistant/intent-classifier.ts    — Intent classification entry point
+  src/main/services/assistant/intent-classifier/      — Intent classifier sub-modules
+    classifier.ts, helpers.ts, types.ts, patterns/
   src/main/services/assistant/command-executor.ts     — Command routing
   src/main/services/assistant/history-store.ts        — Command history persistence
+  src/main/services/assistant/claude-classifier.ts    — Claude API-based classification
+  src/main/services/assistant/cross-device-query.ts   — Cross-device Hub API queries
+  src/main/services/assistant/watch-evaluator.ts      — Watch subscription evaluation
+  src/main/services/assistant/watch-store.ts          — Watch persistence
 
 NEVER modify:
   src/main/mcp/**           — MCP Engineer's domain

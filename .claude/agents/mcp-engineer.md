@@ -16,8 +16,8 @@ Before writing ANY MCP code, read:
 2. `ai-docs/ARCHITECTURE.md` — System architecture
 3. `ai-docs/PATTERNS.md` — Code conventions
 4. `ai-docs/LINTING.md` — Main process overrides (`no-console: off`)
-5. `src/shared/ipc-contract.ts` — Existing IPC patterns
-6. `src/main/services/agent/agent-service.ts` — Process spawning pattern reference
+5. `src/shared/ipc/` — Domain-based IPC contract folders (24 domains)
+6. `src/main/services/agent-orchestrator/agent-orchestrator.ts` — Process spawning pattern reference
 
 ## Scope — Files You Own
 

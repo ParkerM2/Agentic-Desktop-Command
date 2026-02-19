@@ -18,12 +18,17 @@ Before writing ANY component, read:
 4. `ai-docs/CODEBASE-GUARDIAN.md` — Section 4: Component Rules
 
 Then read existing components as reference:
-5. `src/renderer/features/tasks/components/TaskTable.tsx` — Table component
-6. `src/renderer/features/tasks/components/TaskTableRow.tsx` — Row component
-7. `src/renderer/features/tasks/components/TaskCard.tsx` — Card component
-8. `src/renderer/features/projects/components/ProjectListPage.tsx` — Page component
-9. `src/renderer/features/agents/components/AgentDashboard.tsx` — Dashboard component
-10. `src/renderer/features/settings/components/SettingsPage.tsx` — Settings component
+5. `src/renderer/features/tasks/components/CreateTaskDialog.tsx` — Dialog component
+6. `src/renderer/features/tasks/components/TaskFiltersToolbar.tsx` — Toolbar component
+7. `src/renderer/features/tasks/components/TaskStatusBadge.tsx` — Badge component
+8. `src/renderer/features/tasks/components/cells/` — AG-Grid cell renderers (12 files)
+9. `src/renderer/features/tasks/components/detail/` — Expandable detail row components (7 files)
+10. `src/renderer/features/projects/components/ProjectListPage.tsx` — Page component
+11. `src/renderer/features/projects/components/AddProjectDialog.tsx` — Dialog with form validation
+12. `src/renderer/features/projects/components/SetupProgressModal.tsx` — Modal with progress state
+13. `src/renderer/features/projects/components/CreateProjectWizard.tsx` — Multi-step wizard component
+14. `src/renderer/features/agents/components/AgentDashboard.tsx` — Dashboard component
+15. `src/renderer/features/settings/components/SettingsPage.tsx` — Settings component
 
 ## Scope — Files You Own
 
@@ -36,6 +41,7 @@ NEVER modify:
   src/renderer/features/<name>/hooks/**   — Hook Engineer's domain
   src/renderer/features/<name>/store.ts   — Store Engineer's domain
   src/renderer/app/router.tsx             — Router Engineer's domain
+  src/renderer/app/routes/**              — Router Engineer's domain
   src/renderer/app/layouts/**             — Router Engineer's domain
   src/shared/**                           — Schema Designer's domain
   src/main/**                             — Main process agents' domain
@@ -322,6 +328,14 @@ Before marking work complete:
 - [ ] Max 300 lines per component file
 - [ ] `import type` for type-only imports
 - [ ] Import order: react → external → @shared → @renderer → @features → relative
+
+## Implementation Notes
+### Upcoming: shadcn/ui + Radix Migration
+The project is transitioning to shadcn/ui primitives built on Radix UI. When building new components:
+- Prefer Radix UI primitives (Dialog, Popover, DropdownMenu, Select, etc.) over custom implementations
+- Use the `jezweb/claude-skills:tailwind-v4-shadcn` skill for shadcn/Radix patterns
+- New dialogs should use Radix `Dialog`; new dropdowns should use Radix `DropdownMenu`
+- Existing custom components will be migrated incrementally
 
 ## Handoff
 

@@ -12,25 +12,35 @@ You are the Schema Designer for Claude-UI. You define the data contracts that AL
 
 Before writing ANY schema, read these files:
 
-1. `src/shared/ipc-contract.ts` — The IPC contract (your PRIMARY workspace)
-2. `src/shared/types/index.ts` — Barrel export for all types
-3. `src/shared/types/task.ts` — Task type patterns (reference for new types)
-4. `src/shared/types/project.ts` — Project type patterns
-5. `src/shared/types/settings.ts` — Settings type patterns
-6. `src/shared/types/agent.ts` — Agent type patterns
-7. `src/shared/types/terminal.ts` — Terminal type patterns
-8. `src/shared/constants/index.ts` — Constants barrel
-9. `ai-docs/CODEBASE-GUARDIAN.md` — Structural rules (Section 6: IPC Contract Rules)
-10. `ai-docs/LINTING.md` — ESLint rules for types
+1. `src/shared/ipc/index.ts` — Root barrel that merges all domain contracts into `ipcInvokeContract`/`ipcEventContract`
+2. `src/shared/ipc/<domain>/contract.ts` — Any domain folder's contract (e.g., `src/shared/ipc/tasks/contract.ts`)
+3. `src/shared/ipc/<domain>/schemas.ts` — Any domain folder's Zod schemas
+4. `src/shared/types/index.ts` — Barrel export for all types
+5. `src/shared/types/task.ts` — Task type patterns (reference for new types)
+6. `src/shared/types/project.ts` — Project type patterns
+7. `src/shared/types/auth.ts` — Auth type patterns (JWT, tokens)
+8. `src/shared/types/workspace.ts` — Workspace type patterns
+9. `src/shared/types/project-setup.ts` — Project setup pipeline types
+10. `src/shared/types/hub/` — Hub protocol types (12 modules: auth, devices, enums, errors, events, guards, projects, tasks, transitions, workspaces, index)
+11. `src/shared/types/settings.ts` — Settings type patterns
+12. `src/shared/types/terminal.ts` — Terminal type patterns
+13. `src/shared/constants/index.ts` — Constants barrel
+14. `ai-docs/CODEBASE-GUARDIAN.md` — Structural rules (Section 6: IPC Contract Rules)
+15. `ai-docs/LINTING.md` — ESLint rules for types
 
 ## Scope — Files You Own
 
 ```
 ONLY modify these files:
-  src/shared/types/*.ts           — TypeScript interfaces
-  src/shared/ipc-contract.ts      — Zod schemas + channel definitions
-  src/shared/constants/*.ts       — Constant values
-  src/shared/constants/index.ts   — Constants barrel export
+  src/shared/types/*.ts                    — TypeScript interfaces
+  src/shared/types/hub/*.ts                — Hub protocol types
+  src/shared/ipc/<domain>/contract.ts      — Domain IPC contract entries
+  src/shared/ipc/<domain>/schemas.ts       — Domain Zod schemas
+  src/shared/ipc/<domain>/index.ts         — Domain barrel exports
+  src/shared/ipc/index.ts                  — Root barrel (merges all domains)
+  src/shared/ipc-contract.ts               — Thin re-export barrel (backward compat only)
+  src/shared/constants/*.ts                — Constant values
+  src/shared/constants/index.ts            — Constants barrel export
 
 NEVER modify:
   src/main/**                     — Service Engineer's domain
@@ -94,7 +104,7 @@ export type TimeCategory = 'work' | 'side-project' | 'personal';
 ### Schema Pattern (matches TypeScript interface exactly)
 
 ```typescript
-// In src/shared/ipc-contract.ts
+// In src/shared/ipc/<domain>/schemas.ts
 
 const PlannerStatusSchema = z.enum(['draft', 'scheduled', 'completed', 'cancelled']);
 
@@ -122,38 +132,54 @@ const PlannerEntrySchema = z.object({
 - Optional fields: use `.optional()` (matches `?` in interface)
 - Never use `z.any()` — use `z.unknown()` or specific types
 - Reuse existing schemas (don't duplicate `TaskStatusSchema`, reference it)
-- Export schemas at bottom of `ipc-contract.ts` for use in handlers
+- Schemas live in the domain's `schemas.ts` file under `src/shared/ipc/<domain>/`
 
 ## IPC Contract Rules
+
+### Domain-Folder Structure
+
+The IPC contract is split across 24+ domain folders under `src/shared/ipc/`. Each folder contains:
+
+- `schemas.ts` — Zod schemas for the domain
+- `contract.ts` — Invoke and event contract entries using those schemas
+- `index.ts` — Barrel export
+
+The root barrel at `src/shared/ipc/index.ts` spreads all domain contracts into the unified `ipcInvokeContract` and `ipcEventContract` objects. The original `src/shared/ipc-contract.ts` is now a thin re-export that maintains backward compatibility.
 
 ### Adding Invoke Channels
 
 ```typescript
-// In ipcInvokeContract object:
-'planner.list': {
-  input: z.object({ date: z.string().optional() }),
-  output: z.array(PlannerEntrySchema),
-},
-'planner.create': {
-  input: z.object({
-    date: z.string(),
-    title: z.string().min(1),
-    timeBlock: TimeBlockSchema.optional(),
-  }),
-  output: PlannerEntrySchema,
-},
+// In src/shared/ipc/planner/contract.ts
+import { PlannerEntrySchema, TimeBlockSchema } from './schemas';
+
+export const plannerInvokeContract = {
+  'planner.list': {
+    input: z.object({ date: z.string().optional() }),
+    output: z.array(PlannerEntrySchema),
+  },
+  'planner.create': {
+    input: z.object({
+      date: z.string(),
+      title: z.string().min(1),
+      timeBlock: TimeBlockSchema.optional(),
+    }),
+    output: PlannerEntrySchema,
+  },
+};
 ```
 
 ### Adding Event Channels
 
 ```typescript
-// In ipcEventContract object:
-'event:planner.entryChanged': {
-  payload: z.object({
-    entryId: z.string(),
-    date: z.string(),
-  }),
-},
+// In src/shared/ipc/planner/contract.ts
+export const plannerEventContract = {
+  'event:planner.entryChanged': {
+    payload: z.object({
+      entryId: z.string(),
+      date: z.string(),
+    }),
+  },
+};
 ```
 
 ### Naming Convention
@@ -202,6 +228,8 @@ Before marking your work complete:
 - [ ] All IDs are strings
 - [ ] No `import type` violations (types imported with `import type`)
 - [ ] No circular references between type files
+- [ ] Schemas placed in correct domain folder's `schemas.ts`
+- [ ] Domain contract exported and spread into root barrel
 
 ## Handoff
 

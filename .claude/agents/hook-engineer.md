@@ -17,9 +17,15 @@ Before writing ANY hook, read:
 3. `ai-docs/PATTERNS.md` — Nullable values, promise handling, event-driven invalidation
 4. `ai-docs/DATA-FLOW.md` — Section 3: Feature Module Data Flow
 5. `ai-docs/LINTING.md` — Promise rules, type import rules
-6. `src/shared/ipc-contract.ts` — Channels you're wrapping
+6. `src/shared/ipc/` — Domain-based IPC contracts (24 folders, each with contract.ts + schemas.ts)
 7. `src/renderer/shared/lib/ipc.ts` — The `ipc()` helper you call
 8. `src/renderer/shared/hooks/useIpcEvent.ts` — Event subscription hook
+9. `src/renderer/shared/hooks/useIpcQuery.ts` — Generic IPC query wrapper
+10. `src/renderer/shared/hooks/useClaudeAuth.ts` — Claude CLI authentication hook
+11. `src/renderer/shared/hooks/useOAuthStatus.ts` — OAuth provider status hook
+12. `src/renderer/shared/hooks/useHubEvents.ts` — Hub WebSocket event subscription
+13. `src/renderer/shared/hooks/useLooseParams.ts` — Route param extraction with fallback
+14. `src/renderer/shared/hooks/useMutationErrorToast.ts` — Error toast for mutation failures
 
 Then read existing hooks as reference:
 9. `src/renderer/features/tasks/api/queryKeys.ts` — Query key factory pattern
@@ -206,7 +212,7 @@ export function usePlannerEvents() {
 - This is the pattern for real-time updates without polling
 - `useIpcEvent` automatically cleans up on unmount
 - Always invalidate the most specific key possible (detail before list)
-- Event channel names MUST match `ipcEventContract` in `ipc-contract.ts`
+- Event channel names MUST match `ipcEventContract` from `src/shared/ipc/` domain contracts
 
 ## Self-Review Checklist
 

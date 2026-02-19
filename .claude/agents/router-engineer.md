@@ -15,19 +15,34 @@ Before modifying routing, read:
 1. `CLAUDE.md` — Project rules
 2. `ai-docs/DATA-FLOW.md` — Section 9: Routing Data Flow
 3. `src/shared/constants/routes.ts` — Route constants (ROUTES, PROJECT_VIEWS, ROUTE_PATTERNS)
-4. `src/renderer/app/router.tsx` — Current route configuration
-5. `src/renderer/app/layouts/Sidebar.tsx` — Sidebar navigation
-6. `src/renderer/app/layouts/ProjectTabBar.tsx` — Project tab bar
-7. `src/renderer/app/layouts/RootLayout.tsx` — Root layout wrapper
+4. `src/renderer/app/router.tsx` — Root route tree assembly (imports route groups)
+5. `src/renderer/app/routes/` — Domain-based route group files:
+   - `auth.routes.tsx` — Login, register, hub-setup (unauthenticated)
+   - `dashboard.routes.ts` — Dashboard, my-work
+   - `project.routes.ts` — Project views (tasks, agents, terminals, etc.)
+   - `productivity.routes.ts` — Planner, notes, roadmap, ideation, workflow
+   - `communication.routes.ts` — Alerts, briefing
+   - `settings.routes.ts` — Settings page
+   - `misc.routes.ts` — Insights, changelog, health, screen, fitness
+6. `src/renderer/app/layouts/Sidebar.tsx` — Sidebar navigation
+7. `src/renderer/app/layouts/ProjectTabBar.tsx` — Project tab bar
+8. `src/renderer/app/layouts/RootLayout.tsx` — Root layout wrapper
+9. `src/renderer/app/layouts/TopBar.tsx` — Top bar with CommandBar trigger
+10. `src/renderer/app/layouts/CommandBar.tsx` — Global command palette (Cmd+K)
+11. `src/renderer/app/layouts/UserMenu.tsx` — Avatar + logout dropdown
 
 ## Scope — Files You Own
 
 ```
 ONLY modify these files:
   src/shared/constants/routes.ts               — Route constants
-  src/renderer/app/router.tsx                   — Route definitions
+  src/renderer/app/router.tsx                   — Root route tree assembly
+  src/renderer/app/routes/*.ts(x)              — Domain route group files
   src/renderer/app/layouts/Sidebar.tsx          — Sidebar nav items
   src/renderer/app/layouts/ProjectTabBar.tsx    — Project tabs
+  src/renderer/app/layouts/TopBar.tsx           — Top bar
+  src/renderer/app/layouts/CommandBar.tsx       — Command palette
+  src/renderer/app/layouts/UserMenu.tsx         — User menu
   src/renderer/app/layouts/RootLayout.tsx       — Root layout (rarely)
 
 NEVER modify:
@@ -60,22 +75,44 @@ export const ROUTES = {
 } as const;
 ```
 
-### Step 2: Add Route in Router
+### Step 2: Add Route in Route Group File
 ```typescript
-// src/renderer/app/router.tsx
+// src/renderer/app/routes/productivity.routes.ts (or appropriate group)
+
+import { type AnyRoute, createRoute } from '@tanstack/react-router';
+
+import { ROUTES } from '@shared/constants';
 
 import { PlannerPage } from '@features/planner';
 
-const plannerRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: ROUTES.PLANNER,
-  component: PlannerPage,
-});
+export function createProductivityRoutes(appLayoutRoute: AnyRoute) {
+  const plannerRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTES.PLANNER,
+    component: PlannerPage,
+  });
 
-// Add to route tree
+  // ... other productivity routes
+  return [plannerRoute] as const;
+}
+```
+
+### Step 2b: Import in router.tsx (if new group)
+```typescript
+// src/renderer/app/router.tsx
+// Route groups are imported and spread into the route tree:
+const productivityRoutes = createProductivityRoutes(appLayoutRoute);
+
 const routeTree = rootRoute.addChildren([
-  // ... existing routes
-  plannerRoute,    // ADD HERE
+  authLayoutRoute.addChildren([
+    appLayoutRoute.addChildren([
+      indexRoute,
+      ...dashboardRoutes,
+      ...projectRoutes,
+      ...productivityRoutes,  // spread route group
+      ...settingsRoutes,
+    ]),
+  ]),
 ]);
 ```
 
@@ -106,15 +143,16 @@ export const ROUTE_PATTERNS = {
 } as const;
 ```
 
-### Step 2: Add Route
+### Step 2: Add Route in Group File
 ```typescript
-// src/renderer/app/router.tsx
+// src/renderer/app/routes/project.routes.ts
 
 const plannerRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appLayoutRoute,
   path: ROUTE_PATTERNS.PROJECT_PLANNER,
   component: PlannerPage,
 });
+// Include in the returned array from createProjectRoutes()
 ```
 
 ### Step 3: Add to Sidebar navItems

@@ -16,7 +16,8 @@ Before writing ANY git code, read:
 2. `ai-docs/ARCHITECTURE.md` — System architecture
 3. `ai-docs/LINTING.md` — Main process overrides
 4. `src/main/services/project/project-service.ts` — Project service pattern (reference)
-5. `src/shared/types/project.ts` — Current project types
+5. `src/shared/types/git.ts` — Git type definitions
+6. `src/shared/types/project.ts` — Current project types
 
 ## Scope — Files You Own
 
@@ -25,12 +26,14 @@ ONLY create/modify these files:
   src/main/services/git/git-service.ts         — Core git operations
   src/main/services/git/worktree-service.ts    — Worktree management
   src/main/services/git/polyrepo-service.ts    — Multi-repo detection
-  src/main/services/git/types.ts               — Git-specific types
   src/main/services/merge/merge-service.ts     — Merge workflow
+
+Type definitions (shared):
+  src/shared/types/git.ts                      — Git-specific types (GitStatus, GitBranch, etc.)
 
 NEVER modify:
   src/main/services/project/**   — Service Engineer's domain
-  src/shared/**                  — Schema Designer's domain
+  src/shared/ipc/**              — Schema Designer's domain
   src/renderer/**                — Renderer agents' domain
 ```
 
@@ -49,7 +52,7 @@ NEVER modify:
 
 import simpleGit from 'simple-git';
 
-import type { GitStatus, GitBranch } from './types';
+import type { GitStatus, GitBranch } from '@shared/types/git';
 
 export interface GitService {
   /** Get repository status */

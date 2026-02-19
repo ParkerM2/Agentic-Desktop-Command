@@ -35,14 +35,20 @@ You produce a Structural Integrity Report — PASS or FAIL.
 For every new/modified file, verify it's in the correct directory:
 
 ```
-src/shared/types/*.ts          — Only type interfaces, no implementation
-src/shared/ipc-contract.ts     — Only Zod schemas and channel defs
-src/shared/constants/*.ts      — Only constant values
-src/main/services/*/*.ts       — Only business logic
-src/main/ipc/handlers/*.ts     — Only thin IPC handlers
-src/renderer/features/*/       — Self-contained feature modules
-src/renderer/shared/           — Shared renderer utilities
-src/renderer/app/              — Router, layouts, providers
+src/shared/types/*.ts              — Only type interfaces, no implementation
+src/shared/ipc/<domain>/contract.ts — Domain-specific IPC invoke/event entries
+src/shared/ipc/<domain>/schemas.ts  — Domain-specific Zod schemas
+src/shared/ipc/index.ts            — Root barrel merging all domain contracts
+src/shared/ipc-contract.ts         — Thin re-export barrel (backward compat only)
+src/shared/constants/*.ts          — Only constant values
+src/main/bootstrap/*.ts            — App init: lifecycle, service-registry, ipc-wiring, event-wiring
+src/main/services/*/*.ts           — Only business logic
+src/main/ipc/handlers/*.ts         — Only thin IPC handlers
+src/renderer/features/*/           — Self-contained feature modules
+src/renderer/shared/               — Shared renderer utilities
+src/renderer/app/                  — Router, layouts, providers
+src/renderer/app/routes/*.routes.ts — Domain-based route definitions
+.claude/agents/*.md                — Agent definitions (keep in sync with source)
 ```
 
 **Check:** Is each file in the right directory? Flag any file that violates placement rules.
@@ -102,14 +108,15 @@ FORBIDDEN:
 ### Check 5: IPC Contract Consistency
 
 Verify that every IPC channel has:
-1. A Zod schema in `ipc-contract.ts`
-2. A handler in `src/main/ipc/handlers/*.ts`
-3. The handler registered in `src/main/ipc/index.ts`
+1. A Zod schema in the domain's `src/shared/ipc/<domain>/schemas.ts`
+2. A contract entry in `src/shared/ipc/<domain>/contract.ts`
+3. A handler in `src/main/ipc/handlers/*.ts`
+4. The handler registered via `src/main/bootstrap/ipc-wiring.ts`
 
 And verify that TypeScript types match Zod schemas:
 ```
 src/shared/types/task.ts: Task.status: TaskStatus (union type)
-src/shared/ipc-contract.ts: TaskStatusSchema (z.enum with same values)
+src/shared/ipc/tasks/schemas.ts: TaskStatusSchema (z.enum with same values)
 ```
 
 **Check:** Diff type definitions against Zod schemas. Flag mismatches.
@@ -189,14 +196,23 @@ import { join } from 'path';
 
 **Check:** Grep for Node builtins without `node:` prefix in `src/main/`.
 
+### Check 11: Agent Definition Accuracy
+
+When source changes affect areas covered by agent definitions in `.claude/agents/`:
+- Verify referenced file paths still exist
+- Flag stale references to removed/renamed files or directories
+- Run `npm run check:agents` to validate all agent definitions
+
+**Check:** Run `npm run check:agents` and flag any stale references.
+
 ## Report Format
 
 ### PASS Report
 
 ```
 CODEBASE GUARDIAN REPORT: PASS
-═══════════════════════════════════════
-Checks performed: 10
+=======================================
+Checks performed: 11
 Files reviewed: [count]
 
  1. File Placement:          PASS
@@ -209,6 +225,7 @@ Files reviewed: [count]
  8. Constants Usage:         PASS
  9. State Boundaries:        PASS
 10. Node Protocol:           PASS
+11. Agent Definitions:       PASS
 
 VERDICT: APPROVED — structural integrity maintained
 ```
@@ -217,8 +234,8 @@ VERDICT: APPROVED — structural integrity maintained
 
 ```
 CODEBASE GUARDIAN REPORT: FAIL
-═══════════════════════════════════════
-Checks performed: 10
+=======================================
+Checks performed: 11
 
  1. File Placement:          PASS
  2. Module Completeness:     FAIL
@@ -234,6 +251,7 @@ Checks performed: 10
     - PlannerPage.tsx:42 hardcoded '/dashboard' — use ROUTES.DASHBOARD
  9. State Boundaries:        PASS
 10. Node Protocol:           PASS
+11. Agent Definitions:       PASS
 
 ISSUES: 4
 VERDICT: REJECTED — return to specialists for fixes
@@ -241,7 +259,7 @@ VERDICT: REJECTED — return to specialists for fixes
 
 ## Rules — Non-Negotiable
 
-1. **Check ALL 10 categories** — never skip any
+1. **Check ALL 11 categories** — never skip any
 2. **Read actual files** — don't assume, verify
 3. **Report exact locations** — file:line for every issue
 4. **Don't fix code** — report only, let specialists fix

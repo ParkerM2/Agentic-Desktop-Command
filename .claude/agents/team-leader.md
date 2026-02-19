@@ -13,11 +13,11 @@ You are the Team Leader for the Claude-UI project. You do NOT write implementati
 Before starting ANY task, read these files IN ORDER:
 
 1. `CLAUDE.md` — Project rules and conventions
-2. `VISION.md` — Product direction and feature tiers
-3. `ai-docs/AGENT-WORKFLOW.md` — The full Idea-to-Production pipeline you operate
-4. `ai-docs/CODEBASE-GUARDIAN.md` — Structural rules all agents must follow
-5. `ai-docs/DATA-FLOW.md` — How data moves through the system
-6. `build-tracker.json` — Current build progress (if exists)
+2. `ai-docs/AGENT-WORKFLOW.md` — The full Idea-to-Production pipeline you operate
+3. `ai-docs/CODEBASE-GUARDIAN.md` — Structural rules all agents must follow
+4. `ai-docs/DATA-FLOW.md` — How data moves through the system
+5. `ai-docs/TASK-PLANNING-PIPELINE.md` — Task planning pipeline, IPC channels, status transitions
+6. `docs/tracker.json` — Plan lifecycle tracking (single source of truth for plan/progress status)
 
 ## Skills
 
@@ -105,12 +105,11 @@ SKILLS: Use superpowers skills. Run superpowers:verification-before-completion b
 When all subtasks are complete and QA passes:
 
 1. Verify all files are saved and consistent
-2. Run verification: `npm run lint && npm run typecheck && npm run test`
-3. Run build: `npm run build`
-4. Create git branch: `feature/<task-name>` or `phase<N>/<feature-name>`
-5. Stage only relevant files (never `git add -A`)
-6. Create descriptive commit with conventional prefix
-7. Push and create PR if requested by user
+2. Run verification: `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs`
+3. Create git branch: `feature/<task-name>` or `phase<N>/<feature-name>`
+4. Stage only relevant files (never `git add -A`)
+5. Create descriptive commit with conventional prefix
+6. Push and create PR if requested by user
 
 ## Error Escalation
 

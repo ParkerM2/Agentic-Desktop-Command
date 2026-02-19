@@ -17,18 +17,47 @@ const DOC_MAPPING = [
   {
     pattern: /^src\/shared\/types\//,
     docs: ['ARCHITECTURE.md', 'DATA-FLOW.md', 'FEATURES-INDEX.md'],
+    agents: ['schema-designer'],
+  },
+  {
+    pattern: /^src\/shared\/ipc\//,
+    docs: ['ARCHITECTURE.md', 'DATA-FLOW.md'],
+    agents: ['schema-designer'],
   },
   {
     pattern: /ipc-contract\.ts$/,
     docs: ['ARCHITECTURE.md', 'DATA-FLOW.md', 'FEATURES-INDEX.md'],
+    agents: ['schema-designer'],
   },
   {
     pattern: /^src\/main\/services\//,
     docs: ['ARCHITECTURE.md', 'FEATURES-INDEX.md'],
+    agents: ['service-engineer'],
   },
   {
     pattern: /^src\/main\/ipc\/handlers\//,
     docs: ['DATA-FLOW.md', 'FEATURES-INDEX.md'],
+    agents: ['ipc-handler-engineer'],
+  },
+  {
+    pattern: /^src\/renderer\/features\/.*\/components\//,
+    docs: ['FEATURES-INDEX.md', 'PATTERNS.md'],
+    agents: ['component-engineer'],
+  },
+  {
+    pattern: /^src\/renderer\/features\/.*\/api\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['hook-engineer'],
+  },
+  {
+    pattern: /^src\/renderer\/features\/.*\/store\.ts$/,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['store-engineer'],
+  },
+  {
+    pattern: /^src\/renderer\/features\/.*\/hooks\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['hook-engineer'],
   },
   {
     pattern: /^src\/renderer\/features\//,
@@ -37,18 +66,72 @@ const DOC_MAPPING = [
   {
     pattern: /^src\/renderer\/shared\/stores\//,
     docs: ['FEATURES-INDEX.md', 'DATA-FLOW.md'],
+    agents: ['store-engineer'],
   },
   {
     pattern: /^src\/renderer\/shared\/components\//,
     docs: ['FEATURES-INDEX.md'],
+    agents: ['component-engineer'],
+  },
+  {
+    pattern: /^src\/renderer\/shared\/hooks\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['hook-engineer'],
+  },
+  {
+    pattern: /^src\/renderer\/app\/routes\//,
+    docs: ['user-interface-flow.md'],
+    agents: ['router-engineer'],
   },
   {
     pattern: /^src\/renderer\/app\/layouts\//,
     docs: ['user-interface-flow.md'],
+    agents: ['router-engineer', 'component-engineer'],
   },
   {
     pattern: /^src\/renderer\/styles\//,
     docs: ['PATTERNS.md'],
+    agents: ['styling-engineer'],
+  },
+  {
+    pattern: /^src\/main\/services\/agent-orchestrator\//,
+    docs: ['ARCHITECTURE.md'],
+    agents: ['service-engineer', 'mcp-engineer'],
+  },
+  {
+    pattern: /^src\/main\/services\/assistant\//,
+    docs: ['ARCHITECTURE.md'],
+    agents: ['assistant-engineer'],
+  },
+  {
+    pattern: /^src\/main\/auth\//,
+    docs: ['ARCHITECTURE.md'],
+    agents: ['oauth-engineer'],
+  },
+  {
+    pattern: /^src\/main\/services\/git\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['git-engineer'],
+  },
+  {
+    pattern: /^src\/main\/services\/terminal\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['service-engineer'],
+  },
+  {
+    pattern: /^src\/main\/tray\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['tray-engineer'],
+  },
+  {
+    pattern: /^src\/main\/services\/notifications\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['notification-engineer'],
+  },
+  {
+    pattern: /^tests\//,
+    docs: ['FEATURES-INDEX.md'],
+    agents: ['test-engineer'],
   },
 ];
 
@@ -107,6 +190,7 @@ function isDocFile(file) {
     file.startsWith('ai-docs/') ||
     file.startsWith('docs/plans/') ||
     file.startsWith('docs/progress/') ||
+    file.startsWith('.claude/agents/') ||
     file === 'docs/tracker.json' ||
     file === 'CLAUDE.md'
   );
@@ -172,6 +256,26 @@ if (recommended.size > 0) {
   console.error('    - ai-docs/ARCHITECTURE.md (services, IPC, structure)');
   console.error('    - ai-docs/PATTERNS.md (new patterns/conventions)');
   console.error('    - ai-docs/DATA-FLOW.md (new data flows/events)');
+}
+
+const recommendedAgents = new Set();
+
+for (const file of srcFiles) {
+  for (const mapping of DOC_MAPPING) {
+    if (mapping.pattern.test(file) && mapping.agents) {
+      for (const agent of mapping.agents) {
+        recommendedAgents.add(agent);
+      }
+    }
+  }
+}
+
+if (recommendedAgents.size > 0) {
+  console.error('');
+  console.error('  Recommended agent definitions to review:');
+  for (const agent of recommendedAgents) {
+    console.error(`    - .claude/agents/${agent}.md`);
+  }
 }
 
 console.error('');

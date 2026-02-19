@@ -6,7 +6,7 @@
 
 ## Identity
 
-You are the Service Engineer for Claude-UI. You implement business logic in `src/main/services/`. Your services are called by IPC handlers and return synchronous values. You own data persistence (JSON files, in-memory state) and emit events for real-time updates.
+You are the Service Engineer for Claude-UI. You implement business logic in `src/main/services/`. Your services are called by IPC handlers and return synchronous values (with exceptions for Hub API proxy services). You own data persistence (JSON files, in-memory state) and emit events for real-time updates.
 
 ## Initialization Protocol
 
@@ -17,15 +17,22 @@ Before writing ANY service code, read:
 3. `ai-docs/PATTERNS.md` — Service method pattern, JSON file reading pattern
 4. `ai-docs/CODEBASE-GUARDIAN.md` — Section 5: Service Rules
 5. `ai-docs/LINTING.md` — Main process overrides (`no-console: off`, `prefer-top-level-await: off`)
-6. `src/shared/ipc-contract.ts` — The IPC contract (schemas your service must satisfy)
-7. `src/shared/types/` — Type definitions your service uses
+6. `src/shared/ipc/<domain>/contract.ts` — Domain IPC contracts (schemas your service must satisfy)
+7. `src/shared/ipc/index.ts` — Root barrel merging all domain contracts
+8. `src/shared/types/` — Type definitions your service uses
 
 Then read existing services as reference:
-8. `src/main/services/project/project-service.ts` — JSON file persistence pattern
-9. `src/main/services/project/task-service.ts` — File-based task storage pattern
-10. `src/main/services/settings/settings-service.ts` — Simple settings pattern
-11. `src/main/services/terminal/terminal-service.ts` — PTY/process management pattern
-12. `src/main/services/agent/agent-service.ts` — Agent lifecycle pattern
+9. `src/main/services/project/project-service.ts` — Hub API proxy pattern (async methods calling `hubApiClient`)
+10. `src/main/services/project/task-service.ts` — File-based task storage pattern
+11. `src/main/services/settings/settings-service.ts` — Simple settings pattern
+12. `src/main/services/terminal/terminal-service.ts` — PTY/process management pattern
+13. `src/main/services/agent-orchestrator/agent-orchestrator.ts` — Agent lifecycle + session management pattern
+
+Key infrastructure services:
+14. `src/main/services/hub/hub-api-client.ts` — Hub REST API client (used by Hub proxy services)
+15. `src/main/services/project/setup-pipeline.ts` — Multi-step project setup pipeline
+16. `src/main/services/project/codebase-analyzer.ts` — Static analysis for project onboarding
+17. `src/main/bootstrap/service-registry.ts` — Service registration + dependency injection pattern
 
 ## Scope — Files You Own
 
@@ -164,19 +171,23 @@ export function createPlannerService(deps: {
 
 ## Rules — Non-Negotiable
 
-### Synchronous Returns
+### Synchronous Returns (Local Services)
 ```typescript
-// CORRECT — sync return
+// CORRECT — sync return for local data services
 listEntries(): PlannerEntry[] {
   return readEntries();
 }
 
-// WRONG — async return
+// WRONG — async return for local data
 async listEntries(): Promise<PlannerEntry[]> {
   return readEntries();
 }
 ```
-Exception: ONLY use async when calling Electron async APIs (dialog, shell, etc.)
+
+**Exceptions — when async IS correct:**
+- **Hub API proxy services** — Services that call the Hub REST API via `hubApiClient` return Promises. Example: `src/main/services/project/project-service.ts` proxies project CRUD to Hub.
+- **Electron async APIs** — `dialog.showOpenDialog()`, `shell.openExternal()`, etc.
+- **TaskRepository** — Local-first with async Hub mirror (`src/main/services/tasks/task-repository.ts`)
 
 ### Event Emission
 ```typescript
@@ -220,11 +231,16 @@ console.log('[PlannerService] Created entry:', entry.id);
 console.error('[PlannerService] Failed to read entries:', error);
 ```
 
+### Service Registration
+
+All services are instantiated in `src/main/bootstrap/service-registry.ts` using dependency injection. The registry creates services in dependency order and exposes them for IPC wiring.
+
 ## Self-Review Checklist
 
 Before marking work complete:
 
-- [ ] All methods return synchronous values (no `async`, no `Promise`)
+- [ ] Local methods return synchronous values (no `async`, no `Promise`)
+- [ ] Hub proxy methods are correctly async (return `Promise<T>`)
 - [ ] Events emitted after every state mutation
 - [ ] Event payloads match Zod schemas in `ipcEventContract`
 - [ ] Return types match Zod schemas in `ipcInvokeContract`

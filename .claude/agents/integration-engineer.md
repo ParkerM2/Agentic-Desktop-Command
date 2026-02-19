@@ -27,6 +27,14 @@ ONLY create/modify these files:
   src/main/mcp-servers/<service>/tools.ts         — MCP tool definitions
   src/main/mcp-servers/<service>/types.ts         — Service-specific types
 
+Current MCP server directories:
+  src/main/mcp-servers/browser/    — Browser control (shell.openExternal)
+  src/main/mcp-servers/calendar/   — Google Calendar integration
+  src/main/mcp-servers/discord/    — Discord messaging and presence
+  src/main/mcp-servers/github/     — GitHub PRs, issues, notifications
+  src/main/mcp-servers/slack/      — Slack messaging and channels
+  src/main/mcp-servers/spotify/    — Spotify playback control
+
 NEVER modify:
   src/main/mcp/**           — MCP Engineer's domain
   src/shared/**             — Schema Designer's domain

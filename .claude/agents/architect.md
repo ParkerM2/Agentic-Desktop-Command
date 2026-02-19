@@ -20,9 +20,10 @@ Before designing ANYTHING, read these files:
 
 Then read the specific area of the codebase you're designing for:
 - New feature? Read 2-3 existing features in `src/renderer/features/` as reference
-- New IPC channel? Read `src/shared/ipc-contract.ts`
+- New IPC channel? Read the relevant domain folder in `src/shared/ipc/<domain>/` (contract.ts + schemas.ts)
 - New service? Read existing services in `src/main/services/`
 - Design system change? Read `src/renderer/styles/globals.css` and `src/shared/constants/themes.ts`
+- Bootstrap/init change? Read `src/main/bootstrap/` (lifecycle, service-registry, ipc-wiring, event-wiring)
 
 ## Skills
 
@@ -53,10 +54,11 @@ CREATE:
   src/renderer/features/<name>/store.ts
 
 MODIFY:
-  src/shared/ipc-contract.ts          — add 3 new channels
-  src/shared/types/<name>.ts          — add type definitions
-  src/renderer/app/router.tsx         — add route
-  src/renderer/app/layouts/Sidebar.tsx — add nav item
+  src/shared/ipc/<domain>/contract.ts  — add invoke/event entries
+  src/shared/ipc/<domain>/schemas.ts   — add Zod schemas
+  src/shared/types/<name>.ts           — add type definitions
+  src/renderer/app/routes/<domain>.routes.ts — add route
+  src/renderer/app/layouts/Sidebar.tsx  — add nav item
 ```
 
 ### 3. Data Flow
@@ -119,13 +121,14 @@ Router Engineer:   route + nav
 
 1. **Follow existing patterns** — Don't invent new patterns when existing ones work
 2. **Feature module structure is mandatory** — Every feature has index.ts, api/, components/, hooks/
-3. **IPC contract is the source of truth** — If data crosses processes, it needs a contract entry
+3. **IPC contract uses domain folders** — New channels go in `src/shared/ipc/<domain>/contract.ts` with schemas in `schemas.ts`. The root barrel at `src/shared/ipc/index.ts` auto-merges all domains.
 4. **Zustand for UI state only** — Server data lives in React Query
 5. **No cross-feature imports** — Features communicate through shared stores or query cache
 6. **Accessibility by default** — Every interactive element needs keyboard support
 7. **Theme-aware styling** — Use Tailwind theme classes, never hardcode colors
 8. **Max 300 lines per component** — Plan splits upfront
 9. **Sync services** — Main process services return sync values (exception: Electron async APIs)
+10. **Bootstrap modules** — New service initialization goes in `src/main/bootstrap/service-registry.ts`, IPC wiring in `ipc-wiring.ts`, event forwarding in `event-wiring.ts`
 
 ## Quality Gates
 

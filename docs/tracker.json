@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-02-19T00:00:00Z",
+  "lastUpdated": "2026-02-19T14:35:00Z",
   "updatedBy": "team-lead",
   "plans": {
     "full-codebase-audit": {
@@ -340,6 +340,19 @@
       "commit": null,
       "supersededBy": null,
       "tags": ["tracking", "infrastructure"]
+    },
+    "agent-docs-sync": {
+      "title": "Agent Definitions Sync & Documentation Governance",
+      "status": "IMPLEMENTED",
+      "planFile": ".claude/progress/agent-docs-sync-design.md",
+      "progressFile": "docs/progress/agent-docs-sync-progress.md",
+      "created": "2026-02-19",
+      "statusChangedAt": "2026-02-19",
+      "branch": "feature/agent-docs-sync",
+      "pr": null,
+      "commit": null,
+      "supersededBy": null,
+      "tags": ["agents", "docs", "governance"]
     },
     "project-onboarding-pipeline": {
       "title": "Project Onboarding Pipeline",
