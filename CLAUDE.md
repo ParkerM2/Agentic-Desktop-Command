@@ -104,7 +104,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 
 ### Documentation Update Mapping
 
-`npm run check:docs` enforces that source changes include doc updates. Use this mapping to know which docs to update:
+`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, and `CLAUDE.md`. Use this mapping to know which docs to update:
 
 | Change Type | Docs to Update |
 |-------------|----------------|
@@ -115,6 +115,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 | New feature module | `FEATURES-INDEX.md` (feature table), `ARCHITECTURE.md` (system diagram if applicable) |
 | Gap resolution | `user-interface-flow.md` (mark gap RESOLVED with date and description) |
 | New pattern or convention | `PATTERNS.md` (pattern example with code) |
+| Feature plan or design doc | `docs/plans/<feature>-plan.md` (implementation plan) |
 
 **Checklist before committing:**
 

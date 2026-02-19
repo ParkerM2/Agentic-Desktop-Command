@@ -1191,21 +1191,21 @@ Complete list of all registered IPC channels by domain:
 | G-4 | ~~No error UI for Hub disconnect during operation~~ | Medium | Hub | **RESOLVED** (2026-02-15) — Toast notification system + onError handlers on 11 mutations |
 | G-5 | ~~Token refresh not proactive~~ | Medium | Auth | **RESOLVED** (2026-02-15) — useTokenRefresh hook with 2-min pre-expiry timer in AuthGuard |
 | G-6 | ~~Hub config chicken-and-egg~~ | High | Auth/Hub | **RESOLVED** (2026-02-18) — HubSetupPage (`/hub-setup`) added as pre-auth screen. Login/register `beforeLoad` checks `hub.getConfig` and redirects to `/hub-setup` if no Hub URL configured. Docker quick-start instructions + connectivity validation included. |
-| G-6b | Onboarding API key step disconnected | Low | Onboarding | `ApiKeyStep.tsx` collects API key but unclear if it's wired to `settings.createProfile` |
-| G-7 | Project delete confirmation | Low | Projects | Delete button exists but confirmation UX not verified — could accidentally delete |
-| G-8 | Workspace assignment in project wizard | Low | Projects | Workspace dropdown shown in wizard but may not persist `workspaceId` to project on create |
-| G-9 | Device selector unused | Low | Settings | `DeviceSelector.tsx` exists but unclear when/where users would switch devices |
-| G-10 | CommandBar not wired | Low | Navigation | `CommandBar.tsx` renders in TopBar but may not be connected to assistant functionality |
+| G-6b | ~~Onboarding API key step disconnected~~ | Low | Onboarding | **RESOLVED** (2026-02-18) — `ApiKeyStep.tsx` calls `useUpdateSettings()` → `settings.update` IPC to save `anthropicApiKey`. All 5 wizard steps make real IPC calls. `OnboardingWizard` mounted in `RootLayout.tsx`. |
+| G-7 | ~~Project delete confirmation~~ | Low | Projects | **RESOLVED** (2026-02-18) — `ProjectEditDialog.tsx` uses `ConfirmDialog` with `variant="destructive"`, `title="Delete Project"`, wired to `removeProject.mutate()`. |
+| G-8 | ~~Workspace assignment in project wizard~~ | Low | Projects | **RESOLVED** (2026-02-18) — `StepConfigure.tsx` renders workspace `<select>`, `ProjectInitWizard.tsx` passes `workspaceId` to `addProject.mutateAsync()`, handler persists it. |
+| G-9 | ~~Device selector unused~~ | Low | Settings | **RESOLVED** (2026-02-18) — `DeviceSelector.tsx` imported by `WorkspaceEditor.tsx` as "Host Device" selector when editing a workspace (Settings > Workspaces > Edit). |
+| G-10 | ~~CommandBar not wired~~ | Low | Navigation | **RESOLVED** (2026-02-18) — `CommandBar.tsx` imports `useSendCommand` + `useAssistantEvents` from `@features/assistant`, calls `ipc('assistant.sendCommand')`, subscribes to 4 assistant IPC events. Supports Ctrl+K, history, voice input. |
 | G-11 | ~~Calendar feature no OAuth~~ | Low | Calendar | **RESOLVED** (2026-02-18) — OAuth IPC channels added (`oauth.authorize`, `oauth.isAuthenticated`, `oauth.revoke`). OAuthConnectionStatus component provides Connect/Disconnect buttons per provider in Settings → OAuth Providers. |
 | G-12 | ~~Voice feature no UI~~ | Low | Voice | **RESOLVED** (2026-02-18) — VoiceSettings mounted in Settings page (after Hotkeys, before About). ScreenshotButton mounted in TopBar. |
 | G-13 | ~~`/assistant` route defined but not wired~~ | Low | Navigation | **RESOLVED** (2026-02-15) — Assistant is now globally accessible via floating `AssistantWidget` (Ctrl+J toggle). Route constant remains for potential future full-page view. |
 | G-14 | ~~`/briefing` not in sidebar~~ | Low | Navigation | **RESOLVED** (2026-02-18) — Briefing added to Sidebar `topLevelItems` array (second item, with Newspaper icon). |
 | G-15 | ~~No project edit/settings page~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ProjectEditDialog with edit buttons on project cards |
 | G-16 | ~~No delete confirmation dialogs~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ConfirmDialog component + wired to task/project deletes |
-| G-17 | `projects.initialize` is a skeleton | Low | Projects | Handler returns hardcoded `{ success: true }` — not wired to any real initialization logic |
-| G-18 | No project description field in wizard | Low | Projects | Project type supports `description` but the init wizard never asks for one |
-| G-19 | Workspace assignment not editable | Low | Projects | Workspace set during creation but no UI to change it afterward |
-| G-20 | Profile API keys stored in plaintext | Medium | Settings/Security | Profile `apiKey` saved as plaintext in `userData/settings.json` while webhook secrets use Electron `safeStorage` encryption — inconsistent security posture |
+| G-17 | ~~`projects.initialize` is a skeleton~~ | Low | Projects | **RESOLVED** (2026-02-18) — `project-service.ts` creates `.adc/` + `.adc/specs/` directories under the project path. Minimal but functional directory scaffolding. |
+| G-18 | ~~No project description field in wizard~~ | Low | Projects | **RESOLVED** (2026-02-18) — `StepConfigure.tsx` renders description `<textarea>`, `ProjectInitWizard.tsx` includes it in `handleConfirm()`, `StepConfirm.tsx` displays it in summary. |
+| G-19 | ~~Workspace assignment not editable~~ | Low | Projects | **RESOLVED** (2026-02-18) — `ProjectEditDialog.tsx` renders workspace `<select>` from `useWorkspaces()`, tracks changes, sends update via `projects.update` IPC. |
+| G-20 | ~~Profile API keys stored in plaintext~~ | Medium | Settings/Security | **RESOLVED** (2026-02-18) — `settings-encryption.ts` defines `PROFILE_SECRET_KEYS = ['apiKey', 'oauthToken']`. `settings-store.ts` encrypts all profile secrets via `safeStorage` on save, decrypts on load, auto-migrates plaintext → encrypted. |
 
 ### Recommended MCP Test Scenarios
 
