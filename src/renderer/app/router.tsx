@@ -57,7 +57,7 @@ const indexRoute = createRoute({
 
 // ─── Route Groups ────────────────────────────────────────────
 
-const { loginRoute, registerRoute } = createAuthRoutes(rootRoute);
+const { loginRoute, registerRoute, hubSetupRoute } = createAuthRoutes(rootRoute);
 
 const dashboardRoutes = createDashboardRoutes(appLayoutRoute);
 const projectRoutes = createProjectRoutes(appLayoutRoute);
@@ -71,6 +71,7 @@ const miscRoutes = createMiscRoutes(appLayoutRoute);
 const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
+  hubSetupRoute,
   authLayoutRoute.addChildren([
     appLayoutRoute.addChildren([
       indexRoute,

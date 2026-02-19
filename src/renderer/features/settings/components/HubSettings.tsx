@@ -11,6 +11,8 @@ import { Cloud, CloudOff, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { validateHubUrl } from '@features/hub-setup/lib/validateHubUrl';
+
 import {
   useHubConnect,
   useHubDisconnect,
@@ -40,38 +42,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 // ── Sub-components ──────────────────────────────────────────
-
-/** Ping hub health endpoint to validate URL before saving. */
-async function validateHubUrl(url: string): Promise<{ reachable: boolean; error?: string }> {
-  const trimmedUrl = url.replace(/\/+$/, '');
-  const healthUrl = `${trimmedUrl}/api/health`;
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 5000);
-
-    const response = await fetch(healthUrl, {
-      method: 'GET',
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      return { reachable: false, error: `Server returned ${String(response.status)}` };
-    }
-
-    return { reachable: true };
-  } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { reachable: false, error: 'Connection timed out' };
-    }
-    const message = error instanceof Error ? error.message : 'Network error';
-    return { reachable: false, error: message };
-  }
-}
 
 interface ConnectionFormProps {
   isConnecting: boolean;

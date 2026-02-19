@@ -80,8 +80,9 @@ Electron main process starts
 
 | Path | Component | Auth Required | File |
 |------|-----------|---------------|------|
-| `/login` | `LoginPage` | No (redirects away if authenticated) | `src/renderer/features/auth/components/LoginPage.tsx` |
-| `/register` | `RegisterPage` | No (redirects away if authenticated) | `src/renderer/features/auth/components/RegisterPage.tsx` |
+| `/hub-setup` | `HubSetupPage` | No (redirects to /login if hub already configured) | `src/renderer/features/hub-setup/components/HubSetupPage.tsx` |
+| `/login` | `LoginPage` | No (redirects to /hub-setup if hub not configured) | `src/renderer/features/auth/components/LoginPage.tsx` |
+| `/register` | `RegisterPage` | No (redirects to /hub-setup if hub not configured) | `src/renderer/features/auth/components/RegisterPage.tsx` |
 | All other routes | Wrapped by `AuthGuard` | Yes | `src/renderer/features/auth/components/AuthGuard.tsx` |
 
 ### 2.1 First Launch (No Stored Session)
@@ -95,10 +96,14 @@ User opens app
     → Nothing found → setInitializing(false)
   → isAuthenticated = false, isInitializing = false
   → AuthGuard redirects to /login
+  → /login beforeLoad: async hub check via ipc('hub.getConfig', {})
+    → If hubUrl is empty → redirect to /hub-setup
+    → HubSetupPage renders (Docker instructions, URL + API key form)
+    → User connects → redirects to /login
   → LoginPage renders (full-page centered form)
 ```
 
-**User sees**: Login page with email/password form, "Sign In" button, link to Register.
+**User sees**: If Hub not configured, the Hub Setup page with Docker quick-start instructions, Hub URL/API key form, and connectivity validation. After connecting, the Login page with email/password form, "Sign In" button, link to Register, and "Change Hub server" link.
 
 ### 2.2 Registration Flow
 
@@ -899,7 +904,7 @@ User fills Profile form (name, API key, model) → clicks Save
 
 ```
 User enters Hub URL + API Key → clicks Connect
-  → HubSettings.tsx validates URL (pings /api/health)
+  → HubSetupPage.tsx or HubSettings.tsx validates URL (pings /api/health via shared validateHubUrl)
   → If reachable: useHubConnect().mutate({ url, apiKey })
   → ipc('hub.connect', { url, apiKey })
     → hub-handlers.ts → hubConnectionManager.configure(url, apiKey)
@@ -1185,7 +1190,8 @@ Complete list of all registered IPC channels by domain:
 | G-3 | ~~Duplicate task handlers~~ | Medium | Tasks | **RESOLVED** (2026-02-15) — Removed 8 duplicate hub.tasks.* registrations from hub-handlers.ts |
 | G-4 | ~~No error UI for Hub disconnect during operation~~ | Medium | Hub | **RESOLVED** (2026-02-15) — Toast notification system + onError handlers on 11 mutations |
 | G-5 | ~~Token refresh not proactive~~ | Medium | Auth | **RESOLVED** (2026-02-15) — useTokenRefresh hook with 2-min pre-expiry timer in AuthGuard |
-| G-6 | Onboarding API key step disconnected | Low | Onboarding | `ApiKeyStep.tsx` collects API key but unclear if it's wired to `settings.createProfile` |
+| G-6 | ~~Hub config chicken-and-egg~~ | High | Auth/Hub | **RESOLVED** (2026-02-18) — HubSetupPage (`/hub-setup`) added as pre-auth screen. Login/register `beforeLoad` checks `hub.getConfig` and redirects to `/hub-setup` if no Hub URL configured. Docker quick-start instructions + connectivity validation included. |
+| G-6b | Onboarding API key step disconnected | Low | Onboarding | `ApiKeyStep.tsx` collects API key but unclear if it's wired to `settings.createProfile` |
 | G-7 | Project delete confirmation | Low | Projects | Delete button exists but confirmation UX not verified — could accidentally delete |
 | G-8 | Workspace assignment in project wizard | Low | Projects | Workspace dropdown shown in wizard but may not persist `workspaceId` to project on create |
 | G-9 | Device selector unused | Low | Settings | `DeviceSelector.tsx` exists but unclear when/where users would switch devices |

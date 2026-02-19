@@ -3,6 +3,12 @@
 > Desktop UI for managing Claude autonomous coding agents.
 > Electron 39 + React 19 + TypeScript strict + Tailwind v4 + Zustand 5
 
+## Implementation Rule — MANDATORY
+
+**When a plan exists (from `/plan-feature`, `/create-feature-plan`, or user-provided), ALWAYS use the `/implement-feature` skill with parallel agent teams.** Do NOT single-thread implementation yourself. Specialized agents working in parallel are faster and more efficient than sequential solo execution. This applies to ALL planned work — no exceptions, no "this is small enough to do myself" overrides. Use the workflow tooling. That's what it's there for.
+
+---
+
 ## Quick Reference
 
 ```bash

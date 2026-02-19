@@ -10,6 +10,7 @@ export const ROUTES = {
   INDEX: '/',
   LOGIN: '/login',
   REGISTER: '/register',
+  HUB_SETUP: '/hub-setup',
   ALERTS: '/alerts',
   ASSISTANT: '/assistant',
   BRIEFING: '/briefing',

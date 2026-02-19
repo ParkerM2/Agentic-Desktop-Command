@@ -14,6 +14,7 @@ const INPUT_CLASS =
 const MIN_PASSWORD_LENGTH = 8;
 
 interface RegisterPageProps {
+  onNavigateToHubSetup: () => void;
   onNavigateToLogin: () => void;
   onSuccess: () => void;
 }
@@ -28,7 +29,7 @@ function getPasswordError(password: string, confirmPassword: string): string | n
   return null;
 }
 
-export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps) {
+export function RegisterPage({ onNavigateToHubSetup, onNavigateToLogin, onSuccess }: RegisterPageProps) {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -172,6 +173,16 @@ export function RegisterPage({ onNavigateToLogin, onSuccess }: RegisterPageProps
             onClick={onNavigateToLogin}
           >
             Sign in
+          </button>
+        </p>
+
+        <p className="text-center text-sm text-muted-foreground">
+          <button
+            className="font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            type="button"
+            onClick={onNavigateToHubSetup}
+          >
+            Change Hub server
           </button>
         </p>
       </div>

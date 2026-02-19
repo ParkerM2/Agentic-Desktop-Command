@@ -12,11 +12,12 @@ const INPUT_CLASS =
   'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
 interface LoginPageProps {
+  onNavigateToHubSetup: () => void;
   onNavigateToRegister: () => void;
   onSuccess: () => void;
 }
 
-export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
+export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSuccess }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const login = useLogin();
@@ -111,6 +112,16 @@ export function LoginPage({ onNavigateToRegister, onSuccess }: LoginPageProps) {
             onClick={onNavigateToRegister}
           >
             Sign up
+          </button>
+        </p>
+
+        <p className="text-center text-sm text-muted-foreground">
+          <button
+            className="font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            type="button"
+            onClick={onNavigateToHubSetup}
+          >
+            Change Hub server
           </button>
         </p>
       </div>

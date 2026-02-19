@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 27 |
+| Renderer Features | 28 |
 | Main Process Services | 32 |
 | IPC Handler Files | 41 |
 | IPC Domain Folders | 24 |
@@ -34,6 +34,7 @@ Location: `src/renderer/features/`
 | **dashboard** | Home dashboard | DashboardPage, TodayView, DailyStats, ActiveAgents | multiple |
 | **fitness** | Health/fitness tracking | FitnessPage, WorkoutLog, MetricsChart | `fitness.*` |
 | **github** | GitHub integration | GitHubPage, PRList, IssueList | `github.*` |
+| **hub-setup** | Pre-auth Hub configuration wizard | HubSetupPage, validateHubUrl | `hub.getConfig`, `hub.connect` |
 | **ideation** | Idea capture & tracking | IdeationPage, IdeaEditForm | `ideas.*` |
 | **insights** | Analytics dashboard | InsightsPage, MetricsCards, Charts | `insights.*` |
 | **notes** | Note-taking | NotesPage, NoteEditor, NoteList | `notes.*` |
