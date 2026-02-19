@@ -15,6 +15,7 @@ import { authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
+import { dockerInvoke } from './docker';
 import { emailEvents, emailInvoke } from './email';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
@@ -97,6 +98,7 @@ export const ipcInvokeContract = {
   ...oauthInvoke,
   ...workflowInvoke,
   ...dashboardInvoke,
+  ...dockerInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -175,6 +177,8 @@ export {
 } from './briefing';
 
 export { CaptureSchema } from './dashboard';
+
+export { DockerHubSetupResultSchema, DockerStatusSchema } from './docker';
 
 export {
   ClaudeConversationSchema,

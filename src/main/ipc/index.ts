@@ -17,6 +17,7 @@ import { registerChangelogHandlers } from './handlers/changelog-handlers';
 import { registerClaudeHandlers } from './handlers/claude-handlers';
 import { registerDashboardHandlers } from './handlers/dashboard-handlers';
 import { registerDeviceHandlers } from './handlers/device-handlers';
+import { registerDockerHandlers } from './handlers/docker-handlers';
 import { registerEmailHandlers } from './handlers/email-handlers';
 import { registerErrorHandlers } from './handlers/error-handlers';
 import { registerFitnessHandlers } from './handlers/fitness-handlers';
@@ -62,6 +63,7 @@ import type { ChangelogService } from '../services/changelog/changelog-service';
 import type { ClaudeClient } from '../services/claude';
 import type { DashboardService } from '../services/dashboard/dashboard-service';
 import type { DeviceService } from '../services/device/device-service';
+import type { DockerService } from '../services/docker/docker-service';
 import type { EmailService } from '../services/email/email-service';
 import type { FitnessService } from '../services/fitness/fitness-service';
 import type { GitService } from '../services/git/git-service';
@@ -137,6 +139,7 @@ export interface Services {
   qaRunner: QaRunner;
   taskLauncher: TaskLauncherService;
   dashboardService: DashboardService;
+  dockerService: DockerService;
   oauthManager: OAuthManager;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
@@ -216,4 +219,5 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);
   registerQaHandlers(router, services.qaRunner, services.agentOrchestrator, services.taskRepository);
   registerDashboardHandlers(router, services.dashboardService);
+  registerDockerHandlers(router, services.dockerService);
 }

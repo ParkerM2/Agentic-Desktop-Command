@@ -36,6 +36,7 @@ import { createChangelogService } from '../services/changelog/changelog-service'
 import { createClaudeClient } from '../services/claude';
 import { createDashboardService } from '../services/dashboard/dashboard-service';
 import { createDeviceService } from '../services/device/device-service';
+import { createDockerService } from '../services/docker/docker-service';
 import { createEmailService } from '../services/email/email-service';
 import { createFitnessService } from '../services/fitness/fitness-service';
 import { createGitService } from '../services/git/git-service';
@@ -189,6 +190,7 @@ export function createServiceRegistry(
   // ─── Persistence services ────────────────────────────────────
   const notesService = createNotesService({ dataDir, router });
   const dashboardService = createDashboardService({ dataDir, router });
+  const dockerService = createDockerService();
   const plannerService = createPlannerService(router);
   const alertService = createAlertService(router);
   alertService.startChecking();
@@ -448,6 +450,7 @@ export function createServiceRegistry(
     milestonesService,
     notesService,
     dashboardService,
+    dockerService,
     notificationManager,
     plannerService,
     spotifyService,
