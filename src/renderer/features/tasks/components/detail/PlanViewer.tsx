@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import { FileText, MessageSquare, Play, X } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button } from '@ui';
 
 import { PlanFeedbackDialog } from './PlanFeedbackDialog';
 
@@ -19,9 +19,6 @@ interface PlanViewerProps {
   onReject?: (taskId: string) => void;
   onRequestChanges?: (taskId: string, feedback: string) => void;
 }
-
-const ACTION_BUTTON_BASE =
-  'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors';
 
 export function PlanViewer({
   taskId,
@@ -58,45 +55,42 @@ export function PlanViewer({
         </h4>
         {showActions ? (
           <div className="flex items-center gap-2">
-            <button
+            <Button
               aria-label="Approve and execute plan"
-              className={cn(
-                ACTION_BUTTON_BASE,
-                'bg-success/10 text-success hover:bg-success/20',
-              )}
+              className="bg-success/10 text-success hover:bg-success/20"
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 onApproveAndExecute?.(taskId);
               }}
             >
               <Play className="h-3.5 w-3.5" />
               Approve & Execute
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Request changes to plan"
-              className={cn(
-                ACTION_BUTTON_BASE,
-                'bg-warning/10 text-warning hover:bg-warning/20',
-              )}
+              className="bg-warning/10 text-warning hover:bg-warning/20"
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 setFeedbackDialogOpen(true);
               }}
             >
               <MessageSquare className="h-3.5 w-3.5" />
               Request Changes
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Reject plan"
-              className={cn(
-                ACTION_BUTTON_BASE,
-                'bg-destructive/10 text-destructive hover:bg-destructive/20',
-              )}
+              className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 onReject?.(taskId);
               }}
             >
               <X className="h-3.5 w-3.5" />
               Reject
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>

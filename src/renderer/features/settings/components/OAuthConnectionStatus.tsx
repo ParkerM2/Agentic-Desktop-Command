@@ -3,13 +3,16 @@
  * for a single OAuth provider. Appears inside the expanded provider card.
  */
 
-import { Loader2, LogIn, LogOut } from 'lucide-react';
+import { LogIn, LogOut } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Spinner } from '@ui';
+
+
 import { useOAuthAuthorize, useOAuthRevoke, useOAuthStatus } from '../api/useOAuth';
 
-import { BUTTON_BASE, ICON_SIZE } from './oauth-provider-constants';
+import { ICON_SIZE } from './oauth-provider-constants';
 
 interface OAuthConnectionStatusProps {
   provider: string;
@@ -24,7 +27,7 @@ function StatusIndicator({
   isLoading: boolean;
 }) {
   if (isLoading) {
-    return <Loader2 className={cn(ICON_SIZE, 'text-muted-foreground animate-spin')} />;
+    return <Spinner className="text-muted-foreground" size="sm" />;
   }
 
   if (isAuthenticated) {
@@ -66,46 +69,38 @@ export function OAuthConnectionStatus({ provider, hasCredentials }: OAuthConnect
 
       {/* Connect / Disconnect button */}
       {isAuthenticated ? (
-        <button
+        <Button
           disabled={isMutating}
-          type="button"
+          variant="outline"
           className={cn(
-            BUTTON_BASE,
-            'border-border text-muted-foreground border',
             'hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30',
-            'disabled:cursor-not-allowed disabled:opacity-50',
           )}
           onClick={() => {
             revokeMutation.mutate(provider);
           }}
         >
           {revokeMutation.isPending ? (
-            <Loader2 className={cn(ICON_SIZE, 'animate-spin')} />
+            <Spinner size="sm" />
           ) : (
             <LogOut className={ICON_SIZE} />
           )}
           Disconnect
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           disabled={isMutating}
-          type="button"
-          className={cn(
-            BUTTON_BASE,
-            'bg-primary text-primary-foreground hover:bg-primary/90',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
+          variant="primary"
           onClick={() => {
             authorizeMutation.mutate(provider);
           }}
         >
           {authorizeMutation.isPending ? (
-            <Loader2 className={cn(ICON_SIZE, 'animate-spin')} />
+            <Spinner size="sm" />
           ) : (
             <LogIn className={ICON_SIZE} />
           )}
           Connect
-        </button>
+        </Button>
       )}
     </div>
   );

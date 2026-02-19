@@ -67,8 +67,6 @@ export const PROVIDER_CONFIG: Partial<Record<string, ProviderConfig>> = {
 };
 
 export const ICON_SIZE = 'h-4 w-4';
-export const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors';
 
 // ── Validation ──────────────────────────────────────────────
 

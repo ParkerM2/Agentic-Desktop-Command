@@ -9,6 +9,9 @@ import type { Profile } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+
 interface ProfileCardProps {
   profile: Profile;
   onEdit: (profile: Profile) => void;
@@ -31,19 +34,20 @@ export function ProfileCard({ profile, onEdit, onDelete, onSetDefault }: Profile
       )}
     >
       <div className="flex items-center gap-3">
-        <button
+        <Button
           aria-label={profile.isDefault ? 'Default profile' : `Set ${profile.name} as default`}
-          type="button"
+          size="icon"
+          variant="ghost"
           className={cn(
-            'shrink-0 rounded p-1 transition-colors',
+            'shrink-0',
             profile.isDefault
               ? 'text-primary cursor-default'
-              : 'text-muted-foreground hover:text-primary cursor-pointer',
+              : 'text-muted-foreground hover:text-primary',
           )}
           onClick={handleSetDefault}
         >
           <Star className={cn('h-4 w-4', profile.isDefault && 'fill-current')} />
-        </button>
+        </Button>
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{profile.name}</span>
@@ -69,22 +73,24 @@ export function ProfileCard({ profile, onEdit, onDelete, onSetDefault }: Profile
       </div>
 
       <div className="flex items-center gap-1">
-        <button
+        <Button
           aria-label={`Edit ${profile.name}`}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1.5 transition-colors"
-          type="button"
+          className="text-muted-foreground hover:text-foreground"
+          size="icon"
+          variant="ghost"
           onClick={() => onEdit(profile)}
         >
           <Pencil className="h-4 w-4" />
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label={`Delete ${profile.name}`}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1.5 transition-colors"
-          type="button"
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          size="icon"
+          variant="ghost"
           onClick={() => onDelete(profile.id)}
         >
           <Trash2 className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

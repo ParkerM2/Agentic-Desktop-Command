@@ -9,16 +9,13 @@
 
 import { useEffect, useState } from 'react';
 
-import { CheckCircle2, Loader2, Terminal, XCircle } from 'lucide-react';
+import { CheckCircle2, Terminal, XCircle } from 'lucide-react';
+
 
 import { useClaudeAuth } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
-import { cn } from '@renderer/shared/lib/utils';
 
-// ── Constants ───────────────────────────────────────────────
-
-const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors';
+import { Button, Spinner } from '@ui';
 
 // ── Component ───────────────────────────────────────────────
 
@@ -55,7 +52,7 @@ export function ClaudeAuthSettings() {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-4">
-        <Loader2 className="size-4 animate-spin text-muted-foreground" />
+        <Spinner className="text-muted-foreground" size="sm" />
         <span className="text-sm text-muted-foreground">Checking Claude Code status...</span>
       </div>
     );
@@ -100,7 +97,7 @@ export function ClaudeAuthSettings() {
       {/* Authorizing message */}
       {authorizing ? (
         <div className="flex items-center gap-2 rounded-md bg-muted/50 px-3 py-2">
-          <Loader2 className="size-4 animate-spin text-primary" />
+          <Spinner className="text-primary" size="sm" />
           <span className="text-xs text-primary">
             Waiting for browser authorization... Click Authorize in your browser.
           </span>
@@ -110,33 +107,23 @@ export function ClaudeAuthSettings() {
       {/* Action buttons */}
       <div className="flex items-center gap-2">
         {isAuthenticated ? (
-          <button
+          <Button
             disabled={authorizing}
-            type="button"
-            className={cn(
-              BUTTON_BASE,
-              'border border-border bg-background text-card-foreground hover:bg-accent',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
+            variant="outline"
             onClick={handleAuthorize}
           >
             <Terminal className="size-4" />
             Re-authorize
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             disabled={!isInstalled || authorizing}
-            type="button"
-            className={cn(
-              BUTTON_BASE,
-              'bg-primary text-primary-foreground hover:bg-primary/90',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
+            variant="primary"
             onClick={handleAuthorize}
           >
             <Terminal className="size-4" />
             Authorize
-          </button>
+          </Button>
         )}
       </div>
     </div>

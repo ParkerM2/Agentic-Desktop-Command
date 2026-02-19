@@ -8,7 +8,9 @@
 import { useEffect, useState } from 'react';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { cn } from '@renderer/shared/lib/utils';
+
+import { Switch } from '@ui';
+
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
@@ -30,24 +32,11 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
         <p className="text-sm font-medium">{label}</p>
         <p className="text-muted-foreground text-xs">{description}</p>
       </div>
-      <button
-        aria-checked={checked}
+      <Switch
         aria-label={label}
-        role="switch"
-        type="button"
-        className={cn(
-          'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-          checked ? 'bg-primary' : 'bg-muted',
-        )}
-        onClick={() => onChange(!checked)}
-      >
-        <span
-          className={cn(
-            'pointer-events-none block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-            checked ? 'translate-x-5' : 'translate-x-0',
-          )}
-        />
-      </button>
+        checked={checked}
+        onCheckedChange={onChange}
+      />
     </div>
   );
 }

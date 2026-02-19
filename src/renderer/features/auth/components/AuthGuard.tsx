@@ -9,11 +9,12 @@
 import { useEffect } from 'react';
 
 import { Outlet, useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
 
 import { ROUTES } from '@shared/constants';
 
 import { ThemeHydrator } from '@renderer/shared/stores';
+
+import { Spinner } from '@ui';
 
 import { useAuthInit } from '../hooks/useAuthEvents';
 import { useTokenRefresh } from '../hooks/useTokenRefresh';
@@ -42,7 +43,7 @@ export function AuthGuard() {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <ThemeHydrator />
-        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+        <Spinner className="text-muted-foreground" size="lg" />
       </div>
     );
   }

@@ -2,6 +2,8 @@
  * UiScaleSection — UI scale percentage slider
  */
 
+import { Input } from '@ui';
+
 // ── Constants ───────────────────────────────────────────────
 
 const UI_SCALE_MIN = 75;
@@ -23,9 +25,9 @@ export function UiScaleSection({ currentScale, onScaleChange }: UiScaleSectionPr
       </h2>
       <div className="flex items-center gap-4">
         <span className="text-muted-foreground w-10 text-sm">{UI_SCALE_MIN}%</span>
-        <input
+        <Input
           aria-label="UI scale percentage"
-          className="bg-muted accent-primary h-2 flex-1 cursor-pointer appearance-none rounded-full"
+          className="bg-muted accent-primary h-2 flex-1 cursor-pointer appearance-none rounded-full border-0"
           max={UI_SCALE_MAX}
           min={UI_SCALE_MIN}
           step={UI_SCALE_STEP}

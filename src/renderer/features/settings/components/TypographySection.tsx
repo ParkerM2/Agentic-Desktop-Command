@@ -8,6 +8,9 @@ import { Check, ChevronDown } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Input } from '@ui';
+
+
 // ── Constants ───────────────────────────────────────────────
 
 const FONT_FAMILY_OPTIONS = [
@@ -71,17 +74,14 @@ export function TypographySection({
           Font Family
         </h2>
         <div className="relative">
-          <button
+          <Button
             aria-controls={fontListboxId}
             aria-expanded={fontDropdownOpen}
             aria-haspopup="listbox"
             aria-label="Select font family"
+            className="flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-sm"
             role="combobox"
-            type="button"
-            className={cn(
-              'border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm transition-colors',
-              'hover:bg-accent focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-            )}
+            variant="outline"
             onClick={() => setFontDropdownOpen(!fontDropdownOpen)}
             onKeyDown={handleDropdownKeyDown}
           >
@@ -92,7 +92,7 @@ export function TypographySection({
                 fontDropdownOpen && 'rotate-180',
               )}
             />
-          </button>
+          </Button>
           {fontDropdownOpen ? (
             <div
               className="border-border bg-card absolute z-10 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
@@ -131,9 +131,9 @@ export function TypographySection({
         </h2>
         <div className="flex items-center gap-4">
           <span className="text-muted-foreground w-10 text-sm">{FONT_SIZE_MIN}px</span>
-          <input
+          <Input
             aria-label="Font size in pixels"
-            className="bg-muted accent-primary h-2 flex-1 cursor-pointer appearance-none rounded-full"
+            className="bg-muted accent-primary h-2 flex-1 cursor-pointer appearance-none rounded-full border-0"
             max={FONT_SIZE_MAX}
             min={FONT_SIZE_MIN}
             step={1}

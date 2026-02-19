@@ -42,6 +42,73 @@
 
 Types flow automatically — no manual type wiring needed.
 
+## Design System Component Usage
+
+All UI elements use the design system primitives from `@ui`. **NEVER use raw HTML `<button>`, `<input>`, `<label>`, `<textarea>`, `<select>`** or raw `<Loader2 className="animate-spin">` — always use the design system equivalents.
+
+```typescript
+// CORRECT: Use design system primitives
+import { Button, Card, CardContent, CardHeader, Input, Label, Spinner } from '@ui';
+
+function MyForm() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Settings</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name" variant="required">Name</Label>
+          <Input id="name" placeholder="Enter name" />
+        </div>
+        <Button variant="primary" disabled={isPending}>
+          {isPending ? <Spinner size="sm" /> : null}
+          Save
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+// WRONG: Hardcoded HTML elements
+<button className="bg-primary text-white rounded px-4 py-2">Save</button>
+<input className="border rounded px-3 py-2" />
+<Loader2 className="h-4 w-4 animate-spin" />
+```
+
+### Page Layout Pattern
+
+Every page should use `PageLayout` for consistent structure:
+
+```typescript
+import { PageLayout, PageHeader, PageContent, Button } from '@ui';
+
+function SettingsPage() {
+  return (
+    <PageLayout>
+      <PageHeader title="Settings" description="Manage your preferences">
+        <Button variant="primary">Save</Button>
+      </PageHeader>
+      <PageContent>
+        {/* Page-specific content */}
+      </PageContent>
+    </PageLayout>
+  );
+}
+```
+
+### Button Variant Guide
+
+| Use Case | Variant |
+|----------|---------|
+| Primary action (Save, Submit) | `variant="primary"` |
+| Secondary action (Cancel) | `variant="secondary"` |
+| Destructive (Delete, Remove) | `variant="destructive"` |
+| Subtle/icon buttons | `variant="ghost"` |
+| Bordered subtle | `variant="outline"` |
+| Link-style | `variant="link"` |
+| Icon-only | `variant="ghost" size="icon"` |
+
 ## React Component Conventions
 
 ```typescript

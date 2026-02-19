@@ -14,6 +14,8 @@ import type { EventPayload } from '@shared/ipc-contract';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 type WatchdogAlertPayload = EventPayload<'event:agent.orchestrator.watchdogAlert'>;
 
 interface WatchdogDropdownProps {
@@ -95,11 +97,13 @@ export function WatchdogDropdown({
 
   return (
     <div className="relative inline-flex">
-      <button
+      <Button
         ref={buttonRef}
         aria-label="Watchdog alert"
+        size="icon"
+        variant="ghost"
         className={cn(
-          'ml-1 inline-flex items-center rounded-full p-0.5 transition-colors',
+          'ml-1 h-auto w-auto rounded-full p-0.5',
           isWarning
             ? 'text-warning hover:bg-warning/20'
             : 'text-destructive hover:bg-destructive/20',
@@ -107,7 +111,7 @@ export function WatchdogDropdown({
         onClick={handleToggle}
       >
         <AlertTriangle className="h-3.5 w-3.5" />
-      </button>
+      </Button>
 
       {open ? (
         <div

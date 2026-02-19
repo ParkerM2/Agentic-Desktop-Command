@@ -4,11 +4,12 @@
  * Sections: Appearance (mode + color theme), UI Scale, Typography, Language, About
  */
 
-import { Loader2 } from 'lucide-react';
-
 import type { ThemeMode } from '@shared/types';
 
 import { useThemeStore } from '@renderer/shared/stores';
+
+import { Spinner } from '@ui';
+
 
 import { VoiceSettings } from '@features/voice';
 
@@ -69,7 +70,7 @@ export function SettingsPage() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+        <Spinner className="text-muted-foreground" size="md" />
       </div>
     );
   }

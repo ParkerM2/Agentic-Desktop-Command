@@ -13,7 +13,8 @@ import { Play, RefreshCw, Rocket, Square, Trash2 } from 'lucide-react';
 import type { Task } from '@shared/types';
 
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
-import { cn } from '@renderer/shared/lib/utils';
+
+import { Button } from '@ui';
 
 import { useDeleteTask } from '../../api/useTaskMutations';
 
@@ -24,9 +25,6 @@ interface TaskControlsProps {
   onRetry?: (taskId: string) => void;
   onLaunch?: (taskId: string) => void;
 }
-
-const CONTROL_BUTTON_BASE =
-  'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors';
 
 export function TaskControls({ task, onRun, onStop, onRetry, onLaunch }: TaskControlsProps) {
   const deleteTask = useDeleteTask();
@@ -40,70 +38,76 @@ export function TaskControls({ task, onRun, onStop, onRetry, onLaunch }: TaskCon
   return (
     <div className="flex items-center gap-2">
       {isRunning ? (
-        <button
+        <Button
           aria-label="Stop task"
-          className={cn('bg-warning/10 text-warning hover:bg-warning/20', CONTROL_BUTTON_BASE)}
+          className="bg-warning/10 text-warning hover:bg-warning/20"
+          size="sm"
+          variant="ghost"
           onClick={() => {
             onStop?.(task.id);
           }}
         >
           <Square className="h-3.5 w-3.5" />
           Stop
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           aria-label="Run task"
+          className="bg-primary/10 text-primary hover:bg-primary/20"
           disabled={isDone}
-          className={cn(
-            'bg-primary/10 text-primary hover:bg-primary/20',
-            CONTROL_BUTTON_BASE,
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
+          size="sm"
+          variant="ghost"
           onClick={() => {
             onRun?.(task.id);
           }}
         >
           <Play className="h-3.5 w-3.5" />
           Run
-        </button>
+        </Button>
       )}
 
       {!isRunning && !isDone ? (
-        <button
+        <Button
           aria-label="Launch via workflow"
-          className={cn('bg-accent/10 text-accent-foreground hover:bg-accent/20', CONTROL_BUTTON_BASE)}
+          className="bg-accent/10 text-accent-foreground hover:bg-accent/20"
+          size="sm"
+          variant="ghost"
           onClick={() => {
             onLaunch?.(task.id);
           }}
         >
           <Rocket className="h-3.5 w-3.5" />
           Launch
-        </button>
+        </Button>
       ) : null}
 
       {isError ? (
-        <button
+        <Button
           aria-label="Retry task"
-          className={cn('bg-info/10 text-info hover:bg-info/20', CONTROL_BUTTON_BASE)}
+          className="bg-info/10 text-info hover:bg-info/20"
+          size="sm"
+          variant="ghost"
           onClick={() => {
             onRetry?.(task.id);
           }}
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Retry
-        </button>
+        </Button>
       ) : null}
 
-      <button
+      <Button
         aria-label="Delete task"
-        className={cn('bg-destructive/10 text-destructive hover:bg-destructive/20', CONTROL_BUTTON_BASE)}
+        className="bg-destructive/10 text-destructive hover:bg-destructive/20"
+        size="sm"
+        variant="ghost"
         onClick={() => {
           setDeleteConfirmOpen(true);
         }}
       >
         <Trash2 className="h-3.5 w-3.5" />
         Delete
-      </button>
+      </Button>
 
       <ConfirmDialog
         confirmLabel="Delete"

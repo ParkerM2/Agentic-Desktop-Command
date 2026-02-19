@@ -7,6 +7,8 @@ import { ChevronRight } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import type { CustomCellRendererProps } from 'ag-grid-react';
 
 interface ExpandToggleCellProps extends CustomCellRendererProps {
@@ -34,17 +36,19 @@ export function ExpandToggleCell(props: ExpandToggleCellProps) {
 
   return (
     <div className="flex items-center justify-center py-1">
-      <button
+      <Button
         aria-expanded={expanded}
         aria-label={expanded ? 'Collapse row' : 'Expand row'}
-        className="text-muted-foreground hover:text-foreground hover:bg-accent rounded p-1 transition-colors"
+        className="text-muted-foreground hover:text-foreground"
+        size="icon"
+        variant="ghost"
         onClick={handleClick}
         onKeyDown={handleKeyDown}
       >
         <ChevronRight
           className={cn('h-4 w-4 transition-transform duration-200', expanded && 'rotate-90')}
         />
-      </button>
+      </Button>
     </div>
   );
 }

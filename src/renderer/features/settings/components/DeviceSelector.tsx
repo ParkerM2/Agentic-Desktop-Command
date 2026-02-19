@@ -8,6 +8,9 @@ import { ChevronDown, Monitor } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+
 import { useDevices } from '@features/devices';
 
 interface DeviceSelectorProps {
@@ -45,17 +48,14 @@ export function DeviceSelector({ value, onChange }: DeviceSelectorProps) {
 
   return (
     <div className="relative">
-      <button
+      <Button
         aria-controls={listboxId}
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label="Select host device"
+        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm"
         role="combobox"
-        type="button"
-        className={cn(
-          'border-border bg-card flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors',
-          'hover:bg-accent focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-        )}
+        variant="outline"
         onClick={() => setOpen(!open)}
         onKeyDown={handleKeyDown}
       >
@@ -77,7 +77,7 @@ export function DeviceSelector({ value, onChange }: DeviceSelectorProps) {
             open && 'rotate-180',
           )}
         />
-      </button>
+      </Button>
       {open ? (
         <div
           className="border-border bg-card absolute z-10 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"

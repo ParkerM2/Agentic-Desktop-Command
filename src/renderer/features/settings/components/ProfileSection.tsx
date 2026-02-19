@@ -4,11 +4,11 @@
 
 import { useState } from 'react';
 
-import { Loader2, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 import type { Profile } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Spinner } from '@ui';
 
 import {
   useProfiles,
@@ -94,7 +94,7 @@ export function ProfileSection() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <Spinner className="text-muted-foreground" size="sm" />
       </div>
     );
   }
@@ -108,17 +108,10 @@ export function ProfileSection() {
         <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
           Profiles
         </h2>
-        <button
-          type="button"
-          className={cn(
-            'text-muted-foreground hover:text-foreground flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs',
-            'hover:bg-accent transition-colors',
-          )}
-          onClick={handleAdd}
-        >
+        <Button size="sm" variant="ghost" onClick={handleAdd}>
           <Plus className="h-3.5 w-3.5" />
           Add Profile
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -142,13 +135,13 @@ export function ProfileSection() {
       {errorMessage === null ? null : (
         <div className="border-destructive/50 bg-destructive/5 mt-3 flex items-center justify-between rounded-lg border p-3">
           <p className="text-destructive text-sm">{errorMessage}</p>
-          <button
-            className="text-muted-foreground hover:text-foreground rounded px-2 py-1 text-xs"
-            type="button"
+          <Button
+            size="sm"
+            variant="ghost"
             onClick={() => setErrorMessage(null)}
           >
             Dismiss
-          </button>
+          </Button>
         </div>
       )}
 
@@ -159,20 +152,12 @@ export function ProfileSection() {
             Delete profile <strong>{deleteTarget.name}</strong>?
           </p>
           <div className="flex gap-2">
-            <button
-              className="text-muted-foreground hover:text-foreground rounded px-3 py-1 text-sm"
-              type="button"
-              onClick={handleDeleteCancel}
-            >
+            <Button size="sm" variant="ghost" onClick={handleDeleteCancel}>
               Cancel
-            </button>
-            <button
-              className="bg-destructive text-destructive-foreground rounded px-3 py-1 text-sm font-medium"
-              type="button"
-              onClick={handleDeleteConfirm}
-            >
+            </Button>
+            <Button size="sm" variant="destructive" onClick={handleDeleteConfirm}>
               Delete
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}

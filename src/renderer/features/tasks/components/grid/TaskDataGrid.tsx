@@ -7,13 +7,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { AgGridReact } from 'ag-grid-react';
-import { Loader2 } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Spinner } from '@ui';
 
 import { useProjects } from '@features/projects';
 import { useLaunchTask } from '@features/workflow';
@@ -437,7 +438,7 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <Spinner className="text-muted-foreground" size="lg" />
         <p className="text-muted-foreground mt-3 text-sm">Loading tasks...</p>
       </div>
     );

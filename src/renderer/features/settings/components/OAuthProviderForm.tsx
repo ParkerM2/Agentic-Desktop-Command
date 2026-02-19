@@ -5,12 +5,12 @@
 
 import { useState } from 'react';
 
-import { Key, Loader2 } from 'lucide-react';
+import { Key } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Spinner } from '@ui';
 
 import { CredentialInput } from './CredentialInput';
-import { BUTTON_BASE, ICON_SIZE, PROVIDER_CONFIG, validateCredentials } from './oauth-provider-constants';
+import { ICON_SIZE, PROVIDER_CONFIG, validateCredentials } from './oauth-provider-constants';
 import { ProviderConsoleInfo } from './ProviderConsoleInfo';
 
 import type { ValidationState } from './oauth-provider-constants';
@@ -84,23 +84,18 @@ export function OAuthProviderForm({ name, onSave, isPending }: OAuthProviderForm
         onChange={handleClientSecretChange}
       />
 
-      <button
+      <Button
         disabled={isPending}
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'bg-primary text-primary-foreground hover:bg-primary/90',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )}
+        variant="primary"
         onClick={handleSubmit}
       >
         {isPending ? (
-          <Loader2 className={cn(ICON_SIZE, 'animate-spin')} />
+          <Spinner size="sm" />
         ) : (
           <Key className={ICON_SIZE} />
         )}
         Save Credentials
-      </button>
+      </Button>
     </div>
   );
 }

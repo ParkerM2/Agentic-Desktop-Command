@@ -2,11 +2,13 @@
  * SubtaskList -- Checkbox list of subtasks from task.subtasks[]
  */
 
-import { CheckCircle2, Circle, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, Circle, XCircle } from 'lucide-react';
 
 import type { Subtask, SubtaskStatus } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Spinner } from '@ui';
 
 interface SubtaskListProps {
   subtasks: Subtask[];
@@ -18,7 +20,7 @@ function getSubtaskIcon(status: SubtaskStatus) {
       return <CheckCircle2 className="text-success h-4 w-4 shrink-0" />;
     }
     case 'in_progress': {
-      return <Loader2 className="text-primary h-4 w-4 shrink-0 animate-spin" />;
+      return <Spinner className="text-primary shrink-0" size="sm" />;
     }
     case 'failed': {
       return <XCircle className="text-destructive h-4 w-4 shrink-0" />;

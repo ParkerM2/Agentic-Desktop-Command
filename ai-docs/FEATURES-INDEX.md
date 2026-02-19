@@ -409,6 +409,44 @@ Location: `src/renderer/shared/components/`
 | `MutationErrorToast.tsx` | Error toast renderer, mounted in RootLayout. Reads from `useToastStore`, renders fixed bottom-right |
 | `WebhookNotification.tsx` | Webhook execution result notifications |
 
+### Design System Primitives (`src/renderer/shared/components/ui/`)
+
+Barrel export: `import { Button, Card, Input, ... } from '@ui'`
+
+All primitives follow the **shadcn/ui pattern**: CVA variants, `data-slot` attributes, React 19 `ComponentProps` (no forwardRef), `cn()` merging. Feature code uses **props, not className strings**.
+
+| Tier | Component | File | Key Exports |
+|------|-----------|------|-------------|
+| **1: Form** | Button | `ui/button.tsx` | `Button`, `buttonVariants` — variants: primary, secondary, destructive, ghost, outline, link; sizes: sm, md, lg, icon; `asChild` via Radix Slot |
+| **1: Form** | Input | `ui/input.tsx` | `Input`, `inputVariants` — variants: default, error; sizes: sm, md, lg |
+| **1: Form** | Textarea | `ui/textarea.tsx` | `Textarea`, `textareaVariants` — variants: default, error; resize: none, vertical, both |
+| **1: Form** | Label | `ui/label.tsx` | `Label`, `labelVariants` — variants: default, required (red asterisk), error |
+| **1: Display** | Badge | `ui/badge.tsx` | `Badge`, `badgeVariants` — variants: default, secondary, destructive, outline, success, warning, info, error |
+| **1: Display** | Card | `ui/card.tsx` | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` — compound component, variants: default, interactive, elevated |
+| **1: Display** | Spinner | `ui/spinner.tsx` | `Spinner`, `spinnerVariants` — wraps Lucide Loader2, sizes: sm, md, lg |
+| **1: Layout** | PageLayout | `ui/page-layout.tsx` | `PageLayout`, `PageHeader`, `PageContent` — consistent full-width page shell, mobile responsive |
+| **1: Layout** | Typography | `ui/typography.tsx` | `Heading` (h1-h4 via `as` prop), `Text` (default/muted/error/success), `Code` |
+| **1: Layout** | Grid | `ui/grid.tsx` | `Grid` — responsive CSS Grid, cols 1-12, gap variants, mobile-first |
+| **1: Layout** | Stack | `ui/stack.tsx` | `Stack` — flex column, gap/align/justify |
+| **1: Layout** | Flex | `ui/flex.tsx` | `Flex` — flex row, wraps by default, gap/align/justify |
+| **1: Layout** | Container | `ui/container.tsx` | `Container` — max-width wrapper: sm/md/lg/xl/full |
+| **1: Layout** | Separator | `ui/separator.tsx` | `Separator` — wraps Radix, horizontal/vertical |
+| **2: Radix** | Dialog | `ui/dialog.tsx` | Full compound: Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, etc. |
+| **2: Radix** | AlertDialog | `ui/alert-dialog.tsx` | Full compound with action/cancel button styling |
+| **2: Radix** | Select | `ui/select.tsx` | SelectTrigger, SelectContent, SelectItem, scroll buttons |
+| **2: Radix** | DropdownMenu | `ui/dropdown-menu.tsx` | Full compound with sub-menus, checkbox/radio items, shortcuts |
+| **2: Radix** | Tooltip | `ui/tooltip.tsx` | TooltipProvider, Tooltip, TooltipTrigger, TooltipContent |
+| **2: Radix** | Tabs | `ui/tabs.tsx` | Tabs, TabsList, TabsTrigger, TabsContent |
+| **2: Radix** | Switch | `ui/switch.tsx` | Switch with CVA sizes (sm, md) |
+| **2: Radix** | Checkbox | `ui/checkbox.tsx` | Checkbox with check indicator, CVA sizes |
+| **2: Radix** | Toast | `ui/toast.tsx` | Toast, ToastProvider, ToastViewport — variants: default, destructive, success, info |
+| **2: Radix** | ScrollArea | `ui/scroll-area.tsx` | ScrollArea, ScrollBar |
+| **2: Radix** | Popover | `ui/popover.tsx` | Popover, PopoverTrigger, PopoverContent |
+| **2: Radix** | Progress | `ui/progress.tsx` | Progress bar with CVA sizes |
+| **2: Radix** | Slider | `ui/slider.tsx` | Slider with track/range/thumb |
+| **2: Radix** | Collapsible | `ui/collapsible.tsx` | Collapsible, CollapsibleTrigger, CollapsibleContent |
+| **3: Form** | Form System | `ui/form.tsx` | `Form`, `FormField`, `FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox`, `FormSwitch`, `useForm` — TanStack Form + Zod v4 integration |
+
 ## 6.6 Shared Hooks
 
 Location: `src/renderer/shared/hooks/`
@@ -493,6 +531,7 @@ ADC/
 │   │   │   └── settings/components/   # 28 files (split from monolithic)
 │   │   ├── shared/              # Shared hooks, stores, lib, components
 │   │   │   ├── components/      # 9 shared UI components
+│   │   │   │   └── ui/          # 30 design system primitives (shadcn/ui pattern, barrel: @ui)
 │   │   │   ├── hooks/           # 6 shared hooks (+ useLooseParams)
 │   │   │   ├── lib/             # Utilities (cn, ipc helper)
 │   │   │   └── stores/          # 5 Zustand stores + ThemeHydrator

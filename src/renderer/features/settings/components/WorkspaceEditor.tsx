@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 
 import type { Workspace } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Input, Label, Switch, Textarea } from '@ui';
 
 import { useCreateWorkspace, useUpdateWorkspace } from '@features/workspaces';
 
@@ -18,16 +18,6 @@ interface WorkspaceEditorProps {
   workspace: Workspace | null;
   onClose: () => void;
 }
-
-const INPUT_CLASS = cn(
-  'border-border bg-background w-full rounded-lg border px-3 py-2 text-sm',
-  'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-);
-
-const SETTINGS_INPUT_CLASS = cn(
-  'border-border bg-background w-16 rounded-md border px-2 py-1 text-center text-sm',
-  'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-);
 
 export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
   const isEditing = workspace !== null;
@@ -79,25 +69,24 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
           <h2 className="text-lg font-semibold">
             {isEditing ? 'Edit Workspace' : 'New Workspace'}
           </h2>
-          <button
+          <Button
             aria-label="Close"
-            className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
-            type="button"
+            size="icon"
+            variant="ghost"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Form */}
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-sm font-medium" htmlFor="ws-name">
+            <Label className="mb-1 block" htmlFor="ws-name">
               Name
-            </label>
-            <input
-              className={INPUT_CLASS}
+            </Label>
+            <Input
               id="ws-name"
               placeholder="Workspace name"
               type="text"
@@ -108,13 +97,13 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
 
           {/* Description */}
           <div>
-            <label className="text-muted-foreground mb-1 block text-sm font-medium" htmlFor="ws-desc">
+            <Label className="mb-1 block" htmlFor="ws-desc">
               Description
-            </label>
-            <textarea
-              className={cn(INPUT_CLASS, 'resize-none')}
+            </Label>
+            <Textarea
               id="ws-desc"
               placeholder="Optional description"
+              resize="none"
               rows={2}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -137,39 +126,27 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
 
             {/* Auto-start toggle */}
             <div className="mb-3 flex items-center justify-between">
-              <label className="text-sm" htmlFor="ws-autostart">
+              <Label htmlFor="ws-autostart">
                 Auto-start agents
-              </label>
-              <button
-                aria-checked={autoStart}
+              </Label>
+              <Switch
+                checked={autoStart}
                 id="ws-autostart"
-                role="switch"
-                type="button"
-                className={cn(
-                  'relative h-5 w-9 rounded-full transition-colors',
-                  autoStart ? 'bg-primary' : 'bg-muted',
-                )}
-                onClick={() => setAutoStart(!autoStart)}
-              >
-                <span
-                  className={cn(
-                    'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform',
-                    autoStart && 'translate-x-4',
-                  )}
-                />
-              </button>
+                onCheckedChange={setAutoStart}
+              />
             </div>
 
             {/* Max concurrent */}
             <div className="mb-3 flex items-center justify-between">
-              <label className="text-sm" htmlFor="ws-concurrent">
+              <Label htmlFor="ws-concurrent">
                 Max concurrent
-              </label>
-              <input
-                className={SETTINGS_INPUT_CLASS}
+              </Label>
+              <Input
+                className="w-16 text-center"
                 id="ws-concurrent"
                 max={10}
                 min={1}
+                size="sm"
                 type="number"
                 value={maxConcurrent}
                 onChange={(e) => setMaxConcurrent(Number(e.target.value))}
@@ -178,13 +155,14 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
 
             {/* Default branch */}
             <div className="flex items-center justify-between">
-              <label className="text-sm" htmlFor="ws-branch">
+              <Label htmlFor="ws-branch">
                 Default branch
-              </label>
-              <input
-                className={cn(SETTINGS_INPUT_CLASS, 'w-28 text-left')}
+              </Label>
+              <Input
+                className="w-28 text-left"
                 id="ws-branch"
                 placeholder="main"
+                size="sm"
                 type="text"
                 value={defaultBranch}
                 onChange={(e) => setDefaultBranch(e.target.value)}
@@ -195,25 +173,16 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
 
         {/* Actions */}
         <div className="mt-5 flex justify-end gap-3">
-          <button
-            className="text-muted-foreground hover:text-foreground rounded-lg px-4 py-2 text-sm transition-colors"
-            disabled={isSaving}
-            type="button"
-            onClick={onClose}
-          >
+          <Button disabled={isSaving} variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={name.trim().length === 0 || isSaving}
-            type="button"
-            className={cn(
-              'bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-              'hover:bg-primary/90 disabled:opacity-50',
-            )}
+            variant="primary"
             onClick={handleSave}
           >
             {isSaving ? 'Saving...' : 'Save'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

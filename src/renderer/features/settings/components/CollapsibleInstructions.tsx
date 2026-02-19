@@ -8,6 +8,9 @@ import { ChevronDown } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+
 interface CollapsibleInstructionsProps {
   title: string;
   isOpen: boolean;
@@ -23,10 +26,10 @@ export function CollapsibleInstructions({
 }: CollapsibleInstructionsProps) {
   return (
     <div className="border-border bg-muted/30 mt-3 rounded-md border">
-      <button
+      <Button
         aria-expanded={isOpen}
-        className="hover:bg-muted/50 flex w-full items-center justify-between px-3 py-2 text-left transition-colors"
-        type="button"
+        className="hover:bg-muted/50 flex w-full items-center justify-between px-3 py-2 text-left"
+        variant="ghost"
         onClick={onToggle}
       >
         <span className="text-muted-foreground text-xs font-medium">{title}</span>
@@ -36,7 +39,7 @@ export function CollapsibleInstructions({
             isOpen && 'rotate-180',
           )}
         />
-      </button>
+      </Button>
       {isOpen ? <div className="border-border border-t px-3 py-3">{children}</div> : null}
     </div>
   );

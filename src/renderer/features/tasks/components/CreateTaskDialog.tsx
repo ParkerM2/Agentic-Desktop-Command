@@ -4,10 +4,22 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { AlertTriangle, ListPlus, Loader2, X } from 'lucide-react';
+import { AlertTriangle, ListPlus, X } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
+
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+} from '@ui';
 
 import { useCreateTask } from '../api/useTasks';
 
@@ -102,14 +114,14 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
               Create Task
             </h2>
           </div>
-          <button
+          <Button
             aria-label="Close dialog"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            type="button"
+            size="icon"
+            variant="ghost"
             onClick={handleClose}
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
@@ -122,22 +134,16 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
 
           {/* Title field */}
           <div className="space-y-1.5">
-            <label className="text-foreground text-sm font-medium" htmlFor="create-task-title">
-              Title <span className="text-destructive">*</span>
-            </label>
-            <input
+            <Label htmlFor="create-task-title" variant="required">
+              Title
+            </Label>
+            <Input
               aria-required="true"
               disabled={activeProjectId === null}
               id="create-task-title"
               placeholder="Task title..."
               type="text"
               value={title}
-              className={cn(
-                'bg-card border-border text-foreground placeholder:text-muted-foreground',
-                'h-9 w-full rounded-md border px-3 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && isFormValid && !createTask.isPending) {
@@ -149,51 +155,41 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
 
           {/* Description field */}
           <div className="space-y-1.5">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="create-task-description"
-            >
+            <Label htmlFor="create-task-description">
               Description
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               disabled={activeProjectId === null}
               id="create-task-description"
               placeholder="Describe the task..."
+              resize="none"
               rows={3}
               value={description}
-              className={cn(
-                'bg-card border-border text-foreground placeholder:text-muted-foreground',
-                'w-full resize-none rounded-md border px-3 py-2 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
 
           {/* Priority field */}
           <div className="space-y-1.5">
-            <label className="text-foreground text-sm font-medium" htmlFor="create-task-priority">
+            <Label htmlFor="create-task-priority">
               Priority
-            </label>
-            <select
+            </Label>
+            <Select
               disabled={activeProjectId === null}
-              id="create-task-priority"
               value={priority}
-              className={cn(
-                'bg-card border-border text-foreground',
-                'h-9 w-full rounded-md border px-3 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
-              onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              onValueChange={(value) => setPriority(value as TaskPriority)}
             >
-              {PRIORITY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="create-task-priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PRIORITY_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Error message */}
@@ -209,29 +205,20 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
 
         {/* Footer */}
         <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
-          <button
-            type="button"
-            className={cn(
-              'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-              'transition-colors',
-            )}
+          <Button
+            variant="ghost"
             onClick={handleClose}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={!isFormValid || createTask.isPending}
-            type="button"
-            className={cn(
-              'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2',
-              'text-sm font-medium transition-opacity hover:opacity-90',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
+            variant="primary"
             onClick={handleSubmit}
           >
             {createTask.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner size="sm" />
                 Creating...
               </>
             ) : (
@@ -240,7 +227,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                 Create Task
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

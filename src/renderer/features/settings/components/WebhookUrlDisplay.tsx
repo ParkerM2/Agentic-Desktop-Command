@@ -4,6 +4,8 @@
 
 import { Check, ClipboardCopy } from 'lucide-react';
 
+import { Button } from '@ui';
+
 interface WebhookUrlDisplayProps {
   label: string;
   url: string;
@@ -24,10 +26,11 @@ export function WebhookUrlDisplay({
       <p className="text-muted-foreground mb-1 text-xs">{label}</p>
       <div className="border-border bg-background flex items-center gap-2 rounded-md border px-3 py-2">
         <code className="text-foreground min-w-0 flex-1 truncate text-xs">{url}</code>
-        <button
+        <Button
           aria-label={`Copy ${fieldKey} webhook URL`}
-          className="text-muted-foreground hover:text-foreground shrink-0 p-1"
-          type="button"
+          className="shrink-0"
+          size="icon"
+          variant="ghost"
           onClick={() => onCopy(url, fieldKey)}
         >
           {copiedField === fieldKey ? (
@@ -35,7 +38,7 @@ export function WebhookUrlDisplay({
           ) : (
             <ClipboardCopy className="h-4 w-4" />
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );

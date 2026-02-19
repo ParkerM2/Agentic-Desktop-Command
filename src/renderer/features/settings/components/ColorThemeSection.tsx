@@ -8,6 +8,9 @@ import { COLOR_THEMES, COLOR_THEME_LABELS } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+
 // ── Constants ───────────────────────────────────────────────
 
 /** Dark-mode primary colors for each color theme, used as swatch previews */
@@ -36,12 +39,11 @@ export function ColorThemeSection({ currentTheme, onThemeChange }: ColorThemeSec
       </h2>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {COLOR_THEMES.map((theme) => (
-          <button
+          <Button
             key={theme}
-            type="button"
+            variant="outline"
             className={cn(
-              'border-border relative flex flex-col items-center gap-2 rounded-lg border p-3 transition-colors',
-              'hover:bg-accent',
+              'relative flex h-auto flex-col items-center gap-2 rounded-lg p-3',
               currentTheme === theme && 'border-primary bg-accent',
             )}
             onClick={() => onThemeChange(theme)}
@@ -51,7 +53,7 @@ export function ColorThemeSection({ currentTheme, onThemeChange }: ColorThemeSec
             {currentTheme === theme ? (
               <Check className="text-primary absolute top-1.5 right-1.5 h-3.5 w-3.5" />
             ) : null}
-          </button>
+          </Button>
         ))}
       </div>
     </section>

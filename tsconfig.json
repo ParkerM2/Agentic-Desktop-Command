@@ -20,6 +20,7 @@
       "@main/*": ["./src/main/*"],
       "@renderer/*": ["./src/renderer/*"],
       "@features/*": ["./src/renderer/features/*"],
+      "@ui": ["./src/renderer/shared/components/ui"],
       "@ui/*": ["./src/renderer/shared/components/ui/*"]
     }
   },

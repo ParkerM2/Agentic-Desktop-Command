@@ -4,13 +4,28 @@
 
 import { useState, useEffect } from 'react';
 
-import * as Dialog from '@radix-ui/react-dialog';
-import { X, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 
 import { CLAUDE_MODELS } from '@shared/constants';
 import type { Profile } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui';
 
 interface ProfileFormModalProps {
   open: boolean;
@@ -50,129 +65,101 @@ export function ProfileFormModal({ open, profile, onClose, onSave }: ProfileForm
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
-        <Dialog.Content
-          className={cn(
-            'bg-background border-border fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-            'rounded-lg border shadow-2xl',
-          )}
-        >
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogPortal>
+        <DialogOverlay />
+        <DialogContent className="w-full max-w-md">
           {/* Header */}
-          <div className="border-border flex items-center justify-between border-b p-4">
-            <Dialog.Title className="text-lg font-semibold">
+          <DialogHeader>
+            <DialogTitle>
               {isEditing ? 'Edit Profile' : 'New Profile'}
-            </Dialog.Title>
-            <Dialog.Close asChild>
-              <button
-                aria-label="Close"
-                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1.5"
-              >
+            </DialogTitle>
+            <DialogClose asChild>
+              <Button aria-label="Close" size="icon" variant="ghost">
                 <X className="h-4 w-4" />
-              </button>
-            </Dialog.Close>
-          </div>
+              </Button>
+            </DialogClose>
+          </DialogHeader>
 
           {/* Form */}
           <form className="space-y-4 p-4" onSubmit={handleSubmit}>
             {/* Name */}
             <div>
-              <label className="text-sm font-medium" htmlFor="profile-name">
+              <Label htmlFor="profile-name">
                 Name
-              </label>
-              <input
+              </Label>
+              <Input
+                className="mt-1"
                 id="profile-name"
                 placeholder="My Profile"
                 type="text"
                 value={name}
-                className={cn(
-                  'border-border bg-background mt-1 w-full rounded-md border px-3 py-2 text-sm',
-                  'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-                  'placeholder:text-muted-foreground',
-                )}
                 onChange={(event) => setName(event.target.value)}
               />
             </div>
 
             {/* API Key */}
             <div>
-              <label className="text-sm font-medium" htmlFor="profile-api-key">
+              <Label htmlFor="profile-api-key">
                 API Key
-              </label>
+              </Label>
               <div className="relative mt-1">
-                <input
+                <Input
+                  className="pr-10"
                   id="profile-api-key"
                   placeholder="sk-ant-..."
                   type={showApiKey ? 'text' : 'password'}
                   value={apiKey}
-                  className={cn(
-                    'border-border bg-background w-full rounded-md border px-3 py-2 pr-10 text-sm',
-                    'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-                    'placeholder:text-muted-foreground',
-                  )}
                   onChange={(event) => setApiKey(event.target.value)}
                 />
-                <button
+                <Button
                   aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 rounded p-1"
-                  type="button"
+                  className="absolute top-1/2 right-2 -translate-y-1/2"
+                  size="icon"
+                  variant="ghost"
                   onClick={() => setShowApiKey((previous) => !previous)}
                 >
                   {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Model */}
             <div>
-              <label className="text-sm font-medium" htmlFor="profile-model">
+              <Label htmlFor="profile-model">
                 Model
-              </label>
-              <select
-                id="profile-model"
-                value={model}
-                className={cn(
-                  'border-border bg-background mt-1 w-full rounded-md border px-3 py-2 text-sm',
-                  'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-                )}
-                onChange={(event) => setModel(event.target.value)}
-              >
-                <option value="">No model selected</option>
-                {CLAUDE_MODELS.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.label}
-                  </option>
-                ))}
-              </select>
+              </Label>
+              <Select value={model} onValueChange={(v) => setModel(v)}>
+                <SelectTrigger className="mt-1" id="profile-model">
+                  <SelectValue placeholder="No model selected" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">No model selected</SelectItem>
+                  {CLAUDE_MODELS.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Actions */}
             <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                className={cn(
-                  'border-border text-muted-foreground rounded-md border px-4 py-2 text-sm',
-                  'hover:bg-accent hover:text-foreground',
-                )}
-                onClick={onClose}
-              >
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 disabled={name.trim().length === 0}
                 type="submit"
-                className={cn(
-                  'bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium',
-                  'hover:bg-primary/90 disabled:opacity-50',
-                )}
+                variant="primary"
               >
                 {isEditing ? 'Save Changes' : 'Create Profile'}
-              </button>
+              </Button>
             </div>
           </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </DialogContent>
+      </DialogPortal>
+    </Dialog>
   );
 }

@@ -4,9 +4,11 @@
 
 import { useState } from 'react';
 
-import { Loader2, Plus, Server } from 'lucide-react';
+import { Plus, Server } from 'lucide-react';
 
 import type { Workspace } from '@shared/types';
+
+import { Button, Spinner } from '@ui';
 
 import { useDevices } from '@features/devices';
 import { useWorkspaces } from '@features/workspaces';
@@ -38,7 +40,7 @@ export function WorkspacesTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <Spinner className="text-muted-foreground" size="sm" />
       </div>
     );
   }
@@ -52,14 +54,10 @@ export function WorkspacesTab() {
         <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
           Workspaces
         </h2>
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-          type="button"
-          onClick={handleAddWorkspace}
-        >
+        <Button size="sm" variant="primary" onClick={handleAddWorkspace}>
           <Plus className="h-3.5 w-3.5" />
           Add Workspace
-        </button>
+        </Button>
       </div>
 
       {workspaceList.length > 0 ? (

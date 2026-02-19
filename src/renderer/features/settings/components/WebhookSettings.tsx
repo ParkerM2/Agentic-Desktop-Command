@@ -8,9 +8,10 @@
 
 import { useCallback, useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
-
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, Spinner } from '@ui';
+
 
 import { useHubStatus } from '../api/useHub';
 import { useUpdateWebhookConfig, useWebhookConfig } from '../api/useWebhookConfig';
@@ -19,7 +20,6 @@ import { CollapsibleInstructions } from './CollapsibleInstructions';
 import { GitHubSetupInstructions } from './GitHubSetupInstructions';
 import { SecretInput } from './SecretInput';
 import { SlackSetupInstructions } from './SlackSetupInstructions';
-import { SAVE_BUTTON_CLASS } from './webhook-constants';
 import { WebhookUrlDisplay } from './WebhookUrlDisplay';
 
 export function WebhookSettings() {
@@ -77,7 +77,7 @@ export function WebhookSettings() {
   if (isLoading) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-4">
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Spinner className="text-muted-foreground" size="sm" />
         <span className="text-sm">Loading webhook configuration...</span>
       </div>
     );
@@ -140,14 +140,13 @@ export function WebhookSettings() {
               setShowSlackSecret(!showSlackSecret);
             }}
           />
-          <button
-            className={SAVE_BUTTON_CLASS}
+          <Button
             disabled={slackBotToken.length === 0 && slackSigningSecret.length === 0}
-            type="button"
+            variant="primary"
             onClick={handleSaveSlack}
           >
             Save Slack Settings
-          </button>
+          </Button>
           {hasHubUrl ? (
             <WebhookUrlDisplay
               copiedField={copiedField}
@@ -201,14 +200,13 @@ export function WebhookSettings() {
               setShowGithubSecret(!showGithubSecret);
             }}
           />
-          <button
-            className={SAVE_BUTTON_CLASS}
+          <Button
             disabled={githubWebhookSecret.length === 0}
-            type="button"
+            variant="primary"
             onClick={handleSaveGithub}
           >
             Save GitHub Settings
-          </button>
+          </Button>
           {hasHubUrl ? (
             <WebhookUrlDisplay
               copiedField={copiedField}

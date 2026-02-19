@@ -4,12 +4,13 @@
 
 import { useState } from 'react';
 
-import { Loader2 } from 'lucide-react';
-
 import type { DataStoreEntry, DataStoreUsage, RetentionPolicy } from '@shared/types/data-management';
+
 
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, Checkbox, Input, Label, Spinner } from '@ui';
 
 interface RetentionControlProps {
   entry: DataStoreEntry;
@@ -133,63 +134,63 @@ export function RetentionControl({
 
         {/* Retention toggle */}
         <div className="mb-2 flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm" htmlFor={`retention-${entry.id}`}>
-            <input
+          <Label className="flex items-center gap-2 text-sm" htmlFor={`retention-${entry.id}`}>
+            <Checkbox
               checked={isEnabled}
-              className="accent-primary h-4 w-4"
               id={`retention-${entry.id}`}
-              type="checkbox"
-              onChange={handleToggle}
+              onCheckedChange={() => {
+                handleToggle();
+              }}
             />
             Retention enabled
-          </label>
+          </Label>
         </div>
 
         {/* Retention fields (shown only when enabled) */}
         {isEnabled ? (
           <div className="ml-6 flex gap-4">
-            <label className="flex items-center gap-1.5 text-xs" htmlFor={`age-${entry.id}`}>
+            <Label className="flex items-center gap-1.5 text-xs" htmlFor={`age-${entry.id}`}>
               Max age (days):
-              <input
-                className="border-input bg-background w-16 rounded border px-2 py-1 text-xs"
+              <Input
+                className="w-16 text-xs"
                 id={`age-${entry.id}`}
                 min={0}
+                size="sm"
                 type="number"
                 value={maxAgeDays ?? ''}
                 onChange={handleMaxAgeDaysChange}
               />
-            </label>
-            <label className="flex items-center gap-1.5 text-xs" htmlFor={`items-${entry.id}`}>
+            </Label>
+            <Label className="flex items-center gap-1.5 text-xs" htmlFor={`items-${entry.id}`}>
               Max items:
-              <input
-                className="border-input bg-background w-16 rounded border px-2 py-1 text-xs"
+              <Input
+                className="w-16 text-xs"
                 id={`items-${entry.id}`}
                 min={0}
+                size="sm"
                 type="number"
                 value={maxItems ?? ''}
                 onChange={handleMaxItemsChange}
               />
-            </label>
+            </Label>
           </div>
         ) : null}
 
         {/* Clear button */}
         {entry.canClear ? (
           <div className="mt-3 border-t border-border pt-3">
-            <button
+            <Button
+              className="text-destructive hover:bg-destructive/10"
               disabled={clearPending}
-              type="button"
-              className={cn(
-                'text-destructive hover:bg-destructive/10 flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition-colors',
-                'disabled:pointer-events-none disabled:opacity-50',
-              )}
+              size="sm"
+              variant="ghost"
               onClick={() => {
                 setConfirmClearOpen(true);
               }}
             >
-              {clearPending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              {clearPending ? <Spinner size="sm" /> : null}
               Clear store data
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>

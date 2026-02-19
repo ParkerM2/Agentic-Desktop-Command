@@ -5,7 +5,7 @@
 
 import { AlertCircle } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Input, Label } from '@ui';
 
 interface CredentialInputProps {
   id: string;
@@ -32,20 +32,17 @@ export function CredentialInput({
 
   return (
     <div>
-      <label className="text-foreground mb-1 block text-xs font-medium" htmlFor={id}>
+      <Label className="mb-1 block text-xs" htmlFor={id}>
         {label}
-      </label>
-      <input
+      </Label>
+      <Input
         aria-describedby={showError ? errorId : undefined}
         aria-invalid={showError}
         id={id}
         placeholder={placeholder}
         type={type}
         value={value}
-        className={cn(
-          'border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none',
-          showError && 'border-destructive focus:border-destructive focus:ring-destructive',
-        )}
+        variant={showError ? 'error' : 'default'}
         onChange={(e) => {
           onChange(e.target.value);
         }}

@@ -6,12 +6,15 @@
 
 import { useState } from 'react';
 
-import { Download, Loader2, RefreshCw, Upload } from 'lucide-react';
+import { Download, RefreshCw, Upload } from 'lucide-react';
 
 import type { RetentionPolicy } from '@shared/types/data-management';
 
+
 import { cn } from '@renderer/shared/lib/utils';
 import { useToastStore } from '@renderer/shared/stores';
+
+import { Button, Checkbox, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from '@ui';
 
 import {
   useClearStore,
@@ -55,7 +58,7 @@ function renderContent(state: {
   if (state.isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+        <Spinner className="text-muted-foreground" size="md" />
       </div>
     );
   }
@@ -98,8 +101,8 @@ export function StorageManagementSection() {
     });
   }
 
-  function handleIntervalChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const hours = Number(event.target.value);
+  function handleIntervalChange(value: string) {
+    const hours = Number(value);
     updateRetention.mutate({ cleanupIntervalHours: hours });
   }
 
@@ -185,32 +188,37 @@ export function StorageManagementSection() {
         {retention.data === undefined ? null : (
           <div className="border-border bg-card rounded-lg border p-4">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm" htmlFor="auto-cleanup-toggle">
-                <input
+              <Label className="flex items-center gap-2" htmlFor="auto-cleanup-toggle">
+                <Checkbox
                   checked={retention.data.autoCleanupEnabled}
-                  className="accent-primary h-4 w-4"
                   id="auto-cleanup-toggle"
-                  type="checkbox"
-                  onChange={handleAutoCleanupToggle}
+                  onCheckedChange={() => {
+                    handleAutoCleanupToggle();
+                  }}
                 />
                 Auto cleanup
-              </label>
+              </Label>
               {retention.data.autoCleanupEnabled ? (
-                <label className="flex items-center gap-1.5 text-xs" htmlFor="cleanup-interval">
-                  Every:
-                  <select
-                    className="border-input bg-background rounded border px-2 py-1 text-xs"
-                    id="cleanup-interval"
-                    value={retention.data.cleanupIntervalHours}
-                    onChange={handleIntervalChange}
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs" htmlFor="cleanup-interval">
+                    Every:
+                  </Label>
+                  <Select
+                    value={String(retention.data.cleanupIntervalHours)}
+                    onValueChange={handleIntervalChange}
                   >
-                    {CLEANUP_INTERVALS.map((hours) => (
-                      <option key={hours} value={hours}>
-                        {getIntervalLabel(hours)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    <SelectTrigger className="h-7 w-20 text-xs" id="cleanup-interval">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CLEANUP_INTERVALS.map((hours) => (
+                        <SelectItem key={hours} value={String(hours)}>
+                          {getIntervalLabel(hours)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               ) : null}
             </div>
             {retention.data.lastCleanupAt === undefined ? null : (
@@ -251,57 +259,48 @@ export function StorageManagementSection() {
             Actions
           </h3>
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               disabled={runCleanup.isPending}
-              type="button"
-              className={cn(
-                'bg-primary text-primary-foreground flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium',
-                'hover:opacity-90 transition-opacity',
-                'disabled:pointer-events-none disabled:opacity-50',
-              )}
+              size="sm"
+              variant="primary"
               onClick={handleRunCleanup}
             >
               {runCleanup.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Spinner size="sm" />
               ) : (
                 <RefreshCw className="h-3.5 w-3.5" />
               )}
               Run Cleanup Now
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={exportData.isPending}
-              type="button"
-              className={cn(
-                'border-border text-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium',
-                'hover:bg-accent transition-colors',
-                'disabled:pointer-events-none disabled:opacity-50',
-              )}
+              size="sm"
+              variant="outline"
               onClick={handleExport}
             >
               {exportData.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Spinner size="sm" />
               ) : (
                 <Download className="h-3.5 w-3.5" />
               )}
               Export Data
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={importData.isPending}
-              type="button"
+              size="sm"
+              variant="outline"
               className={cn(
-                'border-border text-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium',
-                'hover:bg-accent transition-colors',
                 'disabled:pointer-events-none disabled:opacity-50',
               )}
               onClick={handleImport}
             >
               {importData.isPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Spinner size="sm" />
               ) : (
                 <Upload className="h-3.5 w-3.5" />
               )}
               Import Data
-            </button>
+            </Button>
           </div>
         </div>
       </div>

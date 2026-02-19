@@ -4,7 +4,7 @@
 
 import { Eye, EyeOff } from 'lucide-react';
 
-import { INPUT_CLASS } from './webhook-constants';
+import { Button, Input, Label } from '@ui';
 
 interface SecretInputProps {
   id: string;
@@ -27,12 +27,12 @@ export function SecretInput({
 }: SecretInputProps) {
   return (
     <div>
-      <label className="text-foreground mb-1.5 block text-sm font-medium" htmlFor={id}>
+      <Label className="mb-1.5 block" htmlFor={id}>
         {label}
-      </label>
+      </Label>
       <div className="relative">
-        <input
-          className={INPUT_CLASS}
+        <Input
+          className="pr-10"
           id={id}
           placeholder={placeholder}
           type={isVisible ? 'text' : 'password'}
@@ -41,14 +41,15 @@ export function SecretInput({
             onChange(e.target.value);
           }}
         />
-        <button
+        <Button
           aria-label={isVisible ? `Hide ${label.toLowerCase()}` : `Show ${label.toLowerCase()}`}
-          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 p-1"
-          type="button"
+          className="absolute top-1/2 right-2 -translate-y-1/2"
+          size="icon"
+          variant="ghost"
           onClick={onToggleVisibility}
         >
           {isVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -8,6 +8,9 @@ import type { ThemeMode } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+
 // ── Constants ───────────────────────────────────────────────
 
 const THEME_MODE_OPTIONS: Array<{
@@ -35,19 +38,18 @@ export function AppearanceModeSection({ currentMode, onModeChange }: AppearanceM
       </h2>
       <div className="flex gap-3">
         {THEME_MODE_OPTIONS.map((opt) => (
-          <button
+          <Button
             key={opt.mode}
-            type="button"
+            variant="outline"
             className={cn(
-              'border-border flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors',
-              'hover:bg-accent',
+              'flex h-auto flex-col items-center gap-2 rounded-lg p-4',
               currentMode === opt.mode && 'border-primary bg-accent',
             )}
             onClick={() => onModeChange(opt.mode)}
           >
             <opt.icon className="h-6 w-6" />
             <span className="text-sm">{opt.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </section>

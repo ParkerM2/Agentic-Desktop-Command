@@ -7,11 +7,14 @@
 
 import { useState } from 'react';
 
-import { Check, ChevronDown, Loader2 } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { ICON_SIZE, PROVIDER_CONFIG, useOAuthProviders, useSaveOAuthProvider } from './oauth-provider-constants';
+import { Button, Spinner } from '@ui';
+
+
+import { PROVIDER_CONFIG, useOAuthProviders, useSaveOAuthProvider } from './oauth-provider-constants';
 import { OAuthConnectionStatus } from './OAuthConnectionStatus';
 import { OAuthProviderForm } from './OAuthProviderForm';
 
@@ -23,7 +26,7 @@ export function OAuthProviderSettings() {
   if (isLoading) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-4">
-        <Loader2 className={cn(ICON_SIZE, 'animate-spin')} />
+        <Spinner className="text-muted-foreground" size="sm" />
         <span>Loading providers...</span>
       </div>
     );
@@ -45,10 +48,10 @@ export function OAuthProviderSettings() {
 
         return (
           <div key={provider.name} className="border-border rounded-lg border">
-            <button
+            <Button
               aria-expanded={isExpanded}
-              className="hover:bg-accent flex w-full items-center justify-between px-4 py-3 text-left text-sm transition-colors"
-              type="button"
+              className="hover:bg-accent flex w-full items-center justify-between px-4 py-3 text-left text-sm"
+              variant="ghost"
               onClick={() => {
                 setExpandedProvider(isExpanded ? null : provider.name);
               }}
@@ -72,7 +75,7 @@ export function OAuthProviderSettings() {
                   isExpanded && 'rotate-180',
                 )}
               />
-            </button>
+            </Button>
 
             {isExpanded ? (
               <div className="border-border border-t px-4 pb-4">

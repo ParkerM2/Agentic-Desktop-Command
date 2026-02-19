@@ -10,6 +10,9 @@ import type { Device, Workspace } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+
 import { useDeleteWorkspace } from '@features/workspaces';
 
 interface WorkspaceCardProps {
@@ -52,40 +55,34 @@ export function WorkspaceCard({ workspace, devices, onEdit }: WorkspaceCardProps
           <h3 className="text-sm font-semibold">{workspace.name}</h3>
         </div>
         <div className="flex items-center gap-1">
-          <button
+          <Button
             aria-label="Edit workspace"
-            className="text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors"
-            type="button"
+            className="text-muted-foreground hover:text-foreground"
+            size="icon"
+            variant="ghost"
             onClick={() => onEdit(workspace)}
           >
             <Pencil className="h-3.5 w-3.5" />
-          </button>
+          </Button>
           {confirmDelete ? (
             <div className="flex items-center gap-1">
-              <button
-                className="bg-destructive text-destructive-foreground rounded-md px-2 py-1 text-xs font-medium"
-                type="button"
-                onClick={handleDelete}
-              >
+              <Button size="sm" variant="destructive" onClick={handleDelete}>
                 Confirm
-              </button>
-              <button
-                className="text-muted-foreground hover:text-foreground rounded-md px-2 py-1 text-xs"
-                type="button"
-                onClick={handleCancelDelete}
-              >
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancelDelete}>
                 Cancel
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
+            <Button
               aria-label="Delete workspace"
-              className="text-muted-foreground hover:text-destructive rounded-md p-1.5 transition-colors"
-              type="button"
+              className="text-muted-foreground hover:text-destructive"
+              size="icon"
+              variant="ghost"
               onClick={handleDelete}
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

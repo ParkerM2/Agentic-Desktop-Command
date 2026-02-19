@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-02-19T22:00:00Z",
+  "lastUpdated": "2026-02-20T01:00:00Z",
   "updatedBy": "team-lead",
   "plans": {
     "full-codebase-audit": {
@@ -366,6 +366,19 @@
       "commit": null,
       "supersededBy": null,
       "tags": ["projects", "onboarding", "setup"]
+    },
+    "design-system-foundation": {
+      "title": "Sprint 0.5 — Design System Foundation",
+      "status": "IMPLEMENTED",
+      "planFile": "docs/sprints/sprint-0.5-design-system.md",
+      "progressFile": "docs/progress/design-system-foundation-progress.md",
+      "created": "2026-02-20",
+      "statusChangedAt": "2026-02-20",
+      "branch": "feature/design-system-foundation",
+      "pr": null,
+      "commit": null,
+      "supersededBy": null,
+      "tags": ["ui", "design-system", "components", "radix", "cva"]
     }
   }
 }

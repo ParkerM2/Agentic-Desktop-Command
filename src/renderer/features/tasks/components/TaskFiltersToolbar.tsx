@@ -11,6 +11,8 @@ import type { TaskStatus } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Input } from '@ui';
+
 import { useTaskUI } from '../store';
 
 import { CreateTaskDialog } from './CreateTaskDialog';
@@ -47,14 +49,11 @@ function FilterDropdown({
 
   return (
     <div className="relative">
-      <button
+      <Button
         aria-expanded={isOpen}
         aria-haspopup="listbox"
-        type="button"
+        variant="outline"
         className={cn(
-          'bg-card border-border text-foreground',
-          'flex h-9 items-center gap-2 rounded-md border px-3 text-sm',
-          'hover:bg-muted/50 transition-colors',
           selectedOptions.length > 0 && 'border-primary',
         )}
         onClick={() => setIsOpen((prev) => !prev)}
@@ -65,15 +64,15 @@ function FilterDropdown({
             {selectedOptions.length}
           </span>
         ) : null}
-      </button>
+      </Button>
 
       {isOpen ? (
         <>
-          <button
+          <Button
             aria-label={`Close ${label.toLowerCase()} filter`}
-            className="fixed inset-0 z-40 cursor-default"
+            className="fixed inset-0 z-40 h-full w-full cursor-default rounded-none"
             tabIndex={-1}
-            type="button"
+            variant="ghost"
             onClick={() => setIsOpen(false)}
           />
           <div
@@ -86,14 +85,13 @@ function FilterDropdown({
             {options.map((option) => {
               const isSelected = selectedOptions.includes(option);
               return (
-                <button
+                <Button
                   key={option}
                   aria-selected={isSelected}
                   role="option"
-                  type="button"
+                  variant="ghost"
                   className={cn(
-                    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm',
-                    'hover:bg-muted/50 transition-colors',
+                    'flex w-full justify-start gap-2 px-2 py-1.5',
                     isSelected && 'bg-muted/30',
                   )}
                   onClick={() => onToggle(option)}
@@ -123,7 +121,7 @@ function FilterDropdown({
                       {option.replaceAll('_', ' ')}
                     </span>
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -148,28 +146,23 @@ export function TaskFiltersToolbar() {
     <>
       <div className="flex items-center gap-3 px-4 py-3">
         {/* New Task button */}
-        <button
-          className="bg-primary text-primary-foreground flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-opacity hover:opacity-90"
-          type="button"
+        <Button
+          variant="primary"
           onClick={() => setCreateDialogOpen(true)}
         >
           <Plus className="h-4 w-4" />
           <span>New Task</span>
-        </button>
+        </Button>
 
         {/* Search input */}
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-          <input
+          <Input
             aria-label="Search tasks"
+            className="pl-9"
             placeholder="Search tasks..."
             type="text"
             value={gridSearchText}
-            className={cn(
-              'bg-card border-border text-foreground placeholder:text-muted-foreground',
-              'h-9 w-full rounded-md border py-2 pr-3 pl-9 text-sm',
-              'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-            )}
             onChange={(e) => setGridSearchText(e.target.value)}
           />
         </div>
@@ -187,17 +180,13 @@ export function TaskFiltersToolbar() {
 
         {/* Clear filters */}
         {hasActiveFilters ? (
-          <button
-            type="button"
-            className={cn(
-              'text-muted-foreground hover:text-foreground',
-              'flex h-9 items-center gap-1 rounded-md px-2 text-sm transition-colors',
-            )}
+          <Button
+            variant="ghost"
             onClick={clearFilters}
           >
             <X className="h-4 w-4" />
             <span>Clear</span>
-          </button>
+          </Button>
         ) : null}
       </div>
 

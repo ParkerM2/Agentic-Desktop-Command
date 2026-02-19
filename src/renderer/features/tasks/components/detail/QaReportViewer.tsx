@@ -17,6 +17,8 @@ import {
 
 import { cn, formatDuration } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { useQaReport, useStartFullQa, useStartQuietQa } from '../../api/useQaMutations';
 
 interface QaReportViewerProps {
@@ -83,24 +85,24 @@ export function QaReportViewer({ taskId }: QaReportViewerProps) {
           <span>No QA report available</span>
         </div>
         <div className="flex gap-2">
-          <button
-            className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors"
+          <Button
             disabled={startQuiet.isPending}
-            type="button"
+            size="sm"
+            variant="secondary"
             onClick={() => startQuiet.mutate({ taskId })}
           >
             <PlayCircle className="h-3.5 w-3.5" />
             Run Quiet QA
-          </button>
-          <button
-            className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors"
+          </Button>
+          <Button
             disabled={startFull.isPending}
-            type="button"
+            size="sm"
+            variant="secondary"
             onClick={() => startFull.mutate({ taskId })}
           >
             <PlayCircle className="h-3.5 w-3.5" />
             Run Full QA
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -185,11 +187,11 @@ export function QaReportViewer({ taskId }: QaReportViewerProps) {
           </div>
           <div className="flex flex-wrap gap-2">
             {report.screenshots.map((screenshot) => (
-              <button
+              <Button
                 key={screenshot.path}
-                className="bg-muted/50 hover:bg-muted border-border flex flex-col items-center gap-1 rounded border p-1.5 transition-colors"
+                className="bg-muted/50 hover:bg-muted border-border flex h-auto flex-col items-center gap-1 rounded border p-1.5"
                 title={screenshot.label}
-                type="button"
+                variant="ghost"
                 onClick={() => {
                   setExpandedScreenshot(
                     expandedScreenshot === screenshot.path ? null : screenshot.path,
@@ -198,7 +200,7 @@ export function QaReportViewer({ taskId }: QaReportViewerProps) {
               >
                 <Image className="text-muted-foreground h-6 w-6" />
                 <span className="max-w-[80px] truncate text-[10px]">{screenshot.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
           {expandedScreenshot ? (
@@ -213,24 +215,24 @@ export function QaReportViewer({ taskId }: QaReportViewerProps) {
 
       {/* Re-run buttons */}
       <div className="flex gap-2">
-        <button
-          className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors"
+        <Button
           disabled={startQuiet.isPending}
-          type="button"
+          size="sm"
+          variant="secondary"
           onClick={() => startQuiet.mutate({ taskId })}
         >
           <PlayCircle className="h-3.5 w-3.5" />
           Re-run Quiet QA
-        </button>
-        <button
-          className="bg-muted hover:bg-muted/80 text-foreground inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium transition-colors"
+        </Button>
+        <Button
           disabled={startFull.isPending}
-          type="button"
+          size="sm"
+          variant="secondary"
           onClick={() => startFull.mutate({ taskId })}
         >
           <PlayCircle className="h-3.5 w-3.5" />
           Re-run Full QA
-        </button>
+        </Button>
       </div>
     </div>
   );

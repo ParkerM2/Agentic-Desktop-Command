@@ -7,9 +7,12 @@
 
 import { useState } from 'react';
 
-import { Cloud, CloudOff, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, Input, Label, Spinner } from '@ui';
+
 
 import { validateHubUrl } from '@features/hub-setup/lib/validateHubUrl';
 
@@ -22,10 +25,6 @@ import {
 } from '../api/useHub';
 
 // ── Constants ───────────────────────────────────────────────
-
-const ICON_SIZE = 'h-4 w-4';
-const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors';
 
 const STATUS_STYLES: Record<string, string> = {
   connected: 'bg-success',
@@ -92,11 +91,10 @@ function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFor
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-foreground mb-1.5 block text-sm font-medium" htmlFor="hub-url">
+        <Label className="mb-1.5 block" htmlFor="hub-url">
           Hub URL
-        </label>
-        <input
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+        </Label>
+        <Input
           id="hub-url"
           placeholder="https://192.168.1.100:3443"
           type="url"
@@ -108,11 +106,10 @@ function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFor
       </div>
 
       <div>
-        <label className="text-foreground mb-1.5 block text-sm font-medium" htmlFor="hub-api-key">
+        <Label className="mb-1.5 block" htmlFor="hub-api-key">
           API Key
-        </label>
-        <input
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-1 focus:outline-none"
+        </Label>
+        <Input
           id="hub-api-key"
           placeholder="Enter your hub API key"
           type="password"
@@ -123,25 +120,16 @@ function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFor
         />
       </div>
 
-      <button
+      <Button
         disabled={!hubUrl || !apiKey || isPending}
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'bg-primary text-primary-foreground hover:bg-primary/90',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )}
+        variant="primary"
         onClick={() => {
           void handleSubmit();
         }}
       >
-        {isPending ? (
-          <Loader2 className={cn(ICON_SIZE, 'animate-spin')} />
-        ) : (
-          <Cloud className={ICON_SIZE} />
-        )}
+        {isPending ? <Spinner size="sm" /> : <Cloud className="h-4 w-4" />}
         {getButtonLabel()}
-      </button>
+      </Button>
 
       {validationError === null ? null : (
         <p className="text-destructive text-sm">
@@ -171,40 +159,20 @@ function ConnectedActions({
 }: ConnectedActionsProps) {
   return (
     <div className="flex flex-wrap gap-3">
-      <button
-        disabled={syncPending}
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )}
-        onClick={onSync}
-      >
-        <RefreshCw className={cn(ICON_SIZE, syncPending && 'animate-spin')} />
+      <Button disabled={syncPending} variant="secondary" onClick={onSync}>
+        <RefreshCw className={cn('h-4 w-4', syncPending && 'animate-spin')} />
         Sync Now
-      </button>
+      </Button>
 
-      <button
-        className={cn(BUTTON_BASE, 'bg-secondary text-secondary-foreground hover:bg-secondary/80')}
-        type="button"
-        onClick={onDisconnect}
-      >
-        <CloudOff className={ICON_SIZE} />
+      <Button variant="secondary" onClick={onDisconnect}>
+        <CloudOff className="h-4 w-4" />
         Disconnect
-      </button>
+      </Button>
 
-      <button
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        )}
-        onClick={onRemoveConfig}
-      >
-        <Trash2 className={ICON_SIZE} />
+      <Button variant="destructive" onClick={onRemoveConfig}>
+        <Trash2 className="h-4 w-4" />
         Remove Config
-      </button>
+      </Button>
     </div>
   );
 }
@@ -225,7 +193,7 @@ export function HubSettings() {
   if (isLoading) {
     return (
       <div className="text-muted-foreground flex items-center gap-2 py-4">
-        <Loader2 className={cn(ICON_SIZE, 'animate-spin')} />
+        <Spinner className="text-muted-foreground" size="sm" />
         <span>Loading hub status...</span>
       </div>
     );

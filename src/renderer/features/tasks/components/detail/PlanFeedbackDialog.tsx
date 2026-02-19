@@ -5,9 +5,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import { Loader2, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Spinner, Textarea } from '@ui';
 
 interface PlanFeedbackDialogProps {
   open: boolean;
@@ -108,18 +108,13 @@ export function PlanFeedbackDialog({
 
         {/* Body */}
         <div className="px-6 pt-4 pb-6">
-          <textarea
+          <Textarea
             ref={textareaRef}
             disabled={loading}
             placeholder="e.g., Add error handling for the API calls, use a different approach for..."
+            resize="none"
             rows={5}
             value={feedback}
-            className={cn(
-              'border-input bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 text-sm',
-              'focus:ring-ring focus:border-ring focus:outline-none focus:ring-1',
-              'resize-none',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
             onChange={(e) => {
               setFeedback(e.target.value);
             }}
@@ -137,36 +132,27 @@ export function PlanFeedbackDialog({
 
         {/* Footer */}
         <div className="border-border flex justify-end gap-2 border-t px-6 py-4">
-          <button
+          <Button
             disabled={loading}
-            className={cn(
-              'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-              'transition-colors',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
+            variant="ghost"
             onClick={handleClose}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={loading || feedback.trim().length === 0}
-            className={cn(
-              'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'transition-opacity hover:opacity-90',
-              'disabled:pointer-events-none disabled:opacity-50',
-              'bg-primary text-primary-foreground',
-            )}
+            variant="primary"
             onClick={handleSubmit}
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Spinner size="sm" />
                 Submitting...
               </>
             ) : (
               'Submit Feedback'
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -9,8 +9,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Keyboard, RotateCcw } from 'lucide-react';
 
+
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, Input } from '@ui';
 
 // -- Types --
 
@@ -95,25 +98,22 @@ function HotkeyRow({ binding, currentValue, onSave }: HotkeyRowProps) {
       </div>
       {editing ? (
         <div className="flex items-center gap-2">
-          <input
+          <Input
             aria-label={`Hotkey for ${binding.label}`}
-            className="border-border bg-background focus:border-primary w-44 rounded-md border px-3 py-1.5 text-sm outline-none"
+            className="w-44"
             placeholder="e.g. Ctrl+Shift+Space"
+            size="sm"
             type="text"
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <button
-            className="text-primary text-xs font-medium hover:underline"
-            type="button"
-            onClick={handleSave}
-          >
+          <Button size="sm" variant="link" onClick={handleSave}>
             Save
-          </button>
+          </Button>
         </div>
       ) : (
-        <button className="group flex items-center gap-2" type="button" onClick={handleEditClick}>
+        <Button className="group" variant="ghost" onClick={handleEditClick}>
           <kbd
             className={cn(
               'bg-muted text-muted-foreground rounded-md px-2.5 py-1 font-mono text-xs',
@@ -122,7 +122,7 @@ function HotkeyRow({ binding, currentValue, onSave }: HotkeyRowProps) {
           >
             {currentValue}
           </kbd>
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -197,15 +197,15 @@ export function HotkeySettings() {
           <Keyboard className="h-4 w-4" />
           Global Hotkeys
         </h2>
-        <button
+        <Button
           aria-label="Reset hotkeys to defaults"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs transition-colors"
-          type="button"
+          size="sm"
+          variant="ghost"
           onClick={handleReset}
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset to Defaults
-        </button>
+        </Button>
       </div>
       <div className="border-border bg-card divide-border divide-y rounded-lg border px-4">
         {DEFAULT_HOTKEYS.map((binding) => (

@@ -4,12 +4,9 @@
 
 import { useState } from 'react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Spinner } from '@ui';
 
 import { useRegister } from '../api/useAuth';
-
-const INPUT_CLASS =
-  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -56,136 +53,133 @@ export function RegisterPage({ onNavigateToHubSetup, onNavigateToLogin, onSucces
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-6 rounded-lg border border-border bg-card p-8 shadow-lg">
-        <div className="space-y-2 text-center">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-2 text-center">
           <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-lg bg-primary/10">
             <span className="text-xl font-bold text-primary">C</span>
           </div>
-          <h1 className="text-2xl font-bold text-card-foreground">Create Account</h1>
+          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
           <p className="text-sm text-muted-foreground">
             Fill in the details to get started
           </p>
-        </div>
+        </CardHeader>
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-card-foreground" htmlFor="register-name">
-              Display Name
-            </label>
-            <input
-              required
-              autoComplete="name"
-              className={INPUT_CLASS}
-              id="register-name"
-              placeholder="Your name"
-              type="text"
-              value={displayName}
-              onChange={(e) => { setDisplayName(e.target.value); }}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-card-foreground" htmlFor="register-email">
-              Email
-            </label>
-            <input
-              required
-              autoComplete="email"
-              className={INPUT_CLASS}
-              id="register-email"
-              placeholder="you@example.com"
-              type="email"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); }}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-card-foreground" htmlFor="register-password">
-              Password
-            </label>
-            <input
-              required
-              autoComplete="new-password"
-              className={INPUT_CLASS}
-              id="register-password"
-              minLength={MIN_PASSWORD_LENGTH}
-              placeholder="Choose a password (min 8 characters)"
-              type="password"
-              value={password}
-              onChange={(e) => { setPassword(e.target.value); }}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-card-foreground" htmlFor="register-confirm">
-              Confirm Password
-            </label>
-            <input
-              required
-              autoComplete="new-password"
-              id="register-confirm"
-              placeholder="Re-enter your password"
-              type="password"
-              value={confirmPassword}
-              className={cn(
-                INPUT_CLASS,
-                passwordError === null ? '' : 'border-destructive',
-              )}
-              onChange={(e) => { setConfirmPassword(e.target.value); }}
-            />
-            {passwordError === null ? null : (
-              <p className="text-xs text-destructive">{passwordError}</p>
-            )}
-          </div>
-
-          {register.isError ? (
-            <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {register.error instanceof Error ? register.error.message : 'Registration failed'}
+        <CardContent>
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <Label htmlFor="register-name">
+                Display Name
+              </Label>
+              <Input
+                required
+                autoComplete="name"
+                id="register-name"
+                placeholder="Your name"
+                type="text"
+                value={displayName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDisplayName(e.target.value); }}
+              />
             </div>
-          ) : null}
 
-          <button
-            disabled={!isFormValid || register.isPending}
-            type="submit"
-            className={cn(
-              'w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground',
-              'hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring',
-              'disabled:cursor-not-allowed disabled:opacity-50',
-            )}
-          >
-            {register.isPending ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                Creating account...
-              </span>
-            ) : (
-              'Create Account'
-            )}
-          </button>
-        </form>
+            <div className="space-y-2">
+              <Label htmlFor="register-email">
+                Email
+              </Label>
+              <Input
+                required
+                autoComplete="email"
+                id="register-email"
+                placeholder="you@example.com"
+                type="email"
+                value={email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setEmail(e.target.value); }}
+              />
+            </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <button
-            className="font-medium text-primary underline-offset-4 hover:underline"
-            type="button"
-            onClick={onNavigateToLogin}
-          >
-            Sign in
-          </button>
-        </p>
+            <div className="space-y-2">
+              <Label htmlFor="register-password">
+                Password
+              </Label>
+              <Input
+                required
+                autoComplete="new-password"
+                id="register-password"
+                minLength={MIN_PASSWORD_LENGTH}
+                placeholder="Choose a password (min 8 characters)"
+                type="password"
+                value={password}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPassword(e.target.value); }}
+              />
+            </div>
 
-        <p className="text-center text-sm text-muted-foreground">
-          <button
-            className="font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            type="button"
-            onClick={onNavigateToHubSetup}
-          >
-            Change Hub server
-          </button>
-        </p>
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-confirm">
+                Confirm Password
+              </Label>
+              <Input
+                required
+                autoComplete="new-password"
+                id="register-confirm"
+                placeholder="Re-enter your password"
+                type="password"
+                value={confirmPassword}
+                variant={passwordError === null ? 'default' : 'error'}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setConfirmPassword(e.target.value); }}
+              />
+              {passwordError === null ? null : (
+                <p className="text-xs text-destructive">{passwordError}</p>
+              )}
+            </div>
+
+            {register.isError ? (
+              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {register.error instanceof Error ? register.error.message : 'Registration failed'}
+              </div>
+            ) : null}
+
+            <Button
+              className="w-full"
+              disabled={!isFormValid || register.isPending}
+              type="submit"
+              variant="primary"
+            >
+              {register.isPending ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Spinner size="sm" />
+                  Creating account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+
+        <CardFooter className="flex-col gap-2">
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Button
+              className="h-auto p-0 font-medium"
+              type="button"
+              variant="link"
+              onClick={onNavigateToLogin}
+            >
+              Sign in
+            </Button>
+          </p>
+
+          <p className="text-center text-sm text-muted-foreground">
+            <Button
+              className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+              type="button"
+              variant="link"
+              onClick={onNavigateToHubSetup}
+            >
+              Change Hub server
+            </Button>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
