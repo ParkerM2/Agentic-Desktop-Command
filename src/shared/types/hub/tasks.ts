@@ -25,8 +25,6 @@ export interface Task {
   workspaceId?: string;
   subProjectId?: string;
   assignedDeviceId?: string;
-  /** @deprecated Use assignedDeviceId instead */
-  assignedComputerId?: string | null;
   createdByDeviceId: string;
   priority: TaskPriority;
   executionSessionId?: string;
@@ -42,7 +40,6 @@ export interface TaskCreateRequest {
   title: string;
   description: string;
   projectId: string;
-  assignedComputerId?: string | null;
   priority?: TaskPriority;
   metadata?: Record<string, unknown>;
 }
@@ -50,7 +47,6 @@ export interface TaskCreateRequest {
 export interface TaskListQuery {
   status?: TaskStatus;
   projectId?: string;
-  assignedComputerId?: string;
   createdAfter?: string;
   updatedAfter?: string;
   limit?: number;
@@ -68,7 +64,6 @@ export interface TaskUpdateRequest {
   title?: string;
   description?: string;
   status?: TaskStatus;
-  assignedComputerId?: string | null;
   priority?: TaskPriority;
   metadata?: Record<string, unknown>;
 }

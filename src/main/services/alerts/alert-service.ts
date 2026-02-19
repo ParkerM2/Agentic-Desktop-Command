@@ -118,6 +118,7 @@ export function createAlertService(router: IpcRouter): AlertService {
       };
       alerts.push(alert);
       persist();
+      router.emit('event:alert.changed', { alertId: alert.id });
       return alert;
     },
 
@@ -140,6 +141,7 @@ export function createAlertService(router: IpcRouter): AlertService {
       }
 
       persist();
+      router.emit('event:alert.changed', { alertId: alert.id });
       return alert;
     },
 
@@ -147,6 +149,7 @@ export function createAlertService(router: IpcRouter): AlertService {
       const index = findAlertIndex(id);
       alerts.splice(index, 1);
       persist();
+      router.emit('event:alert.changed', { alertId: id });
       return { success: true };
     },
 

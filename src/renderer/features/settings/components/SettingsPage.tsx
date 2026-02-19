@@ -10,6 +10,8 @@ import type { ThemeMode } from '@shared/types';
 
 import { useThemeStore } from '@renderer/shared/stores';
 
+import { VoiceSettings } from '@features/voice';
+
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
 import { AppearanceModeSection } from './AppearanceModeSection';
@@ -127,6 +129,16 @@ export function SettingsPage() {
       </section>
 
       <HotkeySettings />
+
+      {/* ── Voice ── */}
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          Voice
+        </h2>
+        <div className="border-border bg-card rounded-lg border p-4">
+          <VoiceSettings />
+        </div>
+      </section>
 
       {/* ── About ── */}
       <section className="mb-8">

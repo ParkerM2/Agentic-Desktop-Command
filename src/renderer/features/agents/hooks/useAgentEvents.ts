@@ -1,5 +1,5 @@
 /**
- * Agent IPC event listeners → query invalidation
+ * Agent orchestrator IPC event listeners → query invalidation
  */
 
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,13 +13,19 @@ import { agentKeys } from '../api/queryKeys';
 export function useAgentEvents() {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:agent.statusChanged', ({ agentId: _agentId, taskId }) => {
+  useIpcEvent('event:agent.orchestrator.heartbeat', () => {
+    void queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+  });
+
+  useIpcEvent('event:agent.orchestrator.stopped', ({ taskId }) => {
     void queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
     void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
     void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });
 
-  useIpcEvent('event:agent.log', () => {
-    // Agent logs can be handled in the agent detail view
+  useIpcEvent('event:agent.orchestrator.error', ({ taskId }) => {
+    void queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+    void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
+    void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });
 }

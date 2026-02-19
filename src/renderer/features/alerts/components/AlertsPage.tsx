@@ -11,6 +11,7 @@ import type { Alert } from '@shared/types';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { useAlerts, useDeleteAlert, useDismissAlert } from '../api/useAlerts';
+import { useAlertEvents } from '../hooks/useAlertEvents';
 import { useAlertStore } from '../store';
 
 import { CreateAlertModal } from './CreateAlertModal';
@@ -52,6 +53,8 @@ function formatTriggerTime(triggerAt: string): string {
 }
 
 export function AlertsPage() {
+  useAlertEvents();
+
   const { data: alerts = [], isLoading } = useAlerts(true);
   const dismissAlert = useDismissAlert();
   const deleteAlert = useDeleteAlert();

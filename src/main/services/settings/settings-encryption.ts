@@ -1,5 +1,6 @@
 /**
- * Settings Encryption — Webhook secret encryption/decryption
+ * Settings Encryption — Secret encryption/decryption for webhook secrets
+ * and profile API keys.
  *
  * Uses Electron safeStorage (OS-level encryption: Keychain on macOS,
  * DPAPI on Windows, libsecret on Linux). Falls back to base64 when
@@ -15,6 +16,10 @@ const WEBHOOK_SECRET_KEYS = [
 ] as const;
 
 export type WebhookSecretKey = (typeof WEBHOOK_SECRET_KEYS)[number];
+
+const PROFILE_SECRET_KEYS = ['apiKey'] as const;
+
+export type ProfileSecretKey = (typeof PROFILE_SECRET_KEYS)[number];
 
 interface EncryptedSecretEntry {
   encrypted: string;
@@ -68,4 +73,11 @@ export function decryptSecret(entry: EncryptedSecretEntry): string {
  */
 export function isWebhookSecretKey(key: string): key is WebhookSecretKey {
   return (WEBHOOK_SECRET_KEYS as readonly string[]).includes(key);
+}
+
+/**
+ * Check if a key is a profile secret key (fields that should be encrypted).
+ */
+export function isProfileSecretKey(key: string): key is ProfileSecretKey {
+  return (PROFILE_SECRET_KEYS as readonly string[]).includes(key);
 }

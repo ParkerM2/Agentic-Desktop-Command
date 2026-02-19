@@ -15,17 +15,23 @@ interface GitHubUIState {
   owner: string;
   /** Current repo name */
   repo: string;
+  /** Whether the issue creation dialog is open */
+  issueCreateDialogOpen: boolean;
   setActiveTab: (tab: GitHubTab) => void;
   selectPr: (prNumber: number | null) => void;
   setRepo: (owner: string, repo: string) => void;
+  setIssueCreateDialogOpen: (open: boolean) => void;
 }
 
 export const useGitHubStore = create<GitHubUIState>()((set) => ({
   activeTab: 'prs',
   selectedPrNumber: null,
-  owner: 'ParkerM2',
-  repo: 'Agentic-Desktop-Command',
+  owner: '',
+  repo: '',
+
+  issueCreateDialogOpen: false,
   setActiveTab: (tab) => set({ activeTab: tab }),
   selectPr: (prNumber) => set({ selectedPrNumber: prNumber }),
   setRepo: (owner, repo) => set({ owner, repo }),
+  setIssueCreateDialogOpen: (open) => set({ issueCreateDialogOpen: open }),
 }));

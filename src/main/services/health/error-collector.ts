@@ -46,6 +46,7 @@ export interface ErrorCollector {
 export interface ErrorCollectorCallbacks {
   onError?: (entry: ErrorEntry) => void;
   onCapacityAlert?: (count: number, message: string) => void;
+  onDataRecovery?: (store: string, message: string) => void;
 }
 
 // ─── Constants ───────────────────────────────────────────────────
@@ -99,6 +100,10 @@ export function createErrorCollector(
     } catch {
       console.warn('[ErrorCollector] Corrupted log file — starting fresh');
       entries = [];
+      callbacks?.onDataRecovery?.(
+        'error-log',
+        'Corrupted error log file detected — reset to empty',
+      );
     }
   }
 

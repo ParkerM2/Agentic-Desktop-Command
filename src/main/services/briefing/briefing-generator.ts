@@ -10,7 +10,6 @@ import type { AgentActivitySummary, BriefingConfig, DailyBriefing, TaskSummary }
 import { createBriefingSummarizer } from './briefing-summary';
 
 import type { SuggestionEngine } from './suggestion-engine';
-import type { AgentService } from '../agent/agent-service';
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
@@ -21,11 +20,10 @@ import type { TaskService } from '../project/task-service';
 export interface BriefingGeneratorDeps {
   projectService: ProjectService;
   taskService: TaskService;
-  agentService: AgentService;
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
-  agentOrchestrator?: AgentOrchestrator;
+  agentOrchestrator: AgentOrchestrator;
 }
 
 export interface BriefingGenerator {
@@ -40,7 +38,6 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
   const {
     projectService,
     taskService,
-    agentService,
     notificationManager,
     suggestionEngine,
     agentOrchestrator,
@@ -110,39 +107,17 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
     return { dueToday, completedYesterday, overdue, inProgress };
   }
 
-  function getOrchestratorCounts(today: string): AgentActivitySummary {
-    if (!agentOrchestrator) {
-      return { runningCount: 0, completedToday: 0, errorCount: 0 };
-    }
+  function getAgentActivitySummary(): AgentActivitySummary {
+    const today = getTodayDate();
     let runningCount = 0;
     let completedToday = 0;
     let errorCount = 0;
+
     for (const session of agentOrchestrator.listActiveSessions()) {
       if (session.status === 'active' || session.status === 'spawning') runningCount++;
       if (session.status === 'completed' && session.spawnedAt.startsWith(today)) completedToday++;
       if (session.status === 'error') errorCount++;
     }
-    return { runningCount, completedToday, errorCount };
-  }
-
-  function getAgentActivitySummary(): AgentActivitySummary {
-    const agents = agentService.listAllAgents();
-    const today = getTodayDate();
-
-    let runningCount = 0;
-    let completedToday = 0;
-    let errorCount = 0;
-
-    for (const agent of agents) {
-      if (agent.status === 'running') runningCount++;
-      if (agent.status === 'completed' && agent.completedAt?.split('T')[0] === today) completedToday++;
-      if (agent.status === 'error') errorCount++;
-    }
-
-    const orchCounts = getOrchestratorCounts(today);
-    runningCount += orchCounts.runningCount;
-    completedToday += orchCounts.completedToday;
-    errorCount += orchCounts.errorCount;
 
     return { runningCount, completedToday, errorCount };
   }

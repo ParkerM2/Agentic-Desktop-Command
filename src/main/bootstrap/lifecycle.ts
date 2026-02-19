@@ -9,7 +9,6 @@
 
 import { app, BrowserWindow } from 'electron';
 
-import type { createAgentService } from '../services/agent/agent-service';
 import type { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import type { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import type { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -27,7 +26,6 @@ import type { HotkeyManager } from '../tray/hotkey-manager';
 export interface LifecycleDeps {
   createWindow: () => void;
   terminalService: ReturnType<typeof createTerminalService>;
-  agentService: ReturnType<typeof createAgentService>;
   agentOrchestrator: ReturnType<typeof createAgentOrchestrator>;
   agentWatchdog: ReturnType<typeof createAgentWatchdog>;
   errorCollector: ErrorCollector;
@@ -59,7 +57,6 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     deps.agentWatchdog.dispose();
     deps.qaTrigger.dispose();
     deps.terminalService.dispose();
-    deps.agentService.dispose();
     deps.agentOrchestrator.dispose();
     deps.jsonlProgressWatcher.stop();
     deps.alertService.stopChecking();

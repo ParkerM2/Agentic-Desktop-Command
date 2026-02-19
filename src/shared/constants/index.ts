@@ -9,16 +9,6 @@ export {
 
 export { ROUTES, PROJECT_VIEWS, ROUTE_PATTERNS, projectViewPath } from './routes';
 
-export {
-  STATUS_RUNNING_PATTERNS,
-  STATUS_COMPLETED_PATTERNS,
-  STATUS_ERROR_PATTERNS,
-  PROGRESS_PATTERNS,
-  TOKEN_USAGE_PATTERNS,
-  MODEL_PRICING,
-} from './agent-patterns';
-export type { ModelName } from './agent-patterns';
-
 export { CLAUDE_MODELS, MODEL_SHORT_LABELS } from './models';
 export { COLOR_THEMES, COLOR_THEME_LABELS } from './themes';
 export type { ColorTheme } from './themes';

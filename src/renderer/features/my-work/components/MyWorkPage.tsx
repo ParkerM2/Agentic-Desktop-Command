@@ -3,19 +3,23 @@
  *
  * Displays all tasks from all projects grouped by project name.
  * Includes status filter for quick access to tasks by state.
+ * Shows Hub-disconnected error state when Hub is unreachable.
  */
 
 import { useMemo, useState } from 'react';
 
-import { Briefcase, Filter, FolderOpen } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, Briefcase, Filter, FolderOpen, RefreshCw } from 'lucide-react';
 
 import type { Task, TaskStatus } from '@shared/types';
 
+import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { useProjects } from '@features/projects';
 import { TaskStatusBadge } from '@features/tasks';
 
+import { myWorkKeys } from '../api/queryKeys';
 import { useAllTasks } from '../api/useMyWork';
 
 type StatusFilter = 'all' | TaskStatus;
@@ -116,15 +120,46 @@ function ProjectGroup({ group }: { group: TasksByProject }) {
   );
 }
 
+function HubDisconnectedState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <AlertTriangle className="text-warning mb-4 h-12 w-12" />
+      <h3 className="text-foreground mb-2 text-lg font-medium">Hub disconnected</h3>
+      <p className="text-muted-foreground mb-6 max-w-sm text-sm">
+        Unable to reach the Hub server. Tasks cannot be loaded while the Hub is unreachable.
+      </p>
+      <button
+        type="button"
+        className={cn(
+          'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
+          'transition-opacity hover:opacity-90',
+        )}
+        onClick={onRetry}
+      >
+        <RefreshCw className="h-4 w-4" />
+        Retry
+      </button>
+    </div>
+  );
+}
+
 function TaskListContent({
   isLoading,
+  isError,
   taskGroups,
   hasFilter,
+  onRetry,
 }: {
   isLoading: boolean;
+  isError: boolean;
   taskGroups: TasksByProject[];
   hasFilter: boolean;
+  onRetry: () => void;
 }) {
+  if (isError) {
+    return <HubDisconnectedState onRetry={onRetry} />;
+  }
+
   if (isLoading) {
     return (
       <div className="text-muted-foreground flex items-center justify-center py-12">
@@ -147,9 +182,33 @@ function TaskListContent({
 }
 
 export function MyWorkPage() {
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const { data: tasks, isLoading: tasksLoading } = useAllTasks();
+  const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useAllTasks();
   const { data: projects } = useProjects();
+
+  // Invalidate task list when Hub task events arrive
+  useHubEvent('event:hub.tasks.created', () => {
+    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  });
+  useHubEvent('event:hub.tasks.updated', () => {
+    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  });
+  useHubEvent('event:hub.tasks.deleted', () => {
+    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  });
+  useHubEvent('event:hub.tasks.completed', () => {
+    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  });
+
+  // Refresh on local task status changes
+  useIpcEvent('event:task.statusChanged', () => {
+    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  });
+
+  function handleRetry() {
+    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  }
 
   // Build a map of projectId -> projectName
   const projectsMap = useMemo(() => {
@@ -210,7 +269,13 @@ export function MyWorkPage() {
       </div>
 
       {/* Content */}
-      <TaskListContent hasFilter={hasFilter} isLoading={tasksLoading} taskGroups={taskGroups} />
+      <TaskListContent
+        hasFilter={hasFilter}
+        isError={tasksError}
+        isLoading={tasksLoading}
+        taskGroups={taskGroups}
+        onRetry={handleRetry}
+      />
     </div>
   );
 }

@@ -240,7 +240,7 @@ After auth + onboarding, the user sees the main app shell:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  TopBar: [Project Tabs] [+] ──── [Hub Status] [⌘K] │
+│  TopBar: [Project Tabs] [+] ─ [📷] [Health] [Hub] [⌘K] │
 ├──────────┬──────────────────────────────────────────┤
 │ Sidebar  │  Main Content Area (<Outlet />)          │
 │          │                                          │
@@ -274,7 +274,7 @@ After auth + onboarding, the user sees the main app shell:
 |-----------|------|---------|
 | `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: sidebar + topbar + outlet + notifications |
 | `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible |
-| `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button + Hub status + command bar |
+| `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button + ScreenshotButton + Health + Hub status + command bar |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global assistant input (Cmd+K) |
 | `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |
@@ -871,6 +871,7 @@ Email integration:
 | **Hub Connection** | `HubSettings.tsx` | `hub.connect`, `hub.disconnect`, `hub.getStatus`, `hub.sync`, `hub.removeConfig` | Hub URL + API key, connect/disconnect, sync |
 | **Webhooks** | `WebhookSettings.tsx` | `settings.getWebhookConfig`, `settings.updateWebhookConfig` | Webhook URL + events |
 | **Hotkeys** | `HotkeySettings.tsx` | `hotkeys.get`, `hotkeys.update`, `hotkeys.reset` | Keyboard shortcuts customization |
+| **Voice** | `VoiceSettings` (from `@features/voice`) | `voice.getConfig`, `voice.updateConfig`, `voice.checkPermission` | Enable/disable voice, language, input mode, synthesis test |
 | **About** | inline | — | Version number (v0.1.0) |
 
 ### 23.1 Profile Save Flow (When User Clicks "Save" on a Profile)
@@ -1187,7 +1188,7 @@ Complete list of all registered IPC channels by domain:
 | G-9 | Device selector unused | Low | Settings | `DeviceSelector.tsx` exists but unclear when/where users would switch devices |
 | G-10 | CommandBar not wired | Low | Navigation | `CommandBar.tsx` renders in TopBar but may not be connected to assistant functionality |
 | G-11 | Calendar feature no OAuth | Low | Calendar | `calendar.*` IPC channels exist but no OAuth setup for Google Calendar in settings |
-| G-12 | Voice feature no UI | Low | Voice | `voice.*` IPC channels exist but no visible microphone UI in any page |
+| G-12 | ~~Voice feature no UI~~ | Low | Voice | **RESOLVED** (2026-02-18) — VoiceSettings mounted in Settings page (after Hotkeys, before About). ScreenshotButton mounted in TopBar. |
 | G-13 | ~~`/assistant` route defined but not wired~~ | Low | Navigation | **RESOLVED** (2026-02-15) — Assistant is now globally accessible via floating `AssistantWidget` (Ctrl+J toggle). Route constant remains for potential future full-page view. |
 | G-14 | `/briefing` not in sidebar | Low | Navigation | `BriefingPage` has a registered route but is not listed in the sidebar `topLevelItems` array — only accessible via direct URL |
 | G-15 | ~~No project edit/settings page~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ProjectEditDialog with edit buttons on project cards |

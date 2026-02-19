@@ -56,6 +56,7 @@ export function ProjectInitWizard({ onClose, onComplete }: ProjectInitWizardProp
   const [selectedRepos, setSelectedRepos] = useState<Set<string>>(new Set());
   const [projectName, setProjectName] = useState('');
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
 
   const addProject = useAddProject();
   const createSubProject = useCreateSubProject();
@@ -110,7 +111,12 @@ export function ProjectInitWizard({ onClose, onComplete }: ProjectInitWizardProp
 
   async function handleConfirm() {
     if (!selectedPath) return;
-    const project = await addProject.mutateAsync(selectedPath);
+    const project = await addProject.mutateAsync({
+      path: selectedPath,
+      name: projectName.trim() || undefined,
+      workspaceId: workspaceId ?? undefined,
+      description: description.trim() || undefined,
+    });
 
     // Create sub-projects from selected repos
     if (selectedRepos.size > 0 && detection.data) {
@@ -213,6 +219,7 @@ export function ProjectInitWizard({ onClose, onComplete }: ProjectInitWizardProp
 
           {step === 3 ? (
             <StepConfigure
+              description={description}
               hasChildRepos={hasChildRepos}
               projectName={projectName}
               repoType={repoType}
@@ -220,6 +227,7 @@ export function ProjectInitWizard({ onClose, onComplete }: ProjectInitWizardProp
               selectedReposSize={selectedRepos.size}
               workspaceId={workspaceId}
               workspaces={workspaces ?? []}
+              onDescriptionChange={setDescription}
               onNameChange={setProjectName}
               onWorkspaceChange={setWorkspaceId}
             />
@@ -228,6 +236,7 @@ export function ProjectInitWizard({ onClose, onComplete }: ProjectInitWizardProp
           {step === 4 ? (
             <StepConfirm
               defaultBranch={detection.data?.defaultBranch}
+              description={description}
               hasChildRepos={hasChildRepos}
               projectName={projectName}
               repoType={repoType}

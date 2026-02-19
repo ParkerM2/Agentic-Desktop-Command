@@ -1,9 +1,9 @@
 /**
  * React Query hooks for dashboard data
  *
- * Re-exports project and agent hooks for dashboard consumption.
- * Dashboard-specific queries can be added here as the feature grows.
+ * Re-exports project, agent, and capture hooks for dashboard consumption.
  */
 
 export { useProjects } from '@features/projects';
 export { useAgents } from '@features/agents';
+export { useCaptures, useCaptureMutations } from './useCaptures';

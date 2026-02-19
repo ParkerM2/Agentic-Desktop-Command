@@ -9,6 +9,8 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import http from 'node:http';
+import https from 'node:https';
 
 import type {
   McpConnectionState,
@@ -99,6 +101,12 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     reject: (reason: Error) => void;
   }> = [];
 
+  // SSE transport state
+  let sseAbortController: AbortController | null = null;
+  let ssePostEndpoint: string | null = null;
+  let sseLastEventId = '';
+  let sseReconnecting = false;
+
   function setState(newState: McpConnectionState): void {
     const previousState = state;
     state = newState;
@@ -108,6 +116,11 @@ export function createMcpClient(config: McpServerConfig): McpClient {
   }
 
   function sendRequest(request: JsonRpcRequest): void {
+    if (config.transport === 'sse') {
+      sendSseRequest(request);
+      return;
+    }
+
     if (!childProcess?.stdin?.writable) {
       console.error(`[MCP] Cannot send request to ${config.name}: stdin not writable`);
       return;
@@ -317,6 +330,248 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     }
   }
 
+  function ssePostRequest(
+    endpointUrl: string,
+    body: string,
+  ): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const postUrl = new URL(endpointUrl);
+      const postTransport = postUrl.protocol === 'https:' ? https : http;
+
+      const req = postTransport.request(
+        endpointUrl,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk: Buffer | string) => {
+            data += String(chunk);
+          });
+          res.on('end', () => {
+            if (
+              res.statusCode !== undefined &&
+              res.statusCode >= 200 &&
+              res.statusCode < 300
+            ) {
+              resolve(data);
+            } else {
+              reject(
+                new Error(
+                  `SSE POST to ${endpointUrl} returned status ${String(res.statusCode ?? 'unknown')}`,
+                ),
+              );
+            }
+          });
+        },
+      );
+
+      req.on('error', (error) => {
+        reject(new Error(`SSE POST request failed: ${error.message}`));
+      });
+
+      req.write(body);
+      req.end();
+    });
+  }
+
+  function sendSseRequest(request: JsonRpcRequest): void {
+    if (!ssePostEndpoint) {
+      console.error(`[MCP] Cannot send SSE request to ${config.name}: no POST endpoint`);
+      return;
+    }
+
+    const body = JSON.stringify(request);
+    void (async () => {
+      try {
+        const responseBody = await ssePostRequest(ssePostEndpoint, body);
+        // Some SSE servers return JSON-RPC responses inline on POST.
+        // If the response body is non-empty JSON, process it.
+        if (responseBody.trim().length > 0) {
+          try {
+            const responseJson = JSON.parse(responseBody) as Record<string, unknown>;
+            if (typeof responseJson.id === 'string') {
+              processLine(responseBody);
+            }
+          } catch {
+            // Not JSON — the response will come via the SSE stream
+          }
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown POST error';
+        console.error(`[MCP] SSE POST failed for ${config.name}:`, message);
+
+        // Reject the pending request if it exists
+        const pending = pendingRequests.get(request.id);
+        if (pending) {
+          pendingRequests.delete(request.id);
+          clearTimeout(pending.timeoutId);
+          pending.reject(new Error(message));
+        }
+      }
+    })();
+  }
+
+  function parseSseStream(chunk: string): Array<{ event: string; data: string; id: string }> {
+    const results: Array<{ event: string; data: string; id: string }> = [];
+    let currentEvent = '';
+    let currentData = '';
+    let currentId = '';
+
+    const lines = chunk.split('\n');
+    for (const line of lines) {
+      if (line.length === 0) {
+        // Empty line = dispatch event
+        if (currentData.length > 0) {
+          results.push({ event: currentEvent, data: currentData, id: currentId });
+        }
+        currentEvent = '';
+        currentData = '';
+        currentId = '';
+        continue;
+      }
+
+      if (line.startsWith(':')) {
+        // Comment line — ignore
+        continue;
+      }
+
+      const colonIndex = line.indexOf(':');
+      let field: string;
+      let value: string;
+
+      if (colonIndex === -1) {
+        field = line;
+        value = '';
+      } else {
+        field = line.slice(0, colonIndex);
+        // Skip optional space after colon
+        value = line[colonIndex + 1] === ' ' ? line.slice(colonIndex + 2) : line.slice(colonIndex + 1);
+      }
+
+      switch (field) {
+        case 'event': {
+          currentEvent = value;
+          break;
+        }
+        case 'data': {
+          currentData = currentData.length > 0 ? `${currentData}\n${value}` : value;
+          break;
+        }
+        case 'id': {
+          currentId = value;
+          break;
+        }
+        case 'retry': {
+          // The retry field is informational; reconnect timing is handled by the manager
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    }
+
+    return results;
+  }
+
+  function resolveEndpointUrl(endpointPath: string, baseUrl: string): string {
+    // If the endpoint is already an absolute URL, use it directly
+    if (endpointPath.startsWith('http://') || endpointPath.startsWith('https://')) {
+      return endpointPath;
+    }
+    // Otherwise resolve relative to the SSE base URL
+    const base = new URL(baseUrl);
+    return new URL(endpointPath, base).toString();
+  }
+
+  function sseInitialize(): void {
+    const initRequest = buildJsonRpcRequest('initialize', {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: {
+        name: 'adc',
+        version: '1.0.0',
+      },
+    });
+
+    // Register a pending request for the initialize response
+    const timeoutId = setTimeout(() => {
+      pendingRequests.delete(initRequest.id);
+      console.error(`[MCP] SSE initialize timed out for ${config.name}`);
+      setState('error');
+      events.emit('error', config.name, new Error('SSE initialize timed out'));
+    }, TOOL_CALL_TIMEOUT_MS);
+
+    pendingRequests.set(initRequest.id, {
+      resolve: () => {
+        // Initialize succeeded — now list tools
+        const listRequest = buildJsonRpcRequest('tools/list');
+        const listTimeoutId = setTimeout(() => {
+          pendingRequests.delete(listRequest.id);
+          console.error(`[MCP] SSE tools/list timed out for ${config.name}`);
+        }, TOOL_CALL_TIMEOUT_MS);
+
+        pendingRequests.set(listRequest.id, {
+          resolve: () => {
+            // tools/list handled specially in processLine
+          },
+          reject: (error) => {
+            console.error(`[MCP] SSE tools/list failed for ${config.name}:`, error.message);
+          },
+          timeoutId: listTimeoutId,
+        });
+
+        sendSseRequest(listRequest);
+      },
+      reject: (error) => {
+        console.error(`[MCP] SSE initialize failed for ${config.name}:`, error.message);
+        setState('error');
+        events.emit('error', config.name, error);
+      },
+      timeoutId,
+    });
+
+    sendSseRequest(initRequest);
+  }
+
+  function handleSseEvent(sseEvent: { event: string; data: string; id: string }): void {
+    if (sseEvent.id.length > 0) {
+      sseLastEventId = sseEvent.id;
+    }
+
+    const eventType = sseEvent.event.length > 0 ? sseEvent.event : 'message';
+
+    if (eventType === 'endpoint') {
+      // The server tells us where to POST JSON-RPC requests
+      const endpointPath = sseEvent.data.trim();
+      if (endpointPath.length === 0) {
+        console.error(`[MCP] SSE endpoint event with empty data for ${config.name}`);
+        return;
+      }
+
+      ssePostEndpoint = resolveEndpointUrl(endpointPath, config.url ?? '');
+      console.log(`[MCP] SSE POST endpoint for ${config.name}: ${ssePostEndpoint}`);
+
+      // Send initialize handshake
+      sseInitialize();
+      return;
+    }
+
+    if (eventType === 'message') {
+      // Standard JSON-RPC response delivered via SSE
+      processLine(sseEvent.data);
+      return;
+    }
+
+    // Unknown event types are ignored per the SSE spec
+    console.log(`[MCP] SSE unknown event type "${eventType}" for ${config.name}`);
+  }
+
   function connectSse(): void {
     if (!config.url) {
       setState('error');
@@ -325,12 +580,104 @@ export function createMcpClient(config: McpServerConfig): McpClient {
     }
 
     setState('connecting');
+    sseAbortController = new AbortController();
+    let sseBuffer = '';
 
-    // SSE transport is a placeholder — will be implemented when SSE servers are needed.
-    // For now, emit an error indicating SSE is not yet supported.
     console.log(`[MCP] SSE transport for ${config.name} connecting to ${config.url}`);
-    setState('error');
-    events.emit('error', config.name, new Error('SSE transport is not yet implemented'));
+
+    const sseUrl = new URL(config.url);
+    const transport = sseUrl.protocol === 'https:' ? https : http;
+
+    const headers: Record<string, string> = {
+      Accept: 'text/event-stream',
+      'Cache-Control': 'no-cache',
+    };
+
+    if (sseLastEventId.length > 0) {
+      headers['Last-Event-ID'] = sseLastEventId;
+    }
+
+    const req = transport.get(config.url, { headers }, (res) => {
+      if (
+        res.statusCode !== undefined &&
+        (res.statusCode < 200 || res.statusCode >= 300)
+      ) {
+        const errorMsg = `SSE connection to ${config.url ?? 'unknown'} returned status ${String(res.statusCode)}`;
+        console.error(`[MCP] ${config.name}: ${errorMsg}`);
+        setState('error');
+        events.emit('error', config.name, new Error(errorMsg));
+        return;
+      }
+
+      res.on('data', (chunk: Buffer | string) => {
+        if (sseAbortController?.signal.aborted) {
+          return;
+        }
+
+        sseBuffer += String(chunk);
+
+        // SSE events are delimited by double newlines
+        let boundaryIndex = sseBuffer.indexOf('\n\n');
+        while (boundaryIndex !== -1) {
+          const rawEvent = sseBuffer.slice(0, boundaryIndex + 2);
+          sseBuffer = sseBuffer.slice(boundaryIndex + 2);
+
+          const sseEvents = parseSseStream(rawEvent);
+          for (const sseEvent of sseEvents) {
+            handleSseEvent(sseEvent);
+          }
+
+          boundaryIndex = sseBuffer.indexOf('\n\n');
+        }
+      });
+
+      res.on('end', () => {
+        if (sseAbortController?.signal.aborted) {
+          return;
+        }
+
+        console.log(`[MCP] SSE connection ended for ${config.name}`);
+
+        // Process any remaining buffer content
+        if (sseBuffer.trim().length > 0) {
+          const remainingEvents = parseSseStream(`${sseBuffer}\n\n`);
+          for (const sseEvent of remainingEvents) {
+            handleSseEvent(sseEvent);
+          }
+          sseBuffer = '';
+        }
+
+        if (!sseReconnecting) {
+          setState('disconnected');
+          events.emit('disconnected', config.name);
+        }
+      });
+
+      res.on('error', (error) => {
+        if (sseAbortController?.signal.aborted) {
+          return;
+        }
+
+        console.error(`[MCP] SSE stream error for ${config.name}:`, error.message);
+        setState('error');
+        events.emit('error', config.name, error);
+      });
+    });
+
+    req.on('error', (error) => {
+      if (sseAbortController?.signal.aborted) {
+        return;
+      }
+
+      console.error(`[MCP] SSE request error for ${config.name}:`, error.message);
+      setState('error');
+      events.emit('error', config.name, error);
+    });
+
+    // Wire abort controller to destroy the request
+    sseAbortController.signal.addEventListener('abort', () => {
+      req.destroy();
+    });
   }
 
   return {
@@ -363,7 +710,7 @@ export function createMcpClient(config: McpServerConfig): McpClient {
       }
       queuedCalls.length = 0;
 
-      // Kill the child process
+      // Kill the child process (stdio transport)
       if (childProcess) {
         try {
           childProcess.kill();
@@ -372,6 +719,14 @@ export function createMcpClient(config: McpServerConfig): McpClient {
         }
         childProcess = null;
       }
+
+      // Abort SSE connection (SSE transport)
+      if (sseAbortController) {
+        sseReconnecting = false;
+        sseAbortController.abort();
+        sseAbortController = null;
+      }
+      ssePostEndpoint = null;
 
       tools = [];
       inputBuffer = '';

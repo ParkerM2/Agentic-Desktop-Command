@@ -34,7 +34,7 @@ Location: `src/renderer/features/`
 | **dashboard** | Home dashboard | DashboardPage, TodayView, DailyStats, ActiveAgents | multiple |
 | **fitness** | Health/fitness tracking | FitnessPage, WorkoutLog, MetricsChart | `fitness.*` |
 | **github** | GitHub integration | GitHubPage, PRList, IssueList | `github.*` |
-| **ideation** | Idea capture & tracking | IdeationPage, IdeaForm | `ideas.*` |
+| **ideation** | Idea capture & tracking | IdeationPage, IdeaEditForm | `ideas.*` |
 | **insights** | Analytics dashboard | InsightsPage, MetricsCards, Charts | `insights.*` |
 | **notes** | Note-taking | NotesPage, NoteEditor, NoteList | `notes.*` |
 | **planner** | Daily planner | PlannerPage, TimeBlockGrid, TimeBlockCard | `planner.*` |
@@ -48,7 +48,8 @@ Location: `src/renderer/features/`
 | **merge** | Branch merge workflow | MergeConfirmModal | `merge.*` |
 | **my-work** | Cross-project task view | MyWorkPage | `tasks.*` |
 | **onboarding** | First-run setup wizard | OnboardingWizard, ClaudeCliStep, ApiKeyStep | `app.*`, `settings.*` |
-| **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings | `voice.*` |
+| **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings (mounted in SettingsPage) | `voice.*` |
+| **screen** | Screen capture | ScreenshotButton (mounted in TopBar), ScreenshotViewer | `screen.*` |
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 

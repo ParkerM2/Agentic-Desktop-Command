@@ -9,7 +9,7 @@
 
 import type { Suggestion, SuggestionType } from '@shared/types';
 
-import type { AgentService } from '../agent/agent-service';
+import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
 
@@ -31,14 +31,14 @@ export interface SuggestionEngine {
 export interface SuggestionEngineDeps {
   projectService: ProjectService;
   taskService: TaskService;
-  agentService: AgentService;
+  agentOrchestrator: AgentOrchestrator;
 }
 
 /**
  * Create a suggestion engine instance.
  */
 export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEngine {
-  const { projectService, taskService, agentService } = deps;
+  const { projectService, taskService, agentOrchestrator } = deps;
 
   function getStaleProjectSuggestions(): Suggestion[] {
     const suggestions: Suggestion[] = [];
@@ -72,18 +72,18 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
   function getParallelTaskSuggestions(): Suggestion[] {
     const suggestions: Suggestion[] = [];
     const projects = projectService.listProjectsSync();
-    const runningAgents = agentService.listAllAgents();
+    const activeSessions = agentOrchestrator.listActiveSessions();
     const maxConcurrent = 3; // Could be fetched from settings
 
     for (const project of projects) {
       const tasks = taskService.listTasks(project.id);
       const queuedTasks = tasks.filter((t) => t.status === 'queue');
       const runningTasks = tasks.filter((t) => t.status === 'in_progress');
-      const runningAgentsForProject = runningAgents.filter((a) => a.projectId === project.id);
+      const runningSessionsForProject = activeSessions.filter((s) => s.projectPath.includes(project.id));
 
       // If there are queued tasks but room for more agents
-      if (queuedTasks.length > 1 && runningAgentsForProject.length < maxConcurrent) {
-        const availableSlots = maxConcurrent - runningAgentsForProject.length;
+      if (queuedTasks.length > 1 && runningSessionsForProject.length < maxConcurrent) {
+        const availableSlots = maxConcurrent - runningSessionsForProject.length;
         const parallelizableCount = Math.min(queuedTasks.length, availableSlots);
 
         if (parallelizableCount > 0) {

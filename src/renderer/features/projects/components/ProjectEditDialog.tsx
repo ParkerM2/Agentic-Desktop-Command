@@ -1,5 +1,5 @@
 /**
- * ProjectEditDialog — Modal for editing project details (name, description, branch, git URL).
+ * ProjectEditDialog — Modal for editing project details (name, description, branch, git URL, workspace).
  * Includes delete functionality via ConfirmDialog.
  */
 
@@ -11,6 +11,8 @@ import type { Project } from '@shared/types';
 
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { useWorkspaces } from '@features/workspaces';
 
 import { useRemoveProject, useUpdateProject } from '../api/useProjects';
 
@@ -29,11 +31,13 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
   const [description, setDescription] = useState('');
   const [defaultBranch, setDefaultBranch] = useState('');
   const [gitUrl, setGitUrl] = useState('');
+  const [workspaceId, setWorkspaceId] = useState('');
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const updateProject = useUpdateProject();
   const removeProject = useRemoveProject();
+  const { data: workspaces } = useWorkspaces();
 
   // Initialize form state when project changes
   useEffect(() => {
@@ -42,6 +46,7 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
       setDescription(project.description ?? '');
       setDefaultBranch(project.defaultBranch ?? '');
       setGitUrl(project.gitUrl ?? '');
+      setWorkspaceId(project.workspaceId ?? '');
       setErrorMessage(null);
     }
   }, [project]);
@@ -90,6 +95,9 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
     }
     if (gitUrl.trim() !== (project.gitUrl ?? '')) {
       updates.gitUrl = gitUrl.trim();
+    }
+    if (workspaceId !== (project.workspaceId ?? '')) {
+      updates.workspaceId = workspaceId;
     }
 
     // If nothing changed, just close
@@ -248,6 +256,34 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
               onChange={(e) => setGitUrl(e.target.value)}
             />
           </div>
+
+          {/* Workspace */}
+          {(workspaces?.length ?? 0) > 0 ? (
+            <div>
+              <label
+                className="text-foreground mb-1 block text-sm font-medium"
+                htmlFor="edit-workspace"
+              >
+                Workspace
+              </label>
+              <select
+                id="edit-workspace"
+                value={workspaceId}
+                className={cn(
+                  INPUT_BASE_CLASS,
+                  INPUT_FOCUS_CLASS,
+                )}
+                onChange={(e) => setWorkspaceId(e.target.value)}
+              >
+                <option value="">No workspace</option>
+                {workspaces?.map((ws) => (
+                  <option key={ws.id} value={ws.id}>
+                    {ws.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </div>
 
         {/* Error message */}

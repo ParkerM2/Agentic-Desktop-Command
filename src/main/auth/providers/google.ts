@@ -8,7 +8,10 @@ export const GOOGLE_OAUTH_CONFIG: OAuthConfig = {
   tokenUrl: 'https://oauth2.googleapis.com/token',
   redirectUri: 'adc://oauth/callback',
   scopes: [
-    'https://www.googleapis.com/auth/calendar.events',
+    'openid',
+    'email',
+    'profile',
     'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
   ],
 };

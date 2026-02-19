@@ -78,9 +78,6 @@ export {
 // ── Notes ──
 export { NoteSchema, notesEvents, notesInvoke } from './notes.contract';
 
-// ── Rate Limit ──
-export { rateLimitEvents, rateLimitInvoke } from './rate-limit.contract';
-
 // ── Screen ──
 export {
   screenInvoke,

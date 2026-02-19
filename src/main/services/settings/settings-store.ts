@@ -5,10 +5,16 @@ import { join } from 'node:path';
 
 import { app } from 'electron';
 
-import type { AppSettings } from '@shared/types';
+import type { AppSettings, Profile } from '@shared/types';
 
 import { DEFAULT_PROFILES, DEFAULT_SETTINGS } from './settings-defaults';
-import { decryptSecret, encryptSecret, isEncryptedEntry, isWebhookSecretKey } from './settings-encryption';
+import {
+  decryptSecret,
+  encryptSecret,
+  isEncryptedEntry,
+  isProfileSecretKey,
+  isWebhookSecretKey,
+} from './settings-encryption';
 
 import type { SettingsFile } from './settings-defaults';
 
@@ -55,13 +61,34 @@ export function loadSettingsFile(): { data: SettingsFile; needsMigration: boolea
       }
     }
 
-    const profiles =
+    const rawProfiles =
       Array.isArray(parsed.profiles) && parsed.profiles.length > 0
-        ? parsed.profiles
-        : [...DEFAULT_PROFILES];
+        ? (parsed.profiles as unknown as Array<Record<string, unknown>>)
+        : ([...DEFAULT_PROFILES] as unknown as Array<Record<string, unknown>>);
+
+    const profiles = rawProfiles.map((profile) => {
+      const decrypted = { ...profile };
+      for (const [key, value] of Object.entries(profile)) {
+        if (isProfileSecretKey(key)) {
+          if (isEncryptedEntry(value)) {
+            try {
+              decrypted[key] = decryptSecret(value);
+            } catch {
+              console.error(`[Settings] Failed to decrypt profile ${key}`);
+              decrypted[key] = '';
+            }
+          } else if (typeof value === 'string' && value.length > 0) {
+            // Legacy plaintext — mark for migration
+            decrypted[key] = value;
+            needsMigration = true;
+          }
+        }
+      }
+      return decrypted;
+    });
 
     return {
-      data: { settings: settings as unknown as AppSettings, profiles },
+      data: { settings: settings as unknown as AppSettings, profiles: profiles as unknown as Profile[] },
       needsMigration,
     };
   } catch {
@@ -90,9 +117,21 @@ export function saveSettingsFile(data: SettingsFile): void {
         : value;
   }
 
+  const encryptedProfiles = data.profiles.map((profile) => {
+    const raw = profile as unknown as Record<string, unknown>;
+    const encrypted: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(raw)) {
+      encrypted[key] =
+        isProfileSecretKey(key) && typeof value === 'string' && value.length > 0
+          ? encryptSecret(value)
+          : value;
+    }
+    return encrypted;
+  });
+
   const output = {
     settings: encryptedSettings,
-    profiles: data.profiles,
+    profiles: encryptedProfiles,
   };
 
   writeFileSync(filePath, JSON.stringify(output, null, 2), 'utf-8');

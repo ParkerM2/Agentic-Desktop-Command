@@ -2,12 +2,26 @@
  * Productivity feature — public API
  */
 
-// API hooks
+// API hooks — Calendar
 export {
-  useCalendarEvents,
   useCalendarCreateEvent,
   useCalendarDeleteEvent,
+  useCalendarEvents,
 } from './api/useCalendar';
+
+// API hooks — Spotify
+export {
+  useSpotifyAddToQueue,
+  useSpotifyNext,
+  useSpotifyPause,
+  useSpotifyPlay,
+  useSpotifyPlayback,
+  useSpotifyPrevious,
+  useSpotifySearch,
+  useSpotifyVolume,
+} from './api/useSpotify';
+
+// Query keys
 export { calendarKeys, spotifyKeys } from './api/queryKeys';
 
 // Components

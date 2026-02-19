@@ -19,6 +19,7 @@ import { getNextNum, slugify } from './task-slug';
 import { getSpecsDir, getTaskDir, listTaskDirs, readJsonFile, readTask } from './task-store';
 
 import type { ImplementationPlanJson } from './task-spec-parser';
+import type { IpcRouter } from '../../ipc/router';
 
 /* ------------------------------------------------------------------ */
 /*  Public interface                                                   */
@@ -34,7 +35,6 @@ export interface TaskService {
   updateTask: (taskId: string, updates: Record<string, unknown>) => Task;
   updateTaskStatus: (taskId: string, status: TaskStatus) => Task;
   deleteTask: (projectId: string, taskId: string) => void;
-  executeTask: (projectId: string, taskId: string) => { agentId: string };
 }
 
 type ProjectResolver = (projectId: string) => string | undefined;
@@ -43,6 +43,7 @@ type ProjectsLister = () => Array<{ id: string; path: string }>;
 export function createTaskService(
   resolveProject: ProjectResolver,
   listProjects?: ProjectsLister,
+  router?: IpcRouter,
 ): TaskService {
   // Cache: taskId → projectPath (populated on list/get/create)
   const taskProjectMap = new Map<string, string>();
@@ -191,6 +192,11 @@ export function createTaskService(
       writeFileSync(planPath, JSON.stringify(plan, null, 2));
       const task = readTask(getTaskDir(projectPath, taskId), taskId);
       if (!task) throw new Error('Failed to read updated task');
+      router?.emit('event:task.statusChanged', {
+        taskId,
+        status,
+        projectId: projectPath,
+      });
       return task;
     },
 
@@ -201,20 +207,6 @@ export function createTaskService(
         rmSync(taskDir, { recursive: true, force: true });
       }
       taskProjectMap.delete(taskId);
-    },
-
-    executeTask(projectId, taskId) {
-      const projectPath = resolve(projectId);
-      const planPath = join(getTaskDir(projectPath, taskId), PLAN_FILENAME);
-      if (existsSync(planPath)) {
-        const plan = readJsonFile(planPath) as ImplementationPlanJson;
-        plan.status = 'in_progress';
-        plan.xstateState = 'in_progress';
-        plan.executionPhase = 'idle';
-        plan.updated_at = new Date().toISOString();
-        writeFileSync(planPath, JSON.stringify(plan, null, 2));
-      }
-      return { agentId: `agent-${taskId}-${Date.now()}` };
     },
   };
 }

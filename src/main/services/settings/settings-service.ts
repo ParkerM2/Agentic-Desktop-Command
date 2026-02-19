@@ -45,7 +45,7 @@ export function createSettingsService(): SettingsService {
 
   // Migrate plaintext secrets to encrypted format on first load
   if (needsMigration) {
-    console.log('[Settings] Migrating plaintext webhook secrets to encrypted format');
+    console.log('[Settings] Migrating plaintext secrets to encrypted format');
     persist();
   }
 
@@ -60,6 +60,23 @@ export function createSettingsService(): SettingsService {
         ...updates,
       } as AppSettings & Record<string, unknown>;
       store.settings = merged;
+
+      // Auto-create/update "Default" profile when anthropicApiKey is set
+      if (typeof updates.anthropicApiKey === 'string' && updates.anthropicApiKey.length > 0) {
+        const apiKeyValue = updates.anthropicApiKey;
+        const defaultProfile = store.profiles.find((p) => p.isDefault);
+        if (defaultProfile) {
+          defaultProfile.apiKey = apiKeyValue;
+        } else {
+          store.profiles.unshift({
+            id: randomUUID(),
+            name: 'Default',
+            apiKey: apiKeyValue,
+            isDefault: true,
+          });
+        }
+      }
+
       persist();
       return store.settings;
     },

@@ -37,8 +37,8 @@ export function registerProjectHandlers(router: IpcRouter, service: ProjectServi
     return projects.map((p) => transformHubProject(p as unknown as Record<string, unknown>));
   });
 
-  router.handle('projects.add', async ({ path }) => {
-    const project = await service.addProject({ path });
+  router.handle('projects.add', async ({ path, name, workspaceId, description }) => {
+    const project = await service.addProject({ path, name, workspaceId, description });
     return transformHubProject(project as unknown as Record<string, unknown>);
   });
 
@@ -46,8 +46,8 @@ export function registerProjectHandlers(router: IpcRouter, service: ProjectServi
     return await service.removeProject(projectId);
   });
 
-  router.handle('projects.initialize', ({ projectId: _projectId }) =>
-    Promise.resolve({ success: true }),
+  router.handle('projects.initialize', ({ projectId }) =>
+    Promise.resolve(service.initializeProject(projectId)),
   );
 
   router.handle('projects.selectDirectory', async () => {

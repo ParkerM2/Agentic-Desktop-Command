@@ -22,6 +22,8 @@ export function useTaskEvents() {
   useAgentEvents();
   // QA session events (started, progress, completed)
   useQaEvents();
+  // NOTE: Workflow progress events (event:task.progressUpdated) are already
+  // handled below — do NOT call useWorkflowEvents() here to avoid duplicate handlers.
   const queryClient = useQueryClient();
 
   // ── Local task events ──

@@ -6,6 +6,9 @@
  * The selectDirectory() and detectRepoStructure() remain local Electron operations.
  */
 
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { dialog } from 'electron';
 
 import type { Project, SubProject } from '@shared/types';
@@ -18,6 +21,7 @@ export interface ProjectAddInput {
   path: string;
   workspaceId?: string;
   name?: string;
+  description?: string;
   repoStructure?: Project['repoStructure'];
   gitUrl?: string;
   defaultBranch?: string;
@@ -35,6 +39,7 @@ export interface ProjectUpdateInput {
   description?: string;
   gitUrl?: string;
   defaultBranch?: string;
+  workspaceId?: string;
 }
 
 export interface ProjectService {
@@ -56,6 +61,8 @@ export interface ProjectService {
     subProjectId: string,
   ) => Promise<{ success: boolean }>;
 
+  /** Initialize project-local directories (.adc/specs) */
+  initializeProject: (projectId: string) => { success: boolean; error?: string };
   /** Resolve a project ID to its filesystem path (sync, for other services) */
   getProjectPath: (projectId: string) => string | undefined;
   /** Sync list for legacy callers — returns cached data */
@@ -86,6 +93,30 @@ export function createProjectService(deps: {
   }
 
   return {
+    initializeProject(projectId) {
+      const projectPath = projectCache.get(projectId)?.path;
+      if (!projectPath) {
+        return { success: false, error: `Project ${projectId} not found` };
+      }
+
+      try {
+        const adcDir = join(projectPath, '.adc');
+        const specsDir = join(adcDir, 'specs');
+
+        if (!existsSync(adcDir)) {
+          mkdirSync(adcDir, { recursive: true });
+        }
+        if (!existsSync(specsDir)) {
+          mkdirSync(specsDir, { recursive: true });
+        }
+
+        return { success: true };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return { success: false, error: message };
+      }
+    },
+
     getProjectPath(projectId) {
       return projectCache.get(projectId)?.path;
     },
@@ -118,6 +149,7 @@ export function createProjectService(deps: {
       const result = await hubApiClient.hubPost<Project>(endpoint, {
         path: data.path,
         name: data.name,
+        description: data.description,
         repoStructure: data.repoStructure,
         gitUrl: data.gitUrl,
         defaultBranch: data.defaultBranch,

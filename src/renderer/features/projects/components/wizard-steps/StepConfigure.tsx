@@ -11,6 +11,7 @@ interface WorkspaceOption {
 
 interface StepConfigureProps {
   projectName: string;
+  description: string;
   selectedPath: string | null;
   repoType: string;
   hasChildRepos: boolean;
@@ -18,11 +19,13 @@ interface StepConfigureProps {
   workspaceId: string | null;
   workspaces: WorkspaceOption[];
   onNameChange: (name: string) => void;
+  onDescriptionChange: (description: string) => void;
   onWorkspaceChange: (id: string | null) => void;
 }
 
 export function StepConfigure({
   projectName,
+  description,
   selectedPath,
   repoType,
   hasChildRepos,
@@ -30,6 +33,7 @@ export function StepConfigure({
   workspaceId,
   workspaces,
   onNameChange,
+  onDescriptionChange,
   onWorkspaceChange,
 }: StepConfigureProps) {
   return (
@@ -49,6 +53,22 @@ export function StepConfigure({
             'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
           )}
           onChange={(e) => onNameChange(e.target.value)}
+        />
+      </div>
+      <div>
+        <label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-description">
+          Description
+        </label>
+        <textarea
+          id="wizard-description"
+          placeholder="Optional project description"
+          rows={2}
+          value={description}
+          className={cn(
+            'border-border bg-background w-full resize-none rounded-lg border px-3 py-2 text-sm',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
+          )}
+          onChange={(e) => onDescriptionChange(e.target.value)}
         />
       </div>
       {workspaces.length > 0 ? (

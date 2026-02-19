@@ -1,42 +1,11 @@
 /**
  * Agents IPC Schemas
  *
- * Zod schemas for agent sessions, token usage, orchestrator sessions,
- * QA system, workflow, terminals, and workspaces/devices.
+ * Zod schemas for orchestrator sessions, QA system, workflow,
+ * terminals, and workspaces/devices.
  */
 
 import { z } from 'zod';
-
-import { TokenUsageSchema } from '../common/schemas';
-
-// ── Agent Session Schemas ───────────────────────────────────────
-
-export const AgentSessionSchema = z.object({
-  id: z.string(),
-  taskId: z.string(),
-  projectId: z.string(),
-  status: z.enum(['idle', 'running', 'paused', 'error', 'completed']),
-  worktreePath: z.string().optional(),
-  terminalId: z.string().optional(),
-  startedAt: z.string(),
-  completedAt: z.string().optional(),
-  tokenUsage: TokenUsageSchema.optional(),
-});
-
-export const AggregatedTokenUsageSchema = z.object({
-  totalInputTokens: z.number(),
-  totalOutputTokens: z.number(),
-  totalTokens: z.number(),
-  totalCostUsd: z.number(),
-  byAgent: z.array(
-    z.object({
-      agentId: z.string(),
-      taskId: z.string(),
-      projectId: z.string(),
-      usage: TokenUsageSchema,
-    }),
-  ),
-});
 
 // ── Agent Orchestrator Schemas ──────────────────────────────────
 

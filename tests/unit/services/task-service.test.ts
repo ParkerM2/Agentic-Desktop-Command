@@ -569,51 +569,6 @@ describe('TaskService', () => {
     });
   });
 
-  describe('executeTask()', () => {
-    it('updates task status to in_progress', () => {
-      const taskId = '1-execute-test';
-      resetFs({
-        [`${SPECS_DIR}/${taskId}/requirements.json`]: createRequirementsJson('Execute Test'),
-        [`${SPECS_DIR}/${taskId}/implementation_plan.json`]: createPlanJson(
-          'Execute Test',
-          'queue',
-        ),
-      });
-
-      const service = createTaskService(createProjectResolver());
-      const result = service.executeTask(PROJECT_ID, taskId);
-
-      expect(result.agentId).toMatch(/^agent-1-execute-test-/);
-
-      // Verify status was updated
-      const planContent = getFileContent(`${SPECS_DIR}/${taskId}/implementation_plan.json`);
-      const plan = JSON.parse(planContent!) as PlanData;
-      expect(plan.status).toBe('in_progress');
-      expect(plan.xstateState).toBe('in_progress');
-      expect(plan.executionPhase).toBe('idle');
-    });
-
-    it('returns agentId with timestamp', () => {
-      const taskId = '1-agent-id-test';
-      resetFs({
-        [`${SPECS_DIR}/${taskId}/requirements.json`]: createRequirementsJson('Agent ID Test'),
-        [`${SPECS_DIR}/${taskId}/implementation_plan.json`]: createPlanJson('Agent ID Test'),
-      });
-
-      const service = createTaskService(createProjectResolver());
-      const before = Date.now();
-      const result = service.executeTask(PROJECT_ID, taskId);
-      const after = Date.now();
-
-      // Extract timestamp from agentId
-      const parts = result.agentId.split('-');
-      const timestamp = Number(parts.at(-1));
-
-      expect(timestamp).toBeGreaterThanOrEqual(before);
-      expect(timestamp).toBeLessThanOrEqual(after);
-    });
-  });
-
   describe('edge cases', () => {
     it('handles task with logs', () => {
       const taskId = '1-with-logs';

@@ -16,6 +16,7 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { useProjects } from '@features/projects';
+import { useLaunchTask } from '@features/workflow';
 
 import { useKillAgent, useRestartFromCheckpoint, useStartExecution, useStartPlanning } from '../../api/useAgentMutations';
 import { useUpdateTaskStatus } from '../../api/useTaskMutations';
@@ -77,6 +78,7 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
   const killAgent = useKillAgent();
   const restartCheckpoint = useRestartFromCheckpoint();
   const updateStatus = useUpdateTaskStatus();
+  const launchTask = useLaunchTask();
 
   // Project data for resolving projectPath
   const { data: projects } = useProjects();
@@ -201,6 +203,21 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
       updateStatus.mutate({ taskId, status: 'backlog' });
     },
     [updateStatus],
+  );
+
+  const handleLaunchWorkflow = useCallback(
+    (taskId: string) => {
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      const taskProjectId = (task as unknown as { projectId?: string }).projectId ?? projectId ?? '';
+      const path = resolveProjectPath(taskProjectId);
+      if (path.length === 0) return;
+      launchTask.mutate({
+        taskDescription: task.description,
+        projectPath: path,
+      });
+    },
+    [tasks, projectId, resolveProjectPath, launchTask],
   );
 
   const getRowId = useCallback(
@@ -400,6 +417,7 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
             task={detailData.parentTask}
             onApproveAndExecute={handleStartExecution}
             onKillAgent={handleKillAgent}
+            onLaunchWorkflow={handleLaunchWorkflow}
             onRejectPlan={handleRejectPlan}
             onRestartCheckpoint={handleRestartCheckpoint}
           />
@@ -407,7 +425,7 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
       }
       return null;
     },
-    [handleStartExecution, handleKillAgent, handleRejectPlan, handleRestartCheckpoint],
+    [handleStartExecution, handleKillAgent, handleLaunchWorkflow, handleRejectPlan, handleRestartCheckpoint],
   );
 
   if (isLoading) {

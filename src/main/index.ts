@@ -137,7 +137,6 @@ function initializeApp(): void {
   setupLifecycle({
     createWindow,
     terminalService: registry.terminalService,
-    agentService: registry.agentService,
     agentOrchestrator: registry.agentOrchestrator,
     agentWatchdog: registry.agentWatchdog,
     errorCollector: registry.errorCollector,

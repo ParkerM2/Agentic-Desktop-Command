@@ -3,5 +3,10 @@
  */
 
 export { InsightsPage } from './components/InsightsPage';
-export { useInsightMetrics, useTaskDistribution, useProjectBreakdown } from './api/useInsights';
+export {
+  useInsightMetrics,
+  useInsightTimeSeries,
+  useProjectBreakdown,
+  useTaskDistribution,
+} from './api/useInsights';
 export { insightKeys } from './api/queryKeys';

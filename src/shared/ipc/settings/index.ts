@@ -16,10 +16,4 @@ export {
   WebhookConfigSchema,
 } from './schemas';
 
-export {
-  hotkeysInvoke,
-  screenInvoke,
-  settingsEvents,
-  settingsInvoke,
-  voiceInvoke,
-} from './contract';
+export { hotkeysInvoke, screenInvoke, settingsInvoke, voiceInvoke } from './contract';

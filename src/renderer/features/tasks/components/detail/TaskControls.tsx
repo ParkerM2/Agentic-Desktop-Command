@@ -1,13 +1,14 @@
 /**
- * TaskControls -- Action buttons for task detail: Run, Stop, Retry, Delete
+ * TaskControls -- Action buttons for task detail: Run, Stop, Retry, Launch, Delete
  *
  * Run/Stop/Retry delegate to orchestrator callbacks from the parent.
+ * Launch delegates to the workflow feature's useLaunchTask.
  * Delete is handled directly via useDeleteTask.
  */
 
 import { useState } from 'react';
 
-import { Play, RefreshCw, Square, Trash2 } from 'lucide-react';
+import { Play, RefreshCw, Rocket, Square, Trash2 } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
@@ -21,12 +22,13 @@ interface TaskControlsProps {
   onRun?: (taskId: string) => void;
   onStop?: (taskId: string) => void;
   onRetry?: (taskId: string) => void;
+  onLaunch?: (taskId: string) => void;
 }
 
 const CONTROL_BUTTON_BASE =
   'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors';
 
-export function TaskControls({ task, onRun, onStop, onRetry }: TaskControlsProps) {
+export function TaskControls({ task, onRun, onStop, onRetry, onLaunch }: TaskControlsProps) {
   const deleteTask = useDeleteTask();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -65,6 +67,19 @@ export function TaskControls({ task, onRun, onStop, onRetry }: TaskControlsProps
           Run
         </button>
       )}
+
+      {!isRunning && !isDone ? (
+        <button
+          aria-label="Launch via workflow"
+          className={cn('bg-accent/10 text-accent-foreground hover:bg-accent/20', CONTROL_BUTTON_BASE)}
+          onClick={() => {
+            onLaunch?.(task.id);
+          }}
+        >
+          <Rocket className="h-3.5 w-3.5" />
+          Launch
+        </button>
+      ) : null}
 
       {isError ? (
         <button

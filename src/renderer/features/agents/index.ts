@@ -6,8 +6,6 @@ export {
   useAgents,
   useAllAgents,
   useStopAgent,
-  usePauseAgent,
-  useResumeAgent,
 } from './api/useAgents';
 export { agentKeys } from './api/queryKeys';
 export { useAgentEvents } from './hooks/useAgentEvents';

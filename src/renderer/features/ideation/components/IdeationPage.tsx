@@ -1,13 +1,15 @@
 import { useState } from 'react';
 
-import { ChevronDown, ChevronUp, Lightbulb, Plus, Tag, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lightbulb, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
 
-import type { IdeaCategory } from '@shared/types';
+import type { Idea, IdeaCategory } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
 import { useCreateIdea, useDeleteIdea, useIdeas, useVoteIdea } from '../api/useIdeas';
 import { useIdeaEvents } from '../hooks/useIdeaEvents';
+
+import { IdeaEditForm } from './IdeaEditForm';
 
 const CATEGORY_CONFIG: Record<IdeaCategory, { label: string; colorClass: string }> = {
   feature: { label: 'Feature', colorClass: 'text-primary' },
@@ -33,6 +35,7 @@ export function IdeationPage() {
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState<IdeaCategory>('feature');
+  const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
 
   const category = activeFilter === 'all' ? undefined : activeFilter;
   const { data: ideas, isLoading } = useIdeas(undefined, undefined, category);
@@ -170,13 +173,24 @@ export function IdeationPage() {
                         {catConfig.label}
                       </span>
                     </div>
-                    <button
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                      type="button"
-                      onClick={() => deleteIdea.mutate(idea.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        aria-label={`Edit ${idea.title}`}
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        type="button"
+                        onClick={() => setEditingIdea(idea)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        aria-label={`Delete ${idea.title}`}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        type="button"
+                        onClick={() => deleteIdea.mutate(idea.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Title & Description */}
@@ -222,6 +236,9 @@ export function IdeationPage() {
           </div>
         ) : null}
       </div>
+
+      {/* Edit dialog */}
+      <IdeaEditForm idea={editingIdea} onClose={() => setEditingIdea(null)} />
     </div>
   );
 }

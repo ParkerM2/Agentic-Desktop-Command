@@ -8,12 +8,13 @@
  * Domain contracts are in src/shared/ipc/<domain>/ folders.
  */
 
-import { agentsEvents, agentsInvoke, orchestratorEvents, orchestratorInvoke } from './agents';
+import { orchestratorEvents, orchestratorInvoke } from './agents';
 import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
 import { authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { claudeEvents, claudeInvoke } from './claude';
+import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { emailEvents, emailInvoke } from './email';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
@@ -36,7 +37,6 @@ import {
   milestonesInvoke,
   notesEvents,
   notesInvoke,
-  rateLimitEvents,
   screenInvoke,
   timeInvoke,
   voiceEvents,
@@ -61,7 +61,6 @@ export const ipcInvokeContract = {
   ...tasksInvoke,
   ...hubTasksInvoke,
   ...terminalsInvoke,
-  ...agentsInvoke,
   ...settingsInvoke,
   ...hotkeysInvoke,
   ...notesInvoke,
@@ -95,6 +94,7 @@ export const ipcInvokeContract = {
   ...devicesInvoke,
   ...authInvoke,
   ...workflowInvoke,
+  ...dashboardInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -103,7 +103,6 @@ export const ipcEventContract = {
   ...tasksEvents,
   ...hubTasksEvents,
   ...terminalsEvents,
-  ...agentsEvents,
   ...projectsEvents,
   ...appEvents,
   ...healthEvents,
@@ -119,13 +118,13 @@ export const ipcEventContract = {
   ...fitnessEvents,
   ...hubEvents,
   ...githubEvents,
-  ...rateLimitEvents,
   ...emailEvents,
   ...notificationsEvents,
   ...voiceEvents,
   ...briefingEvents,
   ...orchestratorEvents,
   ...qaEvents,
+  ...dashboardEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -138,9 +137,7 @@ export type { EventChannel, EventPayload, InvokeChannel, InvokeInput, InvokeOutp
 
 export {
   AgentPhaseSchema,
-  AgentSessionSchema,
   AgentSessionStatusSchema,
-  AggregatedTokenUsageSchema,
   OrchestratorSessionSchema,
 } from './agents';
 
@@ -174,6 +171,8 @@ export {
   SuggestionTypeSchema,
   TaskSummarySchema,
 } from './briefing';
+
+export { CaptureSchema } from './dashboard';
 
 export {
   ClaudeConversationSchema,
@@ -234,7 +233,6 @@ export {
   HubConnectionStatusSchema,
   HubStatusOutputSchema,
   HubSyncOutputSchema,
-  HubWsStatusOutputSchema,
 } from './hub';
 
 export {

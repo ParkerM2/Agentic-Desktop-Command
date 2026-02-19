@@ -12,7 +12,6 @@ import type {
   TaskDistribution,
 } from '@shared/types';
 
-import type { AgentService } from '../agent/agent-service';
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
@@ -27,27 +26,34 @@ export interface InsightsService {
 
 export function createInsightsService(deps: {
   taskService: TaskService;
-  agentService: AgentService;
   projectService: ProjectService;
-  agentOrchestrator?: AgentOrchestrator;
+  agentOrchestrator: AgentOrchestrator;
   qaRunner?: QaRunner;
 }): InsightsService {
-  const { taskService, agentService, projectService, agentOrchestrator, qaRunner } = deps;
+  const { taskService, projectService, agentOrchestrator, qaRunner } = deps;
+
+  function getOrchestratorTokenCost(): number {
+    // AgentSession does not yet track per-session token costs.
+    // When the orchestrator adds cost tracking to AgentSession,
+    // sum completed session costs here. For now return 0.
+    return 0;
+  }
 
   function getOrchestratorMetrics(): {
     sessionsToday: number;
     successRate: number;
     avgDuration: number;
+    activeCount: number;
   } {
-    if (!agentOrchestrator) {
-      return { sessionsToday: 0, successRate: 0, avgDuration: 0 };
-    }
-
     const today = new Date().toISOString().split('T')[0] ?? '';
     const allSessions = [...agentOrchestrator.listActiveSessions()];
 
     const sessionsToday = allSessions.filter(
       (s) => s.spawnedAt.startsWith(today),
+    ).length;
+
+    const activeCount = allSessions.filter(
+      (s) => s.status === 'active' || s.status === 'spawning',
     ).length;
 
     const finished = allSessions.filter(
@@ -67,7 +73,7 @@ export function createInsightsService(deps: {
       avgDuration = Math.round(totalDuration / completed.length);
     }
 
-    return { sessionsToday, successRate, avgDuration };
+    return { sessionsToday, successRate, avgDuration, activeCount };
   }
 
   function getQaPassRate(projectIds: string[]): number {
@@ -107,15 +113,7 @@ export function createInsightsService(deps: {
 
       const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      // Agent metrics from first project (agents are project-scoped)
-      const agentProjectId = projectId ?? (projectIds.length > 0 ? projectIds[0] : '');
-      const agents = agentProjectId ? agentService.listAgents(agentProjectId) : [];
-      const activeAgents = agents.filter((a) => a.status === 'running').length;
-      const completedAgents = agents.filter((a) => a.status === 'completed').length;
-      const agentSuccessRate =
-        agents.length > 0 ? Math.round((completedAgents / agents.length) * 100) : 0;
-
-      // Orchestrator and QA metrics
+      // Agent metrics from orchestrator
       const orchMetrics = getOrchestratorMetrics();
       const qaPassRate = getQaPassRate(projectIds);
 
@@ -123,14 +121,14 @@ export function createInsightsService(deps: {
         totalTasks,
         completedTasks,
         completionRate,
-        agentRunCount: agents.length,
-        agentSuccessRate,
-        activeAgents,
+        agentRunCount: orchMetrics.sessionsToday,
+        agentSuccessRate: orchMetrics.successRate,
+        activeAgents: orchMetrics.activeCount,
         orchestratorSessionsToday: orchMetrics.sessionsToday,
         orchestratorSuccessRate: orchMetrics.successRate,
         averageAgentDuration: orchMetrics.avgDuration,
         qaPassRate,
-        totalTokenCost: 0,
+        totalTokenCost: getOrchestratorTokenCost(),
       };
     },
 
@@ -153,13 +151,10 @@ export function createInsightsService(deps: {
         }
 
         // Count orchestrator sessions spawned on this date
-        let agentRuns = 0;
-        if (agentOrchestrator) {
-          const activeSessions = agentOrchestrator.listActiveSessions();
-          agentRuns = activeSessions.filter(
-            (s) => s.spawnedAt.startsWith(dateStr),
-          ).length;
-        }
+        const activeSessions = agentOrchestrator.listActiveSessions();
+        const agentRuns = activeSessions.filter(
+          (s) => s.spawnedAt.startsWith(dateStr),
+        ).length;
 
         result.push({
           date: dateStr,

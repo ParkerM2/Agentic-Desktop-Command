@@ -20,6 +20,7 @@ import {
   Lightbulb,
   ListTodo,
   Map,
+  Newspaper,
   PanelLeft,
   PanelLeftClose,
   ScrollText,
@@ -52,6 +53,7 @@ const COLLAPSED_STYLE = 'justify-center px-0';
 /** Top-level nav items (not project-scoped) */
 const topLevelItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
+  { label: 'Briefing', icon: Newspaper, path: ROUTES.BRIEFING },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
   { label: 'Notes', icon: StickyNote, path: ROUTES.NOTES },
   { label: 'Fitness', icon: Dumbbell, path: ROUTES.FITNESS },

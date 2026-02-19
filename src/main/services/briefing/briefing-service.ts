@@ -20,7 +20,6 @@ import { createBriefingGenerator } from './briefing-generator';
 
 import type { SuggestionEngine } from './suggestion-engine';
 import type { IpcRouter } from '../../ipc/router';
-import type { AgentService } from '../agent/agent-service';
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
@@ -54,11 +53,10 @@ export interface BriefingServiceDeps {
   router: IpcRouter;
   projectService: ProjectService;
   taskService: TaskService;
-  agentService: AgentService;
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
-  agentOrchestrator?: AgentOrchestrator;
+  agentOrchestrator: AgentOrchestrator;
 }
 
 /**
@@ -79,7 +77,6 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
   const generator = createBriefingGenerator({
     projectService: deps.projectService,
     taskService: deps.taskService,
-    agentService: deps.agentService,
     claudeClient: deps.claudeClient,
     notificationManager: deps.notificationManager,
     suggestionEngine: deps.suggestionEngine,

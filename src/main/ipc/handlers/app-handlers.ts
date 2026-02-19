@@ -15,30 +15,65 @@ interface AppHandlerDeps {
   providers: Map<string, OAuthConfig>;
 }
 
+function getExecError(error: unknown): { code?: string; status?: number } {
+  if (error === null || typeof error !== 'object') {
+    return {};
+  }
+  const record = error as Record<string, unknown>;
+  return {
+    code: typeof record.code === 'string' ? record.code : undefined,
+    status: typeof record.status === 'number' ? record.status : undefined,
+  };
+}
+
 function checkClaudeAuth(): {
   installed: boolean;
   authenticated: boolean;
   version?: string;
 } {
+  // Step 1: Check if Claude CLI is installed via --version
+  let version: string | undefined;
   try {
-    const stdout = execFileSync('claude', ['--version'], {
+    version = execFileSync('claude', ['--version'], {
       encoding: 'utf-8',
       timeout: 5000,
     }).trim();
-    return { installed: true, authenticated: true, version: stdout };
   } catch (error: unknown) {
-    const code =
-      error !== null &&
-      typeof error === 'object' &&
-      'code' in error &&
-      typeof (error as Record<string, unknown>).code === 'string'
-        ? (error as Record<string, string>).code
-        : undefined;
+    const { code } = getExecError(error);
     if (code === 'ENOENT') {
       return { installed: false, authenticated: false };
     }
-    // CLI exists but command failed — installed but possibly not authenticated
+    // CLI exists but --version failed — treat as installed but unknown auth
     return { installed: true, authenticated: false };
+  }
+
+  // Step 2: Verify actual authentication via `claude auth status`
+  try {
+    const authOutput = execFileSync('claude', ['auth', 'status'], {
+      encoding: 'utf-8',
+      timeout: 5000,
+    }).trim();
+
+    // If the command succeeds and output contains "authenticated" or "logged in",
+    // the user is authenticated. A non-zero exit or "not authenticated" means no auth.
+    const lowerOutput = authOutput.toLowerCase();
+    const authenticated =
+      lowerOutput.includes('authenticated') ||
+      lowerOutput.includes('logged in') ||
+      lowerOutput.includes('active');
+
+    return { installed: true, authenticated, version };
+  } catch (error: unknown) {
+    const { status } = getExecError(error);
+
+    // Non-zero exit from `auth status` means not authenticated
+    if (status !== undefined && status !== 0) {
+      return { installed: true, authenticated: false, version };
+    }
+
+    // Command not recognized (older CLI without auth subcommand) — fall back
+    // to assuming authenticated if --version succeeded
+    return { installed: true, authenticated: true, version };
   }
 }
 

@@ -20,8 +20,6 @@ import { createTokenStore } from '../auth/token-store';
 import { IpcRouter } from '../ipc/router';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
-import { createAgentQueue } from '../services/agent/agent-queue';
-import { createAgentService } from '../services/agent/agent-service';
 import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -36,6 +34,7 @@ import { createSuggestionEngine } from '../services/briefing/suggestion-engine';
 import { createCalendarService } from '../services/calendar/calendar-service';
 import { createChangelogService } from '../services/changelog/changelog-service';
 import { createClaudeClient } from '../services/claude';
+import { createDashboardService } from '../services/dashboard/dashboard-service';
 import { createDeviceService } from '../services/device/device-service';
 import { createEmailService } from '../services/email/email-service';
 import { createFitnessService } from '../services/fitness/fitness-service';
@@ -95,7 +94,6 @@ export interface ServiceRegistryResult {
   webhookRelay: ReturnType<typeof createWebhookRelay>;
   hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
   terminalService: ReturnType<typeof createTerminalService>;
-  agentService: ReturnType<typeof createAgentService>;
   alertService: ReturnType<typeof createAlertService>;
   notificationManager: ReturnType<typeof createNotificationManager>;
   briefingService: ReturnType<typeof createBriefingService>;
@@ -119,6 +117,7 @@ export function createServiceRegistry(
   const errorCollector = createErrorCollector(dataDir, {
     onError: (entry) => { router.emit('event:app.error', entry); },
     onCapacityAlert: (count, message) => { router.emit('event:app.capacityAlert', { count, message }); },
+    onDataRecovery: (store, message) => { router.emit('event:app.dataRecovery', { store, message }); },
   });
   const healthRegistry = createHealthRegistry({
     onUnhealthy: (serviceName, missedCount) => {
@@ -172,20 +171,13 @@ export function createServiceRegistry(
   const taskService = createTaskService(
     (id) => projectService.getProjectPath(id),
     () => projectService.listProjectsSync().map((p) => ({ id: p.id, path: p.path })),
+    router,
   );
   const settingsService = createSettingsService();
 
-  // ─── Agent services ──────────────────────────────────────────
-  const agentSettings = settingsService.getAgentSettings();
-  const agentQueue = createAgentQueue(router, agentSettings.maxConcurrentAgents);
-  const agentService = createAgentService(
-    router,
-    (id) => projectService.getProjectPath(id),
-    agentQueue,
-  );
-
   // ─── Persistence services ────────────────────────────────────
   const notesService = createNotesService({ dataDir, router });
+  const dashboardService = createDashboardService({ dataDir, router });
   const plannerService = createPlannerService(router);
   const alertService = createAlertService(router);
   alertService.startChecking();
@@ -314,11 +306,6 @@ export function createServiceRegistry(
   const screenCaptureService = initNonCritical('screenCapture', () =>
     createScreenCaptureService(),
   );
-  const suggestionEngine = createSuggestionEngine({
-    projectService,
-    taskService,
-    agentService,
-  });
   const appUpdateService = createAppUpdateService(router);
 
   // ─── Hotkey + quick input ────────────────────────────────────
@@ -364,9 +351,14 @@ export function createServiceRegistry(
   healthRegistry.register('hubHeartbeat', 60_000);
   healthRegistry.register('hubWebSocket', 30_000);
 
+  const suggestionEngine = createSuggestionEngine({
+    projectService,
+    taskService,
+    agentOrchestrator,
+  });
+
   const insightsService = createInsightsService({
     taskService,
-    agentService,
     projectService,
     agentOrchestrator,
     qaRunner,
@@ -377,7 +369,6 @@ export function createServiceRegistry(
     router,
     projectService,
     taskService,
-    agentService,
     claudeClient,
     notificationManager,
     suggestionEngine,
@@ -428,8 +419,6 @@ export function createServiceRegistry(
     taskService,
     terminalService,
     settingsService,
-    agentService,
-    agentQueue,
     claudeClient,
     deviceService,
     alertService,
@@ -447,6 +436,7 @@ export function createServiceRegistry(
     mcpManager,
     milestonesService,
     notesService,
+    dashboardService,
     notificationManager,
     plannerService,
     spotifyService,
@@ -485,7 +475,6 @@ export function createServiceRegistry(
     webhookRelay,
     hubConnectionManager,
     terminalService,
-    agentService,
     alertService,
     notificationManager,
     briefingService,

@@ -1,5 +1,7 @@
 /**
  * QuickCapture — Quick text input for ideas, tasks, and notes
+ *
+ * Persists captures via IPC (dashboard.captures.*) so they survive restarts.
  */
 
 import { useState } from 'react';
@@ -8,18 +10,19 @@ import { Plus, X } from 'lucide-react';
 
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
-import { useDashboardStore } from '../store';
+import { useCaptureMutations, useCaptures } from '../api/useCaptures';
 
 const MAX_RECENT = 5;
 
 export function QuickCapture() {
   const [inputValue, setInputValue] = useState('');
-  const { quickCaptures, addCapture, removeCapture } = useDashboardStore();
+  const { data: captures } = useCaptures();
+  const { createCapture, deleteCapture } = useCaptureMutations();
 
   function handleSubmit() {
     const trimmed = inputValue.trim();
     if (trimmed.length === 0) return;
-    addCapture(trimmed);
+    createCapture.mutate(trimmed);
     setInputValue('');
   }
 
@@ -29,7 +32,7 @@ export function QuickCapture() {
     }
   }
 
-  const recentCaptures = quickCaptures.slice(0, MAX_RECENT);
+  const recentCaptures = (captures ?? []).slice(0, MAX_RECENT);
 
   return (
     <div className="bg-card border-border rounded-lg border p-4">
@@ -61,7 +64,7 @@ export function QuickCapture() {
         </button>
       </div>
 
-      {recentCaptures.length > 0 && (
+      {recentCaptures.length > 0 ? (
         <ul className="mt-3 space-y-1.5">
           {recentCaptures.map((capture) => (
             <li
@@ -73,15 +76,16 @@ export function QuickCapture() {
                 {formatRelativeTime(capture.createdAt)}
               </span>
               <button
+                aria-label="Remove capture"
                 className="text-muted-foreground hover:text-foreground shrink-0"
-                onClick={() => removeCapture(capture.id)}
+                onClick={() => deleteCapture.mutate(capture.id)}
               >
                 <X className="h-3 w-3" />
               </button>
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </div>
   );
 }

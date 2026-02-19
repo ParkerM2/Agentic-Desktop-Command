@@ -23,9 +23,7 @@ export {
   // ── Schema re-exports (alphabetical by domain) ──
   // agents
   AgentPhaseSchema,
-  AgentSessionSchema,
   AgentSessionStatusSchema,
-  AggregatedTokenUsageSchema,
   OrchestratorSessionSchema,
   // assistant
   AssistantActionSchema,
@@ -106,7 +104,6 @@ export {
   HubConnectionStatusSchema,
   HubStatusOutputSchema,
   HubSyncOutputSchema,
-  HubWsStatusOutputSchema,
   // misc (alerts, changelog, devices, ideas, insights, merge, milestones, notes, screen, voice, workspaces)
   AlertLinkedToSchema,
   AlertSchema,

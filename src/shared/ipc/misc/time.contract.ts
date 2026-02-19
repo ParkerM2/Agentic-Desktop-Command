@@ -2,6 +2,9 @@
  * Time Parser IPC Contract
  *
  * Invoke channel for natural language time parsing.
+ *
+ * @dead The `time.parse` channel has a main-process handler but is never
+ *       called from the renderer. Retained for potential future use.
  */
 
 import { z } from 'zod';

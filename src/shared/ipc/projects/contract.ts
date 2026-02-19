@@ -16,7 +16,12 @@ export const projectsInvoke = {
     output: z.array(ProjectSchema),
   },
   'projects.add': {
-    input: z.object({ path: z.string() }),
+    input: z.object({
+      path: z.string(),
+      name: z.string().optional(),
+      workspaceId: z.string().optional(),
+      description: z.string().optional(),
+    }),
     output: ProjectSchema,
   },
   'projects.remove': {
@@ -42,6 +47,7 @@ export const projectsInvoke = {
       description: z.string().optional(),
       gitUrl: z.string().optional(),
       defaultBranch: z.string().optional(),
+      workspaceId: z.string().optional(),
     }),
     output: ProjectSchema,
   },

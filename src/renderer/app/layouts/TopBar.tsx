@@ -16,6 +16,7 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
+import { ScreenshotButton } from '@features/screen';
 
 import { CommandBar } from './CommandBar';
 
@@ -91,8 +92,9 @@ export function TopBar() {
         </button>
       </div>
 
-      {/* Right: Health + Hub status + Command bar */}
+      {/* Right: Screenshot + Health + Hub status + Command bar */}
       <div className="ml-2 flex shrink-0 items-center gap-2">
+        <ScreenshotButton className="scale-[0.85] origin-right" />
         <HealthIndicator />
         <HubStatus />
         <div className="w-80">

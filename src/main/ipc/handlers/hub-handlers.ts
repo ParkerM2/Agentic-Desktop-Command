@@ -39,6 +39,9 @@ export function registerHubHandlers(
 
   router.handle('hub.sync', async () => {
     const syncedCount = await syncService.syncPending();
+    if (syncedCount > 0) {
+      router.emit('event:hub.syncCompleted', { entities: [], syncedCount });
+    }
     return { syncedCount, pendingCount: syncService.getPendingCount() };
   });
 

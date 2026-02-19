@@ -41,8 +41,14 @@ export const PROVIDER_CONFIG: Partial<Record<string, ProviderConfig>> = {
     label: 'Google',
     consoleUrl: 'https://console.cloud.google.com/apis/credentials',
     consoleName: 'Google Cloud Console',
-    requiredScopes: ['openid', 'email', 'profile'],
-    scopeDescription: 'Basic profile information and email',
+    requiredScopes: [
+      'openid',
+      'email',
+      'profile',
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/calendar.events',
+    ],
+    scopeDescription: 'Profile, email, and Google Calendar access (read/write events)',
   },
   slack: {
     label: 'Slack',

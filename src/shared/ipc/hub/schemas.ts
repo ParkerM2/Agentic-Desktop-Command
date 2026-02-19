@@ -25,13 +25,6 @@ export const HubConfigOutputSchema = z.object({
   lastConnected: z.string().optional(),
 });
 
-export const HubWsStatusOutputSchema = z.object({
-  status: HubConnectionStatusSchema,
-  lastConnectedAt: z.string().nullable(),
-  reconnectAttempts: z.number(),
-  error: z.string().nullable(),
-});
-
 export const HubSyncOutputSchema = z.object({
   syncedCount: z.number(),
   pendingCount: z.number(),

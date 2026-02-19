@@ -1,31 +1,33 @@
 /**
- * AgentDashboard — Shows running agents for the active project
+ * AgentDashboard — Shows running orchestrator agent sessions
  */
 
-import { Bot, Pause, Play, Square, Loader2, Clock } from 'lucide-react';
+import { Bot, Square, Loader2, Clock } from 'lucide-react';
 
-import type { AgentSession } from '@shared/types';
-
-import { useLooseParams } from '@renderer/shared/hooks';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
-import { useAgents, useStopAgent, usePauseAgent, useResumeAgent } from '../api/useAgents';
+import { useAllAgents, useStopAgent } from '../api/useAgents';
 import { useAgentEvents } from '../hooks/useAgentEvents';
 
 const statusColors: Record<string, string> = {
-  idle: 'text-zinc-400',
-  running: 'text-amber-400',
-  paused: 'text-blue-400',
-  error: 'text-red-400',
+  spawning: 'text-blue-400',
+  active: 'text-amber-400',
   completed: 'text-emerald-400',
+  error: 'text-red-400',
+  killed: 'text-zinc-400',
+};
+
+const statusLabels: Record<string, string> = {
+  spawning: 'Spawning',
+  active: 'Running',
+  completed: 'Completed',
+  error: 'Error',
+  killed: 'Killed',
 };
 
 export function AgentDashboard() {
-  const params = useLooseParams();
-  const { data: agents, isLoading } = useAgents(params.projectId ?? null);
+  const { data: sessions, isLoading } = useAllAgents();
   const stopAgent = useStopAgent();
-  const pauseAgent = usePauseAgent();
-  const resumeAgent = useResumeAgent();
 
   useAgentEvents();
 
@@ -41,19 +43,22 @@ export function AgentDashboard() {
     <div className="mx-auto max-w-4xl p-6">
       <h1 className="mb-6 text-xl font-bold">Agents</h1>
 
-      {agents && agents.length > 0 ? (
+      {sessions && sessions.length > 0 ? (
         <div className="space-y-3">
-          {agents.map((agent: AgentSession) => (
+          {sessions.map((session) => (
             <div
-              key={agent.id}
+              key={session.id}
               className="border-border flex items-center justify-between rounded-lg border p-4"
             >
               <div className="flex items-center gap-3">
-                <Bot className={cn('h-5 w-5', statusColors[agent.status] ?? 'text-zinc-400')} />
+                <Bot className={cn('h-5 w-5', statusColors[session.status] ?? 'text-zinc-400')} />
                 <div>
-                  <p className="text-sm font-medium">Agent {agent.id.slice(0, 8)}</p>
+                  <p className="text-sm font-medium">
+                    {session.phase === 'planning' ? 'Planning' : 'Executing'} — {session.taskId.slice(0, 12)}
+                  </p>
                   <p className="text-muted-foreground text-xs">
-                    Task: {agent.taskId.slice(0, 8)} · {agent.status}
+                    {statusLabels[session.status] ?? session.status}
+                    {session.pid > 0 ? ` · PID ${String(session.pid)}` : ''}
                   </p>
                 </div>
               </div>
@@ -61,35 +66,16 @@ export function AgentDashboard() {
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground flex items-center gap-1 text-xs">
                   <Clock className="h-3 w-3" />
-                  {formatRelativeTime(agent.startedAt)}
+                  {formatRelativeTime(session.spawnedAt)}
                 </span>
 
-                {agent.status === 'running' && (
-                  <>
-                    <button
-                      className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1.5"
-                      title="Pause"
-                      onClick={() => pauseAgent.mutate(agent.id)}
-                    >
-                      <Pause className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1.5"
-                      title="Stop"
-                      onClick={() => stopAgent.mutate(agent.id)}
-                    >
-                      <Square className="h-4 w-4" />
-                    </button>
-                  </>
-                )}
-
-                {agent.status === 'paused' && (
+                {(session.status === 'active' || session.status === 'spawning') && (
                   <button
-                    className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1.5"
-                    title="Resume"
-                    onClick={() => resumeAgent.mutate(agent.id)}
+                    className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1.5"
+                    title="Stop"
+                    onClick={() => stopAgent.mutate(session.id)}
                   >
-                    <Play className="h-4 w-4" />
+                    <Square className="h-4 w-4" />
                   </button>
                 )}
               </div>

@@ -9,6 +9,7 @@ interface WorkspaceOption {
 
 interface StepConfirmProps {
   projectName: string;
+  description: string;
   selectedPath: string | null;
   repoType: string;
   hasChildRepos: boolean;
@@ -20,6 +21,7 @@ interface StepConfirmProps {
 
 export function StepConfirm({
   projectName,
+  description,
   selectedPath,
   repoType,
   hasChildRepos,
@@ -47,6 +49,12 @@ export function StepConfirm({
               <dd className="font-medium">
                 {workspaces.find((ws) => ws.id === workspaceId)?.name ?? workspaceId}
               </dd>
+            </div>
+          ) : null}
+          {description.trim().length > 0 ? (
+            <div className="flex justify-between">
+              <dt className="text-muted-foreground">Description</dt>
+              <dd className="max-w-[250px] truncate text-right font-medium">{description}</dd>
             </div>
           ) : null}
           <div className="flex justify-between">

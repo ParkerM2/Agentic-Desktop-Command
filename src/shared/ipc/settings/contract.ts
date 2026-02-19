@@ -182,12 +182,3 @@ export const screenInvoke = {
   },
 } as const;
 
-/** Event channels for voice-related events */
-export const settingsEvents = {
-  'event:voice.transcript': {
-    payload: z.object({
-      transcript: z.string(),
-      isFinal: z.boolean(),
-    }),
-  },
-} as const;

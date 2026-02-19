@@ -25,7 +25,7 @@ export function useAddProject() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (path: string) => ipc('projects.add', { path }),
+    mutationFn: (data: InvokeInput<'projects.add'>) => ipc('projects.add', data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },

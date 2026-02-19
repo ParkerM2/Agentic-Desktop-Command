@@ -83,8 +83,20 @@ export function executePlanner(
           'planner_today',
         );
       }
-      case 'weekly':
-        return buildActionResponse('Weekly review feature coming soon.', intent, 'planner_weekly');
+      case 'weekly': {
+        const mondayDate = new Date().toISOString().slice(0, 10);
+        const review = deps.plannerService.getWeek(mondayDate);
+        const { summary } = review;
+        const lines = [
+          `Week of ${review.weekStartDate} to ${review.weekEndDate}:`,
+          `- Goals set: ${String(summary.totalGoalsSet)}, completed: ${String(summary.totalGoalsCompleted)}`,
+          `- Time blocks: ${String(summary.totalTimeBlocks)} (${String(summary.totalHoursPlanned)}h planned)`,
+        ];
+        if (review.reflection !== undefined && review.reflection.length > 0) {
+          lines.push(`- Reflection: ${review.reflection}`);
+        }
+        return buildActionResponse(lines.join('\n'), intent, 'planner_weekly');
+      }
       default:
         return buildTextResponse(
           'I understood that as a planner command, but could not determine the action.',

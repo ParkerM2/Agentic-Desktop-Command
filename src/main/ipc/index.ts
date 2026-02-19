@@ -5,7 +5,6 @@
  * Each handler file is thin — it maps channels to service calls.
  */
 
-import { registerAgentHandlers } from './handlers/agent-handlers';
 import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
@@ -16,6 +15,7 @@ import { registerBriefingHandlers } from './handlers/briefing-handlers';
 import { registerCalendarHandlers } from './handlers/calendar-handlers';
 import { registerChangelogHandlers } from './handlers/changelog-handlers';
 import { registerClaudeHandlers } from './handlers/claude-handlers';
+import { registerDashboardHandlers } from './handlers/dashboard-handlers';
 import { registerDeviceHandlers } from './handlers/device-handlers';
 import { registerEmailHandlers } from './handlers/email-handlers';
 import { registerErrorHandlers } from './handlers/error-handlers';
@@ -50,8 +50,6 @@ import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
-import type { AgentQueue } from '../services/agent/agent-queue';
-import type { AgentService } from '../services/agent/agent-service';
 import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AppUpdateService } from '../services/app/app-update-service';
@@ -60,6 +58,7 @@ import type { BriefingService } from '../services/briefing/briefing-service';
 import type { CalendarService } from '../services/calendar/calendar-service';
 import type { ChangelogService } from '../services/changelog/changelog-service';
 import type { ClaudeClient } from '../services/claude';
+import type { DashboardService } from '../services/dashboard/dashboard-service';
 import type { DeviceService } from '../services/device/device-service';
 import type { EmailService } from '../services/email/email-service';
 import type { FitnessService } from '../services/fitness/fitness-service';
@@ -97,8 +96,6 @@ export interface Services {
   taskService: TaskService;
   terminalService: TerminalService;
   settingsService: SettingsService;
-  agentService: AgentService;
-  agentQueue: AgentQueue;
   claudeClient: ClaudeClient;
   deviceService: DeviceService;
   alertService: AlertService;
@@ -135,6 +132,7 @@ export interface Services {
   hubAuthService: HubAuthService;
   qaRunner: QaRunner;
   taskLauncher: TaskLauncherService;
+  dashboardService: DashboardService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -152,11 +150,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerSettingsHandlers(router, services.settingsService, {
     dataDir: services.dataDir,
     providers: services.providers,
-    onAgentSettingsChanged: (settings) => {
-      services.agentQueue.setMaxConcurrent(settings.maxConcurrentAgents);
-    },
   });
-  registerAgentHandlers(router, services.agentService);
   registerAlertHandlers(router, services.alertService);
   registerAuthHandlers(router, { hubAuthService: services.hubAuthService });
   registerAppHandlers(router, {
@@ -215,4 +209,5 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerDeviceHandlers(router, services.deviceService);
   registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.hubApiClient);
   registerQaHandlers(router, services.qaRunner, services.agentOrchestrator, services.hubApiClient);
+  registerDashboardHandlers(router, services.dashboardService);
 }

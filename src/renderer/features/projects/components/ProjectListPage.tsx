@@ -126,7 +126,7 @@ export function ProjectListPage() {
   async function handleAddProject() {
     const result = await selectDirectory.mutateAsync();
     if (result.path) {
-      const project = await addProject.mutateAsync(result.path);
+      const project = await addProject.mutateAsync({ path: result.path });
       addProjectTab(project.id);
       void navigate({ to: projectViewPath(project.id, PROJECT_VIEWS.TASKS) });
     }

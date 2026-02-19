@@ -22,13 +22,17 @@ export function registerGitHandlers(
     gitService.createBranch(repoPath, branchName, baseBranch),
   );
 
-  router.handle('git.createWorktree', ({ repoPath, worktreePath, branch }) =>
-    worktreeService.createWorktree(repoPath, worktreePath, branch),
-  );
+  router.handle('git.createWorktree', async ({ repoPath, worktreePath, branch }) => {
+    const result = await worktreeService.createWorktree(repoPath, worktreePath, branch);
+    router.emit('event:git.worktreeChanged', { projectId: repoPath });
+    return result;
+  });
 
-  router.handle('git.removeWorktree', ({ repoPath, worktreePath }) =>
-    worktreeService.removeWorktree(repoPath, worktreePath),
-  );
+  router.handle('git.removeWorktree', async ({ repoPath, worktreePath }) => {
+    const result = await worktreeService.removeWorktree(repoPath, worktreePath);
+    router.emit('event:git.worktreeChanged', { projectId: repoPath });
+    return result;
+  });
 
   router.handle('git.listWorktrees', ({ projectId }) =>
     Promise.resolve(worktreeService.listWorktrees(projectId)),

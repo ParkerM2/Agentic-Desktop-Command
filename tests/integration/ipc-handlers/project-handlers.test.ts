@@ -69,6 +69,13 @@ function createMockProjectService(projectStore: Map<string, Project>): ProjectSe
       return updated;
     }),
     selectDirectory: vi.fn(async () => ({ path: '/mock/selected/path' })),
+    initializeProject: vi.fn((projectId: string) => {
+      const project = projectStore.get(projectId);
+      if (!project) {
+        return { success: false, error: `Project ${projectId} not found` };
+      }
+      return { success: true };
+    }),
     getProjectPath: vi.fn((projectId: string) => projectStore.get(projectId)?.path),
     listProjectsSync: vi.fn(() => [...projectStore.values()]),
     getSubProjects: vi.fn(async () => []),
@@ -268,11 +275,24 @@ describe('Project IPC Handlers', () => {
   // ─── projects.initialize ─────────────────────────────────────
 
   describe('projects.initialize', () => {
-    it('returns success (no-op in Hub proxy mode)', async () => {
-      const result = await invoke('projects.initialize', { projectId: 'init-me' });
+    it('creates .adc/specs directory for a known project', async () => {
+      const project = createMockProject({ id: 'init-proj', name: 'Init Project' });
+      projectStore.set(project.id, project);
+
+      const result = await invoke('projects.initialize', { projectId: 'init-proj' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
+    });
+
+    it('returns error for unknown project', async () => {
+      const result = await invoke('projects.initialize', { projectId: 'nonexistent' });
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        success: false,
+        error: 'Project nonexistent not found',
+      });
     });
 
     it('validates input with Zod - missing projectId', async () => {

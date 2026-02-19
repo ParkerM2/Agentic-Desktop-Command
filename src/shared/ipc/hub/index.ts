@@ -8,5 +8,4 @@ export {
   HubConnectionStatusSchema,
   HubStatusOutputSchema,
   HubSyncOutputSchema,
-  HubWsStatusOutputSchema,
 } from './schemas';

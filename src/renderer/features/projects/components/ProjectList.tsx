@@ -25,7 +25,7 @@ export function ProjectList() {
   const handleAdd = async () => {
     const result = await selectDir.mutateAsync();
     if (result.path) {
-      const project = await addProject.mutateAsync(result.path);
+      const project = await addProject.mutateAsync({ path: result.path });
       setActiveProject(project.id);
     }
   };

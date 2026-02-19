@@ -3,7 +3,6 @@
  */
 
 // Components
-export { AssistantPage } from './components/AssistantPage';
 export { AssistantWidget } from './components/AssistantWidget';
 
 // Store

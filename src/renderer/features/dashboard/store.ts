@@ -1,38 +1,17 @@
 /**
  * Dashboard Store — UI state for the dashboard feature
+ *
+ * Quick captures are now persisted via IPC (dashboard.captures.*).
+ * This store only holds transient UI state.
  */
 
 import { create } from 'zustand';
 
-interface QuickCapture {
-  id: string;
-  text: string;
-  createdAt: string;
-}
-
 interface DashboardState {
-  quickCaptures: QuickCapture[];
-  addCapture: (text: string) => void;
-  removeCapture: (id: string) => void;
+  /** Placeholder for future UI state (e.g., selected widget, collapsed sections) */
+  _initialized: boolean;
 }
 
-export const useDashboardStore = create<DashboardState>((set) => ({
-  quickCaptures: [],
-
-  addCapture: (text) =>
-    set((state) => ({
-      quickCaptures: [
-        {
-          id: crypto.randomUUID(),
-          text,
-          createdAt: new Date().toISOString(),
-        },
-        ...state.quickCaptures,
-      ],
-    })),
-
-  removeCapture: (id) =>
-    set((state) => ({
-      quickCaptures: state.quickCaptures.filter((capture) => capture.id !== id),
-    })),
+export const useDashboardStore = create<DashboardState>()(() => ({
+  _initialized: true,
 }));

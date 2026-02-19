@@ -5,7 +5,9 @@
  * Replaces the previous stub page with real feature module.
  */
 
-import { Bell, CircleDot, GitPullRequest, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Bell, CircleDot, GitPullRequest, Loader2, Settings } from 'lucide-react';
 
 import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 import { cn } from '@renderer/shared/lib/utils';
@@ -14,6 +16,7 @@ import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/us
 import { useGitHubEvents } from '../hooks/useGitHubEvents';
 import { useGitHubStore } from '../store';
 
+import { IssueCreateForm } from './IssueCreateForm';
 import { IssueList } from './IssueList';
 import { NotificationList } from './NotificationList';
 import { PrDetailModal } from './PrDetailModal';
@@ -36,12 +39,24 @@ const TAB_CONFIG: Array<{
 // ── Component ────────────────────────────────────────────────
 
 export function GitHubPage() {
-  const { activeTab, selectedPrNumber, owner, repo, setActiveTab, selectPr } = useGitHubStore();
+  const { activeTab, selectedPrNumber, owner, repo, setActiveTab, selectPr, setRepo } =
+    useGitHubStore();
   const { data: prs, isLoading: prsLoading } = useGitHubPrs();
   const { data: issues, isLoading: issuesLoading } = useGitHubIssues();
   const { data: notifications, isLoading: notificationsLoading } = useGitHubNotifications();
 
+  const [editingRepo, setEditingRepo] = useState(false);
+  const [repoInput, setRepoInput] = useState(`${owner}/${repo}`);
+
   useGitHubEvents();
+
+  function handleRepoSave() {
+    const parts = repoInput.trim().split('/');
+    if (parts.length === 2 && parts[0].length > 0 && parts[1].length > 0) {
+      setRepo(parts[0], parts[1]);
+    }
+    setEditingRepo(false);
+  }
 
   const openPrCount = prs?.filter((pr) => pr.state === 'open').length ?? 0;
   const openIssueCount = issues?.filter((i) => i.state === 'open').length ?? 0;
@@ -90,9 +105,47 @@ export function GitHubPage() {
           <GitPullRequest className="text-primary h-6 w-6" />
           <h1 className="text-2xl font-bold">GitHub</h1>
         </div>
-        <p className="text-muted-foreground mt-1 text-sm">
-          {owner}/{repo}
-        </p>
+        <div className="mt-1 flex items-center gap-2">
+          {editingRepo ? (
+            <input
+              id="github-repo-input"
+              placeholder="owner/repo"
+              type="text"
+              value={repoInput}
+              className={cn(
+                'bg-card border-border text-foreground placeholder:text-muted-foreground',
+                'h-7 w-64 rounded-md border px-2 text-sm',
+                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
+              )}
+              onChange={(e) => setRepoInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRepoSave();
+                if (e.key === 'Escape') setEditingRepo(false);
+              }}
+            />
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {owner.length > 0 && repo.length > 0
+                ? `${owner}/${repo}`
+                : 'No repository configured'}
+            </p>
+          )}
+          <button
+            aria-label={editingRepo ? 'Save repository' : 'Change repository'}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            type="button"
+            onClick={() => {
+              if (editingRepo) {
+                handleRepoSave();
+              } else {
+                setRepoInput(`${owner}/${repo}`);
+                setEditingRepo(true);
+              }
+            }}
+          >
+            <Settings className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -162,6 +215,9 @@ export function GitHubPage() {
       {selectedPrNumber === null ? null : (
         <PrDetailModal prNumber={selectedPrNumber} onClose={() => selectPr(null)} />
       )}
+
+      {/* Issue Create Dialog */}
+      <IssueCreateForm />
     </div>
   );
 }
