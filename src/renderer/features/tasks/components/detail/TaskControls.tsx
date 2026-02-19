@@ -33,7 +33,7 @@ export function TaskControls({ task, onRun, onStop, onRetry, onLaunch }: TaskCon
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const status = task.status as string;
-  const isRunning = status === 'in_progress' || status === 'running' || status === 'planning';
+  const isRunning = status === 'running' || status === 'planning';
   const isDone = status === 'done';
   const isError = status === 'error';
 

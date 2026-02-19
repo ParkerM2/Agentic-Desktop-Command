@@ -12,12 +12,13 @@ import { z } from 'zod';
 
 export const TaskStatusSchema = z.enum([
   'backlog',
-  'queue',
-  'in_progress',
-  'ai_review',
-  'human_review',
+  'planning',
+  'plan_ready',
+  'queued',
+  'running',
+  'paused',
+  'review',
   'done',
-  'pr_created',
   'error',
 ]);
 
@@ -56,6 +57,9 @@ export const TaskSchema = z.object({
   title: z.string(),
   description: z.string(),
   status: TaskStatusSchema,
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  projectId: z.string().optional(),
+  workspaceId: z.string().optional(),
   subtasks: z.array(SubtaskSchema),
   executionProgress: ExecutionProgressSchema.optional(),
   reviewReason: z.enum(['completed', 'errors', 'qa_rejected', 'plan_review']).optional(),

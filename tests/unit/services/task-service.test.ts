@@ -157,7 +157,7 @@ describe('TaskService', () => {
         [`${SPECS_DIR}/2-second-task/requirements.json`]: createRequirementsJson('Second Task'),
         [`${SPECS_DIR}/2-second-task/implementation_plan.json`]: createPlanJson(
           'Second Task',
-          'in_progress',
+          'running',
         ),
       });
 
@@ -211,7 +211,7 @@ describe('TaskService', () => {
       const taskId = '1-test-task';
       resetFs({
         [`${SPECS_DIR}/${taskId}/requirements.json`]: createRequirementsJson('Test Task'),
-        [`${SPECS_DIR}/${taskId}/implementation_plan.json`]: createPlanJson('Test Task', 'queue'),
+        [`${SPECS_DIR}/${taskId}/implementation_plan.json`]: createPlanJson('Test Task', 'queued'),
       });
 
       const service = createTaskService(createProjectResolver());
@@ -219,7 +219,7 @@ describe('TaskService', () => {
 
       expect(task.id).toBe(taskId);
       expect(task.title).toBe('Test Task');
-      expect(task.status).toBe('queue');
+      expect(task.status).toBe('queued');
     });
 
     it('throws error for unknown task ID', () => {
@@ -244,7 +244,7 @@ describe('TaskService', () => {
         [`${SPECS_DIR}/${taskId}/requirements.json`]: createRequirementsJson('Task with Phases'),
         [`${SPECS_DIR}/${taskId}/implementation_plan.json`]: createPlanJson(
           'Task with Phases',
-          'in_progress',
+          'running',
           phases,
         ),
       });
@@ -443,26 +443,27 @@ describe('TaskService', () => {
       const service = createTaskService(createProjectResolver());
       service.listTasks(PROJECT_ID);
 
-      const updated = service.updateTaskStatus(taskId, 'in_progress');
+      const updated = service.updateTaskStatus(taskId, 'running');
 
-      expect(updated.status).toBe('in_progress');
+      expect(updated.status).toBe('running');
 
       // Verify file was updated
       const planContent = getFileContent(`${SPECS_DIR}/${taskId}/implementation_plan.json`);
       const plan = JSON.parse(planContent!) as PlanData;
-      expect(plan.status).toBe('in_progress');
-      expect(plan.xstateState).toBe('in_progress');
+      expect(plan.status).toBe('running');
+      expect(plan.xstateState).toBe('running');
     });
 
     it('supports all valid status values', () => {
       const statuses: TaskStatus[] = [
         'backlog',
-        'queue',
-        'in_progress',
-        'ai_review',
-        'human_review',
+        'planning',
+        'plan_ready',
+        'queued',
+        'running',
+        'paused',
+        'review',
         'done',
-        'pr_created',
         'error',
       ];
 
@@ -493,7 +494,7 @@ describe('TaskService', () => {
       const service = createTaskService(createProjectResolver());
       service.listTasks(PROJECT_ID);
 
-      expect(() => service.updateTaskStatus(taskId, 'in_progress')).toThrow('plan not found');
+      expect(() => service.updateTaskStatus(taskId, 'running')).toThrow('plan not found');
     });
   });
 
@@ -609,7 +610,7 @@ describe('TaskService', () => {
         [`${SPECS_DIR}/${taskId}/requirements.json`]: createRequirementsJson('With Progress'),
         [`${SPECS_DIR}/${taskId}/implementation_plan.json`]: JSON.stringify({
           feature: 'With Progress',
-          status: 'in_progress',
+          status: 'running',
           executionPhase: 'coding',
           completedPhases: ['planning'],
           created_at: '2026-01-01T00:00:00.000Z',

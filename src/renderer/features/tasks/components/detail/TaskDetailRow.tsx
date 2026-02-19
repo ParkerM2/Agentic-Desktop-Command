@@ -25,7 +25,7 @@ interface TaskDetailRowProps {
 /** Check if a task has a plan based on status or metadata */
 function hasPlan(task: Task): boolean {
   const hubStatus = task.status as string;
-  const planStatuses = new Set(['plan_ready', 'queued', 'running', 'in_progress', 'paused', 'review', 'done']);
+  const planStatuses = new Set(['plan_ready', 'queued', 'running', 'paused', 'review', 'done']);
   return planStatuses.has(hubStatus) || typeof task.metadata?.planContent === 'string';
 }
 
@@ -34,7 +34,7 @@ export function TaskDetailRow({ task, onApproveAndExecute, onRejectPlan, onReque
   const planContent = (task.metadata?.planContent as string | undefined) ?? null;
 
   // Show QA report tab for review/done statuses or if metadata indicates QA ran
-  const qaRelevantStatuses = new Set(['review', 'ai_review', 'human_review', 'done']);
+  const qaRelevantStatuses = new Set(['review', 'done']);
   const showQa = qaRelevantStatuses.has(task.status as string);
 
   return (

@@ -6,8 +6,8 @@
  */
 
 import type { AgentOrchestrator } from '../../services/agent-orchestrator/types';
-import type { HubApiClient } from '../../services/hub/hub-api-client';
 import type { QaRunner } from '../../services/qa/qa-types';
+import type { TaskRepository } from '../../services/tasks/types';
 import type { IpcRouter } from '../router';
 
 const UNKNOWN_TASK = 'Unknown task';
@@ -22,19 +22,20 @@ function extractDescription(data: Record<string, unknown>): string {
   return UNKNOWN_TASK;
 }
 
-async function resolveTaskDescription(hubApiClient: HubApiClient, taskId: string): Promise<string> {
-  const taskResult = await hubApiClient.getTask(taskId);
-  if (!taskResult.ok || !taskResult.data) {
+async function resolveTaskDescription(taskRepository: TaskRepository, taskId: string): Promise<string> {
+  try {
+    const task = await taskRepository.getTask(taskId);
+    return extractDescription(task as unknown as Record<string, unknown>);
+  } catch {
     return UNKNOWN_TASK;
   }
-  return extractDescription(taskResult.data as unknown as Record<string, unknown>);
 }
 
 export function registerQaHandlers(
   router: IpcRouter,
   qaRunner: QaRunner,
   orchestrator: AgentOrchestrator,
-  hubApiClient: HubApiClient,
+  taskRepository: TaskRepository,
 ): void {
   // Wire QA session events to IPC events for the renderer
   qaRunner.onSessionEvent((event) => {
@@ -71,7 +72,7 @@ export function registerQaHandlers(
       throw new Error('No project path available for QA');
     }
 
-    const taskDescription = await resolveTaskDescription(hubApiClient, taskId);
+    const taskDescription = await resolveTaskDescription(taskRepository, taskId);
 
     const session = await qaRunner.startQuiet(taskId, {
       projectPath,
@@ -90,7 +91,7 @@ export function registerQaHandlers(
       throw new Error('No project path available for QA');
     }
 
-    const taskDescription = await resolveTaskDescription(hubApiClient, taskId);
+    const taskDescription = await resolveTaskDescription(taskRepository, taskId);
 
     const session = await qaRunner.startFull(taskId, {
       projectPath,

@@ -9,6 +9,7 @@
  *   - task_logs.json — execution logs (optional)
  */
 
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -113,6 +114,8 @@ export function createTaskService(
       mkdirSync(taskDir, { recursive: true });
 
       const now = new Date().toISOString();
+      const uuid = randomUUID();
+
       writeFileSync(
         join(taskDir, REQUIREMENTS_FILENAME),
         JSON.stringify(
@@ -149,6 +152,8 @@ export function createTaskService(
             model: 'opus',
             thinkingLevel: 'high',
             complexity: draft.complexity ?? 'standard',
+            uuid,
+            projectId: draft.projectId,
           },
           null,
           2,
@@ -162,7 +167,9 @@ export function createTaskService(
         title: draft.title,
         description: draft.description,
         status: 'backlog' as const,
+        projectId: draft.projectId,
         subtasks: [],
+        metadata: { uuid },
         createdAt: now,
         updatedAt: now,
       };
@@ -170,12 +177,36 @@ export function createTaskService(
 
     updateTask(taskId, updates) {
       const projectPath = resolveByTaskId(taskId);
-      const planPath = join(getTaskDir(projectPath, taskId), PLAN_FILENAME);
+      const taskDir = getTaskDir(projectPath, taskId);
+      const planPath = join(taskDir, PLAN_FILENAME);
       if (!existsSync(planPath)) throw new Error(`Task ${taskId} plan not found`);
       const plan = readJsonFile(planPath) as ImplementationPlanJson;
       const updated = { ...plan, ...updates, updated_at: new Date().toISOString() };
       writeFileSync(planPath, JSON.stringify(updated, null, 2));
-      const task = readTask(getTaskDir(projectPath, taskId), taskId);
+
+      // Persist priority, workspaceId, and metadata to task_metadata.json
+      const metadataUpdates: Record<string, unknown> = {};
+      if ('priority' in updates) metadataUpdates.priority = updates.priority;
+      if ('workspaceId' in updates) metadataUpdates.workspaceId = updates.workspaceId;
+      if ('metadata' in updates && typeof updates.metadata === 'object' && updates.metadata !== null) {
+        Object.assign(metadataUpdates, updates.metadata);
+      }
+
+      if (Object.keys(metadataUpdates).length > 0) {
+        const metaPath = join(taskDir, METADATA_FILENAME);
+        let existingMeta: Record<string, unknown> = {};
+        if (existsSync(metaPath)) {
+          try {
+            existingMeta = readJsonFile(metaPath) as Record<string, unknown>;
+          } catch {
+            /* corrupted metadata — start fresh */
+          }
+        }
+        const mergedMeta = { ...existingMeta, ...metadataUpdates };
+        writeFileSync(metaPath, JSON.stringify(mergedMeta, null, 2));
+      }
+
+      const task = readTask(taskDir, taskId);
       if (!task) throw new Error('Failed to read updated task');
       return task;
     },

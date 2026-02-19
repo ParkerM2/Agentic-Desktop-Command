@@ -16,9 +16,9 @@ import type { IpcRouter } from '../ipc/router';
 import type { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import type { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
 import type { createWatchEvaluator } from '../services/assistant/watch-evaluator';
-import type { HubApiClient } from '../services/hub/hub-api-client';
 import type { createHubConnectionManager } from '../services/hub/hub-connection';
 import type { createWebhookRelay } from '../services/hub/webhook-relay';
+import type { TaskRepository } from '../services/tasks/types';
 
 interface EventWiringDeps {
   router: IpcRouter;
@@ -27,7 +27,7 @@ interface EventWiringDeps {
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
   webhookRelay: ReturnType<typeof createWebhookRelay>;
   hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
-  hubApiClient: HubApiClient;
+  taskRepository: TaskRepository;
 }
 
 /**
@@ -99,7 +99,7 @@ export function wireEventForwarding(deps: EventWiringDeps): void {
     watchEvaluator,
     webhookRelay,
     hubConnectionManager,
-    hubApiClient,
+    taskRepository,
   } = deps;
 
   // ─── Orchestrator session events → IPC ───────────────────────
@@ -128,8 +128,8 @@ export function wireEventForwarding(deps: EventWiringDeps): void {
               const plan = detectPlanFile(event.session.projectPath, event.session.logFile);
               if (plan) {
                 // Update Hub task: status → plan_ready, store plan in metadata
-                await hubApiClient.updateTaskStatus(event.session.taskId, 'plan_ready');
-                await hubApiClient.updateTask(event.session.taskId, {
+                await taskRepository.updateTaskStatus(event.session.taskId, 'plan_ready');
+                await taskRepository.updateTask(event.session.taskId, {
                   metadata: {
                     planContent: plan.content,
                     planFilePath: plan.filePath,

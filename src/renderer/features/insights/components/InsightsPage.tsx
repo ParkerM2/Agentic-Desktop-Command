@@ -5,13 +5,14 @@ import type { InsightMetrics, TaskDistribution } from '@shared/types';
 import { useInsightMetrics, useProjectBreakdown, useTaskDistribution } from '../api/useInsights';
 
 const STATUS_COLOR_MAP: Record<string, string> = {
-  done: '--primary',
-  in_progress: '--ring',
-  queue: '--muted-foreground',
   backlog: '--border',
-  ai_review: '--info',
-  human_review: '--warning',
-  pr_created: '--success',
+  planning: '--info',
+  plan_ready: '--warning',
+  queued: '--muted-foreground',
+  running: '--ring',
+  paused: '--muted-foreground',
+  review: '--warning',
+  done: '--primary',
   error: '--destructive',
 };
 

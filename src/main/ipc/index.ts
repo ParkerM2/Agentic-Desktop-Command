@@ -84,6 +84,7 @@ import type { SettingsService } from '../services/settings/settings-service';
 import type { SpotifyService } from '../services/spotify/spotify-service';
 import type { GithubTaskImporter } from '../services/tasks/github-importer';
 import type { TaskDecomposer } from '../services/tasks/task-decomposer';
+import type { TaskRepository } from '../services/tasks/types';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
 import type { VoiceService } from '../services/voice/voice-service';
@@ -121,6 +122,7 @@ export interface Services {
   worktreeService: WorktreeService;
   mergeService: MergeService;
   timeParserService: TimeParserService;
+  taskRepository: TaskRepository;
   taskDecomposer: TaskDecomposer;
   githubImporter: GithubTaskImporter;
   voiceService: VoiceService | null;
@@ -142,7 +144,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerProjectHandlers(router, services.projectService);
   registerTaskHandlers(
     router,
-    services.hubApiClient,
+    services.taskRepository,
     services.taskDecomposer,
     services.githubImporter,
   );
@@ -207,7 +209,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
   registerWorkspaceHandlers(router, services.hubApiClient);
   registerDeviceHandlers(router, services.deviceService);
-  registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.hubApiClient);
-  registerQaHandlers(router, services.qaRunner, services.agentOrchestrator, services.hubApiClient);
+  registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);
+  registerQaHandlers(router, services.qaRunner, services.agentOrchestrator, services.taskRepository);
   registerDashboardHandlers(router, services.dashboardService);
 }

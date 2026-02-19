@@ -712,62 +712,111 @@ Original API call retried with new token
 
 ---
 
-## 12. Hub-First Task Execution Flow (UI -> Hub -> Dispatch -> Device -> Progress -> UI)
+## 12. Local-First Task CRUD Flow
+
+All task operations go through `TaskRepository`, which always reads/writes locally first and mirrors mutations to Hub when connected.
+
+### Read Flow (list/get)
 
 ```
-User clicks "Execute" on task
+User views task dashboard
   |
   v
-useExecuteTask().mutate(taskId)
+useTasks(projectId) → ipc('hub.tasks.list', { projectId })
+  |
+  v
+                              hub-task-handlers.ts
+                                |
+                                v
+                              taskRepository.listTasks({ projectId })
+                                |  src/main/services/tasks/task-repository.ts
+                                v
+                              taskService.listTasks(projectId)
+                                |  reads .adc/specs/ directories (always local)
+                                v
+                              localToHubTask() converts local → HubTask shape
+                                |
+                                v
+                              Return { tasks: HubTask[] }
+```
+
+### Write Flow (create/update/delete)
+
+```
+User creates a task (CreateTaskDialog)
+  |
+  v
+useCreateTask().mutate({ projectId, title, description, priority })
+  |
+  v
+ipc('hub.tasks.create', { ... })
+  |
+  v
+                              hub-task-handlers.ts
+                                |
+                                v
+                              taskRepository.createTask(body)
+                                |
+                                +→ taskService.createTask(draft)    ← ALWAYS (local .adc/specs/)
+                                |    Creates UUID-based task dir
+                                |    Writes requirements.json + task_metadata.json
+                                |
+                                +→ mirrorToHub(() =>                ← OPTIONAL (fire-and-forget)
+                                |    hubApiClient.createTask(body))
+                                |    Only runs when Hub is connected
+                                |    Logs warnings on failure
+                                |
+                                v
+                              Return HubTask (from local data, immediate)
+```
+
+### Hub-Only Operations (execute/cancel)
+
+```
+User clicks "Execute" (remote dispatch)
   |
   v
 ipc('hub.tasks.execute', { taskId })
   |
   v
-                              hub-handlers.ts
+                              taskRepository.executeTask(taskId)
+                                |
+                                +-→ Hub not connected? → throw Error
+                                |
+                                +-→ hubApiClient.executeTask(taskId)
+                                     |
+                                     v
+                                   POST /api/tasks/:id/execute
+                                     → Hub dispatches to target device
+```
+
+### Reverse Flow (Hub WebSocket → Local Update)
+
+```
+HUB SERVER                      MAIN PROCESS                    RENDERER
+==========                      ============                    ========
+
+WebSocket broadcast
+  { type: 'task.updated', ... }
+                              hub-connection.ts receives
                                 |
                                 v
-                              hubApiClient.executeTask(taskId)
+                              event-wiring: taskRepository.updateTask()
+                                |  Updates local .adc/specs/ files
+                                v
+                              router.emit('event:hub.tasks.updated', payload)
                                 |
                                 v
-                              POST /api/tasks/:id/execute
+                              BrowserWindow.webContents.send(...)
                                                                   |
                                                                   v
-                                                              Hub dispatches to target device
-                                                              WS: { type: 'task.executing', taskId }
+                                                              useHubEvent('event:hub.tasks.updated')
                                                                   |
-                              <---- WS event --------<-----------+
-                                |
-                                v
-                              workflowService.launch({ taskId, projectPath })
-                                |
-                                v
-                              Spawn Claude CLI as PTY process
-                                |
-                                v
-                              progressWatcher.start(projectPath)
-                                |
-                                +--> Parse progress files every 2s
-                                |     |
-                                |     v
-                                |   progressSyncer.push(taskId, progress)
-                                |     |
-                                |     v
-                                |   PUT /api/tasks/:id/progress
-                                |                                   |
-                                |                                   v
-                                |                               WS broadcast: task.progress
-                                |                                   |
-                              router.emit('event:hub.tasks.progress')
-                                |
-                                v
-                              React receives progress events
-                                |
-                                v
-                              queryClient.setQueryData() patches task cache
-                                |
-                                v
-                              AG-Grid ProgressBarCell re-renders
+                                                                  v
+                                                              queryClient.invalidateQueries()
+                                                                  |
+                                                                  v
+                                                              React Query refetches from TaskRepository (local)
 ```
 
 ---
@@ -1148,7 +1197,7 @@ User triggers agent spawn (via ActionsCell → useAgentMutations)
 ipc('agent.startPlanning' | 'agent.startExecution', { taskId, ... })
   |
   v
-agent-orchestrator-handlers.ts → hubApiClient.updateTaskStatus() → orchestrator.spawn()
+agent-orchestrator-handlers.ts → taskRepository.updateTaskStatus() → orchestrator.spawn()
   |  src/main/services/agent-orchestrator/agent-orchestrator.ts
   v
 child_process.spawn('claude', ['-p', prompt], { detached: true, stdio: 'pipe' })
@@ -1221,9 +1270,10 @@ TaskDataGrid mounts
 
 ---
 
-## 19.5. Task Planning Pipeline Flow
+## 19.5. Task Planning Pipeline Flow (Local-First)
 
 The complete planning pipeline: idea → plan → review → approve/reject/request changes → execute.
+All status transitions go through `TaskRepository` (local-first with Hub mirror).
 
 ```
 User creates task (idea/backlog)
@@ -1238,7 +1288,7 @@ useStartPlanning().mutate({ taskId, projectPath, taskDescription })
 ipc('agent.startPlanning', { ... })
   |
   v
-hubApiClient.updateTaskStatus(taskId, 'planning')
+taskRepository.updateTaskStatus(taskId, 'planning')    ← local + Hub mirror
   → orchestrator.spawn({ phase: 'planning', prompt: '/plan-feature ...' })
     → Hooks config merged into .claude/settings.local.json
     → Agent writes JSONL progress to {dataDir}/progress/{taskId}.jsonl
@@ -1250,7 +1300,8 @@ Agent completes planning (process exits)
 event-wiring.ts: onSessionEvent('completed') + phase === 'planning'
   → Scan project for plan files (PLAN.md, plan.md, etc.)
   → If plan file found:
-      hubApiClient.updateTaskStatus(taskId, 'plan_ready')
+      taskRepository.updateTaskStatus(taskId, 'plan_ready')      ← local + Hub mirror
+      taskRepository.updateTask(taskId, { metadata: { planContent, planFilePath } })
       router.emit('event:agent.orchestrator.planReady', { taskId, planSummary, planFilePath })
   → Restore original .claude/settings.local.json content
   |

@@ -27,12 +27,13 @@ type StatusFilter = 'all' | TaskStatus;
 const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'All Tasks' },
   { value: 'backlog', label: 'Backlog' },
-  { value: 'queue', label: 'Queue' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'ai_review', label: 'AI Review' },
-  { value: 'human_review', label: 'Review' },
+  { value: 'planning', label: 'Planning' },
+  { value: 'plan_ready', label: 'Plan Ready' },
+  { value: 'queued', label: 'Queued' },
+  { value: 'running', label: 'Running' },
+  { value: 'paused', label: 'Paused' },
+  { value: 'review', label: 'Review' },
   { value: 'done', label: 'Done' },
-  { value: 'pr_created', label: 'PR Created' },
   { value: 'error', label: 'Error' },
 ];
 

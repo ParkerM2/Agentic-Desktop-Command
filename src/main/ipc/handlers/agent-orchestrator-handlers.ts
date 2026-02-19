@@ -8,17 +8,17 @@
 import { readFileSync } from 'node:fs';
 
 import type { AgentOrchestrator } from '../../services/agent-orchestrator/types';
-import type { HubApiClient } from '../../services/hub/hub-api-client';
+import type { TaskRepository } from '../../services/tasks/types';
 import type { IpcRouter } from '../router';
 
 export function registerAgentOrchestratorHandlers(
   router: IpcRouter,
   orchestrator: AgentOrchestrator,
-  hubApiClient: HubApiClient,
+  taskRepository: TaskRepository,
 ): void {
   router.handle('agent.startPlanning', async ({ taskId, projectPath, taskDescription, subProjectPath }) => {
     // Update task status to 'planning' via Hub API
-    await hubApiClient.updateTaskStatus(taskId, 'planning');
+    await taskRepository.updateTaskStatus(taskId, 'planning');
 
     const session = await orchestrator.spawn({
       taskId,
@@ -33,7 +33,7 @@ export function registerAgentOrchestratorHandlers(
 
   router.handle('agent.startExecution', async ({ taskId, projectPath, taskDescription, planRef, subProjectPath }) => {
     // Update task status to 'running' via Hub API
-    await hubApiClient.updateTaskStatus(taskId, 'running');
+    await taskRepository.updateTaskStatus(taskId, 'running');
 
     const prompt = planRef
       ? `/implement-feature ${taskDescription} --plan ${planRef}`
@@ -54,7 +54,7 @@ export function registerAgentOrchestratorHandlers(
     'agent.replanWithFeedback',
     async ({ taskId, projectPath, taskDescription, feedback, previousPlanPath, subProjectPath }) => {
       // Update task status back to 'planning' via Hub API
-      await hubApiClient.updateTaskStatus(taskId, 'planning');
+      await taskRepository.updateTaskStatus(taskId, 'planning');
 
       const feedbackBlock = [
         '',
@@ -117,7 +117,7 @@ export function registerAgentOrchestratorHandlers(
 
     // Update task status back to active phase
     const hubStatus = phase === 'planning' ? 'planning' : 'running';
-    await hubApiClient.updateTaskStatus(taskId, hubStatus);
+    await taskRepository.updateTaskStatus(taskId, hubStatus);
 
     const session = await orchestrator.spawn({
       taskId,

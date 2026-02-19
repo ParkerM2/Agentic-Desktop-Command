@@ -105,7 +105,7 @@ export function ActionsCell(props: ActionsCellProps) {
       ) : null}
 
       {/* Kill action — available during planning and running */}
-      {status === 'planning' || status === 'running' || status === 'in_progress' ? (
+      {status === 'planning' || status === 'running' ? (
         <button
           aria-label="Kill agent"
           className={cn(ICON_BUTTON, 'text-warning hover:text-warning')}

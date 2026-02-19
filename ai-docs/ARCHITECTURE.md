@@ -85,9 +85,9 @@ The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modu
 | Module | Responsibility |
 |--------|---------------|
 | `lifecycle.ts` | Electron app lifecycle events, BrowserWindow creation, graceful shutdown (disposes all services including HealthRegistry + ErrorCollector last) |
-| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient` in registry result for use by event-wiring (planning completion detection). |
+| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Creates `taskRepository` (local-first with Hub mirror) wired to TaskService + HubApiClient + HubConnectionManager. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient` and `taskRepository` in registry result for use by event-wiring and IPC handlers. |
 | `ipc-wiring.ts` | Registers all IPC handlers (connects handler files to router) |
-| `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via Hub API. |
+| `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via `taskRepository` (local-first). |
 | `index.ts` | Barrel re-export |
 
 ### Bootstrap Resilience Features
@@ -153,6 +153,7 @@ Key refactored services:
 - **notifications/** — 7 files: slack-watcher, github-watcher, filter, manager, store
 - **settings/** — 4 files: defaults, encryption, store
 - **project/** — 6 files: detector, task-service, slug, spec-parser, store
+- **tasks/** — 3 files: types (TaskRepository interface), task-repository (local-first impl), barrel
 - **qa/** — 7 files: poller, prompt, report-parser, session-store, trigger, types
 
 ## React Query Integration
@@ -318,7 +319,7 @@ Operators: equals, changes, any
 When a watch triggers, the evaluator fires a callback that emits `event:assistant.proactive`
 with source 'watch', enabling the assistant widget to show proactive notifications.
 
-## Task System
+## Task System (Local-First)
 
 Tasks are stored as file-system directories under `{project}/.adc/specs/`:
 
@@ -327,12 +328,39 @@ specs/
 ├── 1-implement-login/
 │   ├── requirements.json       # Task description, workflow type
 │   ├── implementation_plan.json # Status, phases, execution state
-│   └── task_metadata.json      # Model config, complexity
+│   └── task_metadata.json      # UUID, priority, projectId, model config
 └── 2-fix-sidebar-bug/
     └── ...
 ```
 
-The TaskService reads/writes these files. The Task Table displays tasks in a filterable, sortable dashboard view.
+### Local-First Architecture
+
+The task system uses a **local-first** pattern via `TaskRepository`. All reads and writes go through the local `TaskService` (file system), with mutations optionally mirrored to Hub when connected.
+
+```
+BEFORE (Hub-first):
+  Renderer → hub.tasks.* → hubApiClient → Hub HTTP API
+
+AFTER (Local-first):
+  Renderer → hub.tasks.* → TaskRepository → TaskService (ALWAYS, local .adc/specs/)
+                                  |
+                                  +→ HubApiClient (mirror, fire-and-forget, when connected)
+```
+
+**Key files:**
+- `src/main/services/tasks/types.ts` — `TaskRepository` interface and `TaskRepositoryDeps`
+- `src/main/services/tasks/task-repository.ts` — Local-first implementation with Hub mirror
+- `src/main/services/project/task-service.ts` — File-system task CRUD (UUID support, metadata persistence)
+- `src/main/services/project/task-store.ts` — Reads spec files, maps legacy statuses to Hub values
+
+**Rules:**
+- All task CRUD (list, get, create, update, delete) reads/writes locally first
+- Mutations are mirrored to Hub via `mirrorToHub()` (fire-and-forget, logs warnings on failure)
+- `executeTask` and `cancelTask` are **Hub-only** operations — they throw if Hub is not connected
+- `TaskStatus` is unified to Hub enum values everywhere (`backlog`, `planning`, `plan_ready`, `queued`, `running`, `paused`, `review`, `done`, `error`)
+- Legacy on-disk statuses (`queue`, `in_progress`, `ai_review`, etc.) are auto-mapped to Hub values via `LEGACY_STATUS_MAP` in `src/shared/types/task.ts`
+
+The Task Table displays tasks in a filterable, sortable AG-Grid dashboard view.
 
 ## Design System & Theme Architecture
 
@@ -541,9 +569,9 @@ The Electron client connects to a self-hosted Hub server for multi-device sync.
 
 ---
 
-## Hub-First Task Operations
+## Local-First Task Operations
 
-Task CRUD operations now route through the Hub API rather than local file storage:
+Task CRUD operations route through the `TaskRepository`, which always reads/writes locally and optionally mirrors to Hub:
 
 ```
 RENDERER                          MAIN PROCESS                    HUB SERVER
@@ -555,23 +583,31 @@ useTasks() hook
 ipc('hub.tasks.list', { projectId })
   |
   v
-                              hub-handlers.ts
+                              hub-task-handlers.ts
                                 |
                                 v
-                              hubApiClient.listTasks(projectId)
-                                |  src/main/services/hub/hub-api-client.ts
+                              taskRepository.listTasks(projectId)
+                                |  src/main/services/tasks/task-repository.ts
                                 v
-                              GET /api/tasks?projectId=...
-                                                                  |
-                                                                  v
-                                                              SQLite query
-                                                                  |
-                                                                  v
-                                                              JSON response
-                              <---------------------------------+
+                              taskService.listTasks(projectId)
+                                |  reads .adc/specs/ directories
+                                v
+                              Return local tasks (always works, even offline)
+
+--- On mutation (create, update, delete): ---
+
+                              taskRepository.createTask(body)
+                                |
+                                +→ taskService.createTask(draft)     ← ALWAYS (local)
+                                |
+                                +→ mirrorToHub(() =>                 ← OPTIONAL (when connected)
+                                     hubApiClient.createTask(body))
+                                     Fire-and-forget, logs warnings
 ```
 
 Local `tasks.*` channels still exist for backward-compatible access and are used internally by services (insights, briefing, assistant). The renderer exclusively uses `hub.tasks.*` channels.
+
+**Hub-only operations:** `executeTask` and `cancelTask` require Hub connectivity — they throw an error if Hub is not connected. Use `agent.startExecution` for local execution via the orchestrator.
 
 ### WebSocket Event Forwarding (Hub -> Electron -> React)
 

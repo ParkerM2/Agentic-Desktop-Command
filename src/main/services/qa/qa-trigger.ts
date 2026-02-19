@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import type { QaContext, QaRunner } from './qa-types';
 import type { IpcRouter } from '../../ipc/router';
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
-import type { HubApiClient } from '../hub/hub-api-client';
+import type { TaskRepository } from '../tasks/types';
 
 export interface QaTrigger {
   dispose: () => void;
@@ -60,10 +60,10 @@ function getTaskDescription(task: { title: string; description: string }): strin
 export function createQaTrigger(deps: {
   qaRunner: QaRunner;
   orchestrator: AgentOrchestrator;
-  hubApiClient: HubApiClient;
+  taskRepository: TaskRepository;
   router: IpcRouter;
 }): QaTrigger {
-  const { qaRunner, orchestrator, hubApiClient } = deps;
+  const { qaRunner, orchestrator, taskRepository } = deps;
   const triggeredTasks = new Set<string>();
 
   function isQaAlreadyRunning(taskId: string): boolean {
@@ -86,13 +86,13 @@ export function createQaTrigger(deps: {
     triggeredTasks.add(taskId);
 
     try {
-      const taskResult = await hubApiClient.getTask(taskId);
-      if (!taskResult.ok || !taskResult.data) {
+      let task;
+      try {
+        task = await taskRepository.getTask(taskId);
+      } catch {
         console.warn(`[QaTrigger] Task ${taskId} not found, skipping QA`);
         return;
       }
-
-      const task = taskResult.data;
 
       // Determine project path from agent session
       const agentSession = orchestrator.getSessionByTaskId(taskId);
@@ -131,12 +131,9 @@ export function createQaTrigger(deps: {
     setTimeout(() => {
       void (async () => {
         try {
-          const taskResult = await hubApiClient.getTask(taskId);
-          if (taskResult.ok && taskResult.data) {
-            const task = taskResult.data;
-            if (task.status === 'review') {
-              await handleTaskReview(taskId);
-            }
+          const task = await taskRepository.getTask(taskId);
+          if (task.status === 'review') {
+            await handleTaskReview(taskId);
           }
         } catch {
           // Silently skip — task fetch may fail

@@ -344,6 +344,8 @@ Raw hex/rgb/hsl values are **ONLY** allowed inside theme variable definitions:
 | `ai-docs/DATA-FLOW.md` | Detailed data flow diagrams for all systems |
 | `ai-docs/CODEBASE-GUARDIAN.md` | File placement rules, naming conventions, import rules |
 | `ai-docs/LINTING.md` | ESLint rules reference and fix patterns |
+| `ai-docs/TASK-PLANNING-PIPELINE.md` | Task planning pipeline — IPC channels, status transitions, file map |
+| `ai-docs/AGENT-WORKFLOW.md` | Agent team orchestration workflow (intake → QA → merge) |
 | `ai-docs/user-interface-flow.md` | UX flow map, gap analysis, component wiring |
 | `ai-docs/prompts/implementing-features/README.md` | Team workflow for multi-agent feature implementation |
 

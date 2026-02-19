@@ -22,6 +22,7 @@ export type * from './planner';
 export type * from './project';
 export type * from './settings';
 export type * from './task';
+export { LEGACY_STATUS_MAP } from './task';
 export type * from './terminal';
 export type * from './voice';
 export type * from './screen';

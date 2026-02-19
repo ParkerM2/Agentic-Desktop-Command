@@ -72,12 +72,12 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
   }
 
   function isDueToday(task: { status: string; createdAt: string }, today: string): boolean {
-    if (task.status !== 'queue' && task.status !== 'backlog') return false;
-    return task.createdAt.split('T')[0] === today || task.status === 'queue';
+    if (task.status !== 'queued' && task.status !== 'backlog') return false;
+    return task.createdAt.split('T')[0] === today || task.status === 'queued';
   }
 
   function isOverdue(task: { status: string; updatedAt: string }): boolean {
-    if (task.status !== 'error' && task.status !== 'human_review') return false;
+    if (task.status !== 'error' && task.status !== 'review') return false;
     const hoursSinceUpdate = (Date.now() - new Date(task.updatedAt).getTime()) / (60 * 60 * 1000);
     return hoursSinceUpdate > 24;
   }
@@ -97,7 +97,7 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
     for (const project of projects) {
       const tasks = taskService.listTasks(project.id);
       for (const task of tasks) {
-        if (task.status === 'in_progress') inProgress++;
+        if (task.status === 'running') inProgress++;
         if (isCompletedYesterday(task, yesterday)) completedYesterday++;
         if (isDueToday(task, today)) dueToday++;
         if (isOverdue(task)) overdue++;

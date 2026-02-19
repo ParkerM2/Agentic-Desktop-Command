@@ -77,8 +77,8 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
 
     for (const project of projects) {
       const tasks = taskService.listTasks(project.id);
-      const queuedTasks = tasks.filter((t) => t.status === 'queue');
-      const runningTasks = tasks.filter((t) => t.status === 'in_progress');
+      const queuedTasks = tasks.filter((t) => t.status === 'queued');
+      const runningTasks = tasks.filter((t) => t.status === 'running');
       const runningSessionsForProject = activeSessions.filter((s) => s.projectPath.includes(project.id));
 
       // If there are queued tasks but room for more agents
@@ -146,7 +146,7 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
 
       // Find tasks stuck in human_review for too long (>24h)
       const now = Date.now();
-      const reviewTasks = tasks.filter((t) => t.status === 'human_review');
+      const reviewTasks = tasks.filter((t) => t.status === 'review');
       for (const task of reviewTasks) {
         const updatedAt = new Date(task.updatedAt).getTime();
         const hoursSinceUpdate = (now - updatedAt) / (60 * 60 * 1000);

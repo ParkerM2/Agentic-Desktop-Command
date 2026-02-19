@@ -10,13 +10,27 @@ import {
   SPECS_DIR,
   REQUIREMENTS_FILENAME,
   PLAN_FILENAME,
+  METADATA_FILENAME,
   LOGS_FILENAME,
 } from '@shared/constants';
-import type { Subtask, Task, TaskStatus } from '@shared/types';
+import type { Subtask, Task, TaskPriority, TaskStatus } from '@shared/types';
+import { LEGACY_STATUS_MAP } from '@shared/types';
 
 import { getPhaseStatus } from './task-spec-parser';
 
 import type { ImplementationPlanJson, PlanPhase, RequirementsJson } from './task-spec-parser';
+
+/** On-disk shape of task_metadata.json */
+interface TaskMetadataJson {
+  uuid?: string;
+  priority?: string;
+  projectId?: string;
+  workspaceId?: string;
+  [key: string]: unknown;
+}
+
+/** Valid TaskPriority values for runtime checking */
+const VALID_PRIORITIES = new Set<string>(['low', 'normal', 'high', 'urgent']);
 
 export function readJsonFile(filePath: string): unknown {
   const raw = readFileSync(filePath, 'utf-8');
@@ -42,6 +56,17 @@ export function readTask(taskDir: string, taskId: string): Task | null {
       ? (readJsonFile(planPath) as ImplementationPlanJson)
       : {};
 
+    // Read task_metadata.json for UUID, priority, projectId, workspaceId
+    let meta: TaskMetadataJson = {};
+    const metaPath = join(taskDir, METADATA_FILENAME);
+    if (existsSync(metaPath)) {
+      try {
+        meta = readJsonFile(metaPath) as TaskMetadataJson;
+      } catch {
+        /* corrupted metadata file — use defaults */
+      }
+    }
+
     let logs: string[] = [];
     const logsPath = join(taskDir, LOGS_FILENAME);
     if (existsSync(logsPath)) {
@@ -52,7 +77,8 @@ export function readTask(taskDir: string, taskId: string): Task | null {
       }
     }
 
-    const status: TaskStatus = plan.status ?? plan.xstateState ?? 'backlog';
+    const rawStatus: string = plan.status ?? plan.xstateState ?? 'backlog';
+    const status: TaskStatus = LEGACY_STATUS_MAP[rawStatus] ?? (rawStatus as TaskStatus);
     const subtasks: Subtask[] = (plan.phases ?? []).map((ph: PlanPhase, i: number) => ({
       id: `${taskId}-phase-${i}`,
       title: ph.name ?? ph.title ?? `Phase ${i + 1}`,
@@ -61,12 +87,20 @@ export function readTask(taskDir: string, taskId: string): Task | null {
       files: ph.files ?? [],
     }));
 
+    const priority: TaskPriority | undefined =
+      typeof meta.priority === 'string' && VALID_PRIORITIES.has(meta.priority)
+        ? (meta.priority as TaskPriority)
+        : undefined;
+
     return {
       id: taskId,
       specId: taskId,
       title: plan.feature ?? req.task_description ?? taskId,
       description: req.task_description ?? plan.description ?? '',
       status,
+      priority,
+      projectId: meta.projectId,
+      workspaceId: meta.workspaceId,
       subtasks,
       executionProgress: plan.executionPhase
         ? {
@@ -76,6 +110,7 @@ export function readTask(taskDir: string, taskId: string): Task | null {
             completedPhases: plan.completedPhases,
           }
         : undefined,
+      metadata: meta.uuid ? { uuid: meta.uuid } : undefined,
       logs,
       createdAt: plan.created_at ?? new Date().toISOString(),
       updatedAt: plan.updated_at ?? new Date().toISOString(),

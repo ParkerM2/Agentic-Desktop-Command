@@ -8,12 +8,13 @@ import { cn } from '@renderer/shared/lib/utils';
 
 const statusConfig: Record<TaskStatus, { label: string; className: string }> = {
   backlog: { label: 'Backlog', className: 'bg-zinc-500/15 text-zinc-400' },
-  queue: { label: 'Queue', className: 'bg-blue-500/15 text-blue-400' },
-  in_progress: { label: 'In Progress', className: 'bg-amber-500/15 text-amber-400' },
-  ai_review: { label: 'AI Review', className: 'bg-purple-500/15 text-purple-400' },
-  human_review: { label: 'Review', className: 'bg-orange-500/15 text-orange-400' },
+  planning: { label: 'Planning', className: 'bg-blue-500/15 text-blue-400' },
+  plan_ready: { label: 'Plan Ready', className: 'bg-purple-500/15 text-purple-400' },
+  queued: { label: 'Queued', className: 'bg-blue-500/15 text-blue-400' },
+  running: { label: 'Running', className: 'bg-amber-500/15 text-amber-400' },
+  paused: { label: 'Paused', className: 'bg-orange-500/15 text-orange-400' },
+  review: { label: 'Review', className: 'bg-purple-500/15 text-purple-400' },
   done: { label: 'Done', className: 'bg-emerald-500/15 text-emerald-400' },
-  pr_created: { label: 'PR Created', className: 'bg-teal-500/15 text-teal-400' },
   error: { label: 'Error', className: 'bg-red-500/15 text-red-400' },
 };
 

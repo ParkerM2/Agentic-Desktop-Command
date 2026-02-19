@@ -2,15 +2,21 @@
  * Task-related types
  */
 
-export type TaskStatus =
-  | 'backlog'
-  | 'queue'
-  | 'in_progress'
-  | 'ai_review'
-  | 'human_review'
-  | 'done'
-  | 'pr_created'
-  | 'error';
+import type { TaskPriority, TaskStatus } from './hub/enums';
+
+export type { TaskPriority, TaskStatus } from './hub/enums';
+
+/**
+ * Maps legacy on-disk status values to unified Hub status values.
+ * Used when reading old spec files that may contain pre-unification statuses.
+ */
+export const LEGACY_STATUS_MAP: Record<string, TaskStatus> = {
+  queue: 'queued',
+  in_progress: 'running',
+  ai_review: 'review',
+  human_review: 'review',
+  pr_created: 'done',
+};
 
 export type SubtaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
@@ -100,6 +106,9 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
+  priority?: TaskPriority;
+  projectId?: string;
+  workspaceId?: string;
   subtasks: Subtask[];
   executionProgress?: ExecutionProgress;
   qaReport?: QAReport;

@@ -1,7 +1,6 @@
 /**
  * StatusBadgeCell — AG-Grid cell renderer for task status with colored badge.
- * Shows a pulsing dot for active statuses (in_progress, planning).
- * Supports both local TaskStatus and Hub TaskStatus values.
+ * Shows a pulsing dot for active statuses (planning, running).
  * Shows watchdog alert overlay when an active alert exists for the task.
  */
 
@@ -39,16 +38,11 @@ const STATUS_CONFIG: Record<string, StatusConfig> = {
   backlog: { label: 'Backlog', className: STYLE_MUTED },
   planning: { label: 'Planning...', className: STYLE_INFO, pulsing: true },
   plan_ready: { label: 'Plan Ready', className: STYLE_WARNING },
-  queue: { label: 'Queue', className: STYLE_INFO },
   queued: { label: 'Queued', className: STYLE_INFO },
-  in_progress: { label: 'In Progress', className: STYLE_PRIMARY, pulsing: true },
   running: { label: 'Running', className: STYLE_PRIMARY, pulsing: true },
-  ai_review: { label: 'AI Review', className: STYLE_WARNING },
-  human_review: { label: 'Review', className: STYLE_WARNING },
-  review: { label: 'Review', className: STYLE_WARNING },
   paused: { label: 'Paused', className: STYLE_MUTED },
+  review: { label: 'Review', className: STYLE_WARNING },
   done: { label: 'Done', className: 'bg-success/15 text-success border-success/30' },
-  pr_created: { label: 'PR Created', className: STYLE_INFO },
   error: { label: 'Error', className: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
 

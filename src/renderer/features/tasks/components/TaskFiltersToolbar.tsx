@@ -18,12 +18,13 @@ import { TaskStatusBadge } from './TaskStatusBadge';
 
 const ALL_STATUSES: TaskStatus[] = [
   'backlog',
-  'queue',
-  'in_progress',
-  'ai_review',
-  'human_review',
+  'planning',
+  'plan_ready',
+  'queued',
+  'running',
+  'paused',
+  'review',
   'done',
-  'pr_created',
   'error',
 ];
 

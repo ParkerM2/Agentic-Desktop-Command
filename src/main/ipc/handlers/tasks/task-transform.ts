@@ -8,10 +8,8 @@
 import type { InvokeOutput } from '@shared/ipc-contract';
 import type { Task as HubTask } from '@shared/types/hub-protocol';
 
-import { mapHubStatusToLocal } from './status-mapping';
-
-// Hub API Task shape differs from the legacy local TaskSchema.
-// Legacy channels cast Hub responses through unknown at this boundary.
+// Hub and local now share the same TaskStatus enum.
+// This transform converts the Hub API shape to the local Task shape.
 type LegacyTask = InvokeOutput<'tasks.get'>;
 type LegacyTaskList = InvokeOutput<'tasks.list'>;
 
@@ -48,7 +46,7 @@ export function transformHubTask(hubTask: HubTask): LegacyTask {
     id: hubTask.id,
     title: hubTask.title,
     description: hubTask.description,
-    status: mapHubStatusToLocal(hubTask.status) as LegacyTask['status'],
+    status: hubTask.status as LegacyTask['status'],
     subtasks: [],
     metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     createdAt: hubTask.createdAt,

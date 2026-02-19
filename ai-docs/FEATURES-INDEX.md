@@ -95,7 +95,7 @@ Location: `src/main/services/`
 | **milestones** | Milestone CRUD | list, create, update, delete | - |
 | **notes** | Note CRUD | list, create, update, delete | - |
 | **planner** | Daily time blocks | listBlocks, createBlock, updateBlock | `event:planner.*` |
-| **project** | Project management. Sub-modules: `project-detector.ts`, `task-service.ts`, `task-slug.ts`, `task-spec-parser.ts`, `task-store.ts` | list, add, remove, selectDirectory | `event:project.*` |
+| **project** | Project management. Sub-modules: `project-detector.ts`, `task-service.ts` (UUID support, metadata persistence), `task-slug.ts`, `task-spec-parser.ts`, `task-store.ts` (reads metadata, maps legacy statuses via `LEGACY_STATUS_MAP`) | list, add, remove, selectDirectory | `event:project.*` |
 | **settings** | App settings persistence. Sub-modules: `settings-defaults.ts`, `settings-encryption.ts`, `settings-store.ts` | get, update | `event:settings.changed` |
 | **spotify** | Spotify integration | getCurrentTrack, play, pause, skip | - |
 | **terminal** | PTY terminal management | create, sendInput, resize, kill | `event:terminal.*` |
@@ -103,7 +103,7 @@ Location: `src/main/services/`
 | **claude** | Persistent Claude sessions (Anthropic SDK) | sendMessage, getConversation, listConversations | `event:claude.*` |
 | **email** | Email sending (SMTP). Sub-modules: `email-config.ts`, `email-encryption.ts`, `email-queue.ts`, `email-store.ts`, `smtp-transport.ts` (barrel: `index.ts`) | sendEmail, getConfig, testConnection | - |
 | **notifications** | Background Slack/GitHub watchers. Sub-modules: `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (barrel: `index.ts`) | startWatching, stopWatching, getNotifications | `event:notification.*` |
-| **tasks** | Smart task creation. Sub-modules: `task-decomposer.ts`, `github-importer.ts` (barrel: `index.ts`) | decompose, importFromGithub | - |
+| **tasks** | Smart task creation + local-first repository. Sub-modules: `types.ts` (TaskRepository interface + deps), `task-repository.ts` (local-first impl with Hub mirror), `task-decomposer.ts`, `github-importer.ts` (barrel: `index.ts`) | listTasks, getTask, createTask, updateTask, updateTaskStatus, deleteTask, executeTask, cancelTask, decompose, importFromGithub | - |
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |
 | **device** | Device registration & heartbeat via Hub API | registerDevice, updateDevice, sendHeartbeat | `event:hub.devices.*` |
@@ -451,7 +451,7 @@ ADC/
 │   │   │   ├── project/         # 6 files (detector, tasks, slug, spec-parser, store)
 │   │   │   ├── qa/              # 7 files (poller, prompt, parser, session, trigger, types)
 │   │   │   ├── settings/        # 4 files (defaults, encryption, store)
-│   │   │   ├── tasks/           # 3 files (decomposer, github-importer)
+│   │   │   ├── tasks/           # 4 files (types, task-repository, decomposer, github-importer)
 │   │   │   └── ...              # Other service directories
 │   │   └── tray/                # System tray + hotkeys
 │   ├── preload/                 # Context bridge

@@ -67,7 +67,7 @@ import { createQaTrigger } from '../services/qa/qa-trigger';
 import { createScreenCaptureService } from '../services/screen/screen-capture-service';
 import { createSettingsService } from '../services/settings/settings-service';
 import { createSpotifyService } from '../services/spotify/spotify-service';
-import { createGithubImporter, createTaskDecomposer } from '../services/tasks';
+import { createGithubImporter, createTaskDecomposer, createTaskRepository } from '../services/tasks';
 import { createTerminalService } from '../services/terminal/terminal-service';
 import { createTimeParserService } from '../services/time-parser/time-parser-service';
 import { createVoiceService } from '../services/voice/voice-service';
@@ -78,6 +78,7 @@ import { createQuickInputWindow } from '../tray/quick-input';
 import type { OAuthConfig } from '../auth/types';
 import type { Services } from '../ipc';
 import type { HubApiClient } from '../services/hub/hub-api-client';
+import type { TaskRepository } from '../services/tasks/types';
 
 /** Everything createServiceRegistry produces — services + extras needed for lifecycle/event wiring. */
 export interface ServiceRegistryResult {
@@ -100,6 +101,7 @@ export interface ServiceRegistryResult {
   hotkeyManager: ReturnType<typeof createHotkeyManager>;
   settingsService: ReturnType<typeof createSettingsService>;
   hubApiClient: HubApiClient;
+  taskRepository: TaskRepository;
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
 }
@@ -175,6 +177,14 @@ export function createServiceRegistry(
     router,
   );
   const settingsService = createSettingsService();
+
+  // ─── Task repository (local-first + Hub mirror) ──────────────
+  const taskRepository = createTaskRepository({
+    taskService,
+    hubApiClient,
+    hubConnectionManager,
+    projectService,
+  });
 
   // ─── Persistence services ────────────────────────────────────
   const notesService = createNotesService({ dataDir, router });
@@ -346,7 +356,7 @@ export function createServiceRegistry(
   agentWatchdog.start();
 
   // QA auto-trigger — starts QA when tasks enter review
-  const qaTrigger = createQaTrigger({ qaRunner, orchestrator: agentOrchestrator, hubApiClient, router });
+  const qaTrigger = createQaTrigger({ qaRunner, orchestrator: agentOrchestrator, taskRepository, router });
 
   // Health registry enrollment — register background services for monitoring
   healthRegistry.register('hubHeartbeat', 60_000);
@@ -447,6 +457,7 @@ export function createServiceRegistry(
     mergeService,
     timeParserService: createTimeParserService(),
     taskDecomposer,
+    taskRepository,
     githubImporter,
     voiceService,
     screenCaptureService,
@@ -482,6 +493,7 @@ export function createServiceRegistry(
     hotkeyManager,
     settingsService,
     hubApiClient,
+    taskRepository,
     heartbeatIntervalId,
     registeredDeviceId,
   };
