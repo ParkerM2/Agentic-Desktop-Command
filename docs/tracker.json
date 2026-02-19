@@ -135,11 +135,11 @@
     },
     "separation-of-concerns": {
       "title": "Codebase Separation of Concerns",
-      "status": "APPROVED",
+      "status": "IMPLEMENTED",
       "planFile": "docs/plans/2026-02-16-codebase-separation-of-concerns-design.md",
       "progressFile": null,
       "created": "2026-02-16",
-      "statusChangedAt": "2026-02-16",
+      "statusChangedAt": "2026-02-19",
       "branch": null,
       "pr": null,
       "commit": null,
