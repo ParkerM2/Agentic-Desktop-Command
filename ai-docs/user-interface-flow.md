@@ -261,6 +261,7 @@ After auth + onboarding, the user sees the main app shell:
 │ Tasks    │  (Project-scoped, disabled without       │
 │ Terminals│   active project)                        │
 │ Agents   │                                          │
+│ Pipeline │                                          │
 │ Roadmap  │                                          │
 │ Ideation │                                          │
 │ GitHub   │                                          │
@@ -433,6 +434,7 @@ Once a project is active, these routes become available:
 | `/projects/$projectId/ideation` | `IdeationPage` | `src/renderer/features/ideation/` |
 | `/projects/$projectId/changelog` | `ChangelogPage` | `src/renderer/features/changelog/` |
 | `/projects/$projectId/insights` | `InsightsPage` | `src/renderer/features/insights/` |
+| `/projects/$projectId/workflow` | `WorkflowPipelinePage` | `src/renderer/features/workflow-pipeline/` |
 
 ### 6.5 Editing a Project
 
@@ -1037,6 +1039,58 @@ User launches a task
 **Key files**:
 - `src/main/ipc/handlers/workflow-handlers.ts`
 - `src/main/services/workflow/workflow-service.ts`
+
+### 25.4 Workflow Pipeline Page
+
+**Route**: `/projects/$projectId/workflow`
+**Component**: `WorkflowPipelinePage`
+**Feature**: `src/renderer/features/workflow-pipeline/`
+
+Visual pipeline page showing a task's journey through 7 workflow steps as a connected horizontal diagram.
+
+**Layout**:
+```
+┌──────────────────────────────────────────────────────────┐
+│ Workflow Pipeline  [Task Selector dropdown ▾]            │
+├──────────────────────────────────────────────────────────┤
+│ ○ Backlog → ○ Planning → ● Plan Ready → ○ Queued → ...  │
+├──────────────────────────────────────────────────────────┤
+│ Step Content Panel                                       │
+│ (changes based on selected pipeline step)                │
+│                                                          │
+│ Backlog: description view/edit                           │
+│ Planning: in-progress indicator + logs                   │
+│ Plan Ready: approve/reject/edit plan                     │
+│ Queued: waiting state                                    │
+│ Running: progress bar + subtasks + logs                  │
+│ Review: QA report + PR status                            │
+│ Done: completion summary                                 │
+│ Error: error details + recovery actions                  │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Components**:
+| Component | File | Purpose |
+|-----------|------|---------|
+| `WorkflowPipelinePage` | `components/WorkflowPipelinePage.tsx` | Page assembly: selector + diagram + panels |
+| `TaskSelector` | `components/TaskSelector.tsx` | Dropdown to pick a task from the project |
+| `PipelineDiagram` | `components/PipelineDiagram.tsx` | Horizontal step diagram with connectors |
+| `PipelineStepNode` | `components/PipelineStepNode.tsx` | Individual step node (icon, label, state) |
+| `PipelineConnector` | `components/PipelineConnector.tsx` | Animated connector between steps |
+| `MarkdownRenderer` | `components/shared/MarkdownRenderer.tsx` | Renders markdown content |
+| `MarkdownEditor` | `components/shared/MarkdownEditor.tsx` | Split-pane markdown editor with preview |
+| 8 Step Panels | `components/step-panels/*.tsx` | Backlog, Planning, PlanReady, Queued, Running, Review, Done, Error |
+
+**Data flow**:
+- `TaskSelector` uses `useTasks(projectId)` from `@features/tasks` to list project tasks
+- Selected task fetched via `useTask(taskId)` from `@features/tasks`
+- Pipeline diagram renders step states based on `task.status`
+- Default selected step is the task's current status
+- BacklogPanel save wires to `useUpdateTaskDescription()` mutation
+- PlanReadyPanel save wires to `useUpdateTaskPlan()` mutation
+- Real-time updates via `useWorkflowPipelineEvents()` (delegates to `useAgentEvents`)
+
+**Sidebar**: "Pipeline" item with Workflow icon, after Agents
 
 ---
 

@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 28 |
+| Renderer Features | 29 |
 | Main Process Services | 32 |
 | IPC Handler Files | 41 |
 | IPC Domain Folders | 24 |
@@ -52,6 +52,7 @@ Location: `src/renderer/features/`
 | **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings (mounted in SettingsPage) | `voice.*` |
 | **screen** | Screen capture | ScreenshotButton (mounted in TopBar), ScreenshotViewer | `screen.*` |
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
+| **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 
 ### Feature Module Structure

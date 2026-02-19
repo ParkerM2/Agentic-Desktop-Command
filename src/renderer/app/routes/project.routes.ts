@@ -15,6 +15,7 @@ import { ProjectListPage } from '@features/projects';
 import { RoadmapPage } from '@features/roadmap';
 import { TaskDataGrid } from '@features/tasks';
 import { TerminalGrid } from '@features/terminals';
+import { WorkflowPipelinePage } from '@features/workflow-pipeline';
 
 export function createProjectRoutes(appLayoutRoute: AnyRoute) {
   const projectsRoute = createRoute({
@@ -80,6 +81,12 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     component: InsightsPage,
   });
 
+  const workflowRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_WORKFLOW,
+    component: WorkflowPipelinePage,
+  });
+
   return [
     projectsRoute,
     projectRoute,
@@ -91,5 +98,6 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ideationRoute,
     changelogRoute,
     insightsRoute,
+    workflowRoute,
   ] as const;
 }

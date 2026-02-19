@@ -36,6 +36,7 @@ export const PROJECT_VIEWS = {
   GITHUB: 'github',
   CHANGELOG: 'changelog',
   INSIGHTS: 'insights',
+  WORKFLOW: 'workflow',
 } as const;
 
 /** TanStack Router path patterns (use $projectId param syntax) */
@@ -49,6 +50,7 @@ export const ROUTE_PATTERNS = {
   PROJECT_GITHUB: '/projects/$projectId/github',
   PROJECT_CHANGELOG: '/projects/$projectId/changelog',
   PROJECT_INSIGHTS: '/projects/$projectId/insights',
+  PROJECT_WORKFLOW: '/projects/$projectId/workflow',
 } as const;
 
 /** Build a project view path with a concrete project ID */
