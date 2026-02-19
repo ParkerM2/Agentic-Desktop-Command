@@ -24,7 +24,8 @@ npm run test:integration  # Integration tests only (vitest)
 npm run test:e2e     # E2E tests (playwright + electron)
 npm run test:coverage    # Unit tests with coverage report
 npm run check:docs   # Verify docs updated for source changes
-npm run verify       # Run ALL 5 verification commands at once
+npm run validate:tracker  # Validate docs/tracker.json integrity
+npm run verify       # Run ALL verification commands at once
 ```
 
 ## Verification Requirements — MANDATORY (Non-Skippable)
@@ -104,7 +105,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 
 ### Documentation Update Mapping
 
-`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, and `CLAUDE.md`. Use this mapping to know which docs to update:
+`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, `docs/progress/`, `docs/tracker.json`, and `CLAUDE.md`. Use this mapping to know which docs to update:
 
 | Change Type | Docs to Update |
 |-------------|----------------|
@@ -116,6 +117,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 | Gap resolution | `user-interface-flow.md` (mark gap RESOLVED with date and description) |
 | New pattern or convention | `PATTERNS.md` (pattern example with code) |
 | Feature plan or design doc | `docs/plans/<feature>-plan.md` (implementation plan) |
+| Plan lifecycle changes | `docs/tracker.json` (update status, add new entry) |
 
 **Checklist before committing:**
 
@@ -124,6 +126,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 3. Did I introduce a new pattern? → Update `PATTERNS.md`
 4. Did I change the architecture? → Update `ARCHITECTURE.md`
 5. Did I change the UI layout or resolve a gap? → Update `user-interface-flow.md`
+6. Did I create/complete a plan? → Update `docs/tracker.json`
 
 ## Architecture Overview
 
@@ -356,5 +359,5 @@ Raw hex/rgb/hsl values are **ONLY** allowed inside theme variable definitions:
 | `ai-docs/user-interface-flow.md` | UX flow map, gap analysis, component wiring |
 | `ai-docs/prompts/implementing-features/README.md` | Team workflow for multi-agent feature implementation |
 
-**Current gaps and priorities:** `docs/plans/2026-02-13-full-codebase-audit.md`
+**Plan lifecycle tracking:** `docs/tracker.json` (single source of truth for all plan/progress status)
 

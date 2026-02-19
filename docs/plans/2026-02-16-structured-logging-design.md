@@ -1,7 +1,7 @@
 # Structured Logging & Diagnostics — Production Hardening Design
 
-**Date**: 2026-02-16
-**Status**: Approved design — ready for implementation
+> Tracker Key: `structured-logging` | Status: **APPROVED** | Created: 2026-02-16
+
 **Scope**: Replace console.* with structured electron-log, log rotation, diagnostic export, ESLint enforcement
 
 ---

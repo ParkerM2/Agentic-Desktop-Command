@@ -1,5 +1,7 @@
 # Team Beta: Frontend + UI Implementation
 
+> Tracker Key: `team-beta-frontend` | Status: **IN_PROGRESS** | Created: 2026-02-14
+
 **Branch**: `feature/team-beta-frontend`
 **Base**: `master`
 **Coordination**: `docs/plans/2026-02-14-parallel-implementation-plan.md`

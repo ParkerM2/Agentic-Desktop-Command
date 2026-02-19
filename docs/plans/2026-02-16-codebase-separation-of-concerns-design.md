@@ -1,9 +1,7 @@
 # Feature Design: Codebase Separation of Concerns
 
-**Author**: /create-feature-plan (brainstorming + deep analysis)
-**Created**: 2026-02-16
-**Updated**: 2026-02-16
-**Status**: READY FOR IMPLEMENTATION
+> Tracker Key: `separation-of-concerns` | Status: **APPROVED** | Created: 2026-02-16
+
 **Workflow Mode**: standard
 **Team Lead**: Orchestrator (delegates to parallel agents per wave)
 

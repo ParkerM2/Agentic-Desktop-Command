@@ -1,5 +1,7 @@
 # Plan: Low-Hanging Fruit Gap Closures
 
+> Tracker Key: `low-hanging-fruit-gaps` | Status: **IMPLEMENTED** | Created: 2026-02-18
+
 ## Summary
 
 Investigation of the 4 requested gaps reveals that **2 of 4 are already resolved** in the current codebase, and 1 more is partially resolved (3 of 5 barrels already complete). The gap analysis doc was stale on these items. Only **2 barrel files** need actual code changes, plus documentation updates.

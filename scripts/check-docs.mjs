@@ -103,7 +103,13 @@ function isSrcFile(file) {
 }
 
 function isDocFile(file) {
-  return file.startsWith('ai-docs/') || file.startsWith('docs/plans/') || file === 'CLAUDE.md';
+  return (
+    file.startsWith('ai-docs/') ||
+    file.startsWith('docs/plans/') ||
+    file.startsWith('docs/progress/') ||
+    file === 'docs/tracker.json' ||
+    file === 'CLAUDE.md'
+  );
 }
 
 // --- Main ---

@@ -1,9 +1,9 @@
 # Three Pillars Design — Agent Orchestration, Automated QA, Assistant 2.0
 
+> Tracker Key: `three-pillars` | Status: **APPROVED** | Created: 2026-02-15
+
 > Transform Claude-UI from a task dashboard into an autonomous development orchestrator.
 
-**Status**: DESIGN APPROVED — Ready for implementation
-**Created**: 2026-02-15
 **Branch**: `feature/ai-assistant` (current)
 
 ---

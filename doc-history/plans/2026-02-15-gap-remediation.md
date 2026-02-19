@@ -1,10 +1,10 @@
 # Gap Remediation Plan — High & Medium Priority
 
+> Tracker Key: `gap-remediation` | Status: **IMPLEMENTED** | Created: 2026-02-15
+
 > Fill in the gaps identified in `ai-docs/user-interface-flow.md` (G-1 through G-20).
 > Focus: High and Medium severity only. Low items deferred to future sprints.
 
-**Status**: IMPLEMENTED
-**Created**: 2026-02-15
 **Source**: `ai-docs/user-interface-flow.md` Gap Analysis (20 gaps total)
 
 ---

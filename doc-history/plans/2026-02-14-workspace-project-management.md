@@ -1,9 +1,7 @@
 # Workspace & Project Management
 
-**Status**: DRAFT
-**Author**: Claude + Parker
-**Created**: 2026-02-14
-**Priority**: HIGH
+> Tracker Key: `workspace-project` | Status: **SUPERSEDED** | Created: 2026-02-14
+
 **Related**: `2026-02-13-kanban-workflow-refactor.md` (Task Dashboard & Multi-Device Workflow plan)
 
 ---

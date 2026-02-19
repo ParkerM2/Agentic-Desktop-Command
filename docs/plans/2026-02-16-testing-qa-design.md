@@ -1,7 +1,7 @@
 # Testing & QA Strategy — Production Hardening Design
 
-**Date**: 2026-02-16
-**Status**: Approved design — ready for implementation
+> Tracker Key: `testing-qa` | Status: **APPROVED** | Created: 2026-02-16
+
 **Scope**: Tier 1 critical path tests for hardening features + existing data-critical services
 
 ---

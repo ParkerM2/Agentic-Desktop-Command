@@ -1,7 +1,7 @@
 # Security Hardening — Production Hardening Design
 
-**Date**: 2026-02-16
-**Status**: Approved design — ready for implementation
+> Tracker Key: `security-hardening` | Status: **APPROVED** | Created: 2026-02-16
+
 **Scope**: Agent sandboxing, IPC security, CSP, configurable security settings, remaining audit items
 
 ---

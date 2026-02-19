@@ -28,7 +28,8 @@ Every feature passes through these phases. No phase may be skipped.
 PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD+DOCS ──▶ TEST ──▶ QA ──▶ INTEGRATE
   │         │         │            │              │       │         │
   │         │         │            │              │       │         └─ Merge worktrees, FULL TEST SUITE,
-  │         │         │            │              │       │            commit, push, PR
+  │         │         │            │              │       │            commit, push, PR.
+  │         │         │            │              │       │            Update tracker.json status → IMPLEMENTED
   │         │         │            │              │       │
   │         │         │            │              │       └─ QA agent verifies ALL tests pass,
   │         │         │            │              │          then does visual testing
@@ -42,11 +43,12 @@ PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD+DOCS ──▶ TEST ──
   │         │         └─ TeamCreate, TaskCreate with dependencies,
   │         │            spawn agents with full initialization
   │         │
-  │         └─ Create progress temp file at
-  │            docs/progress/<feature-name>-progress.md
+  │         └─ Create progress file at docs/progress/<feature-name>-progress.md
+  │            Update tracker.json: add entry with status IN_PROGRESS
   │
   └─ Read design doc, decompose into tasks,
-     identify agent roles, map dependencies
+     identify agent roles, map dependencies.
+     Update tracker.json: add entry with status DRAFT or APPROVED
 ```
 
 ### TEST GATE — NON-NEGOTIABLE
@@ -63,6 +65,21 @@ npm run check:docs   # Documentation updated for source changes
 ```
 
 **Skipping tests or doc updates = automatic failure. No exceptions. No excuses.**
+
+### Tracker Update — Team Lead Responsibility
+
+The Team Lead MUST update `docs/tracker.json` at each lifecycle transition:
+
+| Transition | Tracker Update |
+|------------|---------------|
+| Feature planned | Add entry with status `DRAFT` or `APPROVED` |
+| Work begins | Set status to `IN_PROGRESS`, set `branch` field |
+| Work blocked | Set status to `BLOCKED` |
+| Implementation complete | Set status to `IMPLEMENTED` |
+| Feature superseded | Set status to `SUPERSEDED`, set `supersededBy` field |
+| Feature archived | Move files to `doc-history/`, update paths, set status to `ARCHIVED` |
+
+Always update `statusChangedAt` when changing status. Run `npm run validate:tracker` to verify.
 
 ---
 
@@ -140,6 +157,16 @@ If resuming from crash:
 4. Resume from the first non-COMPLETE task
 ```
 
+### Tracker.json Integration
+
+The Team Lead must update `docs/tracker.json` at these lifecycle points:
+- **New feature**: Add entry with status `IN_PROGRESS`
+- **Feature complete**: Set status to `IMPLEMENTED`
+- **Feature archived**: Move files to `doc-history/`, update paths, set status to `ARCHIVED`
+- **Feature superseded**: Set status to `SUPERSEDED`, set `supersededBy` field
+
+Run `npm run validate:tracker` to verify tracker integrity after any changes.
+
 ### Recovery Protocol (For New Sessions)
 
 When a Team Lead agent starts and detects existing progress:
@@ -200,6 +227,7 @@ Claude-UI/
 │   └── prompts/
 │       └── implementing-features/     # THIS PLAYBOOK
 ├── docs/
+│   ├── tracker.json                   # Single source of truth for plan/progress lifecycle
 │   ├── plans/                         # Design documents (one per feature)
 │   └── progress/                      # Crash-safe progress files (one per active feature)
 ├── .claude/agents/                    # Agent prompt definitions (27 specialists)
@@ -617,3 +645,25 @@ Checklist:
 4. `src/main/ipc/index.ts` — Import and register handler file
 5. `src/shared/ipc-contract.ts` — Define channels
 6. `ai-docs/ARCHITECTURE.md` — Add to service list
+
+---
+
+## 8. Team Lead Feature Kickoff Checklist
+
+Use this checklist when starting any new feature implementation:
+
+1. READ design doc / plan
+2. DECOMPOSE into tasks with dependencies
+3. CREATE progress file at `docs/progress/<feature-name>-progress.md`
+3b. UPDATE tracker: Add entry to `docs/tracker.json` with status `IN_PROGRESS`
+4. CREATE team via TeamCreate
+5. CREATE tasks via TaskCreate with proper `blockedBy` relationships
+6. CREATE worktrees (if needed)
+7. SPAWN agents with full initialization protocol (see section 5)
+8. MONITOR progress, update progress file after each state change
+9. RUN QA verification for each completed task (see section 6)
+10. MERGE worktrees to feature branch
+11. RUN full verification suite: `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs`
+12. COMMIT and push, create PR if requested
+13. UPDATE tracker: Set status to `IMPLEMENTED` in `docs/tracker.json`
+14. RUN `npm run validate:tracker` to verify tracker integrity

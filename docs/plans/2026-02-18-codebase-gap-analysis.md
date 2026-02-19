@@ -1,6 +1,7 @@
 # Codebase Gap Analysis — UI, Wiring, Backend & Vision Gaps
 
-**Date**: 2026-02-18
+> Tracker Key: `codebase-gap-analysis` | Status: **IMPLEMENTED** | Created: 2026-02-18
+
 **Branch**: `work/dead-code-cleanup` (active cleanup in progress)
 **Audit scope**: All 27 renderer features, 35 main services, ~200 IPC channels, shared types, existing docs
 

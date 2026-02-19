@@ -524,6 +524,37 @@ npm run format       # Prettier format
 
 ---
 
+## 10. Plan Lifecycle Tracker
+
+| Component | Path | Description |
+|-----------|------|-------------|
+| Tracker Registry | `docs/tracker.json` | Single source of truth for all plan/progress lifecycle |
+| Validation Script | `scripts/validate-tracker.mjs` | 5-check validator (schema, existence, orphans, staleness, archive candidates) |
+| NPM Script | `npm run validate:tracker` | Runs the validation script |
+
+### Status Enum
+
+| Status | Meaning |
+|--------|---------|
+| `DRAFT` | Initial write-up, not yet approved |
+| `APPROVED` | Design approved, ready for implementation |
+| `IN_PROGRESS` | Currently being implemented |
+| `BLOCKED` | Implementation blocked by external dependency |
+| `IMPLEMENTED` | Code merged and working |
+| `SUPERSEDED` | Replaced by a newer plan (see `supersededBy` field) |
+| `ABANDONED` | Decided not to implement |
+| `ARCHIVED` | Completed and moved to `doc-history/` |
+| `TRACKING` | Living document (roadmap, etc.) — no implementation phase |
+
+### File Organization
+
+- **Active plans**: `docs/plans/` — plans currently in backlog or in progress
+- **Active progress**: `docs/progress/` — crash-recovery files for active features
+- **Archived plans**: `doc-history/plans/` — completed/superseded plans
+- **Archived progress**: `doc-history/progress/` — progress files for completed features
+
+---
+
 ## Related Documentation
 
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — System diagram and data flow

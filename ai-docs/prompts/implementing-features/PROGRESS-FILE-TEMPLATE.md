@@ -85,8 +85,10 @@
 - [ ] `npx tsc --noEmit` passes on merged branch
 - [ ] `npm run build` passes on merged branch
 - [ ] Documentation updated (ARCHITECTURE.md, PATTERNS.md, DATA-FLOW.md as needed)
+- [ ] `docs/tracker.json` updated — status set to IMPLEMENTED, statusChangedAt updated
 - [ ] Progress file status set to COMPLETE
 - [ ] Design doc status updated to IMPLEMENTED
+- [ ] `npm run validate:tracker` passes
 - [ ] Committed with descriptive message
 - [ ] PR created (if requested)
 

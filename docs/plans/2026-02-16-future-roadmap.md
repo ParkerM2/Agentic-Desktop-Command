@@ -1,7 +1,6 @@
 # Future Roadmap — Deferred Items from Hardening Brainstorm
 
-**Date**: 2026-02-16
-**Status**: Tracking document — items to plan in future sessions
+> Tracker Key: `future-roadmap` | Status: **TRACKING** | Created: 2026-02-16
 
 ---
 

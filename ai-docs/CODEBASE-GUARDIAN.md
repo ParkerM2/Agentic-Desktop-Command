@@ -34,6 +34,22 @@
 | `src/renderer/app/routes/` | Route group files (8 files, one per domain: auth, dashboard, project, settings, etc.) | Business logic, component definitions |
 | `src/renderer/styles/` | Global CSS, theme definitions | Component-specific styles (use Tailwind classes) |
 
+### Plan Lifecycle Tracking
+
+| File | Location | Rule |
+|------|----------|------|
+| `tracker.json` | `docs/tracker.json` | Single source of truth for plan status. MUST be updated when plans change status. |
+| `validate-tracker.mjs` | `scripts/validate-tracker.mjs` | Validation script — do not move. |
+| Active plans | `docs/plans/` | Plans with status DRAFT, APPROVED, IN_PROGRESS, BLOCKED, TRACKING |
+| Active progress | `docs/progress/` | Progress files for features currently being implemented |
+| Archived plans | `doc-history/plans/` | Plans with status IMPLEMENTED, SUPERSEDED, ABANDONED, ARCHIVED |
+| Archived progress | `doc-history/progress/` | Progress files for completed features |
+
+**Archival rules:**
+- Plans with status `IMPLEMENTED` or `SUPERSEDED` that are older than 14 days should be archived
+- When archiving: `git mv` the file to `doc-history/`, update `docs/tracker.json` paths, set status to `ARCHIVED`
+- `npm run validate:tracker` must pass after any archival operation
+
 ### Feature Module Structure (MANDATORY)
 
 Every feature in `src/renderer/features/<name>/` MUST have:

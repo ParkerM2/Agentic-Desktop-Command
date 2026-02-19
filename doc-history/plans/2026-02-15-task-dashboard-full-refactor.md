@@ -1,7 +1,7 @@
 # Task Dashboard Full Refactor — Design & Implementation Plan
 
-**Date**: 2026-02-15
-**Status**: PENDING APPROVAL
+> Tracker Key: `task-dashboard-full-refactor` | Status: **IMPLEMENTED** | Created: 2026-02-15
+
 **Scope**: Full platform refactor — AG-Grid table, auth, workspaces, devices, Hub-first execution, progress watchers
 **Dependencies**: AG-Grid Community v35.1.0 (evaluated at `docs/research/2026-02-14-ag-grid-evaluation.md`)
 

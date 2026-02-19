@@ -1,8 +1,7 @@
 # Data Management Audit — Storage, Memory, Tracking & Lifecycle
 
-**Created**: 2026-02-17
-**Status**: TODO
-**Priority**: High
+> Tracker Key: `data-management-audit` | Status: **DRAFT** | Created: 2026-02-17
+
 **Triggered by**: Discovery that workflow progress files, Playwright MCP screenshots, and agent session artifacts were leaking into git history
 
 ---

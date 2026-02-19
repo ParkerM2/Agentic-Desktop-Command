@@ -1,9 +1,6 @@
 # Task Dashboard & Multi-Device Workflow
 
-**Status**: DRAFT
-**Author**: Claude + Parker
-**Created**: 2026-02-13
-**Priority**: HIGH
+> Tracker Key: `kanban-workflow` | Status: **SUPERSEDED** | Created: 2026-02-13
 
 ---
 
