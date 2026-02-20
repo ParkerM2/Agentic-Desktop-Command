@@ -140,7 +140,7 @@ export function CreateProjectWizard({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       role="dialog"
     >
-      <div className="bg-card border-border mx-4 flex w-full max-w-lg flex-col rounded-xl border shadow-xl">
+      <div className="bg-card border-border mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl border shadow-xl">
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Create New Project</h2>

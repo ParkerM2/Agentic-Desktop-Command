@@ -179,7 +179,7 @@ describe('ProjectService', () => {
 
       expect(hubApiClient.hubPost).toHaveBeenCalledWith(
         '/api/workspaces/ws-1/projects',
-        expect.objectContaining({ path: '/path/to/ws' }),
+        expect.objectContaining({ rootPath: '/path/to/ws' }),
       );
     });
 

@@ -117,6 +117,8 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
       name: projectName.trim() || undefined,
       workspaceId: workspaceId ?? undefined,
       description: description.trim() || undefined,
+      repoStructure: repoType as 'single' | 'monorepo' | 'multi-repo',
+      defaultBranch: detection.data?.defaultBranch ?? undefined,
     });
 
     // Create sub-projects from selected repos
@@ -147,7 +149,7 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       role="dialog"
     >
-      <div className="bg-card border-border mx-4 flex w-full max-w-lg flex-col rounded-xl border shadow-xl">
+      <div className="bg-card border-border mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl border shadow-xl">
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Initialize Project</h2>

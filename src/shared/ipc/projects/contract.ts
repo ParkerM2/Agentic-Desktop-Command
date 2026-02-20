@@ -28,6 +28,8 @@ export const projectsInvoke = {
       name: z.string().optional(),
       workspaceId: z.string().optional(),
       description: z.string().optional(),
+      repoStructure: z.enum(['single', 'monorepo', 'multi-repo']).optional(),
+      defaultBranch: z.string().optional(),
     }),
     output: ProjectSchema,
   },

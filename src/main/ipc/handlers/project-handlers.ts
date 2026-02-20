@@ -44,10 +44,20 @@ export function registerProjectHandlers(
     return projects.map((p) => transformHubProject(p as unknown as Record<string, unknown>));
   });
 
-  router.handle('projects.add', async ({ path, name, workspaceId, description }) => {
-    const project = await service.addProject({ path, name, workspaceId, description });
-    return transformHubProject(project as unknown as Record<string, unknown>);
-  });
+  router.handle(
+    'projects.add',
+    async ({ path, name, workspaceId, description, repoStructure, defaultBranch }) => {
+      const project = await service.addProject({
+        path,
+        name,
+        workspaceId,
+        description,
+        repoStructure,
+        defaultBranch,
+      });
+      return transformHubProject(project as unknown as Record<string, unknown>);
+    },
+  );
 
   router.handle('projects.remove', async ({ projectId }) => {
     return await service.removeProject(projectId);

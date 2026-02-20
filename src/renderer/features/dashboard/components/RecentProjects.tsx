@@ -5,7 +5,7 @@
 import { useState } from 'react';
 
 import { useNavigate } from '@tanstack/react-router';
-import { FolderOpen, Loader2, Plus, Wand2 } from 'lucide-react';
+import { FolderOpen, Loader2, Sparkles, Wand2 } from 'lucide-react';
 
 import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 
@@ -13,41 +13,30 @@ import { cn, formatRelativeTime, truncate } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
 import {
-  AddProjectDialog,
   CreateProjectWizard,
+  ProjectInitWizard,
   SetupProgressModal,
   useProjects,
-  useSelectDirectory,
 } from '@features/projects';
 
 export function RecentProjects() {
   const navigate = useNavigate();
   const { data: projects, isLoading } = useProjects();
   const { addProjectTab } = useLayoutStore();
-  const selectDirectory = useSelectDirectory();
 
   // Dialog state
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedFolderPath, setSelectedFolderPath] = useState('');
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [createWizardOpen, setCreateWizardOpen] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [setupProjectId, setSetupProjectId] = useState('');
-  const [createWizardOpen, setCreateWizardOpen] = useState(false);
 
   function handleOpenProject(projectId: string) {
     addProjectTab(projectId);
     void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
-  async function handleAddProject() {
-    const result = await selectDirectory.mutateAsync();
-    if (result.path) {
-      setSelectedFolderPath(result.path);
-      setShowAddDialog(true);
-    }
-  }
-
-  function handleSetupStarted(projectId: string) {
-    setShowAddDialog(false);
+  function handleWizardSetupStarted(projectId: string) {
+    setWizardOpen(false);
     setSetupProjectId(projectId);
     setShowProgressModal(true);
   }
@@ -112,13 +101,13 @@ export function RecentProjects() {
             <button
               type="button"
               className={cn(
-                'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium',
-                'hover:bg-primary/90 transition-colors',
+                'border-border text-foreground flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium',
+                'hover:bg-accent transition-colors',
               )}
-              onClick={handleAddProject}
+              onClick={() => setWizardOpen(true)}
             >
-              <Plus className="h-3.5 w-3.5" />
-              Add Project
+              <Wand2 className="h-3.5 w-3.5" />
+              Init Wizard
             </button>
             <button
               type="button"
@@ -128,18 +117,24 @@ export function RecentProjects() {
               )}
               onClick={() => setCreateWizardOpen(true)}
             >
-              <Wand2 className="h-3.5 w-3.5" />
+              <Sparkles className="h-3.5 w-3.5" />
               New Project
             </button>
           </div>
         </div>
       )}
 
-      <AddProjectDialog
-        folderPath={selectedFolderPath}
-        open={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        onSetupStarted={handleSetupStarted}
+      {wizardOpen ? (
+        <ProjectInitWizard
+          onClose={() => setWizardOpen(false)}
+          onSetupStarted={handleWizardSetupStarted}
+        />
+      ) : null}
+
+      <CreateProjectWizard
+        open={createWizardOpen}
+        onClose={() => setCreateWizardOpen(false)}
+        onProjectCreated={handleProjectCreated}
       />
 
       <SetupProgressModal
@@ -147,12 +142,6 @@ export function RecentProjects() {
         projectId={setupProjectId}
         onClose={() => setShowProgressModal(false)}
         onComplete={handleSetupComplete}
-      />
-
-      <CreateProjectWizard
-        open={createWizardOpen}
-        onClose={() => setCreateWizardOpen(false)}
-        onProjectCreated={handleProjectCreated}
       />
     </div>
   );

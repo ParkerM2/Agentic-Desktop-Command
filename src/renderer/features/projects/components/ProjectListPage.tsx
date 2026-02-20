@@ -5,7 +5,7 @@
 import { useState } from 'react';
 
 import { useNavigate } from '@tanstack/react-router';
-import { FolderOpen, Layers, Loader2, Pencil, Plus, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import { FolderOpen, Layers, Loader2, Pencil, Sparkles, Trash2, Wand2 } from 'lucide-react';
 
 import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 import type { Project, RepoType } from '@shared/types';
@@ -13,14 +13,8 @@ import type { Project, RepoType } from '@shared/types';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import {
-  useProjects,
-  useRemoveProject,
-  useSelectDirectory,
-  useSubProjects,
-} from '../api/useProjects';
+import { useProjects, useRemoveProject, useSubProjects } from '../api/useProjects';
 
-import { AddProjectDialog } from './AddProjectDialog';
 import { CreateProjectWizard } from './CreateProjectWizard';
 import { ProjectEditDialog } from './ProjectEditDialog';
 import { ProjectInitWizard } from './ProjectInitWizard';
@@ -119,33 +113,14 @@ export function ProjectListPage() {
   const navigate = useNavigate();
   const { data: projects, isLoading } = useProjects();
   const removeProject = useRemoveProject();
-  const selectDirectory = useSelectDirectory();
   const { addProjectTab } = useLayoutStore();
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [createWizardOpen, setCreateWizardOpen] = useState(false);
 
-  // Add Project Dialog state
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [selectedFolderPath, setSelectedFolderPath] = useState('');
-
   // Setup Progress Modal state
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [setupProjectId, setSetupProjectId] = useState('');
-
-  async function handleAddProject() {
-    const result = await selectDirectory.mutateAsync();
-    if (result.path) {
-      setSelectedFolderPath(result.path);
-      setShowAddDialog(true);
-    }
-  }
-
-  function handleSetupStarted(projectId: string) {
-    setShowAddDialog(false);
-    setSetupProjectId(projectId);
-    setShowProgressModal(true);
-  }
 
   function handleSetupComplete() {
     setShowProgressModal(false);
@@ -217,19 +192,6 @@ export function ProjectListPage() {
             <Sparkles className="h-4 w-4" />
             New Project
           </button>
-          <button
-            disabled={selectDirectory.isPending}
-            type="button"
-            className={cn(
-              'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'hover:bg-primary/90 transition-colors',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
-            onClick={handleAddProject}
-          >
-            <Plus className="h-4 w-4" />
-            Add Project
-          </button>
         </div>
       </div>
 
@@ -264,13 +226,6 @@ export function ProjectListPage() {
         open={createWizardOpen}
         onClose={() => setCreateWizardOpen(false)}
         onProjectCreated={handleProjectCreated}
-      />
-
-      <AddProjectDialog
-        folderPath={selectedFolderPath}
-        open={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        onSetupStarted={handleSetupStarted}
       />
 
       <SetupProgressModal

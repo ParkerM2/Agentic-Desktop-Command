@@ -149,15 +149,27 @@ export function createProjectService(deps: {
 
       const projectName = data.name ?? basename(data.path);
 
-      const result = await hubApiClient.hubPost<Project>(endpoint, {
-        path: data.path,
-        name: projectName,
-        description: data.description,
-        repoStructure: data.repoStructure,
-        gitUrl: data.gitUrl,
-        defaultBranch: data.defaultBranch,
-        subProjects: data.subProjects,
-      });
+      const body = data.workspaceId
+        ? {
+            rootPath: data.path,
+            name: projectName,
+            description: data.description,
+            repoStructure: data.repoStructure ?? 'single',
+            gitUrl: data.gitUrl,
+            defaultBranch: data.defaultBranch,
+            subProjects: data.subProjects,
+          }
+        : {
+            path: data.path,
+            name: projectName,
+            description: data.description,
+            repoStructure: data.repoStructure,
+            gitUrl: data.gitUrl,
+            defaultBranch: data.defaultBranch,
+            subProjects: data.subProjects,
+          };
+
+      const result = await hubApiClient.hubPost<Project>(endpoint, body);
 
       if (!result.ok || !result.data) {
         throw new Error(result.error ?? 'Failed to add project');

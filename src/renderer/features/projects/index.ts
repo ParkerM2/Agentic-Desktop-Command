@@ -38,7 +38,6 @@ export { useProjectEvents } from './hooks/useProjectEvents';
 export { useSetupProgress } from './hooks/useSetupProgress';
 
 // Components
-export { AddProjectDialog } from './components/AddProjectDialog';
 export { ProjectEditDialog } from './components/ProjectEditDialog';
 export { ProjectListPage } from './components/ProjectListPage';
 export { SetupProgressModal } from './components/SetupProgressModal';
