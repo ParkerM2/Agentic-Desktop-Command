@@ -388,9 +388,9 @@ Location: `src/renderer/app/layouts/`
 
 | Layout | Purpose |
 |--------|---------|
-| `RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for sidebar + content layout with localStorage persistence. Sidebar panel is collapsible and syncs with layout store. |
+| `RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for sidebar + content layout with localStorage persistence. Sidebar panel is collapsible (collapses to 56px, minSize 160px so labels are visible when expanded, maxSize 300px) and syncs with layout store. |
 | `TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement + minimize/maximize/close controls. Uses `window.*` IPC channels. |
-| `Sidebar.tsx` | Navigation sidebar (fills its parent panel, collapse state driven by layout store) |
+| `Sidebar.tsx` | Navigation sidebar (fills its parent panel, collapse state driven by layout store). Uses `bg-sidebar text-sidebar-foreground` theme variables. |
 | `TopBar.tsx` | Top bar with assistant command input |
 | `CommandBar.tsx` | Global command palette (Cmd+K) |
 | `ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |

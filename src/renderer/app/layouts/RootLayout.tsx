@@ -136,7 +136,7 @@ export function RootLayout() {
           defaultSize="208px"
           id={SIDEBAR_PANEL_ID}
           maxSize="300px"
-          minSize="56px"
+          minSize="160px"
           panelRef={sidebarPanelRef}
         >
           <Sidebar />
