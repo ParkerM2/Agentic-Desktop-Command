@@ -6,7 +6,7 @@ import { create } from 'zustand';
 
 interface ProductivityState {
   /** Active tab in the productivity page */
-  activeTab: 'overview' | 'calendar' | 'spotify';
+  activeTab: 'overview' | 'calendar' | 'spotify' | 'briefing' | 'notes' | 'planner' | 'alerts' | 'comms';
   /** Search query for Spotify */
   spotifySearchQuery: string;
   setActiveTab: (tab: ProductivityState['activeTab']) => void;

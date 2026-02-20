@@ -2,9 +2,15 @@
  * ProductivityPage — Dashboard combining Calendar and Spotify widgets
  */
 
-import { Calendar, Headphones, LayoutGrid } from 'lucide-react';
+import { Bell, Calendar, CalendarDays, Globe, Headphones, LayoutGrid, Newspaper, StickyNote } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import { AlertsPage } from '@features/alerts';
+import { BriefingPage } from '@features/briefing';
+import { CommunicationsPage } from '@features/communications';
+import { NotesPage } from '@features/notes';
+import { PlannerPage } from '@features/planner';
 
 import { useProductivityStore } from '../store';
 
@@ -17,6 +23,11 @@ const TABS = [
   { id: 'overview' as const, label: 'Overview', icon: LayoutGrid },
   { id: 'calendar' as const, label: 'Calendar', icon: Calendar },
   { id: 'spotify' as const, label: 'Spotify', icon: Headphones },
+  { id: 'briefing' as const, label: 'Briefing', icon: Newspaper },
+  { id: 'notes' as const, label: 'Notes', icon: StickyNote },
+  { id: 'planner' as const, label: 'Planner', icon: CalendarDays },
+  { id: 'alerts' as const, label: 'Alerts', icon: Bell },
+  { id: 'comms' as const, label: 'Comms', icon: Globe },
 ];
 
 const TAB_BASE = 'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors';
@@ -75,6 +86,36 @@ export function ProductivityPage() {
         {activeTab === 'spotify' ? (
           <div className="mx-auto max-w-md">
             <SpotifyWidget />
+          </div>
+        ) : null}
+
+        {activeTab === 'briefing' ? (
+          <div className="h-full">
+            <BriefingPage />
+          </div>
+        ) : null}
+
+        {activeTab === 'notes' ? (
+          <div className="h-full">
+            <NotesPage />
+          </div>
+        ) : null}
+
+        {activeTab === 'planner' ? (
+          <div className="h-full">
+            <PlannerPage />
+          </div>
+        ) : null}
+
+        {activeTab === 'alerts' ? (
+          <div className="h-full">
+            <AlertsPage />
+          </div>
+        ) : null}
+
+        {activeTab === 'comms' ? (
+          <div className="h-full">
+            <CommunicationsPage />
           </div>
         ) : null}
       </div>

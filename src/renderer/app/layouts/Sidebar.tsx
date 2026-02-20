@@ -8,26 +8,21 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   BarChart3,
-  Bell,
   Bot,
   Briefcase,
-  CalendarDays,
   ChevronDown,
   Dumbbell,
-  Globe,
   GitBranch,
   Headphones,
   Home,
   Lightbulb,
   ListTodo,
   Map,
-  Newspaper,
   PanelLeft,
   PanelLeftClose,
   Plus,
   ScrollText,
   Settings,
-  StickyNote,
   Terminal,
   Workflow,
 } from 'lucide-react';
@@ -58,14 +53,9 @@ const COLLAPSED_STYLE = 'justify-center px-0';
 /** Personal nav items (not project-scoped) */
 const personalItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
-  { label: 'Briefing', icon: Newspaper, path: ROUTES.BRIEFING },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
-  { label: 'Notes', icon: StickyNote, path: ROUTES.NOTES },
   { label: 'Fitness', icon: Dumbbell, path: ROUTES.FITNESS },
-  { label: 'Planner', icon: CalendarDays, path: ROUTES.PLANNER },
   { label: 'Productivity', icon: Headphones, path: ROUTES.PRODUCTIVITY },
-  { label: 'Alerts', icon: Bell, path: ROUTES.ALERTS },
-  { label: 'Comms', icon: Globe, path: ROUTES.COMMUNICATIONS },
 ];
 
 /** Development nav items (project-scoped) */
