@@ -11,8 +11,8 @@
 |----------|-------|
 | Renderer Features | 29 |
 | Main Process Services | 33 |
-| IPC Handler Files | 41 |
-| IPC Domain Folders | 26 |
+| IPC Handler Files | 42 |
+| IPC Domain Folders | 27 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -176,6 +176,7 @@ Location: `src/main/ipc/handlers/`
 | `data-management-handlers.ts` | dataManagement.* (registry, usage, retention, cleanup, export/import) |
 | `security-handlers.ts` | security.getSettings, security.updateSettings, security.exportAudit |
 | `agent-orchestrator-handlers.ts` | agent.startPlanning, agent.startExecution, agent.replanWithFeedback, agent.killSession, agent.restartFromCheckpoint, agent.getOrchestratorSession, agent.listOrchestratorSessions |
+| `window-handlers.ts` | window.minimize, window.maximize, window.close, window.isMaximized |
 
 ### IPC Utilities (`src/main/ipc/`)
 
@@ -263,7 +264,7 @@ The main process `index.ts` has been split into **5 focused bootstrap modules**:
 
 ### IPC Contract (Domain-Based Structure)
 
-The IPC contract has been split from a single monolithic file into **25 domain folders** under `src/shared/ipc/`. The root barrel at `src/shared/ipc/index.ts` merges all domain contracts back into the unified `ipcInvokeContract` and `ipcEventContract` objects. The original `src/shared/ipc-contract.ts` is now a thin backward-compatible re-export.
+The IPC contract has been split from a single monolithic file into **27 domain folders** under `src/shared/ipc/`. The root barrel at `src/shared/ipc/index.ts` merges all domain contracts back into the unified `ipcInvokeContract` and `ipcEventContract` objects. The original `src/shared/ipc-contract.ts` is now a thin backward-compatible re-export.
 
 **Domain folders** (`src/shared/ipc/<domain>/`):
 
@@ -294,6 +295,7 @@ The IPC contract has been split from a single monolithic file into **25 domain f
 | `health` | Error collection, health registry invoke/event contracts |
 | `data-management` | Data store registry, retention settings, cleanup, usage, export/import (8 invoke + 1 event) |
 | `security` | Security settings, audit export (3 channels) |
+| `window` | Window controls (minimize, maximize, close, isMaximized) |
 | `workflow` | Workflow execution |
 
 Each domain folder contains:
@@ -386,7 +388,8 @@ Location: `src/renderer/app/layouts/`
 
 | Layout | Purpose |
 |--------|---------|
-| `RootLayout.tsx` | Root shell: uses `react-resizable-panels` (Group/Panel/Separator) for sidebar + content layout with localStorage persistence. Sidebar panel is collapsible and syncs with layout store. |
+| `RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for sidebar + content layout with localStorage persistence. Sidebar panel is collapsible and syncs with layout store. |
+| `TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement + minimize/maximize/close controls. Uses `window.*` IPC channels. |
 | `Sidebar.tsx` | Navigation sidebar (fills its parent panel, collapse state driven by layout store) |
 | `TopBar.tsx` | Top bar with assistant command input |
 | `CommandBar.tsx` | Global command palette (Cmd+K) |
@@ -427,6 +430,7 @@ All primitives follow the **shadcn/ui pattern**: CVA variants, `data-slot` attri
 | **1: Display** | Card | `ui/card.tsx` | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` — compound component, variants: default, interactive, elevated |
 | **1: Display** | Skeleton | `ui/skeleton.tsx` | `Skeleton` — pulse-animated placeholder, variants: line, circle, card |
 | **1: Display** | Spinner | `ui/spinner.tsx` | `Spinner`, `spinnerVariants` — wraps Lucide Loader2, sizes: sm, md, lg |
+| **1: Display** | EmptyState | `ui/empty-state.tsx` | `EmptyState`, `emptyStateVariants` — centered icon + title + description + action slot, sizes: sm, md, lg |
 | **1: Layout** | PageLayout | `ui/page-layout.tsx` | `PageLayout`, `PageHeader`, `PageContent` — consistent full-width page shell, mobile responsive |
 | **1: Layout** | Typography | `ui/typography.tsx` | `Heading` (h1-h4 via `as` prop), `Text` (default/muted/error/success), `Code` |
 | **1: Layout** | Grid | `ui/grid.tsx` | `Grid` — responsive CSS Grid, cols 1-12, gap variants, mobile-first |

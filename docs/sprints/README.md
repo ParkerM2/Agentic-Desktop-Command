@@ -8,7 +8,7 @@
 | [Sprint 1](./sprint-1-core-hardening.md) | Core Hardening (install → task → PR) | COMPLETE |
 | [Sprint 2](./sprint-2-feature-hardening.md) | Feature Hardening (P0 UX fixes) | P0 COMPLETE |
 | [Sprint 3](./sprint-3-ux-ui.md) | UX/UI (layout decomposition + themes) | P0 COMPLETE |
-| [Sprint 4](./sprint-4-touch-up.md) | Touch Up (custom assets + beta testing) | NOT STARTED |
+| [Sprint 4](./sprint-4-touch-up.md) | Touch Up (custom assets + beta testing) | P0 COMPLETE |
 
 ## Why Sprint 0.5 Comes First
 

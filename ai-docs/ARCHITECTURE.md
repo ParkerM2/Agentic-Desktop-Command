@@ -41,7 +41,7 @@
 │                                          └─ ... (33 total)      │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
-│  │ IPC Contract: src/shared/ipc/ (26 domain folders)            ││
+│  │ IPC Contract: src/shared/ipc/ (27 domain folders)            ││
 │  │ Each folder: contract.ts + schemas.ts + index.ts             ││
 │  │ Root barrel merges all into ipcInvokeContract/ipcEventContract││
 │  └──────────────────────────────────────────────────────────────┘│
@@ -69,7 +69,7 @@
 
 ## Domain-Based IPC Structure
 
-The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 24 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
+The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 27 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
 
 - `schemas.ts` — Zod schemas for the domain
 - `contract.ts` — Invoke and event contract entries using those schemas
@@ -703,7 +703,8 @@ The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: uses `react-resizable-panels` (Group/Panel/Separator) for resizable sidebar + content layout. Sidebar panel is collapsible (syncs with layout store). Layout persists to localStorage via `useDefaultLayout`. |
+| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for resizable sidebar + content layout. Sidebar panel is collapsible (syncs with layout store). Layout persists to localStorage via `useDefaultLayout`. |
+| `TitleBar` | `src/renderer/app/layouts/TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement + minimize/maximize/close controls via `window.*` IPC channels. |
 | `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Navigation sidebar (fills its parent panel container) |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Top bar with CommandBar trigger |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global command palette (Cmd+K) |

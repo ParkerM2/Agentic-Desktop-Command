@@ -16,6 +16,8 @@ import type { Task, TaskStatus } from '@shared/types';
 import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, EmptyState } from '@ui';
+
 import { useProjects } from '@features/projects';
 import { TaskStatusBadge } from '@features/tasks';
 
@@ -78,18 +80,19 @@ function getTaskCountLabel(count: number): string {
   return 'tasks';
 }
 
-function EmptyState({ hasFilter }: { hasFilter: boolean }) {
+function MyWorkEmptyState({ hasFilter }: { hasFilter: boolean }) {
   const title = hasFilter ? 'No tasks match filter' : 'No tasks yet';
   const description = hasFilter
     ? 'Try selecting a different status filter to see more tasks.'
     : 'Tasks from all your projects will appear here. Add projects and create tasks to get started.';
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Briefcase className="text-muted-foreground mb-4 h-12 w-12" />
-      <h3 className="text-foreground mb-2 text-lg font-medium">{title}</h3>
-      <p className="text-muted-foreground max-w-sm text-sm">{description}</p>
-    </div>
+    <EmptyState
+      description={description}
+      icon={Briefcase}
+      size="lg"
+      title={title}
+    />
   );
 }
 
@@ -123,24 +126,18 @@ function ProjectGroup({ group }: { group: TasksByProject }) {
 
 function HubDisconnectedState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <AlertTriangle className="text-warning mb-4 h-12 w-12" />
-      <h3 className="text-foreground mb-2 text-lg font-medium">Hub disconnected</h3>
-      <p className="text-muted-foreground mb-6 max-w-sm text-sm">
-        Unable to reach the Hub server. Tasks cannot be loaded while the Hub is unreachable.
-      </p>
-      <button
-        type="button"
-        className={cn(
-          'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-          'transition-opacity hover:opacity-90',
-        )}
-        onClick={onRetry}
-      >
-        <RefreshCw className="h-4 w-4" />
-        Retry
-      </button>
-    </div>
+    <EmptyState
+      description="Unable to reach the Hub server. Tasks cannot be loaded while the Hub is unreachable."
+      icon={AlertTriangle}
+      size="lg"
+      title="Hub disconnected"
+      action={
+        <Button onClick={onRetry}>
+          <RefreshCw className="h-4 w-4" />
+          Retry
+        </Button>
+      }
+    />
   );
 }
 
@@ -170,7 +167,7 @@ function TaskListContent({
   }
 
   if (taskGroups.length === 0) {
-    return <EmptyState hasFilter={hasFilter} />;
+    return <MyWorkEmptyState hasFilter={hasFilter} />;
   }
 
   return (

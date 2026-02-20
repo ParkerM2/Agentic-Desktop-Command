@@ -6,10 +6,12 @@
 
 import { useEffect } from 'react';
 
-import { Plus, X, Terminal as TerminalIcon, Loader2 } from 'lucide-react';
+import { Loader2, Plus, Terminal as TerminalIcon, X } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, EmptyState } from '@ui';
 
 import { useTerminals, useCreateTerminal, useCloseTerminal } from '../api/useTerminals';
 import { useTerminalEvents } from '../hooks/useTerminalEvents';
@@ -108,18 +110,19 @@ export function TerminalGrid() {
         ))}
 
         {/* Empty state */}
-        {(terminals === undefined || terminals.length === 0) && (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-            <TerminalIcon className="h-8 w-8" />
-            <p className="text-sm">No terminal open</p>
-            <button
-              className="rounded-md bg-secondary px-3 py-1.5 text-sm text-secondary-foreground hover:bg-accent"
-              onClick={handleCreateTerminal}
-            >
-              Create Terminal
-            </button>
-          </div>
-        )}
+        {(terminals === undefined || terminals.length === 0) ? (
+          <EmptyState
+            className="h-full"
+            icon={TerminalIcon}
+            size="sm"
+            title="No terminal open"
+            action={
+              <Button size="sm" variant="secondary" onClick={handleCreateTerminal}>
+                Create Terminal
+              </Button>
+            }
+          />
+        ) : null}
       </div>
     </div>
   );

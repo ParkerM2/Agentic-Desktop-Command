@@ -2,7 +2,7 @@
 
 **Goal:** Visual polish, custom assets, and real-world testing. This sprint leverages the plug-and-play architecture from Sprint 3 to rapidly iterate on designs. Friends install the app and provide feedback.
 
-**Status:** NOT STARTED
+**Status:** IMPLEMENTED (P0 items — 4 tasks: title bar, empty states, micro-interactions, scrollbar fix)
 
 ---
 
@@ -29,17 +29,17 @@
 ### 3. Custom Components
 - [ ] Refined button styles (beyond Radix defaults)
 - [ ] Custom card designs per feature area
-- [ ] Polished form inputs with micro-interactions
+- [x] Polished form inputs with micro-interactions — DONE (Button scale/shadow, Input/Textarea focus shadow)
 - [ ] Custom toast/notification designs
 - [ ] Progress indicators with personality
 - [ ] Refined dropdown menus and popovers
-- [ ] Custom scrollbar styling
+- [x] Custom scrollbar styling — DONE (theme-aware color-mix, no hardcoded colors)
 
 ### 4. Custom Layouts
 - [ ] Leverage Sprint 3 compositional system for layout experiments
 - [ ] Try different sidebar configurations (collapsible, mini, overlay)
 - [ ] Experiment with dashboard grid layouts
-- [ ] Custom title bar — Task #2
+- [x] Custom title bar — DONE (frameless window + TitleBar.tsx + window IPC domain)
 - [ ] Window chrome that matches the theme system
 - [ ] Explore: tabbed vs. single-page navigation styles
 

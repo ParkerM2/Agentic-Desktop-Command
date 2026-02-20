@@ -31,6 +31,7 @@ import { useSettings } from '@features/settings';
 import { hubKeys, useHubStatus } from '@features/settings/api/useHub';
 
 import { Sidebar } from './Sidebar';
+import { TitleBar } from './TitleBar';
 import { TopBar } from './TopBar';
 
 const SIDEBAR_PANEL_ID = 'sidebar';
@@ -95,9 +96,12 @@ export function RootLayout() {
   // Show loading state while fetching settings
   if (isLoading) {
     return (
-      <div className="bg-background flex h-screen items-center justify-center">
+      <div className="flex h-screen flex-col overflow-hidden">
         <ThemeHydrator />
-        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        <TitleBar />
+        <div className="bg-background flex flex-1 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
+        </div>
       </div>
     );
   }
@@ -116,10 +120,11 @@ export function RootLayout() {
   }
 
   return (
-    <div className="h-screen overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden">
       <ThemeHydrator />
+      <TitleBar />
       <Group
-        className="h-full"
+        className="min-h-0 flex-1"
         defaultLayout={defaultLayout}
         id={LAYOUT_STORAGE_ID}
         orientation="horizontal"

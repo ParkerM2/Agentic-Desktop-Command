@@ -46,6 +46,7 @@ import { registerTerminalHandlers } from './handlers/terminal-handlers';
 import { registerTimeHandlers } from './handlers/time-handlers';
 import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
+import { registerWindowHandlers } from './handlers/window-handlers';
 import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
 
@@ -238,4 +239,5 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.settingsService,
     services.dataDir,
   );
+  registerWindowHandlers(router);
 }
