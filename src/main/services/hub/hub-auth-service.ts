@@ -30,6 +30,10 @@ export interface HubAuthResult<T> {
 
 // ─── Service interface ──────────────────────────────────────
 
+export type RestoreResult =
+  | { restored: true; user: User; accessToken: string; refreshToken: string; expiresAt: string }
+  | { restored: false };
+
 export interface HubAuthService {
   login: (data: { email: string; password: string }) => Promise<HubAuthResult<AuthResponse>>;
   register: (data: {
@@ -40,6 +44,7 @@ export interface HubAuthService {
   logout: () => Promise<HubAuthResult<{ success: boolean }>>;
   getCurrentUser: () => Promise<HubAuthResult<User>>;
   refreshToken: () => Promise<HubAuthResult<AuthRefreshResponse>>;
+  restoreSession: () => Promise<RestoreResult>;
   getAccessToken: () => string | null;
   isAuthenticated: () => boolean;
 }
@@ -294,6 +299,35 @@ export function createHubAuthService(deps: HubAuthServiceDeps): HubAuthService {
 
     isAuthenticated() {
       return tokenStore.hasTokens(HUB_PROVIDER);
+    },
+
+    async restoreSession(): Promise<RestoreResult> {
+      // No stored tokens — nothing to restore
+      if (!tokenStore.hasTokens(HUB_PROVIDER)) {
+        return { restored: false };
+      }
+
+      // Attempt to refresh the stored token
+      const refreshResult = await this.refreshToken();
+      if (!refreshResult.ok || !refreshResult.data) {
+        hubLogger.warn('[HubAuth] Session restore failed: token refresh failed');
+        return { restored: false };
+      }
+
+      // Fetch current user with the fresh access token
+      const userResult = await this.getCurrentUser();
+      if (!userResult.ok || !userResult.data) {
+        hubLogger.warn('[HubAuth] Session restore failed: could not fetch user');
+        return { restored: false };
+      }
+
+      return {
+        restored: true,
+        user: userResult.data,
+        accessToken: refreshResult.data.accessToken,
+        refreshToken: refreshResult.data.refreshToken,
+        expiresAt: refreshResult.data.expiresAt,
+      };
     },
   };
 }
