@@ -1,60 +1,45 @@
 /**
- * ColorThemeSection — Color theme swatch grid selector
+ * ColorThemeSection — Shows active theme name and navigates to Theme Editor
  */
 
-import { Check } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { Palette } from 'lucide-react';
 
-import { COLOR_THEMES, COLOR_THEME_LABELS } from '@shared/constants';
-
-import { cn } from '@renderer/shared/lib/utils';
+import { ROUTES } from '@shared/constants';
 
 import { Button } from '@ui';
 
-
-// ── Constants ───────────────────────────────────────────────
-
-/** Dark-mode primary colors for each color theme, used as swatch previews */
-const THEME_SWATCH_COLORS: Record<string, string> = {
-  default: 'bg-[#D6D876]',
-  dusk: 'bg-[#E6E7A3]',
-  lime: 'bg-[#8B5CF6]',
-  ocean: 'bg-[#38BDF8]',
-  retro: 'bg-[#FBBF24]',
-  neo: 'bg-[#F0ABFC]',
-  forest: 'bg-[#4ADE80]',
-};
 
 // ── Component ───────────────────────────────────────────────
 
 interface ColorThemeSectionProps {
   currentTheme: string;
-  onThemeChange: (theme: string) => void;
 }
 
-export function ColorThemeSection({ currentTheme, onThemeChange }: ColorThemeSectionProps) {
+export function ColorThemeSection({ currentTheme }: ColorThemeSectionProps) {
+  const navigate = useNavigate();
+
+  const displayName = currentTheme === 'default' ? 'Default' : currentTheme;
+
+  function handleCustomize() {
+    // Route registered by Task #6 — type assertion needed until route tree includes /settings/themes
+    void navigate({ to: ROUTES.THEMES as '/' });
+  }
+
   return (
     <section className="mb-8">
       <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         Color Theme
       </h2>
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {COLOR_THEMES.map((theme) => (
-          <Button
-            key={theme}
-            variant="outline"
-            className={cn(
-              'relative flex h-auto flex-col items-center gap-2 rounded-lg p-3',
-              currentTheme === theme && 'border-primary bg-accent',
-            )}
-            onClick={() => onThemeChange(theme)}
-          >
-            <div className={cn('h-8 w-8 rounded-full', THEME_SWATCH_COLORS[theme] ?? '')} />
-            <span className="text-xs font-medium">{COLOR_THEME_LABELS[theme]}</span>
-            {currentTheme === theme ? (
-              <Check className="text-primary absolute top-1.5 right-1.5 h-3.5 w-3.5" />
-            ) : null}
-          </Button>
-        ))}
+      <div className="border-border bg-card flex items-center justify-between rounded-lg border px-4 py-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">Active Theme</span>
+          <span className="text-muted-foreground text-xs">{displayName}</span>
+        </div>
+        <Button size="sm" variant="outline" onClick={handleCustomize}>
+          <Palette className="mr-1.5 h-4 w-4" />
+          Customize Theme
+        </Button>
       </div>
     </section>
   );

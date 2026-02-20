@@ -35,7 +35,7 @@ import { WorkspacesTab } from './WorkspacesTab';
 export function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { mode, colorTheme, uiScale, setMode, setColorTheme, setUiScale } = useThemeStore();
+  const { mode, colorTheme, uiScale, setMode, setUiScale } = useThemeStore();
 
   const currentFontFamily = settings?.fontFamily ?? 'system-ui';
   const currentFontSize = settings?.fontSize ?? 14;
@@ -43,11 +43,6 @@ export function SettingsPage() {
   function handleThemeChange(newMode: ThemeMode) {
     setMode(newMode);
     updateSettings.mutate({ theme: newMode });
-  }
-
-  function handleColorThemeChange(theme: string) {
-    setColorTheme(theme);
-    updateSettings.mutate({ colorTheme: theme });
   }
 
   function handleUiScaleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -87,7 +82,7 @@ export function SettingsPage() {
         <WorkspacesTab />
       </section>
 
-      <ColorThemeSection currentTheme={colorTheme} onThemeChange={handleColorThemeChange} />
+      <ColorThemeSection currentTheme={colorTheme} />
       <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
 
       <TypographySection
