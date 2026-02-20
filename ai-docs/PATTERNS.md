@@ -749,6 +749,23 @@ Key rules:
 - **`void form.handleSubmit()`** — must use `void` to satisfy `no-floating-promises`
 - **Shorthand props first** — `required` before `field`, `label`, etc. (`react/jsx-sort-props`)
 - **Cross-field validation** — use `.refine()` on the Zod schema with `path` targeting specific field
+- **`FormSelect`** — use for dropdowns: `<FormSelect field={field} label="Model" options={[{label, value}]} placeholder="..." />`
+- **`FormField` for custom layouts** — wrap custom render (e.g., password toggle) inside `<FormField label="...">` and bind `field.handleBlur`/`field.handleChange` manually
+- **Multiple forms in one component** — extract each form into its own sub-component with its own `useForm` instance (see WebhookSettings: SlackForm + GitHubForm)
+- **Dialog forms** — use `form.reset()` + `form.setFieldValue()` in a `useEffect` triggered by `open` prop to sync external state into form defaults
+
+### Migrated forms
+
+All app forms now use TanStack Form + Zod:
+
+| Form | Location | Notes |
+|------|----------|-------|
+| LoginPage | `features/auth/components/LoginPage.tsx` | Email + password, rate limiting |
+| RegisterPage | `features/auth/components/RegisterPage.tsx` | Email + password + confirm |
+| ProfileFormModal | `features/settings/components/ProfileFormModal.tsx` | Name (required), API key (password toggle), Model (FormSelect) |
+| ConnectionForm | `features/settings/components/HubSettings.tsx` | Hub URL (z.url) + API key, async validateHubUrl on submit |
+| SlackForm | `features/settings/components/WebhookSettings.tsx` | Bot token + signing secret (both optional) |
+| GitHubForm | `features/settings/components/WebhookSettings.tsx` | Webhook secret (required) |
 
 ## Floating Widget Pattern
 

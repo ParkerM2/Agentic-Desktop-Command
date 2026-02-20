@@ -1,10 +1,14 @@
 /**
  * ProfileFormModal — Create or edit a profile
+ *
+ * Uses TanStack Form + Zod validation + design system FormInput/FormSelect primitives.
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
+import { useForm } from '@tanstack/react-form';
 import { Eye, EyeOff, X } from 'lucide-react';
+import { z } from 'zod';
 
 import { CLAUDE_MODELS } from '@shared/constants';
 import type { Profile } from '@shared/types';
@@ -18,14 +22,23 @@ import {
   DialogOverlay,
   DialogPortal,
   DialogTitle,
+  Form,
+  FormField,
+  FormInput,
+  FormSelect,
   Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from '@ui';
+
+const profileSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  apiKey: z.string(),
+  model: z.string(),
+});
+
+const MODEL_OPTIONS = [
+  { label: 'No model selected', value: '__none__' },
+  ...CLAUDE_MODELS.map((m) => ({ label: m.label, value: m.id })),
+];
 
 interface ProfileFormModalProps {
   open: boolean;
@@ -35,33 +48,46 @@ interface ProfileFormModalProps {
 }
 
 export function ProfileFormModal({ open, profile, onClose, onSave }: ProfileFormModalProps) {
-  const [name, setName] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [model, setModel] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
 
   const isEditing = profile !== null;
 
+  const form = useForm({
+    defaultValues: {
+      name: '',
+      apiKey: '',
+      model: '',
+    },
+    validators: {
+      onChange: profileSchema,
+    },
+    onSubmit: ({ value }) => {
+      const trimmedName = value.name.trim();
+      if (trimmedName.length === 0) {
+        return;
+      }
+      onSave({
+        name: trimmedName,
+        apiKey: value.apiKey.length > 0 ? value.apiKey : undefined,
+        model: value.model.length > 0 && value.model !== '__none__' ? value.model : undefined,
+      });
+    },
+  });
+
   useEffect(() => {
     if (open) {
-      setName(profile?.name ?? '');
-      setApiKey(profile?.apiKey ?? '');
-      setModel(profile?.model ?? '');
+      form.reset();
+      form.setFieldValue('name', profile?.name ?? '');
+      form.setFieldValue('apiKey', profile?.apiKey ?? '');
+      form.setFieldValue('model', profile?.model ?? '');
       setShowApiKey(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form when dialog opens
   }, [open, profile]);
 
-  function handleSubmit(event: React.SyntheticEvent) {
-    event.preventDefault();
-    const trimmedName = name.trim();
-    if (trimmedName.length === 0) {
-      return;
-    }
-    onSave({
-      name: trimmedName,
-      apiKey: apiKey.length > 0 ? apiKey : undefined,
-      model: model.length > 0 ? model : undefined,
-    });
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void form.handleSubmit();
   }
 
   return (
@@ -82,82 +108,80 @@ export function ProfileFormModal({ open, profile, onClose, onSave }: ProfileForm
           </DialogHeader>
 
           {/* Form */}
-          <form className="space-y-4 p-4" onSubmit={handleSubmit}>
+          <Form className="space-y-4 p-4" onSubmit={handleFormSubmit}>
             {/* Name */}
-            <div>
-              <Label htmlFor="profile-name">
-                Name
-              </Label>
-              <Input
-                className="mt-1"
-                id="profile-name"
-                placeholder="My Profile"
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </div>
-
-            {/* API Key */}
-            <div>
-              <Label htmlFor="profile-api-key">
-                API Key
-              </Label>
-              <div className="relative mt-1">
-                <Input
-                  className="pr-10"
-                  id="profile-api-key"
-                  placeholder="sk-ant-..."
-                  type={showApiKey ? 'text' : 'password'}
-                  value={apiKey}
-                  onChange={(event) => setApiKey(event.target.value)}
+            <form.Field name="name">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Name"
+                  placeholder="My Profile"
+                  type="text"
                 />
-                <Button
-                  aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-                  className="absolute top-1/2 right-2 -translate-y-1/2"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setShowApiKey((previous) => !previous)}
-                >
-                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
+              )}
+            </form.Field>
+
+            {/* API Key — custom render for visibility toggle */}
+            <form.Field name="apiKey">
+              {(field) => (
+                <FormField label="API Key">
+                  <div className="relative">
+                    <Input
+                      className="pr-10"
+                      name="apiKey"
+                      placeholder="sk-ant-..."
+                      type={showApiKey ? 'text' : 'password'}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        field.handleChange(e.target.value);
+                      }}
+                    />
+                    <Button
+                      aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
+                      className="absolute top-1/2 right-2 -translate-y-1/2"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setShowApiKey((previous) => !previous)}
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </FormField>
+              )}
+            </form.Field>
 
             {/* Model */}
-            <div>
-              <Label htmlFor="profile-model">
-                Model
-              </Label>
-              <Select value={model} onValueChange={(v) => setModel(v)}>
-                <SelectTrigger className="mt-1" id="profile-model">
-                  <SelectValue placeholder="No model selected" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">No model selected</SelectItem>
-                  {CLAUDE_MODELS.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <form.Field name="model">
+              {(field) => (
+                <FormSelect
+                  field={field}
+                  label="Model"
+                  options={MODEL_OPTIONS}
+                  placeholder="No model selected"
+                />
+              )}
+            </form.Field>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                disabled={name.trim().length === 0}
-                type="submit"
-                variant="primary"
-              >
-                {isEditing ? 'Save Changes' : 'Create Profile'}
-              </Button>
-            </div>
-          </form>
+            <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+              {([canSubmit]) => (
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={onClose}>
+                    Cancel
+                  </Button>
+                  <Button
+                    disabled={!canSubmit}
+                    type="submit"
+                    variant="primary"
+                  >
+                    {isEditing ? 'Save Changes' : 'Create Profile'}
+                  </Button>
+                </div>
+              )}
+            </form.Subscribe>
+          </Form>
         </DialogContent>
       </DialogPortal>
     </Dialog>

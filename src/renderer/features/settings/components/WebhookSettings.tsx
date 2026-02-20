@@ -4,23 +4,165 @@
  * Configures Slack and GitHub webhook credentials, displays computed webhook
  * URLs from the Hub URL setting, and provides copy-to-clipboard functionality.
  * Includes collapsible setup instructions for each webhook type.
+ *
+ * Uses TanStack Form + Zod validation for both Slack and GitHub sections.
  */
 
 import { useCallback, useState } from 'react';
 
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
+
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Spinner } from '@ui';
-
+import { Button, Form, FormInput, Spinner } from '@ui';
 
 import { useHubStatus } from '../api/useHub';
 import { useUpdateWebhookConfig, useWebhookConfig } from '../api/useWebhookConfig';
 
 import { CollapsibleInstructions } from './CollapsibleInstructions';
 import { GitHubSetupInstructions } from './GitHubSetupInstructions';
-import { SecretInput } from './SecretInput';
 import { SlackSetupInstructions } from './SlackSetupInstructions';
 import { WebhookUrlDisplay } from './WebhookUrlDisplay';
+
+// ── Schemas ────────────────────────────────────────────────
+
+const slackSchema = z.object({
+  botToken: z.string(),
+  signingSecret: z.string(),
+});
+
+const githubSchema = z.object({
+  webhookSecret: z.string().min(1, 'Webhook secret is required'),
+});
+
+// ── Slack Form ─────────────────────────────────────────────
+
+interface SlackFormProps {
+  isConfigured: boolean;
+  onSave: (data: { botToken?: string; signingSecret?: string }) => void;
+}
+
+function SlackForm({ isConfigured, onSave }: SlackFormProps) {
+  const form = useForm({
+    defaultValues: {
+      botToken: '',
+      signingSecret: '',
+    },
+    validators: {
+      onChange: slackSchema,
+    },
+    onSubmit: ({ value }) => {
+      onSave({
+        botToken: value.botToken.length > 0 ? value.botToken : undefined,
+        signingSecret: value.signingSecret.length > 0 ? value.signingSecret : undefined,
+      });
+      form.reset();
+    },
+  });
+
+  const hasInput =
+    form.state.values.botToken.length > 0 ||
+    form.state.values.signingSecret.length > 0;
+
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void form.handleSubmit();
+  }
+
+  return (
+    <Form className="space-y-3" onSubmit={handleFormSubmit}>
+      <form.Field name="botToken">
+        {(field) => (
+          <FormInput
+            field={field}
+            label="Bot Token (xoxb-...)"
+            placeholder={isConfigured ? '******** (saved)' : 'xoxb-your-bot-token'}
+            type="password"
+          />
+        )}
+      </form.Field>
+
+      <form.Field name="signingSecret">
+        {(field) => (
+          <FormInput
+            field={field}
+            label="Signing Secret"
+            placeholder={isConfigured ? '******** (saved)' : 'Your signing secret'}
+            type="password"
+          />
+        )}
+      </form.Field>
+
+      <Button
+        disabled={!hasInput}
+        type="submit"
+        variant="primary"
+      >
+        Save Slack Settings
+      </Button>
+    </Form>
+  );
+}
+
+// ── GitHub Form ────────────────────────────────────────────
+
+interface GitHubFormProps {
+  isConfigured: boolean;
+  onSave: (data: { webhookSecret?: string }) => void;
+}
+
+function GitHubForm({ isConfigured, onSave }: GitHubFormProps) {
+  const form = useForm({
+    defaultValues: {
+      webhookSecret: '',
+    },
+    validators: {
+      onChange: githubSchema,
+    },
+    onSubmit: ({ value }) => {
+      onSave({
+        webhookSecret: value.webhookSecret.length > 0 ? value.webhookSecret : undefined,
+      });
+      form.reset();
+    },
+  });
+
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void form.handleSubmit();
+  }
+
+  return (
+    <Form className="space-y-3" onSubmit={handleFormSubmit}>
+      <form.Field name="webhookSecret">
+        {(field) => (
+          <FormInput
+            required
+            field={field}
+            label="Webhook Secret"
+            placeholder={isConfigured ? '******** (saved)' : 'Your webhook secret'}
+            type="password"
+          />
+        )}
+      </form.Field>
+
+      <form.Subscribe selector={(state) => [state.canSubmit]}>
+        {([canSubmit]) => (
+          <Button
+            disabled={!canSubmit || form.state.values.webhookSecret.length === 0}
+            type="submit"
+            variant="primary"
+          >
+            Save GitHub Settings
+          </Button>
+        )}
+      </form.Subscribe>
+    </Form>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────
 
 export function WebhookSettings() {
   // 1. Hooks
@@ -28,12 +170,6 @@ export function WebhookSettings() {
   const updateConfig = useUpdateWebhookConfig();
   const { data: hubStatus } = useHubStatus();
 
-  const [slackBotToken, setSlackBotToken] = useState('');
-  const [slackSigningSecret, setSlackSigningSecret] = useState('');
-  const [githubWebhookSecret, setGithubWebhookSecret] = useState('');
-  const [showSlackToken, setShowSlackToken] = useState(false);
-  const [showSlackSecret, setShowSlackSecret] = useState(false);
-  const [showGithubSecret, setShowGithubSecret] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showSlackInstructions, setShowSlackInstructions] = useState(false);
   const [showGithubInstructions, setShowGithubInstructions] = useState(false);
@@ -55,22 +191,19 @@ export function WebhookSettings() {
     }, 2000);
   }, []);
 
-  function handleSaveSlack() {
+  function handleSaveSlack(data: { botToken?: string; signingSecret?: string }) {
     updateConfig.mutate({
       slack: {
-        botToken: slackBotToken.length > 0 ? slackBotToken : undefined,
-        signingSecret: slackSigningSecret.length > 0 ? slackSigningSecret : undefined,
+        botToken: data.botToken,
+        signingSecret: data.signingSecret,
       },
     });
-    setSlackBotToken('');
-    setSlackSigningSecret('');
   }
 
-  function handleSaveGithub() {
+  function handleSaveGithub(data: { webhookSecret?: string }) {
     updateConfig.mutate({
-      github: { webhookSecret: githubWebhookSecret.length > 0 ? githubWebhookSecret : undefined },
+      github: { webhookSecret: data.webhookSecret },
     });
-    setGithubWebhookSecret('');
   }
 
   // 4. Render
@@ -117,46 +250,20 @@ export function WebhookSettings() {
           <SlackSetupInstructions />
         </CollapsibleInstructions>
 
-        <div className="mt-4 space-y-3">
-          <SecretInput
-            id="slack-bot-token"
-            isVisible={showSlackToken}
-            label="Bot Token (xoxb-...)"
-            placeholder={isSlackConfigured ? '******** (saved)' : 'xoxb-your-bot-token'}
-            value={slackBotToken}
-            onChange={setSlackBotToken}
-            onToggleVisibility={() => {
-              setShowSlackToken(!showSlackToken);
-            }}
-          />
-          <SecretInput
-            id="slack-signing-secret"
-            isVisible={showSlackSecret}
-            label="Signing Secret"
-            placeholder={isSlackConfigured ? '******** (saved)' : 'Your signing secret'}
-            value={slackSigningSecret}
-            onChange={setSlackSigningSecret}
-            onToggleVisibility={() => {
-              setShowSlackSecret(!showSlackSecret);
-            }}
-          />
-          <Button
-            disabled={slackBotToken.length === 0 && slackSigningSecret.length === 0}
-            variant="primary"
-            onClick={handleSaveSlack}
-          >
-            Save Slack Settings
-          </Button>
+        <div className="mt-4">
+          <SlackForm isConfigured={isSlackConfigured} onSave={handleSaveSlack} />
           {hasHubUrl ? (
-            <WebhookUrlDisplay
-              copiedField={copiedField}
-              fieldKey="slack"
-              label="Webhook URL (copy to Slack App settings):"
-              url={slackWebhookUrl}
-              onCopy={handleCopy}
-            />
+            <div className="mt-3">
+              <WebhookUrlDisplay
+                copiedField={copiedField}
+                fieldKey="slack"
+                label="Webhook URL (copy to Slack App settings):"
+                url={slackWebhookUrl}
+                onCopy={handleCopy}
+              />
+            </div>
           ) : (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-muted-foreground mt-3 text-xs">
               Connect to a Hub server to get your webhook URL.
             </p>
           )}
@@ -188,35 +295,20 @@ export function WebhookSettings() {
           <GitHubSetupInstructions />
         </CollapsibleInstructions>
 
-        <div className="mt-4 space-y-3">
-          <SecretInput
-            id="github-webhook-secret"
-            isVisible={showGithubSecret}
-            label="Webhook Secret"
-            placeholder={isGithubConfigured ? '******** (saved)' : 'Your webhook secret'}
-            value={githubWebhookSecret}
-            onChange={setGithubWebhookSecret}
-            onToggleVisibility={() => {
-              setShowGithubSecret(!showGithubSecret);
-            }}
-          />
-          <Button
-            disabled={githubWebhookSecret.length === 0}
-            variant="primary"
-            onClick={handleSaveGithub}
-          >
-            Save GitHub Settings
-          </Button>
+        <div className="mt-4">
+          <GitHubForm isConfigured={isGithubConfigured} onSave={handleSaveGithub} />
           {hasHubUrl ? (
-            <WebhookUrlDisplay
-              copiedField={copiedField}
-              fieldKey="github"
-              label="Webhook URL (copy to GitHub repo settings):"
-              url={githubWebhookUrl}
-              onCopy={handleCopy}
-            />
+            <div className="mt-3">
+              <WebhookUrlDisplay
+                copiedField={copiedField}
+                fieldKey="github"
+                label="Webhook URL (copy to GitHub repo settings):"
+                url={githubWebhookUrl}
+                onCopy={handleCopy}
+              />
+            </div>
           ) : (
-            <p className="text-muted-foreground text-xs">
+            <p className="text-muted-foreground mt-3 text-xs">
               Connect to a Hub server to get your webhook URL.
             </p>
           )}

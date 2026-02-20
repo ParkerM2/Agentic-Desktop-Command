@@ -3,16 +3,19 @@
  *
  * Allows users to configure the hub server URL and API key,
  * connect/disconnect, view connection status, and trigger syncs.
+ *
+ * ConnectionForm uses TanStack Form + Zod validation.
  */
 
 import { useState } from 'react';
 
+import { useForm } from '@tanstack/react-form';
 import { Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
+import { z } from 'zod';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Input, Label, Spinner } from '@ui';
-
+import { Button, Form, FormInput, Spinner } from '@ui';
 
 import { validateHubUrl } from '@features/hub-setup/lib/validateHubUrl';
 
@@ -40,6 +43,11 @@ const STATUS_LABELS: Record<string, string> = {
   error: 'Error',
 };
 
+const connectionSchema = z.object({
+  hubUrl: z.url('Enter a valid URL'),
+  apiKey: z.string().min(1, 'API key is required'),
+});
+
 // ── Sub-components ──────────────────────────────────────────
 
 interface ConnectionFormProps {
@@ -49,32 +57,32 @@ interface ConnectionFormProps {
 }
 
 function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFormProps) {
-  const [hubUrl, setHubUrl] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  async function handleSubmit() {
-    if (!hubUrl || !apiKey) {
-      return;
-    }
+  const form = useForm({
+    defaultValues: {
+      hubUrl: '',
+      apiKey: '',
+    },
+    validators: {
+      onChange: connectionSchema,
+    },
+    onSubmit: async ({ value }) => {
+      setValidationError(null);
+      setIsValidating(true);
 
-    // Clear previous validation error
-    setValidationError(null);
-    setIsValidating(true);
+      const validation = await validateHubUrl(value.hubUrl);
+      setIsValidating(false);
 
-    // Validate hub URL before proceeding
-    const validation = await validateHubUrl(hubUrl);
-    setIsValidating(false);
+      if (!validation.reachable) {
+        setValidationError(validation.error ?? 'Hub server is unreachable');
+        return;
+      }
 
-    if (!validation.reachable) {
-      setValidationError(validation.error ?? 'Hub server is unreachable');
-      return;
-    }
-
-    // Validation passed, proceed with connection
-    onConnect(hubUrl, apiKey);
-  }
+      onConnect(value.hubUrl, value.apiKey);
+    },
+  });
 
   const isPending = isConnecting || isValidating;
 
@@ -88,48 +96,49 @@ function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFor
     return 'Connect';
   }
 
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void form.handleSubmit();
+  }
+
   return (
-    <div className="space-y-4">
-      <div>
-        <Label className="mb-1.5 block" htmlFor="hub-url">
-          Hub URL
-        </Label>
-        <Input
-          id="hub-url"
-          placeholder="https://192.168.1.100:3443"
-          type="url"
-          value={hubUrl}
-          onChange={(e) => {
-            setHubUrl(e.target.value);
-          }}
-        />
-      </div>
+    <Form className="space-y-4" onSubmit={handleFormSubmit}>
+      <form.Field name="hubUrl">
+        {(field) => (
+          <FormInput
+            required
+            field={field}
+            label="Hub URL"
+            placeholder="https://192.168.1.100:3443"
+            type="url"
+          />
+        )}
+      </form.Field>
 
-      <div>
-        <Label className="mb-1.5 block" htmlFor="hub-api-key">
-          API Key
-        </Label>
-        <Input
-          id="hub-api-key"
-          placeholder="Enter your hub API key"
-          type="password"
-          value={apiKey}
-          onChange={(e) => {
-            setApiKey(e.target.value);
-          }}
-        />
-      </div>
+      <form.Field name="apiKey">
+        {(field) => (
+          <FormInput
+            required
+            field={field}
+            label="API Key"
+            placeholder="Enter your hub API key"
+            type="password"
+          />
+        )}
+      </form.Field>
 
-      <Button
-        disabled={!hubUrl || !apiKey || isPending}
-        variant="primary"
-        onClick={() => {
-          void handleSubmit();
-        }}
-      >
-        {isPending ? <Spinner size="sm" /> : <Cloud className="h-4 w-4" />}
-        {getButtonLabel()}
-      </Button>
+      <form.Subscribe selector={(state) => [state.canSubmit]}>
+        {([canSubmit]) => (
+          <Button
+            disabled={!canSubmit || isPending}
+            type="submit"
+            variant="primary"
+          >
+            {isPending ? <Spinner size="sm" /> : <Cloud className="h-4 w-4" />}
+            {getButtonLabel()}
+          </Button>
+        )}
+      </form.Subscribe>
 
       {validationError === null ? null : (
         <p className="text-destructive text-sm">
@@ -140,7 +149,7 @@ function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFor
       {connectError && validationError === null ? (
         <p className="text-destructive text-sm">Failed to connect. Check your URL and API key.</p>
       ) : null}
-    </div>
+    </Form>
   );
 }
 
