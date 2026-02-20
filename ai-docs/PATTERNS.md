@@ -907,6 +907,50 @@ Custom animation utility classes live **outside** the `@theme` block in `globals
 - Custom animations outside `@theme` need explicit `.animate-*` class definitions
 - Always use `color-mix(in srgb, var(--token), transparent)` for semi-transparent effects in animations
 
+## Sidebar Collapse Pattern
+
+The sidebar uses `react-resizable-panels` with bidirectional sync between the panel and the layout store.
+
+**Key configuration** in `RootLayout.tsx`:
+```tsx
+<Panel
+  collapsible
+  collapsedSize="56px"    // Icon-only strip width — NOT "0%" (that hides the sidebar entirely)
+  defaultSize="208px"
+  minSize="56px"          // Matches collapsedSize so drag-to-collapse works
+  panelRef={sidebarPanelRef}
+>
+```
+
+**Collapse detection** — use `panel.isCollapsed()`, NOT layout size comparison:
+```tsx
+const handleLayoutChanged = useCallback(
+  (layout: Record<string, number>) => {
+    onLayoutChanged(layout);
+    setPanelLayout(layout);
+    // Use imperative API — layout values are flexGrow numbers, not px/% sizes
+    const collapsed = sidebarPanelRef.current?.isCollapsed() ?? false;
+    setSidebarCollapsed(collapsed);
+  },
+  [onLayoutChanged, setPanelLayout, setSidebarCollapsed, sidebarPanelRef],
+);
+```
+
+**Store-to-panel sync** — `useEffect` watches `sidebarCollapsed` and calls `panel.collapse()` / `panel.expand()`:
+```tsx
+useEffect(() => {
+  const panel = sidebarPanelRef.current;
+  if (!panel) return;
+  if (sidebarCollapsed && !panel.isCollapsed()) panel.collapse();
+  else if (!sidebarCollapsed && panel.isCollapsed()) panel.expand();
+}, [sidebarCollapsed, sidebarPanelRef]);
+```
+
+Rules:
+- `collapsedSize` MUST match `minSize` so the sidebar snaps to icon-only when dragged to minimum
+- Always use `panel.isCollapsed()` to detect collapsed state — never compare flexGrow values
+- The `Sidebar` component reads `sidebarCollapsed` from `useLayoutStore` to conditionally render labels
+
 ## Agent Orchestrator Pattern
 
 For headless Claude agent lifecycle management with event-driven status updates:
