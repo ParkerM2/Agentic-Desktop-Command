@@ -20,17 +20,15 @@ import type {
 
 import { watcherLogger } from '@main/lib/logger';
 
-import { createGitHubClient } from '../../mcp-servers/github/github-client';
+import { createGitHubCliClient } from '../../mcp-servers/github/github-client';
 
 import type { NotificationManager, NotificationWatcher } from './notification-watcher';
-import type { OAuthManager } from '../../auth/oauth-manager';
 import type { IpcRouter } from '../../ipc/router';
 import type { Notification as GitHubApiNotification } from '../../mcp-servers/github/types';
 
 // ── Types ────────────────────────────────────────────────────
 
 interface GitHubWatcherDeps {
-  oauthManager: OAuthManager;
   router: IpcRouter;
   notificationManager: NotificationManager;
   getConfig: () => GitHubWatcherConfig;
@@ -38,7 +36,6 @@ interface GitHubWatcherDeps {
 
 // ── Constants ────────────────────────────────────────────────
 
-const GITHUB_PROVIDER = 'github';
 const MIN_POLL_INTERVAL_MS = 10_000; // 10 seconds minimum
 const MAX_BACKOFF_MS = 5 * 60 * 1000; // 5 minutes max backoff
 const INITIAL_BACKOFF_MS = 5_000;
@@ -220,23 +217,15 @@ function githubNotificationToNotification(
 // ── Factory ──────────────────────────────────────────────────
 
 export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatcher {
-  const { oauthManager, router, notificationManager, getConfig } = deps;
+  const { router, notificationManager, getConfig } = deps;
+
+  const client = createGitHubCliClient();
 
   let pollInterval: ReturnType<typeof setInterval> | null = null;
   let lastPollTime: string | undefined;
   let lastError: string | undefined;
   let backoffMs = INITIAL_BACKOFF_MS;
   let polling = false;
-
-  async function getClient() {
-    try {
-      const token = await oauthManager.getAccessToken(GITHUB_PROVIDER);
-      return createGitHubClient(token);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to get GitHub token';
-      throw new Error(`GitHub authentication failed: ${message}`);
-    }
-  }
 
   async function pollForNotifications(): Promise<Notification[]> {
     if (polling) {
@@ -248,8 +237,6 @@ export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatche
     const config = getConfig();
 
     try {
-      const client = await getClient();
-
       // Emit polling status
       router.emit('event:notifications.watcherStatusChanged', {
         source: 'github',

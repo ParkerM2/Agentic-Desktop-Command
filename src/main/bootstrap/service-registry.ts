@@ -21,6 +21,7 @@ import { IpcRouter } from '../ipc/router';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
+import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -318,7 +319,8 @@ export function createServiceRegistry(
   });
 
   // ─── External API services ───────────────────────────────────
-  const githubService = createGitHubService({ oauthManager, router });
+  const githubCliClient = createGitHubCliClient();
+  const githubService = createGitHubService({ client: githubCliClient, router });
   const spotifyService = initNonCritical('spotify', () =>
     createSpotifyService({ oauthManager }),
   );
@@ -342,7 +344,6 @@ export function createServiceRegistry(
   notificationManager.registerWatcher(slackWatcher);
 
   const githubWatcher = createGitHubWatcher({
-    oauthManager,
     router,
     notificationManager,
     getConfig: () => notificationManager.getConfig().github,

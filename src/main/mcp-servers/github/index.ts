@@ -15,7 +15,7 @@ export const GITHUB_SERVER_CONFIG: McpServerConfig = {
   authProvider: 'github',
 };
 
-export { createGitHubClient } from './github-client';
+export { createGitHubCliClient } from './github-client';
 export { executeGitHubTool, GITHUB_TOOLS } from './tools';
-export type { GitHubClient } from './github-client';
+export type { GitHubAuthStatus, GitHubClient, GitHubRepo } from './github-client';
 export type { Issue, Notification, PullRequest, PullRequestReview } from './types';

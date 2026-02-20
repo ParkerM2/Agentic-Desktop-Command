@@ -1,21 +1,27 @@
 /**
- * GitHub Service — Wraps the GitHub REST API client with OAuth token management.
+ * GitHub Service — Wraps the gh CLI client for GitHub API access.
  *
- * Gets tokens from the OAuthManager before each call.
+ * Uses the gh CLI (no OAuth tokens needed).
  * Maps raw API responses to the shared GitHubPullRequest / GitHubIssue / GitHubNotification types.
  */
 
 import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared/types';
 
-import { createGitHubClient } from '../../mcp-servers/github/github-client';
-
-import type { OAuthManager } from '../../auth/oauth-manager';
 import type { IpcRouter } from '../../ipc/router';
+import type {
+  GitHubAuthStatus,
+  GitHubClient,
+  GitHubRepo,
+} from '../../mcp-servers/github/github-client';
 import type { Issue, Notification, PullRequest } from '../../mcp-servers/github/types';
 
 // ── Interface ─────────────────────────────────────────────────
 
 export interface GitHubService {
+  getAuthStatus: () => Promise<GitHubAuthStatus>;
+
+  getRepos: (params?: { limit?: number }) => Promise<GitHubRepo[]>;
+
   listPrs: (params: {
     owner: string;
     repo: string;
@@ -43,8 +49,6 @@ export interface GitHubService {
 }
 
 // ── Mappers ───────────────────────────────────────────────────
-
-const GITHUB_PROVIDER = 'github';
 
 function mapPr(raw: PullRequest): GitHubPullRequest {
   return {
@@ -104,48 +108,46 @@ function mapNotification(raw: Notification): GitHubNotification {
 // ── Factory ───────────────────────────────────────────────────
 
 export function createGitHubService(deps: {
-  oauthManager: OAuthManager;
+  client: GitHubClient;
   router: IpcRouter;
 }): GitHubService {
-  const { oauthManager, router } = deps;
-
-  async function getClient() {
-    const token = await oauthManager.getAccessToken(GITHUB_PROVIDER);
-    return createGitHubClient(token);
-  }
+  const { client, router } = deps;
 
   function emitUpdated(type: 'pr' | 'issue' | 'notification', owner: string, repo: string): void {
     router.emit('event:github.updated', { type, owner, repo });
   }
 
   return {
+    async getAuthStatus() {
+      return await client.getAuthStatus();
+    },
+
+    async getRepos(params) {
+      return await client.getRepos(params);
+    },
+
     async listPrs(params) {
-      const client = await getClient();
       const raw = await client.listPrs(params);
       return raw.map(mapPr);
     },
 
     async getPr(params) {
-      const client = await getClient();
       const raw = await client.getPr(params);
       return mapPr(raw);
     },
 
     async listIssues(params) {
-      const client = await getClient();
       const raw = await client.listIssues(params);
       return raw.map(mapIssue);
     },
 
     async createIssue(params) {
-      const client = await getClient();
       const raw = await client.createIssue(params);
       emitUpdated('issue', params.owner, params.repo);
       return mapIssue(raw);
     },
 
     async getNotifications(params) {
-      const client = await getClient();
       const raw = await client.getNotifications(params);
       return raw.map(mapNotification);
     },
