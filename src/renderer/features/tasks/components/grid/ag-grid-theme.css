@@ -55,18 +55,39 @@
 }
 
 /* ── Explicit background fallbacks ──
-   In case CSS variable inheritance doesn't cascade through AG-Grid's
-   internal DOM structure, set backgrounds directly on key containers. */
+   Force backgrounds on all AG-Grid internal containers.
+   Using !important to override Tailwind v4 CSS layer ordering
+   which can cause ag-theme-quartz defaults to win over our overrides. */
 .ag-theme-quartz.ag-theme-claude .ag-root-wrapper {
-  background-color: var(--card);
+  background-color: var(--card) !important;
+}
+
+.ag-theme-quartz.ag-theme-claude .ag-root-wrapper-body {
+  background-color: var(--card) !important;
+}
+
+.ag-theme-quartz.ag-theme-claude .ag-root {
+  background-color: var(--card) !important;
+}
+
+.ag-theme-quartz.ag-theme-claude .ag-body {
+  background-color: var(--card) !important;
 }
 
 .ag-theme-quartz.ag-theme-claude .ag-body-viewport {
-  background-color: var(--card);
+  background-color: var(--card) !important;
+}
+
+.ag-theme-quartz.ag-theme-claude .ag-center-cols-viewport {
+  background-color: var(--card) !important;
+}
+
+.ag-theme-quartz.ag-theme-claude .ag-center-cols-container {
+  background-color: var(--card) !important;
 }
 
 /* ── Detail row override ──
    Ensures expanded detail rows have consistent bg with the card container. */
 .ag-theme-quartz.ag-theme-claude .ag-full-width-row-detail {
-  background-color: var(--card);
+  background-color: var(--card) !important;
 }

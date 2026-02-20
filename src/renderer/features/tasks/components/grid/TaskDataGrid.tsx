@@ -474,7 +474,7 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
       <TaskFiltersToolbar />
 
       <Card className="border-border bg-card min-h-0 flex-1 overflow-hidden rounded-lg border">
-        <div className={cn('ag-theme-quartz ag-theme-claude h-full')}>
+        <div className={cn('ag-theme-quartz ag-theme-claude h-full bg-card')}>
           <AgGridReact<TaskOrDetail>
             animateRows
             suppressCellFocus
