@@ -43,7 +43,7 @@ If FAIL, you list every issue with file:line and fix instructions.
 
 ### Step 1: Automated Checks — MANDATORY TEST GATE (run ALL of these — NO EXCEPTIONS)
 
-> **THIS IS NON-NEGOTIABLE. ALL 5 COMMANDS MUST PASS. SKIPPING = AUTOMATIC FAIL.**
+> **THIS IS NON-NEGOTIABLE. ALL 6 COMMANDS MUST PASS. SKIPPING = AUTOMATIC FAIL.**
 
 ```bash
 # Run this exact sequence. ALL must pass.
@@ -51,6 +51,7 @@ npm run lint          # ESLint — must pass with ZERO violations
 npm run typecheck     # TypeScript — must pass with ZERO errors
 npm run test          # Vitest — ALL tests must pass (unit + integration)
 npm run build         # Electron-vite — must build successfully
+npm run test:e2e     # E2E tests — Playwright + Electron (requires build)
 npm run check:docs    # Documentation — must be updated for source changes
 ```
 
@@ -223,7 +224,7 @@ ASSIGNED FIXES:
 
 ## Rules — Non-Negotiable
 
-1. **Run ALL 5 automated checks** — never skip any, especially `npm run test` and `npm run check:docs`
+1. **Run ALL 6 automated checks** — never skip any, especially `npm run test` and `npm run check:docs`
 2. **TEST SUITE IS MANDATORY** — `npm run test` must be run and pass. No exceptions.
 3. **Check EVERY changed file** — no sampling, no shortcuts
 4. **Be specific** — file:line for every issue, exact fix instruction

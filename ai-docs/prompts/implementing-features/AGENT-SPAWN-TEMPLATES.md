@@ -69,8 +69,8 @@ Before ANY action, invoke the appropriate superpowers skill:
 
 ## When Complete
 
-1. Run all 5 verification commands — all must pass clean:
-   `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs`
+1. Run all 6 verification commands — all must pass clean:
+   `npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs`
 2. Spawn a QA Review agent (see below) to validate your work
 3. If QA passes: send the QA report + completion summary to the Team Lead
 4. If QA fails: fix the issues, re-run checks, spawn a NEW QA review agent (max 3 rounds)

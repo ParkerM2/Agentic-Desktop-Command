@@ -34,7 +34,7 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check:agents": "node scripts/check-agents.mjs",
     "validate:tracker": "node scripts/validate-tracker.mjs",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs && npm run validate:tracker"
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs && npm run validate:tracker"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",

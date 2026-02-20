@@ -33,11 +33,12 @@ npm run verify       # Run ALL verification commands at once
 **Before ANY work can be considered complete, ready for human review, or merged:**
 
 ```bash
-# ALL FIVE COMMANDS MUST PASS — NO EXCEPTIONS
+# ALL SIX COMMANDS MUST PASS — NO EXCEPTIONS
 npm run lint         # Zero violations
 npm run typecheck    # Zero errors
 npm run test         # All tests pass
 npm run build        # Builds successfully
+npm run test:e2e     # E2E tests pass (playwright + electron — requires build)
 npm run check:docs   # Documentation updated for source changes
 ```
 
@@ -74,8 +75,8 @@ These phrases without test evidence are **LIES**:
 ```
 1. Make code changes
 2. Update relevant ai-docs/ for your changes
-3. Run: npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs
-4. See: All 5 commands pass with zero errors
+3. Run: npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs
+4. See: All 6 commands pass with zero errors
 5. ONLY THEN: "All verification passes. Ready for review."
 ```
 
