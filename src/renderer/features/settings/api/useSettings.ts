@@ -16,13 +16,14 @@ export const settingsKeys = {
 
 /** Fetch app settings */
 export function useSettings() {
-  const { setMode, setColorTheme, setUiScale } = useThemeStore();
+  const { setMode, setColorTheme, setUiScale, setCustomThemes } = useThemeStore();
 
   return useQuery({
     queryKey: settingsKeys.app(),
     queryFn: async () => {
       const settings = await ipc('settings.get', {});
       // Sync theme store on load
+      setCustomThemes(settings.customThemes ?? []);
       setMode(settings.theme);
       setColorTheme(settings.colorTheme);
       setUiScale(settings.uiScale);
