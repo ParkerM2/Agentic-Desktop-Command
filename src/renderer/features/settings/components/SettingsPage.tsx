@@ -1,15 +1,19 @@
 /**
- * SettingsPage — App settings view
+ * SettingsPage — App settings view with tab bar layout
  *
- * Sections: Appearance (mode + color theme), UI Scale, Typography, Language, About
+ * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
  */
+
+import { useState } from 'react';
+
+import { HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
+import { cn } from '@renderer/shared/lib/utils';
 import { useThemeStore } from '@renderer/shared/stores';
 
 import { Spinner } from '@ui';
-
 
 import { VoiceSettings } from '@features/voice';
 
@@ -30,9 +34,27 @@ import { UiScaleSection } from './UiScaleSection';
 import { WebhookSettings } from './WebhookSettings';
 import { WorkspacesTab } from './WorkspacesTab';
 
-// ── Component ───────────────────────────────────────────────
+// ── Tab Constants ──────────────────────────────────────────
+
+const SETTINGS_TABS = [
+  { id: 'display' as const, label: 'Display', icon: Paintbrush },
+  { id: 'profile' as const, label: 'Profile', icon: User },
+  { id: 'hub' as const, label: 'Hub', icon: Server },
+  { id: 'integrations' as const, label: 'Integrations', icon: Plug },
+  { id: 'storage' as const, label: 'Storage', icon: HardDrive },
+  { id: 'advanced' as const, label: 'Advanced', icon: Wrench },
+];
+
+type SettingsTabId = (typeof SETTINGS_TABS)[number]['id'];
+
+const TAB_BASE = 'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors';
+const TAB_ACTIVE = 'border-primary text-foreground font-medium';
+const TAB_INACTIVE = 'border-transparent text-muted-foreground hover:text-foreground';
+
+// ── Component ──────────────────────────────────────────────
 
 export function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<SettingsTabId>('display');
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
   const { mode, colorTheme, uiScale, setMode, setUiScale } = useThemeStore();
@@ -62,6 +84,117 @@ export function SettingsPage() {
     updateSettings.mutate({ fontSize });
   }
 
+  function renderTabContent() {
+    switch (activeTab) {
+      case 'display': {
+        return (
+          <>
+            <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
+            <BackgroundSettings />
+            <ColorThemeSection currentTheme={colorTheme} />
+            <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
+            <TypographySection
+              currentFontFamily={currentFontFamily}
+              currentFontSize={currentFontSize}
+              onFontFamilyChange={handleFontFamilyChange}
+              onFontSizeChange={handleFontSizeChange}
+            />
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Language
+              </h2>
+              <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
+                <span>English</span>
+                <span className="text-muted-foreground text-xs">Only language available</span>
+              </div>
+            </section>
+          </>
+        );
+      }
+      case 'profile': {
+        return (
+          <>
+            <ProfileSection />
+            <section className="mb-8">
+              <WorkspacesTab />
+            </section>
+          </>
+        );
+      }
+      case 'hub': {
+        return (
+          <section className="mb-8">
+            <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              Hub Connection
+            </h2>
+            <HubSettings />
+          </section>
+        );
+      }
+      case 'integrations': {
+        return (
+          <>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Claude Code
+              </h2>
+              <ClaudeAuthSettings />
+            </section>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                GitHub
+              </h2>
+              <GitHubAuthSettings />
+            </section>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                OAuth Providers
+              </h2>
+              <OAuthProviderSettings />
+            </section>
+          </>
+        );
+      }
+      case 'storage': {
+        return (
+          <section className="mb-8">
+            <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              Storage Management
+            </h2>
+            <StorageManagementSection />
+          </section>
+        );
+      }
+      case 'advanced': {
+        return (
+          <>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Assistant &amp; Webhooks
+              </h2>
+              <WebhookSettings />
+            </section>
+            <HotkeySettings />
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Voice
+              </h2>
+              <div className="border-border bg-card rounded-lg border p-4">
+                <VoiceSettings />
+              </div>
+            </section>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                About
+              </h2>
+              <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
+            </section>
+          </>
+        );
+      }
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -71,105 +204,35 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl overflow-y-auto p-8">
-      <h1 className="mb-8 text-2xl font-bold">Settings</h1>
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Header */}
+      <div className="border-border border-b px-6 py-4">
+        <h1 className="text-foreground text-2xl font-bold">Settings</h1>
+      </div>
 
-      <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
-      <BackgroundSettings />
-      <ProfileSection />
-
-      <section className="mb-8">
-        <WorkspacesTab />
-      </section>
-
-      <ColorThemeSection currentTheme={colorTheme} />
-      <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
-
-      <TypographySection
-        currentFontFamily={currentFontFamily}
-        currentFontSize={currentFontSize}
-        onFontFamilyChange={handleFontFamilyChange}
-        onFontSizeChange={handleFontSizeChange}
-      />
-
-      {/* ── Language ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          Language
-        </h2>
-        <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
-          <span>English</span>
-          <span className="text-muted-foreground text-xs">Only language available</span>
+      {/* Tabs */}
+      <div className="border-border border-b px-6">
+        <div className="flex gap-1">
+          {SETTINGS_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              className={cn(TAB_BASE, activeTab === tab.id ? TAB_ACTIVE : TAB_INACTIVE)}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.id);
+              }}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* ── Claude Code ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          Claude Code
-        </h2>
-        <ClaudeAuthSettings />
-      </section>
-
-      {/* ── GitHub ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          GitHub
-        </h2>
-        <GitHubAuthSettings />
-      </section>
-
-      {/* ── OAuth Providers ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          OAuth Providers
-        </h2>
-        <OAuthProviderSettings />
-      </section>
-
-      {/* ── Hub Connection ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          Hub Connection
-        </h2>
-        <HubSettings />
-      </section>
-
-      {/* ── Storage Management ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          Storage Management
-        </h2>
-        <StorageManagementSection />
-      </section>
-
-      {/* ── Webhooks ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          Assistant &amp; Webhooks
-        </h2>
-        <WebhookSettings />
-      </section>
-
-      <HotkeySettings />
-
-      {/* ── Voice ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          Voice
-        </h2>
-        <div className="border-border bg-card rounded-lg border p-4">
-          <VoiceSettings />
-        </div>
-      </section>
-
-      {/* ── About ── */}
-      <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-          About
-        </h2>
-        <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
-      </section>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="mx-auto max-w-2xl">{renderTabContent()}</div>
+      </div>
     </div>
   );
 }
