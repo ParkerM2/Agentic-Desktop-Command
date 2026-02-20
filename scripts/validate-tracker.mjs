@@ -2,12 +2,12 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 /**
- * validate-tracker — Validates docs/tracker.json integrity.
+ * validate-tracker — Validates docs/tracker.json v2 schema integrity.
  *
  * 5 checks:
  *   1. Schema validation (required fields, valid status enum)
- *   2. File existence (planFile / progressFile paths exist on disk)
- *   3. Orphan detection (every .md in docs/plans/ and docs/progress/ is tracked)
+ *   2. File existence (planFile paths exist on disk)
+ *   3. Orphan detection (every .md in docs/plans/ is tracked)
  *   4. Staleness warning (APPROVED entries older than 7 days)
  *   5. Archive candidates (IMPLEMENTED entries older than 14 days)
  *
@@ -18,10 +18,7 @@ const VALID_STATUSES = [
   'DRAFT',
   'APPROVED',
   'IN_PROGRESS',
-  'BLOCKED',
   'IMPLEMENTED',
-  'SUPERSEDED',
-  'ABANDONED',
   'ARCHIVED',
   'TRACKING',
 ];
@@ -63,13 +60,9 @@ const entries = Object.entries(plans);
       }
     }
 
-    // planFile and progressFile must be present as keys (value can be null)
+    // planFile must be present as a key (value can be null)
     if (!('planFile' in entry)) {
       console.error(`  ERROR: "${key}" missing field "planFile" (use null if no plan file)`);
-      schemaErrors++;
-    }
-    if (!('progressFile' in entry)) {
-      console.error(`  ERROR: "${key}" missing field "progressFile" (use null if no progress file)`);
       schemaErrors++;
     }
 
@@ -104,15 +97,6 @@ const entries = Object.entries(plans);
         fileErrors++;
       }
     }
-
-    if (entry.progressFile) {
-      const fullPath = join(ROOT, entry.progressFile);
-      filesChecked++;
-      if (!existsSync(fullPath)) {
-        console.error(`  ERROR: "${key}" progressFile not found: ${entry.progressFile}`);
-        fileErrors++;
-      }
-    }
   }
 
   errors += fileErrors;
@@ -125,27 +109,11 @@ const entries = Object.entries(plans);
 {
   let orphanCount = 0;
 
-  // Collect all tracked file paths
+  // Collect all tracked plan file paths
   const trackedFiles = new Set();
   for (const entry of Object.values(plans)) {
     if (entry.planFile) {
       trackedFiles.add(entry.planFile);
-    }
-    if (entry.progressFile) {
-      trackedFiles.add(entry.progressFile);
-    }
-  }
-
-  // Also collect tag-referenced audit progress files from full-codebase-audit
-  const auditEntry = plans['full-codebase-audit'];
-  const auditProgressFiles = [
-    'doc-history/progress/audit-p0-p1-p2-progress.md',
-    'doc-history/progress/audit-p3-progress.md',
-    'doc-history/progress/audit-p4-progress.md',
-  ];
-  if (auditEntry) {
-    for (const f of auditProgressFiles) {
-      trackedFiles.add(f);
     }
   }
 
@@ -157,19 +125,6 @@ const entries = Object.entries(plans);
       const relativePath = `docs/plans/${file}`;
       if (!trackedFiles.has(relativePath)) {
         console.warn(`  WARN: Orphan plan file not tracked: ${relativePath}`);
-        orphanCount++;
-      }
-    }
-  }
-
-  // Check docs/progress/
-  const progressDir = join(ROOT, 'docs', 'progress');
-  if (existsSync(progressDir)) {
-    const progressFiles = readdirSync(progressDir).filter((f) => f.endsWith('.md'));
-    for (const file of progressFiles) {
-      const relativePath = `docs/progress/${file}`;
-      if (!trackedFiles.has(relativePath)) {
-        console.warn(`  WARN: Orphan progress file not tracked: ${relativePath}`);
         orphanCount++;
       }
     }
