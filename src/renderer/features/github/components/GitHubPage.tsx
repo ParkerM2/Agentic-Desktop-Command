@@ -7,15 +7,18 @@
 
 import { useState } from 'react';
 
-import { Bell, CircleDot, GitPullRequest, Loader2, Settings } from 'lucide-react';
+import { Bell, CircleDot, GitPullRequest, Settings } from 'lucide-react';
 
 import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Input, Spinner } from '@ui';
 
 import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/useGitHub';
 import { useGitHubEvents } from '../hooks/useGitHubEvents';
 import { useGitHubStore } from '../store';
 
+import { GitHubConnectionStatus } from './GitHubConnectionStatus';
 import { IssueCreateForm } from './IssueCreateForm';
 import { IssueList } from './IssueList';
 import { NotificationList } from './NotificationList';
@@ -86,7 +89,7 @@ export function GitHubPage() {
   function renderLoader(): React.ReactNode {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+        <Spinner className="text-muted-foreground" size="md" />
       </div>
     );
   }
@@ -99,6 +102,9 @@ export function GitHubPage() {
         title="Connect GitHub"
       />
 
+      {/* Connection Status */}
+      <GitHubConnectionStatus />
+
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2">
@@ -107,16 +113,12 @@ export function GitHubPage() {
         </div>
         <div className="mt-1 flex items-center gap-2">
           {editingRepo ? (
-            <input
+            <Input
+              className="h-7 w-64 text-sm"
               id="github-repo-input"
               placeholder="owner/repo"
               type="text"
               value={repoInput}
-              className={cn(
-                'bg-card border-border text-foreground placeholder:text-muted-foreground',
-                'h-7 w-64 rounded-md border px-2 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-              )}
               onChange={(e) => setRepoInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleRepoSave();

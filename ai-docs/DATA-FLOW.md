@@ -710,6 +710,33 @@ tokenStore.setTokens(newTokens)
 Original API call retried with new token
 ```
 
+### Session Restore (on app startup)
+
+```
+App starts / renderer mounts AuthGuard
+  |
+  v
+ipc('auth.restore', {})
+  |
+  v
+                              auth-handlers.ts
+                                |
+                                v
+                              hubAuthService.restoreSession()
+                                |  Reads encrypted tokens from tokenStore
+                                v
+                              Has stored refreshToken?
+                                |
+                           NO --+-- YES
+                           |         |
+                           v         v
+                    Return       POST /api/auth/refresh { refreshToken }
+                    { restored:    |
+                      false }      v
+                                 Valid? Return { restored: true, user, tokens }
+                                 Invalid? Clear tokens, return { restored: false }
+```
+
 ---
 
 ## 12. Local-First Task CRUD Flow

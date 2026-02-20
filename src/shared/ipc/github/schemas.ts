@@ -59,3 +59,21 @@ export const GitHubNotificationSchema = z.object({
   repoName: z.string(),
   updatedAt: z.string(),
 });
+
+export const GitHubAuthStatusSchema = z.object({
+  installed: z.boolean(),
+  authenticated: z.boolean(),
+  username: z.string().nullable(),
+  scopes: z.array(z.string()),
+});
+
+export const GitHubRepoSchema = z.object({
+  name: z.string(),
+  fullName: z.string(),
+  owner: z.string(),
+  isPrivate: z.boolean(),
+  defaultBranch: z.string(),
+  description: z.string().nullable(),
+  url: z.string(),
+  updatedAt: z.string(),
+});

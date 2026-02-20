@@ -6,7 +6,13 @@
 
 import { z } from 'zod';
 
-import { GitHubIssueSchema, GitHubNotificationSchema, GitHubPullRequestSchema } from './schemas';
+import {
+  GitHubAuthStatusSchema,
+  GitHubIssueSchema,
+  GitHubNotificationSchema,
+  GitHubPullRequestSchema,
+  GitHubRepoSchema,
+} from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
@@ -45,6 +51,14 @@ export const githubInvoke = {
   'github.getNotifications': {
     input: z.object({ all: z.boolean().optional() }),
     output: z.array(GitHubNotificationSchema),
+  },
+  'github.authStatus': {
+    input: z.object({}),
+    output: GitHubAuthStatusSchema,
+  },
+  'github.getRepos': {
+    input: z.object({ limit: z.number().optional() }),
+    output: z.array(GitHubRepoSchema),
   },
 } as const;
 

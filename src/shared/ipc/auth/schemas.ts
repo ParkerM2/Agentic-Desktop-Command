@@ -2,7 +2,7 @@
  * Auth IPC Schemas
  *
  * Zod schemas for authentication: user profile, JWT tokens,
- * login, register, and token refresh.
+ * login, register, token refresh, and session restore.
  */
 
 import { z } from 'zod';
@@ -50,3 +50,14 @@ export const RefreshInputSchema = z.object({
 export const RefreshOutputSchema = z.object({
   tokens: AuthTokensSchema,
 });
+
+export const RestoreOutputSchema = z.discriminatedUnion('restored', [
+  z.object({
+    restored: z.literal(true),
+    user: UserSchema,
+    tokens: AuthTokensSchema,
+  }),
+  z.object({
+    restored: z.literal(false),
+  }),
+]);

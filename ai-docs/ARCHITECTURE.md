@@ -563,11 +563,12 @@ The Electron client connects to a self-hosted Hub server for multi-device sync.
 
 ### Authentication Flow
 
-1. **Login**: `hub.auth.login` → Hub validates → returns access + refresh tokens
-2. **Token Storage**: Tokens encrypted with `safeStorage` in `hub-token-store.ts`
-3. **Proactive Refresh**: `useTokenRefresh()` hook sets timer 2 min before `expiresAt`, refreshes automatically
-4. **Device Registration**: On startup, registers device with Hub + 30s heartbeat
-5. **WebSocket Auth**: First message after connect is `{ type: "auth", apiKey }`, validated within 5s
+1. **Login**: `auth.login` → Hub validates → returns access + refresh tokens
+2. **Token Storage**: Tokens encrypted with `safeStorage` in `token-store.ts` (provider: 'hub')
+3. **Session Restore**: `auth.restore` → checks TokenStore for stored refresh token → refreshes via Hub → returns user + tokens (discriminated union: `{ restored: true, user, tokens }` or `{ restored: false }`)
+4. **Proactive Refresh**: `useTokenRefresh()` hook sets timer 2 min before `expiresAt`, refreshes automatically
+5. **Device Registration**: On startup, registers device with Hub + 30s heartbeat
+6. **WebSocket Auth**: First message after connect is `{ type: "auth", apiKey }`, validated within 5s
 
 ---
 
@@ -678,7 +679,7 @@ Every 30s: deviceService.sendHeartbeat(deviceId)
 
 The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 
-- **TaskDataGrid** — Main grid component with column definitions, row selection, and sorting
+- **TaskDataGrid** — Main grid component wrapped in `<Card>` from `@ui` for consistent container styling, with column definitions, row selection, and sorting
 - **Cell renderers** — 12 custom cell renderers (StatusBadge, ProgressBar, ActivitySparkline, Agent, PrStatus, Cost, Priority, Actions, ExpandToggle, Workspace, Title, RelativeTime)
 - **Detail rows** — DIY master/detail via `isFullWidthRow` + `fullWidthCellRenderer` (Community workaround for Enterprise-only feature)
 - **TaskFiltersToolbar** — Filter controls above the grid

@@ -122,4 +122,31 @@ export function registerAuthHandlers(
       },
     };
   });
+
+  // Restore a previously authenticated session from encrypted token storage.
+  // Called on app startup to silently re-authenticate without user interaction.
+  router.handle('auth.restore', async () => {
+    const result = await hubAuthService.restoreSession();
+
+    if (!result.restored) {
+      return { restored: false as const };
+    }
+
+    return {
+      restored: true as const,
+      user: {
+        id: result.user.id,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        avatarUrl: result.user.avatarUrl ?? null,
+        createdAt: result.user.createdAt,
+        lastLoginAt: result.user.lastLoginAt ?? null,
+      },
+      tokens: {
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+        expiresIn: expiresAtToExpiresIn(result.expiresAt),
+      },
+    };
+  });
 }

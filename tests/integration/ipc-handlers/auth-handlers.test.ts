@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
 
 import type { IpcRouter } from '@main/ipc/router';
-import type { HubAuthResult, HubAuthService } from '@main/services/hub/hub-auth-service';
+import type { HubAuthResult, HubAuthService, RestoreResult } from '@main/services/hub/hub-auth-service';
 import type { AuthRefreshResponse, AuthResponse, User } from '@shared/types/hub-protocol';
 
 // ─── Mock Factory ──────────────────────────────────────────────
@@ -46,6 +46,7 @@ function createMockHubAuthService(): HubAuthService {
     logout: vi.fn(),
     getCurrentUser: vi.fn(),
     refreshToken: vi.fn(),
+    restoreSession: vi.fn(),
     getAccessToken: vi.fn(),
     isAuthenticated: vi.fn(),
   };
@@ -458,6 +459,87 @@ describe('Auth IPC Handlers', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
       expect(result.error).toContain('refreshToken');
+    });
+  });
+
+  // ─── auth.restore ────────────────────────────────────────────
+
+  describe('auth.restore', () => {
+    it('returns user and tokens when session restore succeeds', async () => {
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const restoreResult: RestoreResult = {
+        restored: true,
+        user: createMockHubUser(),
+        accessToken: 'restored-access-token',
+        refreshToken: 'restored-refresh-token',
+        expiresAt,
+      };
+      vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
+
+      const result = await invoke('auth.restore', {});
+
+      expect(result.success).toBe(true);
+      const data = result.data as {
+        restored: true;
+        user: Record<string, unknown>;
+        tokens: Record<string, unknown>;
+      };
+      expect(data.restored).toBe(true);
+      expect(data.user.id).toBe('user-1');
+      expect(data.user.email).toBe('test@example.com');
+      expect(data.user.displayName).toBe('Test User');
+      expect(data.tokens.accessToken).toBe('restored-access-token');
+      expect(data.tokens.refreshToken).toBe('restored-refresh-token');
+      expect(typeof data.tokens.expiresIn).toBe('number');
+      expect(hubAuthService.restoreSession).toHaveBeenCalled();
+    });
+
+    it('returns restored: false when no session to restore', async () => {
+      const restoreResult: RestoreResult = { restored: false };
+      vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
+
+      const result = await invoke('auth.restore', {});
+
+      expect(result.success).toBe(true);
+      const data = result.data as { restored: false };
+      expect(data.restored).toBe(false);
+      expect(hubAuthService.restoreSession).toHaveBeenCalled();
+    });
+
+    it('transforms undefined avatarUrl to null on restore', async () => {
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const restoreResult: RestoreResult = {
+        restored: true,
+        user: createMockHubUser({ avatarUrl: undefined }),
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        expiresAt,
+      };
+      vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
+
+      const result = await invoke('auth.restore', {});
+
+      expect(result.success).toBe(true);
+      const data = result.data as { restored: true; user: Record<string, unknown> };
+      expect(data.user.avatarUrl).toBeNull();
+    });
+
+    it('transforms undefined lastLoginAt to null on restore', async () => {
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const restoreResult: RestoreResult = {
+        restored: true,
+        user: createMockHubUser({ lastLoginAt: undefined }),
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+        expiresAt,
+      };
+      vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
+
+      const result = await invoke('auth.restore', {});
+
+      expect(result.success).toBe(true);
+      const data = result.data as { restored: true; user: Record<string, unknown> };
+      expect(data.user.lastLoginAt).toBeNull();
     });
   });
 });

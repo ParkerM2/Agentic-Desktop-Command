@@ -33,7 +33,7 @@ Location: `src/renderer/features/`
 | **communications** | Slack/Discord integration | SlackPanel, DiscordPanel | MCP tools |
 | **dashboard** | Home dashboard | DashboardPage, TodayView, DailyStats, ActiveAgents | multiple |
 | **fitness** | Health/fitness tracking | FitnessPage, WorkoutLog, MetricsChart | `fitness.*` |
-| **github** | GitHub integration | GitHubPage, PRList, IssueList | `github.*` |
+| **github** | GitHub integration | GitHubPage, GitHubConnectionStatus, PRList, IssueList, NotificationList, PrDetailModal, IssueCreateForm; **Hooks**: useGitHubAuthStatus, useGitHubRepos, useGitHubPrs, useGitHubIssues, useGitHubNotifications, useCreateIssue, useGitHubEvents | `github.*` |
 | **hub-setup** | Pre-auth Hub configuration wizard | HubSetupPage, validateHubUrl | `hub.getConfig`, `hub.connect` |
 | **ideation** | Idea capture & tracking | IdeationPage, IdeaEditForm | `ideas.*` |
 | **insights** | Analytics dashboard | InsightsPage, MetricsCards, Charts | `insights.*` |
@@ -43,7 +43,7 @@ Location: `src/renderer/features/`
 | **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager, ProjectEditDialog, GitStatusIndicator (branch name + clean/changed badge in project list) | `projects.*`, `git.status` |
 | **roadmap** | Project roadmap | RoadmapPage, MilestoneCard | `milestones.*` |
 | **settings** | App settings | SettingsPage, HubSettings, OAuthProviderSettings, OAuthConnectionStatus, WebhookSettings, StorageManagementSection, StorageUsageBar, RetentionControl | `settings.*`, `oauth.*`, `dataManagement.*` |
-| **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid, TaskFiltersToolbar, TaskDetailRow, TaskStatusBadge, CreateTaskDialog, PlanFeedbackDialog, TaskResultView (status/duration/cost/log summary for completed tasks), CreatePrDialog (GitHub PR creation post-task-completion); **Hooks**: useTaskEvents (→ useAgentEvents + useQaEvents), useAgentMutations (useStartPlanning, useStartExecution, useReplanWithFeedback, useKillAgent, useRestartFromCheckpoint), useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*` (incl. `agent.replanWithFeedback`), `qa.*`, `git.createPr`, `event:agent.orchestrator.*`, `event:qa.*` |
+| **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid (AG-Grid wrapped in `<Card>` from `@ui`), TaskFiltersToolbar, TaskDetailRow, TaskStatusBadge, CreateTaskDialog, PlanFeedbackDialog, TaskResultView (status/duration/cost/log summary for completed tasks), CreatePrDialog (GitHub PR creation post-task-completion); **Hooks**: useTaskEvents (→ useAgentEvents + useQaEvents), useAgentMutations (useStartPlanning, useStartExecution, useReplanWithFeedback, useKillAgent, useRestartFromCheckpoint), useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*` (incl. `agent.replanWithFeedback`), `qa.*`, `git.createPr`, `event:agent.orchestrator.*`, `event:qa.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions | BriefingPage, SuggestionCard | `briefing.*` |
 | **merge** | Branch merge workflow | MergeConfirmModal, MergePreviewPanel, ConflictResolver, FileDiffViewer (`@git-diff-view/react`) | `merge.*` |
@@ -89,7 +89,7 @@ Location: `src/main/services/`
 | **changelog** | Project changelog CRUD | list, addEntry | - |
 | **fitness** | Health metrics (manual) | getMetrics, logWorkout | - |
 | **git** | Git operations (simple-git + `gh` CLI for PRs) | getStatus, listBranches, createBranch, commit, push, resolveConflict, createPr, listWorktrees, detectStructure | `event:git.*` |
-| **github** | GitHub API integration | listPRs, listIssues, getRepo | - |
+| **github** | GitHub API integration (gh CLI) | listPRs, listIssues, getRepo, authStatus, getRepos | - |
 | **hub** | Hub server connection. Sub-modules: `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` | connect, disconnect, sync | `event:hub.*` |
 | **ideas** | Idea CRUD | list, create, update, delete | - |
 | **insights** | Analytics aggregation | getMetrics, getTimeSeries | - |
@@ -277,7 +277,7 @@ The IPC contract has been split from a single monolithic file into **25 domain f
 | `email` | SMTP email sending, queue |
 | `fitness` | Workouts, body measurements, goals |
 | `git` | Git status, branches, worktrees, commit, push, resolveConflict, createPr |
-| `github` | GitHub PRs, issues, notifications |
+| `github` | GitHub PRs, issues, notifications, auth status, repos |
 | `hub` | Hub connection, sync, config |
 | `misc` | Alerts, calendar, changelog, devices, hotkeys, ideas, insights, merge, milestones, notes, screen, time, voice, webhooks, workspaces (18 contract files) |
 | `oauth` | OAuth authorization, authentication status, token revocation (3 channels) |

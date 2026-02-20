@@ -12,6 +12,7 @@ export {
   RefreshOutputSchema,
   RegisterInputSchema,
   RegisterOutputSchema,
+  RestoreOutputSchema,
   UserSchema,
 } from './schemas';
 

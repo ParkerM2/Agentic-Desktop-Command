@@ -22,6 +22,26 @@ export type { GitHubIssue, GitHubNotification, GitHubPullRequest };
 /** Alias for components that use the shorter name */
 export type GitHubPr = GitHubPullRequest;
 
+// ── Auth & Repos ─────────────────────────────────────────────
+
+/** Check gh CLI auth status (installed, authenticated, username, scopes) */
+export function useGitHubAuthStatus() {
+  return useQuery({
+    queryKey: githubKeys.authStatus(),
+    queryFn: () => ipc('github.authStatus', {}),
+    staleTime: 60_000,
+  });
+}
+
+/** Fetch list of repos accessible to the authenticated GitHub user */
+export function useGitHubRepos() {
+  return useQuery({
+    queryKey: githubKeys.repos(),
+    queryFn: () => ipc('github.getRepos', { limit: 30 }),
+    staleTime: 120_000,
+  });
+}
+
 // ── Hooks ────────────────────────────────────────────────────
 
 /** Fetch pull requests for the active repo */

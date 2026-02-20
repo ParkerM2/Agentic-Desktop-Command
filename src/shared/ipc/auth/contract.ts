@@ -2,7 +2,7 @@
  * Auth IPC Contract
  *
  * Invoke channel definitions for authentication operations:
- * register, login, logout, token refresh, and current user.
+ * register, login, logout, token refresh, current user, and session restore.
  */
 
 import { z } from 'zod';
@@ -14,6 +14,7 @@ import {
   RefreshOutputSchema,
   RegisterInputSchema,
   RegisterOutputSchema,
+  RestoreOutputSchema,
   UserSchema,
 } from './schemas';
 
@@ -38,5 +39,9 @@ export const authInvoke = {
   'auth.me': {
     input: z.object({}),
     output: UserSchema,
+  },
+  'auth.restore': {
+    input: z.object({}),
+    output: RestoreOutputSchema,
   },
 } as const;

@@ -5,11 +5,14 @@
 export { githubKeys } from './api/queryKeys';
 export {
   useCreateIssue,
+  useGitHubAuthStatus,
   useGitHubIssues,
   useGitHubNotifications,
   useGitHubPrDetail,
   useGitHubPrs,
+  useGitHubRepos,
 } from './api/useGitHub';
+export { GitHubConnectionStatus } from './components/GitHubConnectionStatus';
 export { GitHubPage } from './components/GitHubPage';
 export { IssueCreateForm } from './components/IssueCreateForm';
 export { IssueList } from './components/IssueList';

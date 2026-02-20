@@ -3,7 +3,7 @@
  *
  * Reads isAuthenticated and isInitializing from the auth store. While init is
  * in progress, shows a spinner. Once init completes, redirects unauthenticated
- * users to /login. Calls useAuthInit() to restore session from localStorage.
+ * users to /login. Calls useAuthInit() to restore session via auth.restore IPC.
  */
 
 import { useEffect } from 'react';
@@ -25,7 +25,7 @@ export function AuthGuard() {
   const isInitializing = useAuthStore((s) => s.isInitializing);
   const navigate = useNavigate();
 
-  // Restore session from localStorage on app startup
+  // Restore session via auth.restore IPC on app startup
   useAuthInit();
   // Proactively refresh tokens before expiry
   useTokenRefresh();
