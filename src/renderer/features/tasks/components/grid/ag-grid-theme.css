@@ -7,7 +7,9 @@
   /* ── Core colors ── */
   --ag-background-color: var(--card);
   --ag-foreground-color: var(--foreground);
+  --ag-data-background-color: var(--card);
   --ag-border-color: var(--border);
+  --ag-secondary-border-color: color-mix(in srgb, var(--border) 50%, transparent);
 
   /* ── Header ── */
   --ag-header-background-color: var(--muted);
@@ -23,13 +25,19 @@
 
   /* ── Controls ── */
   --ag-input-focus-border-color: var(--ring);
+  --ag-input-border-color: var(--input);
   --ag-checkbox-checked-color: var(--primary);
   --ag-toggle-button-on-background-color: var(--primary);
 
-  /* ── Overlay (no-rows, loading) ── */
-  --ag-modal-overlay-background-color: color-mix(in srgb, var(--background) 80%, transparent);
+  /* ── Text ── */
+  --ag-secondary-foreground-color: var(--muted-foreground);
+  --ag-disabled-foreground-color: var(--muted-foreground);
 
-  /* ── Tooltip ── */
+  /* ── Panels / Menus / Overlays ── */
+  --ag-control-panel-background-color: var(--card);
+  --ag-menu-background-color: var(--popover);
+  --ag-panel-background-color: var(--card);
+  --ag-modal-overlay-background-color: color-mix(in srgb, var(--background) 80%, transparent);
   --ag-tooltip-background-color: var(--popover);
 
   /* ── Sizing & typography ── */
@@ -39,6 +47,22 @@
   --ag-header-height: 40px;
   --ag-row-height: 44px;
   --ag-icon-size: 14px;
+}
+
+/* ── Dark mode: native scrollbar + control dark rendering ── */
+.dark .ag-theme-quartz.ag-theme-claude {
+  color-scheme: dark;
+}
+
+/* ── Explicit background fallbacks ──
+   In case CSS variable inheritance doesn't cascade through AG-Grid's
+   internal DOM structure, set backgrounds directly on key containers. */
+.ag-theme-quartz.ag-theme-claude .ag-root-wrapper {
+  background-color: var(--card);
+}
+
+.ag-theme-quartz.ag-theme-claude .ag-body-viewport {
+  background-color: var(--card);
 }
 
 /* ── Detail row override ──

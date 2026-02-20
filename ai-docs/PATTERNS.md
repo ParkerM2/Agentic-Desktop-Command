@@ -537,6 +537,20 @@ AG-Grid v35 uses the quartz theme with design-system token overrides. The theme 
 2. **Override class**: `ag-theme-claude` stacked with quartz for compound specificity
 3. **CSS variables**: `--ag-*` properties mapped to design system tokens (`var(--card)`, `var(--foreground)`, etc.)
 4. **Interactive states**: Use `color-mix()` for hover/selection (NEVER hardcode hex/rgb)
+5. **Dark mode**: `.dark .ag-theme-quartz.ag-theme-claude` sets `color-scheme: dark` for native scrollbars/controls
+6. **Explicit fallbacks**: `.ag-root-wrapper` and `.ag-body-viewport` get direct `background-color` overrides in case CSS variable inheritance doesn't cascade through AG-Grid's internal DOM
+
+### Variable Categories
+
+The theme CSS defines variables across these groups:
+- **Core**: `--ag-background-color`, `--ag-foreground-color`, `--ag-data-background-color`, `--ag-border-color`, `--ag-secondary-border-color`
+- **Header**: `--ag-header-background-color`, `--ag-header-foreground-color`, `--ag-header-cell-hover-background-color`
+- **Rows**: `--ag-odd-row-background-color`, `--ag-row-hover-color`, `--ag-row-border-color`, `--ag-selected-row-background-color`, `--ag-range-selection-background-color`
+- **Controls**: `--ag-input-focus-border-color`, `--ag-input-border-color`, `--ag-checkbox-checked-color`, `--ag-toggle-button-on-background-color`
+- **Text**: `--ag-secondary-foreground-color`, `--ag-disabled-foreground-color`
+- **Panels/Menus**: `--ag-control-panel-background-color`, `--ag-menu-background-color`, `--ag-panel-background-color`, `--ag-modal-overlay-background-color`, `--ag-tooltip-background-color`
+
+**Critical**: `--ag-data-background-color` MUST be set explicitly — it controls the data viewport area and defaults to white if omitted, breaking dark mode.
 
 ### CSS Selector Pattern
 
@@ -545,10 +559,20 @@ AG-Grid v35 uses the quartz theme with design-system token overrides. The theme 
 .ag-theme-quartz.ag-theme-claude {
   --ag-background-color: var(--card);
   --ag-foreground-color: var(--foreground);
+  --ag-data-background-color: var(--card);
   --ag-header-background-color: var(--muted);
   --ag-row-hover-color: color-mix(in srgb, var(--accent) 50%, transparent);
   /* ... */
 }
+
+/* Dark mode: native scrollbar + control dark rendering */
+.dark .ag-theme-quartz.ag-theme-claude {
+  color-scheme: dark;
+}
+
+/* Explicit background fallbacks for AG-Grid internal DOM */
+.ag-theme-quartz.ag-theme-claude .ag-root-wrapper { background-color: var(--card); }
+.ag-theme-quartz.ag-theme-claude .ag-body-viewport { background-color: var(--card); }
 ```
 
 ### Component Usage
@@ -565,6 +589,7 @@ AG-Grid v35 uses the quartz theme with design-system token overrides. The theme 
 - **ALWAYS** use compound selector `.ag-theme-quartz.ag-theme-claude` (not `.ag-theme-claude` alone)
 - **ALWAYS** wrap grid in `<Card>` from `@ui` for visual containment
 - **NEVER** hardcode colors in the theme CSS -- use `var()` and `color-mix()` only
+- **ALWAYS** set `--ag-data-background-color` alongside `--ag-background-color` — omitting it causes white viewport in dark mode
 - **ALWAYS** add `?? []` fallback when passing `task.subtasks` to child components
 - **ALWAYS** add `?? ''` fallback when accessing `task.description` in search/filter logic
 
