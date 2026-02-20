@@ -10,25 +10,19 @@ import { FolderOpen, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 
 import { cn, formatRelativeTime, truncate } from '@renderer/shared/lib/utils';
-import { useLayoutStore } from '@renderer/shared/stores';
+import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
-import {
-  CreateProjectWizard,
-  ProjectInitWizard,
-  SetupProgressModal,
-  useProjects,
-} from '@features/projects';
+import { CreateProjectWizard, ProjectInitWizard, useProjects } from '@features/projects';
 
 export function RecentProjects() {
   const navigate = useNavigate();
   const { data: projects, isLoading } = useProjects();
   const { addProjectTab } = useLayoutStore();
+  const { addToast } = useToastStore();
 
   // Dialog state
   const [wizardOpen, setWizardOpen] = useState(false);
   const [createWizardOpen, setCreateWizardOpen] = useState(false);
-  const [showProgressModal, setShowProgressModal] = useState(false);
-  const [setupProjectId, setSetupProjectId] = useState('');
 
   function handleOpenProject(projectId: string) {
     addProjectTab(projectId);
@@ -37,22 +31,16 @@ export function RecentProjects() {
 
   function handleWizardSetupStarted(projectId: string) {
     setWizardOpen(false);
-    setSetupProjectId(projectId);
-    setShowProgressModal(true);
-  }
-
-  function handleSetupComplete() {
-    setShowProgressModal(false);
-    if (setupProjectId.length > 0) {
-      addProjectTab(setupProjectId);
-      void navigate({ to: projectViewPath(setupProjectId, PROJECT_VIEWS.TASKS) });
-    }
+    addProjectTab(projectId);
+    addToast('Project created — setup running in background', 'success');
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   function handleProjectCreated(projectId: string) {
     setCreateWizardOpen(false);
-    setSetupProjectId(projectId);
-    setShowProgressModal(true);
+    addProjectTab(projectId);
+    addToast('Project created — setup running in background', 'success');
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   if (isLoading) {
@@ -135,13 +123,6 @@ export function RecentProjects() {
         open={createWizardOpen}
         onClose={() => setCreateWizardOpen(false)}
         onProjectCreated={handleProjectCreated}
-      />
-
-      <SetupProgressModal
-        open={showProgressModal}
-        projectId={setupProjectId}
-        onClose={() => setShowProgressModal(false)}
-        onComplete={handleSetupComplete}
       />
     </div>
   );

@@ -11,14 +11,13 @@ import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 import type { Project, RepoType } from '@shared/types';
 
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
-import { useLayoutStore } from '@renderer/shared/stores';
+import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
 import { useProjects, useRemoveProject, useSubProjects } from '../api/useProjects';
 
 import { CreateProjectWizard } from './CreateProjectWizard';
 import { ProjectEditDialog } from './ProjectEditDialog';
 import { ProjectInitWizard } from './ProjectInitWizard';
-import { SetupProgressModal } from './SetupProgressModal';
 
 function repoStructureBadgeClass(structure: RepoType): string {
   if (structure === 'monorepo') return 'bg-info/10 text-info';
@@ -114,21 +113,10 @@ export function ProjectListPage() {
   const { data: projects, isLoading } = useProjects();
   const removeProject = useRemoveProject();
   const { addProjectTab } = useLayoutStore();
+  const { addToast } = useToastStore();
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [createWizardOpen, setCreateWizardOpen] = useState(false);
-
-  // Setup Progress Modal state
-  const [showProgressModal, setShowProgressModal] = useState(false);
-  const [setupProjectId, setSetupProjectId] = useState('');
-
-  function handleSetupComplete() {
-    setShowProgressModal(false);
-    if (setupProjectId.length > 0) {
-      addProjectTab(setupProjectId);
-      void navigate({ to: projectViewPath(setupProjectId, PROJECT_VIEWS.TASKS) });
-    }
-  }
 
   function handleOpenProject(projectId: string) {
     addProjectTab(projectId);
@@ -137,14 +125,16 @@ export function ProjectListPage() {
 
   function handleWizardSetupStarted(projectId: string) {
     setWizardOpen(false);
-    setSetupProjectId(projectId);
-    setShowProgressModal(true);
+    addProjectTab(projectId);
+    addToast('Project created — setup running in background', 'success');
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   function handleProjectCreated(projectId: string) {
     setCreateWizardOpen(false);
-    setSetupProjectId(projectId);
-    setShowProgressModal(true);
+    addProjectTab(projectId);
+    addToast('Project created — setup running in background', 'success');
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   function handleEditProject(e: React.MouseEvent | React.KeyboardEvent, project: Project) {
@@ -226,13 +216,6 @@ export function ProjectListPage() {
         open={createWizardOpen}
         onClose={() => setCreateWizardOpen(false)}
         onProjectCreated={handleProjectCreated}
-      />
-
-      <SetupProgressModal
-        open={showProgressModal}
-        projectId={setupProjectId}
-        onClose={() => setShowProgressModal(false)}
-        onComplete={handleSetupComplete}
       />
 
       <ProjectEditDialog

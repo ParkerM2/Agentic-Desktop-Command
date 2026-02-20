@@ -80,9 +80,16 @@ const projectItems: NavItem[] = [
 export function Sidebar() {
   const navigate = useNavigate();
   const routerState = useRouterState();
-  const { sidebarCollapsed, toggleSidebar, activeProjectId } = useLayoutStore();
+  const { sidebarCollapsed, toggleSidebar, activeProjectId, addProjectTab } = useLayoutStore();
 
   const currentPath = routerState.location.pathname;
+
+  // Sync URL → store: if we're on a /projects/:id/* route but the store lost the active project
+  // (e.g. after page reload), re-hydrate it from the URL.
+  const urlProjectId = /^\/projects\/([^/]+)/.exec(currentPath)?.[1] ?? null;
+  if (urlProjectId && urlProjectId !== activeProjectId) {
+    addProjectTab(urlProjectId);
+  }
 
   function handleNav(path: string) {
     if (!activeProjectId) return;

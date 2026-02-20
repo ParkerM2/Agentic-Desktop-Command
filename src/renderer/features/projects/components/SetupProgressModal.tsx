@@ -151,10 +151,13 @@ export function SetupProgressModal({
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-              <span className="text-muted-foreground ml-3 text-sm">
-                Waiting for pipeline to start...
+              <span className="text-muted-foreground mt-3 text-sm">
+                Preparing setup pipeline...
+              </span>
+              <span className="text-muted-foreground mt-1 text-xs">
+                Analyzing your project and configuring tools
               </span>
             </div>
           )}

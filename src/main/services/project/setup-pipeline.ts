@@ -215,6 +215,7 @@ export function createSetupPipeline(deps: SetupPipelineDeps): SetupPipelineServi
       const emitProgress = createEmitter(steps, projectId, analysisRef);
 
       serviceLogger.info(`[SetupPipeline] Running setup for existing project: ${projectName}`);
+      emitProgress(); // Emit initial state so the modal shows all pending steps immediately
       await runSteps(steps, emitProgress);
       serviceLogger.info(`[SetupPipeline] Setup complete for existing project: ${projectName}`);
     },
@@ -281,6 +282,7 @@ export function createSetupPipeline(deps: SetupPipelineDeps): SetupPipelineServi
       const emitProgress = createEmitter(allSteps, projectId, analysisRef);
 
       serviceLogger.info(`[SetupPipeline] Running setup for new project: ${input.name}`);
+      emitProgress(); // Emit initial state so the modal shows all pending steps immediately
       await runSteps(allSteps, emitProgress);
       serviceLogger.info(`[SetupPipeline] Setup complete for new project: ${input.name}`);
     },

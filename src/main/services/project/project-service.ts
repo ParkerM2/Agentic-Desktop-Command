@@ -83,13 +83,20 @@ export function createProjectService(deps: {
   function updateCache(projects: Project[]): void {
     projectCache.clear();
     for (const p of projects) {
-      projectCache.set(p.id, p);
+      cacheProject(p);
     }
   }
 
-  /** Add or update a single project in the cache */
+  /** Add or update a single project in the cache.
+   *  Hub API returns `rootPath` while local code expects `path` —
+   *  normalize here so getProjectPath() always works. */
   function cacheProject(project: Project): void {
-    projectCache.set(project.id, project);
+    const raw = project as unknown as Record<string, unknown>;
+    const normalized: Project = {
+      ...project,
+      path: project.path || (raw.rootPath as string) || '',
+    };
+    projectCache.set(normalized.id, normalized);
   }
 
   return {
