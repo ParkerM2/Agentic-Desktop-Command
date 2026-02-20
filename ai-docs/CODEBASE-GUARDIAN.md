@@ -40,15 +40,11 @@
 |------|----------|------|
 | `tracker.json` | `docs/tracker.json` | Single source of truth for plan status. MUST be updated when plans change status. |
 | `validate-tracker.mjs` | `scripts/validate-tracker.mjs` | Validation script — do not move. |
-| Active plans | `docs/plans/` | Plans with status DRAFT, APPROVED, IN_PROGRESS, BLOCKED, TRACKING |
-| Active progress | `docs/progress/` | Progress files for features currently being implemented |
-| Archived plans | `doc-history/plans/` | Plans with status IMPLEMENTED, SUPERSEDED, ABANDONED, ARCHIVED |
-| Archived progress | `doc-history/progress/` | Progress files for completed features |
+| Active plans | `docs/plans/` | Plans with status DRAFT, APPROVED, IN_PROGRESS, TRACKING |
 
-**Archival rules:**
-- Plans with status `IMPLEMENTED` or `SUPERSEDED` that are older than 14 days should be archived
-- When archiving: `git mv` the file to `doc-history/`, update `docs/tracker.json` paths, set status to `ARCHIVED`
-- `npm run validate:tracker` must pass after any archival operation
+**Cleanup rules:**
+- Plans for features with status `IMPLEMENTED` that are older than 14 days should be deleted and their tracker entry removed
+- `npm run validate:tracker` must pass after any cleanup operation
 
 ### Feature Module Structure (MANDATORY)
 

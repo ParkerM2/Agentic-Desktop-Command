@@ -44,6 +44,7 @@ import { registerSpotifyHandlers } from './handlers/spotify-handlers';
 import { registerTaskHandlers } from './handlers/task-handlers';
 import { registerTerminalHandlers } from './handlers/terminal-handlers';
 import { registerTimeHandlers } from './handlers/time-handlers';
+import { registerTrackerHandlers } from './handlers/tracker-handlers';
 import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
 import { registerWindowHandlers } from './handlers/window-handlers';
@@ -98,6 +99,7 @@ import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TaskRepository } from '../services/tasks/types';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
+import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { HotkeyManager } from '../tray/hotkey-manager';
@@ -152,6 +154,7 @@ export interface Services {
   storageInspector: StorageInspector;
   codebaseAnalyzer: CodebaseAnalyzerService;
   setupPipeline: SetupPipelineService;
+  trackerService: TrackerService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -240,4 +243,5 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.dataDir,
   );
   registerWindowHandlers(router);
+  registerTrackerHandlers(router, services.trackerService);
 }

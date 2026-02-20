@@ -112,7 +112,7 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 > that future agents read. If agent docs are stale, agents produce wrong code, which wastes time and money.
 > **Failing to update docs is the same as shipping broken code. Treat it that way.**
 
-`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, `docs/progress/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md`. Use this mapping to know which docs to update:
+`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/plans/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md`. Use this mapping to know which docs to update:
 
 | Change Type | Docs to Update |
 |-------------|----------------|
@@ -122,10 +122,9 @@ If tests don't exist for the area you're modifying, **that doesn't exempt you fr
 | New shared utility | `FEATURES-INDEX.md` (shared sections), `CODEBASE-GUARDIAN.md` (placement rules) |
 | UI layout changes | `user-interface-flow.md` (UX flow sections), `FEATURES-INDEX.md` (layouts) |
 | New feature module | `FEATURES-INDEX.md` (feature table), `ARCHITECTURE.md` (system diagram if applicable) |
-| Gap resolution | `user-interface-flow.md` (mark gap RESOLVED with date and description) |
 | New pattern or convention | `PATTERNS.md` (pattern example with code), **ALL relevant agent files** |
 | Feature plan or design doc | `docs/plans/<feature>-plan.md` (implementation plan) |
-| Plan lifecycle changes | `docs/tracker.json` (update status, add new entry) |
+| Plan lifecycle changes | `docs/tracker.json` |
 | Any change to file structure, imports, or conventions | **ALL `.claude/agents/*.md` files that reference the affected area** |
 
 **Checklist before committing — ALL items are mandatory:**

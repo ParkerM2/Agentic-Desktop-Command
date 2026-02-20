@@ -27,8 +27,11 @@ logs/security/
 # Runtime data
 .adc/
 
-# Claude Code session artifacts (local-only, events sync to Hub)
-.claude/progress/
+# Workflow plugin runtime data (ephemeral, not committed)
+.claude/progress/*/events.jsonl
+.claude/progress/*/current.md
+.claude/progress/*/history.md
+.claude/progress/index.md
 .claude/teams/
 .claude/tasks/
 .claude/settings.json

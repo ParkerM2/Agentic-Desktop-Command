@@ -43,8 +43,7 @@ PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD+DOCS ──▶ TEST ──
   │         │         └─ TeamCreate, TaskCreate with dependencies,
   │         │            spawn agents with full initialization
   │         │
-  │         └─ Create progress file at docs/progress/<feature-name>-progress.md
-  │            Update tracker.json: add entry with status IN_PROGRESS
+  │         └─ Update tracker.json: add entry with status IN_PROGRESS
   │
   └─ Read design doc, decompose into tasks,
      identify agent roles, map dependencies.
@@ -78,7 +77,7 @@ The Team Lead MUST update `docs/tracker.json` at each lifecycle transition:
 | Work blocked | Set status to `BLOCKED` |
 | Implementation complete | Set status to `IMPLEMENTED` |
 | Feature superseded | Set status to `SUPERSEDED`, set `supersededBy` field |
-| Feature archived | Move files to `doc-history/`, update paths, set status to `ARCHIVED` |
+| Feature archived | Delete plan file, remove tracker entry or set status to `ARCHIVED` |
 
 Always update `statusChangedAt` when changing status. Run `npm run validate:tracker` to verify.
 
@@ -92,9 +91,7 @@ Claude Code sessions can terminate unexpectedly (terminal close, timeout, proces
 
 ### The Progress File
 
-**Location**: `docs/progress/<feature-name>-progress.md`
-
-The Team Lead MUST create this file BEFORE spawning any agents, and update it after EVERY significant state change (agent complete, agent failed, phase transition).
+Progress is tracked via the team's TaskList and the `.claude/progress/` runtime directory (auto-managed by the workflow plugin). The Team Lead updates tracker.json status after each phase transition.
 
 **When to update the progress file:**
 - After creating the team and tasks
@@ -163,7 +160,7 @@ If resuming from crash:
 The Team Lead must update `docs/tracker.json` at these lifecycle points:
 - **New feature**: Add entry with status `IN_PROGRESS`
 - **Feature complete**: Set status to `IMPLEMENTED`
-- **Feature archived**: Move files to `doc-history/`, update paths, set status to `ARCHIVED`
+- **Feature archived**: Delete plan file, remove tracker entry or set status to `ARCHIVED`
 - **Feature superseded**: Set status to `SUPERSEDED`, set `supersededBy` field
 
 Run `npm run validate:tracker` to verify tracker integrity after any changes.
@@ -172,7 +169,7 @@ Run `npm run validate:tracker` to verify tracker integrity after any changes.
 
 When a Team Lead agent starts and detects existing progress:
 
-1. Read `docs/progress/<feature-name>-progress.md`
+1. Check `docs/tracker.json` for feature status
 2. Run `git worktree list` to verify worktree state
 3. Check if the team still exists (read `~/.claude/teams/<team-name>/config.json`)
 4. If team exists: use `TaskList` to get current state, resume from first pending task
@@ -272,7 +269,7 @@ Claude-UI/
 │       ├── ipc-contract.ts           # THE source of truth for IPC
 │       ├── constants/                 # Theme constants, route paths
 │       └── types/                     # Domain type definitions
-└── doc-history/                       # Archived planning docs
+└── docs/tracker.json                  # Plan status tracker (v2)
 ```
 
 ### Updating the Structure
@@ -655,7 +652,7 @@ Use this checklist when starting any new feature implementation:
 
 1. READ design doc / plan
 2. DECOMPOSE into tasks with dependencies
-3. CREATE progress file at `docs/progress/<feature-name>-progress.md`
+3. UPDATE `docs/tracker.json`: add entry with status `IN_PROGRESS`
 3b. UPDATE tracker: Add entry to `docs/tracker.json` with status `IN_PROGRESS`
 4. CREATE team via TeamCreate
 5. CREATE tasks via TaskCreate with proper `blockedBy` relationships
