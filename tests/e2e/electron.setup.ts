@@ -17,10 +17,21 @@
  *
  * @see https://playwright.dev/docs/api/class-electron
  */
-import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { config } from 'dotenv';
 import { test as base, expect } from '@playwright/test';
+
+// Load .env.test from project root for test credentials (TEST_EMAIL, TEST_PASSWORD, etc.)
+const currentFilePath_ = fileURLToPath(import.meta.url);
+const projectRoot = resolve(dirname(currentFilePath_), '../..');
+const envTestPath = join(projectRoot, '.env.test');
+
+if (existsSync(envTestPath)) {
+  config({ path: envTestPath });
+}
 import { _electron as electron } from 'playwright';
 
 import type { ElectronApplication, Page } from 'playwright';

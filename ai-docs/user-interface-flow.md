@@ -277,8 +277,8 @@ After auth + onboarding, the user sees the main app shell:
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: sidebar + topbar + outlet + notifications |
-| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible |
+| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: sidebar (collapsible, minSize 160px) + topbar + outlet + notifications |
+| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible. Uses `bg-sidebar text-sidebar-foreground` theme vars. |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button + ScreenshotButton + Health + Hub status + command bar |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global assistant input (Cmd+K) |
 | `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
