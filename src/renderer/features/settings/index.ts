@@ -32,6 +32,7 @@ export { StorageUsageBar } from './components/StorageUsageBar';
 export { RetentionControl } from './components/RetentionControl';
 export { WorkspacesTab } from './components/WorkspacesTab';
 export { DeviceCard } from './components/DeviceCard';
+export { ThemeEditorPage } from './components/theme-editor';
 
 // Re-export from dedicated feature modules for backward compatibility
 export {

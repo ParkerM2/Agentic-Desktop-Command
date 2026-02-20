@@ -23,5 +23,14 @@ export function createSettingsRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
-  return [settingsRoute] as const;
+  const themesRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTES.THEMES,
+    component: lazyRouteComponent(
+      () => import('@features/settings'),
+      'ThemeEditorPage',
+    ),
+  });
+
+  return [settingsRoute, themesRoute] as const;
 }
