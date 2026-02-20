@@ -29,6 +29,7 @@ import {
   TOP_LEVEL_NAV_ITEMS,
 } from './helpers/navigation';
 import { waitForPageContent } from './helpers/page-helpers';
+import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Full Smoke Flow', () => {
   test('complete app walkthrough via real clicks', async ({ authenticatedWindow }) => {
@@ -45,6 +46,7 @@ test.describe('Full Smoke Flow', () => {
 
     // Verify page has content (greeting header or dashboard widgets)
     await assertPageLoaded(page);
+    await takeScreenshot(page, 'smoke-dashboard');
 
     // ── Step 2: Click through ALL top-level sidebar items ─────────────
     for (const label of TOP_LEVEL_NAV_ITEMS) {
@@ -73,6 +75,7 @@ test.describe('Full Smoke Flow', () => {
         await assertPageLoaded(page);
         await waitForPageContent(page);
       }
+      await takeScreenshot(page, 'smoke-project-scoped');
     }
 
     // ── Step 5: Settings via sidebar footer ───────────────────────────
@@ -87,6 +90,7 @@ test.describe('Full Smoke Flow', () => {
 
     const dataThemeAfterOcean = await page.locator('html').getAttribute('data-theme');
     expect(dataThemeAfterOcean).toBe('ocean');
+    await takeScreenshot(page, 'smoke-settings-ocean');
 
     // Reset to Oscura (default)
     const oscuraButton = page.locator('button', { hasText: 'Oscura' });

@@ -9,6 +9,7 @@
 import { test, expect } from './electron.setup';
 import { assertNoConsoleErrors, createConsoleCollector } from './helpers/console-collector';
 import { navigateToSettings } from './helpers/navigation';
+import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Theme Visual Verification', () => {
   test('Default dark mode — html has class "dark" and no data-theme', async ({
@@ -19,6 +20,7 @@ test.describe('Theme Visual Verification', () => {
 
     const dataTheme = await page.locator('html').getAttribute('data-theme');
     expect(dataTheme).toBeNull();
+    await takeScreenshot(page, 'theme-default-dark');
   });
 
   test('Ocean theme changes sidebar background', async ({ authenticatedWindow: page }) => {
@@ -46,6 +48,7 @@ test.describe('Theme Visual Verification', () => {
     });
     expect(oceanSidebarBg).not.toBeNull();
     expect(oceanSidebarBg).not.toBe(defaultSidebarBg);
+    await takeScreenshot(page, 'theme-ocean-dark');
   });
 
   test('Forest theme changes card background', async ({ authenticatedWindow: page }) => {
@@ -84,6 +87,7 @@ test.describe('Theme Visual Verification', () => {
     if (oceanCardBg !== null && forestCardBg !== null) {
       expect(forestCardBg).not.toBe(oceanCardBg);
     }
+    await takeScreenshot(page, 'theme-forest-dark');
   });
 
   test('Light mode changes body background', async ({ authenticatedWindow: page }) => {
@@ -108,6 +112,7 @@ test.describe('Theme Visual Verification', () => {
 
     // Light mode body should differ from dark mode body
     expect(lightBodyBg).not.toBe(darkBodyBg);
+    await takeScreenshot(page, 'theme-light-mode');
   });
 
   test('Dark mode restores after Light mode', async ({ authenticatedWindow: page }) => {

@@ -13,6 +13,7 @@ import {
   PROJECT_NAV_ITEMS,
   toggleSidebarCollapse,
 } from './helpers/navigation';
+import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Sidebar Mechanics', () => {
   test('sidebar visible after login', async ({ authenticatedWindow: page }) => {
@@ -22,6 +23,7 @@ test.describe('Sidebar Mechanics', () => {
     // "ADC" brand text should be visible when sidebar is expanded
     const adcText = sidebar.locator('text=ADC');
     await expect(adcText).toBeVisible();
+    await takeScreenshot(page, 'sidebar-expanded');
   });
 
   test('collapse toggle hides ADC text and narrows sidebar', async ({
@@ -47,6 +49,7 @@ test.describe('Sidebar Mechanics', () => {
     const collapsedBox = await sidebar.boundingBox();
     expect(collapsedBox).not.toBeNull();
     expect(collapsedBox!.width).toBeLessThan(initialBox!.width);
+    await takeScreenshot(page, 'sidebar-collapsed');
   });
 
   test('expand toggle restores ADC text', async ({ authenticatedWindow: page }) => {

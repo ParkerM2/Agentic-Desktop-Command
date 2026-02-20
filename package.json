@@ -31,6 +31,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright test && bash scripts/post-e2e-screenshots.sh",
     "check:docs": "node scripts/check-docs.mjs",
     "check:agents": "node scripts/check-agents.mjs",
     "validate:tracker": "node scripts/validate-tracker.mjs",

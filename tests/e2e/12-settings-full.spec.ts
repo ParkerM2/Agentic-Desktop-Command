@@ -10,6 +10,7 @@ import { test, expect } from './electron.setup';
 
 import { createConsoleCollector, assertNoConsoleErrors } from './helpers/console-collector';
 import { navigateToSettings } from './helpers/navigation';
+import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Settings Page', () => {
   test('Settings loads via sidebar footer click', async ({ authenticatedWindow: page }) => {
@@ -45,6 +46,7 @@ test.describe('Settings Page', () => {
     const htmlClasses = await page.locator('html').getAttribute('class');
     expect(htmlClasses).toContain('light');
     expect(htmlClasses).not.toContain('dark');
+    await takeScreenshot(page, 'settings-light-mode');
   });
 
   test('Click Dark mode applies dark class to html', async ({ authenticatedWindow: page }) => {
@@ -56,6 +58,7 @@ test.describe('Settings Page', () => {
 
     const htmlClasses = await page.locator('html').getAttribute('class');
     expect(htmlClasses).toContain('dark');
+    await takeScreenshot(page, 'settings-dark-mode');
   });
 
   test('Color Theme section visible', async ({ authenticatedWindow: page }) => {
@@ -77,6 +80,7 @@ test.describe('Settings Page', () => {
 
     const dataTheme = await page.locator('html').getAttribute('data-theme');
     expect(dataTheme).toBe('ocean');
+    await takeScreenshot(page, 'settings-ocean-theme');
   });
 
   test('Switch to Forest theme sets data-theme="forest"', async ({

@@ -14,6 +14,7 @@ import {
 } from './helpers/console-collector';
 import { navigateToSidebarItem } from './helpers/navigation';
 import { waitForPageContent } from './helpers/page-helpers';
+import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Dashboard', () => {
   test('loads after login', async ({ authenticatedWindow: page }) => {
@@ -23,6 +24,7 @@ test.describe('Dashboard', () => {
     // Page should have visible content
     const bodyText = await page.locator('body').innerText();
     expect(bodyText.trim().length).toBeGreaterThan(0);
+    await takeScreenshot(page, 'dashboard-layout');
   });
 
   test('greeting header shows time-aware greeting', async ({ authenticatedWindow: page }) => {
