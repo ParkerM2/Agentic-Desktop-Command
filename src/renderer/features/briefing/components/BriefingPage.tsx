@@ -13,6 +13,8 @@ import {
   Sun,
 } from 'lucide-react';
 
+import { Button, EmptyState } from '@ui';
+
 import { useDailyBriefing, useGenerateBriefing, useSuggestions } from '../api/useBriefing';
 
 import { SuggestionCard } from './SuggestionCard';
@@ -56,34 +58,6 @@ function LoadingState() {
   );
 }
 
-interface EmptyStateProps {
-  isPending: boolean;
-  onGenerate: () => void;
-  onKeyDown: (event: React.KeyboardEvent) => void;
-}
-
-function EmptyState({ isPending, onGenerate, onKeyDown }: EmptyStateProps) {
-  return (
-    <div className="border-border bg-card rounded-lg border p-8 text-center">
-      <Sun className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-      <h2 className="text-foreground mb-2 text-lg font-semibold">No briefing yet</h2>
-      <p className="text-muted-foreground mb-4 text-sm">
-        Generate your daily briefing to see a summary of your tasks and suggestions.
-      </p>
-      <button
-        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
-        disabled={isPending}
-        type="button"
-        onClick={onGenerate}
-        onKeyDown={onKeyDown}
-      >
-        <RefreshCw className={`h-4 w-4 ${isPending ? 'animate-spin' : ''}`} />
-        Generate Briefing
-      </button>
-    </div>
-  );
-}
-
 export function BriefingPage() {
   const { data: briefing, isLoading: briefingLoading } = useDailyBriefing();
   const { data: suggestions } = useSuggestions();
@@ -111,9 +85,18 @@ export function BriefingPage() {
     if (!hasBriefing) {
       return (
         <EmptyState
-          isPending={generateBriefing.isPending}
-          onGenerate={handleGenerate}
-          onKeyDown={handleGenerateKeyDown}
+          description="Generate your daily briefing to see a summary of your tasks and suggestions."
+          icon={Sun}
+          title="No briefing yet"
+          action={
+            <Button
+              disabled={generateBriefing.isPending}
+              onClick={handleGenerate}
+            >
+              <RefreshCw className={`h-4 w-4 ${generateBriefing.isPending ? 'animate-spin' : ''}`} />
+              Generate Briefing
+            </Button>
+          }
         />
       );
     }

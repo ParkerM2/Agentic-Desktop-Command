@@ -180,6 +180,44 @@ All interactive primitives (Button, Input, Textarea) include subtle micro-intera
 - `active:scale-[0.98]` gives tactile press feedback; the scale is subtle enough to avoid layout shift
 - These classes live in the CVA variant definitions — do NOT add them inline in component JSX
 
+### EmptyState Pattern
+
+Use `<EmptyState>` from `@ui` for all "no data" / "no results" screens. Replaces inline empty state JSX across features.
+
+```typescript
+import { Briefcase } from 'lucide-react';
+
+import { Button, EmptyState } from '@ui';
+
+// Simple — icon + title + description
+<EmptyState
+  description="No tasks match the current filter."
+  icon={Briefcase}
+  title="No tasks found"
+/>
+
+// With action button
+<EmptyState
+  description="Generate your daily briefing to get started."
+  icon={Sun}
+  title="No briefing yet"
+  action={
+    <Button onClick={handleGenerate}>Generate Briefing</Button>
+  }
+/>
+
+// Size variants: sm (compact), md (default), lg (full-page)
+<EmptyState icon={TerminalIcon} size="sm" title="No terminal open" />
+```
+
+**Props:**
+- `icon` — Lucide icon component, rendered in a circular muted background
+- `title` — Primary heading (required)
+- `description` — Secondary text (optional)
+- `action` — Slot for button(s) below description (optional)
+- `size` — `sm` | `md` | `lg` (controls padding, icon size, text size)
+- `className` — Merged via `cn()`
+
 ## React Component Conventions
 
 ```typescript

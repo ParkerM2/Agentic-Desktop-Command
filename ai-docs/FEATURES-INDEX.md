@@ -427,6 +427,7 @@ All primitives follow the **shadcn/ui pattern**: CVA variants, `data-slot` attri
 | **1: Display** | Card | `ui/card.tsx` | `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter` — compound component, variants: default, interactive, elevated |
 | **1: Display** | Skeleton | `ui/skeleton.tsx` | `Skeleton` — pulse-animated placeholder, variants: line, circle, card |
 | **1: Display** | Spinner | `ui/spinner.tsx` | `Spinner`, `spinnerVariants` — wraps Lucide Loader2, sizes: sm, md, lg |
+| **1: Display** | EmptyState | `ui/empty-state.tsx` | `EmptyState`, `emptyStateVariants` — centered icon + title + description + action slot, sizes: sm, md, lg |
 | **1: Layout** | PageLayout | `ui/page-layout.tsx` | `PageLayout`, `PageHeader`, `PageContent` — consistent full-width page shell, mobile responsive |
 | **1: Layout** | Typography | `ui/typography.tsx` | `Heading` (h1-h4 via `as` prop), `Text` (default/muted/error/success), `Code` |
 | **1: Layout** | Grid | `ui/grid.tsx` | `Grid` — responsive CSS Grid, cols 1-12, gap variants, mobile-first |

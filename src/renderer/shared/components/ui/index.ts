@@ -35,6 +35,9 @@ export type { SkeletonProps } from './skeleton';
 export { Spinner, spinnerVariants } from './spinner';
 export type { SpinnerProps } from './spinner';
 
+export { EmptyState, emptyStateVariants } from './empty-state';
+export type { EmptyStateProps } from './empty-state';
+
 // Tier 1: Layout & Typography
 export { PageContent, PageHeader, PageLayout } from './page-layout';
 export type { PageContentProps, PageHeaderProps, PageLayoutProps } from './page-layout';
