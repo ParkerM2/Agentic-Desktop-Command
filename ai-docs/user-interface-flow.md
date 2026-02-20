@@ -244,7 +244,7 @@ After auth + onboarding, the user sees the main app shell:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  TopBar: [Project Tabs] [+] ─ [📷] [Health] [Hub] [⌘K] │
+│  TopBar: [Project Tabs] [+]                             │
 ├──────────┬──────────────────────────────────────────┤
 │ Sidebar  │  Main Content Area (<Outlet />)          │
 │          │                                          │
@@ -279,8 +279,7 @@ After auth + onboarding, the user sees the main app shell:
 |-----------|------|---------|
 | `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: sidebar + topbar + outlet + notifications |
 | `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible |
-| `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button + ScreenshotButton + Health + Hub status + command bar |
-| `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global assistant input (Cmd+K) |
+| `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button (utility buttons moved to TitleBar; CommandBar replaced by AssistantWidget) |
 | `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |
 | `AssistantWidget` | `src/renderer/features/assistant/components/AssistantWidget.tsx` | Floating chat widget (Ctrl+J toggle), renders WidgetFab + WidgetPanel |

@@ -1,8 +1,9 @@
 /**
- * TopBar — Unified top bar with project tabs and command bar
+ * TopBar — Project tabs bar
  *
- * Replaces ProjectTabBar. Left side has project tabs, right side has
- * the global command bar for assistant input.
+ * Displays open project tabs and an "Add project" button.
+ * Utility buttons (screenshot, health, hub status) live in TitleBar.
+ * The AssistantWidget (chat popup) replaces the former CommandBar.
  */
 
 import { useNavigate } from '@tanstack/react-router';
@@ -10,15 +11,10 @@ import { FolderOpen, Plus, X } from 'lucide-react';
 
 import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 
-import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
-import { ScreenshotButton } from '@features/screen';
-
-import { CommandBar } from './CommandBar';
 
 export function TopBar() {
   // 1. Hooks
@@ -90,16 +86,6 @@ export function TopBar() {
         >
           <Plus className="h-4 w-4" />
         </button>
-      </div>
-
-      {/* Right: Screenshot + Health + Hub status + Command bar */}
-      <div className="ml-2 flex shrink-0 items-center gap-2">
-        <ScreenshotButton className="scale-[0.85] origin-right" />
-        <HealthIndicator />
-        <HubStatus />
-        <div className="w-80">
-          <CommandBar />
-        </div>
       </div>
     </div>
   );
