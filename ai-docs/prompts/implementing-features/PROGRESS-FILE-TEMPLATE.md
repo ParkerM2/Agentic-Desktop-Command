@@ -1,6 +1,6 @@
 # Progress File Template
 
-> Copy this to `docs/progress/<feature-name>-progress.md` when starting a new feature.
+> Template for crash-recovery progress tracking. Used by the workflow plugin in `.claude/progress/`.
 
 ---
 

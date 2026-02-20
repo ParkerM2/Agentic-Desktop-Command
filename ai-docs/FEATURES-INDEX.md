@@ -296,6 +296,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `data-management` | Data store registry, retention settings, cleanup, usage, export/import (8 invoke + 1 event) |
 | `security` | Security settings, audit export (3 channels) |
 | `window` | Window controls (minimize, maximize, close, isMaximized) |
+| `tracker` | Plan tracker (list, get, update docs/tracker.json via IPC) |
 | `workflow` | Workflow execution |
 
 Each domain folder contains:
@@ -608,19 +609,14 @@ npm run format       # Prettier format
 | `DRAFT` | Initial write-up, not yet approved |
 | `APPROVED` | Design approved, ready for implementation |
 | `IN_PROGRESS` | Currently being implemented |
-| `BLOCKED` | Implementation blocked by external dependency |
 | `IMPLEMENTED` | Code merged and working |
-| `SUPERSEDED` | Replaced by a newer plan (see `supersededBy` field) |
-| `ABANDONED` | Decided not to implement |
-| `ARCHIVED` | Completed and moved to `doc-history/` |
+| `ARCHIVED` | Completed and removed from active tracking |
 | `TRACKING` | Living document (roadmap, etc.) — no implementation phase |
 
 ### File Organization
 
-- **Active plans**: `docs/plans/` — plans currently in backlog or in progress
-- **Active progress**: `docs/progress/` — crash-recovery files for active features
-- **Archived plans**: `doc-history/plans/` — completed/superseded plans
-- **Archived progress**: `doc-history/progress/` — progress files for completed features
+- **Plans**: `docs/plans/` — design docs for active and recently completed features
+- **Tracker**: `docs/tracker.json` — single source of truth for plan status (v2 schema)
 
 ---
 

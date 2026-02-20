@@ -321,7 +321,7 @@ When starting a new feature, the Team Lead follows this sequence:
 ```
 1. READ the design document
 2. DECOMPOSE into tasks with dependencies
-3. CREATE progress file: docs/progress/<feature>-progress.md
+3. UPDATE `docs/tracker.json`: add entry with status `IN_PROGRESS`
 4. CREATE team: TeamCreate with team_name
 5. CREATE tasks: TaskCreate for each task with descriptions + acceptance criteria
 6. SET dependencies: TaskUpdate with addBlockedBy for each task
