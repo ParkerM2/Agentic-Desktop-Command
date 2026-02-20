@@ -704,7 +704,7 @@ The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for resizable sidebar + content layout. Sidebar panel is collapsible (syncs with layout store). Layout persists to localStorage via `useDefaultLayout`. |
-| `TitleBar` | `src/renderer/app/layouts/TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement + minimize/maximize/close controls via `window.*` IPC channels. |
+| `TitleBar` | `src/renderer/app/layouts/TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement, utility buttons (screenshot, health, hub status) separated by vertical divider from minimize/maximize/close window controls via `window.*` IPC channels. |
 | `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Navigation sidebar (fills its parent panel container) |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Top bar with CommandBar trigger |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global command palette (Cmd+K) |

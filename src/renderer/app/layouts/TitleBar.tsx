@@ -2,16 +2,22 @@
  * TitleBar — Custom frameless window title bar
  *
  * Replaces the native OS title bar. Provides drag region for window
- * movement and minimize/maximize/close buttons for window controls.
+ * movement, utility buttons (screenshot, health, hub status), and
+ * minimize/maximize/close buttons for window controls.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 
 import { Minus, Square, X } from 'lucide-react';
 
+import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { Button } from '@ui';
+import { Button, Separator } from '@ui';
+
+import { HealthIndicator } from '@features/health';
+
+import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 export function TitleBar() {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -66,6 +72,16 @@ export function TitleBar() {
 
       {/* Spacer — fills remaining drag area */}
       <div className="flex-1" />
+
+      {/* Utility buttons — screenshot, health, hub status */}
+      <div className="electron-no-drag flex items-center gap-0.5 px-1">
+        <TitleBarScreenshot />
+        <HealthIndicator />
+        <HubStatus />
+      </div>
+
+      {/* Divider between utility buttons and window controls */}
+      <Separator className="mx-1 h-4" orientation="vertical" />
 
       {/* Window controls — right side */}
       <div className="electron-no-drag flex h-full items-center">
