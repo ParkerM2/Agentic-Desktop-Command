@@ -14,7 +14,7 @@ import { useLooseParams } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Spinner } from '@ui';
+import { Card, Spinner } from '@ui';
 
 import { useProjects } from '@features/projects';
 import { useLaunchTask } from '@features/workflow';
@@ -472,26 +472,28 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
     <div className="flex h-full flex-col">
       <TaskFiltersToolbar />
 
-      <div className={cn('ag-theme-quartz ag-theme-claude flex-1')}>
-        <AgGridReact<TaskOrDetail>
-          animateRows
-          suppressCellFocus
-          columnDefs={columnDefs}
-          fullWidthCellRenderer={fullWidthCellRenderer}
-          getRowClass={getRowClass}
-          getRowHeight={getRowHeight}
-          getRowId={getRowId}
-          isFullWidthRow={isFullWidthRow}
-          noRowsOverlayComponent={NoRowsOverlay}
-          rowData={rowData}
-          defaultColDef={{
-            filter: false,
-            resizable: true,
-            suppressHeaderMenuButton: true,
-          }}
-          onGridReady={onGridReady}
-        />
-      </div>
+      <Card className="min-h-0 flex-1 overflow-hidden p-0">
+        <div className={cn('ag-theme-quartz ag-theme-claude h-full')}>
+          <AgGridReact<TaskOrDetail>
+            animateRows
+            suppressCellFocus
+            columnDefs={columnDefs}
+            fullWidthCellRenderer={fullWidthCellRenderer}
+            getRowClass={getRowClass}
+            getRowHeight={getRowHeight}
+            getRowId={getRowId}
+            isFullWidthRow={isFullWidthRow}
+            noRowsOverlayComponent={NoRowsOverlay}
+            rowData={rowData}
+            defaultColDef={{
+              filter: false,
+              resizable: true,
+              suppressHeaderMenuButton: true,
+            }}
+            onGridReady={onGridReady}
+          />
+        </div>
+      </Card>
     </div>
   );
 }

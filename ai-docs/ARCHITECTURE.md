@@ -678,7 +678,7 @@ Every 30s: deviceService.sendHeartbeat(deviceId)
 
 The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 
-- **TaskDataGrid** — Main grid component with column definitions, row selection, and sorting
+- **TaskDataGrid** — Main grid component wrapped in `<Card>` from `@ui` for consistent container styling, with column definitions, row selection, and sorting
 - **Cell renderers** — 12 custom cell renderers (StatusBadge, ProgressBar, ActivitySparkline, Agent, PrStatus, Cost, Priority, Actions, ExpandToggle, Workspace, Title, RelativeTime)
 - **Detail rows** — DIY master/detail via `isFullWidthRow` + `fullWidthCellRenderer` (Community workaround for Enterprise-only feature)
 - **TaskFiltersToolbar** — Filter controls above the grid
