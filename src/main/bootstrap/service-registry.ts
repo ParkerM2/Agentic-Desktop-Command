@@ -82,6 +82,7 @@ import { createSpotifyService } from '../services/spotify/spotify-service';
 import { createGithubImporter, createTaskDecomposer, createTaskRepository } from '../services/tasks';
 import { createTerminalService } from '../services/terminal/terminal-service';
 import { createTimeParserService } from '../services/time-parser/time-parser-service';
+import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createHotkeyManager } from '../tray/hotkey-manager';
@@ -484,6 +485,9 @@ export function createServiceRegistry(
   const progressDir = join(dataDir, 'progress');
   const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
 
+  // ─── Tracker service (reads/writes docs/tracker.json) ────────
+  const trackerService = createTrackerService(process.cwd());
+
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
     agentOrchestrator,
@@ -535,6 +539,7 @@ export function createServiceRegistry(
     oauthManager,
     codebaseAnalyzer,
     setupPipeline,
+    trackerService,
     dataDir,
     providers,
     tokenStore,

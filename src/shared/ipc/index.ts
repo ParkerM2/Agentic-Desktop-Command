@@ -56,6 +56,7 @@ import { settingsInvoke } from './settings';
 import { spotifyInvoke } from './spotify';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents, tasksInvoke } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
+import { trackerInvoke } from './tracker';
 import { windowInvoke } from './window';
 import { workflowInvoke } from './workflow';
 
@@ -105,6 +106,7 @@ export const ipcInvokeContract = {
   ...securityInvoke,
   ...dataManagementInvoke,
   ...windowInvoke,
+  ...trackerInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -394,3 +396,5 @@ export {
 export { TerminalSessionSchema } from './terminals';
 
 export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './window';
+
+export { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './tracker';
