@@ -162,6 +162,24 @@ function SettingsPage() {
 | Link-style | `variant="link"` |
 | Icon-only | `variant="ghost" size="icon"` |
 
+### Micro-Interaction Conventions
+
+All interactive primitives (Button, Input, Textarea) include subtle micro-interactions for a polished feel:
+
+| Interaction | Class | Applied To |
+|-------------|-------|------------|
+| Smooth transitions | `transition-all duration-150` | Button, Input, Textarea (base) |
+| Press feedback | `active:scale-[0.98]` | Button (base) |
+| Focus ring offset | `focus-visible:ring-offset-2` | Button (base) |
+| Focus shadow | `focus-visible:shadow-sm` | Input, Textarea (base) |
+| Hover elevation | `hover:shadow-sm` | Button `primary` and `secondary` variants only |
+
+**Rules:**
+- `transition-all duration-150` replaces `transition-colors` for smoother multi-property transitions
+- `hover:shadow-sm` is intentionally limited to `primary` and `secondary` variants — ghost, link, destructive, and outline should NOT have hover shadows
+- `active:scale-[0.98]` gives tactile press feedback; the scale is subtle enough to avoid layout shift
+- These classes live in the CVA variant definitions — do NOT add them inline in component JSX
+
 ## React Component Conventions
 
 ```typescript

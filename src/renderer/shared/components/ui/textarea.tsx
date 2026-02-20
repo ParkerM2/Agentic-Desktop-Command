@@ -7,7 +7,7 @@ import type { VariantProps } from 'class-variance-authority';
 // ─── Variants (ALL Tailwind lives here) ─────────────────
 
 const textareaVariants = cva(
-  'flex min-h-[60px] w-full rounded-md border bg-background px-3 py-2 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+  'flex min-h-[60px] w-full rounded-md border bg-background px-3 py-2 text-sm transition-all duration-150 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-sm disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
