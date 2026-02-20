@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-02-20",
+  "lastUpdated": "2026-02-21",
   "plans": {
     "future-roadmap": {
       "title": "Future Roadmap",
@@ -51,6 +51,16 @@
       "branch": "feature/tracking-consolidation",
       "pr": null,
       "tags": ["tracking", "infrastructure", "cleanup"]
+    },
+    "ui-layout-refactor": {
+      "title": "UI Layout Refactor",
+      "status": "IMPLEMENTED",
+      "planFile": "docs/features/ui-layout-refactor/plan.md",
+      "created": "2026-02-20",
+      "statusChangedAt": "2026-02-21",
+      "branch": "feature/ui-layout-refactor",
+      "pr": null,
+      "tags": ["ui", "refactor", "sidebar", "settings", "ag-grid"]
     }
   }
 }
