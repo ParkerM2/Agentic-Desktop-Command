@@ -1,7 +1,9 @@
 /* AG-Grid theme overrides using ADC design system tokens.
-   All colors reference CSS custom properties — zero hardcoded values. */
+   All colors reference CSS custom properties — zero hardcoded values.
+   Compound selector (.ag-theme-quartz.ag-theme-claude) ensures our
+   design-system overrides beat the default quartz theme specificity. */
 
-.ag-theme-claude {
+.ag-theme-quartz.ag-theme-claude {
   /* ── Core colors ── */
   --ag-background-color: var(--card);
   --ag-foreground-color: var(--foreground);
@@ -37,4 +39,10 @@
   --ag-header-height: 40px;
   --ag-row-height: 44px;
   --ag-icon-size: 14px;
+}
+
+/* ── Detail row override ──
+   Ensures expanded detail rows have consistent bg with the card container. */
+.ag-theme-quartz.ag-theme-claude .ag-full-width-row-detail {
+  background-color: var(--card);
 }

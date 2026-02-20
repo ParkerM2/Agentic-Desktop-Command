@@ -743,11 +743,12 @@ The `AssistantWidget` provides a floating chat interface accessible from any pag
 ### Verification Commands (ALL MUST PASS)
 
 ```bash
-# Run before ANY completion claim. All 5 must pass.
+# Run before ANY completion claim. All 6 must pass.
 npm run lint         # Zero violations
 npm run typecheck    # Zero errors
 npm run test         # All tests pass
 npm run build        # Builds successfully
+npm run test:e2e     # E2E tests pass (playwright + electron — requires build)
 npm run check:docs   # Documentation updated for source changes
 ```
 

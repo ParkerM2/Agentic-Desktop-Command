@@ -56,11 +56,12 @@ PLAN ──▶ TRACK ──▶ ASSIGN ──▶ BUILD+DOCS ──▶ TEST ──
 **At EVERY transition, the test suite MUST pass:**
 
 ```bash
-# These 5 commands MUST pass before ANY completion claim
+# These 6 commands MUST pass before ANY completion claim
 npm run lint         # Zero violations
 npm run typecheck    # Zero errors
 npm run test         # All tests pass
 npm run build        # Builds successfully
+npm run test:e2e     # E2E tests pass (playwright + electron — requires build)
 npm run check:docs   # Documentation updated for source changes
 ```
 

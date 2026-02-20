@@ -104,7 +104,8 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
       filtered = filtered.filter(
         (t) =>
           t.title.toLowerCase().includes(lower) ||
-          t.description.toLowerCase().includes(lower),
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Hub data may omit description at runtime
+          (t.description ?? '').toLowerCase().includes(lower),
       );
     }
 
@@ -469,10 +470,10 @@ export function TaskDataGrid({ projectId: projectIdProp }: TaskDataGridProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col gap-3 p-4">
       <TaskFiltersToolbar />
 
-      <Card className="min-h-0 flex-1 overflow-hidden p-0">
+      <Card className="border-border bg-card min-h-0 flex-1 overflow-hidden rounded-lg border">
         <div className={cn('ag-theme-quartz ag-theme-claude h-full')}>
           <AgGridReact<TaskOrDetail>
             animateRows

@@ -19,19 +19,20 @@ Files Modified: ___
 
 ## Automated Checks — MANDATORY TEST GATE (QA Agent runs ALL of these)
 
-> **⚠️ ALL FIVE CHECKS MUST PASS. This is not optional. Skipping = automatic FAIL.**
+> **⚠️ ALL SIX CHECKS MUST PASS. This is not optional. Skipping = automatic FAIL.**
 
 - [ ] `npm run lint` — zero violations
 - [ ] `npm run typecheck` — zero errors (equivalent to `npx tsc --noEmit`)
 - [ ] `npm run test` — **ALL tests pass (unit + integration) — NO SKIPPING**
 - [ ] `npm run build` — builds successfully
+- [ ] `npm run test:e2e` — E2E tests pass (playwright + electron — requires build)
 - [ ] `npm run check:docs` — documentation updated for source changes
 
 ### Test Verification Protocol
 
 ```bash
 # Run this exact command sequence. All must pass.
-npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs
+npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs
 ```
 
 **If ANY command fails:**

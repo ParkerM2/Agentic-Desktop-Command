@@ -10,6 +10,7 @@ release/
 .env
 .env.*
 !.env.example
+!.env.test.example
 .mcp.json
 settings.json
 

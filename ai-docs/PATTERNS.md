@@ -527,6 +527,47 @@ For branded buttons that need a dark appearance on light backgrounds and vice ve
 <Button className="bg-[#24292f] text-white hover:bg-[#24292f]/90">
 ```
 
+## AG-Grid Theming Pattern
+
+AG-Grid v35 uses the quartz theme with design-system token overrides. The theme CSS lives at `src/renderer/features/tasks/components/grid/ag-grid-theme.css` and is imported in `globals.css`.
+
+### How It Works
+
+1. **Base theme**: `ag-theme-quartz` (imported from `ag-grid-community/styles/`)
+2. **Override class**: `ag-theme-claude` stacked with quartz for compound specificity
+3. **CSS variables**: `--ag-*` properties mapped to design system tokens (`var(--card)`, `var(--foreground)`, etc.)
+4. **Interactive states**: Use `color-mix()` for hover/selection (NEVER hardcode hex/rgb)
+
+### CSS Selector Pattern
+
+```css
+/* Compound selector ensures overrides beat quartz defaults */
+.ag-theme-quartz.ag-theme-claude {
+  --ag-background-color: var(--card);
+  --ag-foreground-color: var(--foreground);
+  --ag-header-background-color: var(--muted);
+  --ag-row-hover-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  /* ... */
+}
+```
+
+### Component Usage
+
+```tsx
+<Card className="border-border bg-card min-h-0 flex-1 overflow-hidden rounded-lg border">
+  <div className={cn('ag-theme-quartz ag-theme-claude h-full')}>
+    <AgGridReact ... />
+  </div>
+</Card>
+```
+
+### Rules
+- **ALWAYS** use compound selector `.ag-theme-quartz.ag-theme-claude` (not `.ag-theme-claude` alone)
+- **ALWAYS** wrap grid in `<Card>` from `@ui` for visual containment
+- **NEVER** hardcode colors in the theme CSS -- use `var()` and `color-mix()` only
+- **ALWAYS** add `?? []` fallback when passing `task.subtasks` to child components
+- **ALWAYS** add `?? ''` fallback when accessing `task.description` in search/filter logic
+
 ## Security — Secret Storage Pattern
 
 All secrets (OAuth credentials, webhook secrets, API keys) MUST be encrypted using Electron's `safeStorage` API.
@@ -906,6 +947,50 @@ Custom animation utility classes live **outside** the `@theme` block in `globals
 - Tailwind v4 animations registered inside `@theme` (e.g., `--animate-slide-up`) use the `animate-*` utility directly
 - Custom animations outside `@theme` need explicit `.animate-*` class definitions
 - Always use `color-mix(in srgb, var(--token), transparent)` for semi-transparent effects in animations
+
+## Sidebar Collapse Pattern
+
+The sidebar uses `react-resizable-panels` with bidirectional sync between the panel and the layout store.
+
+**Key configuration** in `RootLayout.tsx`:
+```tsx
+<Panel
+  collapsible
+  collapsedSize="56px"    // Icon-only strip width — NOT "0%" (that hides the sidebar entirely)
+  defaultSize="208px"
+  minSize="56px"          // Matches collapsedSize so drag-to-collapse works
+  panelRef={sidebarPanelRef}
+>
+```
+
+**Collapse detection** — use `panel.isCollapsed()`, NOT layout size comparison:
+```tsx
+const handleLayoutChanged = useCallback(
+  (layout: Record<string, number>) => {
+    onLayoutChanged(layout);
+    setPanelLayout(layout);
+    // Use imperative API — layout values are flexGrow numbers, not px/% sizes
+    const collapsed = sidebarPanelRef.current?.isCollapsed() ?? false;
+    setSidebarCollapsed(collapsed);
+  },
+  [onLayoutChanged, setPanelLayout, setSidebarCollapsed, sidebarPanelRef],
+);
+```
+
+**Store-to-panel sync** — `useEffect` watches `sidebarCollapsed` and calls `panel.collapse()` / `panel.expand()`:
+```tsx
+useEffect(() => {
+  const panel = sidebarPanelRef.current;
+  if (!panel) return;
+  if (sidebarCollapsed && !panel.isCollapsed()) panel.collapse();
+  else if (!sidebarCollapsed && panel.isCollapsed()) panel.expand();
+}, [sidebarCollapsed, sidebarPanelRef]);
+```
+
+Rules:
+- `collapsedSize` MUST match `minSize` so the sidebar snaps to icon-only when dragged to minimum
+- Always use `panel.isCollapsed()` to detect collapsed state — never compare flexGrow values
+- The `Sidebar` component reads `sidebarCollapsed` from `useLayoutStore` to conditionally render labels
 
 ## Agent Orchestrator Pattern
 

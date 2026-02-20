@@ -62,11 +62,11 @@ export function RootLayout() {
       onLayoutChanged(layout);
       setPanelLayout(layout);
 
-      // Sync collapsed state: if sidebar panel is at collapsed size (0%), mark as collapsed
-      const sidebarSize = layout[SIDEBAR_PANEL_ID] ?? 0;
-      setSidebarCollapsed(sidebarSize === 0);
+      // Sync collapsed state using the panel's imperative API
+      const collapsed = sidebarPanelRef.current?.isCollapsed() ?? false;
+      setSidebarCollapsed(collapsed);
     },
-    [onLayoutChanged, setPanelLayout, setSidebarCollapsed],
+    [onLayoutChanged, setPanelLayout, setSidebarCollapsed, sidebarPanelRef],
   );
 
   // When sidebarCollapsed changes from external toggle, sync to panel
@@ -132,7 +132,7 @@ export function RootLayout() {
       >
         <Panel
           collapsible
-          collapsedSize="0%"
+          collapsedSize="56px"
           defaultSize="208px"
           id={SIDEBAR_PANEL_ID}
           maxSize="300px"

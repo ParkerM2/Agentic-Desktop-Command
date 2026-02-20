@@ -132,7 +132,8 @@ export function TaskDetailRow({ task, onApproveAndExecute, onRejectPlan, onReque
       <div className="mb-4 grid grid-cols-3 gap-6">
         {/* Left: Subtasks */}
         <div className="min-w-0">
-          <SubtaskList subtasks={task.subtasks} />
+          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Hub data may omit subtasks at runtime */}
+          <SubtaskList subtasks={task.subtasks ?? []} />
         </div>
 
         {/* Center: Execution Log */}
