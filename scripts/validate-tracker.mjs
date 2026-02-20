@@ -7,7 +7,7 @@ import { join, resolve } from 'node:path';
  * 5 checks:
  *   1. Schema validation (required fields, valid status enum)
  *   2. File existence (planFile paths exist on disk)
- *   3. Orphan detection (every .md in docs/plans/ is tracked)
+ *   3. Orphan detection (every folder in docs/features/ is tracked)
  *   4. Staleness warning (APPROVED entries older than 7 days)
  *   5. Archive candidates (IMPLEMENTED entries older than 14 days)
  *
@@ -117,14 +117,15 @@ const entries = Object.entries(plans);
     }
   }
 
-  // Check docs/plans/
-  const plansDir = join(ROOT, 'docs', 'plans');
-  if (existsSync(plansDir)) {
-    const planFiles = readdirSync(plansDir).filter((f) => f.endsWith('.md'));
-    for (const file of planFiles) {
-      const relativePath = `docs/plans/${file}`;
-      if (!trackedFiles.has(relativePath)) {
-        console.warn(`  WARN: Orphan plan file not tracked: ${relativePath}`);
+  // Check docs/features/ — each subfolder should have a matching tracker key
+  const featuresDir = join(ROOT, 'docs', 'features');
+  if (existsSync(featuresDir)) {
+    const featureSlugs = readdirSync(featuresDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+    for (const slug of featureSlugs) {
+      if (!plans[slug]) {
+        console.warn(`  WARN: Orphan feature folder not tracked: docs/features/${slug}/`);
         orphanCount++;
       }
     }

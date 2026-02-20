@@ -40,7 +40,7 @@
 |------|----------|------|
 | `tracker.json` | `docs/tracker.json` | Single source of truth for plan status. MUST be updated when plans change status. |
 | `validate-tracker.mjs` | `scripts/validate-tracker.mjs` | Validation script — do not move. |
-| Active plans | `docs/plans/` | Plans with status DRAFT, APPROVED, IN_PROGRESS, TRACKING |
+| Active plans | `docs/features/<slug>/plan.md` | Plans with status DRAFT, APPROVED, IN_PROGRESS, TRACKING |
 
 **Cleanup rules:**
 - Plans for features with status `IMPLEMENTED` that are older than 14 days should be deleted and their tracker entry removed

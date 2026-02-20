@@ -188,7 +188,7 @@ function isSrcFile(file) {
 function isDocFile(file) {
   return (
     file.startsWith('ai-docs/') ||
-    file.startsWith('docs/plans/') ||
+    file.startsWith('docs/features/') ||
     file.startsWith('.claude/agents/') ||
     file === 'docs/tracker.json' ||
     file === 'CLAUDE.md'

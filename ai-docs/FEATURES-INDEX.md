@@ -615,7 +615,7 @@ npm run format       # Prettier format
 
 ### File Organization
 
-- **Plans**: `docs/plans/` — design docs for active and recently completed features
+- **Plans**: `docs/features/<slug>/plan.md` — design docs for active and recently completed features
 - **Tracker**: `docs/tracker.json` — single source of truth for plan status (v2 schema)
 
 ---

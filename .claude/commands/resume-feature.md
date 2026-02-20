@@ -87,7 +87,7 @@ Based on your analysis:
 - Check if a plan file was partially written
 - If yes, review and complete it
 - If no, start the planning process fresh using the `/plan-feature` approach
-- Write the plan to `docs/plans/<feature-slug>-plan.md`
+- Write the plan to `docs/features/<feature-slug>/plan.md`
 
 ### If resuming an execution phase:
 - Identify which tasks from the plan are complete vs incomplete

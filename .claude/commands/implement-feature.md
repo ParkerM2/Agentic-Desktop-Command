@@ -28,7 +28,7 @@ MANDATORY READS:
 
 If a design document exists, read it too:
 ```
-docs/plans/<feature-name>.md
+docs/features/<feature-name>/plan.md
 ```
 
 ---
@@ -188,9 +188,8 @@ When ALL tasks have QA PASS:
 
 ## Phase 9: Cleanup
 
-- Update `docs/progress/<feature>-progress.md` → status: COMPLETE
-- Update `docs/plans/<design-doc>.md` → status: IMPLEMENTED
-- Move design doc to `doc-history/` if requested
+- Update `docs/tracker.json → status: IMPLEMENTED
+- Update `docs/features/<slug>/plan.md` → status: IMPLEMENTED
 - Clean up worktrees: `git worktree remove <path>`
 - Report completion summary to user
 

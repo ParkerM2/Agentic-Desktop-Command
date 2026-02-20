@@ -5,7 +5,7 @@
     "future-roadmap": {
       "title": "Future Roadmap",
       "status": "TRACKING",
-      "planFile": "docs/plans/2026-02-16-future-roadmap.md",
+      "planFile": "docs/features/future-roadmap/plan.md",
       "created": "2026-02-16",
       "statusChangedAt": "2026-02-16",
       "branch": null,
@@ -15,7 +15,7 @@
     "separation-of-concerns": {
       "title": "Codebase Separation of Concerns",
       "status": "IMPLEMENTED",
-      "planFile": "docs/plans/2026-02-16-codebase-separation-of-concerns-design.md",
+      "planFile": "docs/features/separation-of-concerns/plan.md",
       "created": "2026-02-16",
       "statusChangedAt": "2026-02-19",
       "branch": null,

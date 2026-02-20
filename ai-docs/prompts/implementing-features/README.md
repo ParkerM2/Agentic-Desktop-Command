@@ -108,7 +108,7 @@ Progress is tracked via the team's TaskList and the `.claude/progress/` runtime 
 **Status**: IN_PROGRESS | BLOCKED | QA_REVIEW | INTEGRATING | COMPLETE
 **Team**: <team-name>
 **Branch**: feature/<feature-name>
-**Design Doc**: docs/plans/<design-doc>.md
+**Design Doc**: docs/features/<slug>/plan.md
 **Started**: <ISO timestamp>
 **Last Updated**: <ISO timestamp>
 

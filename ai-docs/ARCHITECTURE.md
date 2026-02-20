@@ -857,4 +857,4 @@ For exploratory testing, the AI QA agent uses MCP Electron tools to interact wit
 - Reads console logs for error detection
 - Follows natural language test scenarios in `tests/qa-scenarios/`
 
-See `docs/plans/2026-02-14-test-suite-design.md` for the full testing strategy.
+See the test suite design document for the full testing strategy.

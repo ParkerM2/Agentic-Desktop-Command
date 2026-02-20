@@ -11,7 +11,7 @@
 **Team**: <team-name>
 **Base Branch**: master
 **Feature Branch**: feature/<feature-name>
-**Design Doc**: docs/plans/<design-doc>.md
+**Design Doc**: docs/features/<slug>/plan.md
 **Started**: <YYYY-MM-DD HH:MM>
 **Last Updated**: <YYYY-MM-DD HH:MM>
 **Updated By**: <agent name or "team-lead">

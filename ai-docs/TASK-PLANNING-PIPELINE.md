@@ -33,7 +33,7 @@ Agent writes plan file → exits
   ▼
 event-wiring.ts detects plan file
   │  ├── Scan log for PLAN_FILE:<path> marker
-  │  └── Fallback: scan docs/plans/*-plan.md (most recent)
+  │  └── Fallback: scan docs/features/*/plan.md (most recent)
   │
   ▼
 taskRepository: planning → plan_ready (local + Hub mirror)
@@ -164,7 +164,7 @@ Contract source: `src/shared/ipc/agents/contract.ts`
 When a planning-phase agent completes (exit code 0), `event-wiring.ts` runs `detectPlanFile()`:
 
 1. **Strategy 1 — Log marker:** Scans the agent's log file (last line first) for `PLAN_FILE:<relative-path>`. The `/plan-feature` command is instructed to output this marker.
-2. **Strategy 2 — Filesystem fallback:** Scans `docs/plans/` for files matching `*-plan.md`, sorted reverse-alphabetically (most recent first).
+2. **Strategy 2 — Filesystem fallback:** Scans `docs/features/` for subdirectories containing `plan.md`, sorted reverse-alphabetically (most recent first).
 
 If found:
 - Reads the plan file content
@@ -230,9 +230,9 @@ For Claude instances and developers working **on** the application:
 - `CODEBASE-GUARDIAN.md` — Structural rules
 - `user-interface-flow.md` — UX flow and gap analysis
 
-### Runtime Docs (`.claude/commands/`, `docs/plans/`)
+### Runtime Docs (`.claude/commands/`, `docs/features/`)
 Used **by** the application at runtime (Claude CLI reads these):
 - `.claude/commands/plan-feature.md` — Planning agent instructions
 - `.claude/commands/resume-feature.md` — Resume agent instructions
 - `.claude/commands/implement-feature.md` — Execution agent instructions
-- `docs/plans/*-plan.md` — Generated plan files (output of planning agents)
+- `docs/features/<slug>/plan.md` — Generated plan files (output of planning agents)

@@ -37,7 +37,7 @@ interface EventWiringDeps {
  *
  * Checks two locations in order:
  * 1. The agent's log file for a `PLAN_FILE:<path>` output line
- * 2. The `docs/plans/` directory for recently created `*-plan.md` files
+ * 2. The `docs/features/` directory for subdirectories containing `plan.md`
  *
  * Returns `{ filePath, content }` or `null` if no plan file found.
  */
@@ -67,18 +67,23 @@ function detectPlanFile(
     // Log may be gone if cleanup ran first — continue to fallback
   }
 
-  // Strategy 2: Scan docs/plans/ for *-plan.md files (most recent first)
-  const plansDir = join(projectPath, 'docs', 'plans');
+  // Strategy 2: Scan docs/features/ for subdirectories containing plan.md (most recent first)
+  const featuresDir = join(projectPath, 'docs', 'features');
   try {
-    if (existsSync(plansDir)) {
-      const planFiles = readdirSync(plansDir)
-        .filter((f) => f.endsWith('-plan.md'))
+    if (existsSync(featuresDir)) {
+      const featureDirs = readdirSync(featuresDir, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name)
         .sort()
         .reverse();
 
-      if (planFiles.length > 0) {
-        const filePath = `docs/plans/${planFiles[0]}`;
-        const fullPath = join(plansDir, planFiles[0]);
+      const dirWithPlan = featureDirs.find((d) =>
+        existsSync(join(featuresDir, d, 'plan.md')),
+      );
+
+      if (dirWithPlan) {
+        const filePath = `docs/features/${dirWithPlan}/plan.md`;
+        const fullPath = join(featuresDir, dirWithPlan, 'plan.md');
         return {
           filePath,
           content: readFileSync(fullPath, 'utf-8'),

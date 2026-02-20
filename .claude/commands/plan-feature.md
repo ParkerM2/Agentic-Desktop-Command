@@ -87,10 +87,10 @@ Identify which tasks can run **in parallel** (no shared files).
 
 ## Phase 5: Write the Plan
 
-Write the complete plan to: `docs/plans/<feature-slug>-plan.md`
+Write the complete plan to: `docs/features/<feature-slug>/plan.md`
 
 The feature slug should be derived from the description: lowercase, hyphens, no special chars.
-Example: "Add user authentication" becomes `docs/plans/add-user-authentication-plan.md`
+Example: "Add user authentication" becomes `docs/features/add-user-authentication/plan.md`
 
 ### Plan File Format
 
@@ -145,7 +145,8 @@ After writing the plan file, output the **absolute file path** as the very last 
 
 Example final line:
 ```
-PLAN_FILE:docs/plans/add-user-authentication-plan.md
+PLAN_FILE:docs/features/add-user-authentication/plan.md
+nAlso add a tracker entry to `docs/tracker.json` with the slug as key and status `DRAFT`.
 ```
 
 ---
