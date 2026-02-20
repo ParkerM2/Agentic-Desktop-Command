@@ -6,6 +6,39 @@
 
 ---
 
+## Priority 0 — User-Reported UX Fixes
+
+> These came from hands-on testing during Sprint 1 and are higher priority than the feature hardening work below.
+
+### P0-1. Persist Auth Session (safeStorage)
+- [ ] Store refresh token in Electron `safeStorage` (encrypted at rest)
+- [ ] On app launch, check for stored refresh token and silently exchange for new access token
+- [ ] Only show login page if refresh token is missing or expired
+- [ ] Clear stored token on explicit logout
+- **Why:** Users currently have to re-sign-in every time the app restarts. The main process owns auth tokens but they live only in memory — they're lost on restart.
+- **Files:** `src/main/services/auth/auth-service.ts`, `src/main/bootstrap/lifecycle.ts`
+- **Ref:** Gap analysis G-20 (plaintext API keys), Sprint 1 T2 (auth refresh hardening)
+
+### P0-2. Route All GitHub Through gh CLI
+- [ ] Replace API token-based GitHub calls with `gh` CLI subprocess calls
+- [ ] GitHub page should detect `gh auth status` and show connection state
+- [ ] All GitHub features (repos, issues, PRs, status) route through `gh api` calls
+- [ ] Remove or deprecate the manual API token configuration in Settings > OAuth
+- **Why:** The GitHub page isn't connecting or filling out info. The previous API token system is unreliable — `gh` CLI handles auth, rate limits, and enterprise configs natively.
+- **Files:** `src/main/services/github/github-service.ts`, `src/main/ipc/handlers/github-handlers.ts`, GitHub feature components
+- **Ref:** Gap analysis 1g (GitHub issue creation UI), 2g (`github.createIssue` unused)
+
+### P0-3. AG-Grid Card Wrapper + Custom Theme Tokens
+- [ ] Wrap AG-Grid instances in `@ui/Card` component for consistent container styling
+- [ ] Create AG-Grid theme token mapping that pulls from CSS custom properties (`--primary`, `--foreground`, `--border`, etc.)
+- [ ] AG-Grid header, row, selection, and accent colors adapt to active color theme
+- [ ] Ensure dark/light mode + all color themes work correctly
+- **Why:** AG-Grid currently uses its own default theme which doesn't match the app's design system. It looks out of place.
+- **Files:** `src/renderer/features/tasks/components/TaskDataGrid.tsx`, `src/renderer/styles/globals.css` (AG-Grid overrides)
+- **Ref:** Design system conventions in CLAUDE.md (never hardcode RGBA, use `color-mix()` with `var()`)
+
+---
+
 ## Focus Areas
 
 ### 1. Ideation & Brainstorming

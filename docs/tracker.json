@@ -392,6 +392,19 @@
       "commit": null,
       "supersededBy": null,
       "tags": ["sprint", "hardening", "e2e-pipeline", "git", "auth", "tasks"]
+    },
+    "sprint-2-feature-hardening": {
+      "title": "Sprint 2: Feature Hardening",
+      "status": "PLANNED",
+      "planFile": "docs/sprints/sprint-2-feature-hardening.md",
+      "progressFile": null,
+      "created": "2026-02-20",
+      "statusChangedAt": "2026-02-20",
+      "branch": null,
+      "pr": null,
+      "commit": null,
+      "supersededBy": null,
+      "tags": ["sprint", "feature-hardening", "auth", "github", "ag-grid", "ux"]
     }
   }
 }

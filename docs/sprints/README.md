@@ -4,8 +4,8 @@
 
 | Sprint | Theme | Status |
 |--------|-------|--------|
-| [Sprint 0.5](./sprint-0.5-design-system.md) | Design System Foundation (UI primitives + forms) | NOT STARTED |
-| [Sprint 1](./sprint-1-core-hardening.md) | Core Hardening (install → task → PR) | NOT STARTED |
+| [Sprint 0.5](./sprint-0.5-design-system.md) | Design System Foundation (UI primitives + forms) | COMPLETE |
+| [Sprint 1](./sprint-1-core-hardening.md) | Core Hardening (install → task → PR) | COMPLETE |
 | [Sprint 2](./sprint-2-feature-hardening.md) | Feature Hardening (non-core features) | NOT STARTED |
 | [Sprint 3](./sprint-3-ux-ui.md) | UX/UI (layout decomposition + themes) | NOT STARTED |
 | [Sprint 4](./sprint-4-touch-up.md) | Touch Up (custom assets + beta testing) | NOT STARTED |
