@@ -892,22 +892,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--muted-foreground);
-  opacity: 0.3;
+  background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
   border-radius: var(--radius-full);
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  opacity: 0.5;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(134, 143, 151, 0.3);
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: rgba(134, 143, 151, 0.5);
+  background: color-mix(in srgb, var(--muted-foreground) 50%, transparent);
 }
 
 /* ============================================
