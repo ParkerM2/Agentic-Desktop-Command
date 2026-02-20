@@ -92,8 +92,8 @@ User opens app
   → Router resolves / → redirect to /dashboard
   → AuthGuard.tsx renders (wraps all authenticated routes)
   → useAuthInit() runs (src/renderer/features/auth/hooks/useAuthEvents.ts)
-    → Checks localStorage for stored auth (key: "adc-auth")
-    → Nothing found → setInitializing(false)
+    → Calls ipc('auth.restore', {}) — main process checks encrypted TokenStore
+    → No stored tokens → returns { restored: false } → clearAuth(), setInitializing(false)
   → isAuthenticated = false, isInitializing = false
   → AuthGuard redirects to /login
   → /login beforeLoad: async hub check via ipc('hub.getConfig', {})
@@ -149,18 +149,17 @@ Same as registration but with `auth.login` channel, POST to `/api/auth/login`, a
 
 ```
 User opens app with stored session
-  → AuthGuard renders, isInitializing = true (stored tokens found)
+  → AuthGuard renders, isInitializing = true (stored tokens found in localStorage cache)
   → Shows loading spinner
   → useAuthInit() runs:
-    → Calls ipc('auth.me', {}) to validate access token
-    → SUCCESS → setUser(), setInitializing(false) → AuthGuard renders <Outlet />
-    → FAIL → attempts ipc('auth.refresh', { refreshToken })
-      → SUCCESS → updateTokens(), retry auth.me, setInitializing(false)
-      → FAIL → clearAuth() → redirect to /login
+    → Calls ipc('auth.restore', {}) — main process checks encrypted TokenStore
+    → Has refreshToken → refreshes via Hub → returns { restored: true, user, tokens }
+    → SUCCESS → setAuth(user, tokens), setExpiresAt(), setInitializing(false) → AuthGuard renders <Outlet />
+    → FAIL (no token or refresh failed) → returns { restored: false } → clearAuth() → redirect to /login
 ```
 
-**IPC channels**: `auth.me`, `auth.refresh`
-**Hub endpoints**: GET `/api/auth/me`, POST `/api/auth/refresh`
+**IPC channels**: `auth.restore`
+**Hub endpoints**: POST `/api/auth/refresh` (called by main process internally)
 
 ### 2.5 Token Refresh
 
@@ -169,9 +168,9 @@ User opens app with stored session
 - On timer fire: calls `useRefreshToken().mutate()` → updates `expiresAt` → timer reschedules
 - On refresh failure: `clearAuth()` → redirect to login
 - Hook mounted in `AuthGuard.tsx` (runs for all authenticated pages)
-- Fallback: `useAuthInit()` handles refresh on app start for expired tokens
+- Startup restore: `useAuthInit()` calls `auth.restore` IPC — main process refreshes via encrypted TokenStore
 - Main process is authoritative token owner (stores in TokenStore via `hub-auth-service.ts`)
-- Renderer stores copy in localStorage for quick startup check
+- Renderer stores copy in localStorage as cache; actual session restore comes from main process
 
 **Key files**:
 - `src/renderer/features/auth/hooks/useTokenRefresh.ts` — proactive timer hook

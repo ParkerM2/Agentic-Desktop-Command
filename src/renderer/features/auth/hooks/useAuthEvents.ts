@@ -1,5 +1,9 @@
 /**
  * Auth event hooks — session restoration and auth lifecycle
+ *
+ * On app startup, calls `auth.restore` IPC channel to ask the main process
+ * to restore the session from its encrypted token store. If successful,
+ * populates the auth store. If not, redirects to login.
  */
 
 import { useEffect, useRef } from 'react';
@@ -12,19 +16,22 @@ import { authKeys } from '../api/queryKeys';
 import { useAuthStore } from '../store';
 
 /**
- * Restores auth session from stored tokens on app startup.
+ * Restores auth session from the main process encrypted token store.
  *
- * Checks if tokens are persisted in localStorage (via the store's initial state),
- * then attempts to validate the session by calling auth.me. If the session is
- * invalid, attempts a token refresh. If both fail, clears stored auth.
+ * Calls `auth.restore` IPC — the main process checks its encrypted
+ * TokenStore for a stored refresh token, refreshes via Hub, and returns
+ * a discriminated union: `{ restored: true, user, tokens }` or
+ * `{ restored: false }`.
  *
- * Call this once at the app root level.
+ * If the user is already authenticated (e.g., from a manual login during
+ * this session), the restore is skipped.
+ *
+ * Call this once at the app root level (AuthGuard).
  */
 export function useAuthInit(): void {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const refreshToken = useAuthStore((s) => s.refreshToken);
-  const setUser = useAuthStore((s) => s.setUser);
-  const updateTokens = useAuthStore((s) => s.updateTokens);
+  const isInitializing = useAuthStore((s) => s.isInitializing);
+  const setAuth = useAuthStore((s) => s.setAuth);
   const setExpiresAt = useAuthStore((s) => s.setExpiresAt);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const setInitializing = useAuthStore((s) => s.setInitializing);
@@ -33,39 +40,28 @@ export function useAuthInit(): void {
 
   useEffect(() => {
     if (hasRun.current) return;
-
-    if (!isAuthenticated) {
-      setInitializing(false);
-      return;
-    }
-
     hasRun.current = true;
+
+    // Already authenticated from manual login — skip restore
+    if (isAuthenticated && !isInitializing) return;
 
     void (async () => {
       try {
-        const user = await ipc('auth.me', {});
-        setUser(user);
-        void queryClient.invalidateQueries({ queryKey: authKeys.me() });
-      } catch {
-        if (!refreshToken) {
-          clearAuth();
-          return;
-        }
+        const result = await ipc('auth.restore', {});
 
-        try {
-          const result = await ipc('auth.refresh', { refreshToken });
-          updateTokens(result.tokens);
+        if (result.restored) {
+          setAuth(result.user, result.tokens);
           setExpiresAt(Date.now() + result.tokens.expiresIn * 1000);
-
-          const user = await ipc('auth.me', {});
-          setUser(user);
           void queryClient.invalidateQueries({ queryKey: authKeys.me() });
-        } catch {
+        } else {
           clearAuth();
         }
+      } catch {
+        // Network error or main process error — treat as not restored
+        clearAuth();
       } finally {
         setInitializing(false);
       }
     })();
-  }, [isAuthenticated, refreshToken, setUser, updateTokens, setExpiresAt, clearAuth, setInitializing, queryClient]);
+  }, [isAuthenticated, isInitializing, setAuth, setExpiresAt, clearAuth, setInitializing, queryClient]);
 }
