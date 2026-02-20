@@ -6,6 +6,7 @@
  */
 
 import {
+  createHashHistory,
   createRouter,
   createRoute,
   createRootRoute,
@@ -128,7 +129,10 @@ const routeTree = rootRoute.addChildren([
 
 // ─── Router Instance ─────────────────────────────────────────
 
+const hashHistory = createHashHistory();
+
 const router = createRouter({
+  history: hashHistory,
   routeTree,
   defaultPreload: 'intent',
   defaultPendingComponent: DefaultPendingComponent,
