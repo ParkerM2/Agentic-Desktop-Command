@@ -1,14 +1,34 @@
 /**
- * Register page — display name, email, password, confirm password
+ * Register page — display name, email, password, confirm password.
+ *
+ * Uses TanStack Form + Zod validation + design system FormInput primitives.
+ * Password confirmation is validated via a form-level Zod refinement.
  */
 
 import { useState } from 'react';
 
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Spinner } from '@ui';
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
+
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, Spinner } from '@ui';
 
 import { useRegister } from '../api/useAuth';
 
 const MIN_PASSWORD_LENGTH = 8;
+
+const registerSchema = z
+  .object({
+    displayName: z.string().min(1, 'Display name is required'),
+    email: z.email('Enter a valid email address'),
+    password: z
+      .string()
+      .min(MIN_PASSWORD_LENGTH, `Password must be at least ${String(MIN_PASSWORD_LENGTH)} characters`),
+    confirmPassword: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
 interface RegisterPageProps {
   onNavigateToHubSetup: () => void;
@@ -16,39 +36,37 @@ interface RegisterPageProps {
   onSuccess: () => void;
 }
 
-function getPasswordError(password: string, confirmPassword: string): string | null {
-  if (password.length > 0 && password.length < MIN_PASSWORD_LENGTH) {
-    return `Password must be at least ${String(MIN_PASSWORD_LENGTH)} characters`;
-  }
-  if (confirmPassword.length > 0 && password !== confirmPassword) {
-    return 'Passwords do not match';
-  }
-  return null;
-}
-
 export function RegisterPage({ onNavigateToHubSetup, onNavigateToLogin, onSuccess }: RegisterPageProps) {
-  const [displayName, setDisplayName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [serverError, setServerError] = useState<string | null>(null);
   const register = useRegister();
 
-  const passwordError = getPasswordError(password, confirmPassword);
+  const form = useForm({
+    defaultValues: {
+      displayName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+    validators: {
+      onChange: registerSchema,
+    },
+    onSubmit: ({ value }) => {
+      setServerError(null);
+      register.mutate(
+        { email: value.email, password: value.password, displayName: value.displayName },
+        {
+          onSuccess,
+          onError: (error: unknown) => {
+            setServerError(error instanceof Error ? error.message : 'Registration failed');
+          },
+        },
+      );
+    },
+  });
 
-  const isFormValid =
-    displayName.length > 0 &&
-    email.length > 0 &&
-    password.length >= MIN_PASSWORD_LENGTH &&
-    confirmPassword.length > 0 &&
-    passwordError === null;
-
-  function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!isFormValid) return;
-    register.mutate(
-      { email, password, displayName },
-      { onSuccess },
-    );
+    void form.handleSubmit();
   }
 
   return (
@@ -65,94 +83,81 @@ export function RegisterPage({ onNavigateToHubSetup, onNavigateToLogin, onSucces
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="register-name">
-                Display Name
-              </Label>
-              <Input
-                required
-                autoComplete="name"
-                id="register-name"
-                placeholder="Your name"
-                type="text"
-                value={displayName}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setDisplayName(e.target.value); }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="register-email">
-                Email
-              </Label>
-              <Input
-                required
-                autoComplete="email"
-                id="register-email"
-                placeholder="you@example.com"
-                type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setEmail(e.target.value); }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="register-password">
-                Password
-              </Label>
-              <Input
-                required
-                autoComplete="new-password"
-                id="register-password"
-                minLength={MIN_PASSWORD_LENGTH}
-                placeholder="Choose a password (min 8 characters)"
-                type="password"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPassword(e.target.value); }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="register-confirm">
-                Confirm Password
-              </Label>
-              <Input
-                required
-                autoComplete="new-password"
-                id="register-confirm"
-                placeholder="Re-enter your password"
-                type="password"
-                value={confirmPassword}
-                variant={passwordError === null ? 'default' : 'error'}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setConfirmPassword(e.target.value); }}
-              />
-              {passwordError === null ? null : (
-                <p className="text-xs text-destructive">{passwordError}</p>
+          <Form className="space-y-4" onSubmit={handleFormSubmit}>
+            <form.Field name="displayName">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Display Name"
+                  placeholder="Your name"
+                  type="text"
+                />
               )}
-            </div>
+            </form.Field>
 
-            {register.isError ? (
+            <form.Field name="email">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Email"
+                  placeholder="you@example.com"
+                  type="email"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="password">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Password"
+                  placeholder="Choose a password (min 8 characters)"
+                  type="password"
+                />
+              )}
+            </form.Field>
+
+            <form.Field name="confirmPassword">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Confirm Password"
+                  placeholder="Re-enter your password"
+                  type="password"
+                />
+              )}
+            </form.Field>
+
+            {serverError === null ? null : (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {register.error instanceof Error ? register.error.message : 'Registration failed'}
+                {serverError}
               </div>
-            ) : null}
+            )}
 
-            <Button
-              className="w-full"
-              disabled={!isFormValid || register.isPending}
-              type="submit"
-              variant="primary"
-            >
-              {register.isPending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Spinner size="sm" />
-                  Creating account...
-                </span>
-              ) : (
-                'Create Account'
+            <form.Subscribe selector={(state) => [state.canSubmit]}>
+              {([canSubmit]) => (
+                <Button
+                  className="w-full"
+                  disabled={!canSubmit || register.isPending}
+                  type="submit"
+                  variant="primary"
+                >
+                  {register.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Spinner size="sm" />
+                      Creating account...
+                    </span>
+                  ) : (
+                    'Create Account'
+                  )}
+                </Button>
               )}
-            </Button>
-          </form>
+            </form.Subscribe>
+          </Form>
         </CardContent>
 
         <CardFooter className="flex-col gap-2">

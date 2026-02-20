@@ -628,6 +628,75 @@ Key rules:
 - **No autoFocus** — `jsx-a11y/no-autofocus` rule forbids `autoFocus` prop
 - **Form submit** — Use `<form onSubmit>` for Enter key support (except in textareas)
 
+## TanStack Form + Zod Validation Pattern
+
+For forms using TanStack Form with Zod schema validation and the design system `FormInput` primitives:
+
+```typescript
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
+
+import { Button, Form, FormInput, Spinner } from '@ui';
+
+// Define Zod schema with validation messages
+const myFormSchema = z.object({
+  email: z.email('Enter a valid email address'),
+  name: z.string().min(1, 'Name is required'),
+});
+
+export function MyFormPage() {
+  const mutation = useMyMutation();
+
+  const form = useForm({
+    defaultValues: { email: '', name: '' },
+    validators: { onChange: myFormSchema },
+    onSubmit: ({ value }) => {
+      mutation.mutate(value);
+    },
+  });
+
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+    e.preventDefault();
+    void form.handleSubmit();
+  }
+
+  return (
+    <Form onSubmit={handleFormSubmit}>
+      <form.Field name="email">
+        {(field) => (
+          <FormInput
+            required
+            field={field}
+            label="Email"
+            placeholder="you@example.com"
+            type="email"
+          />
+        )}
+      </form.Field>
+
+      <form.Subscribe selector={(state) => [state.canSubmit]}>
+        {([canSubmit]) => (
+          <Button disabled={!canSubmit || mutation.isPending} type="submit">
+            {mutation.isPending ? <Spinner size="sm" /> : 'Submit'}
+          </Button>
+        )}
+      </form.Subscribe>
+    </Form>
+  );
+}
+```
+
+Key rules:
+- **Import `useForm`** from `@tanstack/react-form` directly (NOT from `@ui`)
+- **Import `Form`, `FormInput`** from `@ui` barrel
+- **Zod schemas** passed to `validators: { onChange: schema }` for real-time validation
+- **Zod 4** uses `z.email()` (not `z.string().email()` which is deprecated)
+- **`form.Field`** renders children with a `field` API passed to `FormInput`
+- **`form.Subscribe`** for reactive `canSubmit` state on the submit button
+- **`void form.handleSubmit()`** — must use `void` to satisfy `no-floating-promises`
+- **Shorthand props first** — `required` before `field`, `label`, etc. (`react/jsx-sort-props`)
+- **Cross-field validation** — use `.refine()` on the Zod schema with `path` targeting specific field
+
 ## Floating Widget Pattern
 
 For persistent overlay components accessible from any page (like the assistant chat widget):

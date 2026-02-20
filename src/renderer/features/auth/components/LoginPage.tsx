@@ -2,16 +2,26 @@
  * Login page — full-page centered form with email/password and link to register.
  * Includes client-side rate limiting: after 5 consecutive failed attempts,
  * the submit button is disabled for 30 seconds.
+ *
+ * Uses TanStack Form + Zod validation + design system FormInput primitives.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Input, Label, Spinner } from '@ui';
+import { useForm } from '@tanstack/react-form';
+import { z } from 'zod';
+
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, Spinner } from '@ui';
 
 import { useLogin } from '../api/useAuth';
 
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_SECONDS = 30;
+
+const loginSchema = z.object({
+  email: z.email('Enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
 
 interface LoginPageProps {
   onNavigateToHubSetup: () => void;
@@ -20,14 +30,38 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSuccess }: LoginPageProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const login = useLogin();
 
   const isCoolingDown = cooldownRemaining > 0;
+
+  const form = useForm({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    validators: {
+      onChange: loginSchema,
+    },
+    onSubmit: ({ value }) => {
+      if (isCoolingDown) return;
+
+      login.mutate(value, {
+        onSuccess,
+        onError: () => {
+          setFailedAttempts((prev) => {
+            const next = prev + 1;
+            if (next >= MAX_ATTEMPTS) {
+              startCooldown();
+            }
+            return next;
+          });
+        },
+      });
+    },
+  });
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -60,28 +94,10 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
     }, 1000);
   }, []);
 
-  function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
+  function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (isCoolingDown) return;
-
-    login.mutate(
-      { email, password },
-      {
-        onSuccess,
-        onError: () => {
-          setFailedAttempts((prev) => {
-            const next = prev + 1;
-            if (next >= MAX_ATTEMPTS) {
-              startCooldown();
-            }
-            return next;
-          });
-        },
-      },
-    );
+    void form.handleSubmit();
   }
-
-  const isFormValid = email.length > 0 && password.length > 0;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -97,36 +113,30 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="login-email">
-                Email
-              </Label>
-              <Input
-                required
-                autoComplete="email"
-                id="login-email"
-                placeholder="you@example.com"
-                type="email"
-                value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setEmail(e.target.value); }}
-              />
-            </div>
+          <Form className="space-y-4" onSubmit={handleFormSubmit}>
+            <form.Field name="email">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Email"
+                  placeholder="you@example.com"
+                  type="email"
+                />
+              )}
+            </form.Field>
 
-            <div className="space-y-2">
-              <Label htmlFor="login-password">
-                Password
-              </Label>
-              <Input
-                required
-                autoComplete="current-password"
-                id="login-password"
-                placeholder="Enter your password"
-                type="password"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setPassword(e.target.value); }}
-              />
-            </div>
+            <form.Field name="password">
+              {(field) => (
+                <FormInput
+                  required
+                  field={field}
+                  label="Password"
+                  placeholder="Enter your password"
+                  type="password"
+                />
+              )}
+            </form.Field>
 
             {login.isError && !isCoolingDown ? (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -145,22 +155,26 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
               </div>
             ) : null}
 
-            <Button
-              className="w-full"
-              disabled={!isFormValid || login.isPending || isCoolingDown}
-              type="submit"
-              variant="primary"
-            >
-              {login.isPending ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Spinner size="sm" />
-                  Signing in...
-                </span>
-              ) : (
-                'Sign In'
+            <form.Subscribe selector={(state) => [state.canSubmit]}>
+              {([canSubmit]) => (
+                <Button
+                  className="w-full"
+                  disabled={!canSubmit || login.isPending || isCoolingDown}
+                  type="submit"
+                  variant="primary"
+                >
+                  {login.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Spinner size="sm" />
+                      Signing in...
+                    </span>
+                  ) : (
+                    'Sign In'
+                  )}
+                </Button>
               )}
-            </Button>
-          </form>
+            </form.Subscribe>
+          </Form>
         </CardContent>
 
         <CardFooter className="flex-col gap-2">

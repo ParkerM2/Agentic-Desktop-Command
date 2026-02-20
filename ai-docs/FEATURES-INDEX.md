@@ -28,7 +28,7 @@ Location: `src/renderer/features/`
 | **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea), CommandBar (TopBar) | `assistant.*` |
-| **auth** | User authentication | LoginPage, RegisterPage, AuthGuard, UserMenu (in layouts); **Hooks**: useForceLogout (IPC-driven logout on token refresh failure) | `auth.*` |
+| **auth** | User authentication | LoginPage (TanStack Form + Zod), RegisterPage (TanStack Form + Zod), AuthGuard, UserMenu (in layouts); **Hooks**: useForceLogout (IPC-driven logout on token refresh failure) | `auth.*` |
 | **changelog** | Project changelog viewer | ChangelogPage, ChangelogEntry | `changelog.*` |
 | **communications** | Slack/Discord integration | SlackPanel, DiscordPanel | MCP tools |
 | **dashboard** | Home dashboard | DashboardPage, TodayView, DailyStats, ActiveAgents | multiple |
@@ -445,7 +445,7 @@ All primitives follow the **shadcn/ui pattern**: CVA variants, `data-slot` attri
 | **2: Radix** | Progress | `ui/progress.tsx` | Progress bar with CVA sizes |
 | **2: Radix** | Slider | `ui/slider.tsx` | Slider with track/range/thumb |
 | **2: Radix** | Collapsible | `ui/collapsible.tsx` | Collapsible, CollapsibleTrigger, CollapsibleContent |
-| **3: Form** | Form System | `ui/form.tsx` | `Form`, `FormField`, `FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox`, `FormSwitch`, `useForm` — TanStack Form + Zod v4 integration |
+| **3: Form** | Form System | `ui/form.tsx` | `Form`, `FormField`, `FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox`, `FormSwitch` — TanStack Form + Zod v4 integration. `Form` and field components exported from `@ui` barrel. Import `useForm` from `@tanstack/react-form` directly. |
 
 ## 6.6 Shared Hooks
 
