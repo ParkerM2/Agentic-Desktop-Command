@@ -4,6 +4,7 @@
  * Provides:
  * - electronApp: Launches and closes the Electron application
  * - mainWindow: Gets the first window and waits for DOM content loaded
+ * - authenticatedWindow: Gets a window that is logged in via test credentials
  *
  * Usage:
  * ```typescript
@@ -24,9 +25,12 @@ import { _electron as electron } from 'playwright';
 
 import type { ElectronApplication, Page } from 'playwright';
 
+import { loginWithTestAccount } from './helpers/auth';
+
 interface TestFixtures {
   electronApp: ElectronApplication;
   mainWindow: Page;
+  authenticatedWindow: Page;
 }
 
 // ESM-compatible dirname equivalent
@@ -60,6 +64,19 @@ export const test = base.extend<TestFixtures>({
 
     // Wait for the page to be fully loaded
     await window.waitForLoadState('domcontentloaded');
+
+    await use(window);
+  },
+
+  authenticatedWindow: async ({ electronApp }, use) => {
+    // Wait for the first window to appear
+    const window = await electronApp.firstWindow();
+
+    // Wait for the page to be fully loaded
+    await window.waitForLoadState('domcontentloaded');
+
+    // Log in using test credentials from environment variables
+    await loginWithTestAccount(window);
 
     await use(window);
   },
