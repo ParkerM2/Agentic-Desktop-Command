@@ -1,16 +1,19 @@
 /**
  * Layout Store — Global layout/navigation state
  *
- * Sidebar collapsed state, active project, etc.
+ * Sidebar collapsed state, active project, panel layout, etc.
  * Everything that affects the app shell but isn't feature-specific.
  */
 
 import { create } from 'zustand';
 
+import type { Layout } from 'react-resizable-panels';
+
 interface LayoutState {
   sidebarCollapsed: boolean;
   activeProjectId: string | null;
   projectTabOrder: string[];
+  panelLayout: Layout | null;
 
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
@@ -18,12 +21,14 @@ interface LayoutState {
   setProjectTabOrder: (order: string[]) => void;
   addProjectTab: (projectId: string) => void;
   removeProjectTab: (projectId: string) => void;
+  setPanelLayout: (layout: Layout) => void;
 }
 
 export const useLayoutStore = create<LayoutState>((set) => ({
   sidebarCollapsed: false,
   activeProjectId: null,
   projectTabOrder: [],
+  panelLayout: null,
 
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
@@ -50,4 +55,6 @@ export const useLayoutStore = create<LayoutState>((set) => ({
           s.activeProjectId === projectId ? (order.at(-1) ?? null) : s.activeProjectId,
       };
     }),
+
+  setPanelLayout: (layout) => set({ panelLayout: layout }),
 }));

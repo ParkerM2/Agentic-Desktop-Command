@@ -384,8 +384,8 @@ Location: `src/renderer/app/layouts/`
 
 | Layout | Purpose |
 |--------|---------|
-| `RootLayout.tsx` | Root shell: sidebar + content area + notifications + AssistantWidget |
-| `Sidebar.tsx` | Navigation sidebar |
+| `RootLayout.tsx` | Root shell: uses `react-resizable-panels` (Group/Panel/Separator) for sidebar + content layout with localStorage persistence. Sidebar panel is collapsible and syncs with layout store. |
+| `Sidebar.tsx` | Navigation sidebar (fills its parent panel, collapse state driven by layout store) |
 | `TopBar.tsx` | Top bar with assistant command input |
 | `CommandBar.tsx` | Global command palette (Cmd+K) |
 | `ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
@@ -468,7 +468,7 @@ Location: `src/renderer/shared/stores/`
 |-------|---------|
 | `assistant-widget-store.ts` | Floating assistant widget open/close state (`useAssistantWidgetStore`) |
 | `command-bar-store.ts` | CommandBar processing state, input history, toast visibility |
-| `layout-store.ts` | Sidebar state, active project, project tabs |
+| `layout-store.ts` | Sidebar state, active project, project tabs, resizable panel layout (persisted via `react-resizable-panels` `useDefaultLayout`) |
 | `theme-store.ts` | Dark/light mode, color theme, UI scale |
 | `toast-store.ts` | Toast notification queue (max 3, auto-dismiss 5s) |
 | `ThemeHydrator.tsx` | Component that hydrates theme CSS vars on `<html>` (co-located with theme-store) |

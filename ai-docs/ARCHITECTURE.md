@@ -703,8 +703,8 @@ The task dashboard uses AG-Grid Community v35.1.0 for the main data grid:
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: sidebar + TopBar + content + notification overlays + AssistantWidget |
-| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Navigation sidebar |
+| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: uses `react-resizable-panels` (Group/Panel/Separator) for resizable sidebar + content layout. Sidebar panel is collapsible (syncs with layout store). Layout persists to localStorage via `useDefaultLayout`. |
+| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Navigation sidebar (fills its parent panel container) |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Top bar with CommandBar trigger |
 | `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global command palette (Cmd+K) |
 | `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
