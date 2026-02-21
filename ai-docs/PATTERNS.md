@@ -545,10 +545,10 @@ AG-Grid v35 uses the quartz theme with design-system token overrides. Theme conf
 
 1. **Base theme**: `ag-theme-quartz` (imported from `ag-grid-community/styles/`)
 2. **Override class**: `ag-theme-claude` stacked with quartz for compound specificity
-3. **Theming API**: AG-Grid's `themeQuartz.withPart(colorSchemeDark).withParams()` maps theme params to design system CSS vars at runtime (defined in `ag-grid-theme.ts`)
+3. **Theming API**: AG-Grid's `themeQuartz.withPart(isDark ? colorSchemeDark : colorSchemeLight).withParams()` dynamically selects the color scheme based on app theme mode at runtime (defined in `ag-grid-theme.ts`). `TaskDataGrid` reads `useThemeStore().mode` and passes the correct theme via `useMemo`.
 4. **Custom themes**: Because AG-Grid reads CSS custom properties, custom themes applied via `setProperty()` are automatically picked up — no AG-Grid-specific reconfiguration needed
 5. **Interactive states**: Use `color-mix()` for hover/selection (NEVER hardcode hex/rgb)
-6. **Dark mode**: `colorSchemeDark` part handles native scrollbar/control rendering
+6. **Light/dark mode**: Color scheme part (`colorSchemeDark` or `colorSchemeLight`) is dynamically selected based on app theme mode, handles native scrollbar/control rendering
 
 ### Component Usage
 

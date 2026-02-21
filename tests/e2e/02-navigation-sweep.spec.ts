@@ -22,21 +22,9 @@ test.describe('Navigation Sweep', () => {
     await assertPageLoaded(page);
   });
 
-  test('click Briefing navigates to /briefing', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Briefing');
-    await expect(page).toHaveURL(/\/briefing/);
-    await assertPageLoaded(page);
-  });
-
   test('click My Work navigates to /my-work', async ({ authenticatedWindow: page }) => {
     await navigateToSidebarItem(page, 'My Work');
     await expect(page).toHaveURL(/\/my-work/);
-    await assertPageLoaded(page);
-  });
-
-  test('click Notes navigates to /notes', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Notes');
-    await expect(page).toHaveURL(/\/notes/);
     await assertPageLoaded(page);
   });
 
@@ -46,27 +34,9 @@ test.describe('Navigation Sweep', () => {
     await assertPageLoaded(page);
   });
 
-  test('click Planner navigates to /planner', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Planner');
-    await expect(page).toHaveURL(/\/planner/);
-    await assertPageLoaded(page);
-  });
-
   test('click Productivity navigates to /productivity', async ({ authenticatedWindow: page }) => {
     await navigateToSidebarItem(page, 'Productivity');
     await expect(page).toHaveURL(/\/productivity/);
-    await assertPageLoaded(page);
-  });
-
-  test('click Alerts navigates to /alerts', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Alerts');
-    await expect(page).toHaveURL(/\/alerts/);
-    await assertPageLoaded(page);
-  });
-
-  test('click Comms navigates to /communications', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Comms');
-    await expect(page).toHaveURL(/\/communications/);
     await assertPageLoaded(page);
   });
 

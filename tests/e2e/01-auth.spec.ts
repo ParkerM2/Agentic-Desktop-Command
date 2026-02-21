@@ -81,7 +81,7 @@ test.describe('Auth — Login Page', () => {
     await expect(mainWindow.getByPlaceholder('you@example.com')).toBeVisible();
 
     // Verify Password input
-    await expect(mainWindow.getByLabel('Password')).toBeVisible();
+    await expect(mainWindow.getByLabel('Password', { exact: true })).toBeVisible();
     await expect(mainWindow.getByPlaceholder('Choose a password (min 8 characters)')).toBeVisible();
 
     // Verify Confirm Password input

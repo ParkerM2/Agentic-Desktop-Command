@@ -24,14 +24,14 @@
 13. [Changelog](#13-changelog)
 14. [Insights](#14-insights)
 15. [My Work](#15-my-work)
-16. [Briefing](#16-briefing)
-17. [Planner](#17-planner)
-18. [Notes](#18-notes)
+16. [Briefing](#16-briefing) *(Productivity tab)*
+17. [Planner](#17-planner) *(Productivity tab)*
+18. [Notes](#18-notes) *(Productivity tab)*
 19. [Fitness](#19-fitness)
-20. [Productivity](#20-productivity)
-21. [Alerts](#21-alerts)
-22. [Communications](#22-communications)
-23. [Settings](#23-settings)
+20. [Productivity](#20-productivity) *(tabs: Overview, Calendar, Spotify, Briefing, Notes, Planner, Alerts, Comms)*
+21. [Alerts](#21-alerts) *(Productivity tab)*
+22. [Communications](#22-communications) *(Productivity tab)*
+23. [Settings](#23-settings) *(6-tab layout: Display, Profile, Hub, Integrations, Storage, Advanced)*
 24. [Hub Connection & Real-Time](#24-hub-connection--real-time)
 25. [Workflow System](#25-workflow-system)
 26. [IPC Channel Reference](#26-ipc-channel-reference)
@@ -248,24 +248,23 @@ After auth + onboarding, the user sees the main app shell:
 ├──────────┬──────────────────────────────────────────┤
 │ Sidebar  │  Main Content Area (<Outlet />)          │
 │          │                                          │
-│ Dashboard│  (Route-specific page component)         │
-│ My Work  │                                          │
-│ Notes    │                                          │
-│ Fitness  │                                          │
-│ Planner  │                                          │
-│ Producty │                                          │
-│ Alerts   │                                          │
-│ Comms    │                                          │
-│ ──────── │                                          │
-│ Tasks    │  (Project-scoped, disabled without       │
-│ Terminals│   active project)                        │
-│ Agents   │                                          │
-│ Pipeline │                                          │
-│ Roadmap  │                                          │
-│ Ideation │                                          │
-│ GitHub   │                                          │
-│ Changelog│                                          │
-│ Insights │                                          │
+│ ▾ Development (accordion, shown first)              │
+│  +Add Prj│  (first item inside accordion)           │
+│  Tasks   │  (Project-scoped, disabled without       │
+│  Terminal│   active project)                        │
+│  Agents  │                                          │
+│  Pipeline│                                          │
+│  Roadmap │                                          │
+│  Ideation│                                          │
+│  GitHub  │                                          │
+│  Changlog│                                          │
+│  Insights│                                          │
+│ ▾ Personal (accordion, shown second)                │
+│  Dashbrd │  (Route-specific page component)         │
+│  My Work │                                          │
+│  Fitness │                                          │
+│  Producty│  (tabs: Briefing, Notes, Planner,        │
+│          │   Alerts, Comms, Calendar, Spotify)       │
 │ ──────── │                                          │
 │ 👤 User  │  (UserMenu: avatar + logout dropdown)    │
 │ 🟢 Hub   │                                          │
@@ -278,7 +277,7 @@ After auth + onboarding, the user sees the main app shell:
 | Component | File | Purpose |
 |-----------|------|---------|
 | `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: sidebar (collapsible, minSize 160px) + topbar + outlet + notifications |
-| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Nav items (top-level + project-scoped), collapsible. Uses `bg-sidebar text-sidebar-foreground` theme vars. |
+| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Two accordion sections: Development (first, with +Add Project as first child, then project-scoped items) and Personal (Dashboard, My Work, Fitness, Productivity). Briefing/Notes/Planner/Alerts/Comms removed — now Productivity tabs. Collapsible. Uses `bg-sidebar text-sidebar-foreground` theme vars. |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button (utility buttons moved to TitleBar; AssistantWidget provides global assistant access) |
 | `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |
@@ -859,26 +858,28 @@ Email integration:
 **Component**: `SettingsPage`
 **File**: `src/renderer/features/settings/components/SettingsPage.tsx`
 
-### Settings Sections (Top to Bottom)
+### Settings Tabs (6-Tab Layout)
 
-| Section | Component | IPC Channel(s) | What It Controls |
-|---------|-----------|----------------|------------------|
-| **Appearance** | inline in `SettingsPage` | `settings.update` | Light/Dark/System mode |
-| **Background & Startup** | `BackgroundSettings.tsx` | `settings.update`, `app.setOpenAtLogin` | Open at login, minimize to tray |
-| **Profiles** | `ProfileSection.tsx` | `settings.getProfiles`, `settings.createProfile`, `settings.updateProfile`, `settings.deleteProfile`, `settings.setDefaultProfile` | Claude API profiles (name, API key, model) |
-| **Workspaces** | `WorkspacesTab.tsx` | `workspaces.list`, `workspaces.create`, `workspaces.update`, `workspaces.delete` | Workspace CRUD |
-| **Color Theme** | `ColorThemeSection.tsx` | `settings.update` | Shows active theme name + "Customize Theme" button → navigates to Theme Editor (`/settings/themes`) |
-| **UI Scale** | inline in `SettingsPage` | `settings.update` | 75%–150% scaling slider |
-| **Font Family** | inline in `SettingsPage` | `settings.update` | System/Inter/JetBrains Mono/Fira Code/SF Mono |
-| **Font Size** | inline in `SettingsPage` | `settings.update` | 12px–20px slider |
-| **Language** | inline in `SettingsPage` | — | English only (static) |
-| **OAuth Providers** | `OAuthProviderSettings.tsx` | `settings.getOAuthProviders`, `settings.setOAuthProvider` | GitHub, Spotify client ID/secret |
-| **Hub Connection** | `HubSettings.tsx` | `hub.connect`, `hub.disconnect`, `hub.getStatus`, `hub.sync`, `hub.removeConfig` | Hub URL + API key, connect/disconnect, sync |
-| **Webhooks** | `WebhookSettings.tsx` | `settings.getWebhookConfig`, `settings.updateWebhookConfig` | Webhook URL + events |
-| **Hotkeys** | `HotkeySettings.tsx` | `hotkeys.get`, `hotkeys.update`, `hotkeys.reset` | Keyboard shortcuts customization |
-| **Voice** | `VoiceSettings` (from `@features/voice`) | `voice.getConfig`, `voice.updateConfig`, `voice.checkPermission` | Enable/disable voice, language, input mode, synthesis test |
-| **Storage Management** | `StorageManagementSection.tsx` (+ `StorageUsageBar.tsx`, `RetentionControl.tsx`) | `dataManagement.getRegistry`, `dataManagement.getUsage`, `dataManagement.getRetention`, `dataManagement.updateRetention`, `dataManagement.clearStore`, `dataManagement.runCleanup`, `dataManagement.exportData`, `dataManagement.importData`, `event:dataManagement.cleanupComplete` | Storage usage bar, per-store retention policies, auto-cleanup toggle, manual cleanup, data export/import |
-| **About** | inline | — | Version number (v0.1.0) |
+Settings is now a tabbed interface with 6 tabs. Each tab groups related sections:
+
+| Tab | Section | Component | IPC Channel(s) | What It Controls |
+|-----|---------|-----------|----------------|------------------|
+| **Display** | Appearance | inline | `settings.update` | Light/Dark/System mode |
+| **Display** | Background & Startup | `BackgroundSettings.tsx` | `settings.update`, `app.setOpenAtLogin` | Open at login, minimize to tray |
+| **Display** | Color Theme | `ColorThemeSection.tsx` | `settings.update` | Active theme + "Customize Theme" → Theme Editor (`/settings/themes`) |
+| **Display** | UI Scale | inline | `settings.update` | 75%–150% scaling slider |
+| **Display** | Font Family | inline | `settings.update` | System/Inter/JetBrains Mono/Fira Code/SF Mono |
+| **Display** | Font Size | inline | `settings.update` | 12px–20px slider |
+| **Display** | Language | inline | — | English only (static) |
+| **Profile** | Profiles | `ProfileSection.tsx` | `settings.getProfiles`, `settings.createProfile`, `settings.updateProfile`, `settings.deleteProfile`, `settings.setDefaultProfile` | Claude API profiles (name, API key, model) |
+| **Profile** | Workspaces | `WorkspacesTab.tsx` | `workspaces.list`, `workspaces.create`, `workspaces.update`, `workspaces.delete` | Workspace CRUD |
+| **Hub** | Hub Connection | `HubSettings.tsx` | `hub.connect`, `hub.disconnect`, `hub.getStatus`, `hub.sync`, `hub.removeConfig` | Hub URL + API key, connect/disconnect, sync |
+| **Integrations** | OAuth Providers | `OAuthProviderSettings.tsx` | `settings.getOAuthProviders`, `settings.setOAuthProvider` | GitHub, Spotify client ID/secret |
+| **Storage** | Storage Management | `StorageManagementSection.tsx` (+ `StorageUsageBar.tsx`, `RetentionControl.tsx`) | `dataManagement.getRegistry`, `dataManagement.getUsage`, `dataManagement.getRetention`, `dataManagement.updateRetention`, `dataManagement.clearStore`, `dataManagement.runCleanup`, `dataManagement.exportData`, `dataManagement.importData`, `event:dataManagement.cleanupComplete` | Storage usage bar, retention policies, cleanup, export/import |
+| **Advanced** | Webhooks | `WebhookSettings.tsx` | `settings.getWebhookConfig`, `settings.updateWebhookConfig` | Webhook URL + events |
+| **Advanced** | Hotkeys | `HotkeySettings.tsx` | `hotkeys.get`, `hotkeys.update`, `hotkeys.reset` | Keyboard shortcuts customization |
+| **Advanced** | Voice | `VoiceSettings` (from `@features/voice`) | `voice.getConfig`, `voice.updateConfig`, `voice.checkPermission` | Enable/disable voice, language, input mode, synthesis test |
+| **Advanced** | About | inline | — | Version number (v0.1.0) |
 
 ### 23.0 Theme Editor Page
 

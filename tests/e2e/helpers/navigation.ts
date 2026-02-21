@@ -11,30 +11,24 @@ import type { Page } from 'playwright';
 
 // ─── Constants ────────────────────────────────────────────────
 
-/** Top-level sidebar navigation labels (matches Sidebar.tsx topLevelItems). */
+/**
+ * Top-level sidebar navigation labels (matches Sidebar.tsx personalItems).
+ * Briefing, Notes, Planner, Alerts, Comms were moved to Productivity tabs
+ * in the ui-layout-refactor and are no longer sidebar items.
+ */
 export const TOP_LEVEL_NAV_ITEMS = [
   'Dashboard',
-  'Briefing',
   'My Work',
-  'Notes',
   'Fitness',
-  'Planner',
   'Productivity',
-  'Alerts',
-  'Comms',
 ] as const;
 
 /** Expected URL path segments for each top-level sidebar label. */
 export const ROUTE_URL_MAP: Record<string, string> = {
   Dashboard: '/dashboard',
-  Briefing: '/briefing',
   'My Work': '/my-work',
-  Notes: '/notes',
   Fitness: '/fitness',
-  Planner: '/planner',
   Productivity: '/productivity',
-  Alerts: '/alerts',
-  Comms: '/communications',
 };
 
 /** Project-scoped sidebar navigation labels (matches Sidebar.tsx projectItems). */

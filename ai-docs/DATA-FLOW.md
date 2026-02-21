@@ -620,14 +620,14 @@ Routes are defined across 8 route group files in `src/renderer/app/routes/` and 
 / (RootLayout)
 ├── /dashboard              -> DashboardPage          (dashboard.routes.ts)
 ├── /my-work                -> MyWorkPage
-├── /alerts                 -> AlertsPage
-├── /briefing               -> BriefingPage
-├── /communications         -> CommunicationsPage
+├── /alerts                 -> AlertsPage (also accessible via Productivity > Alerts tab)
+├── /briefing               -> BriefingPage (also accessible via Productivity > Briefing tab)
+├── /communications         -> CommunicationsPage (also accessible via Productivity > Comms tab)
 ├── /fitness                -> FitnessPage
-├── /notes                  -> NotesPage
-├── /planner                -> PlannerPage
+├── /notes                  -> NotesPage (also accessible via Productivity > Notes tab)
+├── /planner                -> PlannerPage (also accessible via Productivity > Planner tab)
 ├── /planner/weekly         -> WeeklyReviewPage
-├── /productivity           -> ProductivityPage
+├── /productivity           -> ProductivityPage (8 tabs: Overview, Calendar, Spotify, Briefing, Notes, Planner, Alerts, Comms)
 ├── /projects               -> ProjectListPage
 ├── /projects/$projectId    -> redirect to /tasks
 │   ├── /tasks              -> TaskDataGrid
@@ -640,7 +640,7 @@ Routes are defined across 8 route group files in `src/renderer/app/routes/` and 
 │   └── /insights           -> InsightsPage
 ├── /login                  -> LoginPage (unauthenticated)
 ├── /register               -> RegisterPage (unauthenticated)
-└── /settings               -> SettingsPage
+└── /settings               -> SettingsPage (6-tab layout: Display, Profile, Hub, Integrations, Storage, Advanced)
 ```
 
 ---
