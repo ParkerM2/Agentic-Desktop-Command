@@ -948,49 +948,44 @@ Custom animation utility classes live **outside** the `@theme` block in `globals
 - Custom animations outside `@theme` need explicit `.animate-*` class definitions
 - Always use `color-mix(in srgb, var(--token), transparent)` for semi-transparent effects in animations
 
-## Sidebar Collapse Pattern
+## Customizable Sidebar Layout Pattern
 
-The sidebar uses `react-resizable-panels` with bidirectional sync between the panel and the layout store.
+The app uses a **composable sidebar layout system** with 16 layout variants. The selected layout is stored in `layout-store.sidebarLayout` and persisted via `settings.sidebarLayout`.
 
-**Key configuration** in `RootLayout.tsx`:
-```tsx
-<Panel
-  collapsible
-  collapsedSize="56px"    // Icon-only strip width — NOT "0%" (that hides the sidebar entirely)
-  defaultSize="208px"
-  minSize="56px"          // Matches collapsedSize so drag-to-collapse works
-  panelRef={sidebarPanelRef}
->
+**Architecture**:
+```
+RootLayout → LayoutWrapper(layoutId) → SidebarProvider + SidebarLayoutXX + SidebarInset
+                                        └→ ContentHeader (SidebarTrigger + Breadcrumbs)
 ```
 
-**Collapse detection** — use `panel.isCollapsed()`, NOT layout size comparison:
+**Layout selection**:
 ```tsx
-const handleLayoutChanged = useCallback(
-  (layout: Record<string, number>) => {
-    onLayoutChanged(layout);
-    setPanelLayout(layout);
-    // Use imperative API — layout values are flexGrow numbers, not px/% sizes
-    const collapsed = sidebarPanelRef.current?.isCollapsed() ?? false;
-    setSidebarCollapsed(collapsed);
-  },
-  [onLayoutChanged, setPanelLayout, setSidebarCollapsed, sidebarPanelRef],
-);
+// Read from store
+const sidebarLayout = useLayoutStore((s) => s.sidebarLayout);
+
+// Change layout (updates store + persists via IPC)
+const { setSidebarLayout } = useLayoutStore();
+const updateSettings = useUpdateSettings();
+setSidebarLayout('sidebar-07');
+updateSettings.mutate({ sidebarLayout: 'sidebar-07' });
 ```
 
-**Store-to-panel sync** — `useEffect` watches `sidebarCollapsed` and calls `panel.collapse()` / `panel.expand()`:
-```tsx
-useEffect(() => {
-  const panel = sidebarPanelRef.current;
-  if (!panel) return;
-  if (sidebarCollapsed && !panel.isCollapsed()) panel.collapse();
-  else if (!sidebarCollapsed && panel.isCollapsed()) panel.expand();
-}, [sidebarCollapsed, sidebarPanelRef]);
-```
+**Adding a new sidebar layout**:
+1. Create `SidebarLayoutXX.tsx` in `src/renderer/app/layouts/sidebar-layouts/`
+2. Import nav items from `./shared-nav` (personalItems, developmentItems, settingsItem, addProjectItem)
+3. Use shadcn Sidebar composables from `@ui/sidebar`
+4. Add lazy import to `LAYOUT_MAP` in `LayoutWrapper.tsx`
+5. Add entry to `SIDEBAR_LAYOUTS` and `SIDEBAR_LAYOUT_IDS` in `src/shared/types/layout.ts`
+6. Add preview config to `LAYOUT_PREVIEWS` in `LayoutSection.tsx`
 
-Rules:
-- `collapsedSize` MUST match `minSize` so the sidebar snaps to icon-only when dragged to minimum
-- Always use `panel.isCollapsed()` to detect collapsed state — never compare flexGrow values
-- The `Sidebar` component reads `sidebarCollapsed` from `useLayoutStore` to conditionally render labels
+**Breadcrumbs**:
+Routes declare `staticData: { breadcrumbLabel: 'Name' }` and `AppBreadcrumbs` reads from `useMatches()` to build the trail.
+
+**Key shadcn Sidebar props**:
+- `side="left" | "right"` — sidebar position
+- `variant="default" | "floating" | "inset"` — visual style
+- `collapsible="offcanvas" | "icon" | "none"` — collapse behavior
+- `SidebarMenuButton tooltip="Label"` — shows tooltip when icon-collapsed
 
 ## Agent Orchestrator Pattern
 

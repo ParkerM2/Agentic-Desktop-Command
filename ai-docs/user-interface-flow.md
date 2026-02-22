@@ -276,8 +276,11 @@ After auth + onboarding, the user sees the main app shell:
 
 | Component | File | Purpose |
 |-----------|------|---------|
-| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: sidebar (collapsible, minSize 160px) + topbar + outlet + notifications |
-| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Two accordion sections: Development (first, with +Add Project as first child, then project-scoped items) and Personal (Dashboard, My Work, Fitness, Productivity). Briefing/Notes/Planner/Alerts/Comms removed — now Productivity tabs. Collapsible. Uses `bg-sidebar text-sidebar-foreground` theme vars. |
+| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Shell: TitleBar + LayoutWrapper (selected sidebar layout variant) + topbar + outlet + notifications |
+| `LayoutWrapper` | `src/renderer/app/layouts/LayoutWrapper.tsx` | Switches between 16 sidebar layout variants. Lazy-loads SidebarLayoutXX, wraps in SidebarProvider + SidebarInset + ContentHeader. |
+| `ContentHeader` | `src/renderer/app/layouts/ContentHeader.tsx` | Shared content header bar: SidebarTrigger + Breadcrumbs separator |
+| `AppBreadcrumbs` | `src/renderer/app/layouts/AppBreadcrumbs.tsx` | Breadcrumb trail from TanStack Router useMatches() staticData.breadcrumbLabel |
+| `SidebarLayoutXX` | `src/renderer/app/layouts/sidebar-layouts/` | 16 sidebar layout variants (01=Grouped, 02=Collapsible, 03=Submenus, 04=Floating, 05=Collapsible+Search, 06=Dropdown, 07=Icon Collapse, 08=Inset, 09=Nested, 10=Popover, 11=File Tree, 12=Calendar, 13=Dialog/Offcanvas, 14=Right Side, 15=Dual, 16=Sticky Header) |
 | `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Project tabs + add button (utility buttons moved to TitleBar; AssistantWidget provides global assistant access) |
 | `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |

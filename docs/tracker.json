@@ -61,6 +61,16 @@
       "branch": "feature/ui-layout-refactor",
       "pr": null,
       "tags": ["ui", "refactor", "sidebar", "settings", "ag-grid"]
+    },
+    "customizable-sidebar-layouts": {
+      "title": "Customizable Sidebar Layout System",
+      "status": "IN_PROGRESS",
+      "planFile": null,
+      "created": "2026-02-21",
+      "statusChangedAt": "2026-02-21",
+      "branch": "feature/customizable-sidebar-layouts",
+      "pr": null,
+      "tags": ["ui", "sidebar", "layouts", "shadcn", "breadcrumbs"]
     }
   }
 }

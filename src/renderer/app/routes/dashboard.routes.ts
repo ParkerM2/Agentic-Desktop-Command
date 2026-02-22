@@ -16,6 +16,7 @@ export function createDashboardRoutes(appLayoutRoute: AnyRoute) {
   const dashboardRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.DASHBOARD,
+    staticData: { breadcrumbLabel: 'Dashboard' },
     pendingComponent: DashboardSkeleton,
     component: lazyRouteComponent(
       () => import('@features/dashboard'),
@@ -26,6 +27,7 @@ export function createDashboardRoutes(appLayoutRoute: AnyRoute) {
   const myWorkRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.MY_WORK,
+    staticData: { breadcrumbLabel: 'My Work' },
     pendingComponent: DashboardSkeleton,
     component: lazyRouteComponent(
       () => import('@features/my-work'),

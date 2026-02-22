@@ -26,6 +26,7 @@ import { ColorThemeSection } from './ColorThemeSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
 import { HubSettings } from './HubSettings';
+import { LayoutSection } from './LayoutSection';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
 import { StorageManagementSection } from './StorageManagementSection';
@@ -89,6 +90,7 @@ export function SettingsPage() {
       case 'display': {
         return (
           <>
+            <LayoutSection />
             <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
             <BackgroundSettings />
             <ColorThemeSection currentTheme={colorTheme} />

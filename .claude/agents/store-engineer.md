@@ -107,10 +107,13 @@ import { create } from 'zustand';
 
 interface LayoutState {
   sidebarCollapsed: boolean;
+  sidebarLayout: SidebarLayoutId;  // Which of 16 sidebar layouts to use
   activeProjectId: string | null;
-  projectTabs: string[];
+  projectTabOrder: string[];
 
   toggleSidebar: () => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  setSidebarLayout: (id: SidebarLayoutId) => void;
   setActiveProject: (id: string | null) => void;
   addProjectTab: (id: string) => void;
   removeProjectTab: (id: string) => void;
@@ -118,17 +121,20 @@ interface LayoutState {
 
 export const useLayoutStore = create<LayoutState>()((set) => ({
   sidebarCollapsed: false,
+  sidebarLayout: 'sidebar-07',
   activeProjectId: null,
-  projectTabs: [],
+  projectTabOrder: [],
 
   toggleSidebar: () =>
     set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+  setSidebarLayout: (id) => set({ sidebarLayout: id }),
   setActiveProject: (id) => set({ activeProjectId: id }),
   addProjectTab: (id) =>
     set((state) => ({
-      projectTabs: state.projectTabs.includes(id)
-        ? state.projectTabs
-        : [...state.projectTabs, id],
+      projectTabOrder: state.projectTabOrder.includes(id)
+        ? state.projectTabOrder
+        : [...state.projectTabOrder, id],
     })),
   removeProjectTab: (id) =>
     set((state) => ({
@@ -247,7 +253,7 @@ Before marking work complete:
 
 ## Design System Awareness
 
-This project has a design system at `src/renderer/shared/components/ui/` (30 primitives), imported via `@ui`. All UI-facing code must use these primitives instead of raw HTML elements. Key exports: Button, Input, Textarea, Label, Badge, Card, Spinner, Dialog, AlertDialog, Select, DropdownMenu, Tooltip, Tabs, Switch, Checkbox, Toast, ScrollArea, Popover, Progress, Slider, Collapsible, PageLayout, Typography, Grid, Stack, Flex, Container, Separator, Form system (FormField, FormInput, etc.).
+This project has a design system at `src/renderer/shared/components/ui/` (30 primitives), imported via `@ui`. All UI-facing code must use these primitives instead of raw HTML elements. Key exports: Button, Input, Textarea, Label, Badge, Card, Spinner, Dialog, AlertDialog, Select, DropdownMenu, Tooltip, Tabs, Switch, Checkbox, Toast, ScrollArea, Popover, Progress, Slider, Collapsible, Sidebar (composable sidebar system), Breadcrumb (composable breadcrumb navigation), PageLayout, Typography, Grid, Stack, Flex, Container, Separator, Form system (FormField, FormInput, etc.).
 
 ## Handoff
 

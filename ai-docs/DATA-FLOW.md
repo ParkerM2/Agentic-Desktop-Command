@@ -216,8 +216,9 @@ components/
                     |   Shared stores:      |
                     |   layout-store:       |
                     |     sidebarCollapsed  |
+                    |     sidebarLayout     |
                     |     activeProjectId   |
-                    |     projectTabs       |
+                    |     projectTabOrder   |
                     |   theme-store:        |
                     |     mode (light/dark) |
                     |     colorTheme        |
@@ -585,7 +586,7 @@ Toast notification shows success/failure
 User clicks sidebar nav item
   |
   v
-handleNav(path)                            Sidebar.tsx
+handleNav(path)                            SidebarLayoutXX.tsx (via shared-nav.ts)
   |
   v
 navigate({ to: projectViewPath(id, path) })

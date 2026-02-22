@@ -24,7 +24,11 @@ Before modifying routing, read:
    - `communication.routes.ts` — Alerts, briefing
    - `settings.routes.ts` — Settings page
    - `misc.routes.ts` — Insights, changelog, health, screen, fitness
-6. `src/renderer/app/layouts/Sidebar.tsx` — Sidebar navigation
+6. `src/renderer/app/layouts/sidebar-layouts/shared-nav.ts` — Shared nav items (personalItems, developmentItems)
+7. `src/renderer/app/layouts/sidebar-layouts/SidebarLayout*.tsx` — 16 sidebar layout variants
+8. `src/renderer/app/layouts/LayoutWrapper.tsx` — Switches between sidebar layouts
+9. `src/renderer/app/layouts/ContentHeader.tsx` — SidebarTrigger + Breadcrumbs
+10. `src/renderer/app/layouts/AppBreadcrumbs.tsx` — Breadcrumb trail from route staticData
 7. `src/renderer/app/layouts/ProjectTabBar.tsx` — Project tab bar
 8. `src/renderer/app/layouts/RootLayout.tsx` — Root layout wrapper
 9. `src/renderer/app/layouts/TopBar.tsx` — Top bar with CommandBar trigger
@@ -38,7 +42,10 @@ ONLY modify these files:
   src/shared/constants/routes.ts               — Route constants
   src/renderer/app/router.tsx                   — Root route tree assembly
   src/renderer/app/routes/*.ts(x)              — Domain route group files
-  src/renderer/app/layouts/Sidebar.tsx          — Sidebar nav items
+  src/renderer/app/layouts/sidebar-layouts/shared-nav.ts  — Shared nav items (add here)
+  src/renderer/app/layouts/sidebar-layouts/*.tsx — Sidebar layout variants
+  src/renderer/app/layouts/LayoutWrapper.tsx     — Layout switching
+  src/renderer/app/layouts/AppBreadcrumbs.tsx    — Breadcrumbs
   src/renderer/app/layouts/ProjectTabBar.tsx    — Project tabs
   src/renderer/app/layouts/TopBar.tsx           — Top bar
   src/renderer/app/layouts/CommandBar.tsx       — Command palette
@@ -118,7 +125,7 @@ const routeTree = rootRoute.addChildren([
 
 ### Step 3: Add Sidebar Nav Item
 ```typescript
-// src/renderer/app/layouts/Sidebar.tsx
+// src/renderer/app/layouts/sidebar-layouts/shared-nav.ts
 
 import { Calendar } from 'lucide-react';
 
@@ -157,7 +164,7 @@ const plannerRoute = createRoute({
 
 ### Step 3: Add to Sidebar navItems
 ```typescript
-// src/renderer/app/layouts/Sidebar.tsx
+// src/renderer/app/layouts/sidebar-layouts/shared-nav.ts
 
 import { Calendar } from 'lucide-react';
 
@@ -249,7 +256,8 @@ Before marking work complete:
 - [ ] Route constants added to `src/shared/constants/routes.ts`
 - [ ] Route uses constants (not hardcoded strings)
 - [ ] Route added to `routeTree` in `router.tsx`
-- [ ] Sidebar nav item added (if user-facing feature)
+- [ ] Sidebar nav item added to shared-nav.ts (if user-facing feature)
+- [ ] Route has staticData.breadcrumbLabel (for breadcrumb trail)
 - [ ] Navigation calls use `void` operator
 - [ ] Redirect uses `throw redirect()` with eslint-disable comment
 - [ ] Feature imported from barrel export (not internal path)
@@ -260,7 +268,7 @@ Before marking work complete:
 
 ## Design System Awareness
 
-This project has a design system at `src/renderer/shared/components/ui/` (30 primitives), imported via `@ui`. All UI-facing code must use these primitives instead of raw HTML elements. Key exports: Button, Input, Textarea, Label, Badge, Card, Spinner, Dialog, AlertDialog, Select, DropdownMenu, Tooltip, Tabs, Switch, Checkbox, Toast, ScrollArea, Popover, Progress, Slider, Collapsible, PageLayout, Typography, Grid, Stack, Flex, Container, Separator, Form system (FormField, FormInput, etc.).
+This project has a design system at `src/renderer/shared/components/ui/` (30 primitives), imported via `@ui`. All UI-facing code must use these primitives instead of raw HTML elements. Key exports: Button, Input, Textarea, Label, Badge, Card, Spinner, Dialog, AlertDialog, Select, DropdownMenu, Tooltip, Tabs, Switch, Checkbox, Toast, ScrollArea, Popover, Progress, Slider, Collapsible, Sidebar (composable sidebar system), Breadcrumb (composable breadcrumb navigation), PageLayout, Typography, Grid, Stack, Flex, Container, Separator, Form system (FormField, FormInput, etc.).
 
 ## Handoff
 

@@ -42,7 +42,7 @@ Location: `src/renderer/features/`
 | **productivity** | Productivity hub (8 tabs: Overview, Calendar, Spotify, Briefing, Notes, Planner, Alerts, Comms) | ProductivityPage (tabbed), CalendarWidget, SpotifyWidget; embeds BriefingPage, NotesPage, PlannerPage, AlertsPage, CommunicationsPage as tab content | `calendar.*`, `spotify.*`, `briefing.*`, `notes.*`, `planner.*`, `alerts.*` |
 | **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager, ProjectEditDialog, GitStatusIndicator (branch name + clean/changed badge in project list) | `projects.*`, `git.status` |
 | **roadmap** | Project roadmap | RoadmapPage, MilestoneCard | `milestones.*` |
-| **settings** | App settings (6-tab layout: Display, Profile, Hub, Integrations, Storage, Advanced) | SettingsPage (tabbed), ProfileFormModal (TanStack Form + Zod + FormSelect), HubSettings (ConnectionForm uses TanStack Form + Zod), OAuthProviderSettings, OAuthConnectionStatus, WebhookSettings (SlackForm + GitHubForm use TanStack Form + Zod), StorageManagementSection, StorageUsageBar, RetentionControl, ColorThemeSection; **Theme Editor** (`components/theme-editor/`, 10 files): ThemeEditorPage, ColorControl, ColorSection, ThemePreview, SavedThemesBar, CssImportDialog, css-parser.ts, css-exporter.ts, token-sections.ts — Route: `/settings/themes` | `settings.*`, `oauth.*`, `dataManagement.*` |
+| **settings** | App settings (6-tab layout: Display, Profile, Hub, Integrations, Storage, Advanced) | SettingsPage (tabbed), LayoutSection (sidebar layout selector with SVG wireframe preview), ProfileFormModal (TanStack Form + Zod + FormSelect), HubSettings (ConnectionForm uses TanStack Form + Zod), OAuthProviderSettings, OAuthConnectionStatus, WebhookSettings (SlackForm + GitHubForm use TanStack Form + Zod), StorageManagementSection, StorageUsageBar, RetentionControl, ColorThemeSection; **Theme Editor** (`components/theme-editor/`, 10 files): ThemeEditorPage, ColorControl, ColorSection, ThemePreview, SavedThemesBar, CssImportDialog, css-parser.ts, css-exporter.ts, token-sections.ts — Route: `/settings/themes` | `settings.*`, `oauth.*`, `dataManagement.*` |
 | **tasks** | Task management (AG-Grid dashboard) | TaskDataGrid (AG-Grid v35 wrapped in `<Card>` from `@ui`; themed via compound `.ag-theme-quartz.ag-theme-claude` CSS class with design-system token overrides via AG-Grid Theming API in `ag-grid-modules.ts`), TaskFiltersToolbar, TaskDetailRow (subtasks use `?? []` fallback for Hub data), TaskStatusBadge, CreateTaskDialog, PlanFeedbackDialog, TaskResultView (status/duration/cost/log summary for completed tasks), CreatePrDialog (GitHub PR creation post-task-completion); **Hooks**: useTaskEvents (→ useAgentEvents + useQaEvents), useAgentMutations (useStartPlanning, useStartExecution, useReplanWithFeedback, useKillAgent, useRestartFromCheckpoint), useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*` (incl. `agent.replanWithFeedback`), `qa.*`, `git.createPr`, `event:agent.orchestrator.*`, `event:qa.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions *(accessed via Productivity > Briefing tab)* | BriefingPage, SuggestionCard | `briefing.*` |
@@ -389,13 +389,40 @@ Location: `src/renderer/app/layouts/`
 
 | Layout | Purpose |
 |--------|---------|
-| `RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for sidebar + content layout with localStorage persistence. Sidebar panel is collapsible (collapses to 56px, minSize 160px, maxSize 300px) and syncs with layout store. |
+| `RootLayout.tsx` | Root shell: renders TitleBar at top, then `LayoutWrapper` with the selected sidebar layout variant. Layout selection stored in layout store + persisted via settings IPC. |
+| `LayoutWrapper.tsx` | Switches between 16 sidebar layout variants. Lazy-loads `SidebarLayoutXX` components. Wraps content in `SidebarProvider` + `SidebarInset` + `ContentHeader`. |
+| `ContentHeader.tsx` | Shared content header bar: `[SidebarTrigger] \| [Breadcrumbs]`. Renders inside SidebarInset across all layout variants. |
+| `AppBreadcrumbs.tsx` | Breadcrumb trail from TanStack Router `useMatches()`. Reads `staticData.breadcrumbLabel` from route matches. |
 | `TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement, utility buttons (screenshot, health indicator, hub status) separated by vertical divider from minimize/maximize/close window controls. Uses `window.*` IPC channels. |
 | `TitleBarScreenshot.tsx` | Camera icon button that captures the primary screen via `screen.listSources` + `screen.capture` IPC channels and copies PNG to clipboard. Shows checkmark feedback for 1.5s on success. |
-| `Sidebar.tsx` | Navigation sidebar (fills its parent panel, collapse state driven by layout store). Uses `bg-sidebar text-sidebar-foreground` theme variables. |
+| `Sidebar.tsx` | Legacy navigation sidebar (kept for reference). Replaced by `sidebar-layouts/SidebarLayoutXX.tsx` components. |
 | `TopBar.tsx` | Top bar with project tabs + add button |
 | `ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
 | `UserMenu.tsx` | Avatar + logout dropdown in sidebar footer |
+
+### Sidebar Layout Variants
+
+Location: `src/renderer/app/layouts/sidebar-layouts/`
+
+| File | Layout | Description |
+|------|--------|-------------|
+| `shared-nav.ts` | — | Shared nav items (`personalItems`, `developmentItems`, `settingsItem`, `addProjectItem`, `NavItem` type) |
+| `SidebarLayout01.tsx` | Grouped | Simple sidebar with labeled section groups |
+| `SidebarLayout02.tsx` | Collapsible Sections | Sidebar with collapsible section groups |
+| `SidebarLayout03.tsx` | Submenus | Sidebar with inline expandable sub-items |
+| `SidebarLayout04.tsx` | Floating | Floating sidebar with `variant="floating"` |
+| `SidebarLayout05.tsx` | Collapsible Submenus | Collapsible sub-items with search input |
+| `SidebarLayout06.tsx` | Dropdown Submenus | Sidebar with dropdown-style sub-items |
+| `SidebarLayout07.tsx` | Icon Collapse | Sidebar that collapses to icons (`collapsible="icon"`) |
+| `SidebarLayout08.tsx` | Inset + Secondary | Inset sidebar with `variant="inset"` |
+| `SidebarLayout09.tsx` | Nested | Wide sidebar with deeply nested collapsible groups |
+| `SidebarLayout10.tsx` | Popover | Floating icon-collapsible sidebar |
+| `SidebarLayout11.tsx` | File Tree | Sidebar with tree hierarchy using SidebarMenuSub |
+| `SidebarLayout12.tsx` | Calendar | Sidebar with date display widget |
+| `SidebarLayout13.tsx` | Dialog | Offcanvas sidebar (`collapsible="offcanvas"`) |
+| `SidebarLayout14.tsx` | Right Side | Right-aligned sidebar (`side="right"`) |
+| `SidebarLayout15.tsx` | Dual | Left + right sidebar layout |
+| `SidebarLayout16.tsx` | Sticky Header | Sidebar with sticky header section |
 
 ---
 
@@ -453,6 +480,8 @@ All primitives follow the **shadcn/ui pattern**: CVA variants, `data-slot` attri
 | **2: Radix** | Progress | `ui/progress.tsx` | Progress bar with CVA sizes |
 | **2: Radix** | Slider | `ui/slider.tsx` | Slider with track/range/thumb |
 | **2: Radix** | Collapsible | `ui/collapsible.tsx` | Collapsible, CollapsibleTrigger, CollapsibleContent |
+| **2: Sidebar** | Sidebar | `ui/sidebar.tsx` | `SidebarProvider`, `Sidebar`, `SidebarContent`, `SidebarFooter`, `SidebarGroup`, `SidebarGroupAction`, `SidebarGroupContent`, `SidebarGroupLabel`, `SidebarHeader`, `SidebarInset`, `SidebarInput`, `SidebarMenu`, `SidebarMenuAction`, `SidebarMenuBadge`, `SidebarMenuButton`, `SidebarMenuItem`, `SidebarMenuSkeleton`, `SidebarMenuSub`, `SidebarMenuSubButton`, `SidebarMenuSubItem`, `SidebarRail`, `SidebarSeparator`, `SidebarTrigger`, `useSidebar`, `sidebarMenuButtonVariants` — shadcn composable sidebar system, adapted for Electron (no mobile Sheet) |
+| **2: Breadcrumb** | Breadcrumb | `ui/breadcrumb.tsx` | `Breadcrumb`, `BreadcrumbList`, `BreadcrumbItem`, `BreadcrumbLink`, `BreadcrumbPage`, `BreadcrumbSeparator`, `BreadcrumbEllipsis` — composable breadcrumb navigation |
 | **3: Form** | Form System | `ui/form.tsx` | `Form`, `FormField`, `FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox`, `FormSwitch` — TanStack Form + Zod v4 integration. `Form` and field components exported from `@ui` barrel. Import `useForm` from `@tanstack/react-form` directly. |
 
 ## 6.6 Shared Hooks

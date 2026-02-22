@@ -16,6 +16,7 @@ export function createCommunicationRoutes(appLayoutRoute: AnyRoute) {
   const communicationsRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.COMMUNICATIONS,
+    staticData: { breadcrumbLabel: 'Communications' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
       () => import('@features/communications'),

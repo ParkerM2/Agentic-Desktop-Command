@@ -176,6 +176,7 @@ projects: Project[];        // Should be in React Query
 // CORRECT — UI state in Zustand
 selectedTaskId: string | null;
 sidebarCollapsed: boolean;
+
 ```
 
 **Check:** Read each store file. Flag any server data stored in Zustand.

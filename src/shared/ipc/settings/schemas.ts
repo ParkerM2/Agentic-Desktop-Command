@@ -7,6 +7,8 @@
 
 import { z } from 'zod';
 
+import { SIDEBAR_LAYOUT_IDS } from '@shared/types/layout';
+
 import { DataRetentionSettingsSchema } from '../data-management/schemas';
 
 // ── Theme Schemas ───────────────────────────────────────────────
@@ -64,6 +66,7 @@ export const AppSettingsSchema = z.object({
   customThemes: z.array(CustomThemeSchema).optional(),
   language: z.string(),
   uiScale: z.number(),
+  sidebarLayout: z.enum(SIDEBAR_LAYOUT_IDS as [string, ...string[]]).optional(),
   onboardingCompleted: z.boolean(),
   fontFamily: z.string().optional(),
   fontSize: z.number().optional(),

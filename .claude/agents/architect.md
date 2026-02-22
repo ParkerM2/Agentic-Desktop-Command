@@ -58,7 +58,7 @@ MODIFY:
   src/shared/ipc/<domain>/schemas.ts   — add Zod schemas
   src/shared/types/<name>.ts           — add type definitions
   src/renderer/app/routes/<domain>.routes.ts — add route
-  src/renderer/app/layouts/Sidebar.tsx  — add nav item
+  src/renderer/app/layouts/sidebar-layouts/shared-nav.ts — add nav item
 ```
 
 ### 3. Data Flow

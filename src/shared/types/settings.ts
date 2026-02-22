@@ -3,6 +3,7 @@
  */
 
 import type { DataRetentionSettings } from './data-management';
+import type { SidebarLayoutId } from './layout';
 import type { SecuritySettings } from './security';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -19,6 +20,7 @@ export interface AppSettings {
   customThemes?: CustomTheme[];
   language: string;
   uiScale: number;
+  sidebarLayout?: SidebarLayoutId;
   onboardingCompleted: boolean;
   seenVersionWarnings?: string[];
   fontFamily?: string;

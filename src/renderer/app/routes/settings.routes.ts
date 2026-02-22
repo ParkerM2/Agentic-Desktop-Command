@@ -16,6 +16,7 @@ export function createSettingsRoutes(appLayoutRoute: AnyRoute) {
   const settingsRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.SETTINGS,
+    staticData: { breadcrumbLabel: 'Settings' },
     pendingComponent: SettingsSkeleton,
     component: lazyRouteComponent(
       () => import('@features/settings'),
@@ -26,6 +27,7 @@ export function createSettingsRoutes(appLayoutRoute: AnyRoute) {
   const themesRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.THEMES,
+    staticData: { breadcrumbLabel: 'Themes' },
     component: lazyRouteComponent(
       () => import('@features/settings'),
       'ThemeEditorPage',

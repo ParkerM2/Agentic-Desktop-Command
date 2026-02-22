@@ -167,6 +167,46 @@ export {
 } from './collapsible';
 export type { CollapsibleContentProps, CollapsibleProps, CollapsibleTriggerProps } from './collapsible';
 
+// Tier 2: Sidebar + Breadcrumb
+export {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupAction,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarInput,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSkeleton,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+  sidebarMenuButtonVariants,
+  useSidebar,
+} from './sidebar';
+export type { SidebarContextProps } from './sidebar';
+
+export {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from './breadcrumb';
+
 // Tier 3: Form System (TanStack Form + Zod v4)
 // Note: import { useForm } from '@tanstack/react-form' directly — not re-exported here
 export {

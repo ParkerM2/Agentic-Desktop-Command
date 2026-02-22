@@ -16,6 +16,7 @@ export function createMiscRoutes(appLayoutRoute: AnyRoute) {
   const briefingRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.BRIEFING,
+    staticData: { breadcrumbLabel: 'Briefing' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
       () => import('@features/briefing'),
@@ -26,6 +27,7 @@ export function createMiscRoutes(appLayoutRoute: AnyRoute) {
   const fitnessRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.FITNESS,
+    staticData: { breadcrumbLabel: 'Fitness' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
       () => import('@features/fitness'),

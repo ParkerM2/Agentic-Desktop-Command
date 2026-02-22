@@ -98,7 +98,7 @@ export interface FitnessService {
 
 ## Design System Awareness
 
-This project has a design system at `src/renderer/shared/components/ui/` (30 primitives), imported via `@ui`. All UI-facing code must use these primitives instead of raw HTML elements. Key exports: Button, Input, Textarea, Label, Badge, Card, Spinner, Dialog, AlertDialog, Select, DropdownMenu, Tooltip, Tabs, Switch, Checkbox, Toast, ScrollArea, Popover, Progress, Slider, Collapsible, PageLayout, Typography, Grid, Stack, Flex, Container, Separator, Form system (FormField, FormInput, etc.).
+This project has a design system at `src/renderer/shared/components/ui/` (30 primitives), imported via `@ui`. All UI-facing code must use these primitives instead of raw HTML elements. Key exports: Button, Input, Textarea, Label, Badge, Card, Spinner, Dialog, AlertDialog, Select, DropdownMenu, Tooltip, Tabs, Switch, Checkbox, Toast, ScrollArea, Popover, Progress, Slider, Collapsible, Sidebar (composable sidebar system), Breadcrumb (composable breadcrumb navigation), PageLayout, Typography, Grid, Stack, Flex, Container, Separator, Form system (FormField, FormInput, etc.).
 
 ## Handoff
 

@@ -7,16 +7,20 @@
 
 import { create } from 'zustand';
 
+import type { SidebarLayoutId } from '@shared/types/layout';
+
 import type { Layout } from 'react-resizable-panels';
 
 interface LayoutState {
   sidebarCollapsed: boolean;
+  sidebarLayout: SidebarLayoutId;
   activeProjectId: string | null;
   projectTabOrder: string[];
   panelLayout: Layout | null;
 
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setSidebarLayout: (id: SidebarLayoutId) => void;
   setActiveProject: (projectId: string | null) => void;
   setProjectTabOrder: (order: string[]) => void;
   addProjectTab: (projectId: string) => void;
@@ -26,12 +30,14 @@ interface LayoutState {
 
 export const useLayoutStore = create<LayoutState>((set) => ({
   sidebarCollapsed: false,
+  sidebarLayout: 'sidebar-07',
   activeProjectId: null,
   projectTabOrder: [],
   panelLayout: null,
 
   toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
   setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
+  setSidebarLayout: (id) => set({ sidebarLayout: id }),
 
   setActiveProject: (projectId) => set({ activeProjectId: projectId }),
 
