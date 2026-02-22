@@ -10,9 +10,11 @@ import { join } from 'node:path';
 
 import type { ChangeCategory, ChangelogEntry } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import { generateChangelogEntry } from './changelog-generator';
 
-export interface ChangelogService {
+export interface ChangelogService extends ReinitializableService {
   listEntries: () => ChangelogEntry[];
   addEntry: (data: {
     version: string;
@@ -113,11 +115,13 @@ function saveFile(filePath: string, data: ChangelogFile): void {
 }
 
 export function createChangelogService(deps: { dataDir: string }): ChangelogService {
-  const filePath = join(deps.dataDir, 'changelog.json');
-  const store = loadFile(filePath);
+  // Mutable file path for user-scoping
+  let currentFilePath = join(deps.dataDir, 'changelog.json');
+  // In-memory cache
+  let store = loadFile(currentFilePath);
 
   function persist(): void {
-    saveFile(filePath, store);
+    saveFile(currentFilePath, store);
   }
 
   return {
@@ -139,6 +143,16 @@ export function createChangelogService(deps: { dataDir: string }): ChangelogServ
 
     async generateFromGit(repoPath, version, fromTag) {
       return await generateChangelogEntry(repoPath, version, fromTag);
+    },
+
+    reinitialize(dataDir: string) {
+      currentFilePath = join(dataDir, 'changelog.json');
+      // Reload data from new path
+      store = loadFile(currentFilePath);
+    },
+
+    clearState() {
+      store = { entries: [...DEFAULT_ENTRIES] };
     },
   };
 }

@@ -31,12 +31,19 @@ import { createAssistantService } from '../services/assistant/assistant-service'
 import { createCrossDeviceQuery } from '../services/assistant/cross-device-query';
 import { createWatchEvaluator } from '../services/assistant/watch-evaluator';
 import { createWatchStore } from '../services/assistant/watch-store';
+import { createUserSessionManager } from '../services/auth';
 import { createBriefingService } from '../services/briefing/briefing-service';
 import { createSuggestionEngine } from '../services/briefing/suggestion-engine';
 import { createCalendarService } from '../services/calendar/calendar-service';
 import { createChangelogService } from '../services/changelog/changelog-service';
 import { createClaudeClient } from '../services/claude';
 import { createDashboardService } from '../services/dashboard/dashboard-service';
+import {
+  createUserDataMigrator,
+  createUserDataResolver,
+  isReinitializable,
+  type ReinitializableService,
+} from '../services/data-management';
 import { createCleanupService } from '../services/data-management/cleanup-service';
 import { createCrashRecovery } from '../services/data-management/crash-recovery';
 import { createStorageInspector } from '../services/data-management/storage-inspector';
@@ -79,7 +86,11 @@ import { createQaTrigger } from '../services/qa/qa-trigger';
 import { createScreenCaptureService } from '../services/screen/screen-capture-service';
 import { createSettingsService } from '../services/settings/settings-service';
 import { createSpotifyService } from '../services/spotify/spotify-service';
-import { createGithubImporter, createTaskDecomposer, createTaskRepository } from '../services/tasks';
+import {
+  createGithubImporter,
+  createTaskDecomposer,
+  createTaskRepository,
+} from '../services/tasks';
 import { createTerminalService } from '../services/terminal/terminal-service';
 import { createTimeParserService } from '../services/time-parser/time-parser-service';
 import { createTrackerService } from '../services/tracker/tracker-service';
@@ -90,6 +101,7 @@ import { createQuickInputWindow } from '../tray/quick-input';
 
 import type { OAuthConfig } from '../auth/types';
 import type { Services } from '../ipc';
+import type { UserSessionManager } from '../services/auth';
 import type { HubApiClient } from '../services/hub/hub-api-client';
 import type { TaskRepository } from '../services/tasks/types';
 
@@ -119,6 +131,7 @@ export interface ServiceRegistryResult {
   taskRepository: TaskRepository;
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
+  userSessionManager: UserSessionManager;
 }
 
 /**
@@ -131,11 +144,22 @@ export function createServiceRegistry(
   const router = new IpcRouter(getMainWindow);
   const dataDir = app.getPath('userData');
 
+  // ─── User session management ─────────────────────────────────
+  const userDataResolver = createUserDataResolver(dataDir);
+  const userDataMigrator = createUserDataMigrator();
+  const userSessionManager = createUserSessionManager(router);
+
   // ─── Error collector + health registry (created early) ──────
   const errorCollector = createErrorCollector(dataDir, {
-    onError: (entry) => { router.emit('event:app.error', entry); },
-    onCapacityAlert: (count, message) => { router.emit('event:app.capacityAlert', { count, message }); },
-    onDataRecovery: (store, message) => { router.emit('event:app.dataRecovery', { store, message }); },
+    onError: (entry) => {
+      router.emit('event:app.error', entry);
+    },
+    onCapacityAlert: (count, message) => {
+      router.emit('event:app.capacityAlert', { count, message });
+    },
+    onDataRecovery: (store, message) => {
+      router.emit('event:app.dataRecovery', { store, message });
+    },
   });
   const healthRegistry = createHealthRegistry({
     onUnhealthy: (serviceName, missedCount) => {
@@ -151,7 +175,9 @@ export function createServiceRegistry(
       const msg = error instanceof Error ? error.message : String(error);
       appLogger.warn(`[Bootstrap] Non-critical service "${name}" failed to init: ${msg}`);
       errorCollector.report({
-        severity: 'warning', tier: 'app', category: 'service',
+        severity: 'warning',
+        tier: 'app',
+        category: 'service',
         message: `Service initialization failed: ${name} - ${msg}`,
       });
       return null;
@@ -220,7 +246,7 @@ export function createServiceRegistry(
   const notesService = createNotesService({ dataDir, router });
   const dashboardService = createDashboardService({ dataDir, router });
   const dockerService = createDockerService();
-  const plannerService = createPlannerService(router);
+  const plannerService = createPlannerService({ dataDir, router });
   const alertService = createAlertService(router);
   alertService.startChecking();
 
@@ -251,12 +277,8 @@ export function createServiceRegistry(
   const milestonesService = initNonCritical('milestones', () =>
     createMilestonesService({ dataDir, router }),
   );
-  const ideasService = initNonCritical('ideas', () =>
-    createIdeasService({ dataDir, router }),
-  );
-  const changelogService = initNonCritical('changelog', () =>
-    createChangelogService({ dataDir }),
-  );
+  const ideasService = initNonCritical('ideas', () => createIdeasService({ dataDir, router }));
+  const changelogService = initNonCritical('changelog', () => createChangelogService({ dataDir }));
   const fitnessService = initNonCritical('fitness', () =>
     createFitnessService({ dataDir, router }),
   );
@@ -322,9 +344,7 @@ export function createServiceRegistry(
   // ─── External API services ───────────────────────────────────
   const githubCliClient = createGitHubCliClient();
   const githubService = createGitHubService({ client: githubCliClient, router });
-  const spotifyService = initNonCritical('spotify', () =>
-    createSpotifyService({ oauthManager }),
-  );
+  const spotifyService = initNonCritical('spotify', () => createSpotifyService({ oauthManager }));
   const calendarService = initNonCritical('calendar', () =>
     createCalendarService({ oauthManager }),
   );
@@ -362,9 +382,7 @@ export function createServiceRegistry(
 
   // ─── Misc services ───────────────────────────────────────────
   const voiceService = initNonCritical('voice', () => createVoiceService());
-  const screenCaptureService = initNonCritical('screenCapture', () =>
-    createScreenCaptureService(),
-  );
+  const screenCaptureService = initNonCritical('screenCapture', () => createScreenCaptureService());
   const appUpdateService = createAppUpdateService(router);
 
   // ─── Hotkey + quick input ────────────────────────────────────
@@ -417,7 +435,12 @@ export function createServiceRegistry(
   agentWatchdog.start();
 
   // QA auto-trigger — starts QA when tasks enter review
-  const qaTrigger = createQaTrigger({ qaRunner, orchestrator: agentOrchestrator, taskRepository, router });
+  const qaTrigger = createQaTrigger({
+    qaRunner,
+    orchestrator: agentOrchestrator,
+    taskRepository,
+    router,
+  });
 
   // Health registry enrollment — register background services for monitoring
   healthRegistry.register('hubHeartbeat', 60_000);
@@ -540,10 +563,46 @@ export function createServiceRegistry(
     codebaseAnalyzer,
     setupPipeline,
     trackerService,
+    userSessionManager,
     dataDir,
     providers,
     tokenStore,
   };
+
+  // ─── User session change handling ────────────────────────────
+  // Collect all user-scoped services that can be reinitialized
+  // Filter to only include services that implement ReinitializableService
+  const candidateServices: unknown[] = [
+    notesService,
+    dashboardService,
+    briefingService,
+    // alertService uses alert-store internally but doesn't expose reinitialize yet
+    alertService,
+    ideasService,
+    plannerService,
+    fitnessService,
+    milestonesService,
+    changelogService,
+  ];
+  const userScopedServices: ReinitializableService[] = candidateServices.filter(isReinitializable);
+
+  // Subscribe to session changes to reinitialize services with user-scoped paths
+  userSessionManager.onSessionChange((session) => {
+    if (session) {
+      // User logged in - migrate existing data then reinitialize with user-scoped paths
+      const userDataDir = userDataResolver.getUserDataDir(session.userId);
+      userDataMigrator.migrateIfNeeded(dataDir, userDataDir);
+      for (const service of userScopedServices) {
+        service.reinitialize(userDataDir);
+      }
+    } else {
+      // User logged out - clear state and reset to global dir
+      for (const service of userScopedServices) {
+        service.clearState();
+        service.reinitialize(dataDir); // Reset to global (pre-login state)
+      }
+    }
+  });
 
   return {
     router,
@@ -570,5 +629,6 @@ export function createServiceRegistry(
     crashRecovery,
     heartbeatIntervalId,
     registeredDeviceId,
+    userSessionManager,
   };
 }

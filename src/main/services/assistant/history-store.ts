@@ -14,10 +14,12 @@ import { app } from 'electron';
 import type { CommandHistoryEntry } from '@shared/types';
 
 import { serviceLogger } from '@main/lib/logger';
+import type { ReinitializableService } from '@main/services/data-management';
 
 const MAX_HISTORY_ENTRIES = 1000;
+const HISTORY_FILE = 'assistant-history.json';
 
-export interface HistoryStore {
+export interface HistoryStore extends ReinitializableService {
   /** Get the most recent entries, newest first. */
   getEntries: (limit?: number) => CommandHistoryEntry[];
   /** Add a new entry to the history. */
@@ -26,12 +28,7 @@ export interface HistoryStore {
   clear: () => void;
 }
 
-function getHistoryFilePath(): string {
-  return join(app.getPath('userData'), 'assistant-history.json');
-}
-
-function loadHistory(): CommandHistoryEntry[] {
-  const filePath = getHistoryFilePath();
+function loadHistoryFromPath(filePath: string): CommandHistoryEntry[] {
   if (!existsSync(filePath)) {
     return [];
   }
@@ -49,8 +46,7 @@ function loadHistory(): CommandHistoryEntry[] {
   }
 }
 
-function saveHistory(entries: CommandHistoryEntry[]): void {
-  const filePath = getHistoryFilePath();
+function saveHistoryToPath(filePath: string, entries: CommandHistoryEntry[]): void {
   const dir = join(filePath, '..');
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -59,7 +55,8 @@ function saveHistory(entries: CommandHistoryEntry[]): void {
 }
 
 export function createHistoryStore(): HistoryStore {
-  let entries: CommandHistoryEntry[] = loadHistory();
+  let currentFilePath = join(app.getPath('userData'), HISTORY_FILE);
+  let entries: CommandHistoryEntry[] = loadHistoryFromPath(currentFilePath);
 
   return {
     getEntries(limit) {
@@ -81,12 +78,21 @@ export function createHistoryStore(): HistoryStore {
         entries = entries.slice(0, MAX_HISTORY_ENTRIES);
       }
 
-      saveHistory(entries);
+      saveHistoryToPath(currentFilePath, entries);
     },
 
     clear() {
       entries = [];
-      saveHistory(entries);
+      saveHistoryToPath(currentFilePath, entries);
+    },
+
+    reinitialize(dataDir: string) {
+      currentFilePath = join(dataDir, HISTORY_FILE);
+      entries = loadHistoryFromPath(currentFilePath);
+    },
+
+    clearState() {
+      entries = [];
     },
   };
 }

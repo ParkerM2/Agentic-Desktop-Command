@@ -6,12 +6,14 @@
  * to match the IPC contract schemas (UserSchema, AuthTokensSchema).
  */
 
+import type { UserSessionManager } from '@main/services/auth';
 import type { HubAuthService } from '@main/services/hub/hub-auth-service';
 
 import type { IpcRouter } from '../router';
 
 export interface AuthHandlerDependencies {
   hubAuthService: HubAuthService;
+  userSessionManager: UserSessionManager;
 }
 
 /**
@@ -24,11 +26,8 @@ function expiresAtToExpiresIn(expiresAt: string): number {
   return Math.max(0, Math.round((expiresMs - nowMs) / 1000));
 }
 
-export function registerAuthHandlers(
-  router: IpcRouter,
-  deps: AuthHandlerDependencies,
-): void {
-  const { hubAuthService } = deps;
+export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDependencies): void {
+  const { hubAuthService, userSessionManager } = deps;
 
   router.handle('auth.login', async ({ email, password }) => {
     const result = await hubAuthService.login({ email, password });
@@ -38,6 +37,13 @@ export function registerAuthHandlers(
     }
 
     const { user, accessToken, refreshToken, expiresAt } = result.data;
+
+    // Set user session for user-scoped storage
+    userSessionManager.setSession({
+      userId: user.id,
+      email: user.email,
+    });
+
     return {
       user: {
         id: user.id,
@@ -100,6 +106,10 @@ export function registerAuthHandlers(
 
   router.handle('auth.logout', async () => {
     await hubAuthService.logout();
+
+    // Clear user session for user-scoped storage
+    userSessionManager.clearSession();
+
     return { success: true };
   });
 
@@ -131,6 +141,12 @@ export function registerAuthHandlers(
     if (!result.restored) {
       return { restored: false as const };
     }
+
+    // Set user session for user-scoped storage on successful restore
+    userSessionManager.setSession({
+      userId: result.user.id,
+      email: result.user.email,
+    });
 
     return {
       restored: true as const,

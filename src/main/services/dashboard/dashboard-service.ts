@@ -9,6 +9,8 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import type { IpcRouter } from '../../ipc/router';
 
 export interface Capture {
@@ -17,7 +19,7 @@ export interface Capture {
   createdAt: string;
 }
 
-export interface DashboardService {
+export interface DashboardService extends ReinitializableService {
   listCaptures: () => Capture[];
   createCapture: (text: string) => Capture;
   deleteCapture: (id: string) => { success: boolean };
@@ -52,11 +54,11 @@ export function createDashboardService(deps: {
   dataDir: string;
   router: IpcRouter;
 }): DashboardService {
-  const filePath = join(deps.dataDir, 'captures.json');
-  const store = loadCapturesFile(filePath);
+  let currentFilePath = join(deps.dataDir, 'captures.json');
+  let store = loadCapturesFile(currentFilePath);
 
   function persist(): void {
-    saveCapturesFile(filePath, store);
+    saveCapturesFile(currentFilePath, store);
   }
 
   function emitChanged(captureId: string): void {
@@ -90,6 +92,15 @@ export function createDashboardService(deps: {
       persist();
       emitChanged(id);
       return { success: true };
+    },
+
+    reinitialize(dataDir: string) {
+      currentFilePath = join(dataDir, 'captures.json');
+      store = loadCapturesFile(currentFilePath);
+    },
+
+    clearState() {
+      store = { captures: [] };
     },
   };
 }

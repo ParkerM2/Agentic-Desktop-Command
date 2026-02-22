@@ -17,6 +17,7 @@ import { ThemeHydrator } from '@renderer/shared/stores';
 import { Spinner } from '@ui';
 
 import { useAuthInit } from '../hooks/useAuthEvents';
+import { useSessionEvents } from '../hooks/useSessionEvents';
 import { useTokenRefresh } from '../hooks/useTokenRefresh';
 import { useAuthStore } from '../store';
 
@@ -27,6 +28,8 @@ export function AuthGuard() {
 
   // Restore session via auth.restore IPC on app startup
   useAuthInit();
+  // Clear query cache on session changes (login/logout/switch user)
+  useSessionEvents();
   // Proactively refresh tokens before expiry
   useTokenRefresh();
 
@@ -41,7 +44,7 @@ export function AuthGuard() {
   // Show loading spinner during initial auth check
   if (isInitializing) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
+      <div className="bg-background flex h-screen items-center justify-center">
         <ThemeHydrator />
         <Spinner className="text-muted-foreground" size="lg" />
       </div>

@@ -20,13 +20,15 @@ import type {
   WorkoutType,
 } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import { calculateStats } from './stats-calculator';
 
 import type { IpcRouter } from '../../ipc/router';
 
 // ── Interface ────────────────────────────────────────────────
 
-export interface FitnessService {
+export interface FitnessService extends ReinitializableService {
   logWorkout: (data: {
     date: string;
     type: WorkoutType;
@@ -91,25 +93,35 @@ function saveJson<T>(filePath: string, data: StoreData<T>): void {
 // ── Factory ──────────────────────────────────────────────────
 
 export function createFitnessService(deps: { dataDir: string; router: IpcRouter }): FitnessService {
-  const fitnessDir = join(deps.dataDir, 'fitness');
-  const workoutsPath = join(fitnessDir, 'workouts.json');
-  const measurementsPath = join(fitnessDir, 'measurements.json');
-  const goalsPath = join(fitnessDir, 'goals.json');
+  // Mutable directory path for user-scoping
+  let fitnessDir = join(deps.dataDir, 'fitness');
 
-  const workouts = loadJson<Workout>(workoutsPath);
-  const measurements = loadJson<BodyMeasurement>(measurementsPath);
-  const goals = loadJson<FitnessGoal>(goalsPath);
+  // Helper to get current file paths
+  function getWorkoutsPath(): string {
+    return join(fitnessDir, 'workouts.json');
+  }
+  function getMeasurementsPath(): string {
+    return join(fitnessDir, 'measurements.json');
+  }
+  function getGoalsPath(): string {
+    return join(fitnessDir, 'goals.json');
+  }
+
+  // In-memory caches
+  let workouts = loadJson<Workout>(getWorkoutsPath());
+  let measurements = loadJson<BodyMeasurement>(getMeasurementsPath());
+  let goals = loadJson<FitnessGoal>(getGoalsPath());
 
   function persistWorkouts(): void {
-    saveJson(workoutsPath, workouts);
+    saveJson(getWorkoutsPath(), workouts);
   }
 
   function persistMeasurements(): void {
-    saveJson(measurementsPath, measurements);
+    saveJson(getMeasurementsPath(), measurements);
   }
 
   function persistGoals(): void {
-    saveJson(goalsPath, goals);
+    saveJson(getGoalsPath(), goals);
   }
 
   return {
@@ -234,6 +246,20 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       persistGoals();
       deps.router.emit('event:fitness.goalChanged', { goalId: id });
       return { success: true };
+    },
+
+    reinitialize(dataDir: string) {
+      fitnessDir = join(dataDir, 'fitness');
+      // Reload data from new directory
+      workouts = loadJson<Workout>(getWorkoutsPath());
+      measurements = loadJson<BodyMeasurement>(getMeasurementsPath());
+      goals = loadJson<FitnessGoal>(getGoalsPath());
+    },
+
+    clearState() {
+      workouts = { items: [] };
+      measurements = { items: [] };
+      goals = { items: [] };
     },
   };
 }

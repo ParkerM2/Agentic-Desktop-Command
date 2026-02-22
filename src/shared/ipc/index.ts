@@ -11,7 +11,7 @@
 import { orchestratorEvents, orchestratorInvoke } from './agents';
 import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
-import { authInvoke } from './auth';
+import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
@@ -138,6 +138,7 @@ export const ipcEventContract = {
   ...qaEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
+  ...authEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -148,11 +149,7 @@ export type { EventChannel, EventPayload, InvokeChannel, InvokeInput, InvokeOutp
 // Explicit named re-exports to avoid ambiguity from mega-domains
 // that aggregate schemas from multiple sub-domains.
 
-export {
-  AgentPhaseSchema,
-  AgentSessionStatusSchema,
-  OrchestratorSessionSchema,
-} from './agents';
+export { AgentPhaseSchema, AgentSessionStatusSchema, OrchestratorSessionSchema } from './agents';
 
 export {
   AssistantActionSchema,

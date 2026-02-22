@@ -17,13 +17,13 @@ export function DashboardSkeleton() {
 
       {/* Stat cards row */}
       <div className="grid grid-cols-3 gap-4">
-        <Skeleton variant="card" className="h-28" />
-        <Skeleton variant="card" className="h-28" />
-        <Skeleton variant="card" className="h-28" />
+        <Skeleton className="h-28" variant="card" />
+        <Skeleton className="h-28" variant="card" />
+        <Skeleton className="h-28" variant="card" />
       </div>
 
       {/* Main content area */}
-      <Skeleton variant="card" className="h-64" />
+      <Skeleton className="h-64" variant="card" />
     </div>
   );
 }
@@ -90,8 +90,8 @@ export function GenericPageSkeleton() {
       <Skeleton className="h-4 w-80" />
 
       {/* Content placeholder */}
-      <Skeleton variant="card" className="h-48" />
-      <Skeleton variant="card" className="h-32" />
+      <Skeleton className="h-48" variant="card" />
+      <Skeleton className="h-32" variant="card" />
     </div>
   );
 }
