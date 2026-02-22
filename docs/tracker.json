@@ -54,12 +54,12 @@
     },
     "tracking-consolidation": {
       "title": "Tracking Consolidation",
-      "status": "IN_PROGRESS",
+      "status": "IMPLEMENTED",
       "planFile": null,
       "created": "2026-02-20",
-      "statusChangedAt": "2026-02-20",
-      "branch": "feature/tracking-consolidation",
-      "pr": null,
+      "statusChangedAt": "2026-02-22",
+      "branch": null,
+      "pr": 64,
       "tags": ["tracking", "infrastructure", "cleanup"]
     },
     "ui-layout-refactor": {
@@ -74,12 +74,12 @@
     },
     "customizable-sidebar-layouts": {
       "title": "Customizable Sidebar Layout System",
-      "status": "IN_PROGRESS",
+      "status": "IMPLEMENTED",
       "planFile": null,
       "created": "2026-02-21",
-      "statusChangedAt": "2026-02-21",
-      "branch": "feature/customizable-sidebar-layouts",
-      "pr": null,
+      "statusChangedAt": "2026-02-22",
+      "branch": null,
+      "pr": 65,
       "tags": ["ui", "sidebar", "layouts", "shadcn", "breadcrumbs"]
     }
   }
