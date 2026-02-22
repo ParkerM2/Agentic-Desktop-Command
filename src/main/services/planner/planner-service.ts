@@ -9,8 +9,6 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { app } from 'electron';
-
 import type {
   DailyPlan,
   ScheduledTask,
@@ -19,9 +17,13 @@ import type {
   WeeklyReviewSummary,
 } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import type { IpcRouter } from '../../ipc/router';
 
-export interface PlannerService {
+const PLANNER_DIR_NAME = 'planner';
+
+export interface PlannerService extends ReinitializableService {
   getDay: (date: string) => DailyPlan;
   updateDay: (
     date: string,
@@ -43,21 +45,6 @@ export interface PlannerService {
   updateWeeklyReflection: (startDate: string, reflection: string) => WeeklyReview;
 }
 
-function getPlannerDir(): string {
-  return join(app.getPath('userData'), 'planner');
-}
-
-function getPlanFilePath(date: string): string {
-  return join(getPlannerDir(), `${date}.json`);
-}
-
-function ensurePlannerDir(): void {
-  const dir = getPlannerDir();
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-}
-
 function makeEmptyPlan(date: string): DailyPlan {
   return {
     date,
@@ -65,25 +52,6 @@ function makeEmptyPlan(date: string): DailyPlan {
     scheduledTasks: [],
     timeBlocks: [],
   };
-}
-
-function loadPlan(date: string): DailyPlan {
-  const filePath = getPlanFilePath(date);
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      return JSON.parse(raw) as DailyPlan;
-    } catch {
-      return makeEmptyPlan(date);
-    }
-  }
-  return makeEmptyPlan(date);
-}
-
-function savePlan(plan: DailyPlan): void {
-  ensurePlannerDir();
-  const filePath = getPlanFilePath(plan.date);
-  writeFileSync(filePath, JSON.stringify(plan, null, 2), 'utf-8');
 }
 
 /**
@@ -176,42 +144,80 @@ function generateSummary(days: DailyPlan[]): WeeklyReviewSummary {
   };
 }
 
-/**
- * Get file path for weekly review reflection
- */
-function getWeeklyReviewFilePath(mondayStr: string): string {
-  return join(getPlannerDir(), `week-${mondayStr}.json`);
-}
+export function createPlannerService(deps: { dataDir: string; router: IpcRouter }): PlannerService {
+  let plannerDir = join(deps.dataDir, PLANNER_DIR_NAME);
 
-/**
- * Load weekly review reflection (if exists)
- */
-function loadWeeklyReflection(mondayStr: string): string | undefined {
-  const filePath = getWeeklyReviewFilePath(mondayStr);
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const data = JSON.parse(raw) as { reflection?: string };
-      return data.reflection;
-    } catch {
-      return undefined;
+  // In-memory cache for loaded plans (keyed by date)
+  let plansCache = new Map<string, DailyPlan>();
+
+  function getPlanFilePath(date: string): string {
+    return join(plannerDir, `${date}.json`);
+  }
+
+  function ensurePlannerDir(): void {
+    if (!existsSync(plannerDir)) {
+      mkdirSync(plannerDir, { recursive: true });
     }
   }
-  return undefined;
-}
 
-/**
- * Save weekly review reflection
- */
-function saveWeeklyReflection(mondayStr: string, reflection: string): void {
-  ensurePlannerDir();
-  const filePath = getWeeklyReviewFilePath(mondayStr);
-  writeFileSync(filePath, JSON.stringify({ reflection }, null, 2), 'utf-8');
-}
+  function loadPlan(date: string): DailyPlan {
+    // Check cache first
+    const cached = plansCache.get(date);
+    if (cached) {
+      return cached;
+    }
 
-export function createPlannerService(router: IpcRouter): PlannerService {
+    const filePath = getPlanFilePath(date);
+    if (existsSync(filePath)) {
+      try {
+        const raw = readFileSync(filePath, 'utf-8');
+        const plan = JSON.parse(raw) as DailyPlan;
+        plansCache.set(date, plan);
+        return plan;
+      } catch {
+        const plan = makeEmptyPlan(date);
+        plansCache.set(date, plan);
+        return plan;
+      }
+    }
+    const plan = makeEmptyPlan(date);
+    plansCache.set(date, plan);
+    return plan;
+  }
+
+  function savePlan(plan: DailyPlan): void {
+    ensurePlannerDir();
+    const filePath = getPlanFilePath(plan.date);
+    writeFileSync(filePath, JSON.stringify(plan, null, 2), 'utf-8');
+    plansCache.set(plan.date, plan);
+  }
+
+  function getWeeklyReviewFilePath(mondayStr: string): string {
+    return join(plannerDir, `week-${mondayStr}.json`);
+  }
+
+  function loadWeeklyReflection(mondayStr: string): string | undefined {
+    const filePath = getWeeklyReviewFilePath(mondayStr);
+    if (existsSync(filePath)) {
+      try {
+        const raw = readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(raw) as { reflection?: string };
+        return data.reflection;
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  }
+
+  function saveWeeklyReflection(mondayStr: string, reflection: string): void {
+    ensurePlannerDir();
+    const filePath = getWeeklyReviewFilePath(mondayStr);
+    writeFileSync(filePath, JSON.stringify({ reflection }, null, 2), 'utf-8');
+  }
+
   function emitDayChanged(date: string): void {
-    router.emit('event:planner.dayChanged', { date });
+    deps.router.emit('event:planner.dayChanged', { date });
   }
 
   return {
@@ -300,8 +306,17 @@ export function createPlannerService(router: IpcRouter): PlannerService {
     updateWeeklyReflection(startDate, reflection) {
       const monday = getWeekMonday(startDate);
       saveWeeklyReflection(monday, reflection);
-      router.emit('event:planner.dayChanged', { date: monday });
+      deps.router.emit('event:planner.dayChanged', { date: monday });
       return this.getWeek(startDate);
+    },
+
+    reinitialize(dataDir: string): void {
+      plannerDir = join(dataDir, PLANNER_DIR_NAME);
+      plansCache = new Map(); // Clear cache to force reload from new path
+    },
+
+    clearState(): void {
+      plansCache = new Map();
     },
   };
 }

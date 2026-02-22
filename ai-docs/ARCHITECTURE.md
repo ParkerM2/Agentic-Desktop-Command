@@ -103,12 +103,51 @@ This replaces the previous monolithic `index.ts` where all initialization lived 
 
 ## Data Persistence
 
+### User-Scoped vs Global Data
+
+Data is separated into **user-scoped** (per-Hub-account) and **global** (device-level):
+
+```
+{appData}/adc/
+├── settings.json          # Global — device preferences
+├── hub-config.json        # Global — needed before login
+├── oauth-tokens.json      # Global — device OAuth tokens
+├── error-log.json         # Global — diagnostics
+└── users/
+    └── {userId}/          # User-scoped directory
+        ├── notes.json
+        ├── captures.json
+        ├── briefings.json
+        ├── assistant-history.json
+        ├── alerts.json
+        ├── ideas.json
+        ├── milestones.json
+        ├── changelog.json
+        ├── planner/       # Daily plans
+        └── fitness/       # Workouts, measurements, goals
+```
+
+**Session lifecycle:**
+- On login: `UserSessionManager.setSession()` → services reinitialize with user-scoped paths
+- On logout: `UserSessionManager.clearSession()` → services clear state and reset to global paths
+- First login: `UserDataMigrator` copies existing global data to user folder
+
+Key modules:
+- `src/main/services/auth/user-session-manager.ts` — Tracks logged-in user, emits session change events
+- `src/main/services/data-management/user-data-resolver.ts` — Computes user-scoped paths
+- `src/main/services/data-management/user-data-migrator.ts` — Migrates data on first login
+- `src/main/services/data-management/reinitializable-service.ts` — Interface for user-scoped services
+
+### Data Locations
+
 | Data | Storage | Location |
 |------|---------|----------|
 | Projects | JSON file | `{appData}/adc/projects.json` |
 | Settings | JSON file | `{appData}/adc/settings.json` |
 | Tasks | File directories | `{projectPath}/.adc/specs/{taskId}/` |
 | Task specs | JSON files | `requirements.json`, `implementation_plan.json`, `task_metadata.json` |
+| Notes | JSON file | `{appData}/adc/users/{userId}/notes.json` |
+| Captures | JSON file | `{appData}/adc/users/{userId}/captures.json` |
 | Terminals | In-memory only | PTY processes managed by TerminalService |
 | Agents | In-memory only | PTY processes managed by AgentService |
 

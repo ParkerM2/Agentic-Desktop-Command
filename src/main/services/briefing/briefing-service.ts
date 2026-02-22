@@ -14,6 +14,8 @@ import { app } from 'electron';
 
 import type { BriefingConfig, DailyBriefing, Suggestion } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import { createBriefingCache } from './briefing-cache';
 import { createBriefingConfigManager } from './briefing-config';
 import { createBriefingGenerator } from './briefing-generator';
@@ -31,7 +33,7 @@ const CONFIG_FILE = 'briefing-config.json';
 const BRIEFING_READY_EVENT = 'event:briefing.ready' as const;
 
 /** Briefing service interface */
-export interface BriefingService {
+export interface BriefingService extends ReinitializableService {
   /** Get the current daily briefing (cached for the day) */
   getDailyBriefing: () => DailyBriefing | null;
   /** Generate a new daily briefing */
@@ -65,15 +67,15 @@ export interface BriefingServiceDeps {
 export function createBriefingService(deps: BriefingServiceDeps): BriefingService {
   const { router, suggestionEngine } = deps;
 
-  const dataDir = app.getPath('userData');
+  let currentDataDir = app.getPath('userData');
 
   // Ensure data directory exists
-  if (!existsSync(dataDir)) {
-    mkdirSync(dataDir, { recursive: true });
+  if (!existsSync(currentDataDir)) {
+    mkdirSync(currentDataDir, { recursive: true });
   }
 
-  const configManager = createBriefingConfigManager(join(dataDir, CONFIG_FILE));
-  const cache = createBriefingCache(join(dataDir, BRIEFING_FILE));
+  let configManager = createBriefingConfigManager(join(currentDataDir, CONFIG_FILE));
+  let cache = createBriefingCache(join(currentDataDir, BRIEFING_FILE));
   const generator = createBriefingGenerator({
     projectService: deps.projectService,
     taskService: deps.taskService,
@@ -85,6 +87,8 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
 
   let schedulerInterval: ReturnType<typeof setInterval> | null = null;
   let lastScheduledDate = '';
+  // Reserved for future caching - currently cleared on reinit/clearState
+  let _cachedBriefing: DailyBriefing | null = null;
 
   function getTodayDate(): string {
     return new Date().toISOString().split('T')[0] ?? '';
@@ -144,6 +148,23 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
         clearInterval(schedulerInterval);
         schedulerInterval = null;
       }
+    },
+
+    reinitialize(dataDir: string) {
+      // Ensure new data directory exists
+      if (!existsSync(dataDir)) {
+        mkdirSync(dataDir, { recursive: true });
+      }
+      currentDataDir = dataDir;
+      configManager = createBriefingConfigManager(join(dataDir, CONFIG_FILE));
+      cache = createBriefingCache(join(dataDir, BRIEFING_FILE));
+      _cachedBriefing = null;
+      lastScheduledDate = '';
+    },
+
+    clearState() {
+      _cachedBriefing = null;
+      lastScheduledDate = '';
     },
   };
 }

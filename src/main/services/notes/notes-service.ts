@@ -11,9 +11,11 @@ import { join } from 'node:path';
 
 import type { Note } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import type { IpcRouter } from '../../ipc/router';
 
-export interface NotesService {
+export interface NotesService extends ReinitializableService {
   listNotes: (filters: { projectId?: string; tag?: string }) => Note[];
   createNote: (data: {
     title: string;
@@ -56,11 +58,11 @@ function saveNotesFile(filePath: string, data: NotesFile): void {
 }
 
 export function createNotesService(deps: { dataDir: string; router: IpcRouter }): NotesService {
-  const filePath = join(deps.dataDir, 'notes.json');
-  const store = loadNotesFile(filePath);
+  let currentFilePath = join(deps.dataDir, 'notes.json');
+  let store = loadNotesFile(currentFilePath);
 
   function persist(): void {
-    saveNotesFile(filePath, store);
+    saveNotesFile(currentFilePath, store);
   }
 
   function emitChanged(noteId: string): void {
@@ -141,6 +143,15 @@ export function createNotesService(deps: { dataDir: string; router: IpcRouter })
       return store.notes.filter(
         (n) => n.title.toLowerCase().includes(lower) || n.content.toLowerCase().includes(lower),
       );
+    },
+
+    reinitialize(dataDir: string) {
+      currentFilePath = join(dataDir, 'notes.json');
+      store = loadNotesFile(currentFilePath);
+    },
+
+    clearState() {
+      store = { notes: [] };
     },
   };
 }

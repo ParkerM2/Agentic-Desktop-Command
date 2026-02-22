@@ -7,3 +7,6 @@ export type { StorageInspector } from './storage-inspector';
 export { exportData, importData } from './data-export';
 export { DATA_STORE_REGISTRY } from './store-registry';
 export { STORE_CLEANUP_FUNCTIONS } from './store-cleaners';
+export { createUserDataResolver, type UserDataResolver } from './user-data-resolver';
+export { type ReinitializableService, isReinitializable } from './reinitializable-service';
+export { createUserDataMigrator, type UserDataMigrator } from './user-data-migrator';

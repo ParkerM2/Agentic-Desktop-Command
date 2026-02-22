@@ -9,8 +9,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
 
+import type { UserSessionManager } from '@main/services/auth';
 import type { IpcRouter } from '@main/ipc/router';
-import type { HubAuthResult, HubAuthService, RestoreResult } from '@main/services/hub/hub-auth-service';
+import type {
+  HubAuthResult,
+  HubAuthService,
+  RestoreResult,
+} from '@main/services/hub/hub-auth-service';
 import type { AuthRefreshResponse, AuthResponse, User } from '@shared/types/hub-protocol';
 
 // ─── Mock Factory ──────────────────────────────────────────────
@@ -52,12 +57,24 @@ function createMockHubAuthService(): HubAuthService {
   };
 }
 
+function createMockUserSessionManager(): UserSessionManager {
+  return {
+    getCurrentSession: vi.fn().mockReturnValue(null),
+    setSession: vi.fn(),
+    clearSession: vi.fn(),
+    onSessionChange: vi.fn().mockReturnValue(() => {}),
+  };
+}
+
 // ─── Test Router Implementation ────────────────────────────────
 
 function createTestRouter(): {
   router: IpcRouter;
   handlers: Map<string, (input: unknown) => Promise<unknown>>;
-  invoke: (channel: string, input: unknown) => Promise<{ success: boolean; data?: unknown; error?: string }>;
+  invoke: (
+    channel: string,
+    input: unknown,
+  ) => Promise<{ success: boolean; data?: unknown; error?: string }>;
 } {
   const handlers = new Map<string, (input: unknown) => Promise<unknown>>();
 
@@ -97,17 +114,19 @@ function createTestRouter(): {
 
 describe('Auth IPC Handlers', () => {
   let hubAuthService: HubAuthService;
+  let userSessionManager: UserSessionManager;
   let router: IpcRouter;
   let invoke: ReturnType<typeof createTestRouter>['invoke'];
 
   beforeEach(async () => {
     hubAuthService = createMockHubAuthService();
+    userSessionManager = createMockUserSessionManager();
 
     const testRouter = createTestRouter();
     ({ router, invoke } = testRouter);
 
     const { registerAuthHandlers } = await import('@main/ipc/handlers/auth-handlers');
-    registerAuthHandlers(router, { hubAuthService });
+    registerAuthHandlers(router, { hubAuthService, userSessionManager });
   });
 
   afterEach(() => {
@@ -130,7 +149,10 @@ describe('Auth IPC Handlers', () => {
       });
 
       expect(result.success).toBe(true);
-      const data = result.data as { user: Record<string, unknown>; tokens: Record<string, unknown> };
+      const data = result.data as {
+        user: Record<string, unknown>;
+        tokens: Record<string, unknown>;
+      };
       expect(data.user.id).toBe('user-1');
       expect(data.user.email).toBe('test@example.com');
       expect(data.user.displayName).toBe('Test User');
@@ -140,6 +162,11 @@ describe('Auth IPC Handlers', () => {
       expect(hubAuthService.login).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
+      });
+      // Verify user session is set for user-scoped storage
+      expect(userSessionManager.setSession).toHaveBeenCalledWith({
+        userId: 'user-1',
+        email: 'test@example.com',
       });
     });
 
@@ -229,7 +256,10 @@ describe('Auth IPC Handlers', () => {
       });
 
       expect(result.success).toBe(true);
-      const data = result.data as { user: Record<string, unknown>; tokens: Record<string, unknown> };
+      const data = result.data as {
+        user: Record<string, unknown>;
+        tokens: Record<string, unknown>;
+      };
       expect(data.user.id).toBe('user-1');
       expect(data.tokens.accessToken).toBe('access-token-123');
       expect(hubAuthService.register).toHaveBeenCalledWith({
@@ -378,7 +408,7 @@ describe('Auth IPC Handlers', () => {
   // ─── auth.logout ──────────────────────────────────────────────
 
   describe('auth.logout', () => {
-    it('returns success on logout', async () => {
+    it('returns success on logout and clears user session', async () => {
       vi.mocked(hubAuthService.logout).mockResolvedValue({
         ok: true,
         data: { success: true },
@@ -389,6 +419,8 @@ describe('Auth IPC Handlers', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
       expect(hubAuthService.logout).toHaveBeenCalled();
+      // Verify user session is cleared for user-scoped storage
+      expect(userSessionManager.clearSession).toHaveBeenCalled();
     });
 
     it('propagates logout errors', async () => {
@@ -492,6 +524,11 @@ describe('Auth IPC Handlers', () => {
       expect(data.tokens.refreshToken).toBe('restored-refresh-token');
       expect(typeof data.tokens.expiresIn).toBe('number');
       expect(hubAuthService.restoreSession).toHaveBeenCalled();
+      // Verify user session is set for user-scoped storage on restore
+      expect(userSessionManager.setSession).toHaveBeenCalledWith({
+        userId: 'user-1',
+        email: 'test@example.com',
+      });
     });
 
     it('returns restored: false when no session to restore', async () => {

@@ -7,13 +7,17 @@
 
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import type { IpcRouter } from '../../ipc/router';
 
-export interface IdeasService {
+const IDEAS_FILE = 'ideas.json';
+
+export interface IdeasService extends ReinitializableService {
   listIdeas: (filters: {
     projectId?: string;
     status?: IdeaStatus;
@@ -60,17 +64,17 @@ function loadFile(filePath: string): IdeasFile {
 }
 
 function saveFile(filePath: string, data: IdeasFile): void {
-  const dir = join(filePath, '..');
+  const dir = dirname(filePath);
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export function createIdeasService(deps: { dataDir: string; router: IpcRouter }): IdeasService {
-  const filePath = join(deps.dataDir, 'ideas.json');
-  const store = loadFile(filePath);
+  let currentFilePath = join(deps.dataDir, IDEAS_FILE);
+  let store = loadFile(currentFilePath);
 
   function persist(): void {
-    saveFile(filePath, store);
+    saveFile(currentFilePath, store);
   }
 
   function emitChanged(ideaId: string): void {
@@ -162,6 +166,15 @@ export function createIdeasService(deps: { dataDir: string; router: IpcRouter })
       persist();
       emitChanged(updated.id);
       return updated;
+    },
+
+    reinitialize(dataDir: string): void {
+      currentFilePath = join(dataDir, IDEAS_FILE);
+      store = loadFile(currentFilePath);
+    },
+
+    clearState(): void {
+      store = { ideas: [] };
     },
   };
 }

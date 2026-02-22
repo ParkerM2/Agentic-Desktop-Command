@@ -16,4 +16,4 @@ export {
   UserSchema,
 } from './schemas';
 
-export { authInvoke } from './contract';
+export { authEvents, authInvoke } from './contract';

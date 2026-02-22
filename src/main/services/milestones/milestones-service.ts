@@ -11,9 +11,11 @@ import { join } from 'node:path';
 
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
+import type { ReinitializableService } from '@main/services/data-management';
+
 import type { IpcRouter } from '../../ipc/router';
 
-export interface MilestonesService {
+export interface MilestonesService extends ReinitializableService {
   listMilestones: (filters: { projectId?: string }) => Milestone[];
   createMilestone: (data: {
     title: string;
@@ -72,11 +74,13 @@ export function createMilestonesService(deps: {
   dataDir: string;
   router: IpcRouter;
 }): MilestonesService {
-  const filePath = join(deps.dataDir, 'milestones.json');
-  const store = loadFile(filePath);
+  // Mutable file path for user-scoping
+  let currentFilePath = join(deps.dataDir, 'milestones.json');
+  // In-memory cache
+  let store = loadFile(currentFilePath);
 
   function persist(): void {
-    saveFile(filePath, store);
+    saveFile(currentFilePath, store);
   }
 
   function emitChanged(milestoneId: string): void {
@@ -163,6 +167,16 @@ export function createMilestonesService(deps: {
       persist();
       emitChanged(milestoneId);
       return updated;
+    },
+
+    reinitialize(dataDir: string) {
+      currentFilePath = join(dataDir, 'milestones.json');
+      // Reload data from new path
+      store = loadFile(currentFilePath);
+    },
+
+    clearState() {
+      store = { milestones: [] };
     },
   };
 }

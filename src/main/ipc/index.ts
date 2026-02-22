@@ -61,6 +61,7 @@ import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AppUpdateService } from '../services/app/app-update-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
+import type { UserSessionManager } from '../services/auth';
 import type { BriefingService } from '../services/briefing/briefing-service';
 import type { CalendarService } from '../services/calendar/calendar-service';
 import type { ChangelogService } from '../services/changelog/changelog-service';
@@ -155,13 +156,19 @@ export interface Services {
   codebaseAnalyzer: CodebaseAnalyzerService;
   setupPipeline: SetupPipelineService;
   trackerService: TrackerService;
+  userSessionManager: UserSessionManager;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
 }
 
 export function registerAllHandlers(router: IpcRouter, services: Services): void {
-  registerProjectHandlers(router, services.projectService, services.codebaseAnalyzer, services.setupPipeline);
+  registerProjectHandlers(
+    router,
+    services.projectService,
+    services.codebaseAnalyzer,
+    services.setupPipeline,
+  );
   registerTaskHandlers(
     router,
     services.taskRepository,
@@ -174,7 +181,10 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     providers: services.providers,
   });
   registerAlertHandlers(router, services.alertService);
-  registerAuthHandlers(router, { hubAuthService: services.hubAuthService });
+  registerAuthHandlers(router, {
+    hubAuthService: services.hubAuthService,
+    userSessionManager: services.userSessionManager,
+  });
   registerAppHandlers(router, {
     tokenStore: services.tokenStore,
     providers: services.providers,
@@ -231,7 +241,12 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerWorkspaceHandlers(router, services.hubApiClient);
   registerDeviceHandlers(router, services.deviceService);
   registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);
-  registerQaHandlers(router, services.qaRunner, services.agentOrchestrator, services.taskRepository);
+  registerQaHandlers(
+    router,
+    services.qaRunner,
+    services.agentOrchestrator,
+    services.taskRepository,
+  );
   registerDashboardHandlers(router, services.dashboardService);
   registerDockerHandlers(router, services.dockerService);
   registerSecurityHandlers(router, services.settingsService);

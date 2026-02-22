@@ -1,7 +1,17 @@
 {
   "version": 2,
-  "lastUpdated": "2026-02-21",
+  "lastUpdated": "2026-02-22",
   "plans": {
+    "user-scoped-storage": {
+      "title": "User-Scoped Data Storage",
+      "status": "IN_PROGRESS",
+      "planFile": "docs/features/user-scoped-storage/plan.md",
+      "created": "2026-02-22",
+      "statusChangedAt": "2026-02-22",
+      "branch": "feature/user-scoped-storage",
+      "pr": null,
+      "tags": ["storage", "auth", "data-isolation", "multi-user"]
+    },
     "future-roadmap": {
       "title": "Future Roadmap",
       "status": "TRACKING",

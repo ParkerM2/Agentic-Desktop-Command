@@ -45,3 +45,13 @@ export const authInvoke = {
     output: RestoreOutputSchema,
   },
 } as const;
+
+/** Event channels for auth operations */
+export const authEvents = {
+  'event:user.sessionChanged': {
+    payload: z.object({
+      userId: z.string().nullable(),
+      email: z.string().nullable(),
+    }),
+  },
+} as const;
