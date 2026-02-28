@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-02-22",
+  "lastUpdated": "2026-02-26",
   "plans": {
     "user-scoped-storage": {
       "title": "User-Scoped Data Storage",
@@ -81,6 +81,166 @@
       "branch": null,
       "pr": 65,
       "tags": ["ui", "sidebar", "layouts", "shadcn", "breadcrumbs"]
+    },
+    "sidebar-architecture-refactor": {
+      "title": "Sidebar/Navigation Architecture Refactor",
+      "status": "DRAFT",
+      "planFile": "docs/features/sidebar-architecture-refactor/plan.md",
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["refactor", "sidebar", "navigation", "P0"]
+    },
+    "docs-sync": {
+      "title": "Documentation Sync Pass",
+      "status": "DRAFT",
+      "planFile": "docs/features/docs-sync/plan.md",
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["docs", "maintenance", "P0"]
+    },
+    "command-palette": {
+      "title": "Global Command Palette",
+      "status": "DRAFT",
+      "planFile": "docs/features/command-palette/plan.md",
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "ux", "navigation", "P1"]
+    },
+    "workspace-ui": {
+      "title": "Workspaces Management UI",
+      "status": "DRAFT",
+      "planFile": "docs/features/workspace-ui/plan.md",
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "ui", "workspaces", "P1"]
+    },
+    "devices-ui": {
+      "title": "Devices Management Page",
+      "status": "DRAFT",
+      "planFile": "docs/features/devices-ui/plan.md",
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "ui", "devices", "P1"]
+    },
+    "productivity-hub-restructure": {
+      "title": "Productivity Hub Restructure",
+      "status": "DRAFT",
+      "planFile": "docs/features/productivity-hub-restructure/plan.md",
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["refactor", "ui", "productivity", "P1"]
+    },
+    "favorites-pinning": {
+      "title": "Favorites & Pinning System",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "ux", "P2"]
+    },
+    "task-bulk-ops": {
+      "title": "Bulk Task Operations",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "tasks", "ag-grid", "P2"]
+    },
+    "agent-dashboard-enhanced": {
+      "title": "Enhanced Agent Dashboard",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "agents", "monitoring", "P2"]
+    },
+    "insights-analytics": {
+      "title": "Insights Analytics Upgrade",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "analytics", "charts", "P2"]
+    },
+    "health-dashboard": {
+      "title": "Service Health Dashboard",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "monitoring", "health", "P2"]
+    },
+    "ci-cd-pipeline": {
+      "title": "GitHub Actions CI/CD Pipeline",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["infra", "ci-cd", "github-actions", "P3"]
+    },
+    "e2e-test-expansion": {
+      "title": "E2E Test Suite Expansion",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["testing", "e2e", "coverage", "P3"]
+    },
+    "accessibility-audit": {
+      "title": "WCAG Accessibility Audit",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["quality", "accessibility", "a11y", "P3"]
+    },
+    "offline-resilience": {
+      "title": "Offline Mode / Graceful Degradation",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["feature", "resilience", "offline", "P3"]
+    },
+    "eslint-warnings-cleanup": {
+      "title": "Clean ESLint Warnings",
+      "status": "DRAFT",
+      "planFile": null,
+      "created": "2026-02-26",
+      "statusChangedAt": "2026-02-26",
+      "branch": null,
+      "pr": null,
+      "tags": ["cleanup", "lint", "P3"]
     }
   }
 }
