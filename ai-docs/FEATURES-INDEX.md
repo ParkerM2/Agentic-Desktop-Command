@@ -25,7 +25,8 @@ Location: `src/renderer/features/`
 
 | Feature | Purpose | Key Components | IPC Channels |
 |---------|---------|----------------|--------------|
-| **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
+| **agent-dashboard** | v2 headless agent chat UI | AgentDashboardPage, AgentChatPanel, AgentPanelCompact, AgentPanelExpanded, AgentPanelPopup, ToolCallCard, TextMessage, UserMessage, AgentStatusBar, AgentLayoutSingle, AgentLayoutGrid, AgentLayoutToolbar | TBD (task-8) |
+| **agents** | Agent process management (v1) | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea) | `assistant.*` |
 | **auth** | User authentication | LoginPage (TanStack Form + Zod), RegisterPage (TanStack Form + Zod), AuthGuard, UserMenu (in layouts); **Hooks**: useForceLogout (IPC-driven logout on token refresh failure) | `auth.*` |
@@ -194,6 +195,7 @@ Location: `src/main/ipc/handlers/`
 
 | File | Types Defined |
 |------|---------------|
+| `agent-dashboard.ts` | AgentChatMessage, AgentSession, AgentToolCall, AgentStatus, AgentRole, AgentPanelState, AgentLayoutMode, AgentDashboardState, ToolCallData (Read/Edit/Write/Bash/AgentSpawn), AgentFileChange, AgentError, AgentTokenUsage |
 | `agent.ts` | AgentSession, AgentStatus, AgentLog |
 | `alert.ts` | Alert, AlertType, AlertPriority |
 | `assistant.ts` | AssistantCommand, AssistantResponse, IntentType (16 types), AssistantAction (30+ actions), AssistantContext |

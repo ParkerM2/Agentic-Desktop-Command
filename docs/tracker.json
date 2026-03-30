@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-02-26",
+  "lastUpdated": "2026-03-30",
   "plans": {
     "user-scoped-storage": {
       "title": "User-Scoped Data Storage",
@@ -162,15 +162,15 @@
       "pr": null,
       "tags": ["feature", "tasks", "ag-grid", "P2"]
     },
-    "agent-dashboard-enhanced": {
-      "title": "Enhanced Agent Dashboard",
-      "status": "DRAFT",
-      "planFile": null,
-      "created": "2026-02-26",
-      "statusChangedAt": "2026-02-26",
-      "branch": null,
+    "agent-dashboard-view": {
+      "title": "Agent Dashboard View — Headless Agents + Custom React UI",
+      "status": "IN_PROGRESS",
+      "planFile": "docs/features/agent-dashboard-view/plan.md",
+      "created": "2026-03-30",
+      "statusChangedAt": "2026-03-30",
+      "branch": "feature/agent-dashboard-view",
       "pr": null,
-      "tags": ["feature", "agents", "monitoring", "P2"]
+      "tags": ["feature", "agents", "monitoring", "dashboard", "P0"]
     },
     "insights-analytics": {
       "title": "Insights Analytics Upgrade",
