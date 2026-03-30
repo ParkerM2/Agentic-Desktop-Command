@@ -9,10 +9,10 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 30 |
+| Renderer Features | 29 |
 | Main Process Services | 33 |
 | IPC Handler Files | 42 |
-| IPC Domain Folders | 28 |
+| IPC Domain Folders | 27 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -25,8 +25,8 @@ Location: `src/renderer/features/`
 
 | Feature | Purpose | Key Components | IPC Channels |
 |---------|---------|----------------|--------------|
-| **agent-dashboard** | ADC v2 agent dashboard (headless agents, chat UI) | Store: `useAgentDashboardStore` (layout, panels, selection, filters, tabs) | `agent-dashboard.*` |
-| **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
+| **agent-dashboard** | v2 headless agent chat UI | AgentDashboardPage, AgentChatPanel, AgentPanelCompact, AgentPanelExpanded, AgentPanelPopup, ToolCallCard, TextMessage, UserMessage, AgentStatusBar, AgentLayoutSingle, AgentLayoutGrid, AgentLayoutToolbar | TBD (task-8) |
+| **agents** | Agent process management (v1) | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea) | `assistant.*` |
 | **auth** | User authentication | LoginPage (TanStack Form + Zod), RegisterPage (TanStack Form + Zod), AuthGuard, UserMenu (in layouts); **Hooks**: useForceLogout (IPC-driven logout on token refresh failure) | `auth.*` |
@@ -53,10 +53,8 @@ Location: `src/renderer/features/`
 | **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings (mounted in SettingsPage) | `voice.*` |
 | **screen** | Screen capture | ScreenshotButton (mounted in TopBar), ScreenshotViewer | `screen.*` |
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
-| **diff-viewer** | Standalone Git diff viewer (Phase 6, ADC v2) | DiffViewer (`@git-diff-view/react`), DiffFileList; **Hooks**: useDiffSummary, useFileDiffContent; **Store**: useDiffViewerUI (viewMode, selectedFile, expandedContext) | `merge.previewDiff`, `merge.getFileDiff` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
-| **file-explorer** | Virtualized file tree (react-arborist) for sidebar | FileExplorer, FileNode; **Hooks**: useFileTree (React Query), useFileTreeEvents (IPC invalidation); **Store**: useFileExplorerUI (expanded/selected/search) | `event:project.updated`, `event:git.worktreeChanged` (placeholder for `files.*`) |
 
 ### Feature Module Structure
 
@@ -112,7 +110,6 @@ Location: `src/main/services/`
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |
 | **device** | Device registration & heartbeat via Hub API | registerDevice, updateDevice, sendHeartbeat | `event:hub.devices.*` |
-| **agent-manager** | ADC v2 headless agent manager (Phase 1). Spawns Claude CLI with stream-json protocol via `child_process.spawn`. Sub-modules: `agent-manager-service.ts` (main factory, session lifecycle, IPC event emission), `stream-json-parser.ts` (NDJSON line parser, content block extraction), `process-manager.ts` (child process spawn, stdin/stdout, SIGTERM/SIGKILL), `index.ts` (barrel). | spawnProjectOwner, spawnTeamLead (stub), listSessions, getSession, sendMessage, stopSession, onEvent, getMessages, dispose | `event:agent-dashboard.*` |
 | **agent-orchestrator** | Headless Claude agent lifecycle management. Hooks config merges into `.claude/settings.local.json` (restored on cleanup). Planning completion auto-detects plan files and transitions to `plan_ready`. Security hardened: taskId sanitization (regex allowlist), environment scrubbing (glob-based blocklist/allowlist), working directory validation (existsSync + restricted paths). | spawnSession, stopSession, listSessions, onSessionEvent | `event:agent.orchestrator.*` |
 | **agent-orchestrator/jsonl-progress-watcher** | JSONL progress file watcher (debounced tail parsing) | start, stop, onProgress | `event:agent.orchestrator.progress`, `event:agent.orchestrator.planReady` |
 | **agent-orchestrator/agent-watchdog** | Health monitoring for active agent sessions (PID checks, heartbeat age, auto-restart on overflow) | start, stop, checkNow, onAlert, dispose | `event:agent.orchestrator.watchdogAlert` (wired in index.ts) |
@@ -121,9 +118,6 @@ Location: `src/main/services/`
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
 | **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 | **data-management** | Storage lifecycle auditing, cleanup, inspection. Sub-modules: `store-registry.ts` (22+ data store entries), `store-cleaners.ts` (per-store cleanup functions), `cleanup-service.ts` (periodic orchestrator), `storage-inspector.ts` (disk usage calculator), `crash-recovery.ts` (orphan detection), `data-export.ts` (archive export/import), `index.ts` (barrel) | runCleanup, getUsage, getRegistry, getRetention, updateRetention, clearStore, exportData, importData | `event:dataManagement.cleanupComplete` |
-| **tmux-bridge** | Tmux session management for agent teams (Layer 1: Agent Visibility). Sub-modules: `tmux-commands.ts` (low-level CLI wrapper), `tmux-bridge-service.ts` (factory). Gracefully handles tmux not being installed. | createSession, sendKeys, capturePane, listSessions, killSession, isAvailable, hasSession | - |
-| **team-watcher** | Watch `~/.claude/teams/*/config.json` for teammate join/leave (Layer 1: Agent Visibility). Debounces fs.watch events (300ms), diffs against known members set. | startWatching, stopWatching, getTeamMembers, onTeammateJoined, onTeammateLeft, dispose | - |
-| **session-jsonl** | Tail-follow session JSONL files for agent output (Layer 1: Agent Visibility). Sub-modules: `jsonl-parser.ts` (offset-tracking tail reader), `session-jsonl-reader.ts` (multi-session manager). | startReading, stopReading, isReading, getOffset, onEvent, dispose | - |
 
 ### Main Process Libraries
 
@@ -201,6 +195,7 @@ Location: `src/main/ipc/handlers/`
 
 | File | Types Defined |
 |------|---------------|
+| `agent-dashboard.ts` | AgentChatMessage, AgentSession, AgentToolCall, AgentStatus, AgentRole, AgentPanelState, AgentLayoutMode, AgentDashboardState, ToolCallData (Read/Edit/Write/Bash/AgentSpawn), AgentFileChange, AgentError, AgentTokenUsage |
 | `agent.ts` | AgentSession, AgentStatus, AgentLog |
 | `alert.ts` | Alert, AlertType, AlertPriority |
 | `assistant.ts` | AssistantCommand, AssistantResponse, IntentType (16 types), AssistantAction (30+ actions), AssistantContext |
@@ -277,7 +272,6 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 
 | Domain | Contents |
 |--------|----------|
-| `agent-dashboard` | ADC v2 agent dashboard: session spawn/query, team watcher events, stream-json chat messages (7 invoke + 7 event channels) |
 | `agents` | Agent + orchestrator invoke/event contracts |
 | `app` | App lifecycle, update, version |
 | `assistant` | Assistant commands, responses, rate limits |
@@ -551,7 +545,7 @@ ADC/
 │   │   │   └── handlers/tasks/  # Split task handlers (5 files)
 │   │   ├── mcp/                 # MCP client framework
 │   │   ├── mcp-servers/         # MCP server definitions
-│   │   ├── services/            # Business logic (35 services)
+│   │   ├── services/            # Business logic (32 services)
 │   │   │   ├── agent/           # 5 files (spawner, parser, queue, tokens)
 │   │   │   ├── assistant/       # Intent classifier (16 files), executors (22 files)
 │   │   │   ├── briefing/        # 6 files (cache, config, generator, summary, suggestions)
