@@ -8,6 +8,7 @@
  * Domain contracts are in src/shared/ipc/<domain>/ folders.
  */
 
+import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
 import { orchestratorEvents, orchestratorInvoke } from './agents';
 import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
@@ -107,6 +108,7 @@ export const ipcInvokeContract = {
   ...dataManagementInvoke,
   ...windowInvoke,
   ...trackerInvoke,
+  ...agentDashboardInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -139,6 +141,7 @@ export const ipcEventContract = {
   ...dashboardEvents,
   ...dataManagementEvents,
   ...authEvents,
+  ...agentDashboardEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -395,3 +398,32 @@ export { TerminalSessionSchema } from './terminals';
 export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './window';
 
 export { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './tracker';
+
+export {
+  AgentChatMessageSchema,
+  AgentDashboardStatusSchema,
+  AgentErrorSchema,
+  AgentErrorTypeSchema,
+  AgentLayoutModeSchema,
+  AgentPanelDataSchema,
+  AgentPanelStateSchema,
+  AgentSessionSchema,
+  AgentSessionTypeSchema,
+  AgentTokenUsageSchema,
+  ChatMessageRoleSchema,
+  ContentBlockSchema,
+  FileChangeSchema,
+  FileChangeStatusSchema,
+  PhaseStatusSchema,
+  StreamJsonEventSchema,
+  StreamJsonEventTypeSchema,
+  TaskCriterionSchema,
+  TaskPhaseSchema,
+  TaskProgressSchema,
+  TeamConfigSchema,
+  TeamMemberSchema,
+  TextBlockSchema,
+  ToolCallDisplaySchema,
+  ToolResultBlockSchema,
+  ToolUseBlockSchema,
+} from './agent-dashboard';
