@@ -3,6 +3,7 @@
  * All domain types used across main, preload, and renderer
  */
 
+export type * from './agent-dashboard';
 export type * from './alert';
 export type * from './assistant';
 export type * from './assistant-watch';
