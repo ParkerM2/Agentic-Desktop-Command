@@ -54,6 +54,7 @@ Location: `src/renderer/features/`
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
+| **file-explorer** | Virtualized file tree (react-arborist) for sidebar | FileExplorer, FileNode; **Hooks**: useFileTree (React Query), useFileTreeEvents (IPC invalidation); **Store**: useFileExplorerUI (expanded/selected/search) | `event:project.updated`, `event:git.worktreeChanged` (placeholder for `files.*`) |
 
 ### Feature Module Structure
 
