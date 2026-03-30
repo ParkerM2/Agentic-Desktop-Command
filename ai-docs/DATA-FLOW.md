@@ -355,6 +355,62 @@ Agent runs (writes JSONL progress to {dataDir}/progress/{taskId}.jsonl)
       useAgentEvents → full task cache invalidation
 ```
 
+### Agent Dashboard Layer 1: Agent Visibility (ADC v2)
+
+Three services provide Layer 1 agent visibility, independent of workflow tracking:
+
+```
+TmuxBridge — tmux session management for team-lead agents
+  createSession(name, { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1' })
+    |
+    v
+  tmux new-session -d -s <name> -e CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+    |
+    v
+  sendKeys(sessionName, 'claude --name team-lead --teammate-mode tmux')
+    |
+    v
+  capturePane(paneId) → raw terminal text (fallback only)
+
+
+TeamWatcher — detect teammate join/leave via config.json watching
+  startWatching(teamName)
+    |
+    v
+  fs.watch(~/.claude/teams/<teamName>/)
+    |
+    +--> on config.json change (debounced 300ms):
+    |      |
+    |      v
+    |    readTeamConfig → parse members array
+    |      |
+    |      v
+    |    diff against known members set
+    |      |
+    |      +--> new member → onTeammateJoined(member)
+    |      +--> missing member → onTeammateLeft(memberId)
+
+
+SessionJSONLReader — tail-follow session JSONL files for structured output
+  startReading(sessionId, ~/.claude/projects/<cwd>/<sessionId>.jsonl)
+    |
+    v
+  fs.watch(jsonlPath) + offset-tracking reads
+    |
+    +--> on file change:
+    |      |
+    |      v
+    |    read from lastOffset → parse NDJSON lines
+    |      |
+    |      v
+    |    validate event type (system | assistant | stream_event | result)
+    |      |
+    |      v
+    |    onEvent(sessionId, StreamJsonEvent)
+    |
+    +--> handles: truncation (offset reset), partial writes (buffered), rapid appends
+```
+
 ### QA Auto-Trigger Flow
 
 ```

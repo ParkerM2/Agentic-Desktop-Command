@@ -141,6 +141,18 @@ export interface TeamConfig {
   members: TeamMember[];
 }
 
+// ── Tmux Types ────────────────────────────────────────────────
+
+/** A tmux session managed by the TmuxBridge */
+export interface TmuxSession {
+  name: string;
+  id: string;
+  created: string;
+  attached: boolean;
+  windows: number;
+}
+
+
 // ── Layer 2: Workflow Tracking ────────────────────────────────
 
 /** Status of a task phase */

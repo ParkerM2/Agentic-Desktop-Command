@@ -319,6 +319,33 @@ spawn() → 'spawned' → 'active' → 'completed' | 'error' | 'killed'
 - **StatusBadgeCell** — supports all statuses including `planning`, `plan_ready` with pulsing indicators
 - **TaskDetailRow** — expandable row with PlanViewer (approve/request changes/reject), PlanFeedbackDialog, QaReportViewer, SubtaskList, ExecutionLog, PRStatusPanel
 
+## Agent Dashboard — Layer 1: Agent Visibility (ADC v2)
+
+Three services provide Layer 1 agent visibility, independent of workflow tracking (Layer 2) and the dashboard (Layer 3). These services are registered in `service-registry.ts` and returned in `ServiceRegistryResult`.
+
+### TmuxBridge (`src/main/services/tmux-bridge/`)
+
+Manages tmux sessions for Team Lead and interactive agents:
+- **tmux-commands.ts** — Low-level tmux CLI wrapper (execSync). Functions: `isTmuxInstalled`, `tmuxNewSession`, `tmuxSendKeys`, `tmuxCapturePane`, `tmuxKillSession`, `tmuxListSessions`, `tmuxHasSession`
+- **tmux-bridge-service.ts** — Factory `createTmuxBridgeService()`. Caches tmux availability check. Methods: `createSession`, `sendKeys`, `capturePane`, `listSessions`, `killSession`, `isAvailable`, `hasSession`
+
+Graceful degradation: If tmux is not installed, `isAvailable()` returns false and `listSessions()` returns empty. Methods that require tmux throw with an install hint.
+
+### TeamWatcher (`src/main/services/team-watcher/`)
+
+Watches `~/.claude/teams/<teamName>/config.json` for membership changes:
+- **team-watcher-service.ts** — Factory `createTeamWatcherService()`. Uses `fs.watch` on the team directory with 300ms debounce. Diffs against known members set to detect joins and leaves.
+- Event handlers: `onTeammateJoined(handler)`, `onTeammateLeft(handler)` — return unsubscribe functions
+- Lifecycle: `startWatching(teamName)`, `stopWatching(teamName)`, `dispose()`
+
+### SessionJSONLReader (`src/main/services/session-jsonl/`)
+
+Tail-follows session JSONL files for structured agent output:
+- **jsonl-parser.ts** — Factory `createJsonlTailReader(filePath, onEvent)`. Tracks byte offset for incremental reads. Handles truncation, partial writes, and rapid appends.
+- **session-jsonl-reader.ts** — Factory `createSessionJSONLReaderService()`. Manages multiple concurrent readers (one per session). Methods: `startReading`, `stopReading`, `isReading`, `getOffset`, `onEvent`, `dispose`
+
+Types used by all three: `TmuxSession`, `TeamMember`, `StreamJsonEvent` from `@shared/types/agent-dashboard`.
+
 ## QA System
 
 Two-tier automated QA system that spawns Claude agents via the orchestrator:
