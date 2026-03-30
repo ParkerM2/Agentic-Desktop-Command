@@ -117,6 +117,9 @@ Location: `src/main/services/`
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
 | **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 | **data-management** | Storage lifecycle auditing, cleanup, inspection. Sub-modules: `store-registry.ts` (22+ data store entries), `store-cleaners.ts` (per-store cleanup functions), `cleanup-service.ts` (periodic orchestrator), `storage-inspector.ts` (disk usage calculator), `crash-recovery.ts` (orphan detection), `data-export.ts` (archive export/import), `index.ts` (barrel) | runCleanup, getUsage, getRegistry, getRetention, updateRetention, clearStore, exportData, importData | `event:dataManagement.cleanupComplete` |
+| **tmux-bridge** | Tmux session management for agent teams (Layer 1: Agent Visibility). Sub-modules: `tmux-commands.ts` (low-level CLI wrapper), `tmux-bridge-service.ts` (factory). Gracefully handles tmux not being installed. | createSession, sendKeys, capturePane, listSessions, killSession, isAvailable, hasSession | - |
+| **team-watcher** | Watch `~/.claude/teams/*/config.json` for teammate join/leave (Layer 1: Agent Visibility). Debounces fs.watch events (300ms), diffs against known members set. | startWatching, stopWatching, getTeamMembers, onTeammateJoined, onTeammateLeft, dispose | - |
+| **session-jsonl** | Tail-follow session JSONL files for agent output (Layer 1: Agent Visibility). Sub-modules: `jsonl-parser.ts` (offset-tracking tail reader), `session-jsonl-reader.ts` (multi-session manager). | startReading, stopReading, isReading, getOffset, onEvent, dispose | - |
 
 ### Main Process Libraries
 
@@ -543,7 +546,7 @@ ADC/
 │   │   │   └── handlers/tasks/  # Split task handlers (5 files)
 │   │   ├── mcp/                 # MCP client framework
 │   │   ├── mcp-servers/         # MCP server definitions
-│   │   ├── services/            # Business logic (32 services)
+│   │   ├── services/            # Business logic (35 services)
 │   │   │   ├── agent/           # 5 files (spawner, parser, queue, tokens)
 │   │   │   ├── assistant/       # Intent classifier (16 files), executors (22 files)
 │   │   │   ├── briefing/        # 6 files (cache, config, generator, summary, suggestions)

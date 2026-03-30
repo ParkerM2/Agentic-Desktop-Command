@@ -84,6 +84,7 @@ import { createTaskService } from '../services/project/task-service';
 import { createQaRunner } from '../services/qa/qa-runner';
 import { createQaTrigger } from '../services/qa/qa-trigger';
 import { createScreenCaptureService } from '../services/screen/screen-capture-service';
+import { createSessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import { createSettingsService } from '../services/settings/settings-service';
 import { createSpotifyService } from '../services/spotify/spotify-service';
 import {
@@ -91,8 +92,10 @@ import {
   createTaskDecomposer,
   createTaskRepository,
 } from '../services/tasks';
+import { createTeamWatcherService } from '../services/team-watcher/team-watcher-service';
 import { createTerminalService } from '../services/terminal/terminal-service';
 import { createTimeParserService } from '../services/time-parser/time-parser-service';
+import { createTmuxBridgeService } from '../services/tmux-bridge/tmux-bridge-service';
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
@@ -103,7 +106,10 @@ import type { OAuthConfig } from '../auth/types';
 import type { Services } from '../ipc';
 import type { UserSessionManager } from '../services/auth';
 import type { HubApiClient } from '../services/hub/hub-api-client';
+import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import type { TaskRepository } from '../services/tasks/types';
+import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
+import type { TmuxBridgeService } from '../services/tmux-bridge/tmux-bridge-service';
 
 /** Everything createServiceRegistry produces — services + extras needed for lifecycle/event wiring. */
 export interface ServiceRegistryResult {
@@ -127,6 +133,9 @@ export interface ServiceRegistryResult {
   settingsService: ReturnType<typeof createSettingsService>;
   cleanupService: ReturnType<typeof createCleanupService>;
   crashRecovery: ReturnType<typeof createCrashRecovery>;
+  tmuxBridgeService: TmuxBridgeService;
+  teamWatcherService: TeamWatcherService;
+  sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
   taskRepository: TaskRepository;
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
@@ -508,6 +517,11 @@ export function createServiceRegistry(
   const progressDir = join(dataDir, 'progress');
   const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
 
+  // ─── Agent dashboard services (Layer 1: Agent Visibility) ────
+  const tmuxBridgeService = createTmuxBridgeService();
+  const teamWatcherService = createTeamWatcherService();
+  const sessionJsonlReaderService = createSessionJSONLReaderService();
+
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
   const trackerService = createTrackerService(process.cwd());
 
@@ -627,6 +641,9 @@ export function createServiceRegistry(
     taskRepository,
     cleanupService,
     crashRecovery,
+    tmuxBridgeService,
+    teamWatcherService,
+    sessionJsonlReaderService,
     heartbeatIntervalId,
     registeredDeviceId,
     userSessionManager,
