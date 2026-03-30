@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 29 |
+| Renderer Features | 30 |
 | Main Process Services | 33 |
 | IPC Handler Files | 42 |
 | IPC Domain Folders | 27 |
@@ -52,6 +52,7 @@ Location: `src/renderer/features/`
 | **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings (mounted in SettingsPage) | `voice.*` |
 | **screen** | Screen capture | ScreenshotButton (mounted in TopBar), ScreenshotViewer | `screen.*` |
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
+| **diff-viewer** | Standalone Git diff viewer (Phase 6, ADC v2) | DiffViewer (`@git-diff-view/react`), DiffFileList; **Hooks**: useDiffSummary, useFileDiffContent; **Store**: useDiffViewerUI (viewMode, selectedFile, expandedContext) | `merge.previewDiff`, `merge.getFileDiff` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 
