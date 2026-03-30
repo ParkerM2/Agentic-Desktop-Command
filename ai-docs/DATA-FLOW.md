@@ -2092,3 +2092,7 @@ Common:
 | `src/shared/ipc/agent-dashboard/schemas.ts` | Zod schemas mirroring the TS types |
 | `src/shared/ipc/agent-dashboard/contract.ts` | 7 invoke + 7 event channel definitions |
 | `src/shared/ipc/agent-dashboard/index.ts` | Domain barrel export |
+| `src/main/services/agent-manager/agent-manager-service.ts` | AgentManager factory — session lifecycle, event emission, message routing |
+| `src/main/services/agent-manager/stream-json-parser.ts` | NDJSON parser — buffers partial lines, validates event types, extracts chat messages |
+| `src/main/services/agent-manager/process-manager.ts` | Child process spawn/kill — `child_process.spawn('claude', [...stream-json flags])` |
+| `src/main/services/agent-manager/index.ts` | Service barrel export |

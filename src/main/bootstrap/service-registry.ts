@@ -22,6 +22,7 @@ import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
+import { createAgentManagerService } from '../services/agent-manager';
 import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -101,6 +102,7 @@ import { createQuickInputWindow } from '../tray/quick-input';
 
 import type { OAuthConfig } from '../auth/types';
 import type { Services } from '../ipc';
+import type { AgentManagerService } from '../services/agent-manager';
 import type { UserSessionManager } from '../services/auth';
 import type { HubApiClient } from '../services/hub/hub-api-client';
 import type { TaskRepository } from '../services/tasks/types';
@@ -109,6 +111,7 @@ import type { TaskRepository } from '../services/tasks/types';
 export interface ServiceRegistryResult {
   router: IpcRouter;
   services: Services;
+  agentManagerService: AgentManagerService;
   assistantService: ReturnType<typeof createAssistantService>;
   agentOrchestrator: ReturnType<typeof createAgentOrchestrator>;
   agentWatchdog: ReturnType<typeof createAgentWatchdog>;
@@ -425,6 +428,9 @@ export function createServiceRegistry(
   // ─── Workflow + orchestrator ──────────────────────────────────
   const taskLauncher = createTaskLauncher();
   const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
+
+  // ─── Agent Manager (v2 — headless stream-json) ──────────────
+  const agentManagerService = createAgentManagerService({ router });
   const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
 
   // Agent watchdog — monitors active sessions for dead/stale processes
@@ -513,6 +519,7 @@ export function createServiceRegistry(
 
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
+    agentManagerService,
     agentOrchestrator,
     agentManagerService: null,
     teamWatcherService: null,
@@ -609,6 +616,7 @@ export function createServiceRegistry(
   return {
     router,
     services,
+    agentManagerService,
     assistantService,
     agentOrchestrator,
     agentWatchdog,
