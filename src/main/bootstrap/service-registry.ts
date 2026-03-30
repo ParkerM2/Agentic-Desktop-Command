@@ -514,6 +514,8 @@ export function createServiceRegistry(
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
     agentOrchestrator,
+    agentManagerService: null,
+    teamWatcherService: null,
     projectService,
     taskService,
     terminalService,

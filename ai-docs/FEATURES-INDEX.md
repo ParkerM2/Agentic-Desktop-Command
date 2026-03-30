@@ -12,7 +12,7 @@
 | Renderer Features | 29 |
 | Main Process Services | 33 |
 | IPC Handler Files | 42 |
-| IPC Domain Folders | 27 |
+| IPC Domain Folders | 28 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -270,6 +270,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 
 | Domain | Contents |
 |--------|----------|
+| `agent-dashboard` | ADC v2 agent dashboard: session spawn/query, team watcher events, stream-json chat messages (7 invoke + 7 event channels) |
 | `agents` | Agent + orchestrator invoke/event contracts |
 | `app` | App lifecycle, update, version |
 | `assistant` | Assistant commands, responses, rate limits |
