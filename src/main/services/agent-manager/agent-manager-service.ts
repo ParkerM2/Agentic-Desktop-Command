@@ -1,0 +1,475 @@
+/**
+ * Agent Manager Service — Spawns and manages headless Claude processes
+ *
+ * Phase 1 of the ADC v2 architecture. Replaces terminal-service for
+ * agent monitoring. Uses stream-json protocol for bidirectional
+ * structured communication with Claude CLI.
+ *
+ * This service handles Project Owner sessions (headless stream-json).
+ * Team Lead sessions (tmux-based) are stubbed here and will be
+ * implemented in Phase 2 via TmuxBridge (task-5).
+ */
+
+import { randomUUID } from 'node:crypto';
+
+import type {
+  AgentChatMessage,
+  AgentSession,
+  AgentSessionType,
+  AgentStatus,
+  AgentTokenUsage,
+  StreamJsonEvent,
+} from '@shared/types/agent-dashboard';
+
+import { agentLogger } from '@main/lib/logger';
+
+import { createProcessManager } from './process-manager';
+import { createStreamJsonParser } from './stream-json-parser';
+
+import type { ManagedProcess } from './process-manager';
+import type { StreamJsonParser } from './stream-json-parser';
+import type { IpcRouter } from '../../ipc/router';
+
+// ── Configuration Types ──────────────────────────────────────
+
+/** Config for spawning a headless Project Owner session */
+export interface ProjectOwnerConfig {
+  projectPath: string;
+  prompt: string;
+  model?: string;
+  name?: string;
+}
+
+/** Config for spawning a tmux-based Team Lead session */
+export interface TeamLeadConfig {
+  projectPath: string;
+  teamName: string;
+  prompt: string;
+  model?: string;
+  name?: string;
+}
+
+// ── Event Types ──────────────────────────────────────────────
+
+export type AgentManagerEventType =
+  | 'session.started'
+  | 'session.ended'
+  | 'message.received'
+  | 'status.changed'
+  | 'stream.event';
+
+export interface AgentManagerEvent {
+  type: AgentManagerEventType;
+  sessionId: string;
+  data: unknown;
+}
+
+type AgentManagerEventHandler = (event: AgentManagerEvent) => void;
+
+// ── Service Interface ────────────────────────────────────────
+
+export interface AgentManagerService {
+  /** Spawn a headless stream-json Project Owner session */
+  spawnProjectOwner: (config: ProjectOwnerConfig) => AgentSession;
+  /** Spawn a tmux-based Team Lead session (Phase 2 — stub) */
+  spawnTeamLead: (config: TeamLeadConfig) => AgentSession;
+  /** List all active agent sessions */
+  listSessions: (filter?: { type?: AgentSessionType; teamName?: string }) => AgentSession[];
+  /** Get a single session by ID */
+  getSession: (sessionId: string) => AgentSession | undefined;
+  /** Send a message to an agent session */
+  sendMessage: (sessionId: string, message: string) => boolean;
+  /** Stop an agent session gracefully */
+  stopSession: (sessionId: string) => boolean;
+  /** Register a handler for agent manager events */
+  onEvent: (handler: AgentManagerEventHandler) => () => void;
+  /** Get chat messages for a session */
+  getMessages: (sessionId: string) => AgentChatMessage[];
+  /** Clean up all sessions (used during app shutdown) */
+  dispose: () => void;
+}
+
+// ── Internal Session Tracking ────────────────────────────────
+
+interface InternalSession {
+  session: AgentSession;
+  process: ManagedProcess | null;
+  parser: StreamJsonParser | null;
+  messages: AgentChatMessage[];
+  cleanups: Array<() => void>;
+}
+
+// ── Factory ──────────────────────────────────────────────────
+
+export interface AgentManagerDeps {
+  router: IpcRouter;
+}
+
+/**
+ * Create an AgentManagerService instance.
+ *
+ * Follows the ADC factory pattern: returns synchronous values,
+ * emits events via IPC router for renderer updates.
+ */
+export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerService {
+  const { router } = deps;
+  const processManager = createProcessManager();
+  const sessions = new Map<string, InternalSession>();
+  const eventHandlers = new Set<AgentManagerEventHandler>();
+
+  // ── Event Emission ───────────────────────────────────────
+
+  function emitEvent(event: AgentManagerEvent): void {
+    for (const handler of eventHandlers) {
+      handler(event);
+    }
+  }
+
+  function updateSessionStatus(internal: InternalSession, newStatus: AgentStatus): void {
+    const previousStatus = internal.session.status;
+    if (previousStatus === newStatus) {
+      return;
+    }
+
+    internal.session.status = newStatus;
+    internal.session.lastActivityAt = new Date().toISOString();
+
+    emitEvent({
+      type: 'status.changed',
+      sessionId: internal.session.id,
+      data: { previousStatus, newStatus },
+    });
+
+    router.emit('event:agent-dashboard.statusChanged', {
+      sessionId: internal.session.id,
+      previousStatus,
+      newStatus,
+    });
+  }
+
+  function updateTokenUsage(internal: InternalSession, usage: AgentTokenUsage): void {
+    internal.session.tokenUsage = {
+      input: internal.session.tokenUsage.input + usage.input,
+      output: internal.session.tokenUsage.output + usage.output,
+    };
+  }
+
+  // ── Stream Event Processing ──────────────────────────────
+
+  function handleStreamEvent(internal: InternalSession, event: StreamJsonEvent): void {
+    internal.session.lastActivityAt = new Date().toISOString();
+
+    // Extract model from system init event
+    if (event.type === 'system' && event.system?.model) {
+      internal.session.model = event.system.model;
+    }
+
+    // Update token usage from result events
+    if (event.type === 'result' && event.usage) {
+      updateTokenUsage(internal, {
+        input: event.usage.input_tokens,
+        output: event.usage.output_tokens,
+      });
+    }
+
+    // Update status based on event type
+    if (event.type === 'assistant' || event.type === 'stream_event') {
+      updateSessionStatus(internal, 'running');
+    } else if (event.type === 'result') {
+      updateSessionStatus(internal, 'idle');
+    }
+
+    // Emit stream event to renderer
+    router.emit('event:agent-dashboard.streamEvent', {
+      sessionId: internal.session.id,
+      event,
+    });
+
+    emitEvent({
+      type: 'stream.event',
+      sessionId: internal.session.id,
+      data: event,
+    });
+  }
+
+  function handleChatMessage(internal: InternalSession, message: AgentChatMessage): void {
+    internal.messages.push(message);
+
+    router.emit('event:agent-dashboard.messageReceived', message);
+
+    emitEvent({
+      type: 'message.received',
+      sessionId: internal.session.id,
+      data: message,
+    });
+  }
+
+  // ── Session Creation Helpers ─────────────────────────────
+
+  function createSessionObject(
+    type: AgentSessionType,
+    config: { name?: string; model?: string; teamName?: string; projectPath?: string },
+  ): AgentSession {
+    const now = new Date().toISOString();
+    return {
+      id: randomUUID(),
+      name: config.name ?? `${type}-${Date.now().toString(36)}`,
+      type,
+      status: 'running',
+      model: config.model ?? 'claude-sonnet-4-6',
+      teamName: config.teamName,
+      branch: undefined,
+      tmuxPaneId: undefined,
+      sessionJsonlPath: undefined,
+      tokenUsage: { input: 0, output: 0 },
+      startedAt: now,
+      lastActivityAt: now,
+    };
+  }
+
+  function wireProcessToParser(internal: InternalSession): void {
+    const { process: managedProcess, parser } = internal;
+    if (!managedProcess || !parser) {
+      return;
+    }
+
+    const events = processManager.events(managedProcess);
+
+    // Pipe stdout to parser
+    const cleanStdout = events.onStdout((data) => {
+      parser.feed(data);
+    });
+    internal.cleanups.push(cleanStdout);
+
+    // Log stderr
+    const cleanStderr = events.onStderr((data) => {
+      agentLogger.warn(`[AgentManager] stderr (${internal.session.id}): ${data.trim()}`);
+    });
+    internal.cleanups.push(cleanStderr);
+
+    // Handle process exit
+    const cleanExit = events.onExit((code, signal) => {
+      const exitStatus: AgentStatus = code === 0 ? 'completed' : 'failed';
+      updateSessionStatus(internal, exitStatus);
+
+      router.emit('event:agent-dashboard.sessionEnded', {
+        sessionId: internal.session.id,
+        status: exitStatus,
+        exitCode: code ?? undefined,
+      });
+
+      emitEvent({
+        type: 'session.ended',
+        sessionId: internal.session.id,
+        data: { code, signal },
+      });
+    });
+    internal.cleanups.push(cleanExit);
+
+    // Handle process errors
+    const cleanError = events.onError((error) => {
+      agentLogger.error(
+        `[AgentManager] Process error (${internal.session.id}): ${error.message}`,
+      );
+      updateSessionStatus(internal, 'failed');
+    });
+    internal.cleanups.push(cleanError);
+
+    // Wire parser events
+    const cleanParserEvent = parser.onEvent((event) => {
+      handleStreamEvent(internal, event);
+    });
+    internal.cleanups.push(cleanParserEvent);
+
+    const cleanParserMessage = parser.onMessage((message) => {
+      handleChatMessage(internal, message);
+    });
+    internal.cleanups.push(cleanParserMessage);
+
+    const cleanParserError = parser.onError((error, rawLine) => {
+      agentLogger.warn(
+        `[AgentManager] Parse error (${internal.session.id}): ${error.message} — line: ${rawLine.slice(0, 200)}`,
+      );
+    });
+    internal.cleanups.push(cleanParserError);
+  }
+
+  // ── Public API ───────────────────────────────────────────
+
+  return {
+    spawnProjectOwner(config) {
+      const session = createSessionObject('project-owner', {
+        name: config.name,
+        model: config.model,
+      });
+
+      const managedProcess = processManager.spawn({
+        cwd: config.projectPath,
+        prompt: config.prompt,
+        model: config.model,
+        name: config.name,
+      });
+
+      const parser = createStreamJsonParser(session.id);
+
+      const internal: InternalSession = {
+        session,
+        process: managedProcess,
+        parser,
+        messages: [],
+        cleanups: [],
+      };
+
+      sessions.set(session.id, internal);
+      wireProcessToParser(internal);
+
+      router.emit('event:agent-dashboard.sessionStarted', session);
+      emitEvent({
+        type: 'session.started',
+        sessionId: session.id,
+        data: session,
+      });
+
+      agentLogger.info(
+        `[AgentManager] Project Owner session started: ${session.id} (PID ${String(managedProcess.pid)})`,
+      );
+
+      return session;
+    },
+
+    spawnTeamLead(config) {
+      // Phase 2 stub — Team Lead requires TmuxBridge (task-5).
+      // For now, create a session object that can be tracked but
+      // mark it as needing attention since tmux integration is pending.
+      const session = createSessionObject('team-lead', {
+        name: config.name,
+        model: config.model,
+        teamName: config.teamName,
+      });
+
+      const internal: InternalSession = {
+        session: { ...session, status: 'idle' },
+        process: null,
+        parser: null,
+        messages: [],
+        cleanups: [],
+      };
+
+      sessions.set(session.id, internal);
+
+      agentLogger.info(
+        `[AgentManager] Team Lead session created (stub): ${session.id} — TmuxBridge pending`,
+      );
+
+      router.emit('event:agent-dashboard.sessionStarted', internal.session);
+
+      return internal.session;
+    },
+
+    listSessions(filter) {
+      const allSessions = Array.from(sessions.values()).map((s) => s.session);
+
+      if (!filter) {
+        return allSessions;
+      }
+
+      return allSessions.filter((s) => {
+        if (filter.type && s.type !== filter.type) {
+          return false;
+        }
+        if (filter.teamName && s.teamName !== filter.teamName) {
+          return false;
+        }
+        return true;
+      });
+    },
+
+    getSession(sessionId) {
+      return sessions.get(sessionId)?.session;
+    },
+
+    sendMessage(sessionId, message) {
+      const internal = sessions.get(sessionId);
+      if (!internal) {
+        agentLogger.warn(`[AgentManager] sendMessage: session not found: ${sessionId}`);
+        return false;
+      }
+
+      if (!internal.process) {
+        agentLogger.warn(`[AgentManager] sendMessage: no process for session: ${sessionId}`);
+        return false;
+      }
+
+      const success = processManager.sendMessage(internal.process, message);
+      if (success) {
+        internal.session.lastActivityAt = new Date().toISOString();
+      }
+      return success;
+    },
+
+    stopSession(sessionId) {
+      const internal = sessions.get(sessionId);
+      if (!internal) {
+        agentLogger.warn(`[AgentManager] stopSession: session not found: ${sessionId}`);
+        return false;
+      }
+
+      // Clean up all event listeners
+      for (const cleanup of internal.cleanups) {
+        cleanup();
+      }
+      internal.cleanups = [];
+
+      // Kill the process if it exists
+      if (internal.process) {
+        processManager.kill(internal.process);
+      }
+
+      // Reset parser state
+      if (internal.parser) {
+        internal.parser.reset();
+      }
+
+      // Update status if not already terminal
+      if (internal.session.status !== 'completed' && internal.session.status !== 'failed') {
+        updateSessionStatus(internal, 'completed');
+      }
+
+      agentLogger.info(`[AgentManager] Session stopped: ${sessionId}`);
+      return true;
+    },
+
+    onEvent(handler) {
+      eventHandlers.add(handler);
+      return () => {
+        eventHandlers.delete(handler);
+      };
+    },
+
+    getMessages(sessionId) {
+      return sessions.get(sessionId)?.messages ?? [];
+    },
+
+    dispose() {
+      agentLogger.info(`[AgentManager] Disposing all sessions (${String(sessions.size)} active)`);
+      for (const [sessionId] of sessions) {
+        // Use the public stopSession to ensure cleanup
+        const internal = sessions.get(sessionId);
+        if (internal) {
+          for (const cleanup of internal.cleanups) {
+            cleanup();
+          }
+          internal.cleanups = [];
+          if (internal.process) {
+            processManager.kill(internal.process);
+          }
+          if (internal.parser) {
+            internal.parser.reset();
+          }
+        }
+      }
+      sessions.clear();
+      eventHandlers.clear();
+    },
+  };
+}

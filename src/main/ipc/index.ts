@@ -57,6 +57,7 @@ import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
+import type { AgentManagerService } from '../services/agent-manager';
 import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AppUpdateService } from '../services/app/app-update-service';
@@ -106,6 +107,7 @@ import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
+  agentManagerService: AgentManagerService;
   agentOrchestrator: AgentOrchestrator;
   projectService: ProjectService;
   taskService: TaskService;
