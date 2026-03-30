@@ -25,6 +25,7 @@ Location: `src/renderer/features/`
 
 | Feature | Purpose | Key Components | IPC Channels |
 |---------|---------|----------------|--------------|
+| **agent-dashboard** | ADC v2 agent dashboard (headless agents, chat UI) | Store: `useAgentDashboardStore` (layout, panels, selection, filters, tabs) | `agent-dashboard.*` |
 | **agents** | Agent process management | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea) | `assistant.*` |
