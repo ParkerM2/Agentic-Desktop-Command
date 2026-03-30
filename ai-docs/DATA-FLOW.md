@@ -57,7 +57,7 @@ Component re-renders with new data
 |------|------|---------|
 | Domain contracts | `src/shared/ipc/<domain>/contract.ts` | Domain-specific channel definitions with Zod schemas |
 | Domain schemas | `src/shared/ipc/<domain>/schemas.ts` | Zod schemas for the domain |
-| Root barrel | `src/shared/ipc/index.ts` | Merges all 23 domain contracts into unified objects |
+| Root barrel | `src/shared/ipc/index.ts` | Merges all 28 domain contracts into unified objects |
 | Compat re-export | `src/shared/ipc-contract.ts` | Thin re-export from `src/shared/ipc/` (backward compat) |
 | Renderer helper | `src/renderer/shared/lib/ipc.ts` | Typed wrapper: `ipc(channel, input) -> Promise<Output>` |
 | Preload bridge | `src/preload/index.ts` | Context bridge: `api.invoke()`, `api.on()` |
@@ -2020,3 +2020,75 @@ GitStatusIndicator renders:
 | `src/renderer/features/tasks/components/CreatePrDialog.tsx` | PR creation dialog (title, body, branch selection) |
 | `src/renderer/features/projects/components/ProjectList.tsx` | GitStatusIndicator (branch + clean/changed badge) |
 | `src/renderer/features/auth/api/useAuth.ts` | useForceLogout hook (IPC logout on token refresh failure) |
+
+---
+
+## 21. Agent Dashboard Data Flow (ADC v2)
+
+Three-layer architecture: agent visibility, workflow tracking, and dashboard correlation.
+
+```
+Layer 1: Agent Visibility (always on)
+═══════════════════════════════════════
+
+Project Owner (headless stream-json)
+  spawn('claude', ['-p', '--input-format', 'stream-json', ...])
+    stdin  ← JSON user messages from React input
+    stdout → NDJSON: system, assistant, stream_event, result
+
+  IPC invoke:  agent-dashboard.spawnProjectOwner
+  IPC events:  event:agent-dashboard.sessionStarted
+               event:agent-dashboard.messageReceived
+               event:agent-dashboard.streamEvent
+
+Team Lead (tmux, interactive, agent teams)
+  tmux new-session → claude --name team-lead --teammate-mode tmux
+    Output: watch session JSONL
+    Input:  tmux send-keys
+
+  IPC invoke:  agent-dashboard.spawnTeamLead
+               agent-dashboard.sendMessage
+
+Teammates (auto-detected)
+  fs.watch(team config.json) → detect joins/leaves
+    Each teammate's session JSONL → parse → IPC
+
+  IPC events:  event:agent-dashboard.teammateJoined
+               event:agent-dashboard.teammateLeft
+
+Common:
+  IPC invoke:  agent-dashboard.listSessions
+               agent-dashboard.getSession
+               agent-dashboard.stopSession
+               agent-dashboard.getFilesChanged
+  IPC events:  event:agent-dashboard.sessionEnded
+               event:agent-dashboard.statusChanged
+```
+
+### IPC Channels
+
+| Channel | Direction | Input | Output | Purpose |
+|---------|-----------|-------|--------|---------|
+| `agent-dashboard.spawnProjectOwner` | invoke | `{ projectPath, prompt, model?, name? }` | `{ sessionId, status }` | Spawn headless stream-json session |
+| `agent-dashboard.spawnTeamLead` | invoke | `{ projectPath, teamName, prompt, model?, name? }` | `{ sessionId, tmuxSessionName, status }` | Spawn tmux team-lead session |
+| `agent-dashboard.listSessions` | invoke | `{ type?, teamName? }` | `AgentSession[]` | List active sessions |
+| `agent-dashboard.getSession` | invoke | `{ sessionId }` | `AgentSession \| null` | Get session details |
+| `agent-dashboard.sendMessage` | invoke | `{ sessionId, message }` | `{ success }` | Send message to agent |
+| `agent-dashboard.stopSession` | invoke | `{ sessionId }` | `{ success }` | Stop agent session |
+| `agent-dashboard.getFilesChanged` | invoke | `{ sessionId, branch? }` | `FileChange[]` | Get git diff for agent's branch |
+| `event:agent-dashboard.sessionStarted` | event | - | `AgentSession` | New session detected |
+| `event:agent-dashboard.sessionEnded` | event | - | `{ sessionId, status, exitCode? }` | Session ended |
+| `event:agent-dashboard.messageReceived` | event | - | `AgentChatMessage` | New chat message |
+| `event:agent-dashboard.statusChanged` | event | - | `{ sessionId, previousStatus, newStatus }` | Status change |
+| `event:agent-dashboard.teammateJoined` | event | - | `TeamMember` | Teammate detected |
+| `event:agent-dashboard.teammateLeft` | event | - | `{ agentId, teamName }` | Teammate left |
+| `event:agent-dashboard.streamEvent` | event | - | `{ sessionId, event }` | Token-level streaming |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/shared/types/agent-dashboard.ts` | TypeScript types for all three layers |
+| `src/shared/ipc/agent-dashboard/schemas.ts` | Zod schemas mirroring the TS types |
+| `src/shared/ipc/agent-dashboard/contract.ts` | 7 invoke + 7 event channel definitions |
+| `src/shared/ipc/agent-dashboard/index.ts` | Domain barrel export |
