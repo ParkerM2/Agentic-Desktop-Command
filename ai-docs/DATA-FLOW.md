@@ -677,6 +677,7 @@ Routes are defined across 8 route group files in `src/renderer/app/routes/` and 
 / (RootLayout)
 ├── /dashboard              -> DashboardPage          (dashboard.routes.ts)
 ├── /my-work                -> MyWorkPage
+├── /agents                 -> AgentDashboard (top-level, cross-project)
 ├── /alerts                 -> AlertsPage (also accessible via Productivity > Alerts tab)
 ├── /briefing               -> BriefingPage (also accessible via Productivity > Briefing tab)
 ├── /communications         -> CommunicationsPage (also accessible via Productivity > Comms tab)

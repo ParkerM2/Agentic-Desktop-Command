@@ -18,6 +18,7 @@ import {
   Lightbulb,
   ListTodo,
   Map,
+  Monitor,
   PanelLeft,
   PanelLeftClose,
   Plus,
@@ -54,6 +55,7 @@ const COLLAPSED_STYLE = 'justify-center px-0';
 const personalItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
+  { label: 'Agents', icon: Monitor, path: ROUTES.AGENTS },
   { label: 'Fitness', icon: Dumbbell, path: ROUTES.FITNESS },
   { label: 'Productivity', icon: Headphones, path: ROUTES.PRODUCTIVITY },
 ];

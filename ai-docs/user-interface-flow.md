@@ -598,7 +598,7 @@ Hub broadcasts WebSocket event
 
 ## 9. Agents
 
-**Route**: `/projects/$projectId/agents`
+**Routes**: `/agents` (top-level, cross-project) and `/projects/$projectId/agents` (project-scoped)
 **Component**: `AgentDashboard`
 **Feature**: `src/renderer/features/agents/`
 

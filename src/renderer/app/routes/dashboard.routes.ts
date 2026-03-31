@@ -35,5 +35,16 @@ export function createDashboardRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
-  return [dashboardRoute, myWorkRoute] as const;
+  const agentsRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTES.AGENTS,
+    staticData: { breadcrumbLabel: 'Agents' },
+    pendingComponent: DashboardSkeleton,
+    component: lazyRouteComponent(
+      () => import('@features/agents'),
+      'AgentDashboard',
+    ),
+  });
+
+  return [dashboardRoute, myWorkRoute, agentsRoute] as const;
 }

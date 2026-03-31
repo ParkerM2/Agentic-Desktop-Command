@@ -24,6 +24,7 @@ export const ROUTES = {
   PRODUCTIVITY: '/productivity',
   PROJECTS: '/projects',
   SETTINGS: '/settings',
+  AGENTS: '/agents',
   THEMES: '/settings/themes',
 } as const;
 

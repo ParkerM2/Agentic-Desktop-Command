@@ -5,7 +5,7 @@ TanStack Router route definitions, split by domain. Each file exports a `create*
 ## Key Files
 
 - **`auth.routes.tsx`** — Login and register routes (outside app layout)
-- **`dashboard.routes.ts`** — Dashboard and my-work views
+- **`dashboard.routes.ts`** — Dashboard, my-work, and agents (top-level) views
 - **`project.routes.ts`** — Project detail, task board, terminal views
 - **`productivity.routes.ts`** — Planner, fitness, changelog, milestones, insights, ideas
 - **`communication.routes.ts`** — Email, GitHub, notifications
