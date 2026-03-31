@@ -81,7 +81,7 @@ Agent process management — spawn, stop, pause, resume Claude CLI agents.
 | Event Hook | `renderer/features/agents/hooks/useAgentEvents.ts` |
 | Store | -- |
 | Components | `renderer/features/agents/components/AgentDashboard.tsx` |
-| Route | `renderer/app/routes/project.routes.ts` → `/projects/$projectId/agents` |
+| Route | `renderer/app/routes/project.routes.ts` → `/projects/$projectId/agents`, `renderer/app/routes/dashboard.routes.ts` → `/agents` (top-level) |
 
 ---
 

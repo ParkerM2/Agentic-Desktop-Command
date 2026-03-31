@@ -17,6 +17,7 @@ import {
   Lightbulb,
   ListTodo,
   Map,
+  Monitor,
   Plus,
   ScrollText,
   Settings,
@@ -42,6 +43,7 @@ export interface NavItem {
 export const personalItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
+  { label: 'Agents', icon: Monitor, path: ROUTES.AGENTS },
   { label: 'Fitness', icon: Dumbbell, path: ROUTES.FITNESS },
   { label: 'Productivity', icon: Headphones, path: ROUTES.PRODUCTIVITY },
 ];
