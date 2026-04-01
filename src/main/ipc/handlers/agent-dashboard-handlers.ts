@@ -19,10 +19,10 @@ import type {
   TeamMember,
 } from '@shared/types/agent-dashboard';
 
-import type { IpcRouter } from '../router';
 import type { AgentManagerService } from '../../services/agent-manager';
 import type { ProgressWatcherV2 } from '../../services/progress-watcher-v2';
 import type { QaRunner, QaSession } from '../../services/qa/qa-types';
+import type { IpcRouter } from '../router';
 
 // ── Service Interfaces ───────────────────────────────────────
 
@@ -47,10 +47,7 @@ function mapQaResultToVerdict(session: QaSession): QaVerdict {
   }
 
   const { result } = session.report;
-  if (result === 'pass') return 'pass';
-  if (result === 'fail') return 'fail';
-  if (result === 'warnings') return 'warnings';
-  return 'none';
+  return result;
 }
 
 function mapVerificationResult(result: 'pass' | 'fail' | undefined): QaVerificationStatus {
@@ -60,7 +57,7 @@ function mapVerificationResult(result: 'pass' | 'fail' | undefined): QaVerificat
 }
 
 function mapQaSessionToDashboard(session: QaSession): QaDashboardSession {
-  const report = session.report;
+  const { report } = session;
 
   const verificationSuite: QaVerificationSuite = report
     ? {

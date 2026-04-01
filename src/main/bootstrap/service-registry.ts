@@ -23,7 +23,6 @@ import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
-import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -75,6 +74,7 @@ import {
   createSlackWatcher,
 } from '../services/notifications';
 import { createPlannerService } from '../services/planner/planner-service';
+import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
 import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
 import { createDocGenerator } from '../services/project/doc-generator';

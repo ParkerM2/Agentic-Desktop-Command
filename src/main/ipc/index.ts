@@ -90,6 +90,7 @@ import type { MilestonesService } from '../services/milestones/milestones-servic
 import type { NotesService } from '../services/notes/notes-service';
 import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
+import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { CodebaseAnalyzerService } from '../services/project/codebase-analyzer';
 import type { ProjectService } from '../services/project/project-service';
 import type { SetupPipelineService } from '../services/project/setup-pipeline';
@@ -103,7 +104,6 @@ import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TaskRepository } from '../services/tasks/types';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
-import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
@@ -266,7 +266,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerWindowHandlers(router);
   registerTrackerHandlers(router, services.trackerService);
-  if (services.agentManagerService && services.teamWatcherService) {
+  if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
       router,
       services.agentManagerService,
