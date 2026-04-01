@@ -210,3 +210,48 @@ export const AgentPanelDataSchema = z.object({
   errors: z.array(AgentErrorSchema),
   taskProgress: TaskProgressSchema.optional(),
 });
+
+// ── Workflow Task (alias for TaskProgress — used by ProgressWatcherV2) ──
+
+export const WorkflowTaskSchema = z.object({
+  taskNumber: z.number(),
+  taskName: z.string(),
+  phases: z.array(TaskPhaseSchema),
+  acceptanceCriteria: z.array(TaskCriterionSchema),
+});
+
+// ── QA Dashboard ─────────────────────────────────────────────
+
+export const QaVerificationStatusSchema = z.enum(['pass', 'fail', 'pending']);
+
+export const QaVerdictSchema = z.enum(['pass', 'fail', 'warnings', 'running', 'none']);
+
+export const QaIssueSeveritySchema = z.enum(['critical', 'major', 'minor', 'cosmetic']);
+
+export const QaVerificationSuiteSchema = z.object({
+  lint: QaVerificationStatusSchema,
+  typecheck: QaVerificationStatusSchema,
+  test: QaVerificationStatusSchema,
+  build: QaVerificationStatusSchema,
+  docs: QaVerificationStatusSchema,
+});
+
+export const QaIssueSchema = z.object({
+  severity: QaIssueSeveritySchema,
+  category: z.string(),
+  description: z.string(),
+  location: z.string().optional(),
+});
+
+export const QaDashboardSessionSchema = z.object({
+  sessionId: z.string(),
+  taskId: z.string(),
+  verdict: QaVerdictSchema,
+  checksRun: z.number(),
+  checksPassed: z.number(),
+  issues: z.array(QaIssueSchema),
+  verificationSuite: QaVerificationSuiteSchema,
+  duration: z.number(),
+  startedAt: z.string(),
+  completedAt: z.string().optional(),
+});
