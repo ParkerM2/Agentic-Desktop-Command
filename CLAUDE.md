@@ -9,6 +9,50 @@
 
 ---
 
+## gstack Skills (global)
+
+Invoke explicitly only — no proactive routing.
+
+### Research & Auditing
+- `/office-hours` — structured product interrogation (6 forcing questions, outputs design doc)
+- `/plan-eng-review` — architecture lock + data flow + edge cases + test plan
+- `/cso` — OWASP Top 10 + STRIDE threat model (daily=high-confidence, comprehensive=deep)
+- `/design-review` — 80-item visual audit on live app with before/after screenshots
+
+### Planning & Validation (before `/new-plan`)
+- `/plan-ceo-review` — "what's the 10-star version?" (4 scope modes)
+- `/plan-design-review` — rates 7 design dimensions 0-10, fixes gaps
+- `/autoplan` — auto-runs CEO → design → eng review pipeline
+
+### Code Quality & QA (after `/agent-team`)
+- `/review` — staff-engineer code review (7 parallel sub-agents)
+- `/qa` — real browser testing + auto-fix + regression test generation
+- `/qa-only` — same as `/qa` but report-only, no code changes
+- `/investigate` — systematic 4-phase debugging (no fix without root cause)
+
+### Session Management
+- `/retro` — weekly retro with shipping streaks + test health trends
+- `/learn` — cross-session memory (patterns, pitfalls, preferences)
+
+### gstack Data
+
+Artifacts: `~/.gstack/projects/ParkerM2-Agentic-Desktop-Command/`
+Symlinked: `.claude/refs/gstack-project` → gstack project data
+QA reports: `~/.gstack/qa/` (per-ticket)
+Learnings: `~/.gstack/projects/ParkerM2-Agentic-Desktop-Command/learnings.jsonl`
+
+When running `/new-plan` or `/agent-team`, check `.claude/refs/gstack-project/` for design docs,
+test plans, and learnings that should inform the plan.
+
+---
+
+## ADC v2 Refactor — Active (P0)
+
+> V2 Refactor active (P0). See `ai-docs/V2-REFACTOR.md`. DO NOT build on `terminal-service`/xterm.js/node-pty.
+> Key slug: `agent-dashboard-view`. Branch: `feature/agent-dashboard-view`.
+
+---
+
 ## Quick Reference
 
 ```bash
@@ -58,107 +102,30 @@ npm run check:docs   # Documentation updated for source changes
 | Adding a new service/component | Run full suite BEFORE handoff |
 | ANY code change whatsoever | Run full suite BEFORE completion claims |
 
-### Violations
-
-These phrases without test evidence are **LIES**:
-- "This should work now"
-- "I've fixed the issue"
-- "The feature is complete"
-- "Ready for review"
-- "Code looks good"
-- "Docs can be updated later"
-- "This change doesn't need doc updates"
-- "I'll update docs in a follow-up"
-
 ### Correct Pattern
 
 ```
-1. Make code changes
-2. Update relevant ai-docs/ for your changes
-3. Run: npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs
-4. See: All 6 commands pass with zero errors
-5. ONLY THEN: "All verification passes. Ready for review."
+1. Make code changes + update relevant ai-docs/
+2. npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs
+3. All 6 pass → ONLY THEN say "All verification passes. Ready for review."
 ```
 
-### Test Suite Structure
+Phrases like "This should work now", "I've fixed the issue", "Ready for review", or "Docs can be updated later" without passing output are **LIES**.
 
-```
-tests/
-├── setup/                    # Test infrastructure
-│   ├── vitest.setup.ts       # Global test setup
-│   └── mocks/                # Electron, FS, PTY, IPC mocks
-├── unit/                     # Unit tests (vitest.config.ts)
-│   └── services/             # Service tests
-├── integration/              # Integration tests (vitest.integration.config.ts)
-│   └── ipc-handlers/         # IPC handler tests
-├── e2e/                      # E2E tests (playwright.config.ts)
-└── qa-scenarios/             # AI QA agent test scenarios
-```
+Tests live in `tests/unit/services/`, `tests/integration/ipc-handlers/`, and co-located with components.
 
-### When Writing New Code
+### Documentation Updates — MANDATORY
 
-If your changes affect:
-- **Services** → Add/update tests in `tests/unit/services/`
-- **IPC Handlers** → Add/update tests in `tests/integration/ipc-handlers/`
-- **Components** → Add component tests co-located with source
-
-If tests don't exist for the area you're modifying, **that doesn't exempt you from running the existing suite**.
-
-### Documentation Update Mapping — MANDATORY
-
-> **EVERY code change MUST include documentation updates. EVERY. SINGLE. TIME.**
-> This includes `ai-docs/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md` itself.
-> Agent definition files (`.claude/agents/*.md`) are NOT optional extras — they are the instructions
-> that future agents read. If agent docs are stale, agents produce wrong code, which wastes time and money.
-> **Failing to update docs is the same as shipping broken code. Treat it that way.**
-
-`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/features/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md`. Use this mapping to know which docs to update:
-
-| Change Type | Docs to Update |
-|-------------|----------------|
-| New component/hook/store | `FEATURES-INDEX.md` (inventory), `PATTERNS.md` (usage examples), **ALL agents that build UI** (component-engineer, styling-engineer, hook-engineer, store-engineer, fitness-engineer) |
-| New design system primitive or pattern | `PATTERNS.md`, `FEATURES-INDEX.md`, **component-engineer.md**, **styling-engineer.md**, and ANY agent that creates UI components |
-| New data flow or IPC wiring | `DATA-FLOW.md` (flow diagram), `ARCHITECTURE.md` (system overview), **ipc-handler-engineer.md**, **service-engineer.md** |
-| New shared utility | `FEATURES-INDEX.md` (shared sections), `CODEBASE-GUARDIAN.md` (placement rules) |
-| UI layout changes | `user-interface-flow.md` (UX flow sections), `FEATURES-INDEX.md` (layouts) |
-| New feature module | `FEATURES-INDEX.md` (feature table), `ARCHITECTURE.md` (system diagram if applicable) |
-| New pattern or convention | `PATTERNS.md` (pattern example with code), **ALL relevant agent files** |
-| Feature plan or design doc | `docs/features/<slug>/plan.md` (implementation plan) |
-| Plan lifecycle changes | `docs/tracker.json` (update status + add entry) |
-| Any change to file structure, imports, or conventions | **ALL `.claude/agents/*.md` files that reference the affected area** |
-
-**Checklist before committing — ALL items are mandatory:**
-
-1. Did I add a new file? → Update `FEATURES-INDEX.md`
-2. Did I add a new data flow? → Update `DATA-FLOW.md`
-3. Did I introduce a new pattern? → Update `PATTERNS.md`
-4. Did I change the architecture? → Update `ARCHITECTURE.md`
-5. Did I change the UI layout or resolve a gap? → Update `user-interface-flow.md`
-6. Did I create/complete a plan? → Update `docs/tracker.json`
-7. **Did I change ANYTHING that affects how agents write code?** → Update ALL relevant `.claude/agents/*.md` files. This is not optional. Stale agent docs = broken agent output = wasted time and money.
+> EVERY code change needs doc updates. Run `npm run check:docs`. See `ai-docs/DOC-UPDATE-MAP.md` for the full change-type → docs mapping.
 
 ## Architecture Overview
 
 ```
 src/
-├── main/           # Electron main process (Node.js)
-│   ├── index.ts    # App entry (delegates to bootstrap/)
-│   ├── bootstrap/  # App init: lifecycle, service-registry, ipc-wiring, event-wiring
-│   ├── ipc/        # IPC router + handler registration
-│   │   └── handlers/tasks/  # Split task handlers (5 files)
-│   └── services/   # Business logic (32 services, each with focused sub-modules)
-├── preload/        # Context bridge (typed API exposed to renderer)
-├── renderer/       # React app (browser context)
-│   ├── app/        # Router, providers, layouts
-│   │   └── routes/ # Route groups (8 files, one per domain)
-│   ├── features/   # Feature modules (each self-contained)
-│   └── shared/     # Shared hooks, stores, lib, components
-└── shared/         # Code shared between main + renderer
-    ├── ipc-contract.ts   # Thin re-export from ipc/ barrel
-    ├── ipc/              # Domain-based IPC contracts (23 folders)
-    │   └── <domain>/     # contract.ts + schemas.ts + index.ts
-    └── types/            # Domain type definitions
-        └── hub/          # Hub protocol types (9 modules)
+├── main/        # Electron main process — bootstrap/, ipc/handlers/, services/ (32)
+├── preload/     # Context bridge (typed API exposed to renderer)
+├── renderer/    # React app — app/routes/ (8 domains), features/, shared/
+└── shared/      # main + renderer shared — ipc/ (23 domain folders), types/hub/
 ```
 
 ## Critical Pattern: IPC Contract
@@ -174,35 +141,11 @@ To add a new IPC operation:
 
 Data flow: `ipc/<domain>/contract.ts` -> root barrel -> `IpcRouter` -> preload bridge -> `ipc()` helper -> React Query hooks
 
-## Service Pattern
+## Service + Feature Patterns
 
-**Local** services return **synchronous values** (not Promises). IPC handlers wrap them:
-```typescript
-// Service method — sync
-listProjects(): Project[] { ... }
+Local services return **sync values**; IPC handlers wrap with `Promise.resolve(...)`. Exceptions: `selectDirectory()` (dialog) and Hub API proxies are async.
 
-// Handler — wraps in Promise.resolve for IPC
-router.handle('projects.list', () => Promise.resolve(service.listProjects()));
-```
-
-Exceptions:
-- `projectService.selectDirectory()` is async (Electron dialog)
-- **Hub API proxy services** are async (they call the Hub REST API via `hubApiClient`)
-
-## Feature Module Pattern
-
-Each feature in `src/renderer/features/` follows:
-```
-feature/
-├── index.ts           # Barrel exports (public API)
-├── api/
-│   ├── queryKeys.ts   # React Query cache key factory
-│   └── use<Feature>.ts # Query/mutation hooks
-├── components/        # React components
-├── hooks/
-│   └── use<Feature>Events.ts  # IPC event -> query invalidation
-└── store.ts           # Zustand store (UI state only)
-```
+Feature module structure: `index.ts` + `api/queryKeys.ts` + `api/use<Feature>.ts` + `components/` + `hooks/use<Feature>Events.ts` + `store.ts` (UI state only).
 
 ## Path Aliases
 
@@ -214,207 +157,60 @@ feature/
 | `@features/*` | `src/renderer/features/*` | renderer |
 | `@ui/*` | `src/renderer/shared/components/ui/*` | renderer |
 
-## ESLint Rules — What You MUST Know
+## ESLint Rules
 
-This project uses **extremely strict** ESLint. Zero violations tolerated. Key rules:
+> Strict ESLint. Zero violations. See `ai-docs/LINTING.md`. Key: no `any`, no `!`, strict booleans (`arr.length > 0`), `import type`, `void` for floating promises.
 
-- **No `any`** — Use `unknown` + type narrowing or `as T` with eslint-disable comment
-- **No `!` (non-null assertion)** — Use `?? fallback` or proper null checks
-- **strict-boolean-expressions** — Numbers can't be used as booleans: use `arr.length > 0` not `arr.length`
-- **no-floating-promises** — Unhandled promises must use `void` operator: `void navigate(...)`
-- **consistent-type-imports** — Always use `import type { T }` for type-only imports
-- **jsx-a11y strict** — Interactive elements need keyboard handlers + ARIA roles
-- **no-nested-ternary** — Extract to helper function or use if/else
-- **naming-convention** — camelCase default, PascalCase for types/components, UPPER_CASE for constants
-- **Unused vars** — Prefix with `_` if intentionally unused: `_event`, `_id`
-- **Promise callbacks** — `.then()` must return a value; prefer `async/await` or `void`
-- **TanStack Router redirects** — Use `// eslint-disable-next-line @typescript-eslint/only-throw-error` for `throw redirect()`
+## Import Order
 
-See `ai-docs/LINTING.md` for the full rule reference and common fix patterns.
-
-## Import Order (Enforced)
-
-```typescript
-// 1. Node builtins
-import { join } from 'node:path';
-
-// 2. External packages (react first, then alphabetical)
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-
-// 3. Internal — @shared, @main, @renderer
-import type { Task } from '@shared/types';
-import { cn } from '@renderer/shared/lib/utils';
-
-// 4. Features
-import { useTasks } from '@features/tasks';
-
-// 5. Relative (parent, sibling)
-import { MyComponent } from './MyComponent';
-```
-
-Blank line between each group. Alphabetical within groups.
+> Enforced. See `ai-docs/PATTERNS.md`. Groups: node builtins → externals (react first) → `@shared`/`@main`/`@renderer` → `@features` → relative. Blank line between groups.
 
 ## React Component Pattern
 
-```typescript
-// Named function declaration (required by eslint)
-export function MyComponent({ prop }: MyComponentProps) {
-  // hooks first, then derived state, then handlers, then render
-}
-```
+> Named function declarations required. See `ai-docs/PATTERNS.md`. Key: `export function MyComponent(...)`, ternary for conditional rendering, self-closing empty tags, no index keys.
 
-- Use `function-declaration` for named components (not arrow functions)
-- Self-closing tags for empty elements: `<Component />`
-- No array index as key
-- Ternary for conditional rendering (not `&&`)
-- Sort JSX props: reserved first, shorthand, alphabetical, callbacks last, multiline last
+## Design System
 
-## Design System — Critical Rules
-
-The design system uses **CSS custom properties** with **Tailwind v4's `@theme` directive** and **`color-mix()`**.
-
-### Architecture
-
-```
-postcss.config.mjs          # Enables @tailwindcss/postcss + autoprefixer
-src/renderer/styles/globals.css  # ALL theme tokens, base styles, utility classes
-src/renderer/shared/stores/theme-store.ts  # Applies mode + colorTheme + uiScale to DOM
-src/shared/constants/themes.ts   # COLOR_THEMES array + ColorTheme type
-```
-
-### How It Works
-
-1. **Theme variables** defined in `:root`, `.dark`, `[data-theme="name"]`, `[data-theme="name"].dark` blocks
-2. **`@theme` block** maps CSS vars to Tailwind tokens: `--color-primary: var(--primary)` etc.
-3. **`theme-store.ts`** applies `class="dark"` + `data-theme="ocean"` + `data-ui-scale="110"` to `<html>`
-4. Components use standard Tailwind classes: `bg-primary`, `text-foreground`, `border-border`
-
-### NEVER Do This
-
-- **NEVER hardcode RGBA/hex in utility classes or animations.** Use `color-mix()`:
-  ```css
-  /* WRONG — only works for default theme */
-  box-shadow: 0 0 0 4px rgba(214, 216, 118, 0.1);
-
-  /* CORRECT — adapts to any active theme */
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
-  ```
-- **NEVER create `.dark` / `:root` variant selectors** for color differences — `color-mix()` with `var()` adapts automatically
-- **NEVER modify the `@theme` block** token mappings — only modify theme variable values in `:root`/`.dark`/`[data-theme]` blocks
-- **NEVER remove `postcss.config.mjs`** — Tailwind v4 requires it for PostCSS processing
-
-### Adding a New Color Theme
-
-1. Add `[data-theme="mytheme"]` and `[data-theme="mytheme"].dark` blocks in `globals.css`
-2. Add `'mytheme'` to `COLOR_THEMES` array in `src/shared/constants/themes.ts`
-3. Add label to `COLOR_THEME_LABELS` in the same file
-4. All theme variables MUST be defined (background, foreground, card, primary, secondary, muted, accent, destructive, border, input, ring, sidebar, popover, success, warning, info, error + shadows)
-
-### Raw Color Values
-
-Raw hex/rgb/hsl values are **ONLY** allowed inside theme variable definitions:
-```css
-/* OK — theme variable definition */
-.dark { --primary: #D6D876; }
-
-/* OK — fixed semantic status colors */
-.column-queue { border-top-color: #22d3ee; }
-
-/* WRONG — hardcoded in utility class */
-.my-hover:hover { background: rgba(214, 216, 118, 0.1); }
-```
+> CSS custom properties + Tailwind v4 `@theme` + `color-mix()`. NEVER hardcode hex/rgba in utility classes. See `ai-docs/DESIGN-SYSTEM.md`.
 
 ## State Management
 
 - **Server state**: React Query (via `useQuery`/`useMutation` in feature `api/` folders)
 - **UI state**: Zustand stores (in feature `store.ts` or `shared/stores/`)
-- **No Redux, no Context for state** — keep it simple
+- **No Redux, no Context for state**
 
-## Tech Stack Reference
+## Tech Stack
 
-| Layer | Tech | Version |
-|-------|------|---------|
-| Desktop | Electron | 39 |
-| Build | electron-vite | 5 |
-| UI | React | 19 |
-| Types | TypeScript strict | 5.9 |
-| Routing | TanStack Router | 1.95 |
-| Data | React Query | 5.62 |
-| State | Zustand | 5 |
-| Styling | Tailwind CSS | 4 |
-| Validation | Zod | 4 |
-| Terminal | xterm.js | 6 |
-| DnD | dnd-kit | 6 |
-| UI Primitives | Radix UI | latest |
-| PTY | @lydell/node-pty | 1.1 |
-| Linting | ESLint 9 + 8 plugins | strict |
-| Formatting | Prettier 3 + tailwindcss plugin | - |
+Electron 39, electron-vite 5, React 19, TypeScript strict 5.9, TanStack Router 1.95, React Query 5.62, Zustand 5, Tailwind 4, Zod 4, dnd-kit 6, Radix UI, ESLint 9 (strict), Prettier 3.
+**v2 replacing**: xterm.js + node-pty → `@llm-ui/react` + `ghostty-web` + `stream-json` + session JSONL.
 
 ## Detailed Architecture Docs
 
-**Read these when you need deeper context:**
+| Document | Purpose |
+|----------|---------|
+| `ai-docs/FEATURES-INDEX.md` | Feature inventory, file locations, service list |
+| `ai-docs/ARCHITECTURE.md` | System architecture, IPC flow |
+| `ai-docs/PATTERNS.md` | Code conventions, component + import patterns |
+| `ai-docs/DATA-FLOW.md` | Data flow diagrams |
+| `ai-docs/CODEBASE-GUARDIAN.md` | File placement, naming, import rules |
+| `ai-docs/LINTING.md` | ESLint rules + fix patterns |
+| `ai-docs/DESIGN-SYSTEM.md` | Design system, color-mix(), themes |
+| `ai-docs/DOC-UPDATE-MAP.md` | Change → docs mapping, pre-commit checklist |
+| `ai-docs/PLAN-TRACKING.md` | Plan tracking, tracker entry format, slug rules |
+| `ai-docs/WORKTREE-BOOTSTRAP.md` | Worktree agent bootstrap via generate-worktree-claude.mjs |
+| `ai-docs/V2-REFACTOR.md` | ADC v2 architecture, services, phases |
+| `ai-docs/TASK-PLANNING-PIPELINE.md` | Task planning IPC channels, status transitions |
+| `ai-docs/AGENT-WORKFLOW.md` | Agent team orchestration (intake → QA → merge) |
+| `ai-docs/user-interface-flow.md` | UX flow map, component wiring |
+| `docs/research/2026-03-30-headless-agent-architecture.md` | ADC v2 full research |
+| `docs/features/agent-dashboard-view/plan.md` | ADC v2 dashboard UI spec |
 
-| Document | When to Read |
-|----------|--------------|
-| `ai-docs/FEATURES-INDEX.md` | Starting point — what features exist, file locations, service inventory |
-| `ai-docs/ARCHITECTURE.md` | System architecture, IPC flow, service patterns |
-| `ai-docs/PATTERNS.md` | Code conventions, component patterns, examples |
-| `ai-docs/DATA-FLOW.md` | Detailed data flow diagrams for all systems |
-| `ai-docs/CODEBASE-GUARDIAN.md` | File placement rules, naming conventions, import rules |
-| `ai-docs/LINTING.md` | ESLint rules reference and fix patterns |
-| `ai-docs/TASK-PLANNING-PIPELINE.md` | Task planning pipeline — IPC channels, status transitions, file map |
-| `ai-docs/AGENT-WORKFLOW.md` | Agent team orchestration workflow (intake → QA → merge) |
-| `ai-docs/user-interface-flow.md` | UX flow map, gap analysis, component wiring |
-| `ai-docs/prompts/implementing-features/README.md` | Team workflow for multi-agent feature implementation |
+**Plan lifecycle:** `docs/tracker.json` (single source of truth). See `ai-docs/PLAN-TRACKING.md`.
 
-**Plan lifecycle tracking:** `docs/tracker.json` (single source of truth for all plan/progress status)
+## Plan Tracking Protocol
 
-## Plan Tracking Protocol — MANDATORY
+> Plans tracked in `docs/tracker.json`. Slug = folder = key = branch. See `ai-docs/PLAN-TRACKING.md`.
 
-**Every plan, feature, or design doc MUST be tracked.** No exceptions — ad-hoc plans, on-the-fly features, and formal design docs all follow the same convention.
+## Worktree Bootstrapping
 
-### The Naming Convention
-
-One **slug** (lowercase, hyphen-separated) used everywhere:
-
-| Artifact | Location |
-|----------|----------|
-| Tracker entry key | `docs/tracker.json` → `plans.<slug>` |
-| Plan/design doc | `docs/features/<slug>/plan.md` |
-| Feature branch | `feature/<slug>` |
-| Runtime progress | `.claude/progress/<slug>/` (gitignored, workflow plugin) |
-
-### When Creating a New Plan or Feature
-
-1. **Choose a slug** — short, descriptive, hyphenated: `custom-theme-editor`, `tracking-consolidation`
-2. **Create the folder**: `docs/features/<slug>/`
-3. **Write the plan**: `docs/features/<slug>/plan.md`
-4. **Add to tracker**: Add an entry to `docs/tracker.json` with the slug as key
-5. **Create the branch**: `feature/<slug>`
-
-### Tracker Entry Format (v2)
-
-```json
-{
-  "<slug>": {
-    "title": "Human-Readable Title",
-    "status": "DRAFT | APPROVED | IN_PROGRESS | IMPLEMENTED | ARCHIVED | TRACKING",
-    "planFile": "docs/features/<slug>/plan.md",
-    "created": "YYYY-MM-DD",
-    "statusChangedAt": "YYYY-MM-DD",
-    "branch": "feature/<slug>",
-    "pr": null,
-    "tags": ["category"]
-  }
-}
-```
-
-### Rules
-
-- **No plan without a tracker entry.** If you create `docs/features/X/plan.md`, add `X` to `docs/tracker.json`.
-- **No feature branch without a tracker entry.** If you create `feature/X`, add `X` to tracker.
-- **Slug = folder = key = branch suffix.** They MUST match. `docs/features/foo/` + tracker key `foo` + branch `feature/foo`.
-- **`npm run validate:tracker`** catches orphan folders (in `docs/features/` but not in tracker) and missing plan files.
-- **On-the-fly plans** still need a tracker entry with status `DRAFT` or `IN_PROGRESS` — you can skip the plan.md file by setting `planFile: null`, but the entry MUST exist.
-
+> Worktree agents get a generated CLAUDE.md via `scripts/generate-worktree-claude.mjs`. Team Leader MUST call this after `git worktree add`. See `ai-docs/WORKTREE-BOOTSTRAP.md`.

@@ -194,18 +194,18 @@ export function AgentPanelExpanded({
           <TabsTrigger value="files">
             <FileCode className="mr-1.5 h-3.5 w-3.5" />
             Files
-            {agent.filesChanged.length > 0 ? (
+            {(agent.filesChanged ?? []).length > 0 ? (
               <Badge className="ml-1.5" size="sm" variant="secondary">
-                {String(agent.filesChanged.length)}
+                {String((agent.filesChanged ?? []).length)}
               </Badge>
             ) : null}
           </TabsTrigger>
           <TabsTrigger value="errors">
             <AlertTriangle className="mr-1.5 h-3.5 w-3.5" />
             Errors
-            {agent.errors.length > 0 ? (
+            {(agent.errors ?? []).length > 0 ? (
               <Badge className="ml-1.5" size="sm" variant="destructive">
-                {String(agent.errors.length)}
+                {String((agent.errors ?? []).length)}
               </Badge>
             ) : null}
           </TabsTrigger>
@@ -214,17 +214,17 @@ export function AgentPanelExpanded({
         <TabsContent className="min-h-0 flex-1" value="chat">
           <AgentChatPanel
             className="h-full"
-            messages={agent.messages}
+            messages={agent.messages ?? []}
             onViewAgent={onViewAgent}
           />
         </TabsContent>
 
         <TabsContent className="min-h-0 flex-1" value="files">
-          <FilesChangedTab files={agent.filesChanged} />
+          <FilesChangedTab files={agent.filesChanged ?? []} />
         </TabsContent>
 
         <TabsContent className="min-h-0 flex-1" value="errors">
-          <ErrorsTab errors={agent.errors} />
+          <ErrorsTab errors={agent.errors ?? []} />
         </TabsContent>
       </Tabs>
     </Card>

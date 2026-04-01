@@ -8,7 +8,7 @@
 
 import { useRef, useEffect } from 'react';
 
-import type { AgentChatMessage } from '@shared/types/agent-dashboard';
+import type { AgentChatItem } from '@shared/types/agent-dashboard';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -21,7 +21,7 @@ import { UserMessage } from './UserMessage';
 // ─── Props ─────────────────────────────────────────────────
 
 interface AgentChatPanelProps {
-  messages: AgentChatMessage[];
+  messages: AgentChatItem[];
   className?: string;
   onViewAgent?: (agentId: string) => void;
 }

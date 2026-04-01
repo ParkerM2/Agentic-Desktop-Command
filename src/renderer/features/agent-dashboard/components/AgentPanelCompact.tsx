@@ -26,8 +26,9 @@ interface AgentPanelCompactProps {
 // ─── Helpers ───────────────────────────────────────────────
 
 function getLastMessagePreview(agent: AgentSession): string {
-  for (let i = agent.messages.length - 1; i >= 0; i--) {
-    const msg = agent.messages[i];
+  const messages = agent.messages ?? [];
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
     if (msg.kind === 'text') {
       return truncate(msg.message.content, 120);
     }

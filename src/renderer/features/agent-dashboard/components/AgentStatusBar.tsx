@@ -4,7 +4,7 @@
  * Shared header component used across compact, expanded, and popup panel states.
  */
 
-import type { AgentSession, AgentStatus } from '@shared/types/agent-dashboard';
+import type { AgentSession, AgentStatusUi } from '@shared/types/agent-dashboard';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -19,23 +19,25 @@ interface AgentStatusBarProps {
 
 // ─── Status Dot ────────────────────────────────────────────
 
-const STATUS_STYLES: Record<AgentStatus, string> = {
-  running: 'bg-success',
-  idle: 'bg-info',
-  attention: 'bg-warning',
-  failed: 'bg-destructive',
-  completed: 'bg-muted-foreground',
+const STATUS_STYLES: Record<AgentStatusUi, string> = {
+  'running': 'bg-success',
+  'idle': 'bg-info',
+  'attention': 'bg-warning',
+  'needs-attention': 'bg-warning',
+  'failed': 'bg-destructive',
+  'completed': 'bg-muted-foreground',
 };
 
-const STATUS_LABELS: Record<AgentStatus, string> = {
-  running: 'Running',
-  idle: 'Idle',
-  attention: 'Needs Attention',
-  failed: 'Failed',
-  completed: 'Completed',
+const STATUS_LABELS: Record<AgentStatusUi, string> = {
+  'running': 'Running',
+  'idle': 'Idle',
+  'attention': 'Needs Attention',
+  'needs-attention': 'Needs Attention',
+  'failed': 'Failed',
+  'completed': 'Completed',
 };
 
-function StatusDot({ status }: { status: AgentStatus }) {
+function StatusDot({ status }: { status: AgentStatusUi }) {
   return (
     <span
       aria-label={STATUS_LABELS[status]}
@@ -72,7 +74,7 @@ export function AgentStatusBar({ agent, className }: AgentStatusBarProps) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{STATUS_LABELS[agent.status]}</span>
           <span aria-hidden="true">|</span>
-          <span>{formatTokens(agent.tokens.inputTokens)} in / {formatTokens(agent.tokens.outputTokens)} out</span>
+          <span>{formatTokens(agent.tokens?.inputTokens ?? 0)} in / {formatTokens(agent.tokens?.outputTokens ?? 0)} out</span>
         </div>
       </div>
     </div>

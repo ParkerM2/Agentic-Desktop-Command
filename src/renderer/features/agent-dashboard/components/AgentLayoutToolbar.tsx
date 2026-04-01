@@ -6,7 +6,7 @@
 
 import { Grid3x3, LayoutPanelLeft } from 'lucide-react';
 
-import type { AgentDashboardFilters, AgentLayoutMode, AgentStatus } from '@shared/types/agent-dashboard';
+import type { AgentDashboardFilters, AgentLayoutMode, AgentStatusUi } from '@shared/types/agent-dashboard';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -32,7 +32,7 @@ interface AgentLayoutToolbarProps {
 
 // ─── Status Options ────────────────────────────────────────
 
-const STATUS_OPTIONS: Array<{ value: AgentStatus | 'all'; label: string }> = [
+const STATUS_OPTIONS: Array<{ value: AgentStatusUi | 'all'; label: string }> = [
   { value: 'all', label: 'All Statuses' },
   { value: 'running', label: 'Running' },
   { value: 'idle', label: 'Idle' },
@@ -114,7 +114,7 @@ export function AgentLayoutToolbar({
         onValueChange={(value) => {
           onFilterChange({
             ...filters,
-            status: value === 'all' ? undefined : value as AgentStatus,
+            status: value === 'all' ? undefined : value as AgentStatusUi,
           });
         }}
       >

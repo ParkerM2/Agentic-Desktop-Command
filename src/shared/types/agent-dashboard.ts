@@ -6,6 +6,9 @@
  *   Layer 1 — Agent Visibility (sessions, team config, JSONL events)
  *   Layer 2 — Workflow Tracking (task progress, phases, acceptance criteria)
  *   Layer 3 — Dashboard (panel view model, layout modes, correlation)
+ *
+ * Also includes component-facing types used by the renderer UI:
+ *   Tool call discriminated union, chat item union, enriched session view model.
  */
 
 // ── Layer 1: Agent Visibility ─────────────────────────────────
@@ -13,13 +16,39 @@
 /** Session types matching the two-session model + auto-detected teammates */
 export type AgentSessionType = 'project-owner' | 'team-lead' | 'teammate';
 
-/** Agent lifecycle status */
+/** Agent lifecycle status (IPC-facing — matches Zod schema) */
 export type AgentStatus = 'running' | 'idle' | 'needs-attention' | 'failed' | 'completed';
 
-/** Token usage counters for an agent session */
+/**
+ * Agent status for UI components.
+ * Includes 'attention' as a UI-friendly alias for 'needs-attention'.
+ */
+export type AgentStatusUi = AgentStatus | 'attention';
+
+/** Agent role within a team or standalone session */
+export type AgentRole =
+  | 'project-owner'
+  | 'team-lead'
+  | 'teammate'
+  | 'component-engineer'
+  | 'service-engineer'
+  | 'hook-engineer'
+  | 'store-engineer'
+  | 'ipc-handler-engineer'
+  | 'styling-engineer'
+  | 'fitness-engineer';
+
+/** Token usage counters for an agent session (IPC-facing) */
 export interface AgentTokenUsage {
   input: number;
   output: number;
+}
+
+/** Token usage for UI rendering — includes cost estimate and explicit field names */
+export interface AgentTokenUsageUi {
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCost: number;
 }
 
 /** Core agent session — represents one running Claude instance */
@@ -27,14 +56,26 @@ export interface AgentSession {
   id: string;
   name: string;
   type: AgentSessionType;
+  role?: AgentRole;
   status: AgentStatus;
   model: string;
   teamName?: string;
   taskId?: string;
+  taskName?: string;
   branch?: string;
+  projectId?: string;
+  projectName?: string;
   tmuxPaneId?: string;
   sessionJsonlPath?: string;
   tokenUsage: AgentTokenUsage;
+  /** UI-facing token usage with explicit field names */
+  tokens?: AgentTokenUsageUi;
+  /** Chat items for panel rendering (text messages + tool calls) */
+  messages?: AgentChatItem[];
+  /** Files modified during this session */
+  filesChanged?: AgentFileChange[];
+  /** Errors encountered during execution */
+  errors?: AgentError[];
   startedAt: string;
   lastActivityAt: string;
 }
@@ -94,12 +135,12 @@ export interface StreamJsonEvent {
   cost?: number;
 }
 
-// ── Chat Message (renderer-facing) ────────────────────────────
+// ── Chat Message (IPC-facing — raw content blocks) ───────────
 
 /** Role of a chat message participant */
 export type ChatMessageRole = 'assistant' | 'user';
 
-/** Parsed chat message ready for rendering */
+/** Parsed chat message from IPC (raw content blocks from NDJSON) */
 export interface AgentChatMessage {
   id: string;
   agentId: string;
@@ -109,7 +150,87 @@ export interface AgentChatMessage {
   isStreaming?: boolean;
 }
 
-// ── Tool Call Display ─────────────────────────────────────────
+// ── Tool Call Types (Component-Facing) ────────────────────────
+
+/** Tool call type discriminator */
+export type ToolCallType = 'Read' | 'Edit' | 'Write' | 'Bash' | 'AgentSpawn';
+
+export interface ToolCallRead {
+  type: 'Read';
+  filePath: string;
+  lineRange?: string;
+  content?: string;
+}
+
+export interface ToolCallEdit {
+  type: 'Edit';
+  filePath: string;
+  additions: number;
+  deletions: number;
+  diffPreview?: string;
+}
+
+export interface ToolCallWrite {
+  type: 'Write';
+  filePath: string;
+  isNew: boolean;
+}
+
+export interface ToolCallBash {
+  type: 'Bash';
+  command: string;
+  output?: string;
+  exitCode?: number;
+  durationMs?: number;
+}
+
+export interface ToolCallAgentSpawn {
+  type: 'AgentSpawn';
+  agentName: string;
+  task: string;
+  model: string;
+  status: AgentStatus;
+  agentId: string;
+}
+
+/** Discriminated union of all tool call data shapes */
+export type ToolCallData =
+  | ToolCallRead
+  | ToolCallEdit
+  | ToolCallWrite
+  | ToolCallBash
+  | ToolCallAgentSpawn;
+
+/** Enriched tool call for UI rendering (wraps ToolCallData with metadata) */
+export interface AgentToolCall {
+  id: string;
+  toolCall: ToolCallData;
+  isError: boolean;
+  timestamp: string;
+}
+
+// ── Text Message (Component-Facing) ──────────────────────────
+
+/** A plain-text chat message for direct rendering */
+export interface AgentTextMessage {
+  id: string;
+  role: 'assistant' | 'user';
+  content: string;
+  timestamp: string;
+  isStreaming?: boolean;
+}
+
+/**
+ * Discriminated union for chat panel items.
+ *
+ * Components iterate over AgentChatItem[] and switch on `kind`
+ * to render either a text bubble or a tool call card.
+ */
+export type AgentChatItem =
+  | { kind: 'text'; message: AgentTextMessage }
+  | { kind: 'tool'; toolCall: AgentToolCall };
+
+// ── Tool Call Display (IPC-Facing) ───────────────────────────
 
 /** Enriched tool call data for UI rendering */
 export interface ToolCallDisplay {
@@ -184,7 +305,7 @@ export interface TaskProgress {
 /** File change status from git diff */
 export type FileChangeStatus = 'A' | 'M' | 'D';
 
-/** A file changed by an agent's work */
+/** A file changed by an agent's work (IPC-facing — git status codes) */
 export interface FileChange {
   path: string;
   status: FileChangeStatus;
@@ -199,9 +320,20 @@ export type AgentErrorType = 'bash' | 'tool' | 'qa' | 'warning';
 export interface AgentError {
   id: string;
   type: AgentErrorType;
+  severity: 'error' | 'warning';
   message: string;
+  source?: string;
   timestamp: string;
   context?: string;
+  chatMessageId?: string;
+}
+
+/** Component-facing file change type with human-readable status */
+export interface AgentFileChange {
+  path: string;
+  status: 'added' | 'modified' | 'deleted';
+  additions: number;
+  deletions: number;
 }
 
 /** Layout modes for the agent dashboard */
@@ -213,8 +345,24 @@ export type AgentPanelState = 'compact' | 'expanded' | 'popup';
 /** Composite view model for a single agent panel */
 export interface AgentPanelData {
   session: AgentSession;
-  messages: AgentChatMessage[];
+  messages: AgentChatItem[];
   filesChanged: FileChange[];
   errors: AgentError[];
   taskProgress?: TaskProgress;
+}
+
+// ── Dashboard State (Component-Facing) ───────────────────────
+
+/** Filter criteria for the agent dashboard */
+export interface AgentDashboardFilters {
+  projectId?: string;
+  status?: AgentStatusUi;
+}
+
+/** Top-level state for the dashboard page component */
+export interface AgentDashboardState {
+  layoutMode: AgentLayoutMode;
+  expandedAgentId?: string;
+  popupAgentId?: string;
+  filters: AgentDashboardFilters;
 }

@@ -535,7 +535,6 @@ export function createServiceRegistry(
   const services: Services = {
     agentManagerService,
     agentOrchestrator,
-    agentManagerService: null,
     teamWatcherService: null,
     projectService,
     taskService,

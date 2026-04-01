@@ -52,7 +52,7 @@ import { registerWindowHandlers } from './handlers/window-handlers';
 import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
 
-import type { AgentManagerService, TeamWatcherService } from './handlers/agent-dashboard-handlers';
+import type { TeamWatcherService } from './handlers/agent-dashboard-handlers';
 import type { IpcRouter } from './router';
 import type { OAuthManager } from '../auth/oauth-manager';
 import type { TokenStore } from '../auth/token-store';
@@ -161,7 +161,6 @@ export interface Services {
   setupPipeline: SetupPipelineService;
   trackerService: TrackerService;
   userSessionManager: UserSessionManager;
-  agentManagerService: AgentManagerService | null;
   teamWatcherService: TeamWatcherService | null;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
