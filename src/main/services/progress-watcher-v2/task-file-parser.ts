@@ -44,12 +44,12 @@ function parseFrontmatter(content: string): TaskFrontmatter {
     }
   }
 
-  const taskNumber = Number.parseInt(fields['taskNumber'] ?? '0', 10);
+  const taskNumber = Number.parseInt(fields.taskNumber ?? '0', 10);
 
   return {
     taskNumber: Number.isNaN(taskNumber) ? 0 : taskNumber,
-    taskName: fields['taskName'] ?? defaults.taskName,
-    status: fields['status'] ?? defaults.status,
+    taskName: fields.taskName ?? defaults.taskName,
+    status: fields.status ?? defaults.status,
   };
 }
 
