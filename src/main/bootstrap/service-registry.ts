@@ -23,6 +23,7 @@ import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
+import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -527,6 +528,7 @@ export function createServiceRegistry(
   const tmuxBridgeService = createTmuxBridgeService();
   const teamWatcherService = createTeamWatcherService();
   const sessionJsonlReaderService = createSessionJSONLReaderService();
+  const progressWatcherV2 = createProgressWatcherV2();
 
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
   const trackerService = createTrackerService(process.cwd());
@@ -535,6 +537,7 @@ export function createServiceRegistry(
   const services: Services = {
     agentManagerService,
     agentOrchestrator,
+    progressWatcherV2,
     teamWatcherService: null,
     projectService,
     taskService,

@@ -103,6 +103,7 @@ import type { TaskDecomposer } from '../services/tasks/task-decomposer';
 import type { TaskRepository } from '../services/tasks/types';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
+import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
@@ -161,6 +162,7 @@ export interface Services {
   setupPipeline: SetupPipelineService;
   trackerService: TrackerService;
   userSessionManager: UserSessionManager;
+  progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
@@ -269,6 +271,8 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
       router,
       services.agentManagerService,
       services.teamWatcherService,
+      services.progressWatcherV2,
+      services.qaRunner,
     );
   }
 }
