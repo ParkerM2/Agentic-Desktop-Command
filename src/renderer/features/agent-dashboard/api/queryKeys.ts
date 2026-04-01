@@ -12,4 +12,9 @@ export const agentDashboardKeys = {
   session: (id: string) => [...agentDashboardKeys.all, 'session', id] as const,
   messages: (sessionId: string) => [...agentDashboardKeys.all, 'messages', sessionId] as const,
   filesChanged: (branch: string) => [...agentDashboardKeys.all, 'files', branch] as const,
+  tasks: (featureSlug: string) => [...agentDashboardKeys.all, 'tasks', featureSlug] as const,
+  task: (featureSlug: string, taskNumber: number) =>
+    [...agentDashboardKeys.all, 'task', featureSlug, taskNumber] as const,
+  qaSession: (taskId: string) => [...agentDashboardKeys.all, 'qa', taskId] as const,
+  qaSessions: () => [...agentDashboardKeys.all, 'qa-sessions'] as const,
 };
