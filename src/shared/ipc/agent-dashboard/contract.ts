@@ -17,8 +17,10 @@ import {
   AgentSessionSchema,
   AgentSessionTypeSchema,
   FileChangeSchema,
+  QaDashboardSessionSchema,
   StreamJsonEventSchema,
   TeamMemberSchema,
+  WorkflowTaskSchema,
 } from './schemas';
 
 // ── Invoke Channels ───────────────────────────────────────────
@@ -92,6 +94,30 @@ export const agentDashboardInvoke = {
     }),
     output: z.array(FileChangeSchema),
   },
+
+  /** Get all workflow tasks for a feature slug */
+  'agent-dashboard.getTasksForFeature': {
+    input: z.object({ featureSlug: z.string() }),
+    output: z.array(WorkflowTaskSchema),
+  },
+
+  /** Get a single workflow task by feature slug and task number */
+  'agent-dashboard.getTask': {
+    input: z.object({ featureSlug: z.string(), taskNumber: z.number() }),
+    output: WorkflowTaskSchema.nullable(),
+  },
+
+  /** Get the QA session for a specific task */
+  'agent-dashboard.getQaSession': {
+    input: z.object({ taskId: z.string() }),
+    output: QaDashboardSessionSchema.nullable(),
+  },
+
+  /** List all QA sessions */
+  'agent-dashboard.listQaSessions': {
+    input: z.object({}),
+    output: z.array(QaDashboardSessionSchema),
+  },
 } as const;
 
 // ── Event Channels ────────────────────────────────────────────
@@ -144,5 +170,18 @@ export const agentDashboardEvents = {
       sessionId: z.string(),
       event: StreamJsonEventSchema,
     }),
+  },
+
+  /** A workflow task was updated (phase change, criterion met, etc.) */
+  'event:agent-dashboard.taskUpdated': {
+    payload: z.object({
+      featureSlug: z.string(),
+      task: WorkflowTaskSchema,
+    }),
+  },
+
+  /** A QA session was updated (new verdict, check completed, etc.) */
+  'event:agent-dashboard.qaSessionUpdated': {
+    payload: QaDashboardSessionSchema,
   },
 } as const;
