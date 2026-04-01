@@ -14,8 +14,6 @@
 
 import { type Theme, colorSchemeDark, colorSchemeLight, themeQuartz } from 'ag-grid-community';
 
-import type { Theme } from 'ag-grid-community';
-
 /**
  * Creates an AG-Grid theme that respects the app's light/dark mode.
  * All colors use CSS custom properties that adapt automatically

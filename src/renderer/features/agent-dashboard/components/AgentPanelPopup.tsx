@@ -11,6 +11,7 @@ import {
   Clock,
   FileCode,
   GitBranch,
+  ListChecks,
   MessageSquare,
 } from 'lucide-react';
 
@@ -37,6 +38,8 @@ import {
 
 import { AgentChatPanel } from './AgentChatPanel';
 import { AgentStatusBar } from './AgentStatusBar';
+import { QaPanel } from './QaPanel';
+import { TasksTab } from './TasksTab';
 
 // ─── Props ─────────────────────────────────────────────────
 
@@ -92,6 +95,17 @@ function getFileStatusColor(status: AgentFileChange['status']): string {
   if (status === 'added') return 'text-success';
   if (status === 'deleted') return 'text-destructive';
   return 'text-warning';
+}
+
+function deriveFeatureSlug(agent: AgentSession): string {
+  const branch = agent.branch;
+  if (branch !== undefined) {
+    const workMatch = /^work\/([^/]+)\//.exec(branch);
+    if (workMatch?.[1] !== undefined) return workMatch[1];
+    const featureMatch = /^feature\/([^/]+)/.exec(branch);
+    if (featureMatch?.[1] !== undefined) return featureMatch[1];
+  }
+  return 'agent-dashboard-view';
 }
 
 // ─── Files Changed Tab ─────────────────────────────────────
@@ -243,6 +257,10 @@ export function AgentPanelPopup({
                 </Badge>
               ) : null}
             </TabsTrigger>
+            <TabsTrigger value="tasks">
+              <ListChecks className="mr-1.5 h-3.5 w-3.5" />
+              Tasks
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent className="min-h-0 flex-1" value="chat">
@@ -260,7 +278,17 @@ export function AgentPanelPopup({
           <TabsContent className="min-h-0 flex-1" value="errors">
             <PopupErrorsTab errors={agent.errors ?? []} />
           </TabsContent>
+
+          <TabsContent className="min-h-0 flex-1" value="tasks">
+            <TasksTab className="h-full" featureSlug={deriveFeatureSlug(agent)} taskId={agent.taskId} />
+          </TabsContent>
         </Tabs>
+
+        {agent.taskId !== undefined ? (
+          <div className="border-t px-6 py-4">
+            <QaPanel taskId={agent.taskId} />
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
