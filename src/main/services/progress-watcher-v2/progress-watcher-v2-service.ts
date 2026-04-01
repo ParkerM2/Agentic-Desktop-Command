@@ -14,10 +14,10 @@ import { join } from 'node:path';
 
 import { watcherLogger } from '@main/lib/logger';
 
-import { extractTaskNumber, parseTaskFile } from './task-file-parser';
-
 import type { FSWatcher } from 'node:fs';
 import type { TaskProgress } from '@shared/types/agent-dashboard';
+
+import { extractTaskNumber, parseTaskFile } from './task-file-parser';
 
 // ─── Types ──────────────────────────────────────────────────
 
