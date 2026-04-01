@@ -12,14 +12,14 @@
  * @see https://www.ag-grid.com/react-data-grid/themes/
  */
 
-import { colorSchemeDark, colorSchemeLight, themeQuartz } from 'ag-grid-community';
+import { type Theme, colorSchemeDark, colorSchemeLight, themeQuartz } from 'ag-grid-community';
 
 /**
  * Creates an AG-Grid theme that respects the app's light/dark mode.
  * All colors use CSS custom properties that adapt automatically
  * when the user switches color themes.
  */
-export function createAdcGridTheme(isDark: boolean) {
+export function createAdcGridTheme(isDark: boolean): Theme {
   return themeQuartz
     .withPart(isDark ? colorSchemeDark : colorSchemeLight)
     .withParams({

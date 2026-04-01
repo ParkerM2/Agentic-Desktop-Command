@@ -351,6 +351,45 @@ export interface AgentPanelData {
   taskProgress?: TaskProgress;
 }
 
+// ── Layer 3: QA Dashboard ────────────────────────────────────
+
+/** QA session verdict */
+export type QaVerdict = 'pass' | 'fail' | 'warnings' | 'running' | 'none';
+
+/** Status of a single verification check */
+export type QaVerificationStatus = 'pass' | 'fail' | 'pending';
+
+/** Verification suite results for the 5 mandatory checks */
+export interface QaVerificationSuite {
+  lint: QaVerificationStatus;
+  typecheck: QaVerificationStatus;
+  test: QaVerificationStatus;
+  build: QaVerificationStatus;
+  docs: QaVerificationStatus;
+}
+
+/** A single QA issue found during a session */
+export interface QaDashboardIssue {
+  severity: 'critical' | 'major' | 'minor' | 'cosmetic';
+  category: string;
+  description: string;
+  location?: string;
+}
+
+/** QA session data for dashboard rendering */
+export interface QaDashboardSession {
+  sessionId: string;
+  taskId: string;
+  verdict: QaVerdict;
+  checksRun: number;
+  checksPassed: number;
+  issues: QaDashboardIssue[];
+  verificationSuite: QaVerificationSuite;
+  duration: number;
+  startedAt: string;
+  completedAt?: string;
+}
+
 // ── Dashboard State (Component-Facing) ───────────────────────
 
 /** Filter criteria for the agent dashboard */

@@ -20,6 +20,12 @@ export {
   FileChangeSchema,
   FileChangeStatusSchema,
   PhaseStatusSchema,
+  QaDashboardSessionSchema,
+  QaIssueSchema,
+  QaIssueSeveritySchema,
+  QaVerdictSchema,
+  QaVerificationStatusSchema,
+  QaVerificationSuiteSchema,
   StreamJsonEventSchema,
   StreamJsonEventTypeSchema,
   TaskCriterionSchema,
@@ -31,6 +37,7 @@ export {
   ToolCallDisplaySchema,
   ToolResultBlockSchema,
   ToolUseBlockSchema,
+  WorkflowTaskSchema,
 } from './schemas';
 
 export { agentDashboardEvents, agentDashboardInvoke } from './contract';
