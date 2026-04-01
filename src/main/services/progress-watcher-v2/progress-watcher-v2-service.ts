@@ -12,12 +12,15 @@
 import { existsSync, readdirSync, readFileSync, watch } from 'node:fs';
 import { join } from 'node:path';
 
+
+import type { TaskProgress } from '@shared/types/agent-dashboard';
+
 import { watcherLogger } from '@main/lib/logger';
+
 
 import { extractTaskNumber, parseTaskFile } from './task-file-parser';
 
 import type { FSWatcher } from 'node:fs';
-import type { TaskProgress } from '@shared/types/agent-dashboard';
 
 // ─── Types ──────────────────────────────────────────────────
 

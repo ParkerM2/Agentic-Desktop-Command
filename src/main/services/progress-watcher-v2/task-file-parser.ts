@@ -30,7 +30,7 @@ function parseFrontmatter(content: string): TaskFrontmatter {
     return defaults;
   }
 
-  const fields: Record<string, string> = {};
+  const fields: Partial<Record<string, string>> = {};
   const yaml = match[1];
   for (const line of yaml.split(/\r?\n/)) {
     const colonIndex = line.indexOf(':');
@@ -44,12 +44,12 @@ function parseFrontmatter(content: string): TaskFrontmatter {
     }
   }
 
-  const taskNumber = Number.parseInt(fields['taskNumber'] ?? '0', 10);
+  const taskNumber = Number.parseInt(fields.taskNumber ?? '0', 10);
 
   return {
     taskNumber: Number.isNaN(taskNumber) ? 0 : taskNumber,
-    taskName: fields['taskName'] ?? defaults.taskName,
-    status: fields['status'] ?? defaults.status,
+    taskName: fields.taskName ?? defaults.taskName,
+    status: fields.status ?? defaults.status,
   };
 }
 
