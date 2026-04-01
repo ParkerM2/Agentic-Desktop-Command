@@ -12,8 +12,8 @@
 
 import type { TeamMember } from '@shared/types/agent-dashboard';
 
-import type { IpcRouter } from '../router';
 import type { AgentManagerService } from '../../services/agent-manager';
+import type { IpcRouter } from '../router';
 
 // ── Service Interfaces ───────────────────────────────────────
 

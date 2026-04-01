@@ -264,7 +264,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerWindowHandlers(router);
   registerTrackerHandlers(router, services.trackerService);
-  if (services.agentManagerService && services.teamWatcherService) {
+  if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
       router,
       services.agentManagerService,
