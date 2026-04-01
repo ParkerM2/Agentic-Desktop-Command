@@ -14,6 +14,8 @@ export { AgentPanelCompact } from './components/AgentPanelCompact';
 export { AgentPanelExpanded } from './components/AgentPanelExpanded';
 export { AgentPanelPopup } from './components/AgentPanelPopup';
 export { AgentStatusBar } from './components/AgentStatusBar';
+export { QaPanel } from './components/QaPanel';
+export { TasksTab } from './components/TasksTab';
 export { TextMessage } from './components/TextMessage';
 export { ToolCallCard } from './components/ToolCallCard';
 export { UserMessage } from './components/UserMessage';
