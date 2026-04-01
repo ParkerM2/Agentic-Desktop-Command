@@ -10,9 +10,18 @@
  * TeamWatcher service does not have a router reference.
  */
 
-import type { TeamMember } from '@shared/types/agent-dashboard';
+import type {
+  QaDashboardIssue,
+  QaDashboardSession,
+  QaVerdict,
+  QaVerificationStatus,
+  QaVerificationSuite,
+  TeamMember,
+} from '@shared/types/agent-dashboard';
 
 import type { AgentManagerService } from '../../services/agent-manager';
+import type { ProgressWatcherV2 } from '../../services/progress-watcher-v2';
+import type { QaRunner, QaSession } from '../../services/qa/qa-types';
 import type { IpcRouter } from '../router';
 
 // ── Service Interfaces ───────────────────────────────────────
@@ -22,12 +31,84 @@ export interface TeamWatcherService {
   onTeammateLeft: (listener: (memberId: string) => void) => void;
 }
 
+// ── QA Mapping Helper ────────────────────────────────────────
+
+function mapQaResultToVerdict(session: QaSession): QaVerdict {
+  if (
+    session.status === 'building' ||
+    session.status === 'launching' ||
+    session.status === 'testing'
+  ) {
+    return 'running';
+  }
+
+  if (!session.report) {
+    return 'none';
+  }
+
+  const { result } = session.report;
+  return result;
+}
+
+function mapVerificationResult(result: 'pass' | 'fail' | undefined): QaVerificationStatus {
+  if (result === 'pass') return 'pass';
+  if (result === 'fail') return 'fail';
+  return 'pending';
+}
+
+function mapQaSessionToDashboard(session: QaSession): QaDashboardSession {
+  const { report } = session;
+
+  const verificationSuite: QaVerificationSuite = report
+    ? {
+        lint: mapVerificationResult(report.verificationSuite.lint),
+        typecheck: mapVerificationResult(report.verificationSuite.typecheck),
+        test: mapVerificationResult(report.verificationSuite.test),
+        build: mapVerificationResult(report.verificationSuite.build),
+        docs: mapVerificationResult(report.verificationSuite.docs),
+      }
+    : {
+        lint: 'pending',
+        typecheck: 'pending',
+        test: 'pending',
+        build: 'pending',
+        docs: 'pending',
+      };
+
+  const issues: QaDashboardIssue[] = report
+    ? report.issues.map((issue) => ({
+        severity: issue.severity,
+        category: issue.category,
+        description: issue.description,
+        location: issue.location,
+      }))
+    : [];
+
+  return {
+    sessionId: session.id,
+    taskId: session.taskId,
+    verdict: mapQaResultToVerdict(session),
+    checksRun: report?.checksRun ?? 0,
+    checksPassed: report?.checksPassed ?? 0,
+    issues,
+    verificationSuite,
+    duration: report?.duration ?? 0,
+    startedAt: session.startedAt,
+    completedAt: session.completedAt,
+  };
+}
+
 // ── Handler Registration ─────────────────────────────────────
+
+/** Set of feature slugs that have been lazily watched */
+const watchedSlugs = new Set<string>();
 
 export function registerAgentDashboardHandlers(
   router: IpcRouter,
   agentManager: AgentManagerService,
   teamWatcher: TeamWatcherService,
+  progressWatcher: ProgressWatcherV2,
+  qaRunner: QaRunner,
 ): void {
   // ── Invoke Handlers ──────────────────────────────────────
 
@@ -65,6 +146,33 @@ export function registerAgentDashboardHandlers(
     Promise.resolve([]),
   );
 
+  // ── Workflow Task Handlers ──────────────────────────────────
+
+  router.handle('agent-dashboard.getTasksForFeature', (input) => {
+    // Lazily start watching the feature on first request
+    if (!watchedSlugs.has(input.featureSlug)) {
+      progressWatcher.watchFeature(input.featureSlug);
+      watchedSlugs.add(input.featureSlug);
+    }
+    return Promise.resolve(progressWatcher.getTasksForFeature(input.featureSlug));
+  });
+
+  router.handle('agent-dashboard.getTask', (input) =>
+    Promise.resolve(progressWatcher.getTask(input.featureSlug, input.taskNumber)),
+  );
+
+  // ── QA Handlers ─────────────────────────────────────────────
+
+  router.handle('agent-dashboard.getQaSession', (input) => {
+    const session = qaRunner.getSessionByTaskId(input.taskId);
+    return Promise.resolve(session ? mapQaSessionToDashboard(session) : null);
+  });
+
+  router.handle('agent-dashboard.listQaSessions', () =>
+    // QaRunner does not expose a list method — stub for now
+    Promise.resolve([]),
+  );
+
   // ── Event Forwarding ─────────────────────────────────────
   // Agent manager events are emitted directly by the service via router.
   // Only teammate join/leave events need forwarding from TeamWatcher.
@@ -75,5 +183,20 @@ export function registerAgentDashboardHandlers(
 
   teamWatcher.onTeammateLeft((memberId) => {
     router.emit('event:agent-dashboard.teammateLeft', { agentId: memberId, teamName: '' });
+  });
+
+  // Forward task updates from ProgressWatcherV2
+  progressWatcher.onTaskUpdated((slug, task) => {
+    router.emit('event:agent-dashboard.taskUpdated', { featureSlug: slug, task });
+  });
+
+  // Forward QA session events (progress + completed only)
+  qaRunner.onSessionEvent((event) => {
+    if (event.type === 'completed' || event.type === 'progress') {
+      router.emit(
+        'event:agent-dashboard.qaSessionUpdated',
+        mapQaSessionToDashboard(event.session),
+      );
+    }
   });
 }

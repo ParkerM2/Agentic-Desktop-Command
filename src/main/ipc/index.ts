@@ -90,6 +90,7 @@ import type { MilestonesService } from '../services/milestones/milestones-servic
 import type { NotesService } from '../services/notes/notes-service';
 import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
+import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { CodebaseAnalyzerService } from '../services/project/codebase-analyzer';
 import type { ProjectService } from '../services/project/project-service';
 import type { SetupPipelineService } from '../services/project/setup-pipeline';
@@ -161,6 +162,7 @@ export interface Services {
   setupPipeline: SetupPipelineService;
   trackerService: TrackerService;
   userSessionManager: UserSessionManager;
+  progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
@@ -269,6 +271,8 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
       router,
       services.agentManagerService,
       services.teamWatcherService,
+      services.progressWatcherV2,
+      services.qaRunner,
     );
   }
 }

@@ -74,6 +74,7 @@ import {
   createSlackWatcher,
 } from '../services/notifications';
 import { createPlannerService } from '../services/planner/planner-service';
+import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
 import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
 import { createDocGenerator } from '../services/project/doc-generator';
@@ -527,6 +528,7 @@ export function createServiceRegistry(
   const tmuxBridgeService = createTmuxBridgeService();
   const teamWatcherService = createTeamWatcherService();
   const sessionJsonlReaderService = createSessionJSONLReaderService();
+  const progressWatcherV2 = createProgressWatcherV2();
 
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
   const trackerService = createTrackerService(process.cwd());
@@ -535,6 +537,7 @@ export function createServiceRegistry(
   const services: Services = {
     agentManagerService,
     agentOrchestrator,
+    progressWatcherV2,
     teamWatcherService: null,
     projectService,
     taskService,
