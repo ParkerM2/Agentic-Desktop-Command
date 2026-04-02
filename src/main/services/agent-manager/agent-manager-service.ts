@@ -26,7 +26,9 @@ import { agentLogger } from '@main/lib/logger';
 
 import { createProcessManager } from './process-manager';
 import { createStreamJsonParser } from './stream-json-parser';
+import { SubprocessStrategy } from './subprocess-strategy';
 
+import type { AgentConnectionStrategy } from './agent-connection-strategy';
 import type { ManagedProcess } from './process-manager';
 import type { StreamJsonParser } from './stream-json-parser';
 import type { IpcRouter } from '../../ipc/router';
@@ -119,6 +121,8 @@ interface InternalSession {
 export interface AgentManagerDeps {
   router: IpcRouter;
   tmuxBridgeService: TmuxBridgeService;
+  /** Optional connection strategy — defaults to SubprocessStrategy */
+  strategy?: AgentConnectionStrategy;
 }
 
 /**
@@ -130,6 +134,8 @@ export interface AgentManagerDeps {
 export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerService {
   const { router, tmuxBridgeService } = deps;
   const processManager = createProcessManager();
+  // Strategy is available for future use — currently SubprocessStrategy delegates to processManager
+  const _strategy: AgentConnectionStrategy = deps.strategy ?? new SubprocessStrategy(processManager);
   const sessions = new Map<string, InternalSession>();
   const eventHandlers = new Set<AgentManagerEventHandler>();
 
