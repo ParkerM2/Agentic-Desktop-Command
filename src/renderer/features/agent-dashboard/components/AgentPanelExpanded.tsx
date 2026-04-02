@@ -54,7 +54,7 @@ function getFileStatusColor(status: AgentFileChange['status']): string {
 }
 
 function deriveFeatureSlug(agent: AgentSession): string {
-  const branch = agent.branch;
+  const { branch } = agent;
   if (branch !== undefined) {
     const workMatch = /^work\/([^/]+)\//.exec(branch);
     if (workMatch?.[1] !== undefined) return workMatch[1];
@@ -249,11 +249,11 @@ export function AgentPanelExpanded({
         </TabsContent>
       </Tabs>
 
-      {agent.taskId !== undefined ? (
+      {agent.taskId === undefined ? null : (
         <div className="border-t p-3">
           <QaPanel taskId={agent.taskId} />
         </div>
-      ) : null}
+      )}
     </Card>
   );
 }

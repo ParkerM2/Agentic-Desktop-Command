@@ -67,11 +67,11 @@ function PhasesChecklist({ phases }: { phases: TaskPhase[] }) {
           )}>
             {phase.name}
           </span>
-          {phase.duration !== undefined ? (
+          {phase.duration === undefined ? null : (
             <span className="ml-auto text-xs text-muted-foreground">
               {String(Math.round(phase.duration / 1000))}s
             </span>
-          ) : null}
+          )}
         </div>
       ))}
     </div>
@@ -101,7 +101,7 @@ function AcceptanceCriteria({ criteria }: { criteria: TaskCriterion[] }) {
 // ─── Component ─────────────────────────────────────────────
 
 export function TasksTab({ taskId, featureSlug, className }: TasksTabProps) {
-  const slug = featureSlug ?? deriveFeatureSlug(undefined);
+  const slug = featureSlug ?? deriveFeatureSlug();
   const { data: tasks, isLoading } = useTasksForFeature(slug);
 
   useProgressEvents();
