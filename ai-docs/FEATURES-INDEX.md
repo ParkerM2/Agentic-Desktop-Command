@@ -12,7 +12,7 @@
 | Renderer Features | 29 |
 | Main Process Services | 33 |
 | IPC Handler Files | 42 |
-| IPC Domain Folders | 27 |
+| IPC Domain Folders | 28 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -25,7 +25,7 @@ Location: `src/renderer/features/`
 
 | Feature | Purpose | Key Components | IPC Channels |
 |---------|---------|----------------|--------------|
-| **agent-dashboard** | v2 headless agent chat UI | AgentDashboardPage, AgentChatPanel, AgentPanelCompact, AgentPanelExpanded, AgentPanelPopup, ToolCallCard, TextMessage, UserMessage, AgentStatusBar, AgentLayoutSingle, AgentLayoutGrid, AgentLayoutToolbar | TBD (task-8) |
+| **agent-dashboard** | v2 headless agent chat UI | AgentDashboardPage, AgentChatPanel, AgentPanelCompact, AgentPanelExpanded, AgentPanelPopup, ToolCallCard, TextMessage, UserMessage, AgentStatusBar, AgentLayoutSingle, AgentLayoutGrid, AgentLayoutToolbar | `agent-dashboard.getTasksForFeature`, `agent-dashboard.getTask`, `agent-dashboard.getQaSession`, `agent-dashboard.listQaSessions`, `agent-dashboard.getFilesChanged`, `event:agent-dashboard.taskUpdated`, `event:agent-dashboard.qaSessionUpdated`, `files.listTree` |
 | **agents** | Agent process management (v1) | AgentDashboard, AgentControls, AgentLogs | `agents.*` |
 | **alerts** | Reminder/alert system | AlertsPage, AlertForm, AlertList | `alerts.*` |
 | **assistant** | Built-in Claude assistant | AssistantWidget (WidgetFab, WidgetPanel, WidgetInput, WidgetMessageArea) | `assistant.*` |

@@ -164,10 +164,10 @@
     },
     "agent-dashboard-view": {
       "title": "Agent Dashboard View — Headless Agents + Custom React UI",
-      "status": "IN_PROGRESS",
+      "status": "IMPLEMENTED",
       "planFile": "docs/features/agent-dashboard-view/plan.md",
       "created": "2026-03-30",
-      "statusChangedAt": "2026-03-30",
+      "statusChangedAt": "2026-04-01",
       "branch": "feature/agent-dashboard-view",
       "pr": null,
       "tags": ["feature", "agents", "monitoring", "dashboard", "P0"]
