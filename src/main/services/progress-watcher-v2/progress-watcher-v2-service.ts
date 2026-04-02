@@ -10,14 +10,16 @@
  */
 
 import { existsSync, readdirSync, readFileSync, watch } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+
+import type { TaskProgress } from '@shared/types/agent-dashboard';
 
 import { watcherLogger } from '@main/lib/logger';
 
-import type { FSWatcher } from 'node:fs';
-import type { TaskProgress } from '@shared/types/agent-dashboard';
-
 import { extractTaskNumber, parseTaskFile } from './task-file-parser';
+
+import type { FSWatcher } from 'node:fs';
+
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -29,6 +31,7 @@ export interface ProgressWatcherV2 {
   getTasksForFeature: (slug: string) => TaskProgress[];
   getTask: (slug: string, taskNumber: number) => TaskProgress | null;
   onTaskUpdated: (listener: TaskUpdatedListener) => void;
+  offTaskUpdated: (listener: TaskUpdatedListener) => void;
   dispose: () => void;
 }
 
@@ -55,8 +58,10 @@ function readAndParseTask(filePath: string): TaskProgress | null {
 
 export function createProgressWatcherV2(): ProgressWatcherV2 {
   const watchers = new Map<string, FSWatcher>();
+  const parentWatchers = new Map<string, FSWatcher>();
   const taskCache = new Map<string, Map<number, TaskProgress>>();
-  const listeners: TaskUpdatedListener[] = [];
+  const listeners = new Set<TaskUpdatedListener>();
+  const watchedSlugs = new Set<string>();
 
   function notifyListeners(slug: string, task: TaskProgress): void {
     for (const listener of listeners) {
@@ -117,40 +122,84 @@ export function createProgressWatcherV2(): ProgressWatcherV2 {
     }
   }
 
+  function setupTasksDirWatcher(slug: string, tasksDir: string): void {
+    watcherLogger.info(`[ProgressWatcherV2] Watching ${tasksDir}`);
+
+    // Scan existing files on start
+    scanExistingTasks(slug, tasksDir);
+
+    try {
+      const watcher = watch(tasksDir, (_eventType, filename) => {
+        handleFileChange(slug, tasksDir, filename);
+      });
+
+      watcher.on('error', (err) => {
+        watcherLogger.error(`[ProgressWatcherV2] Watch error for ${slug}:`, err.message);
+      });
+
+      watchers.set(slug, watcher);
+      watchedSlugs.add(slug);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      watcherLogger.error(`[ProgressWatcherV2] Failed to start watching ${slug}:`, message);
+      watchedSlugs.delete(slug);
+    }
+  }
+
+  function watchParentForTasksDir(slug: string, tasksDir: string): void {
+    const parentDir = dirname(tasksDir);
+
+    if (!existsSync(parentDir)) {
+      watcherLogger.info(
+        `[ProgressWatcherV2] Parent dir does not exist either: ${parentDir}`,
+      );
+      watchedSlugs.delete(slug);
+      return;
+    }
+
+    try {
+      const parentWatcher = watch(parentDir, (eventType, filename) => {
+        if (eventType === 'rename' && filename === 'tasks' && existsSync(tasksDir)) {
+          // tasks directory appeared — clean up parent watcher and set up real watcher
+          parentWatcher.close();
+          parentWatchers.delete(slug);
+          setupTasksDirWatcher(slug, tasksDir);
+        }
+      });
+
+      parentWatcher.on('error', (err) => {
+        watcherLogger.error(`[ProgressWatcherV2] Parent watch error for ${slug}:`, err.message);
+      });
+
+      parentWatchers.set(slug, parentWatcher);
+      watcherLogger.info(
+        `[ProgressWatcherV2] Watching parent dir for tasks/ creation: ${parentDir}`,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      watcherLogger.error(`[ProgressWatcherV2] Failed to watch parent for ${slug}:`, message);
+      watchedSlugs.delete(slug);
+    }
+  }
+
   return {
     watchFeature(slug: string): void {
-      if (watchers.has(slug)) {
+      if (watchedSlugs.has(slug)) {
         return;
       }
+      watchedSlugs.add(slug);
 
       const tasksDir = getTasksDir(slug);
 
       if (!existsSync(tasksDir)) {
         watcherLogger.info(
-          `[ProgressWatcherV2] Tasks dir does not exist: ${tasksDir}`,
+          `[ProgressWatcherV2] Tasks dir does not exist yet: ${tasksDir}`,
         );
+        watchParentForTasksDir(slug, tasksDir);
         return;
       }
 
-      watcherLogger.info(`[ProgressWatcherV2] Watching ${tasksDir}`);
-
-      // Scan existing files on start
-      scanExistingTasks(slug, tasksDir);
-
-      try {
-        const watcher = watch(tasksDir, (_eventType, filename) => {
-          handleFileChange(slug, tasksDir, filename);
-        });
-
-        watcher.on('error', (err) => {
-          watcherLogger.error(`[ProgressWatcherV2] Watch error for ${slug}:`, err.message);
-        });
-
-        watchers.set(slug, watcher);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        watcherLogger.error(`[ProgressWatcherV2] Failed to start watching ${slug}:`, message);
-      }
+      setupTasksDirWatcher(slug, tasksDir);
     },
 
     stopWatching(slug: string): void {
@@ -158,9 +207,15 @@ export function createProgressWatcherV2(): ProgressWatcherV2 {
       if (watcher) {
         watcher.close();
         watchers.delete(slug);
-        taskCache.delete(slug);
-        watcherLogger.info(`[ProgressWatcherV2] Stopped watching slug: ${slug}`);
       }
+      const parentWatcher = parentWatchers.get(slug);
+      if (parentWatcher) {
+        parentWatcher.close();
+        parentWatchers.delete(slug);
+      }
+      taskCache.delete(slug);
+      watchedSlugs.delete(slug);
+      watcherLogger.info(`[ProgressWatcherV2] Stopped watching slug: ${slug}`);
     },
 
     getTasksForFeature(slug: string): TaskProgress[] {
@@ -180,7 +235,11 @@ export function createProgressWatcherV2(): ProgressWatcherV2 {
     },
 
     onTaskUpdated(listener: TaskUpdatedListener): void {
-      listeners.push(listener);
+      listeners.add(listener);
+    },
+
+    offTaskUpdated(listener: TaskUpdatedListener): void {
+      listeners.delete(listener);
     },
 
     dispose(): void {
@@ -188,8 +247,14 @@ export function createProgressWatcherV2(): ProgressWatcherV2 {
         watcher.close();
         watcherLogger.info(`[ProgressWatcherV2] Disposed watcher for slug: ${slug}`);
       }
+      for (const [slug, watcher] of parentWatchers.entries()) {
+        watcher.close();
+        watcherLogger.info(`[ProgressWatcherV2] Disposed parent watcher for slug: ${slug}`);
+      }
       watchers.clear();
+      parentWatchers.clear();
       taskCache.clear();
+      watchedSlugs.clear();
     },
   };
 }
