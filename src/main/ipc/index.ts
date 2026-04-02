@@ -277,6 +277,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
       services.teamWatcherService,
       services.progressWatcherV2,
       services.qaRunner,
+      services.gitService,
     );
   }
 }

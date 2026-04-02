@@ -131,6 +131,10 @@ export function createQaRunner(
       return store.reports.get(taskId);
     },
 
+    listSessions(): QaSession[] {
+      return Array.from(store.sessions.values());
+    },
+
     cancel(sessionId: string): void {
       const session = store.sessions.get(sessionId);
       if (!session) {
