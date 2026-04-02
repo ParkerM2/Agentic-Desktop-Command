@@ -51,6 +51,7 @@ import { createStorageInspector } from '../services/data-management/storage-insp
 import { createDeviceService } from '../services/device/device-service';
 import { createDockerService } from '../services/docker/docker-service';
 import { createEmailService } from '../services/email/email-service';
+import { createFileTreeService } from '../services/file-tree/file-tree-service';
 import { createFitnessService } from '../services/fitness/fitness-service';
 import { createGitService } from '../services/git/git-service';
 import { createPolyrepoService } from '../services/git/polyrepo-service';
@@ -439,8 +440,11 @@ export function createServiceRegistry(
   const taskLauncher = createTaskLauncher();
   const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
 
+  // ─── TmuxBridge (needed by Agent Manager for Team Lead sessions) ──
+  const tmuxBridgeService = createTmuxBridgeService();
+
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
-  const agentManagerService = createAgentManagerService({ router });
+  const agentManagerService = createAgentManagerService({ router, tmuxBridgeService });
   const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
 
   // Agent watchdog — monitors active sessions for dead/stale processes
@@ -525,10 +529,11 @@ export function createServiceRegistry(
   const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
 
   // ─── Agent dashboard services (Layer 1: Agent Visibility) ────
-  const tmuxBridgeService = createTmuxBridgeService();
+  // NOTE: tmuxBridgeService is created earlier (before agentManagerService)
   const teamWatcherService = createTeamWatcherService();
   const sessionJsonlReaderService = createSessionJSONLReaderService();
   const progressWatcherV2 = createProgressWatcherV2();
+  const fileTreeService = createFileTreeService();
 
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
   const trackerService = createTrackerService(process.cwd());
@@ -551,6 +556,7 @@ export function createServiceRegistry(
     changelogService,
     emailService,
     errorCollector,
+    fileTreeService,
     fitnessService,
     healthRegistry,
     hubConnectionManager,

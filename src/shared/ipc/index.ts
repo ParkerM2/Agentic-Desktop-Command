@@ -19,6 +19,7 @@ import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
 import { dockerInvoke } from './docker';
 import { emailEvents, emailInvoke } from './email';
+import { filesInvoke } from './files';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
@@ -79,6 +80,7 @@ export const ipcInvokeContract = {
   ...ideasInvoke,
   ...changelogInvoke,
   ...insightsInvoke,
+  ...filesInvoke,
   ...fitnessInvoke,
   ...assistantInvoke,
   ...hubInvoke,
@@ -248,6 +250,8 @@ export {
   RepoStructureSchema,
   WorktreeSchema,
 } from './git';
+
+export { FileTreeNodeSchema } from './files';
 
 export {
   GitHubIssueSchema,

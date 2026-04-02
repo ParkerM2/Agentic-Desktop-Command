@@ -1,12 +1,12 @@
 /**
  * React Query hook for fetching file tree data via IPC
  *
- * Currently uses `projects.analyzeCodebase` as a placeholder.
- * Will be wired to a dedicated `files.listTree` IPC channel once
- * the backend service is implemented.
+ * Calls `files.listTree` to get the directory tree from the main process.
  */
 
 import { useQuery } from '@tanstack/react-query';
+
+import { ipc } from '@renderer/shared/lib/ipc';
 
 import { fileExplorerKeys } from './queryKeys';
 
@@ -28,96 +28,15 @@ export interface FileTreeNode {
   isModified: boolean;
 }
 
-// ─── Placeholder data for initial development ──────────────────
-
-function createPlaceholderTree(): FileTreeNode[] {
-  return [
-    {
-      id: 'src',
-      name: 'src',
-      isDirectory: true,
-      extension: null,
-      isModified: false,
-      children: [
-        {
-          id: 'src/main',
-          name: 'main',
-          isDirectory: true,
-          extension: null,
-          isModified: false,
-          children: [
-            {
-              id: 'src/main/index.ts',
-              name: 'index.ts',
-              isDirectory: false,
-              extension: 'ts',
-              isModified: true,
-              children: null,
-            },
-          ],
-        },
-        {
-          id: 'src/renderer',
-          name: 'renderer',
-          isDirectory: true,
-          extension: null,
-          isModified: false,
-          children: [
-            {
-              id: 'src/renderer/App.tsx',
-              name: 'App.tsx',
-              isDirectory: false,
-              extension: 'tsx',
-              isModified: false,
-              children: null,
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'package.json',
-      name: 'package.json',
-      isDirectory: false,
-      extension: 'json',
-      isModified: true,
-      children: null,
-    },
-    {
-      id: 'tsconfig.json',
-      name: 'tsconfig.json',
-      isDirectory: false,
-      extension: 'json',
-      isModified: false,
-      children: null,
-    },
-    {
-      id: 'README.md',
-      name: 'README.md',
-      isDirectory: false,
-      extension: 'md',
-      isModified: false,
-      children: null,
-    },
-  ];
-}
-
 // ─── Hook ──────────────────────────────────────────────────────
 
 /**
  * Fetches the file tree for a given project path.
- *
- * When the backend `files.listTree` IPC channel is available,
- * replace the placeholder with: `ipc('files.listTree', { projectPath })`
  */
 export function useFileTree(projectPath: string | null) {
   return useQuery({
     queryKey: fileExplorerKeys.tree(projectPath ?? ''),
-    queryFn: (): Promise<FileTreeNode[]> => {
-      // TODO: Replace with IPC call when backend service is ready
-      // return ipc('files.listTree', { projectPath: projectPath ?? '' });
-      return Promise.resolve(createPlaceholderTree());
-    },
+    queryFn: () => ipc('files.listTree', { path: projectPath ?? '' }),
     enabled: projectPath !== null,
     staleTime: 30_000,
   });
