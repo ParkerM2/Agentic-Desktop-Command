@@ -30,7 +30,7 @@ function parseFrontmatter(content: string): TaskFrontmatter {
     return defaults;
   }
 
-  const fields: Record<string, string> = {};
+  const fields: Partial<Record<string, string>> = {};
   const yaml = match[1];
   for (const line of yaml.split(/\r?\n/)) {
     const colonIndex = line.indexOf(':');

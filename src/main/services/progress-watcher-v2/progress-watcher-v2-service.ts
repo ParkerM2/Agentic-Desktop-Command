@@ -20,7 +20,6 @@ import { extractTaskNumber, parseTaskFile } from './task-file-parser';
 
 import type { FSWatcher } from 'node:fs';
 
-
 // ─── Types ──────────────────────────────────────────────────
 
 export type TaskUpdatedListener = (slug: string, task: TaskProgress) => void;
