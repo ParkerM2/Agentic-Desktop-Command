@@ -41,8 +41,8 @@ export function createDashboardRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Agents' },
     pendingComponent: DashboardSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/agents'),
-      'AgentDashboard',
+      () => import('@features/agent-dashboard'),
+      'AgentDashboardPage',
     ),
   });
 

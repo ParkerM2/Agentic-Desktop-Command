@@ -22,6 +22,7 @@ import { registerDeviceHandlers } from './handlers/device-handlers';
 import { registerDockerHandlers } from './handlers/docker-handlers';
 import { registerEmailHandlers } from './handlers/email-handlers';
 import { registerErrorHandlers } from './handlers/error-handlers';
+import { registerFilesHandlers } from './handlers/files-handlers';
 import { registerFitnessHandlers } from './handlers/fitness-handlers';
 import { registerGitHandlers } from './handlers/git-handlers';
 import { registerGitHubHandlers } from './handlers/github-handlers';
@@ -75,6 +76,7 @@ import type { StorageInspector } from '../services/data-management/storage-inspe
 import type { DeviceService } from '../services/device/device-service';
 import type { DockerService } from '../services/docker/docker-service';
 import type { EmailService } from '../services/email/email-service';
+import type { FileTreeService } from '../services/file-tree/file-tree-service';
 import type { FitnessService } from '../services/fitness/fitness-service';
 import type { GitService } from '../services/git/git-service';
 import type { WorktreeService } from '../services/git/worktree-service';
@@ -164,6 +166,7 @@ export interface Services {
   userSessionManager: UserSessionManager;
   progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
+  fileTreeService: FileTreeService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -206,6 +209,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   }
   registerEmailHandlers(router, services.emailService);
   registerErrorHandlers(router, services.errorCollector, services.healthRegistry);
+  registerFilesHandlers(router, services.fileTreeService);
   if (services.fitnessService) {
     registerFitnessHandlers(router, services.fitnessService);
   }
@@ -273,6 +277,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
       services.teamWatcherService,
       services.progressWatcherV2,
       services.qaRunner,
+      services.gitService,
     );
   }
 }

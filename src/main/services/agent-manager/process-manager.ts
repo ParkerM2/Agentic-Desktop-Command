@@ -132,6 +132,7 @@ export function createProcessManager(): ProcessManager {
         cwd: config.cwd,
         env,
         stdio: ['pipe', 'pipe', 'pipe'],
+        detached: process.platform !== 'win32',
       });
 
       const now = new Date();
@@ -182,7 +183,7 @@ export function createProcessManager(): ProcessManager {
       }
 
       const { stdin } = managed.process;
-      if (!stdin || stdin.destroyed) {
+      if (!stdin || stdin.destroyed || !stdin.writable) {
         agentLogger.warn(
           `[AgentManager] stdin not available for process ${String(managed.pid)}`,
         );
@@ -202,7 +203,13 @@ export function createProcessManager(): ProcessManager {
 
       const { pid } = managed;
       agentLogger.info(`[AgentManager] Sending SIGTERM to process ${String(pid)}`);
-      managed.process.kill('SIGTERM');
+
+      // Kill the entire process group on Unix; fall back to single-process kill on Windows
+      if (process.platform === 'win32') {
+        managed.process.kill('SIGTERM');
+      } else {
+        process.kill(-pid, 'SIGTERM');
+      }
 
       // Force-kill after grace period if still alive
       const killTimer = setTimeout(() => {
@@ -210,7 +217,11 @@ export function createProcessManager(): ProcessManager {
           agentLogger.warn(
             `[AgentManager] Process ${String(pid)} did not exit, sending SIGKILL`,
           );
-          managed.process.kill('SIGKILL');
+          if (process.platform === 'win32') {
+            managed.process.kill('SIGKILL');
+          } else {
+            process.kill(-pid, 'SIGKILL');
+          }
         }
       }, KILL_GRACE_PERIOD_MS);
 

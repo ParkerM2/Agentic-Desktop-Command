@@ -76,6 +76,18 @@ export interface GitService {
     baseBranch: string,
     headBranch: string,
   ) => Promise<GitCreatePrResult>;
+  /** Get files changed on a branch (vs its merge-base with the default branch) */
+  getFilesChanged: (
+    repoPath: string,
+    branch?: string,
+  ) => Promise<GitFileChange[]>;
+}
+
+export interface GitFileChange {
+  path: string;
+  status: 'A' | 'M' | 'D';
+  additions: number;
+  deletions: number;
 }
 
 const GH_CLI_TIMEOUT_MS = 30_000;
@@ -251,6 +263,34 @@ export function createGitService(polyrepoService: PolyrepoService): GitService {
         number: prNumber,
         title,
       };
+    },
+
+    async getFilesChanged(repoPath, branch) {
+      validateRepoPath(repoPath);
+      const git = simpleGit(repoPath);
+
+      const status = await git.status();
+      const targetBranch = branch ?? status.current ?? 'HEAD';
+
+      // Get diff summary against the merge-base with main/master
+      const diffSummary = await git.diffSummary([targetBranch]);
+
+      return diffSummary.files.map((f) => {
+        let fileStatus: 'A' | 'M' | 'D' = 'M';
+        const df = f as { file: string; changes: number; insertions: number; deletions: number; binary: boolean };
+        if (df.insertions > 0 && df.deletions === 0) {
+          fileStatus = 'A';
+        } else if (df.insertions === 0 && df.deletions > 0 && df.changes === df.deletions) {
+          fileStatus = 'D';
+        }
+
+        return {
+          path: f.file,
+          status: fileStatus,
+          additions: df.insertions,
+          deletions: df.deletions,
+        };
+      });
     },
   };
 }

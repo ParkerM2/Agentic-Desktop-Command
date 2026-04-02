@@ -19,16 +19,20 @@ import type {
   AgentStatus,
   AgentTokenUsage,
   StreamJsonEvent,
+  TmuxSession,
 } from '@shared/types/agent-dashboard';
 
 import { agentLogger } from '@main/lib/logger';
 
 import { createProcessManager } from './process-manager';
 import { createStreamJsonParser } from './stream-json-parser';
+import { SubprocessStrategy } from './subprocess-strategy';
 
+import type { AgentConnectionStrategy } from './agent-connection-strategy';
 import type { ManagedProcess } from './process-manager';
 import type { StreamJsonParser } from './stream-json-parser';
 import type { IpcRouter } from '../../ipc/router';
+import type { TmuxBridgeService } from '../tmux-bridge/tmux-bridge-service';
 
 // ── Configuration Types ──────────────────────────────────────
 
@@ -66,13 +70,22 @@ export interface AgentManagerEvent {
 
 type AgentManagerEventHandler = (event: AgentManagerEvent) => void;
 
+// ── Result Types ────────────────────────────────────────────
+
+export interface SpawnTeamLeadError {
+  error: 'tmux_unavailable' | 'tmux_failed';
+  session: null;
+}
+
+export type SpawnTeamLeadResult = AgentSession | SpawnTeamLeadError;
+
 // ── Service Interface ────────────────────────────────────────
 
 export interface AgentManagerService {
   /** Spawn a headless stream-json Project Owner session */
   spawnProjectOwner: (config: ProjectOwnerConfig) => AgentSession;
-  /** Spawn a tmux-based Team Lead session (Phase 2 — stub) */
-  spawnTeamLead: (config: TeamLeadConfig) => AgentSession;
+  /** Spawn a tmux-based Team Lead session */
+  spawnTeamLead: (config: TeamLeadConfig) => SpawnTeamLeadResult;
   /** List all active agent sessions */
   listSessions: (filter?: { type?: AgentSessionType; teamName?: string }) => AgentSession[];
   /** Get a single session by ID */
@@ -83,6 +96,8 @@ export interface AgentManagerService {
   stopSession: (sessionId: string) => boolean;
   /** Register a handler for agent manager events */
   onEvent: (handler: AgentManagerEventHandler) => () => void;
+  /** Get the working directory (project path) for a session */
+  getSessionProjectPath: (sessionId: string) => string | undefined;
   /** Get chat messages for a session */
   getMessages: (sessionId: string) => AgentChatMessage[];
   /** Clean up all sessions (used during app shutdown) */
@@ -97,12 +112,17 @@ interface InternalSession {
   parser: StreamJsonParser | null;
   messages: AgentChatMessage[];
   cleanups: Array<() => void>;
+  /** Working directory the agent was spawned in */
+  cwd?: string;
 }
 
 // ── Factory ──────────────────────────────────────────────────
 
 export interface AgentManagerDeps {
   router: IpcRouter;
+  tmuxBridgeService: TmuxBridgeService;
+  /** Optional connection strategy — defaults to SubprocessStrategy */
+  strategy?: AgentConnectionStrategy;
 }
 
 /**
@@ -112,8 +132,10 @@ export interface AgentManagerDeps {
  * emits events via IPC router for renderer updates.
  */
 export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerService {
-  const { router } = deps;
+  const { router, tmuxBridgeService } = deps;
   const processManager = createProcessManager();
+  // Strategy is available for future use — currently SubprocessStrategy delegates to processManager
+  const _strategy: AgentConnectionStrategy = deps.strategy ?? new SubprocessStrategy(processManager);
   const sessions = new Map<string, InternalSession>();
   const eventHandlers = new Set<AgentManagerEventHandler>();
 
@@ -318,6 +340,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
         parser,
         messages: [],
         cleanups: [],
+        cwd: config.projectPath,
       };
 
       sessions.set(session.id, internal);
@@ -338,32 +361,54 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
     },
 
     spawnTeamLead(config) {
-      // Phase 2 stub — Team Lead requires TmuxBridge (task-5).
-      // For now, create a session object that can be tracked but
-      // mark it as needing attention since tmux integration is pending.
+      if (!tmuxBridgeService.isAvailable()) {
+        agentLogger.error('[AgentManager] tmux is not available — cannot spawn Team Lead session');
+        return { error: 'tmux_unavailable' as const, session: null };
+      }
+
       const session = createSessionObject('team-lead', {
         name: config.name,
         model: config.model,
         teamName: config.teamName,
       });
 
+      let tmuxSession: TmuxSession;
+      try {
+        tmuxSession = tmuxBridgeService.createSession(session.name, {
+          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
+        });
+      } catch (error) {
+        agentLogger.error(
+          `[AgentManager] TmuxBridge.createSession failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        return { error: 'tmux_failed' as const, session: null };
+      }
+
+      session.tmuxPaneId = tmuxSession.id;
+
       const internal: InternalSession = {
-        session: { ...session, status: 'idle' },
+        session,
         process: null,
         parser: null,
         messages: [],
         cleanups: [],
+        cwd: config.projectPath,
       };
 
       sessions.set(session.id, internal);
 
       agentLogger.info(
-        `[AgentManager] Team Lead session created (stub): ${session.id} — TmuxBridge pending`,
+        `[AgentManager] Team Lead session started: ${session.id} (tmux: ${tmuxSession.name})`,
       );
 
-      router.emit('event:agent-dashboard.sessionStarted', internal.session);
+      router.emit('event:agent-dashboard.sessionStarted', session);
+      emitEvent({
+        type: 'session.started',
+        sessionId: session.id,
+        data: session,
+      });
 
-      return internal.session;
+      return session;
     },
 
     listSessions(filter) {
@@ -386,6 +431,10 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
 
     getSession(sessionId) {
       return sessions.get(sessionId)?.session;
+    },
+
+    getSessionProjectPath(sessionId) {
+      return sessions.get(sessionId)?.cwd;
     },
 
     sendMessage(sessionId, message) {

@@ -99,6 +99,8 @@ export interface QaRunner {
   getSession: (sessionId: string) => QaSession | undefined;
   getSessionByTaskId: (taskId: string) => QaSession | undefined;
   getReportForTask: (taskId: string) => QaReport | undefined;
+  /** List all QA sessions */
+  listSessions: () => QaSession[];
   cancel: (sessionId: string) => void;
   onSessionEvent: (handler: QaSessionEventHandler) => void;
   dispose: () => void;
