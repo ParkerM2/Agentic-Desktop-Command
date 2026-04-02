@@ -1,0 +1,81 @@
+{"ts":"2026-04-02T00:42:49.657Z","type":"agent.spawned","agent":"coder-task-A","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:01.685Z","type":"agent.spawned","agent":"coder-task-B","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:13.666Z","type":"agent.spawned","agent":"coder-task-C","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:24.269Z","type":"agent.spawned","agent":"coder-task-D","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:32.241Z","type":"agent.spawned","agent":"qa-task-A","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:38.887Z","type":"agent.spawned","agent":"qa-task-B","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:44.908Z","type":"agent.spawned","agent":"qa-task-C","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:50.122Z","type":"agent.spawned","agent":"qa-task-D","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:43:58.161Z","type":"message.sent","to":"team-lead","contentHint":"Task A done"}
+{"ts":"2026-04-02T00:44:06.876Z","type":"message.sent","to":"qa-task-A","contentHint":"Task A code ready for QA"}
+{"ts":"2026-04-02T00:45:15.131Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task A"}
+{"ts":"2026-04-02T00:45:50.103Z","type":"message.sent","to":"coder-task-A","contentHint":"Shutdown coder-task-A"}
+{"ts":"2026-04-02T00:45:50.288Z","type":"message.sent","to":"qa-task-A","contentHint":"Shutdown qa-task-A"}
+{"ts":"2026-04-02T00:45:54.757Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775090750227@qa-task-A\",\"approve\":true}"}
+{"ts":"2026-04-02T00:48:50.402Z","type":"message.sent","to":"team-lead","contentHint":"Task C complete — File Explorer IPC wired"}
+{"ts":"2026-04-02T00:48:56.502Z","type":"message.sent","to":"qa-task-C","contentHint":"Task C code ready for QA"}
+{"ts":"2026-04-02T00:50:02.806Z","type":"message.sent","to":"team-lead","contentHint":"Task D complete"}
+{"ts":"2026-04-02T00:50:08.460Z","type":"message.sent","to":"qa-task-D","contentHint":"Task D code ready for QA"}
+{"ts":"2026-04-02T00:50:57.306Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task C"}
+{"ts":"2026-04-02T00:51:13.694Z","type":"message.sent","to":"coder-task-C","contentHint":"Shutdown coder-task-C"}
+{"ts":"2026-04-02T00:51:14.239Z","type":"message.sent","to":"qa-task-C","contentHint":"Shutdown qa-task-C"}
+{"ts":"2026-04-02T00:51:18.566Z","type":"message.sent","to":"team-lead","contentHint":"Approving shutdown"}
+{"ts":"2026-04-02T00:51:18.673Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091074170@qa-task-C\",\"approve\":true}"}
+{"ts":"2026-04-02T00:52:23.442Z","type":"message.sent","to":"team-lead","contentHint":"Task B complete"}
+{"ts":"2026-04-02T00:52:28.663Z","type":"message.sent","to":"qa-task-B","contentHint":"Task B code ready for QA"}
+{"ts":"2026-04-02T00:52:37.188Z","type":"message.sent","to":"team-lead","contentHint":"QA FAIL Task D — typed errors missing"}
+{"ts":"2026-04-02T00:52:47.562Z","type":"message.sent","to":"coder-task-D","contentHint":"Task D QA FAIL round 1 — fix typed errors"}
+{"ts":"2026-04-02T00:52:51.367Z","type":"message.sent","to":"qa-task-D","contentHint":"Shutdown qa-task-D after FAIL"}
+{"ts":"2026-04-02T00:52:54.060Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091171302@qa-task-D\",\"approve\":true}"}
+{"ts":"2026-04-02T00:54:28.766Z","type":"message.sent","to":"team-lead","contentHint":"Task D fix complete"}
+{"ts":"2026-04-02T00:54:47.164Z","type":"agent.spawned","agent":"qa-task-D-r2","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:54:59.236Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task B"}
+{"ts":"2026-04-02T00:55:27.534Z","type":"message.sent","to":"coder-task-B","contentHint":"Shutdown coder-task-B"}
+{"ts":"2026-04-02T00:55:28.032Z","type":"message.sent","to":"qa-task-B","contentHint":"Shutdown qa-task-B"}
+{"ts":"2026-04-02T00:55:31.026Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091327964@qa-task-B\",\"approve\":true}"}
+{"ts":"2026-04-02T00:55:34.490Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091327467@coder-task-B\",\"approve\":true}"}
+{"ts":"2026-04-02T00:56:21.727Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task D r2"}
+{"ts":"2026-04-02T00:56:39.050Z","type":"message.sent","to":"coder-task-D","contentHint":"Shutdown coder-task-D"}
+{"ts":"2026-04-02T00:56:39.293Z","type":"message.sent","to":"qa-task-D-r2","contentHint":"Shutdown qa-task-D-r2"}
+{"ts":"2026-04-02T00:56:43.562Z","type":"message.sent","to":"team-lead","contentHint":"Approving shutdown"}
+{"ts":"2026-04-02T00:56:45.225Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091398991@coder-task-D\",\"approve\":true}"}
+{"ts":"2026-04-02T00:58:41.435Z","type":"agent.spawned","agent":"coder-task-E","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:58:55.030Z","type":"agent.spawned","agent":"coder-task-F","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:59:01.831Z","type":"agent.spawned","agent":"coder-task-G","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:59:10.054Z","type":"agent.spawned","agent":"qa-task-E","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:59:15.924Z","type":"agent.spawned","agent":"qa-task-F","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:59:20.882Z","type":"agent.spawned","agent":"qa-task-G","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T00:59:43.043Z","type":"message.sent","to":"team-lead","contentHint":"Task E complete"}
+{"ts":"2026-04-02T00:59:46.830Z","type":"message.sent","to":"qa-task-E","contentHint":"Task E code ready for QA"}
+{"ts":"2026-04-02T00:59:55.447Z","type":"message.sent","to":"team-lead","contentHint":"Task G done — debounce added"}
+{"ts":"2026-04-02T01:00:00.430Z","type":"message.sent","to":"qa-task-G","contentHint":"Task G code ready for QA"}
+{"ts":"2026-04-02T01:00:07.021Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task E"}
+{"ts":"2026-04-02T01:00:27.348Z","type":"message.sent","to":"coder-task-E","contentHint":"Shutdown coder-task-E"}
+{"ts":"2026-04-02T01:00:27.899Z","type":"message.sent","to":"qa-task-E","contentHint":"Shutdown qa-task-E"}
+{"ts":"2026-04-02T01:00:31.076Z","type":"message.sent","to":"team-lead","contentHint":"Approving shutdown"}
+{"ts":"2026-04-02T01:00:33.416Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task G"}
+{"ts":"2026-04-02T01:00:54.963Z","type":"message.sent","to":"coder-task-G","contentHint":"Shutdown coder-task-G"}
+{"ts":"2026-04-02T01:00:55.456Z","type":"message.sent","to":"qa-task-G","contentHint":"Shutdown qa-task-G"}
+{"ts":"2026-04-02T01:00:58.474Z","type":"message.sent","to":"team-lead","contentHint":"Approving shutdown"}
+{"ts":"2026-04-02T01:00:59.102Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091655379@qa-task-G\",\"approve\":true}"}
+{"ts":"2026-04-02T01:01:37.191Z","type":"message.sent","to":"team-lead","contentHint":"Task F complete"}
+{"ts":"2026-04-02T01:01:43.415Z","type":"message.sent","to":"qa-task-F","contentHint":"Task F code ready for QA"}
+{"ts":"2026-04-02T01:02:20.262Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task F — all criteria verified"}
+{"ts":"2026-04-02T01:02:50.026Z","type":"message.sent","to":"coder-task-F","contentHint":"Shutdown coder-task-F"}
+{"ts":"2026-04-02T01:02:51.699Z","type":"message.sent","to":"qa-task-F","contentHint":"Shutdown qa-task-F"}
+{"ts":"2026-04-02T01:02:55.278Z","type":"message.sent","to":"team-lead","contentHint":"Approving shutdown"}
+{"ts":"2026-04-02T01:03:03.054Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775091769965@coder-task-F\",\"approve\":true}"}
+{"ts":"2026-04-02T01:03:59.248Z","type":"agent.spawned","agent":"coder-task-H","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T01:04:08.495Z","type":"agent.spawned","agent":"qa-task-H","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T01:07:06.995Z","type":"message.sent","to":"team-lead","contentHint":"Task H complete"}
+{"ts":"2026-04-02T01:07:13.432Z","type":"message.sent","to":"qa-task-H","contentHint":"Task H code ready for QA"}
+{"ts":"2026-04-02T01:08:13.011Z","type":"message.sent","to":"team-lead","contentHint":"QA PASS Task H"}
+{"ts":"2026-04-02T01:08:28.505Z","type":"message.sent","to":"coder-task-H","contentHint":"Shutdown coder-task-H"}
+{"ts":"2026-04-02T01:08:28.650Z","type":"message.sent","to":"qa-task-H","contentHint":"Shutdown qa-task-H"}
+{"ts":"2026-04-02T01:08:32.530Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775092108589@qa-task-H\",\"approve\":true}"}
+{"ts":"2026-04-02T01:08:32.810Z","type":"message.sent","to":"team-lead","contentHint":"{\"type\":\"shutdown_response\",\"request_id\":\"shutdown-1775092108439@coder-task-H\",\"approve\":true}"}
+{"ts":"2026-04-02T01:09:30.117Z","type":"agent.spawned","agent":"guardian","team":null,"model":null,"subagentType":"general-purpose"}
+{"ts":"2026-04-02T01:11:01.376Z","type":"message.sent","to":"team-lead","contentHint":"Guardian PASS — all 7 checks passed"}
+{"ts":"2026-04-02T01:12:51.883Z","type":"message.sent","to":"guardian","contentHint":"Shutdown guardian"}
+{"ts":"2026-04-02T01:18:45.742Z","type":"branch.merged","branch":"feature/adc-fix-first","command":"git checkout master && git merge --no-ff feature/adc-fix-first -m \"$(cat <<'EOF'\nMerge feature/adc-fix-first — ADC fix-first: wire stubs, arch risks, strategy pattern\n\n8 tasks across 3 waves:\n- Fix /a"}
+{"ts":"2026-04-02T01:27:07.880Z","type":"agent.spawned","agent":"Explore docs structure and staleness","team":null,"model":null,"subagentType":"Explore"}

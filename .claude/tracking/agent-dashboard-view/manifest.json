@@ -1,0 +1,38 @@
+{
+  "feature": "agent-dashboard-view",
+  "agents": {
+    "coder-task-5": {
+      "status": "idle"
+    },
+    "coder-task-3": {
+      "status": "idle"
+    },
+    "coder-task-4": {
+      "status": "idle"
+    },
+    "coder-task-1": {
+      "status": "idle"
+    },
+    "coder-task-2": {
+      "status": "idle"
+    },
+    "impl-task-2": {
+      "status": "idle"
+    },
+    "impl-task-3": {
+      "status": "idle"
+    },
+    "impl-task-1": {
+      "status": "idle"
+    },
+    "impl-task-6": {
+      "status": "idle"
+    },
+    "impl-task-5": {
+      "status": "idle"
+    },
+    "impl-task-4": {
+      "status": "idle"
+    }
+  }
+}

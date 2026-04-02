@@ -1,0 +1,2 @@
+{"v":1,"ts":"2026-03-30T22:55:09.024Z","sid":"862ab5e9","seq":0,"type":"task.completed","feature":"agent-dashboard-view","agent":null,"data":{"taskId":"1","subject":"Create progress infrastructure + task files","teammate":null,"team":null}}
+{"v":1,"ts":"2026-04-01T00:30:05.871Z","sid":"73391cc3","seq":0,"type":"task.completed","feature":"agent-dashboard-view","agent":null,"data":{"taskId":"8","subject":"Setup progress directory + workflow config","teammate":null,"team":null}}

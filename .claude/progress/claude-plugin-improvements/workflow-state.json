@@ -1,0 +1,12 @@
+{
+  "feature": "claude-plugin-improvements",
+  "mode": "fast",
+  "startedAt": "2026-04-01T01:30:57.323Z",
+  "phase": "done",
+  "setupComplete": false,
+  "guardianPassed": false,
+  "currentWave": 0,
+  "totalWaves": 0,
+  "waves": {},
+  "tasks": {}
+}

@@ -1,0 +1,32 @@
+{
+  "projectRulesFile": "CLAUDE.md",
+  "architectureFile": "docs/ARCHITECTURE.md",
+  "progressDir": ".claude/progress",
+  "branching": {
+    "baseBranch": "auto",
+    "featurePrefix": "feature",
+    "workPrefix": "work",
+    "enforce": "warn",
+    "protectedBranches": ["main", "master"],
+    "useWorktrees": false,
+    "worktreeDir": ".worktrees"
+  },
+  "worktreeBootstrap": {
+    "script": "scripts/generate-worktree-claude.mjs",
+    "includeSections": [
+      "verification-requirements",
+      "v2-refactor-context",
+      "eslint-rules",
+      "import-order",
+      "design-system",
+      "ipc-contract",
+      "service-pattern",
+      "feature-module-pattern"
+    ],
+    "alwaysIncludeDocs": [
+      "ai-docs/CODEBASE-GUARDIAN.md",
+      "ai-docs/LINTING.md",
+      "ai-docs/PATTERNS.md"
+    ]
+  }
+}

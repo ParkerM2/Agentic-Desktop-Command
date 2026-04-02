@@ -1,0 +1,53 @@
+{
+  "feature": "adc-fix-first",
+  "mode": "standard",
+  "startedAt": "2026-04-02T00:40:15.091Z",
+  "phase": "done",
+  "setupComplete": false,
+  "guardianPassed": false,
+  "currentWave": 0,
+  "totalWaves": 0,
+  "waves": {},
+  "tasks": {
+    "1": {
+      "state": "completed",
+      "completedAt": "2026-04-02T00:44:03.237Z",
+      "files": []
+    },
+    "2": {
+      "state": "completed",
+      "completedAt": "2026-04-02T00:55:36.382Z",
+      "files": []
+    },
+    "3": {
+      "state": "completed",
+      "completedAt": "2026-04-02T00:51:24.833Z",
+      "files": []
+    },
+    "4": {
+      "state": "completed",
+      "completedAt": "2026-04-02T00:56:37.869Z",
+      "files": []
+    },
+    "5": {
+      "state": "completed",
+      "completedAt": "2026-04-02T00:59:38.569Z",
+      "files": []
+    },
+    "6": {
+      "state": "completed",
+      "completedAt": "2026-04-02T01:02:32.587Z",
+      "files": []
+    },
+    "7": {
+      "state": "completed",
+      "completedAt": "2026-04-02T01:00:02.723Z",
+      "files": []
+    },
+    "8": {
+      "state": "completed",
+      "completedAt": "2026-04-02T01:06:59.810Z",
+      "files": []
+    }
+  }
+}

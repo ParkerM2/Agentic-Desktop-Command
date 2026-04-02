@@ -1,0 +1,15 @@
+{
+  "ticket": "claude-plugin-improvements",
+  "title": "Claude Plugin & Token Optimization Research",
+  "type": "Research",
+  "created": "2026-03-31",
+  "updated": "2026-03-31",
+  "branch": "claude-plugin-improvements",
+  "runs": [
+    {
+      "id": "001-research",
+      "status": "in-progress",
+      "date": "2026-03-31"
+    }
+  ]
+}
