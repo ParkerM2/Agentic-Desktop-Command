@@ -193,9 +193,17 @@ export function registerAgentDashboardHandlers(
     router.emit('event:agent-dashboard.teammateLeft', { agentId: memberId, teamName: '' });
   });
 
-  // Forward task updates from ProgressWatcherV2
+  // Forward task updates from ProgressWatcherV2 (debounced per-slug to avoid thundering herd)
+  const debounceTimers = new Map<string, NodeJS.Timeout>();
+
   progressWatcher.onTaskUpdated((slug, task) => {
-    router.emit('event:agent-dashboard.taskUpdated', { featureSlug: slug, task });
+    clearTimeout(debounceTimers.get(slug));
+    debounceTimers.set(
+      slug,
+      setTimeout(() => {
+        router.emit('event:agent-dashboard.taskUpdated', { featureSlug: slug, task });
+      }, 50),
+    );
   });
 
   // Forward QA session events (progress + completed only)
