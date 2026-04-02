@@ -20,6 +20,7 @@ import type {
 } from '@shared/types/agent-dashboard';
 
 import type { AgentManagerService } from '../../services/agent-manager';
+import type { GitService } from '../../services/git/git-service';
 import type { ProgressWatcherV2 } from '../../services/progress-watcher-v2';
 import type { QaRunner, QaSession } from '../../services/qa/qa-types';
 import type { IpcRouter } from '../router';
@@ -109,6 +110,7 @@ export function registerAgentDashboardHandlers(
   teamWatcher: TeamWatcherService,
   progressWatcher: ProgressWatcherV2,
   qaRunner: QaRunner,
+  gitService: GitService,
 ): void {
   // ── Invoke Handlers ──────────────────────────────────────
 
@@ -118,10 +120,13 @@ export function registerAgentDashboardHandlers(
   });
 
   router.handle('agent-dashboard.spawnTeamLead', (config) => {
-    const session = agentManager.spawnTeamLead(config);
+    const result = agentManager.spawnTeamLead(config);
+    if ('error' in result) {
+      throw new Error(`spawnTeamLead failed: ${result.error}`);
+    }
     return Promise.resolve({
-      sessionId: session.id,
-      tmuxSessionName: session.name,
+      sessionId: result.id,
+      tmuxSessionName: result.name,
       status: 'spawned' as const,
     });
   });
@@ -142,9 +147,13 @@ export function registerAgentDashboardHandlers(
     Promise.resolve({ success: agentManager.stopSession(sessionId) }),
   );
 
-  router.handle('agent-dashboard.getFilesChanged', (_input) =>
-    Promise.resolve([]),
-  );
+  router.handle('agent-dashboard.getFilesChanged', (input) => {
+    const projectPath = agentManager.getSessionProjectPath(input.sessionId);
+    if (!projectPath) {
+      return Promise.resolve([]);
+    }
+    return gitService.getFilesChanged(projectPath, input.branch);
+  });
 
   // ── Workflow Task Handlers ──────────────────────────────────
 
@@ -169,8 +178,7 @@ export function registerAgentDashboardHandlers(
   });
 
   router.handle('agent-dashboard.listQaSessions', () =>
-    // QaRunner does not expose a list method — stub for now
-    Promise.resolve([]),
+    Promise.resolve(qaRunner.listSessions().map(mapQaSessionToDashboard)),
   );
 
   // ── Event Forwarding ─────────────────────────────────────
