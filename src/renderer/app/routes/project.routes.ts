@@ -63,8 +63,8 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Agents' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/agents'),
-      'AgentDashboard',
+      () => import('@features/agent-dashboard'),
+      'AgentDashboardPage',
     ),
   });
 
