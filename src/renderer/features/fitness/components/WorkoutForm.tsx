@@ -8,7 +8,16 @@ import { Plus, Send, Trash2, X } from 'lucide-react';
 
 import type { Exercise, ExerciseSet, WorkoutType } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@ui';
 
 import { useLogWorkout } from '../api/useFitness';
 import { useFitnessUI } from '../store';
@@ -112,14 +121,15 @@ export function WorkoutForm() {
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
         <h3 className="text-foreground text-sm font-semibold">Log Workout</h3>
-        <button
+        <Button
           aria-label="Close form"
-          className="text-muted-foreground hover:bg-accent rounded-md p-1 transition-colors"
+          size="icon"
           type="button"
+          variant="ghost"
           onClick={() => setShowWorkoutForm(false)}
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-4 p-4">
@@ -132,8 +142,7 @@ export function WorkoutForm() {
             >
               Date
             </label>
-            <input
-              className="bg-muted text-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
+            <Input
               id="workout-date"
               type="date"
               value={date}
@@ -147,18 +156,18 @@ export function WorkoutForm() {
             >
               Type
             </label>
-            <select
-              className="bg-muted text-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
-              id="workout-type"
-              value={type}
-              onChange={(e) => setType(e.target.value as WorkoutType)}
-            >
-              {WORKOUT_TYPES.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <Select value={type} onValueChange={(v) => setType(v as WorkoutType)}>
+              <SelectTrigger id="workout-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {WORKOUT_TYPES.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -170,8 +179,7 @@ export function WorkoutForm() {
           >
             Duration (minutes)
           </label>
-          <input
-            className="bg-muted text-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
+          <Input
             id="workout-duration"
             min="1"
             placeholder="45"
@@ -185,14 +193,16 @@ export function WorkoutForm() {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-muted-foreground text-xs font-medium">Exercises</span>
-            <button
-              className="text-primary flex items-center gap-1 text-xs font-medium"
+            <Button
+              className="text-primary h-auto p-0 text-xs font-medium"
+              size="sm"
               type="button"
+              variant="ghost"
               onClick={handleAddExercise}
             >
               <Plus className="h-3 w-3" />
               Add Exercise
-            </button>
+            </Button>
           </div>
           <div className="space-y-3">
             {exercises.map((exercise, exerciseIndex) => (
@@ -219,28 +229,26 @@ export function WorkoutForm() {
           >
             Notes
           </label>
-          <textarea
-            className="bg-muted text-foreground h-16 w-full resize-none rounded-md px-3 py-2 text-sm outline-none"
+          <Textarea
+            className="h-16"
             id="workout-notes"
             placeholder="Optional notes..."
+            resize="none"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
 
         {/* Submit */}
-        <button
+        <Button
+          className="w-full"
           disabled={Number(duration) <= 0}
           type="button"
-          className={cn(
-            'bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-            'disabled:opacity-50',
-          )}
           onClick={handleSubmit}
         >
           <Send className="h-4 w-4" />
           Log Workout
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -268,39 +276,44 @@ function ExerciseInput({
   return (
     <div className="bg-muted/50 rounded-md p-3">
       <div className="mb-2 flex items-center gap-2">
-        <input
+        <Input
           aria-label={`Exercise ${String(exerciseIndex + 1)} name`}
-          className="bg-muted text-foreground flex-1 rounded px-2 py-1 text-sm outline-none"
+          className="flex-1"
           placeholder="Exercise name"
+          size="sm"
           type="text"
           value={exercise.name}
           onChange={(e) => onNameChange(e.target.value)}
         />
-        <button
+        <Button
           aria-label="Remove exercise"
-          className="text-muted-foreground hover:text-destructive p-1"
+          className="text-muted-foreground hover:text-destructive h-auto p-1"
+          size="icon"
           type="button"
+          variant="ghost"
           onClick={onRemove}
         >
           <Trash2 className="h-3 w-3" />
-        </button>
+        </Button>
       </div>
       <div className="space-y-1">
         {exercise.sets.map((exerciseSet, setIndex) => (
           <div key={exercise._setKeys[setIndex]} className="flex items-center gap-2">
             <span className="text-muted-foreground w-8 text-xs">S{String(setIndex + 1)}</span>
-            <input
+            <Input
               aria-label={`Set ${String(setIndex + 1)} reps`}
-              className="bg-muted w-16 rounded px-2 py-1 text-xs outline-none"
+              className="w-16"
               placeholder="Reps"
+              size="sm"
               type="number"
               value={exerciseSet.reps ?? ''}
               onChange={(e) => onSetChange(setIndex, 'reps', e.target.value)}
             />
-            <input
+            <Input
               aria-label={`Set ${String(setIndex + 1)} weight`}
-              className="bg-muted w-20 rounded px-2 py-1 text-xs outline-none"
+              className="w-20"
               placeholder="Weight"
+              size="sm"
               type="number"
               value={exerciseSet.weight ?? ''}
               onChange={(e) => onSetChange(setIndex, 'weight', e.target.value)}
@@ -309,9 +322,15 @@ function ExerciseInput({
           </div>
         ))}
       </div>
-      <button className="text-primary mt-1 text-xs font-medium" type="button" onClick={onAddSet}>
+      <Button
+        className="text-primary mt-1 h-auto p-0 text-xs font-medium"
+        size="sm"
+        type="button"
+        variant="ghost"
+        onClick={onAddSet}
+      >
         + Add Set
-      </button>
+      </Button>
     </div>
   );
 }

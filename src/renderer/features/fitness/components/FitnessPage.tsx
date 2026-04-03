@@ -6,6 +6,8 @@ import { Dumbbell, Plus, Scale, Target, TrendingUp } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { useFitnessEvents } from '../hooks/useFitnessEvents';
 import { useFitnessUI } from '../store';
 
@@ -42,8 +44,7 @@ export function FitnessPage() {
             Track workouts, body composition, and goals
           </p>
         </div>
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+        <Button
           type="button"
           onClick={() => {
             setActiveTab('workouts');
@@ -52,27 +53,28 @@ export function FitnessPage() {
         >
           <Plus className="h-4 w-4" />
           Log Workout
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
       <div className="border-border border-b px-6">
         <div className="flex gap-1">
           {TABS.map((tab) => (
-            <button
+            <Button
               key={tab.id}
               type="button"
+              variant="ghost"
+              onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
+                'flex items-center gap-2 rounded-none border-b-2 px-4 py-3 text-sm font-medium',
                 activeTab === tab.id
                   ? 'border-primary text-foreground'
                   : 'text-muted-foreground hover:text-foreground border-transparent',
               )}
-              onClick={() => setActiveTab(tab.id)}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
