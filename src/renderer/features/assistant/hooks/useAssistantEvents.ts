@@ -28,4 +28,11 @@ export function useAssistantEvents() {
   useIpcEvent('event:assistant.thinking', (payload) => {
     setIsThinking(payload.isThinking);
   });
+
+  useIpcEvent('event:assistant.toolExecuted', (payload) => {
+    // Invalidate React Query caches for all affected query key roots
+    for (const root of payload.queryKeyRoots) {
+      void queryClient.invalidateQueries({ queryKey: [root] });
+    }
+  });
 }

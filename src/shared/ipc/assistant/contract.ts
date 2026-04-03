@@ -14,6 +14,12 @@ export const assistantInvoke = {
     input: z.object({
       input: z.string(),
       projectPath: z.string(),
+      context: z
+        .object({
+          activeView: z.string().optional(),
+          activeProjectId: z.string().optional(),
+        })
+        .optional(),
     }),
     output: z.object({ success: z.boolean() }),
   },
@@ -34,5 +40,12 @@ export const assistantEvents = {
   },
   'event:assistant.thinking': {
     payload: z.object({ isThinking: z.boolean() }),
+  },
+  'event:assistant.toolExecuted': {
+    payload: z.object({
+      toolName: z.string(),
+      queryKeyRoots: z.array(z.string()),
+      result: z.unknown(),
+    }),
   },
 } as const;

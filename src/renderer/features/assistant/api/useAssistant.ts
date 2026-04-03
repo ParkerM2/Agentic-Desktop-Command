@@ -25,10 +25,15 @@ export function useSendCommand() {
   const { setIsThinking, clearCurrentResponse } = useAssistantStore();
 
   return useMutation({
-    mutationFn: (data: { input: string; projectPath: string }) => {
+    mutationFn: (data: {
+      input: string;
+      projectPath: string;
+      context?: { activeView?: string; activeProjectId?: string };
+    }) => {
       return ipc('assistant.sendCommand', {
         input: data.input,
         projectPath: data.projectPath,
+        context: data.context,
       });
     },
     onMutate: () => {

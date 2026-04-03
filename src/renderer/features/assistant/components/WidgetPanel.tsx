@@ -8,6 +8,7 @@
 
 import { useEffect, useRef } from 'react';
 
+import { useRouterState } from '@tanstack/react-router';
 import { Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
@@ -36,6 +37,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const toggleVoiceOutput = useAssistantWidgetStore((s) => s.toggleVoiceOutput);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
   const { data: projects } = useProjects();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -46,9 +48,26 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
     input?.focus();
   }, []);
 
+  function getActiveView(path: string): string {
+    if (path.includes('/roadmap')) return 'roadmap';
+    if (path.includes('/planner')) return 'planner';
+    if (path.includes('/ideation')) return 'ideation';
+    if (path.includes('/notes')) return 'notes';
+    if (path.includes('/fitness')) return 'fitness';
+    if (path.includes('/dashboard') || path === '/') return 'dashboard';
+    return 'default';
+  }
+
   function handleSendCommand(input: string) {
     const activeProject = projects?.find((p) => p.id === activeProjectId);
-    sendCommand.mutate({ input, projectPath: activeProject?.path ?? '' });
+    sendCommand.mutate({
+      input,
+      projectPath: activeProject?.path ?? '',
+      context: {
+        activeView: getActiveView(pathname),
+        activeProjectId: activeProjectId ?? undefined,
+      },
+    });
   }
 
   function handleClearHistory() {
