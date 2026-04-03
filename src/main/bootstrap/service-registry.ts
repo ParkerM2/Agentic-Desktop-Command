@@ -29,7 +29,6 @@ import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl
 import { createAlertService } from '../services/alerts/alert-service';
 import { createAppUpdateService } from '../services/app/app-update-service';
 import { createAssistantService } from '../services/assistant/assistant-service';
-import { createCrossDeviceQuery } from '../services/assistant/cross-device-query';
 import { createWatchEvaluator } from '../services/assistant/watch-evaluator';
 import { createWatchStore } from '../services/assistant/watch-store';
 import { createUserSessionManager } from '../services/auth';
@@ -102,6 +101,7 @@ import { createTmuxBridgeService } from '../services/tmux-bridge/tmux-bridge-ser
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
+import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
 
@@ -114,12 +114,14 @@ import type { SessionJSONLReaderService } from '../services/session-jsonl/sessio
 import type { TaskRepository } from '../services/tasks/types';
 import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
 import type { TmuxBridgeService } from '../services/tmux-bridge/tmux-bridge-service';
+import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 
 /** Everything createServiceRegistry produces — services + extras needed for lifecycle/event wiring. */
 export interface ServiceRegistryResult {
   router: IpcRouter;
   services: Services;
   agentManagerService: AgentManagerService;
+  workspaceSessionManager: WorkspaceSessionManager;
   assistantService: ReturnType<typeof createAssistantService>;
   agentOrchestrator: ReturnType<typeof createAgentOrchestrator>;
   agentWatchdog: ReturnType<typeof createAgentWatchdog>;
@@ -406,7 +408,7 @@ export function createServiceRegistry(
     onCommand: (command) => {
       appLogger.info('[Main] Quick command received:', command);
       if (assistantServiceRef) {
-        void assistantServiceRef.sendCommand(command);
+        assistantServiceRef.sendCommand(command, '');
       }
     },
   });
@@ -445,6 +447,10 @@ export function createServiceRegistry(
 
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router, tmuxBridgeService });
+
+  // ─── Workspace session manager ───────────────────────────────
+  const workspaceSessionManager = createWorkspaceSessionManager(agentManagerService, getMainWindow);
+
   const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
 
   // Agent watchdog — monitors active sessions for dead/stale processes
@@ -494,30 +500,9 @@ export function createServiceRegistry(
   // ─── Watch system ────────────────────────────────────────────
   const watchStore = createWatchStore();
   const watchEvaluator = createWatchEvaluator(watchStore);
-  const crossDeviceQuery = createCrossDeviceQuery(hubApiClient);
 
   // ─── Assistant service ───────────────────────────────────────
-  const assistantService = createAssistantService({
-    router,
-    mcpManager,
-    notesService,
-    alertService,
-    spotifyService: spotifyService ?? undefined,
-    taskService,
-    plannerService,
-    watchStore,
-    crossDeviceQuery,
-    fitnessService: fitnessService ?? undefined,
-    calendarService: calendarService ?? undefined,
-    briefingService,
-    insightsService,
-    ideasService: ideasService ?? undefined,
-    milestonesService: milestonesService ?? undefined,
-    emailService,
-    githubService,
-    changelogService: changelogService ?? undefined,
-    projectService,
-  });
+  const assistantService = createAssistantService(getMainWindow);
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;
 
@@ -595,6 +580,7 @@ export function createServiceRegistry(
     setupPipeline,
     trackerService,
     userSessionManager,
+    workspaceSessionManager,
     dataDir,
     providers,
     tokenStore,
@@ -639,6 +625,7 @@ export function createServiceRegistry(
     router,
     services,
     agentManagerService,
+    workspaceSessionManager,
     assistantService,
     agentOrchestrator,
     agentWatchdog,
