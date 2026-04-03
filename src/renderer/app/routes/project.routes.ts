@@ -60,11 +60,11 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
   const agentsRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_AGENTS,
-    staticData: { breadcrumbLabel: 'Agents' },
+    staticData: { breadcrumbLabel: 'Workspace' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/agent-dashboard'),
-      'AgentDashboardPage',
+      () => import('@features/workspace'),
+      'WorkspacePage',
     ),
   });
 

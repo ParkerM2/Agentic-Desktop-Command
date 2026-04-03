@@ -101,7 +101,7 @@ function AcceptanceCriteria({ criteria }: { criteria: TaskCriterion[] }) {
 // ─── Component ─────────────────────────────────────────────
 
 export function TasksTab({ taskId, featureSlug, className }: TasksTabProps) {
-  const slug = featureSlug ?? deriveFeatureSlug();
+  const slug = featureSlug ?? deriveFeatureSlug(undefined);
   const { data: tasks, isLoading } = useTasksForFeature(slug);
 
   useProgressEvents();

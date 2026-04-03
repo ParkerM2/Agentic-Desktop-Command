@@ -109,6 +109,7 @@ import type { TimeParserService } from '../services/time-parser/time-parser-serv
 import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
+import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
@@ -164,6 +165,7 @@ export interface Services {
   setupPipeline: SetupPipelineService;
   trackerService: TrackerService;
   userSessionManager: UserSessionManager;
+  workspaceSessionManager: WorkspaceSessionManager;
   progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
@@ -249,7 +251,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
   registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
-  registerWorkspaceHandlers(router, services.hubApiClient);
+  registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);
   registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);
   registerQaHandlers(
