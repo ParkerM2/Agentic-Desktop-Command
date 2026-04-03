@@ -1,10 +1,27 @@
 import { useState } from 'react';
 
-import { ChevronDown, ChevronUp, Lightbulb, Pencil, Plus, Tag, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Lightbulb, Pencil, Plus, Sparkles, Tag, Trash2 } from 'lucide-react';
 
 import type { Idea, IdeaCategory } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
+import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
+
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+} from '@ui';
+
+import { useSendCommand } from '@features/assistant';
+import { useProjects } from '@features/projects';
+
 
 import { useCreateIdea, useDeleteIdea, useIdeas, useVoteIdea } from '../api/useIdeas';
 import { useIdeaEvents } from '../hooks/useIdeaEvents';
@@ -28,6 +45,9 @@ const FILTER_OPTIONS: Array<{ value: IdeaCategory | 'all'; label: string }> = [
 
 const CATEGORY_OPTIONS: IdeaCategory[] = ['feature', 'improvement', 'bug', 'performance'];
 
+const DEFAULT_GENERATE_PROMPT =
+  'Suggest 3 new feature ideas for my developer productivity project. For each, call the create_idea tool with a clear title and description.';
+
 export function IdeationPage() {
   useIdeaEvents();
   const [activeFilter, setActiveFilter] = useState<IdeaCategory | 'all'>('all');
@@ -36,12 +56,18 @@ export function IdeationPage() {
   const [formDescription, setFormDescription] = useState('');
   const [formCategory, setFormCategory] = useState<IdeaCategory>('feature');
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [generatePrompt, setGeneratePrompt] = useState(DEFAULT_GENERATE_PROMPT);
 
   const category = activeFilter === 'all' ? undefined : activeFilter;
   const { data: ideas, isLoading } = useIdeas(undefined, undefined, category);
   const createIdea = useCreateIdea();
   const deleteIdea = useDeleteIdea();
   const voteIdea = useVoteIdea();
+  const sendCommand = useSendCommand();
+  const openWidget = useAssistantWidgetStore((s) => s.open);
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projects } = useProjects();
 
   function handleCreate(): void {
     if (!formTitle.trim()) return;
@@ -54,6 +80,19 @@ export function IdeationPage() {
     setFormDescription('');
     setFormCategory('feature');
     setShowForm(false);
+  }
+
+  function handleGenerate(): void {
+    if (!generatePrompt.trim() || sendCommand.isPending) return;
+    const activeProject = projects?.find((p) => p.id === activeProjectId);
+    openWidget();
+    sendCommand.mutate({
+      input: generatePrompt.trim(),
+      projectPath: activeProject?.path ?? '',
+      context: { activeView: 'ideation', activeProjectId: activeProjectId ?? undefined },
+    });
+    setShowGenerate(false);
+    setGeneratePrompt(DEFAULT_GENERATE_PROMPT);
   }
 
   const items = ideas ?? [];
@@ -72,59 +111,117 @@ export function IdeationPage() {
               Brainstorm and organize project ideas
             </p>
           </div>
-          <button
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-            type="button"
-            onClick={() => setShowForm(!showForm)}
-          >
-            <Plus className="h-4 w-4" />
-            New Idea
-          </button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowGenerate(!showGenerate);
+                setShowForm(false);
+              }}
+            >
+              <Sparkles className="h-4 w-4" />
+              Generate with AI
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setShowForm(!showForm);
+                setShowGenerate(false);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              New Idea
+            </Button>
+          </div>
         </div>
+
+        {/* Generate with AI Panel */}
+        {showGenerate ? (
+          <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
+            <p className="text-muted-foreground text-sm">
+              Describe what ideas you want the assistant to generate. It will create them directly in your ideation board.
+            </p>
+            <Textarea
+              resize="none"
+              rows={3}
+              value={generatePrompt}
+              onChange={(e) => setGeneratePrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.metaKey) handleGenerate();
+              }}
+            />
+            <div className="flex gap-2">
+              <Button
+                disabled={sendCommand.isPending || !generatePrompt.trim()}
+                type="button"
+                onClick={handleGenerate}
+              >
+                {sendCommand.isPending ? (
+                  <>
+                    <Spinner className="h-4 w-4" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowGenerate(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Create Form */}
         {showForm ? (
           <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <input
-              className="bg-muted text-foreground placeholder:text-muted-foreground w-full rounded px-3 py-2 text-sm"
+            <Input
               placeholder="Idea title"
               type="text"
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
             />
-            <textarea
-              className="bg-muted text-foreground placeholder:text-muted-foreground w-full rounded px-3 py-2 text-sm"
+            <Textarea
               placeholder="Description"
+              resize="none"
               rows={2}
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
             />
-            <select
-              className="bg-muted text-foreground w-full rounded px-3 py-2 text-sm"
+            <Select
               value={formCategory}
-              onChange={(e) => setFormCategory(e.target.value as IdeaCategory)}
+              onValueChange={(v) => setFormCategory(v as IdeaCategory)}
             >
-              {CATEGORY_OPTIONS.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_CONFIG[cat].label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_OPTIONS.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {CATEGORY_CONFIG[cat].label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex gap-2">
-              <button
-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                type="button"
-                onClick={handleCreate}
-              >
+              <Button type="button" onClick={handleCreate}>
                 Create
-              </button>
-              <button
-                className="bg-muted text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm transition-colors"
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setShowForm(false)}
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -132,19 +229,16 @@ export function IdeationPage() {
         {/* Filters */}
         <div className="mb-6 flex gap-2">
           {FILTER_OPTIONS.map((option) => (
-            <button
+            <Button
               key={option.value}
+              className="rounded-full"
+              size="sm"
               type="button"
-              className={cn(
-                'rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-                activeFilter === option.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground',
-              )}
+              variant={activeFilter === option.value ? 'primary' : 'ghost'}
               onClick={() => setActiveFilter(option.value)}
             >
               {option.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -174,22 +268,26 @@ export function IdeationPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <button
+                      <Button
                         aria-label={`Edit ${idea.title}`}
-                        className="text-muted-foreground hover:text-primary transition-colors"
+                        className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
+                        size="icon"
                         type="button"
+                        variant="ghost"
                         onClick={() => setEditingIdea(idea)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         aria-label={`Delete ${idea.title}`}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
+                        size="icon"
                         type="button"
+                        variant="ghost"
                         onClick={() => deleteIdea.mutate(idea.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -201,21 +299,25 @@ export function IdeationPage() {
 
                   {/* Votes */}
                   <div className="flex items-center gap-2">
-                    <button
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                    <Button
+                      className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
+                      size="icon"
                       type="button"
+                      variant="ghost"
                       onClick={() => voteIdea.mutate({ id: idea.id, delta: 1 })}
                     >
                       <ChevronUp className="h-4 w-4" />
-                    </button>
+                    </Button>
                     <span className="text-sm font-medium">{idea.votes}</span>
-                    <button
-                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    <Button
+                      className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
+                      size="icon"
                       type="button"
+                      variant="ghost"
                       onClick={() => voteIdea.mutate({ id: idea.id, delta: -1 })}
                     >
                       <ChevronDown className="h-4 w-4" />
-                    </button>
+                    </Button>
                     <span className="text-muted-foreground bg-muted/50 ml-auto rounded-full px-2 py-0.5 text-xs capitalize">
                       {idea.status}
                     </span>

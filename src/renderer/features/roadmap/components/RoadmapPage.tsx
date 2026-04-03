@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
-import { CheckCircle2, Circle, Clock, Map, Plus, Square, SquareCheck, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Map, Plus, Sparkles, Square, SquareCheck, Trash2 } from 'lucide-react';
 
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
+import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
 import {
   Button,
@@ -14,8 +15,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Spinner,
   Textarea,
 } from '@ui';
+
+import { useSendCommand } from '@features/assistant';
+import { useProjects } from '@features/projects';
+
 
 import {
   useAddMilestoneTask,
@@ -143,10 +149,11 @@ function MilestoneCard({
       {milestone.tasks.length > 0 ? (
         <div className="mb-3 space-y-1">
           {milestone.tasks.map((task) => (
-            <button
+            <Button
               key={task.id}
-              className="hover:bg-muted/50 flex w-full items-center gap-2 rounded px-1 py-0.5 text-left text-sm"
+              className="hover:bg-muted/50 flex h-auto w-full items-center justify-start gap-2 rounded px-1 py-0.5 text-left text-sm"
               type="button"
+              variant="ghost"
               onClick={() => toggleTask.mutate({ milestoneId: milestone.id, taskId: task.id })}
             >
               {task.completed ? (
@@ -157,7 +164,7 @@ function MilestoneCard({
               <span className={cn(task.completed && 'text-muted-foreground line-through')}>
                 {task.title}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       ) : null}
@@ -188,6 +195,9 @@ function MilestoneCard({
   );
 }
 
+const DEFAULT_GENERATE_PROMPT =
+  'Create a new milestone for my project roadmap. Include a clear title, description, and target date about 4 weeks from now. Call the create_milestone tool to add it.';
+
 export function RoadmapPage() {
   useMilestoneEvents();
   const { data: milestones, isLoading } = useMilestones();
@@ -199,6 +209,13 @@ export function RoadmapPage() {
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formDate, setFormDate] = useState('');
+  const [showGenerate, setShowGenerate] = useState(false);
+  const [generatePrompt, setGeneratePrompt] = useState(DEFAULT_GENERATE_PROMPT);
+
+  const sendCommand = useSendCommand();
+  const openWidget = useAssistantWidgetStore((s) => s.open);
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projects } = useProjects();
 
   function handleCreate(): void {
     if (!formTitle.trim() || !formDate) return;
@@ -211,6 +228,19 @@ export function RoadmapPage() {
     setFormDescription('');
     setFormDate('');
     setShowForm(false);
+  }
+
+  function handleGenerate(): void {
+    if (!generatePrompt.trim() || sendCommand.isPending) return;
+    const activeProject = projects?.find((p) => p.id === activeProjectId);
+    openWidget();
+    sendCommand.mutate({
+      input: generatePrompt.trim(),
+      projectPath: activeProject?.path ?? '',
+      context: { activeView: 'roadmap', activeProjectId: activeProjectId ?? undefined },
+    });
+    setShowGenerate(false);
+    setGeneratePrompt(DEFAULT_GENERATE_PROMPT);
   }
 
   const items = milestones ?? [];
@@ -232,14 +262,74 @@ export function RoadmapPage() {
             </div>
             <p className="text-muted-foreground mt-1 text-sm">Project milestones and progress</p>
           </div>
-          <Button
-            type="button"
-            onClick={() => setShowForm(!showForm)}
-          >
-            <Plus className="h-4 w-4" />
-            New Milestone
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowGenerate(!showGenerate);
+                setShowForm(false);
+              }}
+            >
+              <Sparkles className="h-4 w-4" />
+              Generate with AI
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setShowForm(!showForm);
+                setShowGenerate(false);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              New Milestone
+            </Button>
+          </div>
         </div>
+
+        {/* Generate with AI Panel */}
+        {showGenerate ? (
+          <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
+            <p className="text-muted-foreground text-sm">
+              Describe what milestones you want the assistant to generate. It will create them directly on your roadmap.
+            </p>
+            <Textarea
+              resize="none"
+              rows={3}
+              value={generatePrompt}
+              onChange={(e) => setGeneratePrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.metaKey) handleGenerate();
+              }}
+            />
+            <div className="flex gap-2">
+              <Button
+                disabled={sendCommand.isPending || !generatePrompt.trim()}
+                type="button"
+                onClick={handleGenerate}
+              >
+                {sendCommand.isPending ? (
+                  <>
+                    <Spinner className="h-4 w-4" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    Generate
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowGenerate(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Create Form */}
         {showForm ? (
