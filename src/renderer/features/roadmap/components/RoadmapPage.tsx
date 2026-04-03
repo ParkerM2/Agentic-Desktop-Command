@@ -7,6 +7,17 @@ import type { Milestone, MilestoneStatus } from '@shared/types';
 import { cn } from '@renderer/shared/lib/utils';
 
 import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@ui';
+
+import {
   useAddMilestoneTask,
   useCreateMilestone,
   useDeleteMilestone,
@@ -85,22 +96,28 @@ function MilestoneCard({
           <h3 className="font-medium">{milestone.title}</h3>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            className="bg-muted text-foreground rounded px-2 py-0.5 text-xs"
+          <Select
             value={milestone.status}
-            onChange={(e) => onStatusChange(milestone.id, e.target.value as MilestoneStatus)}
+            onValueChange={(v) => onStatusChange(milestone.id, v as MilestoneStatus)}
           >
-            <option value="planned">Planned</option>
-            <option value="in-progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-          <button
-            className="text-muted-foreground hover:text-destructive transition-colors"
+            <SelectTrigger className="h-7 w-[120px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="planned">Planned</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            className="text-muted-foreground hover:text-destructive"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={() => onDelete(milestone.id)}
           >
             <Trash2 className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -147,9 +164,10 @@ function MilestoneCard({
 
       {/* Add task input */}
       <div className="flex gap-2">
-        <input
-          className="bg-muted text-foreground placeholder:text-muted-foreground flex-1 rounded px-2 py-1 text-sm"
+        <Input
+          className="flex-1"
           placeholder="Add a task..."
+          size="sm"
           type="text"
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
@@ -157,13 +175,14 @@ function MilestoneCard({
             if (e.key === 'Enter') handleAddTask();
           }}
         />
-        <button
-          className="text-muted-foreground hover:text-foreground transition-colors"
+        <Button
+          size="icon"
           type="button"
+          variant="ghost"
           onClick={handleAddTask}
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -213,54 +232,43 @@ export function RoadmapPage() {
             </div>
             <p className="text-muted-foreground mt-1 text-sm">Project milestones and progress</p>
           </div>
-          <button
-            className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+          <Button
             type="button"
             onClick={() => setShowForm(!showForm)}
           >
             <Plus className="h-4 w-4" />
             New Milestone
-          </button>
+          </Button>
         </div>
 
         {/* Create Form */}
         {showForm ? (
           <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <input
-              className="bg-muted text-foreground placeholder:text-muted-foreground w-full rounded px-3 py-2 text-sm"
+            <Input
               placeholder="Milestone title"
               type="text"
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
             />
-            <textarea
-              className="bg-muted text-foreground placeholder:text-muted-foreground w-full rounded px-3 py-2 text-sm"
+            <Textarea
               placeholder="Description"
+              resize="none"
               rows={2}
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
             />
-            <input
-              className="bg-muted text-foreground w-full rounded px-3 py-2 text-sm"
+            <Input
               type="date"
               value={formDate}
               onChange={(e) => setFormDate(e.target.value)}
             />
             <div className="flex gap-2">
-              <button
-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                type="button"
-                onClick={handleCreate}
-              >
+              <Button type="button" onClick={handleCreate}>
                 Create
-              </button>
-              <button
-                className="bg-muted text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm transition-colors"
-                type="button"
-                onClick={() => setShowForm(false)}
-              >
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         ) : null}
