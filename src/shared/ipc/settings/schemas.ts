@@ -76,6 +76,7 @@ export const AppSettingsSchema = z.object({
   minimizeToTray: z.boolean().optional(),
   startMinimized: z.boolean().optional(),
   keepRunning: z.boolean().optional(),
+  assistantAutoStart: z.boolean().optional(),
   dataRetention: DataRetentionSettingsSchema.optional(),
 });
 

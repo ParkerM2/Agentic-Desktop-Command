@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   uiScale: 100,
   onboardingCompleted: false,
   agentSettings: DEFAULT_AGENT_SETTINGS,
+  assistantAutoStart: true,
 };
 
 export const DEFAULT_PROFILES: Profile[] = [{ id: 'default', name: 'Default', isDefault: true }];

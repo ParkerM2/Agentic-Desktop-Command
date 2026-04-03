@@ -23,6 +23,7 @@ import type { SettingsService } from './services/settings/settings-service';
 let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
 let errorCollectorRef: ErrorCollector | null = null;
+let registryRef: ReturnType<typeof createServiceRegistry> | null = null;
 
 // Renderer crash tracking
 let rendererCrashCount = 0;
@@ -57,6 +58,15 @@ function createWindow(): void {
     const startMin = settingsServiceRef?.getSettings().startMinimized;
     if (!startMin) {
       mainWindow?.show();
+    }
+  });
+
+  // Emit assistant autostart after renderer finishes loading
+  mainWindow.webContents.once('did-finish-load', () => {
+    if (settingsServiceRef?.getSettings().assistantAutoStart !== false) {
+      setTimeout(() => {
+        registryRef?.router.emit('event:assistant.autostart', { autoStarted: true });
+      }, 800);
     }
   });
 
@@ -121,6 +131,7 @@ function initializeApp(): void {
   // Store refs for createWindow() settings checks and global error reporting
   settingsServiceRef = registry.settingsService;
   errorCollectorRef = registry.errorCollector;
+  registryRef = registry;
 
   // Wire IPC handlers
   wireIpcHandlers(registry.router, registry.services);

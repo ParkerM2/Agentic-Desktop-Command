@@ -6,10 +6,14 @@
  * renderer, and returns the tool_result payload.
  */
 
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import type { IdeasService } from '../ideas/ideas-service';
 import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
 import type { PlannerService } from '../planner/planner-service';
+import type { ProjectService } from '../project/project-service';
 
 const QUERY_KEY_NOTES = 'notes';
 const QUERY_KEY_MILESTONES = 'milestones';
@@ -21,6 +25,7 @@ export interface ToolExecutorDeps {
   milestonesService: MilestonesService | null;
   ideasService: IdeasService | null;
   plannerService: PlannerService | null;
+  projectService: Pick<ProjectService, 'listProjectsSync'> | null;
   sendEvent: (channel: string, payload: unknown) => void;
 }
 
@@ -52,8 +57,82 @@ function fail(error: string): ToolResult {
   return { success: false, error, queryKeyRoots: [] };
 }
 
+const ALLOWED_PROGRESS_FILES = ['workflow-state.json', 'proof-ledger.jsonl'];
+const PROGRESS_DIR = join(process.cwd(), '.claude', 'progress');
+
+function executeListProjects(projectService: ToolExecutorDeps['projectService']): ToolResult {
+  const projects = projectService?.listProjectsSync() ?? [];
+  return { success: true, data: projects, queryKeyRoots: [] };
+}
+
+function executeQueryRecentItems(
+  input: ToolInput,
+  notesService: NotesService | null,
+  milestonesService: MilestonesService | null,
+  ideasService: IdeasService | null,
+): ToolResult {
+  const type = getString(input, 'type');
+  const sinceStr = getString(input, 'since', '');
+  const since = sinceStr
+    ? new Date(sinceStr)
+    : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  if (type === 'notes') {
+    if (!notesService) return fail('Notes service unavailable');
+    const notes = notesService.listNotes({}).filter((n) => new Date(n.createdAt) >= since);
+    return { success: true, data: notes, queryKeyRoots: [] };
+  }
+  if (type === 'milestones') {
+    if (!milestonesService) return fail('Milestones service unavailable');
+    const items = milestonesService
+      .listMilestones({})
+      .filter((m) => new Date(m.createdAt) >= since);
+    return { success: true, data: items, queryKeyRoots: [] };
+  }
+  if (type === 'ideas') {
+    if (!ideasService) return fail('Ideas service unavailable');
+    const items = ideasService.listIdeas({}).filter((i) => new Date(i.createdAt) >= since);
+    return { success: true, data: items, queryKeyRoots: [] };
+  }
+  return fail(`Unknown type: ${type}`);
+}
+
+function executeListProgressFeatures(): ToolResult {
+  if (!existsSync(PROGRESS_DIR)) {
+    return { success: true, data: [], queryKeyRoots: [] };
+  }
+  try {
+    const entries = readdirSync(PROGRESS_DIR, { withFileTypes: true });
+    const features = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+    return { success: true, data: features, queryKeyRoots: [] };
+  } catch (err: unknown) {
+    return fail(err instanceof Error ? err.message : 'Failed to list progress features');
+  }
+}
+
+function executeReadProgressFile(input: ToolInput): ToolResult {
+  const feature = getString(input, 'feature');
+  const file = getString(input, 'file');
+  if (!ALLOWED_PROGRESS_FILES.includes(file)) {
+    return fail(`File must be one of: ${ALLOWED_PROGRESS_FILES.join(', ')}`);
+  }
+  if (!feature || feature.includes('..') || feature.includes('/') || feature.includes('\\')) {
+    return fail('Invalid feature name');
+  }
+  const filePath = join(PROGRESS_DIR, feature, file);
+  if (!existsSync(filePath)) {
+    return { success: true, data: `File not found: ${filePath}`, queryKeyRoots: [] };
+  }
+  try {
+    const content = readFileSync(filePath, 'utf8');
+    return { success: true, data: content, queryKeyRoots: [] };
+  } catch (err: unknown) {
+    return fail(err instanceof Error ? err.message : 'Failed to read file');
+  }
+}
+
 export function createToolExecutor(deps: ToolExecutorDeps) {
-  const { notesService, milestonesService, ideasService, plannerService, sendEvent } = deps;
+  const { notesService, milestonesService, ideasService, plannerService, projectService, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
     sendEvent('event:assistant.toolExecuted', {
@@ -130,6 +209,18 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
         break;
       case 'add_daily_goal':
         result = executeAddDailyGoal(input);
+        break;
+      case 'list_projects':
+        result = executeListProjects(projectService);
+        break;
+      case 'query_recent_items':
+        result = executeQueryRecentItems(input, notesService, milestonesService, ideasService);
+        break;
+      case 'list_progress_features':
+        result = executeListProgressFeatures();
+        break;
+      case 'read_progress_file':
+        result = executeReadProgressFile(input);
         break;
       default:
         return fail(`Unknown tool: ${toolName}`);

@@ -15,11 +15,15 @@ import { useAssistantStore } from '../store';
 export function useAssistantEvents() {
   const queryClient = useQueryClient();
   const { incrementUnread, setCurrentResponse, setIsThinking } = useAssistantStore();
-  const isWidgetOpen = useAssistantWidgetStore((s) => s.isOpen);
+  const { isOpen, open } = useAssistantWidgetStore();
+
+  useIpcEvent('event:assistant.autostart', () => {
+    open();
+  });
 
   useIpcEvent('event:assistant.response', (payload) => {
     setCurrentResponse(payload.content);
-    if (!isWidgetOpen) {
+    if (!isOpen) {
       incrementUnread();
     }
     void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });

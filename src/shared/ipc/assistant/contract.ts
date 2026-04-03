@@ -48,4 +48,7 @@ export const assistantEvents = {
       result: z.unknown(),
     }),
   },
+  'event:assistant.autostart': {
+    payload: z.object({ autoStarted: z.boolean() }),
+  },
 } as const;

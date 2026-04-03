@@ -105,6 +105,77 @@ export const APP_TOOLS: AppTool[] = [
     },
     queryKeyRoots: ['planner'],
   },
+
+  // ── Context & Memory ─────────────────────────────────────────────────────
+  {
+    name: 'list_projects',
+    description:
+      'List all projects the user has added to ADC with their IDs and filesystem paths. Use when the user asks about their projects.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+    queryKeyRoots: [],
+  },
+
+  {
+    name: 'query_recent_items',
+    description:
+      'Query notes, milestones, or ideas created since a given date. Use when the user asks what was created, added, or done recently.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          enum: ['notes', 'milestones', 'ideas'],
+          description: 'Which data type to query',
+        },
+        since: {
+          type: 'string',
+          description:
+            'ISO 8601 date string. If omitted, defaults to 7 days ago. Example: "2026-03-27T00:00:00Z"',
+        },
+      },
+      required: ['type'],
+    },
+    queryKeyRoots: [],
+  },
+
+  {
+    name: 'list_progress_features',
+    description:
+      'List the workflow feature names being tracked in .claude/progress/. Call this before read_progress_file to discover available features.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+    queryKeyRoots: [],
+  },
+
+  {
+    name: 'read_progress_file',
+    description:
+      'Read a workflow progress file for a tracked feature. Returns workflow-state.json (current phase and status) or proof-ledger.jsonl (task completion records). Use this to answer questions about what tasks were completed.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        feature: {
+          type: 'string',
+          description:
+            'Feature directory name under .claude/progress/ (e.g. "workspace-and-assistant-redesign")',
+        },
+        file: {
+          type: 'string',
+          enum: ['workflow-state.json', 'proof-ledger.jsonl'],
+          description: 'Which file to read',
+        },
+      },
+      required: ['feature', 'file'],
+    },
+    queryKeyRoots: [],
+  },
 ];
 
 export function getToolNames(): string[] {

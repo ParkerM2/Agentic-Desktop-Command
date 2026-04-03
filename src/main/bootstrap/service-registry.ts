@@ -509,6 +509,7 @@ export function createServiceRegistry(
     milestonesService: milestonesService ?? null,
     ideasService: ideasService ?? null,
     plannerService,
+    projectService,
   });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;

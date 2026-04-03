@@ -11,9 +11,9 @@ import { HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react'
 import type { ThemeMode } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
-import { useThemeStore } from '@renderer/shared/stores';
+import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
-import { Spinner } from '@ui';
+import { Spinner, Switch } from '@ui';
 
 import { VoiceSettings } from '@features/voice';
 
@@ -168,8 +168,50 @@ export function SettingsPage() {
         );
       }
       case 'advanced': {
+        const assistantAutoStart = settings?.assistantAutoStart !== false;
+        const { isOpen: assistantIsOpen, open: openAssistant, close: closeAssistant } =
+          useAssistantWidgetStore.getState();
+
         return (
           <>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                AI Assistant
+              </h2>
+              <div className="border-border bg-card space-y-4 rounded-lg border p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Auto-start on launch</p>
+                    <p className="text-muted-foreground text-xs">
+                      Open the assistant panel when ADC starts
+                    </p>
+                  </div>
+                  <Switch
+                    checked={assistantAutoStart}
+                    onCheckedChange={(checked) => {
+                      updateSettings.mutate({ assistantAutoStart: checked });
+                      if (checked && !assistantIsOpen) openAssistant();
+                      if (!checked && assistantIsOpen) closeAssistant();
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Assistant panel</p>
+                    <p className="text-muted-foreground text-xs">
+                      {assistantIsOpen ? 'Currently open' : 'Currently closed'} · Ctrl+J to toggle
+                    </p>
+                  </div>
+                  <Switch
+                    checked={assistantIsOpen}
+                    onCheckedChange={(checked) => {
+                      if (checked) openAssistant();
+                      else closeAssistant();
+                    }}
+                  />
+                </div>
+              </div>
+            </section>
             <section className="mb-8">
               <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Assistant &amp; Webhooks
