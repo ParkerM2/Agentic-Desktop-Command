@@ -1,5 +1,6 @@
 /**
- * GoalsList — Daily goals checklist
+ * GoalsList — Daily goals checklist.
+ * Completion is persisted via the onToggle callback (not local state).
  */
 
 import { useState } from 'react';
@@ -10,12 +11,14 @@ import { cn } from '@renderer/shared/lib/utils';
 
 interface GoalsListProps {
   goals: string[];
+  completedGoals: string[];
   onUpdate: (goals: string[]) => void;
+  onToggle: (goalText: string) => void;
 }
 
-export function GoalsList({ goals, onUpdate }: GoalsListProps) {
+export function GoalsList({ goals, completedGoals, onUpdate, onToggle }: GoalsListProps) {
   const [newGoal, setNewGoal] = useState('');
-  const [completed, setCompleted] = useState<Set<number>>(new Set());
+  const completedSet = new Set(completedGoals);
 
   function handleAdd() {
     const trimmed = newGoal.trim();
@@ -31,29 +34,12 @@ export function GoalsList({ goals, onUpdate }: GoalsListProps) {
   }
 
   function handleRemove(index: number) {
+    const removedText = goals[index];
     const updated = goals.filter((_g, idx) => idx !== index);
-    const updatedCompleted = new Set<number>();
-    for (const c of completed) {
-      if (c < index) {
-        updatedCompleted.add(c);
-      } else if (c > index) {
-        updatedCompleted.add(c - 1);
-      }
-    }
-    setCompleted(updatedCompleted);
     onUpdate(updated);
-  }
-
-  function handleToggle(index: number) {
-    setCompleted((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
+    if (completedSet.has(removedText)) {
+      onToggle(removedText);
+    }
   }
 
   return (
@@ -65,18 +51,19 @@ export function GoalsList({ goals, onUpdate }: GoalsListProps) {
       ) : (
         <ul className="space-y-1.5">
           {goals.map((goal, index) => {
-            const isComplete = completed.has(index);
+            const isComplete = completedSet.has(goal);
             return (
               <li key={`goal-${String(index)}`} className="group flex items-center gap-2">
                 <button
                   aria-label={isComplete ? 'Mark incomplete' : 'Mark complete'}
+                  type="button"
                   className={cn(
                     'flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors',
                     isComplete
                       ? 'border-success bg-success text-success-foreground'
                       : 'border-border hover:border-primary',
                   )}
-                  onClick={() => handleToggle(index)}
+                  onClick={() => onToggle(goal)}
                 >
                   {isComplete ? <Check className="h-3 w-3" /> : null}
                 </button>
@@ -91,6 +78,7 @@ export function GoalsList({ goals, onUpdate }: GoalsListProps) {
                 <button
                   aria-label="Remove goal"
                   className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                  type="button"
                   onClick={() => handleRemove(index)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -115,6 +103,7 @@ export function GoalsList({ goals, onUpdate }: GoalsListProps) {
             <button
               aria-label="Add goal"
               className="text-primary hover:text-primary/80 transition-colors"
+              type="button"
               onClick={handleAdd}
             >
               <Plus className="h-4 w-4" />
@@ -122,6 +111,7 @@ export function GoalsList({ goals, onUpdate }: GoalsListProps) {
             <button
               aria-label="Cancel"
               className="text-muted-foreground hover:text-foreground transition-colors"
+              type="button"
               onClick={() => setNewGoal('')}
             >
               <X className="h-4 w-4" />

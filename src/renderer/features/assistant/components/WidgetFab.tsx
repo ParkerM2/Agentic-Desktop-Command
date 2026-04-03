@@ -9,6 +9,8 @@ import { MessageSquare, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 interface WidgetFabProps {
   isOpen: boolean;
   hasUnread: boolean;
@@ -20,21 +22,20 @@ export function WidgetFab({ hasUnread, isOpen, onClick, unreadCount }: WidgetFab
   function getLabel() {
     if (isOpen) return 'Close assistant';
     if (hasUnread) return `Open assistant (${String(unreadCount)} unread)`;
-    return 'Open assistant';
+    return 'Open assistant (Ctrl+J)';
   }
 
   const label = getLabel();
 
   return (
-    <button
+    <Button
       aria-label={label}
+      type="button"
       className={cn(
         'fixed right-6 bottom-6 z-40',
-        'flex h-12 w-12 items-center justify-center rounded-full',
-        'bg-primary text-primary-foreground',
+        'h-12 w-12 rounded-full p-0',
         'shadow-lg transition-all duration-200',
         'hover:scale-105 active:scale-95',
-        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
       )}
       onClick={onClick}
     >
@@ -54,6 +55,6 @@ export function WidgetFab({ hasUnread, isOpen, onClick, unreadCount }: WidgetFab
           {unreadCount > 9 ? '9+' : String(unreadCount)}
         </span>
       ) : null}
-    </button>
+    </Button>
   );
 }

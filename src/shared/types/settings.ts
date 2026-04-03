@@ -32,6 +32,7 @@ export interface AppSettings {
   minimizeToTray?: boolean;
   startMinimized?: boolean;
   keepRunning?: boolean;
+  assistantAutoStart?: boolean;
   logLevel?: LogLevel;
   securitySettings?: SecuritySettings;
   dataRetention?: DataRetentionSettings;

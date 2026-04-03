@@ -21,6 +21,7 @@ export interface ScheduledTask {
 export interface DailyPlan {
   date: string;
   goals: string[];
+  completedGoals?: string[];
   scheduledTasks: ScheduledTask[];
   timeBlocks: TimeBlock[];
   reflection?: string;

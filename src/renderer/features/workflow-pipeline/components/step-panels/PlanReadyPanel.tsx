@@ -11,7 +11,7 @@ import type { Task } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useStartExecution } from '@features/tasks/api/useAgentMutations';
+import { useReplanWithFeedback, useStartExecution } from '@features/tasks/api/useAgentMutations';
 import { useUpdateTaskStatus } from '@features/tasks/api/useTaskMutations';
 import { PlanFeedbackDialog } from '@features/tasks/components/detail/PlanFeedbackDialog';
 
@@ -34,6 +34,7 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
 
   const startExecution = useStartExecution();
   const updateStatus = useUpdateTaskStatus();
+  const replanWithFeedback = useReplanWithFeedback();
 
   const planContent = (task.metadata?.planContent as string | undefined) ?? '';
 
@@ -66,9 +67,13 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
 
   function handleFeedbackSubmit(feedback: string) {
     setFeedbackDialogOpen(false);
-    // Re-plan with feedback is handled by the parent or a dedicated mutation;
-    // for now, we close the dialog. The parent can wire onRequestChanges if needed.
-    void feedback;
+    replanWithFeedback.mutate({
+      taskId: task.id,
+      projectPath: typeof task.metadata?.worktreePath === 'string' ? task.metadata.worktreePath : '',
+      taskDescription: task.description,
+      feedback,
+      previousPlanPath: typeof task.metadata?.planPath === 'string' ? task.metadata.planPath : undefined,
+    });
   }
 
   if (isEditing) {
@@ -119,13 +124,14 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
           </button>
           <button
             className={cn(ACTION_BUTTON_BASE, 'bg-warning/10 text-warning hover:bg-warning/20')}
+            disabled={replanWithFeedback.isPending}
             type="button"
             onClick={() => {
               setFeedbackDialogOpen(true);
             }}
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            Request Changes
+            {replanWithFeedback.isPending ? 'Requesting...' : 'Request Changes'}
           </button>
           <button
             disabled={updateStatus.isPending}

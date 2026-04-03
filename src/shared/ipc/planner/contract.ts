@@ -25,6 +25,7 @@ export const plannerInvoke = {
     input: z.object({
       date: z.string(),
       goals: z.array(z.string()).optional(),
+      completedGoals: z.array(z.string()).optional(),
       scheduledTasks: z.array(ScheduledTaskSchema).optional(),
       reflection: z.string().optional(),
     }),

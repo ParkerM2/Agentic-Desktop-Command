@@ -502,7 +502,15 @@ export function createServiceRegistry(
   const watchEvaluator = createWatchEvaluator(watchStore);
 
   // ─── Assistant service ───────────────────────────────────────
-  const assistantService = createAssistantService(getMainWindow);
+  const assistantService = createAssistantService({
+    getWindow: getMainWindow,
+    getApiKey: () => settingsService.getSettings().anthropicApiKey,
+    notesService,
+    milestonesService: milestonesService ?? null,
+    ideasService: ideasService ?? null,
+    plannerService,
+    projectService,
+  });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;
 

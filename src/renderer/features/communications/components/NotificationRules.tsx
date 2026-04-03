@@ -6,7 +6,16 @@ import { useState } from 'react';
 
 import { Plus, Trash2 } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Checkbox,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui';
 
 import { useCommunicationsStore } from '../store';
 
@@ -39,43 +48,36 @@ export function NotificationRules() {
 
       {/* Add rule */}
       <div className="mb-4 flex gap-2">
-        <select
+        <Select
           value={newService}
-          className={cn(
-            'border-border bg-background text-foreground rounded-md border px-2 py-1.5 text-sm',
-            'focus:ring-ring focus:ring-1 focus:outline-none',
-          )}
-          onChange={(e) => setNewService(e.target.value as 'slack' | 'discord')}
+          onValueChange={(v) => setNewService(v as 'slack' | 'discord')}
         >
-          <option value="slack">Slack</option>
-          <option value="discord">Discord</option>
-        </select>
+          <SelectTrigger className="w-[110px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="slack">Slack</SelectItem>
+            <SelectItem value="discord">Discord</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <input
+        <Input
+          className="flex-1"
           placeholder="Keyword or pattern..."
           type="text"
           value={newPattern}
-          className={cn(
-            'border-border bg-background text-foreground flex-1 rounded-md border px-3 py-1.5 text-sm',
-            'placeholder:text-muted-foreground',
-            'focus:ring-ring focus:ring-1 focus:outline-none',
-          )}
           onChange={(e) => setNewPattern(e.target.value)}
           onKeyDown={handleKeyDown}
         />
 
-        <button
+        <Button
           aria-label="Add notification rule"
           disabled={newPattern.trim().length === 0}
-          className={cn(
-            'bg-primary text-primary-foreground rounded-md px-3 py-1.5',
-            'hover:bg-primary/90 transition-colors',
-            'disabled:pointer-events-none disabled:opacity-50',
-          )}
+          type="button"
           onClick={handleAdd}
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Rules list */}
@@ -86,23 +88,24 @@ export function NotificationRules() {
               key={rule.id}
               className="border-border flex items-center gap-3 rounded-md border px-3 py-2"
             >
-              <input
+              <Checkbox
                 checked={rule.enabled}
-                className="accent-primary h-4 w-4"
-                type="checkbox"
-                onChange={() => toggleNotificationRule(rule.id)}
+                onCheckedChange={() => toggleNotificationRule(rule.id)}
               />
               <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs capitalize">
                 {rule.service}
               </span>
               <span className="text-foreground min-w-0 flex-1 text-sm">{rule.pattern}</span>
-              <button
+              <Button
                 aria-label={`Remove rule: ${rule.pattern}`}
                 className="text-muted-foreground hover:text-destructive shrink-0"
+                size="icon"
+                type="button"
+                variant="ghost"
                 onClick={() => removeNotificationRule(rule.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

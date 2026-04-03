@@ -9,9 +9,20 @@ import { Loader2, Pencil, X } from 'lucide-react';
 
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@ui';
 
 import { useUpdateIdea } from '../api/useIdeas';
+
 
 const CATEGORY_OPTIONS: readonly IdeaCategory[] = [
   'feature',
@@ -42,11 +53,6 @@ const STATUS_LABELS: Record<IdeaStatus, string> = {
   rejected: 'Rejected',
   implemented: 'Implemented',
 };
-
-const INPUT_BASE_CLASS =
-  'border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm';
-const INPUT_FOCUS_CLASS = 'focus:ring-ring focus:border-ring focus:outline-none focus:ring-1';
-const INPUT_PLACEHOLDER_CLASS = 'placeholder:text-muted-foreground';
 
 interface IdeaEditFormProps {
   idea: Idea | null;
@@ -151,29 +157,27 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
               Edit Idea
             </h2>
           </div>
-          <button
+          <Button
             aria-label="Close dialog"
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
         <div className="space-y-4 px-6 py-4">
           {/* Title */}
           <div className="space-y-1.5">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="edit-idea-title"
-            >
+            <Label htmlFor="edit-idea-title">
               Title <span className="text-destructive">*</span>
-            </label>
-            <input
+            </Label>
+            <Input
               aria-required="true"
-              className={cn(INPUT_BASE_CLASS, INPUT_FOCUS_CLASS, INPUT_PLACEHOLDER_CLASS)}
               id="edit-idea-title"
               placeholder="Idea title"
               type="text"
@@ -189,69 +193,55 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
 
           {/* Description */}
           <div className="space-y-1.5">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="edit-idea-description"
-            >
-              Description
-            </label>
-            <textarea
+            <Label htmlFor="edit-idea-description">Description</Label>
+            <Textarea
               id="edit-idea-description"
               placeholder="Describe the idea..."
+              resize="none"
               rows={3}
               value={description}
-              className={cn(
-                INPUT_BASE_CLASS,
-                INPUT_FOCUS_CLASS,
-                INPUT_PLACEHOLDER_CLASS,
-                'resize-none',
-              )}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
 
           {/* Category */}
           <div className="space-y-1.5">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="edit-idea-category"
-            >
-              Category
-            </label>
-            <select
-              className={cn(INPUT_BASE_CLASS, INPUT_FOCUS_CLASS)}
-              id="edit-idea-category"
+            <Label htmlFor="edit-idea-category">Category</Label>
+            <Select
               value={category}
-              onChange={(e) => setCategory(e.target.value as IdeaCategory)}
+              onValueChange={(v) => setCategory(v as IdeaCategory)}
             >
-              {CATEGORY_OPTIONS.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat]}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="edit-idea-category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORY_OPTIONS.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {CATEGORY_LABELS[cat]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Status */}
           <div className="space-y-1.5">
-            <label
-              className="text-foreground text-sm font-medium"
-              htmlFor="edit-idea-status"
-            >
-              Status
-            </label>
-            <select
-              className={cn(INPUT_BASE_CLASS, INPUT_FOCUS_CLASS)}
-              id="edit-idea-status"
+            <Label htmlFor="edit-idea-status">Status</Label>
+            <Select
               value={status}
-              onChange={(e) => setStatus(e.target.value as IdeaStatus)}
+              onValueChange={(v) => setStatus(v as IdeaStatus)}
             >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABELS[s]}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="edit-idea-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Error message */}
@@ -264,24 +254,16 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
 
         {/* Footer */}
         <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
-          <button
+          <Button
             type="button"
-            className={cn(
-              'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-              'transition-colors',
-            )}
+            variant="ghost"
             onClick={onClose}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={titleIsEmpty || updateIdea.isPending}
             type="button"
-            className={cn(
-              'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2',
-              'text-sm font-medium transition-opacity hover:opacity-90',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
             onClick={handleSave}
           >
             {updateIdea.isPending ? (
@@ -292,7 +274,7 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
             ) : (
               'Save'
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

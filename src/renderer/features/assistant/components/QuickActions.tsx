@@ -2,9 +2,9 @@
  * QuickActions — Common action buttons for the assistant
  */
 
-import { Bell, ClipboardList, Play, StickyNote } from 'lucide-react';
+import { Bell, Lightbulb, Map, StickyNote } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button } from '@ui';
 
 interface QuickAction {
   label: string;
@@ -13,10 +13,29 @@ interface QuickAction {
 }
 
 const quickActions: QuickAction[] = [
-  { label: 'New Note', icon: StickyNote, command: 'create a new note' },
-  { label: 'New Task', icon: ClipboardList, command: 'create a new task' },
-  { label: 'Run Agent', icon: Play, command: 'run agent on current task' },
-  { label: 'Remind Me', icon: Bell, command: 'set a reminder' },
+  {
+    label: 'New Note',
+    icon: StickyNote,
+    command: "Create a new note titled 'Quick Note' with today's date. Use the create_note tool.",
+  },
+  {
+    label: 'New Idea',
+    icon: Lightbulb,
+    command:
+      'Create a new feature idea for my project. Use the create_idea tool with a descriptive title and description.',
+  },
+  {
+    label: 'New Milestone',
+    icon: Map,
+    command:
+      'Create a new milestone for my project roadmap with a target date 4 weeks from today. Use the create_milestone tool.',
+  },
+  {
+    label: 'Plan Today',
+    icon: Bell,
+    command:
+      "Add a productive goal for today to my daily planner. Use the add_daily_goal tool with today's date.",
+  },
 ];
 
 interface QuickActionsProps {
@@ -27,21 +46,20 @@ interface QuickActionsProps {
 export function QuickActions({ disabled, onAction }: QuickActionsProps) {
   return (
     <div className="border-border border-b px-4 py-3">
-      <div className="mx-auto flex max-w-3xl gap-2">
+      <div className="flex flex-wrap gap-2">
         {quickActions.map((action) => (
-          <button
+          <Button
             key={action.label}
+            className="text-muted-foreground text-xs"
             disabled={disabled}
-            className={cn(
-              'border-border text-muted-foreground flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs',
-              'hover:bg-accent hover:text-foreground transition-colors',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
+            size="sm"
+            type="button"
+            variant="outline"
             onClick={() => onAction(action.command)}
           >
             <action.icon className="h-3.5 w-3.5" />
             <span>{action.label}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>
