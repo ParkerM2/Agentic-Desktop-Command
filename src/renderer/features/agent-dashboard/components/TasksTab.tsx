@@ -26,7 +26,7 @@ interface TasksTabProps {
 
 // ─── Helpers ───────────────────────────────────────────────
 
-function deriveFeatureSlug(branch: string | undefined): string {
+function deriveFeatureSlug(branch?: string): string {
   if (branch === undefined) return 'agent-dashboard-view';
   // work/<slug>/<task>
   const workMatch = /^work\/([^/]+)\//.exec(branch);
@@ -101,7 +101,7 @@ function AcceptanceCriteria({ criteria }: { criteria: TaskCriterion[] }) {
 // ─── Component ─────────────────────────────────────────────
 
 export function TasksTab({ taskId, featureSlug, className }: TasksTabProps) {
-  const slug = featureSlug ?? deriveFeatureSlug(undefined);
+  const slug = featureSlug ?? deriveFeatureSlug();
   const { data: tasks, isLoading } = useTasksForFeature(slug);
 
   useProgressEvents();
