@@ -2,16 +2,20 @@
  * WidgetPanel — Assembled floating chat panel for the assistant widget
  *
  * Contains header (title + voice toggle + clear + close), message area,
- * quick action chips, and input with voice button.
+ * and input with send button.
  * Focuses input on mount and restores focus on close.
  */
 
 import { useEffect, useRef } from 'react';
 
-import { Bell, ClipboardList, Play, StickyNote, Trash2, Volume2, VolumeX, X } from 'lucide-react';
+import { Trash2, Volume2, VolumeX, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
-import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
+import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
+
+import { useProjects } from '@features/projects';
+
+import { Button } from '@ui/button';
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
@@ -23,13 +27,6 @@ interface WidgetPanelProps {
   onClose: () => void;
 }
 
-const QUICK_ACTIONS = [
-  { label: 'New Note', icon: StickyNote, command: 'create a new note' },
-  { label: 'New Task', icon: ClipboardList, command: 'create a new task' },
-  { label: 'Run Agent', icon: Play, command: 'run agent on current task' },
-  { label: 'Remind Me', icon: Bell, command: 'set a reminder' },
-] as const;
-
 export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const sendCommand = useSendCommand();
@@ -37,6 +34,8 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const responseHistory = useAssistantStore((s) => s.responseHistory);
   const voiceOutputEnabled = useAssistantWidgetStore((s) => s.voiceOutputEnabled);
   const toggleVoiceOutput = useAssistantWidgetStore((s) => s.toggleVoiceOutput);
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projects } = useProjects();
 
   useEffect(() => {
     const panel = panelRef.current;
@@ -48,7 +47,8 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   }, []);
 
   function handleSendCommand(input: string) {
-    sendCommand.mutate({ input });
+    const activeProject = projects?.find((p) => p.id === activeProjectId);
+    sendCommand.mutate({ input, projectPath: activeProject?.path ?? '' });
   }
 
   function handleClearHistory() {
@@ -70,13 +70,13 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
       <div className="border-border flex items-center justify-between border-b px-3 py-2">
         <h2 className="text-foreground text-sm font-semibold">Assistant</h2>
         <div className="flex items-center gap-1">
-          <button
+          <Button
             aria-label={voiceOutputEnabled ? 'Disable voice output' : 'Enable voice output'}
+            size="icon"
+            variant="ghost"
             className={cn(
-              'rounded-md p-1 transition-colors',
-              voiceOutputEnabled
-                ? 'text-primary hover:bg-primary/10'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              'h-6 w-6 p-1',
+              voiceOutputEnabled ? 'text-primary hover:bg-primary/10' : 'text-muted-foreground',
             )}
             onClick={toggleVoiceOutput}
           >
@@ -85,53 +85,32 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
             ) : (
               <VolumeX className="h-3.5 w-3.5" />
             )}
-          </button>
+          </Button>
           {responseHistory.length > 0 ? (
-            <button
+            <Button
               aria-label="Clear history"
-              className={cn(
-                'text-muted-foreground rounded-md p-1',
-                'hover:bg-muted hover:text-foreground transition-colors',
-              )}
+              className="text-muted-foreground h-6 w-6 p-1"
+              size="icon"
+              variant="ghost"
               onClick={handleClearHistory}
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           ) : null}
-          <button
+          <Button
             aria-label="Close assistant"
-            className={cn(
-              'text-muted-foreground rounded-md p-1',
-              'hover:bg-muted hover:text-foreground transition-colors',
-            )}
+            className="text-muted-foreground h-6 w-6 p-1"
+            size="icon"
+            variant="ghost"
             onClick={onClose}
           >
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Message area */}
       <WidgetMessageArea />
-
-      {/* Quick action chips */}
-      <div className="border-border flex flex-wrap gap-1.5 border-t px-2.5 py-2">
-        {QUICK_ACTIONS.map((action) => (
-          <button
-            key={action.label}
-            disabled={sendCommand.isPending}
-            className={cn(
-              'border-border text-muted-foreground flex items-center gap-1 rounded-md border px-2 py-1 text-[10px]',
-              'hover:bg-accent hover:text-foreground transition-colors',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
-            onClick={() => handleSendCommand(action.command)}
-          >
-            <action.icon className="h-3 w-3" />
-            <span>{action.label}</span>
-          </button>
-        ))}
-      </div>
 
       {/* Input */}
       <WidgetInput disabled={sendCommand.isPending} onSubmit={handleSendCommand} />

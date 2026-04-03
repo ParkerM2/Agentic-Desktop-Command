@@ -11,8 +11,8 @@ import type { AssistantService } from '../../services/assistant/assistant-servic
 import type { IpcRouter } from '../router';
 
 export function registerAssistantHandlers(router: IpcRouter, service: AssistantService): void {
-  router.handle('assistant.sendCommand', ({ input }) => {
-    service.sendCommand(input, '');
+  router.handle('assistant.sendCommand', ({ input, projectPath }) => {
+    service.sendCommand(input, projectPath);
     return Promise.resolve(
       { success: true } as unknown as InvokeOutput<'assistant.sendCommand'>,
     );

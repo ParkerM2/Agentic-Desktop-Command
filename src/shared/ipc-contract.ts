@@ -26,11 +26,9 @@ export {
   AgentSessionStatusSchema,
   OrchestratorSessionSchema,
   // assistant
-  AssistantActionSchema,
   AssistantContextSchema,
   AssistantResponseSchema,
   CommandHistoryEntrySchema,
-  IntentTypeSchema,
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
   // auth

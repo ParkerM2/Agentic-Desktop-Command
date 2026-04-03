@@ -160,11 +160,9 @@ export type { EventChannel, EventPayload, InvokeChannel, InvokeInput, InvokeOutp
 export { AgentPhaseSchema, AgentSessionStatusSchema, OrchestratorSessionSchema } from './agents';
 
 export {
-  AssistantActionSchema,
   AssistantContextSchema,
   AssistantResponseSchema,
   CommandHistoryEntrySchema,
-  IntentTypeSchema,
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
 } from './assistant';

@@ -4,16 +4,12 @@
 
 import { create } from 'zustand';
 
-import type { IntentType } from '@shared/types';
-
 interface ResponseEntry {
   id: string;
   input: string;
   response: string;
-  type: 'text' | 'action' | 'error' | 'proactive';
-  intent?: IntentType;
+  type: 'text' | 'error';
   timestamp: string;
-  source?: 'user' | 'watch' | 'qa' | 'agent';
 }
 
 interface AssistantState {

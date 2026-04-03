@@ -9,81 +9,18 @@ import { z } from 'zod';
 
 // ── Assistant / Command Bar Schemas ─────────────────────────────
 
-export const IntentTypeSchema = z.enum([
-  'quick_command',
-  'task_creation',
-  'conversation',
-  'watch',
-  'device_query',
-  'fitness',
-  'calendar',
-  'briefing',
-  'insights',
-  'ideation',
-  'milestones',
-  'email',
-  'github',
-  'planner',
-  'notes',
-  'changelog',
-]);
-
-export const AssistantActionSchema = z.enum([
-  'create_task',
-  'create_time_block',
-  'create_note',
-  'create_reminder',
-  'search',
-  'spotify_control',
-  'open_url',
-  'conversation',
-  'watch_create',
-  'watch_remove',
-  'watch_list',
-  'device_query',
-  'fitness_log',
-  'fitness_query',
-  'fitness_measurements',
-  'calendar_query',
-  'calendar_create',
-  'briefing_get',
-  'insights_query',
-  'ideation_create',
-  'ideation_query',
-  'milestones_query',
-  'email_send',
-  'email_queue',
-  'github_prs',
-  'github_issues',
-  'github_notifications',
-  'planner_today',
-  'planner_weekly',
-  'notes_search',
-  'notes_list',
-  'changelog_generate',
-]);
-
 export const AssistantContextSchema = z.object({
-  activeProjectId: z.string().nullable(),
-  activeProjectName: z.string().nullable(),
-  currentPage: z.string(),
-  todayDate: z.string(),
+  projectPath: z.string(),
 });
 
 export const AssistantResponseSchema = z.object({
-  type: z.enum(['text', 'action', 'error']),
+  type: z.enum(['text', 'error']),
   content: z.string(),
-  intent: IntentTypeSchema.optional(),
-  action: AssistantActionSchema.optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const CommandHistoryEntrySchema = z.object({
   id: z.string(),
   input: z.string(),
-  source: z.enum(['commandbar', 'slack', 'github']),
-  intent: IntentTypeSchema,
-  action: AssistantActionSchema.optional(),
   responseSummary: z.string(),
   timestamp: z.string(),
 });
