@@ -12,6 +12,8 @@ import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 import { cn, formatRelativeTime, truncate } from '@renderer/shared/lib/utils';
 import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
+import { Button } from '@ui';
+
 import { CreateProjectWizard, ProjectInitWizard, useProjects } from '@features/projects';
 
 export function RecentProjects() {
@@ -62,6 +64,7 @@ export function RecentProjects() {
           {projectList.map((project) => (
             <button
               key={project.id}
+              type="button"
               className={cn(
                 'border-border flex items-start gap-3 rounded-md border p-3 text-left',
                 'hover:bg-accent transition-colors',
@@ -86,28 +89,24 @@ export function RecentProjects() {
           <FolderOpen className="text-muted-foreground mx-auto mb-2 h-8 w-8" />
           <p className="text-muted-foreground text-xs">No projects yet</p>
           <div className="mt-3 flex items-center justify-center gap-2">
-            <button
+            <Button
+              size="sm"
               type="button"
-              className={cn(
-                'border-border text-foreground flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium',
-                'hover:bg-accent transition-colors',
-              )}
+              variant="outline"
               onClick={() => setWizardOpen(true)}
             >
               <Wand2 className="h-3.5 w-3.5" />
               Init Wizard
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               type="button"
-              className={cn(
-                'border-border text-foreground flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium',
-                'hover:bg-accent transition-colors',
-              )}
+              variant="outline"
               onClick={() => setCreateWizardOpen(true)}
             >
               <Sparkles className="h-3.5 w-3.5" />
               New Project
-            </button>
+            </Button>
           </div>
         </div>
       )}

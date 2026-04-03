@@ -8,7 +8,9 @@ import { useState } from 'react';
 
 import { Plus, X } from 'lucide-react';
 
-import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
+import { formatRelativeTime } from '@renderer/shared/lib/utils';
+
+import { Button, Input } from '@ui';
 
 import { useCaptureMutations, useCaptures } from '../api/useCaptures';
 
@@ -39,29 +41,22 @@ export function QuickCapture() {
       <h2 className="text-foreground mb-3 text-sm font-semibold">Quick Capture</h2>
 
       <div className="flex gap-2">
-        <input
+        <Input
+          className="flex-1"
           placeholder="Quick idea, task, or note..."
           type="text"
           value={inputValue}
-          className={cn(
-            'border-border bg-background text-foreground flex-1 rounded-md border px-3 py-1.5 text-sm',
-            'placeholder:text-muted-foreground',
-            'focus:ring-ring focus:ring-1 focus:outline-none',
-          )}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <button
+        <Button
           disabled={inputValue.trim().length === 0}
-          className={cn(
-            'bg-primary text-primary-foreground rounded-md px-3 py-1.5',
-            'hover:bg-primary/90 transition-colors',
-            'disabled:pointer-events-none disabled:opacity-50',
-          )}
+          size="md"
+          type="button"
           onClick={handleSubmit}
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {recentCaptures.length > 0 ? (
@@ -75,13 +70,16 @@ export function QuickCapture() {
               <span className="text-muted-foreground shrink-0 text-xs">
                 {formatRelativeTime(capture.createdAt)}
               </span>
-              <button
+              <Button
                 aria-label="Remove capture"
-                className="text-muted-foreground hover:text-foreground shrink-0"
+                className="text-muted-foreground hover:text-foreground h-auto shrink-0 p-0"
+                size="icon"
+                type="button"
+                variant="ghost"
                 onClick={() => deleteCapture.mutate(capture.id)}
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
