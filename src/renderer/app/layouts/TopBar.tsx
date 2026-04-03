@@ -16,6 +16,8 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useProjects } from '@features/projects';
 
+import { SidebarTrigger } from '@ui/sidebar';
+
 export function TopBar() {
   // 1. Hooks
   const navigate = useNavigate();
@@ -45,6 +47,10 @@ export function TopBar() {
   // 4. Render
   return (
     <div className="border-border bg-card flex h-10 items-center gap-px border-b px-1">
+      {/* Sidebar toggle — replaces ContentHeader bar */}
+      <SidebarTrigger className="-ml-1 mr-1 shrink-0" />
+      <div className="bg-border mr-1 h-4 w-px shrink-0" />
+
       {/* Left: Project tabs */}
       <div className="flex min-w-0 flex-1 items-center gap-px overflow-hidden">
         {openProjects.map((project) => {
