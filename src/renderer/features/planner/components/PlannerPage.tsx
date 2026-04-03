@@ -85,6 +85,14 @@ export function PlannerPage() {
     updateDay.mutate({ date: selectedDate, goals });
   }
 
+  function handleGoalToggle(goalText: string) {
+    const current = plan?.completedGoals ?? [];
+    const next = current.includes(goalText)
+      ? current.filter((g) => g !== goalText)
+      : [...current, goalText];
+    updateDay.mutate({ date: selectedDate, completedGoals: next });
+  }
+
   function handleSaveReflection() {
     updateDay.mutate({ date: selectedDate, reflection });
     setIsEditingReflection(false);
@@ -186,7 +194,13 @@ export function PlannerPage() {
         <div className={cn('grid gap-6', viewMode === 'week' ? 'mt-6 grid-cols-1' : 'grid-cols-2')}>
           {/* Left column — Goals */}
           <div className="space-y-6">
-            <GoalsList goals={plan?.goals ?? []} onUpdate={handleGoalsUpdate} />
+            <GoalsList
+              completedGoals={plan?.completedGoals ?? []}
+              goals={plan?.goals ?? []}
+              onToggle={handleGoalToggle}
+              onUpdate={handleGoalsUpdate}
+            />
+
 
             {/* Reflection */}
             <div className="space-y-2">

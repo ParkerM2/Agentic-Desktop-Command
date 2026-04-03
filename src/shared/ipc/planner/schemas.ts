@@ -44,6 +44,7 @@ export const ScheduledTaskSchema = z.object({
 export const DailyPlanSchema = z.object({
   date: z.string(),
   goals: z.array(z.string()),
+  completedGoals: z.array(z.string()).optional(),
   scheduledTasks: z.array(ScheduledTaskSchema),
   timeBlocks: z.array(TimeBlockSchema),
   reflection: z.string().optional(),

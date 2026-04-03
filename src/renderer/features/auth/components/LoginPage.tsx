@@ -9,11 +9,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useForm } from '@tanstack/react-form';
+import { X } from 'lucide-react';
 import { z } from 'zod';
 
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, Spinner } from '@ui';
 
 import { useLogin } from '../api/useAuth';
+import { useSavedLogins } from '../hooks/useSavedLogins';
 
 const MAX_ATTEMPTS = 5;
 const COOLDOWN_SECONDS = 30;
@@ -34,6 +36,7 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const login = useLogin();
+  const { logins: savedLogins, saveLogin, removeLogin } = useSavedLogins();
 
   const isCoolingDown = cooldownRemaining > 0;
 
@@ -49,7 +52,10 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
       if (isCoolingDown) return;
 
       login.mutate(value, {
-        onSuccess,
+        onSuccess: () => {
+          saveLogin(value.email);
+          onSuccess();
+        },
         onError: () => {
           setFailedAttempts((prev) => {
             const next = prev + 1;
@@ -112,7 +118,39 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
           </p>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="space-y-4">
+          {savedLogins.length > 0 ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Previous logins</p>
+              <div className="flex flex-wrap gap-2">
+                {savedLogins.map((saved) => (
+                  <div
+                    key={saved.email}
+                    className="flex items-center gap-1 rounded-full border border-border bg-muted pl-3 pr-1 py-1 text-xs"
+                  >
+                    <button
+                      className="text-foreground hover:text-primary transition-colors"
+                      type="button"
+                      onClick={() => {
+                        form.setFieldValue('email', saved.email);
+                      }}
+                    >
+                      {saved.email}
+                    </button>
+                    <button
+                      aria-label={`Remove saved login for ${saved.email}`}
+                      className="ml-1 flex size-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+                      type="button"
+                      onClick={() => { removeLogin(saved.email); }}
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <Form className="space-y-4" onSubmit={handleFormSubmit}>
             <form.Field name="email">
               {(field) => (

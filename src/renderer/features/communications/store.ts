@@ -1,5 +1,7 @@
 /**
- * Communications Store — UI state for the communications feature
+ * Communications Store — UI state for the communications feature.
+ * Notification rules are persisted to localStorage so they survive restarts.
+ * Service connection status is ephemeral and re-established on mount.
  */
 
 import { create } from 'zustand';
@@ -26,10 +28,36 @@ interface CommunicationsState {
   toggleNotificationRule: (id: string) => void;
 }
 
+const RULES_STORAGE_KEY = 'adc:notification-rules';
+
+function loadRules(): NotificationRule[] {
+  try {
+    const raw = localStorage.getItem(RULES_STORAGE_KEY);
+    if (raw === null) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is NotificationRule =>
+        typeof item === 'object' &&
+        item !== null &&
+        typeof (item as Record<string, unknown>).id === 'string' &&
+        typeof (item as Record<string, unknown>).service === 'string' &&
+        typeof (item as Record<string, unknown>).pattern === 'string' &&
+        typeof (item as Record<string, unknown>).enabled === 'boolean',
+    );
+  } catch {
+    return [];
+  }
+}
+
+function saveRules(rules: NotificationRule[]): void {
+  localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(rules));
+}
+
 export const useCommunicationsStore = create<CommunicationsState>((set) => ({
   slackStatus: 'disconnected',
   discordStatus: 'disconnected',
-  notificationRules: [],
+  notificationRules: loadRules(),
   activeTab: 'overview',
 
   setSlackStatus: (status) => set({ slackStatus: status }),
@@ -39,19 +67,25 @@ export const useCommunicationsStore = create<CommunicationsState>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   addNotificationRule: (rule) =>
-    set((state) => ({
-      notificationRules: [...state.notificationRules, { ...rule, id: crypto.randomUUID() }],
-    })),
+    set((state) => {
+      const next = [...state.notificationRules, { ...rule, id: crypto.randomUUID() }];
+      saveRules(next);
+      return { notificationRules: next };
+    }),
 
   removeNotificationRule: (id) =>
-    set((state) => ({
-      notificationRules: state.notificationRules.filter((r) => r.id !== id),
-    })),
+    set((state) => {
+      const next = state.notificationRules.filter((r) => r.id !== id);
+      saveRules(next);
+      return { notificationRules: next };
+    }),
 
   toggleNotificationRule: (id) =>
-    set((state) => ({
-      notificationRules: state.notificationRules.map((r) =>
+    set((state) => {
+      const next = state.notificationRules.map((r) =>
         r.id === id ? { ...r, enabled: !r.enabled } : r,
-      ),
-    })),
+      );
+      saveRules(next);
+      return { notificationRules: next };
+    }),
 }));

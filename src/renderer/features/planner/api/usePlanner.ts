@@ -26,6 +26,7 @@ export function useUpdateDay() {
     mutationFn: (input: {
       date: string;
       goals?: string[];
+      completedGoals?: string[];
       scheduledTasks?: ScheduledTask[];
       reflection?: string;
     }) => ipc('planner.updateDay', input),
