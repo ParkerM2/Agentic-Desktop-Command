@@ -14,8 +14,7 @@ import { useAssistantStore } from '../store';
 
 export function useAssistantEvents() {
   const queryClient = useQueryClient();
-  const { addResponseEntry, incrementUnread, setCurrentResponse, setIsThinking } =
-    useAssistantStore();
+  const { incrementUnread, setCurrentResponse, setIsThinking } = useAssistantStore();
   const isWidgetOpen = useAssistantWidgetStore((s) => s.isOpen);
 
   useIpcEvent('event:assistant.response', (payload) => {
@@ -28,23 +27,5 @@ export function useAssistantEvents() {
 
   useIpcEvent('event:assistant.thinking', (payload) => {
     setIsThinking(payload.isThinking);
-  });
-
-  useIpcEvent('event:assistant.commandCompleted', () => {
-    void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
-  });
-
-  useIpcEvent('event:assistant.proactive', (payload) => {
-    const followUpText = payload.followUp ? `\n\nYou said: "${payload.followUp}"` : '';
-    addResponseEntry({
-      input: 'System notification',
-      response: `${payload.content}${followUpText}`,
-      type: 'proactive',
-      source: payload.source,
-    });
-    if (!isWidgetOpen) {
-      incrementUnread();
-    }
-    void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
   });
 }

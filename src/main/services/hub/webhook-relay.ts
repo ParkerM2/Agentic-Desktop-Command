@@ -118,7 +118,7 @@ export function createWebhookRelay(deps: WebhookRelayDeps): WebhookRelay {
         });
 
         // Fire-and-forget: process the command via assistant service
-        void assistantService.processWebhookCommand(command);
+        assistantService.sendCommand(command.commandText, '');
       } catch (error) {
         const message2 = error instanceof Error ? error.message : 'Unknown error';
         hubLogger.error('[WebhookRelay] Error handling hub message:', message2);

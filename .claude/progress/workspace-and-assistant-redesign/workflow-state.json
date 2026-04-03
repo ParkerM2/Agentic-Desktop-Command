@@ -1,0 +1,12 @@
+{
+  "feature": "workspace-and-assistant-redesign",
+  "mode": "strict",
+  "startedAt": "2026-04-03T04:21:58.721Z",
+  "phase": "setup",
+  "setupComplete": false,
+  "guardianPassed": false,
+  "currentWave": 0,
+  "totalWaves": 0,
+  "waves": {},
+  "tasks": {}
+}

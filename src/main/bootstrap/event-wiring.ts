@@ -238,14 +238,12 @@ export function wireEventForwarding(deps: EventWiringDeps): void {
 
   jsonlProgressWatcher.start();
 
-  // ─── Watch evaluator → proactive assistant notifications ─────
+  // ─── Watch evaluator → assistant response notifications ─────
   watchEvaluator.onTrigger((watch) => {
     const description = watch.followUp ?? `${watch.type} watch on ${watch.targetId}`;
-    router.emit('event:assistant.proactive', {
+    router.emit('event:assistant.response', {
       content: `Watch triggered: ${description}`,
-      source: 'watch',
-      taskId: watch.targetId === '*' ? undefined : watch.targetId,
-      followUp: watch.followUp,
+      type: 'text',
     });
   });
   watchEvaluator.start();

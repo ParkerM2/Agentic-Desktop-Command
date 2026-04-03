@@ -16,6 +16,9 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useProjects } from '@features/projects';
 
+import { Button } from '@ui/button';
+import { SidebarTrigger } from '@ui/sidebar';
+
 export function TopBar() {
   // 1. Hooks
   const navigate = useNavigate();
@@ -45,14 +48,19 @@ export function TopBar() {
   // 4. Render
   return (
     <div className="border-border bg-card flex h-10 items-center gap-px border-b px-1">
+      {/* Sidebar toggle — replaces ContentHeader bar */}
+      <SidebarTrigger className="-ml-1 mr-1 shrink-0" />
+      <div className="bg-border mr-1 h-4 w-px shrink-0" />
+
       {/* Left: Project tabs */}
       <div className="flex min-w-0 flex-1 items-center gap-px overflow-hidden">
         {openProjects.map((project) => {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
           return (
-            <button
+            <Button
               key={project.id}
+              variant="ghost"
               className={cn(
                 'group flex items-center gap-2 rounded-t-md px-3 py-1.5 text-sm transition-colors',
                 isActive
@@ -75,17 +83,18 @@ export function TopBar() {
               >
                 <X className="h-3 w-3" />
               </span>
-            </button>
+            </Button>
           );
         })}
 
-        <button
+        <Button
           className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded-md p-1.5"
           title="Open project"
+          variant="ghost"
           onClick={handleAddProject}
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

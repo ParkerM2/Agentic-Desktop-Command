@@ -64,7 +64,7 @@ const personalItems: NavItem[] = [
 const developmentItems: NavItem[] = [
   { label: 'Tasks', icon: ListTodo, path: PROJECT_VIEWS.TASKS },
   { label: 'Terminals', icon: Terminal, path: PROJECT_VIEWS.TERMINALS },
-  { label: 'Agents', icon: Bot, path: PROJECT_VIEWS.AGENTS },
+  { label: 'Workspace', icon: Bot, path: PROJECT_VIEWS.AGENTS },
   { label: 'Pipeline', icon: Workflow, path: PROJECT_VIEWS.WORKFLOW },
   { label: 'Roadmap', icon: Map, path: PROJECT_VIEWS.ROADMAP },
   { label: 'Ideation', icon: Lightbulb, path: PROJECT_VIEWS.IDEATION },

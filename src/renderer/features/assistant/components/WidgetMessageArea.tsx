@@ -8,7 +8,7 @@
 
 import { useEffect, useRef } from 'react';
 
-import { AlertCircle, Bell, Loader2, MessageSquare, Zap } from 'lucide-react';
+import { AlertCircle, Loader2, MessageSquare } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
@@ -21,22 +21,14 @@ import type { ResponseEntry } from '../store';
 
 const RESPONSE_STYLES: Record<ResponseEntry['type'], string> = {
   text: 'bg-muted/50',
-  action: 'bg-primary/10 border border-primary/20',
   error: 'bg-destructive/10 border border-destructive/20',
-  proactive: 'bg-info/10 border border-info/20',
 };
 
 const TTS_MAX_LENGTH = 200;
 
 function ResponseIcon({ type }: { type: ResponseEntry['type'] }) {
-  if (type === 'action') {
-    return <Zap className="text-primary mt-0.5 h-3.5 w-3.5 shrink-0" />;
-  }
   if (type === 'error') {
     return <AlertCircle className="text-destructive mt-0.5 h-3.5 w-3.5 shrink-0" />;
-  }
-  if (type === 'proactive') {
-    return <Bell className="text-info mt-0.5 h-3.5 w-3.5 shrink-0" />;
   }
   return null;
 }
@@ -105,14 +97,12 @@ export function WidgetMessageArea() {
       <div className="space-y-3">
         {responseHistory.map((entry) => (
           <div key={entry.id} className="space-y-1.5">
-            {/* User message — hidden for proactive notifications */}
-            {entry.type === 'proactive' ? null : (
-              <div className="flex justify-end">
-                <div className="bg-primary text-primary-foreground max-w-[85%] rounded-lg px-2.5 py-1.5 text-xs">
-                  {entry.input}
-                </div>
+            {/* User message */}
+            <div className="flex justify-end">
+              <div className="bg-primary text-primary-foreground max-w-[85%] rounded-lg px-2.5 py-1.5 text-xs">
+                {entry.input}
               </div>
-            )}
+            </div>
 
             {/* Assistant response */}
             <div className="flex gap-1.5">

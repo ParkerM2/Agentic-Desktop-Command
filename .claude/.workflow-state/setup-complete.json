@@ -1,0 +1,16 @@
+{
+  "ticket": "workspace-and-assistant-redesign",
+  "totalTasks": 12,
+  "totalWaves": 6,
+  "taskFiles": ["task-1.md", "task-2.md", "task-3.md", "task-4.md", "task-5.md", "task-6.md", "task-7.md", "task-8.md", "task-9.md", "task-10.md", "task-11.md", "task-12.md"],
+  "waveMap": {
+    "1": ["task-1", "task-4"],
+    "2": ["task-2", "task-5"],
+    "3": ["task-3", "task-6", "task-10"],
+    "4": ["task-7", "task-9"],
+    "5": ["task-8", "task-11"],
+    "6": ["task-12"]
+  },
+  "currentWave": 1,
+  "teamLeaderName": "team-lead"
+}

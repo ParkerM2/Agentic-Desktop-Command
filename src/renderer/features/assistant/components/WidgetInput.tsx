@@ -14,6 +14,9 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { VoiceButton } from '@features/voice';
 
+import { Button } from '@ui/button';
+import { Textarea } from '@ui/textarea';
+
 interface WidgetInputProps {
   onSubmit: (input: string) => void;
   disabled?: boolean;
@@ -58,18 +61,16 @@ export function WidgetInput({ disabled, onSubmit }: WidgetInputProps) {
 
   return (
     <div className="border-border flex items-end gap-2 border-t p-2.5">
-      <textarea
+      <Textarea
         ref={textareaRef}
         aria-label="Message assistant"
         disabled={disabled}
         placeholder="Ask anything..."
+        resize="none"
         rows={1}
         value={draft}
         className={cn(
-          'border-border bg-background text-foreground max-h-20 flex-1 resize-none rounded-md border px-2.5 py-1.5 text-xs',
-          'placeholder:text-muted-foreground',
-          'focus:ring-ring focus:ring-1 focus:outline-none',
-          'disabled:opacity-50',
+          'max-h-20 min-h-0 flex-1 px-2.5 py-1.5 text-xs',
         )}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -79,18 +80,16 @@ export function WidgetInput({ disabled, onSubmit }: WidgetInputProps) {
         size="sm"
         onTranscript={handleVoiceTranscript}
       />
-      <button
+      <Button
         aria-label="Send message"
+        className="h-7 w-7 shrink-0 p-1.5"
         disabled={disabled === true || draft.trim().length === 0}
-        className={cn(
-          'bg-primary text-primary-foreground shrink-0 rounded-md p-1.5',
-          'hover:bg-primary/90 transition-colors',
-          'disabled:pointer-events-none disabled:opacity-50',
-        )}
+        size="icon"
+        variant="primary"
         onClick={handleSubmit}
       >
         <ArrowUp className="h-3.5 w-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }

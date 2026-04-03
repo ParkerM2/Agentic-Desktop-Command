@@ -15,8 +15,6 @@ import type { SidebarLayoutId } from '@shared/types/layout';
 
 import { SidebarInset, SidebarProvider } from '@ui/sidebar';
 
-import { ContentHeader } from './ContentHeader';
-
 const LAYOUT_MAP: Record<SidebarLayoutId, React.LazyExoticComponent<React.ComponentType>> = {
   'sidebar-01': lazy(() =>
     import('./sidebar-layouts/SidebarLayout01').then((m) => ({ default: m.SidebarLayout01 })),
@@ -90,7 +88,6 @@ export function LayoutWrapper({ children, layoutId }: LayoutWrapperProps) {
         <Layout />
       </Suspense>
       <SidebarInset>
-        <ContentHeader />
         {children}
       </SidebarInset>
     </SidebarProvider>

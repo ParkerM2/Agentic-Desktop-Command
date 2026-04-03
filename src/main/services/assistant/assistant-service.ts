@@ -1,249 +1,75 @@
 /**
- * Assistant Service — Persistent AI Assistant
+ * AssistantService — simplified direct Claude CLI subprocess.
  *
- * Processes natural language commands through intent classification
- * and routes them to the appropriate MCP server or internal service.
- * Manages command history and emits events for streaming responses.
+ * Fire-and-forget: sends input to `claude --print` and streams the response
+ * back to the renderer via event:assistant.response chunks.
  *
- * Supports commands from multiple sources: command bar, Slack, GitHub.
+ * No intent classification. No executors. No routing.
  */
 
-import { randomUUID } from 'node:crypto';
+import { spawn } from 'node:child_process';
 
-import type {
-  AssistantContext,
-  AssistantResponse,
-  CommandHistoryEntry,
-  WebhookCommand,
-} from '@shared/types';
-
-import { serviceLogger } from '@main/lib/logger';
-import type { McpManager } from '@main/mcp/mcp-manager';
-
-import { createCommandExecutor } from './command-executor';
-import { createHistoryStore } from './history-store';
-import { classifyIntentAsync } from './intent-classifier';
-
-import type { CommandExecutor } from './command-executor';
-import type { CrossDeviceQuery } from './cross-device-query';
-import type { HistoryStore } from './history-store';
-import type { WatchStore } from './watch-store';
-import type { IpcRouter } from '../../ipc/router';
-import type { AlertService } from '../alerts/alert-service';
-import type { BriefingService } from '../briefing/briefing-service';
-import type { CalendarService } from '../calendar/calendar-service';
-import type { ChangelogService } from '../changelog/changelog-service';
-import type { EmailService } from '../email/email-service';
-import type { FitnessService } from '../fitness/fitness-service';
-import type { GitHubService } from '../github/github-service';
-import type { IdeasService } from '../ideas/ideas-service';
-import type { InsightsService } from '../insights/insights-service';
-import type { MilestonesService } from '../milestones/milestones-service';
-import type { NotesService } from '../notes/notes-service';
-import type { PlannerService } from '../planner/planner-service';
-import type { ProjectService } from '../project/project-service';
-import type { TaskService } from '../project/task-service';
-import type { SpotifyService } from '../spotify/spotify-service';
+import type { BrowserWindow } from 'electron';
 
 export interface AssistantService {
-  /** Process a command from any source (UI, Slack, GitHub). */
-  sendCommand: (input: string, context?: AssistantContext) => Promise<AssistantResponse>;
-  /** Process a webhook-triggered command. */
-  processWebhookCommand: (command: WebhookCommand) => Promise<AssistantResponse>;
-  /** Get command history entries, newest first. Sync. */
-  getHistory: (limit?: number) => CommandHistoryEntry[];
-  /** Clear all command history. */
+  sendCommand: (input: string, projectPath: string) => void;
+  getHistory: () => CommandHistoryEntry[];
   clearHistory: () => void;
 }
 
-export interface AssistantServiceDeps {
-  router: IpcRouter;
-  mcpManager: McpManager;
-  notesService?: NotesService;
-  alertService?: AlertService;
-  spotifyService?: SpotifyService;
-  taskService?: TaskService;
-  plannerService?: PlannerService;
-  watchStore?: WatchStore;
-  crossDeviceQuery?: CrossDeviceQuery;
-  fitnessService?: FitnessService;
-  calendarService?: CalendarService;
-  briefingService?: BriefingService;
-  insightsService?: InsightsService;
-  ideasService?: IdeasService;
-  milestonesService?: MilestonesService;
-  emailService?: EmailService;
-  githubService?: GitHubService;
-  changelogService?: ChangelogService;
-  projectService?: ProjectService;
+interface CommandHistoryEntry {
+  id: string;
+  input: string;
+  responseSummary: string;
+  timestamp: string;
 }
 
-function buildHistoryEntry(
-  input: string,
-  source: 'commandbar' | 'slack' | 'github',
-  intent: string,
-  action: string | undefined,
-  responseSummary: string,
-): CommandHistoryEntry {
-  return {
-    id: randomUUID(),
-    input,
-    source,
-    intent: intent as CommandHistoryEntry['intent'],
-    action: action as CommandHistoryEntry['action'],
-    responseSummary: responseSummary.slice(0, 200),
-    timestamp: new Date().toISOString(),
-  };
-}
+export function createAssistantService(getWindow: () => BrowserWindow | null): AssistantService {
+  const history: CommandHistoryEntry[] = [];
 
-/** Internal context with optional project path for enriched routing. */
-interface EnrichedContext extends AssistantContext {
-  activeProjectPath?: string;
-  activeProjectType?: string;
-}
-
-export function createAssistantService(deps: AssistantServiceDeps): AssistantService {
-  const { router, mcpManager } = deps;
-  const history: HistoryStore = createHistoryStore();
-
-  /** Enrich context with project path/type when a project is selected. */
-  function enrichContext(context?: AssistantContext): EnrichedContext | undefined {
-    if (!context?.activeProjectId || !deps.projectService) {
-      return context as EnrichedContext | undefined;
-    }
-
-    const projectPath = deps.projectService.getProjectPath(context.activeProjectId);
-    if (!projectPath) {
-      return context as EnrichedContext;
-    }
-
-    // Find the project in the sync cache for repo structure info
-    const projects = deps.projectService.listProjectsSync();
-    const project = projects.find((p) => p.id === context.activeProjectId);
-
-    return {
-      ...context,
-      activeProjectPath: projectPath,
-      activeProjectType: project?.repoStructure ?? undefined,
-    };
-  }
-
-  const executor: CommandExecutor = createCommandExecutor({
-    mcpManager,
-    notesService: deps.notesService,
-    alertService: deps.alertService,
-    spotifyService: deps.spotifyService,
-    taskService: deps.taskService,
-    plannerService: deps.plannerService,
-    watchStore: deps.watchStore,
-    crossDeviceQuery: deps.crossDeviceQuery,
-    fitnessService: deps.fitnessService,
-    calendarService: deps.calendarService,
-    briefingService: deps.briefingService,
-    insightsService: deps.insightsService,
-    ideasService: deps.ideasService,
-    milestonesService: deps.milestonesService,
-    emailService: deps.emailService,
-    githubService: deps.githubService,
-    changelogService: deps.changelogService,
-  });
-
-  async function processInput(
-    input: string,
-    source: 'commandbar' | 'slack' | 'github',
-    context?: AssistantContext,
-  ): Promise<AssistantResponse> {
-    const trimmedInput = input.trim();
-    if (trimmedInput.length === 0) {
-      return {
-        type: 'error',
-        content: 'Empty command',
-      };
-    }
-
-    // Emit thinking state
-    router.emit('event:assistant.thinking', { isThinking: true });
-
-    try {
-      // Classify the intent (async — tries regex first, then Claude API)
-      const intent = await classifyIntentAsync(trimmedInput);
-      serviceLogger.info(
-        `[Assistant] Classified "${trimmedInput}" as ${intent.type}/${intent.subtype ?? 'none'} (confidence: ${String(intent.confidence)})`,
-      );
-
-      // Enrich context with project details and execute
-      const enrichedCtx = enrichContext(context);
-      const response = await executor.execute(intent, enrichedCtx);
-
-      // Log to history
-      const entry = buildHistoryEntry(
-        trimmedInput,
-        source,
-        intent.type,
-        intent.action,
-        response.content,
-      );
-      history.addEntry(entry);
-
-      // Emit the response event
-      router.emit('event:assistant.response', {
-        content: response.content,
-        type: response.type,
-      });
-
-      // Emit command completed event
-      router.emit('event:assistant.commandCompleted', {
-        id: entry.id,
-        source,
-        action: intent.action ?? intent.subtype ?? intent.type,
-        summary: response.content.slice(0, 100),
-        timestamp: entry.timestamp,
-      });
-
-      return response;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      serviceLogger.error('[Assistant] Command processing failed:', message);
-
-      const errorResponse: AssistantResponse = {
-        type: 'error',
-        content: `Something went wrong: ${message}`,
-      };
-
-      router.emit('event:assistant.response', {
-        content: errorResponse.content,
-        type: 'error',
-      });
-
-      return errorResponse;
-    } finally {
-      router.emit('event:assistant.thinking', { isThinking: false });
-    }
+  function sendEvent(channel: string, payload: unknown): void {
+    getWindow()?.webContents.send(channel, payload);
   }
 
   return {
-    async sendCommand(input, context) {
-      return await processInput(input, 'commandbar', context);
+    sendCommand(input, projectPath) {
+      const id = `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`;
+      sendEvent('event:assistant.thinking', { isThinking: true });
+
+      const child = spawn('claude', ['--print', '-p', input], {
+        cwd: projectPath,
+        shell: true,
+      });
+
+      let responseBuffer = '';
+
+      child.stdout.on('data', (chunk: Buffer) => {
+        const text = chunk.toString();
+        responseBuffer += text;
+        sendEvent('event:assistant.response', { content: text, type: 'text' });
+      });
+
+      child.stderr.on('data', (chunk: Buffer) => {
+        sendEvent('event:assistant.response', { content: chunk.toString(), type: 'error' });
+      });
+
+      child.on('close', () => {
+        sendEvent('event:assistant.thinking', { isThinking: false });
+        history.push({
+          id,
+          input,
+          responseSummary: responseBuffer.slice(0, 200),
+          timestamp: new Date().toISOString(),
+        });
+      });
     },
 
-    async processWebhookCommand(command) {
-      // Map webhook source context into AssistantContext
-      const webhookContext: AssistantContext = {
-        activeProjectId: null,
-        activeProjectName: null,
-        currentPage: `webhook/${command.source}`,
-        todayDate: new Date().toISOString().slice(0, 10),
-      };
-
-      return await processInput(command.commandText, command.source, webhookContext);
-    },
-
-    getHistory(limit) {
-      return history.getEntries(limit);
+    getHistory() {
+      return [...history];
     },
 
     clearHistory() {
-      history.clear();
+      history.length = 0;
     },
   };
 }

@@ -61,6 +61,7 @@ import { terminalsEvents, terminalsInvoke } from './terminals';
 import { trackerInvoke } from './tracker';
 import { windowInvoke } from './window';
 import { workflowInvoke } from './workflow';
+import { workspaceEvents, workspaceInvoke } from './workspace';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
 
@@ -111,6 +112,7 @@ export const ipcInvokeContract = {
   ...windowInvoke,
   ...trackerInvoke,
   ...agentDashboardInvoke,
+  ...workspaceInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -144,6 +146,7 @@ export const ipcEventContract = {
   ...dataManagementEvents,
   ...authEvents,
   ...agentDashboardEvents,
+  ...workspaceEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -157,11 +160,9 @@ export type { EventChannel, EventPayload, InvokeChannel, InvokeInput, InvokeOutp
 export { AgentPhaseSchema, AgentSessionStatusSchema, OrchestratorSessionSchema } from './agents';
 
 export {
-  AssistantActionSchema,
   AssistantContextSchema,
   AssistantResponseSchema,
   CommandHistoryEntrySchema,
-  IntentTypeSchema,
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
 } from './assistant';
@@ -431,3 +432,10 @@ export {
   ToolResultBlockSchema,
   ToolUseBlockSchema,
 } from './agent-dashboard';
+
+export {
+  SessionKeySchema,
+  SessionTypeSchema,
+  WorkspaceSessionSchema,
+  WorkspaceSessionStatusSchema,
+} from './workspace';

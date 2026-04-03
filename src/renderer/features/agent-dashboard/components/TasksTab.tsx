@@ -26,7 +26,7 @@ interface TasksTabProps {
 
 // ─── Helpers ───────────────────────────────────────────────
 
-function deriveFeatureSlug(branch: string | undefined): string {
+function deriveFeatureSlug(branch?: string): string {
   if (branch === undefined) return 'agent-dashboard-view';
   // work/<slug>/<task>
   const workMatch = /^work\/([^/]+)\//.exec(branch);

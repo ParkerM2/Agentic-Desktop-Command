@@ -9,7 +9,6 @@
 
 export {
   AgentActivitySummarySchema,
-  AssistantActionSchema,
   AssistantContextSchema,
   AssistantResponseSchema,
   BriefingConfigSchema,
@@ -30,7 +29,6 @@ export {
   GitHubNotificationTypeSchema,
   GitHubPullRequestSchema,
   GitHubWatcherConfigSchema,
-  IntentTypeSchema,
   NotificationFilterSchema,
   NotificationMetadataSchema,
   NotificationSchema,
