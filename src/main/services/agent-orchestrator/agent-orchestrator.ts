@@ -424,7 +424,11 @@ export function createAgentOrchestrator(
 
       // Try graceful termination first
       try {
-        process.kill(session.pid, 'SIGTERM');
+        if (process.platform === 'win32') {
+          process.kill(session.pid);
+        } else {
+          process.kill(session.pid, 'SIGTERM');
+        }
       } catch {
         // Process may already be gone
       }
@@ -432,7 +436,11 @@ export function createAgentOrchestrator(
       // Force kill after grace period
       setTimeout(() => {
         try {
-          process.kill(session.pid, 'SIGKILL');
+          if (process.platform === 'win32') {
+            process.kill(session.pid);
+          } else {
+            process.kill(session.pid, 'SIGKILL');
+          }
         } catch {
           // Process already exited
         }
@@ -477,7 +485,11 @@ export function createAgentOrchestrator(
         const session = sessions.get(sessionId);
         if (session) {
           try {
-            process.kill(session.pid, 'SIGTERM');
+            if (process.platform === 'win32') {
+              process.kill(session.pid);
+            } else {
+              process.kill(session.pid, 'SIGTERM');
+            }
           } catch {
             // Process may already be gone
           }

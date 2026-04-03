@@ -6,6 +6,7 @@
  */
 
 import { execSync } from 'node:child_process';
+import { platform } from 'node:os';
 
 import { appLogger } from '../../lib/logger';
 
@@ -14,7 +15,9 @@ const TMUX_EXEC_TIMEOUT_MS = 5_000;
 /** Check if tmux is installed and available on the system PATH. */
 export function isTmuxInstalled(): boolean {
   try {
-    execSync('which tmux', { timeout: TMUX_EXEC_TIMEOUT_MS, stdio: 'pipe' });
+    // `which` is not available on Windows; use `where` instead
+    const cmd = platform() === 'win32' ? 'where tmux' : 'which tmux';
+    execSync(cmd, { timeout: TMUX_EXEC_TIMEOUT_MS, stdio: 'pipe' });
     return true;
   } catch {
     return false;
