@@ -18,6 +18,8 @@ import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Textarea } from '@ui';
+
 import {
   useDay,
   useUpdateDay,
@@ -122,57 +124,66 @@ export function PlannerPage() {
 
         <div className="flex items-center gap-2">
           {isToday(selectedDate) ? null : (
-            <button
-              className="text-primary hover:text-primary/80 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+            <Button
+              className="text-primary hover:text-primary/80 px-2.5 py-1 text-xs"
+              size="sm"
+              type="button"
+              variant="ghost"
               onClick={handleGoToday}
             >
               Today
-            </button>
+            </Button>
           )}
 
           <div className="border-border flex items-center rounded-md border">
-            <button
+            <Button
               aria-label="Previous day"
-              className="text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+              className="h-auto p-1.5"
+              size="icon"
+              type="button"
+              variant="ghost"
               onClick={handlePrevDay}
             >
               <ChevronLeft className="h-4 w-4" />
-            </button>
+            </Button>
             <span className="text-foreground min-w-[180px] px-2 text-center text-sm font-medium">
               {formatDateLabel(selectedDate)}
             </span>
-            <button
+            <Button
               aria-label="Next day"
-              className="text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+              className="h-auto p-1.5"
+              size="icon"
+              type="button"
+              variant="ghost"
               onClick={handleNextDay}
             >
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
 
           <div className="border-border ml-2 flex rounded-md border">
-            <button
+            <Button
               className={cn(
-                'px-3 py-1 text-xs font-medium transition-colors',
-                viewMode === 'day'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                'h-auto rounded-r-none px-3 py-1 text-xs',
+                viewMode === 'day' ? '' : 'text-muted-foreground',
               )}
+              type="button"
+              variant={viewMode === 'day' ? 'primary' : 'ghost'}
               onClick={() => setViewMode('day')}
             >
               Day
-            </button>
-            <button
+            </Button>
+            <Button
               className={cn(
-                'px-3 py-1 text-xs font-medium transition-colors',
-                viewMode === 'week'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                'h-auto rounded-l-none px-3 py-1 text-xs',
+                viewMode === 'week' ? '' : 'text-muted-foreground',
               )}
+              type="button"
+              variant={viewMode === 'week' ? 'primary' : 'ghost'}
               onClick={() => setViewMode('week')}
             >
               Week
-            </button>
+            </Button>
           </div>
 
           <Link
@@ -207,38 +218,44 @@ export function PlannerPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-foreground text-sm font-semibold">Reflection</h3>
                 {isEditingReflection ? null : (
-                  <button
-                    className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-xs transition-colors"
+                  <Button
+                    className="text-muted-foreground hover:text-primary h-auto gap-1 p-0 text-xs"
+                    size="sm"
+                    type="button"
+                    variant="ghost"
                     onClick={handleStartEditReflection}
                   >
                     <MessageSquare className="h-3 w-3" />
                     {plan?.reflection ? 'Edit' : 'Add'}
-                  </button>
+                  </Button>
                 )}
               </div>
 
               {isEditingReflection ? (
                 <div className="space-y-2">
-                  <textarea
-                    className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm outline-none focus:ring-1"
+                  <Textarea
                     placeholder="How did today go? What did you learn?"
+                    resize="none"
                     rows={4}
                     value={reflection}
                     onChange={(event) => setReflection(event.target.value)}
                   />
                   <div className="flex justify-end gap-2">
-                    <button
-                      className="text-muted-foreground hover:text-foreground rounded-md px-3 py-1 text-xs transition-colors"
+                    <Button
+                      size="sm"
+                      type="button"
+                      variant="ghost"
                       onClick={() => setIsEditingReflection(false)}
                     >
                       Cancel
-                    </button>
-                    <button
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-1 text-xs font-medium transition-colors"
+                    </Button>
+                    <Button
+                      size="sm"
+                      type="button"
                       onClick={handleSaveReflection}
                     >
                       Save
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
