@@ -9,14 +9,23 @@
 import { useMemo, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, Briefcase, Filter, FolderOpen, RefreshCw } from 'lucide-react';
 
+import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 import type { Task, TaskStatus } from '@shared/types';
 
 import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
-import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, EmptyState } from '@ui';
+import {
+  Button,
+  EmptyState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui';
 
 import { useProjects } from '@features/projects';
 import { TaskStatusBadge } from '@features/tasks';
@@ -96,7 +105,13 @@ function MyWorkEmptyState({ hasFilter }: { hasFilter: boolean }) {
   );
 }
 
-function ProjectGroup({ group }: { group: TasksByProject }) {
+function ProjectGroup({
+  group,
+  onNavigateToProject,
+}: {
+  group: TasksByProject;
+  onNavigateToProject: (projectId: string) => void;
+}) {
   return (
     <div className="border-border bg-card rounded-lg border">
       {/* Project header */}
@@ -109,7 +124,12 @@ function ProjectGroup({ group }: { group: TasksByProject }) {
       {/* Task list */}
       <div className="divide-border divide-y">
         {group.tasks.map((task) => (
-          <div key={task.id} className="px-4 py-3">
+          <button
+            key={task.id}
+            className="hover:bg-accent w-full px-4 py-3 text-left transition-colors"
+            type="button"
+            onClick={() => onNavigateToProject(group.projectId)}
+          >
             <div className="mb-1 flex items-start justify-between gap-2">
               <h3 className="text-foreground text-sm font-medium">{task.title}</h3>
               <TaskStatusBadge status={task.status} />
@@ -117,7 +137,7 @@ function ProjectGroup({ group }: { group: TasksByProject }) {
             {task.description ? (
               <p className="text-muted-foreground line-clamp-2 text-xs">{task.description}</p>
             ) : null}
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -147,12 +167,14 @@ function TaskListContent({
   taskGroups,
   hasFilter,
   onRetry,
+  onNavigateToProject,
 }: {
   isLoading: boolean;
   isError: boolean;
   taskGroups: TasksByProject[];
   hasFilter: boolean;
   onRetry: () => void;
+  onNavigateToProject: (projectId: string) => void;
 }) {
   if (isError) {
     return <HubDisconnectedState onRetry={onRetry} />;
@@ -173,13 +195,18 @@ function TaskListContent({
   return (
     <div className="space-y-4">
       {taskGroups.map((group) => (
-        <ProjectGroup key={group.projectId} group={group} />
+        <ProjectGroup
+          key={group.projectId}
+          group={group}
+          onNavigateToProject={onNavigateToProject}
+        />
       ))}
     </div>
   );
 }
 
 export function MyWorkPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useAllTasks();
@@ -206,6 +233,10 @@ export function MyWorkPage() {
 
   function handleRetry() {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
+  }
+
+  function handleNavigateToProject(projectId: string) {
+    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
   // Build a map of projectId -> projectName
@@ -246,20 +277,18 @@ export function MyWorkPage() {
       <div className="mb-6 flex items-center gap-4">
         <div className="flex items-center gap-2">
           <Filter className="text-muted-foreground h-4 w-4" />
-          <select
-            value={statusFilter}
-            className={cn(
-              'border-border bg-card text-foreground rounded-md border px-3 py-1.5 text-sm',
-              'focus:ring-primary focus:ring-1 focus:outline-none',
-            )}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <span className="text-muted-foreground text-sm">
           {totalTasks} {getTaskCountLabel(totalTasks)}
@@ -272,6 +301,7 @@ export function MyWorkPage() {
         isError={tasksError}
         isLoading={tasksLoading}
         taskGroups={taskGroups}
+        onNavigateToProject={handleNavigateToProject}
         onRetry={handleRetry}
       />
     </div>
