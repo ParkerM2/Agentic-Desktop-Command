@@ -16,6 +16,7 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useProjects } from '@features/projects';
 
+import { Button } from '@ui/button';
 import { SidebarTrigger } from '@ui/sidebar';
 
 export function TopBar() {
@@ -57,8 +58,9 @@ export function TopBar() {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
           return (
-            <button
+            <Button
               key={project.id}
+              variant="ghost"
               className={cn(
                 'group flex items-center gap-2 rounded-t-md px-3 py-1.5 text-sm transition-colors',
                 isActive
@@ -81,17 +83,18 @@ export function TopBar() {
               >
                 <X className="h-3 w-3" />
               </span>
-            </button>
+            </Button>
           );
         })}
 
-        <button
+        <Button
+          variant="ghost"
           className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded-md p-1.5"
           title="Open project"
           onClick={handleAddProject}
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );
