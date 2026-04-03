@@ -88,9 +88,9 @@ export function TopBar() {
         })}
 
         <Button
-          variant="ghost"
           className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded-md p-1.5"
           title="Open project"
+          variant="ghost"
           onClick={handleAddProject}
         >
           <Plus className="h-4 w-4" />
