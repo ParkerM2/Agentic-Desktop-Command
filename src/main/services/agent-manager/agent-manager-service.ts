@@ -6,8 +6,7 @@
  * structured communication with Claude CLI.
  *
  * This service handles Project Owner sessions (headless stream-json).
- * Team Lead sessions (tmux-based) are stubbed here and will be
- * implemented in Phase 2 via TmuxBridge (task-5).
+ * Team Lead sessions use stdin-based spawn (SubprocessStrategy).
  */
 
 import { randomUUID } from 'node:crypto';
@@ -42,7 +41,7 @@ export interface ProjectOwnerConfig {
   name?: string;
 }
 
-/** Config for spawning a tmux-based Team Lead session */
+/** Config for spawning a Team Lead session */
 export interface TeamLeadConfig {
   projectPath: string;
   teamName: string;
@@ -82,7 +81,7 @@ export type SpawnTeamLeadResult = AgentSession | SpawnTeamLeadError;
 export interface AgentManagerService {
   /** Spawn a headless stream-json Project Owner session */
   spawnProjectOwner: (config: ProjectOwnerConfig) => AgentSession;
-  /** Spawn a tmux-based Team Lead session */
+  /** Spawn a Team Lead session */
   spawnTeamLead: (config: TeamLeadConfig) => SpawnTeamLeadResult;
   /** List all active agent sessions */
   listSessions: (filter?: { type?: AgentSessionType; teamName?: string }) => AgentSession[];
@@ -238,7 +237,6 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       model: config.model ?? 'claude-sonnet-4-6',
       teamName: config.teamName,
       branch: undefined,
-      tmuxPaneId: undefined,
       sessionJsonlPath: undefined,
       tokenUsage: { input: 0, output: 0 },
       startedAt: now,

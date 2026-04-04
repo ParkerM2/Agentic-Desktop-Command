@@ -2,10 +2,10 @@
  * MCP Channel Strategy — --channels flag connection strategy (STUB)
  *
  * Future transport using Claude Code's --channels flag for Team Lead input,
- * replacing tmux send-keys injection with a structured channel-based protocol.
+ * using a structured channel-based protocol.
  *
  * The --channels flag enables bidirectional communication via named pipes or
- * IPC channels, providing a more reliable transport than tmux pane injection.
+ * IPC channels.
  *
  * STATUS: Research preview only — not production ready.
  */
