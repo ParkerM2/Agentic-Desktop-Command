@@ -28,9 +28,12 @@ export interface FileNodeData {
   group: string;
 }
 
+export type AgentStatus = 'pending' | 'active' | 'completed' | 'error' | 'idle';
+
 export interface FeatureGroupData {
   type: 'featureGroup';
   label: string;
+  feature: string;
   status: string;
   branch: string | null;
   agentCount: number;
@@ -44,7 +47,8 @@ export interface AgentTaskData {
   taskName: string | null;
   agentRole: string | null;
   wave: number | null;
-  status: string;
+  status: AgentStatus;
+  lastEventTs: string | null;
   fileScope: string[];
   eventCount: number;
   isGuardian: boolean;
@@ -135,6 +139,7 @@ export function buildAgentRFNodes(
     data: {
       type: 'featureGroup',
       label: featureName,
+      feature: featureName,
       status: featureData.status,
       branch: featureData.branch,
       agentCount: featureData.agentCount,
@@ -160,6 +165,7 @@ export function buildAgentRFNodes(
         agentRole: task.agentRole,
         wave: task.wave,
         status: task.status,
+        lastEventTs: task.lastEventTs,
         fileScope: task.fileScope,
         eventCount: task.eventCount,
         isGuardian: task.isGuardian,
