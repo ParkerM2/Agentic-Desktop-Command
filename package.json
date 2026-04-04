@@ -39,6 +39,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
+    "@dagrejs/dagre": "^1.0.4",
+    "@xyflow/react": "^12.10.2",
     "@git-diff-view/core": "^0.0.39",
     "@git-diff-view/react": "^0.0.39",
     "@lydell/node-pty": "^1.1.0",
@@ -100,6 +102,7 @@
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.1.0",
+    "@types/dagre": "^0.7.3",
     "@types/node": "^25.2.3",
     "@types/nodemailer": "^7.0.9",
     "@types/react": "^19.2.7",

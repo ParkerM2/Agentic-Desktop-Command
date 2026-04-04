@@ -4,6 +4,9 @@
 @import 'ag-grid-community/styles/ag-grid.css';
 @import 'ag-grid-community/styles/ag-theme-quartz.css';
 
+/* React Flow base styles */
+@import '@xyflow/react/dist/style.css';
+
 /* ============================================
    ADC Design System
    Ported from Claude-Auto — Oscura Midnight Theme
