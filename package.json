@@ -17,7 +17,7 @@
     "build": "electron-vite build",
     "start": "electron .",
     "preview": "electron-vite preview",
-    "lint": "source ~/.nvm/nvm.sh && nvm use 24 --silent && eslint src/",
+    "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",

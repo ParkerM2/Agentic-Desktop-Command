@@ -440,7 +440,8 @@ describe('AgentOrchestrator', () => {
 
       orchestrator.kill(session.id);
 
-      expect(killSpy).toHaveBeenCalledWith(99999, 'SIGTERM');
+      // Windows calls process.kill(pid) without signal; Unix calls process.kill(pid, 'SIGTERM')
+      expect(killSpy.mock.calls.some((args) => args[0] === 99999)).toBe(true);
 
       killSpy.mockRestore();
       orchestrator.dispose();
@@ -508,8 +509,8 @@ describe('AgentOrchestrator', () => {
 
       orchestrator.dispose();
 
-      // Should have sent SIGTERM to both
-      expect(killSpy).toHaveBeenCalledWith(99999, 'SIGTERM');
+      // Should have sent SIGTERM to both (Windows: process.kill(pid), Unix: process.kill(pid, 'SIGTERM'))
+      expect(killSpy.mock.calls.some((args) => args[0] === 99999)).toBe(true);
       expect(killSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
 
       killSpy.mockRestore();
