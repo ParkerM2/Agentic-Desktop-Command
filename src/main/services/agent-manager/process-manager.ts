@@ -96,7 +96,7 @@ function buildCleanEnv(config: ProcessSpawnConfig): Record<string, string> {
     }
   }
   if (config.agentFlags) {
-    env['CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS'] = '1';
+    env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
   }
   return env;
 }
