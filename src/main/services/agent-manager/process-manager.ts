@@ -11,6 +11,18 @@ import { agentLogger } from '@main/lib/logger';
 
 import type { ChildProcess } from 'node:child_process';
 
+/** Flags for spawning Claude as an agent within a team */
+export interface AgentSpawnFlags {
+  /** Unique agent identifier (e.g. 'coder@team-name') */
+  agentId: string;
+  /** Name of the team this agent belongs to */
+  teamName: string;
+  /** Agent type — defaults to 'general-purpose' */
+  agentType?: string;
+  /** Skip permission prompts — defaults to true */
+  skipPermissions?: boolean;
+}
+
 /** Configuration for spawning a headless Claude process */
 export interface ProcessSpawnConfig {
   /** Working directory for the Claude process */
@@ -21,6 +33,8 @@ export interface ProcessSpawnConfig {
   model?: string;
   /** Optional name for the session */
   name?: string;
+  /** Optional agent team flags — absent means standard (non-agent) spawn */
+  agentFlags?: AgentSpawnFlags;
 }
 
 /** Represents a managed child process with health tracking */
@@ -72,13 +86,17 @@ const KILL_GRACE_PERIOD_MS = 5000;
 /**
  * Build a clean environment for the Claude process.
  * Strips session-detection vars so Claude doesn't think it's nested.
+ * When agentFlags are present, sets CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1.
  */
-function buildCleanEnv(): Record<string, string> {
+function buildCleanEnv(config: ProcessSpawnConfig): Record<string, string> {
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined && !CLAUDE_SESSION_VARS.has(key)) {
       env[key] = value;
     }
+  }
+  if (config.agentFlags) {
+    env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = '1';
   }
   return env;
 }
@@ -102,6 +120,14 @@ function buildSpawnArgs(config: ProcessSpawnConfig): string[] {
     args.push('--model', config.model);
   }
 
+  if (config.agentFlags) {
+    const { agentId, teamName, agentType = 'general-purpose', skipPermissions = true } = config.agentFlags;
+    args.push('--agent-id', agentId, '--agent-name', agentId.split('@')[0], '--team-name', teamName, '--agent-type', agentType);
+    if (skipPermissions) {
+      args.push('--dangerously-skip-permissions');
+    }
+  }
+
   return args;
 }
 
@@ -123,7 +149,7 @@ export function createProcessManager(): ProcessManager {
   return {
     spawn(config) {
       const args = buildSpawnArgs(config);
-      const env = buildCleanEnv();
+      const env = buildCleanEnv(config);
 
       agentLogger.info(`[AgentManager] Spawning claude process in ${config.cwd}`);
       agentLogger.info(`[AgentManager] Args: claude ${args.join(' ')}`);
