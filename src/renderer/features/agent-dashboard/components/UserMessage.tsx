@@ -22,14 +22,14 @@ export function UserMessage({ message, className }: UserMessageProps) {
     <div
       className={cn(
         'rounded-lg px-4 py-3',
-        'bg-primary/10 text-foreground',
+        'bg-primary text-primary-foreground',
         className,
       )}
     >
       <div className="text-sm whitespace-pre-wrap break-words">
         {message.content}
       </div>
-      <div className="mt-1 text-right text-xs text-muted-foreground">
+      <div className="mt-1 text-right text-xs text-primary-foreground/60">
         {new Date(message.timestamp).toLocaleTimeString()}
       </div>
     </div>

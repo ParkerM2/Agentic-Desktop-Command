@@ -45,6 +45,7 @@ function CodeBlock({
         margin: 0,
         borderRadius: 'var(--radius)',
         fontSize: '0.8125rem',
+        background: 'var(--background)',
       }}
     >
       {code}
