@@ -16,6 +16,7 @@ import type { TerminalSession } from '@shared/types';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
+import { useThemeStore } from '@renderer/shared/stores/theme-store';
 
 interface TerminalInstanceProps {
   session: TerminalSession;
@@ -65,6 +66,8 @@ export function TerminalInstance({ session, isActive }: TerminalInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const colorTheme = useThemeStore((s) => s.colorTheme);
+  const mode = useThemeStore((s) => s.mode);
 
   // Initialize xterm on mount
   useEffect(() => {
@@ -140,6 +143,12 @@ export function TerminalInstance({ session, isActive }: TerminalInstanceProps) {
 
     return () => observer.disconnect();
   }, [isActive, session.id]);
+
+  // Re-apply theme when color theme or mode changes
+  useEffect(() => {
+    if (!xtermRef.current) return;
+    xtermRef.current.options.theme = getTerminalTheme();
+  }, [colorTheme, mode]);
 
   // Receive output from main process
   useIpcEvent('event:terminal.output', ({ sessionId, data }) => {

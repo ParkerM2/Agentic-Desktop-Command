@@ -51,7 +51,7 @@ export const agentDashboardInvoke = {
     }),
     output: z.object({
       sessionId: z.string(),
-      tmuxSessionName: z.string(),
+      tmuxSessionName: z.string().optional(),
       status: z.literal('spawned'),
     }),
   },

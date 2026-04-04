@@ -108,6 +108,7 @@ function EditContent({ data }: { data: ToolCallEdit }) {
               borderRadius: 'var(--radius)',
               fontSize: '0.75rem',
               maxHeight: '10rem',
+              background: 'var(--background)',
             }}
           >
             {data.diffPreview}

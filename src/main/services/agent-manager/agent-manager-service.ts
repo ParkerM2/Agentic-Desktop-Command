@@ -6,8 +6,7 @@
  * structured communication with Claude CLI.
  *
  * This service handles Project Owner sessions (headless stream-json).
- * Team Lead sessions (tmux-based) are stubbed here and will be
- * implemented in Phase 2 via TmuxBridge (task-5).
+ * Team Lead sessions use stdin-based spawn (SubprocessStrategy).
  */
 
 import { randomUUID } from 'node:crypto';
@@ -19,7 +18,6 @@ import type {
   AgentStatus,
   AgentTokenUsage,
   StreamJsonEvent,
-  TmuxSession,
 } from '@shared/types/agent-dashboard';
 
 import { agentLogger } from '@main/lib/logger';
@@ -32,7 +30,6 @@ import type { AgentConnectionStrategy } from './agent-connection-strategy';
 import type { ManagedProcess } from './process-manager';
 import type { StreamJsonParser } from './stream-json-parser';
 import type { IpcRouter } from '../../ipc/router';
-import type { TmuxBridgeService } from '../tmux-bridge/tmux-bridge-service';
 
 // ── Configuration Types ──────────────────────────────────────
 
@@ -44,7 +41,7 @@ export interface ProjectOwnerConfig {
   name?: string;
 }
 
-/** Config for spawning a tmux-based Team Lead session */
+/** Config for spawning a Team Lead session */
 export interface TeamLeadConfig {
   projectPath: string;
   teamName: string;
@@ -73,7 +70,7 @@ type AgentManagerEventHandler = (event: AgentManagerEvent) => void;
 // ── Result Types ────────────────────────────────────────────
 
 export interface SpawnTeamLeadError {
-  error: 'tmux_unavailable' | 'tmux_failed';
+  error: 'spawn_failed';
   session: null;
 }
 
@@ -84,7 +81,7 @@ export type SpawnTeamLeadResult = AgentSession | SpawnTeamLeadError;
 export interface AgentManagerService {
   /** Spawn a headless stream-json Project Owner session */
   spawnProjectOwner: (config: ProjectOwnerConfig) => AgentSession;
-  /** Spawn a tmux-based Team Lead session */
+  /** Spawn a Team Lead session */
   spawnTeamLead: (config: TeamLeadConfig) => SpawnTeamLeadResult;
   /** List all active agent sessions */
   listSessions: (filter?: { type?: AgentSessionType; teamName?: string }) => AgentSession[];
@@ -120,7 +117,6 @@ interface InternalSession {
 
 export interface AgentManagerDeps {
   router: IpcRouter;
-  tmuxBridgeService: TmuxBridgeService;
   /** Optional connection strategy — defaults to SubprocessStrategy */
   strategy?: AgentConnectionStrategy;
 }
@@ -132,7 +128,7 @@ export interface AgentManagerDeps {
  * emits events via IPC router for renderer updates.
  */
 export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerService {
-  const { router, tmuxBridgeService } = deps;
+  const { router } = deps;
   const processManager = createProcessManager();
   // Strategy is available for future use — currently SubprocessStrategy delegates to processManager
   const _strategy: AgentConnectionStrategy = deps.strategy ?? new SubprocessStrategy(processManager);
@@ -241,7 +237,6 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       model: config.model ?? 'claude-sonnet-4-6',
       teamName: config.teamName,
       branch: undefined,
-      tmuxPaneId: undefined,
       sessionJsonlPath: undefined,
       tokenUsage: { input: 0, output: 0 },
       startedAt: now,
@@ -361,44 +356,47 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
     },
 
     spawnTeamLead(config) {
-      if (!tmuxBridgeService.isAvailable()) {
-        agentLogger.error('[AgentManager] tmux is not available — cannot spawn Team Lead session');
-        return { error: 'tmux_unavailable' as const, session: null };
-      }
-
       const session = createSessionObject('team-lead', {
         name: config.name,
         model: config.model,
         teamName: config.teamName,
       });
 
-      let tmuxSession: TmuxSession;
+      let managedProcess: ReturnType<typeof processManager.spawn>;
       try {
-        tmuxSession = tmuxBridgeService.createSession(session.name, {
-          CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
+        managedProcess = processManager.spawn({
+          cwd: config.projectPath,
+          prompt: config.prompt,
+          model: config.model,
+          name: config.name,
+          agentFlags: {
+            agentId: `${config.name ?? session.name}@${config.teamName}`,
+            teamName: config.teamName,
+          },
         });
       } catch (error) {
         agentLogger.error(
-          `[AgentManager] TmuxBridge.createSession failed: ${error instanceof Error ? error.message : String(error)}`,
+          `[AgentManager] processManager.spawn failed for Team Lead: ${error instanceof Error ? error.message : String(error)}`,
         );
-        return { error: 'tmux_failed' as const, session: null };
+        return { error: 'spawn_failed' as const, session: null };
       }
 
-      session.tmuxPaneId = tmuxSession.id;
+      const parser = createStreamJsonParser(session.id);
 
       const internal: InternalSession = {
         session,
-        process: null,
-        parser: null,
+        process: managedProcess,
+        parser,
         messages: [],
         cleanups: [],
         cwd: config.projectPath,
       };
 
       sessions.set(session.id, internal);
+      wireProcessToParser(internal);
 
       agentLogger.info(
-        `[AgentManager] Team Lead session started: ${session.id} (tmux: ${tmuxSession.name})`,
+        `[AgentManager] Team Lead session started: ${session.id} (PID ${String(managedProcess.pid)})`,
       );
 
       router.emit('event:agent-dashboard.sessionStarted', session);
