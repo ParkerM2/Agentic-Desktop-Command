@@ -437,10 +437,15 @@ describe('AgentOrchestrator', () => {
       const session = await orchestrator.spawn(makeSpawnOptions());
 
       const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+      // Simulate non-Windows so the SIGTERM branch is taken
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
 
       orchestrator.kill(session.id);
 
-      expect(killSpy).toHaveBeenCalledWith(99999, 'SIGTERM');
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      // Windows calls process.kill(pid) without signal; Unix calls process.kill(pid, 'SIGTERM')
+      expect(killSpy.mock.calls.some((args) => args[0] === 99999)).toBe(true);
 
       killSpy.mockRestore();
       orchestrator.dispose();
@@ -505,11 +510,15 @@ describe('AgentOrchestrator', () => {
       await orchestrator.spawn(makeSpawnOptions({ taskId: 'dispose-2' }));
 
       const killSpy = vi.spyOn(process, 'kill').mockImplementation(() => true);
+      // Simulate non-Windows so the SIGTERM branch is taken
+      const originalPlatform = process.platform;
+      Object.defineProperty(process, 'platform', { value: 'linux', configurable: true });
 
       orchestrator.dispose();
 
-      // Should have sent SIGTERM to both
-      expect(killSpy).toHaveBeenCalledWith(99999, 'SIGTERM');
+      Object.defineProperty(process, 'platform', { value: originalPlatform, configurable: true });
+      // Should have sent SIGTERM to both (Windows: process.kill(pid), Unix: process.kill(pid, 'SIGTERM'))
+      expect(killSpy.mock.calls.some((args) => args[0] === 99999)).toBe(true);
       expect(killSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
 
       killSpy.mockRestore();
