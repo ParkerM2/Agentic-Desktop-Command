@@ -173,13 +173,13 @@ function FileHeader({
         {/* Expand context toggle */}
         <button
           aria-label={expandedContext ? 'Collapse context' : 'Expand context'}
+          type="button"
           className={cn(
             'rounded p-1.5 text-xs transition-colors',
             expandedContext
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:text-foreground',
           )}
-          type="button"
           onClick={onToggleExpand}
         >
           <UnfoldVertical className="h-3.5 w-3.5" />
@@ -189,13 +189,13 @@ function FileHeader({
         <div className="border-border flex items-center gap-0.5 rounded-md border p-0.5">
           <button
             aria-label="Split view"
+            type="button"
             className={cn(
               'rounded px-2 py-1 text-xs transition-colors',
               isSplit
                 ? 'bg-muted text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
-            type="button"
             onClick={() => {
               if (!isSplit) onToggleViewMode();
             }}
@@ -204,13 +204,13 @@ function FileHeader({
           </button>
           <button
             aria-label="Unified view"
+            type="button"
             className={cn(
               'rounded px-2 py-1 text-xs transition-colors',
               isSplit
                 ? 'text-muted-foreground hover:text-foreground'
                 : 'bg-muted text-foreground',
             )}
-            type="button"
             onClick={() => {
               if (isSplit) onToggleViewMode();
             }}

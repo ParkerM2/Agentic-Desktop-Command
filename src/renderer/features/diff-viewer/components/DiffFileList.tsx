@@ -142,9 +142,9 @@ export function DiffFileList({
           : files.map((file) => (
               <FileRow
                 key={file.filePath}
+                showDir
                 file={file}
                 isSelected={selectedFile === file.filePath}
-                showDir
                 onSelect={onSelectFile}
               />
             ))}
@@ -168,6 +168,7 @@ function FileRow({ file, isSelected, showDir, onSelect }: FileRowProps) {
 
   return (
     <button
+      type="button"
       className={cn(
         'flex w-full items-center justify-between px-3 py-1.5 text-left text-xs',
         'transition-colors',
@@ -175,7 +176,6 @@ function FileRow({ file, isSelected, showDir, onSelect }: FileRowProps) {
           ? 'bg-accent text-accent-foreground'
           : 'text-foreground hover:bg-muted/50',
       )}
-      type="button"
       onClick={() => onSelect(file.filePath)}
     >
       <div className="flex min-w-0 items-center gap-2">

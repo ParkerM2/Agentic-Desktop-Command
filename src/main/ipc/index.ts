@@ -47,6 +47,7 @@ import { registerTaskHandlers } from './handlers/task-handlers';
 import { registerTerminalHandlers } from './handlers/terminal-handlers';
 import { registerTimeHandlers } from './handlers/time-handlers';
 import { registerTrackerHandlers } from './handlers/tracker-handlers';
+import { registerVisualizationHandlers } from './handlers/visualization-handlers';
 import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
 import { registerWindowHandlers } from './handlers/window-handlers';
@@ -107,6 +108,7 @@ import type { TaskRepository } from '../services/tasks/types';
 import type { TerminalService } from '../services/terminal/terminal-service';
 import type { TimeParserService } from '../services/time-parser/time-parser-service';
 import type { TrackerService } from '../services/tracker/tracker-service';
+import type { VisualizationService } from '../services/visualization';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
@@ -164,6 +166,7 @@ export interface Services {
   codebaseAnalyzer: CodebaseAnalyzerService;
   setupPipeline: SetupPipelineService;
   trackerService: TrackerService;
+  visualizationService: VisualizationService;
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
   progressWatcherV2: ProgressWatcherV2;
@@ -272,6 +275,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerWindowHandlers(router);
   registerTrackerHandlers(router, services.trackerService);
+  registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
       router,

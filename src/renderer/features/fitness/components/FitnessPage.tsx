@@ -64,13 +64,13 @@ export function FitnessPage() {
               key={tab.id}
               type="button"
               variant="ghost"
-              onClick={() => setActiveTab(tab.id)}
               className={cn(
                 'flex items-center gap-2 rounded-none border-b-2 px-4 py-3 text-sm font-medium',
                 activeTab === tab.id
                   ? 'border-primary text-foreground'
                   : 'text-muted-foreground hover:text-foreground border-transparent',
               )}
+              onClick={() => setActiveTab(tab.id)}
             >
               <tab.icon className="h-4 w-4" />
               {tab.label}
