@@ -5,9 +5,9 @@
  * Service methods are synchronous — handlers wrap returns with Promise.resolve().
  */
 
-import type { IpcRouter } from '../router';
 import type { ProjectService } from '../../services/project/project-service';
 import type { VisualizationService } from '../../services/visualization';
+import type { IpcRouter } from '../router';
 
 export function registerVisualizationHandlers(
   router: IpcRouter,
