@@ -163,23 +163,23 @@ export function PlannerPage() {
 
           <div className="border-border ml-2 flex rounded-md border">
             <Button
+              type="button"
+              variant={viewMode === 'day' ? 'primary' : 'ghost'}
               className={cn(
                 'h-auto rounded-r-none px-3 py-1 text-xs',
                 viewMode === 'day' ? '' : 'text-muted-foreground',
               )}
-              type="button"
-              variant={viewMode === 'day' ? 'primary' : 'ghost'}
               onClick={() => setViewMode('day')}
             >
               Day
             </Button>
             <Button
+              type="button"
+              variant={viewMode === 'week' ? 'primary' : 'ghost'}
               className={cn(
                 'h-auto rounded-l-none px-3 py-1 text-xs',
                 viewMode === 'week' ? '' : 'text-muted-foreground',
               )}
-              type="button"
-              variant={viewMode === 'week' ? 'primary' : 'ghost'}
               onClick={() => setViewMode('week')}
             >
               Week
