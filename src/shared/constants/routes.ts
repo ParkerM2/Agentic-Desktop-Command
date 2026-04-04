@@ -39,6 +39,7 @@ export const PROJECT_VIEWS = {
   CHANGELOG: 'changelog',
   INSIGHTS: 'insights',
   WORKFLOW: 'workflow',
+  VISUALIZATION: 'visualization',
 } as const;
 
 /** TanStack Router path patterns (use $projectId param syntax) */
@@ -53,6 +54,7 @@ export const ROUTE_PATTERNS = {
   PROJECT_CHANGELOG: '/projects/$projectId/changelog',
   PROJECT_INSIGHTS: '/projects/$projectId/insights',
   PROJECT_WORKFLOW: '/projects/$projectId/workflow',
+  PROJECT_VISUALIZATION: '/projects/$projectId/visualization',
 } as const;
 
 /** Build a project view path with a concrete project ID */

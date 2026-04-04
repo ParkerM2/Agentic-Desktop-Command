@@ -134,6 +134,17 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
+  const visualizationRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_VISUALIZATION,
+    staticData: { breadcrumbLabel: 'Visual Map' },
+    pendingComponent: ProjectSkeleton,
+    component: lazyRouteComponent(
+      () => import('@features/visualization'),
+      'VisualizationPage',
+    ),
+  });
+
   return [
     projectsRoute,
     projectRoute,
@@ -146,5 +157,6 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     changelogRoute,
     insightsRoute,
     workflowRoute,
+    visualizationRoute,
   ] as const;
 }
