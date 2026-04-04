@@ -31,7 +31,10 @@ logs/security/
 .claude/progress/*/events.jsonl
 .claude/progress/*/current.md
 .claude/progress/*/history.md
+.claude/progress/*/proof-ledger.jsonl
+.claude/progress/*/workflow-state.json
 .claude/progress/index.md
+.claude/.workflow-state/
 .claude/teams/
 .claude/tasks/
 .claude/settings.json

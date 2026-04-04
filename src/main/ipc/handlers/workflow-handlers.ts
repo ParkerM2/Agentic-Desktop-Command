@@ -2,20 +2,28 @@
  * Workflow IPC handlers
  *
  * Manages progress watching for project directories and task launching.
- * Watches docs/progress/*.md files and syncs changes to Hub.
+ * Uses the JSONL-based watcher for milestone/context/permission push events,
+ * plus the legacy markdown watcher (via progress-syncer) for Hub sync.
  * Launches Claude CLI sessions for task execution.
  */
 
+import { createJsonlWatcher } from '../../services/workflow/jsonl-watcher';
 import { createProgressSyncer } from '../../services/workflow/progress-syncer';
 import { createProgressWatcher } from '../../services/workflow/progress-watcher';
 
 import type { HubApiClient } from '../../services/hub/hub-api-client';
+import type { JsonlWatcher } from '../../services/workflow/jsonl-watcher';
 import type { ProgressWatcher } from '../../services/workflow/progress-watcher';
 import type { TaskLauncherService } from '../../services/workflow/task-launcher';
 import type { IpcRouter } from '../router';
 
-/** Active watchers keyed by project path. */
-const activeWatchers = new Map<string, ProgressWatcher>();
+interface ActiveWatcher {
+  jsonl: JsonlWatcher;
+  legacy: ProgressWatcher;
+}
+
+/** Active watcher pairs keyed by project path. */
+const activeWatchers = new Map<string, ActiveWatcher>();
 
 export function registerWorkflowHandlers(
   router: IpcRouter,
@@ -23,23 +31,21 @@ export function registerWorkflowHandlers(
   taskLauncher: TaskLauncherService,
 ): void {
   router.handle('workflow.watchProgress', ({ projectPath }) => {
-    // Stop existing watcher for this path if any
+    // Stop existing watchers for this path if any
     const existing = activeWatchers.get(projectPath);
     if (existing) {
-      existing.stop();
+      existing.jsonl.stop();
+      existing.legacy.stop();
       activeWatchers.delete(projectPath);
     }
 
-    const watcher = createProgressWatcher(projectPath);
-
-    // Wire up the syncer for Hub progress sync
+    // ── Legacy markdown watcher for Hub progress sync ──
+    const legacyWatcher = createProgressWatcher(projectPath);
     const syncer = createProgressSyncer(hubApiClient);
-    watcher.onProgress((data) => {
+    legacyWatcher.onProgress((data) => {
       void syncer.syncProgress(data.taskId, data);
     });
-
-    // Also emit IPC events for renderer updates
-    watcher.onProgress((data) => {
+    legacyWatcher.onProgress((data) => {
       router.emit('event:task.progressUpdated', {
         taskId: data.taskId,
         progress: {
@@ -50,9 +56,36 @@ export function registerWorkflowHandlers(
         },
       });
     });
+    legacyWatcher.start();
 
-    watcher.start();
-    activeWatchers.set(projectPath, watcher);
+    // ── New JSONL watcher for milestone/context/permission events ──
+    const jsonlWatcher = createJsonlWatcher(projectPath);
+
+    jsonlWatcher.onMilestone((event) => {
+      router.emit('event:workflow.milestone', {
+        ticket: event.ticket,
+        run: event.run,
+        event: event.event,
+        agent: event.agent,
+        ts: event.ts,
+        data: event.data,
+      });
+    });
+
+    jsonlWatcher.onContext((ctx) => {
+      router.emit('event:workflow.context', {
+        ticket: ctx?.ticket ?? null,
+        phase: ctx?.phase ?? null,
+        runSlug: ctx?.runSlug ?? null,
+      });
+    });
+
+    jsonlWatcher.onPermission((ticket, agent, message) => {
+      router.emit('event:workflow.permission', { ticket, agent, message });
+    });
+
+    jsonlWatcher.start();
+    activeWatchers.set(projectPath, { jsonl: jsonlWatcher, legacy: legacyWatcher });
 
     return Promise.resolve({ success: true });
   });
@@ -60,7 +93,8 @@ export function registerWorkflowHandlers(
   router.handle('workflow.stopWatching', ({ projectPath }) => {
     const watcher = activeWatchers.get(projectPath);
     if (watcher) {
-      watcher.stop();
+      watcher.jsonl.stop();
+      watcher.legacy.stop();
       activeWatchers.delete(projectPath);
     }
     return Promise.resolve({ success: true });

@@ -15,6 +15,7 @@ import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useProjects } from '@features/projects';
+import { WorkflowStatusBar } from '@features/workflow';
 
 import { Button } from '@ui/button';
 import { SidebarTrigger } from '@ui/sidebar';
@@ -95,6 +96,11 @@ export function TopBar() {
         >
           <Plus className="h-4 w-4" />
         </Button>
+      </div>
+
+      {/* Right: Workflow context indicator */}
+      <div className="ml-2 flex shrink-0 items-center pr-1">
+        <WorkflowStatusBar />
       </div>
     </div>
   );
