@@ -57,3 +57,28 @@ test-results/
 
 # E2E screenshots (generated, force-added on feature branches)
 tests/e2e/screenshots/
+
+# E2E test runtime data
+.e2e-test-tmp/
+.e2e-user-data/
+.e2e-user-data-fresh/
+
+# Local Claude settings
+.claude/settings.local.json
+
+# Progress tracking subdirs (only specific files are excluded above)
+.claude/progress/
+.claude/tracking/customizable-sidebar-layouts/
+.claude/tracking/event-wiring-and-dead-code-cleanup/
+.claude/tracking/p0-critical-fixes/
+.claude/tracking/system-b-jsonl-progress-tracking/
+.claude/tracking/tmux-replacement/
+.claude/tracking/workspace-and-assistant-redesign/
+
+# Generated screenshots and debug images
+*.png
+docs/screenshots/
+docs/superpowers/
+
+# One-off scripts
+scripts/cdp-screenshot.mjs

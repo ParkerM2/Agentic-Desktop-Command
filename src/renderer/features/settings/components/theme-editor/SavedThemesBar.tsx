@@ -100,14 +100,26 @@ function SavedThemeChip({ theme, onApply, onDelete }: SavedThemeChipProps) {
   return (
     <div className="border-border bg-card flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2">
       <div className="flex items-center gap-1.5">
+        {/* Light swatch: left half = background, right half = primary */}
         <div
-          className="h-3 w-3 rounded-full border"
-          style={{ backgroundColor: theme.light.primary, borderColor: theme.light.border }}
-        />
+          className="h-4 w-4 shrink-0 overflow-hidden rounded-full border"
+          style={{ borderColor: theme.light.border }}
+        >
+          <div className="flex h-full w-full">
+            <div className="h-full w-1/2" style={{ backgroundColor: theme.light.background }} />
+            <div className="h-full w-1/2" style={{ backgroundColor: theme.light.primary }} />
+          </div>
+        </div>
+        {/* Dark swatch: left half = background, right half = primary */}
         <div
-          className="h-3 w-3 rounded-full border"
-          style={{ backgroundColor: theme.dark.primary, borderColor: theme.dark.border }}
-        />
+          className="h-4 w-4 shrink-0 overflow-hidden rounded-full border"
+          style={{ borderColor: theme.dark.border }}
+        >
+          <div className="flex h-full w-full">
+            <div className="h-full w-1/2" style={{ backgroundColor: theme.dark.background }} />
+            <div className="h-full w-1/2" style={{ backgroundColor: theme.dark.primary }} />
+          </div>
+        </div>
       </div>
       <span className="text-foreground max-w-[120px] truncate text-xs font-medium">
         {theme.name}

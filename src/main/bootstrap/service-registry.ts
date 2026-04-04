@@ -446,7 +446,7 @@ export function createServiceRegistry(
   const tmuxBridgeService = createTmuxBridgeService();
 
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
-  const agentManagerService = createAgentManagerService({ router, tmuxBridgeService });
+  const agentManagerService = createAgentManagerService({ router });
 
   // ─── Workspace session manager ───────────────────────────────
   const workspaceSessionManager = createWorkspaceSessionManager(agentManagerService, getMainWindow);

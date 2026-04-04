@@ -1,6 +1,6 @@
 {
   "v": 1,
-  "generatedAt": "2026-04-01T02:08:10.272Z",
+  "generatedAt": "2026-04-04T01:42:58.210Z",
   "features": [
     {
       "feature": "agent-dashboard-view",
@@ -8,6 +8,20 @@
       "created": null,
       "branch": null,
       "agentCount": 11
+    },
+    {
+      "feature": "tmux-replacement",
+      "status": "pending",
+      "created": null,
+      "branch": null,
+      "agentCount": 4
+    },
+    {
+      "feature": "workspace-and-assistant-redesign",
+      "status": "pending",
+      "created": null,
+      "branch": null,
+      "agentCount": 30
     }
   ]
 }
