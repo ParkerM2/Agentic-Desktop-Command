@@ -60,7 +60,7 @@ import { hubTasksEvents, hubTasksInvoke, tasksEvents, tasksInvoke } from './task
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { trackerInvoke } from './tracker';
 import { windowInvoke } from './window';
-import { workflowInvoke } from './workflow';
+import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
@@ -147,6 +147,7 @@ export const ipcEventContract = {
   ...authEvents,
   ...agentDashboardEvents,
   ...workspaceEvents,
+  ...workflowEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────

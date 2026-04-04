@@ -28,6 +28,7 @@ import { useErrorEvents } from '@features/health';
 import { OnboardingWizard } from '@features/onboarding';
 import { useSettings } from '@features/settings';
 import { hubKeys, useHubStatus } from '@features/settings/api/useHub';
+import { WorkflowPermissionModal } from '@features/workflow';
 
 import { LayoutWrapper } from './LayoutWrapper';
 import { TitleBar } from './TitleBar';
@@ -105,6 +106,7 @@ export function RootLayout() {
       <MutationErrorToast />
       <WebhookNotification />
       <AssistantWidget />
+      <WorkflowPermissionModal />
     </div>
   );
 }
