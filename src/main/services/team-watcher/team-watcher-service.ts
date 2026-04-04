@@ -75,7 +75,6 @@ function readTeamConfig(configPath: string): TeamMember[] {
         agentId: typeof m.agentId === 'string' ? m.agentId : '',
         name: typeof m.name === 'string' ? m.name : '',
         sessionId: typeof m.sessionId === 'string' ? m.sessionId : '',
-        tmuxPaneId: typeof m.tmuxPaneId === 'string' ? m.tmuxPaneId : undefined,
         cwd: typeof m.cwd === 'string' ? m.cwd : '',
         status: isValidAgentStatus(m.status) ? m.status : 'running',
       }))

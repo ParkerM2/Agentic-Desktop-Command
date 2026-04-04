@@ -97,7 +97,6 @@ import {
 import { createTeamWatcherService } from '../services/team-watcher/team-watcher-service';
 import { createTerminalService } from '../services/terminal/terminal-service';
 import { createTimeParserService } from '../services/time-parser/time-parser-service';
-import { createTmuxBridgeService } from '../services/tmux-bridge/tmux-bridge-service';
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
@@ -113,7 +112,6 @@ import type { HubApiClient } from '../services/hub/hub-api-client';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import type { TaskRepository } from '../services/tasks/types';
 import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
-import type { TmuxBridgeService } from '../services/tmux-bridge/tmux-bridge-service';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 
 /** Everything createServiceRegistry produces — services + extras needed for lifecycle/event wiring. */
@@ -140,7 +138,6 @@ export interface ServiceRegistryResult {
   settingsService: ReturnType<typeof createSettingsService>;
   cleanupService: ReturnType<typeof createCleanupService>;
   crashRecovery: ReturnType<typeof createCrashRecovery>;
-  tmuxBridgeService: TmuxBridgeService;
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
@@ -442,9 +439,6 @@ export function createServiceRegistry(
   const taskLauncher = createTaskLauncher();
   const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
 
-  // ─── TmuxBridge (needed by Agent Manager for Team Lead sessions) ──
-  const tmuxBridgeService = createTmuxBridgeService();
-
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
 
@@ -522,7 +516,6 @@ export function createServiceRegistry(
   const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
 
   // ─── Agent dashboard services (Layer 1: Agent Visibility) ────
-  // NOTE: tmuxBridgeService is created earlier (before agentManagerService)
   const teamWatcherService = createTeamWatcherService();
   const sessionJsonlReaderService = createSessionJSONLReaderService();
   const progressWatcherV2 = createProgressWatcherV2();
@@ -654,7 +647,6 @@ export function createServiceRegistry(
     taskRepository,
     cleanupService,
     crashRecovery,
-    tmuxBridgeService,
     teamWatcherService,
     sessionJsonlReaderService,
     heartbeatIntervalId,

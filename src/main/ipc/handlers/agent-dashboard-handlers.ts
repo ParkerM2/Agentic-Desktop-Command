@@ -126,7 +126,6 @@ export function registerAgentDashboardHandlers(
     }
     return Promise.resolve({
       sessionId: result.id,
-      tmuxSessionName: result.name,
       status: 'spawned' as const,
     });
   });
