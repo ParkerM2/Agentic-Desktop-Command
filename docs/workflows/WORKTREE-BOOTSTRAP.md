@@ -36,4 +36,4 @@ node scripts/generate-worktree-claude.mjs \
 
 ## Doc Visibility in Worktrees
 
-Git worktrees share the full repo content. Agents in worktrees can read `ai-docs/`, `docs/`, `.claude/agents/`, etc. The generated CLAUDE.md doesn't inline everything — it extracts essential rules and points to the full docs for deeper context.
+Git worktrees share the full repo content. Agents in worktrees can read `docs/`, `.claude/agents/`, etc. The generated CLAUDE.md doesn't inline everything — it extracts essential rules and points to the full docs for deeper context.

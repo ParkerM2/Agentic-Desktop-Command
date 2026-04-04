@@ -1,6 +1,6 @@
 {
   "projectRulesFile": "CLAUDE.md",
-  "architectureFile": "docs/ARCHITECTURE.md",
+  "architectureFile": "docs/architecture/ARCHITECTURE.md",
   "progressDir": ".claude/progress",
   "branching": {
     "baseBranch": "auto",
@@ -24,9 +24,9 @@
       "feature-module-pattern"
     ],
     "alwaysIncludeDocs": [
-      "ai-docs/CODEBASE-GUARDIAN.md",
-      "ai-docs/LINTING.md",
-      "ai-docs/PATTERNS.md"
+      "docs/patterns/CODEBASE-GUARDIAN.md",
+      "docs/patterns/LINTING.md",
+      "docs/patterns/PATTERNS.md"
     ]
   }
 }

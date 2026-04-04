@@ -24,11 +24,11 @@ Your task is **Task #<N>: <task name>**.
 ## Initialization (MANDATORY — do ALL before writing code)
 
 1. Read `CLAUDE.md` — project rules and conventions
-2. Read `ai-docs/ARCHITECTURE.md` — system architecture
-3. Read `ai-docs/PATTERNS.md` — code conventions
-4. Read `ai-docs/LINTING.md` — ESLint rules and fix patterns
+2. Read `docs/architecture/ARCHITECTURE.md` — system architecture
+3. Read `docs/patterns/PATTERNS.md` — code conventions
+4. Read `docs/patterns/LINTING.md` — ESLint rules and fix patterns
 5. Read `.claude/agents/<your-agent>.md` — your specific rules and templates
-6. Read `ai-docs/prompts/implementing-features/README.md` — the implementation playbook
+6. Read `docs/prompts/implementing-features/README.md` — the implementation playbook
 
 ## Required Skills (MANDATORY — use these)
 
@@ -112,11 +112,11 @@ Your job is to validate the work done for **Task #<N>: <task name>**.
 ## Initialization (MANDATORY)
 
 1. Read `CLAUDE.md` — project rules
-2. Read `ai-docs/LINTING.md` — ESLint rules
-3. Read `ai-docs/PATTERNS.md` — code patterns
+2. Read `docs/patterns/LINTING.md` — ESLint rules
+3. Read `docs/patterns/PATTERNS.md` — code patterns
 4. Read `.claude/agents/qa-reviewer.md` — QA review protocol
-5. Read `ai-docs/prompts/mcp_tools/electron_validation.md` — Electron testing tools
-6. Read `ai-docs/prompts/implementing-features/QA-CHECKLIST-TEMPLATE.md` — checklist reference
+5. Read `docs/prompts/mcp_tools/electron_validation.md` — Electron testing tools
+6. Read `docs/prompts/implementing-features/QA-CHECKLIST-TEMPLATE.md` — checklist reference
 
 ## Required Skills (MANDATORY)
 
@@ -288,10 +288,10 @@ Coding agents should have updated docs alongside their code. Your job is to veri
 
 ## Initialization
 1. Read `CLAUDE.md`
-2. Read `ai-docs/ARCHITECTURE.md` — verify it reflects current state
-3. Read `ai-docs/PATTERNS.md` — verify new patterns are documented
-4. Read `ai-docs/DATA-FLOW.md` — verify new IPC/events are documented
-5. Read `ai-docs/FEATURES-INDEX.md` — verify new features/services listed
+2. Read `docs/architecture/ARCHITECTURE.md` — verify it reflects current state
+3. Read `docs/patterns/PATTERNS.md` — verify new patterns are documented
+4. Read `docs/architecture/DATA-FLOW.md` — verify new IPC/events are documented
+5. Read `docs/routing/FEATURES-INDEX.md` — verify new features/services listed
 
 ## Files Changed in This Feature
 

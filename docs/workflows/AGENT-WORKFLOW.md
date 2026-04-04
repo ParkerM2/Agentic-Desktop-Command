@@ -205,9 +205,9 @@ npm run build        # Builds successfully
 
 5. Review every changed file against:
    - CLAUDE.md rules
-   - ai-docs/CODEBASE-GUARDIAN.md structural rules
-   - ai-docs/PATTERNS.md code patterns
-   - ai-docs/LINTING.md ESLint rules
+   - docs/patterns/CODEBASE-GUARDIAN.md structural rules
+   - docs/patterns/PATTERNS.md code patterns
+   - docs/patterns/LINTING.md ESLint rules
 6. Check for design system violations (hardcoded colors, missing theme vars)
 7. Check accessibility (keyboard handlers, ARIA roles, labels)
 8. Check import order compliance
