@@ -78,7 +78,11 @@ export function createTaskLauncher(): TaskLauncherService {
       if (!session) return false;
 
       try {
-        process.kill(session.pid, 'SIGTERM');
+        if (process.platform === 'win32') {
+          process.kill(session.pid);
+        } else {
+          process.kill(session.pid, 'SIGTERM');
+        }
         sessions.delete(sessionId);
         return true;
       } catch {

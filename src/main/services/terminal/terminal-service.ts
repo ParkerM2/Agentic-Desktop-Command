@@ -5,6 +5,7 @@
  * Pipes I/O between PTY and IPC events.
  */
 
+import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { platform } from 'node:os';
 
@@ -31,7 +32,18 @@ export interface TerminalService {
 
 function getShell(): string {
   if (platform() === 'win32') {
-    // Prefer PowerShell 7+ if available, then Windows PowerShell, then cmd
+    // Prefer PowerShell 7+ (pwsh): check PATH first, then fall back to hardcoded
+    // install location, then fall back to Windows PowerShell, then cmd.exe
+    try {
+      const found = execSync('where pwsh', { stdio: 'pipe', timeout: 3000 })
+        .toString()
+        .trim()
+        .split('\n')[0]
+        ?.trim();
+      if (found && found.length > 0) return found;
+    } catch {
+      // pwsh not on PATH — try hardcoded location
+    }
     const pwsh7 = 'C:\\Program Files\\PowerShell\\7\\pwsh.exe';
     if (existsSync(pwsh7)) return pwsh7;
     return process.env.COMSPEC ?? 'cmd.exe';
