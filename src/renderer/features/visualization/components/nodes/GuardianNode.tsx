@@ -1,9 +1,10 @@
-import type { NodeProps } from '@xyflow/react';
 
 import { Handle, Position } from '@xyflow/react';
 
-import type { AgentStatus, AgentTaskNode as AgentTaskRFNode } from '../../lib/graph-builders';
 import { useVisualizationStore } from '../../store';
+
+import type { AgentStatus, AgentTaskNode as AgentTaskRFNode } from '../../lib/graph-builders';
+import type { NodeProps } from '@xyflow/react';
 
 function relativeTime(ts: string | null): string {
   if (!ts) return '';
@@ -25,7 +26,8 @@ function statusTextClass(status: AgentStatus): string {
     case 'error': {
       return 'text-destructive';
     }
-    default: {
+    case 'idle':
+    case 'pending': {
       return 'text-muted-foreground';
     }
   }
@@ -37,15 +39,15 @@ export function GuardianNode({ id, data, selected }: NodeProps<AgentTaskRFNode>)
 
   return (
     <>
-      <Handle type="target" position={Position.Top} />
+      <Handle position={Position.Top} type="target" />
       <div
+        aria-label={`Guardian agent: ${data.agentName}`}
+        role="button"
+        tabIndex={0}
         className={[
           'min-w-[180px] rounded-md border-2 border-primary/40 bg-primary/5 px-3 py-2 shadow-sm',
           selected ? 'ring-2 ring-primary' : '',
         ].join(' ')}
-        role="button"
-        tabIndex={0}
-        aria-label={`Guardian agent: ${data.agentName}`}
         onClick={() => {
           openDetailPanel(id);
         }}
@@ -58,11 +60,11 @@ export function GuardianNode({ id, data, selected }: NodeProps<AgentTaskRFNode>)
       >
         <div className="mb-1 flex items-center gap-2">
           <span
+            aria-hidden="true"
             className={[
               'inline-block h-2 w-2 shrink-0 rounded-full',
               data.status === 'active' ? 'animate-pulse bg-primary' : 'bg-muted-foreground',
             ].join(' ')}
-            aria-hidden="true"
           />
           <span className="truncate text-sm font-semibold">{data.agentName}</span>
           <span className="ml-auto shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium text-primary">
@@ -74,7 +76,7 @@ export function GuardianNode({ id, data, selected }: NodeProps<AgentTaskRFNode>)
           {timeAgo !== '' && <span className="text-muted-foreground">{timeAgo}</span>}
         </div>
       </div>
-      <Handle type="source" position={Position.Bottom} />
+      <Handle position={Position.Bottom} type="source" />
     </>
   );
 }
