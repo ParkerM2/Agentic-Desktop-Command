@@ -22,8 +22,8 @@ export function DataFlowEdge({
   return (
     <BaseEdge
       id={id}
-      path={edgePath}
       markerEnd={markerEnd}
+      path={edgePath}
       style={{ stroke: 'var(--border)', strokeWidth: 1, strokeOpacity: 0.5 }}
     />
   );
