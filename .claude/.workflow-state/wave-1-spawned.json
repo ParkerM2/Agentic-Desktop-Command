@@ -1,11 +1,17 @@
 {
   "wave": 1,
-  "tasks": ["task-1", "task-4"],
+  "tasks": [
+    "task-1",
+    "task-2",
+    "task-3"
+  ],
   "agentIds": {
-    "coder-task-1": "coder-task-1@workspace-and-assistant-redesign",
-    "qa-task-1": "qa-task-1@workspace-and-assistant-redesign",
-    "coder-task-4": "coder-task-4@workspace-and-assistant-redesign",
-    "qa-task-4": "qa-task-4@workspace-and-assistant-redesign"
+    "coder-task-1": "coder-task-1@visualization-canvas",
+    "qa-task-1": "qa-task-1@visualization-canvas",
+    "coder-task-2": "coder-task-2@visualization-canvas",
+    "qa-task-2": "qa-task-2@visualization-canvas",
+    "coder-task-3": "coder-task-3@visualization-canvas",
+    "qa-task-3": "qa-task-3@visualization-canvas"
   },
-  "spawnedAt": "2026-04-03T00:00:00Z"
+  "spawnedAt": "2026-04-04T19:55:44.807Z"
 }
