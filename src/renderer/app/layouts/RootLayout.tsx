@@ -88,7 +88,7 @@ export function RootLayout() {
               Hub disconnected. Some features may be unavailable.
             </div>
           ) : null}
-          <main className="flex-1 overflow-auto">
+          <main className="min-h-0 flex-1 overflow-hidden">
             <RouteErrorBoundary resetKey={pathname}>
               <Outlet />
             </RouteErrorBoundary>
