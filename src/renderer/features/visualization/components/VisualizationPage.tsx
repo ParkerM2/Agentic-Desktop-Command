@@ -1,19 +1,20 @@
-import { useParams } from '@tanstack/react-router';
 import { ReactFlowProvider } from '@xyflow/react';
 
-import { ROUTE_PATTERNS } from '@shared/constants';
-
 import { PageContent, PageHeader, PageLayout } from '@ui';
+
+import { useLooseParams } from '@renderer/shared/hooks';
 
 import { VisualizationCanvas } from './canvas/VisualizationCanvas';
 import { NodeDetailPanel } from './panels/NodeDetailPanel';
 
 export function VisualizationPage() {
-  const { projectId } = useParams({ from: ROUTE_PATTERNS.PROJECT_VISUALIZATION });
+  const params = useLooseParams();
+  const projectId = params.projectId ?? '';
+
   return (
     <PageLayout>
       <PageHeader description="Codebase structure and agent activity" title="Visual Map" />
-      <PageContent className="p-0 h-full flex flex-col">
+      <PageContent className="h-full flex-1 p-0">
         <ReactFlowProvider>
           <div className="relative flex-1">
             <VisualizationCanvas projectId={projectId} />
