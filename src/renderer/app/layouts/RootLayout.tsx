@@ -31,7 +31,6 @@ import { hubKeys, useHubStatus } from '@features/settings/api/useHub';
 import { WorkflowPermissionModal } from '@features/workflow';
 
 import { LayoutWrapper } from './LayoutWrapper';
-import { TitleBar } from './TitleBar';
 import { TopBar } from './TopBar';
 
 export function RootLayout() {
@@ -58,12 +57,9 @@ export function RootLayout() {
   // Show loading state while fetching settings
   if (isLoading) {
     return (
-      <div className="flex h-screen flex-col overflow-hidden">
+      <div className="bg-background flex h-screen items-center justify-center">
         <ThemeHydrator />
-        <TitleBar />
-        <div className="bg-background flex flex-1 items-center justify-center">
-          <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
-        </div>
+        <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -84,7 +80,6 @@ export function RootLayout() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ThemeHydrator />
-      <TitleBar />
       <div className="min-h-0 flex-1">
         <LayoutWrapper layoutId={sidebarLayout}>
           <TopBar />
