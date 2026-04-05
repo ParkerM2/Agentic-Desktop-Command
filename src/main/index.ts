@@ -17,11 +17,11 @@ import {
 } from './bootstrap';
 import { appLogger } from './lib/logger';
 
-// Enable remote debugging for DevTools MCP integration
-app.commandLine.appendSwitch('remote-debugging-port', '9222');
-
 import type { ErrorCollector } from './services/health/error-collector';
 import type { SettingsService } from './services/settings/settings-service';
+
+// Enable remote debugging for DevTools MCP integration
+app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
 let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
