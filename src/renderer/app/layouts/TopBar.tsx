@@ -1,106 +1,216 @@
 /**
- * TopBar — Project tabs bar
+ * TopBar — Unified app bar
  *
- * Displays open project tabs and an "Add project" button.
- * Utility buttons (screenshot, health, hub status) live in TitleBar.
- * The AssistantWidget (chat popup) provides global assistant access.
+ * Single bar replacing the old TitleBar + TopBar stack.
+ * Lives inside SidebarInset (inside SidebarProvider) so SidebarTrigger works.
+ * Provides the electron drag region, project tabs, utility buttons, and window controls.
  */
 
+import { useCallback, useEffect, useState } from 'react';
+
 import { useNavigate } from '@tanstack/react-router';
-import { FolderOpen, Plus, X } from 'lucide-react';
+import { Folder, FolderOpen, Minus, PanelLeft, Plus, Square, X } from 'lucide-react';
 
 import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 
+import { HubStatus } from '@renderer/shared/components/HubStatus';
+import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
+import { Button, Separator } from '@ui';
+
+import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
 import { WorkflowStatusBar } from '@features/workflow';
 
-import { Button } from '@ui/button';
-import { SidebarTrigger } from '@ui/sidebar';
+
+import { useSidebar } from '@ui/sidebar';
+
+import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 export function TopBar() {
-  // 1. Hooks
   const navigate = useNavigate();
   const { activeProjectId, projectTabOrder, setActiveProject, removeProjectTab } = useLayoutStore();
   const { data: projects } = useProjects();
+  const { toggleSidebar } = useSidebar();
+  const [isMaximized, setIsMaximized] = useState(false);
 
-  // 2. Derived state
+  const refreshMaximizedState = useCallback(async () => {
+    try {
+      const result = await ipc('window.isMaximized', {});
+      setIsMaximized(result.isMaximized);
+    } catch {
+      // non-critical
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshMaximizedState();
+  }, [refreshMaximizedState]);
+
+  useEffect(() => {
+    function handleResize() {
+      void refreshMaximizedState();
+    }
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [refreshMaximizedState]);
+
   const openProjects = projectTabOrder
     .map((id) => projects?.find((p) => p.id === id))
     .filter(Boolean);
 
-  // 3. Handlers
   function handleSelectProject(projectId: string) {
     setActiveProject(projectId);
     void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
-  }
-
-  function handleCloseTab(e: React.MouseEvent | React.KeyboardEvent, projectId: string) {
-    e.stopPropagation();
-    removeProjectTab(projectId);
   }
 
   function handleAddProject() {
     void navigate({ to: ROUTES.PROJECTS });
   }
 
-  // 4. Render
-  return (
-    <div className="border-border bg-card flex h-10 items-center gap-px border-b px-1">
-      {/* Sidebar toggle — replaces ContentHeader bar */}
-      <SidebarTrigger className="-ml-1 mr-1 shrink-0" />
-      <div className="bg-border mr-1 h-4 w-px shrink-0" />
+  function handleMinimize() {
+    void ipc('window.minimize', {});
+  }
 
-      {/* Left: Project tabs */}
-      <div className="flex min-w-0 flex-1 items-center gap-px overflow-hidden">
+  function handleMaximize() {
+    void ipc('window.maximize', {});
+    setIsMaximized((prev) => !prev);
+  }
+
+  function handleClose() {
+    void ipc('window.close', {});
+  }
+
+  return (
+    <div className="electron-drag border-border bg-card flex h-10 shrink-0 items-stretch border-b">
+      {/* Sidebar toggle */}
+      <div className="electron-no-drag flex items-center">
+        <Button
+          aria-label="Toggle sidebar"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground h-10 w-10 rounded-none"
+          size="icon"
+          variant="ghost"
+          onClick={toggleSidebar}
+        >
+          <PanelLeft className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="bg-border my-2 w-px shrink-0" />
+
+      {/* Project tabs */}
+      <div className="electron-no-drag flex min-w-0 items-stretch overflow-hidden">
         {openProjects.map((project) => {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
           return (
-            <Button
+            <button
               key={project.id}
-              variant="ghost"
               className={cn(
-                'group flex items-center gap-2 rounded-t-md px-3 py-1.5 text-sm transition-colors',
+                'border-border group flex h-full items-center gap-1.5 border-r px-4 text-xs transition-colors',
+                'border-t-2',
                 isActive
-                  ? 'bg-background text-foreground border-primary border-b-2'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  ? 'border-t-primary bg-background text-foreground'
+                  : 'border-t-transparent text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
               onClick={() => handleSelectProject(project.id)}
             >
-              <FolderOpen className="h-3.5 w-3.5 shrink-0" />
-              <span className="max-w-32 truncate">{project.name}</span>
+              {isActive ? (
+                <FolderOpen className="text-primary h-3 w-3 shrink-0" />
+              ) : (
+                <Folder className="h-3 w-3 shrink-0" />
+              )}
+              <span className="max-w-32 truncate font-mono">{project.name}</span>
               <span
                 aria-label={`Close ${project.name} tab`}
-                className="hover:bg-muted ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
+                className="hover:bg-muted ml-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
                 role="button"
                 tabIndex={0}
-                onClick={(e) => handleCloseTab(e, project.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeProjectTab(project.id);
+                }}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') handleCloseTab(e, project.id);
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    removeProjectTab(project.id);
+                  }
                 }}
               >
-                <X className="h-3 w-3" />
+                ×
               </span>
-            </Button>
+            </button>
           );
         })}
-
-        <Button
-          className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded-md p-1.5"
+        <button
+          className="text-muted-foreground hover:text-foreground flex h-full items-center px-3 transition-colors"
           title="Open project"
-          variant="ghost"
           onClick={handleAddProject}
         >
-          <Plus className="h-4 w-4" />
-        </Button>
+          <Plus className="h-3.5 w-3.5" />
+        </button>
       </div>
 
-      {/* Right: Workflow context indicator */}
-      <div className="ml-2 flex shrink-0 items-center pr-1">
+      {/* Drag spacer */}
+      <div className="flex-1" />
+
+      {/* Utility buttons */}
+      <div className="electron-no-drag flex items-center gap-0.5 px-1">
         <WorkflowStatusBar />
+        <TitleBarScreenshot />
+        <HealthIndicator />
+        <HubStatus />
+      </div>
+
+      {/* Separator */}
+      <Separator className="mx-1 self-center" orientation="vertical" />
+
+      {/* Window controls */}
+      <div className="electron-no-drag flex h-full items-center">
+        <Button
+          aria-label="Minimize window"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground h-10 w-10 rounded-none"
+          size="icon"
+          variant="ghost"
+          onClick={handleMinimize}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </Button>
+        <Button
+          aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
+          className="text-muted-foreground hover:bg-muted hover:text-foreground h-10 w-10 rounded-none"
+          size="icon"
+          variant="ghost"
+          onClick={handleMaximize}
+        >
+          {isMaximized ? (
+            <svg
+              aria-hidden="true"
+              className="h-3 w-3"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              viewBox="0 0 10 10"
+            >
+              <rect height="7" rx="0.5" width="7" x="0.5" y="2.5" />
+              <path d="M2.5 2.5V1a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-.5.5H8" />
+            </svg>
+          ) : (
+            <Square className="h-3 w-3" />
+          )}
+        </Button>
+        <Button
+          aria-label="Close window"
+          className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground h-10 w-10 rounded-none"
+          size="icon"
+          variant="ghost"
+          onClick={handleClose}
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
       </div>
     </div>
   );
