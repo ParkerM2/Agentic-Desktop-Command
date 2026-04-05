@@ -1,5 +1,6 @@
-
 import { Handle, Position } from '@xyflow/react';
+
+import { StatusIndicator } from '@ui';
 
 import { useVisualizationStore } from '../../store';
 
@@ -17,38 +18,22 @@ function relativeTime(ts: string | null): string {
   return new Date(ts).toLocaleDateString();
 }
 
-function statusDotClass(status: AgentStatus): string {
+function statusVariant(
+  status: AgentStatus,
+): 'success' | 'error' | 'warning' | 'neutral' {
   switch (status) {
     case 'active': {
-      return 'bg-primary animate-pulse';
+      return 'warning';
     }
     case 'completed': {
-      return 'bg-green-500';
+      return 'success';
     }
     case 'error': {
-      return 'bg-destructive';
+      return 'error';
     }
     case 'idle':
     case 'pending': {
-      return 'bg-muted-foreground';
-    }
-  }
-}
-
-function statusTextClass(status: AgentStatus): string {
-  switch (status) {
-    case 'active': {
-      return 'text-primary';
-    }
-    case 'completed': {
-      return 'text-green-500';
-    }
-    case 'error': {
-      return 'text-destructive';
-    }
-    case 'idle':
-    case 'pending': {
-      return 'text-muted-foreground';
+      return 'neutral';
     }
   }
 }
@@ -79,9 +64,10 @@ export function AgentTaskNode({ id, data, selected }: NodeProps<AgentTaskRFNode>
         }}
       >
         <div className="mb-1 flex items-center gap-2">
-          <span
+          <StatusIndicator
             aria-hidden="true"
-            className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(data.status)}`}
+            size="sm"
+            variant={statusVariant(data.status)}
           />
           <span className="truncate text-sm font-medium">{data.agentName}</span>
         </div>
@@ -89,7 +75,11 @@ export function AgentTaskNode({ id, data, selected }: NodeProps<AgentTaskRFNode>
           <p className="mb-1 truncate text-xs text-muted-foreground">{data.taskName}</p>
         )}
         <div className="flex items-center justify-between gap-1 text-xs">
-          <span className={statusTextClass(data.status)}>{data.status}</span>
+          <StatusIndicator
+            label={data.status}
+            size="sm"
+            variant={statusVariant(data.status)}
+          />
           {timeAgo !== '' && <span className="text-muted-foreground">{timeAgo}</span>}
         </div>
         {data.wave !== null && (

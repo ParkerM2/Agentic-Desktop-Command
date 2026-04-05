@@ -1,5 +1,6 @@
-
 import { Handle, Position } from '@xyflow/react';
+
+import { StatusIndicator } from '@ui';
 
 import { useVisualizationStore } from '../../store';
 
@@ -15,20 +16,22 @@ function relativeTime(ts: string | null): string {
   return new Date(ts).toLocaleDateString();
 }
 
-function statusTextClass(status: AgentStatus): string {
+function statusVariant(
+  status: AgentStatus,
+): 'success' | 'warning' | 'error' | 'neutral' {
   switch (status) {
     case 'active': {
-      return 'text-primary';
+      return 'warning';
     }
     case 'completed': {
-      return 'text-green-500';
+      return 'success';
     }
     case 'error': {
-      return 'text-destructive';
+      return 'error';
     }
     case 'idle':
     case 'pending': {
-      return 'text-muted-foreground';
+      return 'neutral';
     }
   }
 }
@@ -59,12 +62,10 @@ export function GuardianNode({ id, data, selected }: NodeProps<AgentTaskRFNode>)
         }}
       >
         <div className="mb-1 flex items-center gap-2">
-          <span
+          <StatusIndicator
             aria-hidden="true"
-            className={[
-              'inline-block h-2 w-2 shrink-0 rounded-full',
-              data.status === 'active' ? 'animate-pulse bg-primary' : 'bg-muted-foreground',
-            ].join(' ')}
+            size="sm"
+            variant={statusVariant(data.status)}
           />
           <span className="truncate text-sm font-semibold">{data.agentName}</span>
           <span className="ml-auto shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium text-primary">
@@ -72,7 +73,11 @@ export function GuardianNode({ id, data, selected }: NodeProps<AgentTaskRFNode>)
           </span>
         </div>
         <div className="flex items-center justify-between gap-1 text-xs">
-          <span className={statusTextClass(data.status)}>{data.status}</span>
+          <StatusIndicator
+            label={data.status}
+            size="sm"
+            variant={statusVariant(data.status)}
+          />
           {timeAgo !== '' && <span className="text-muted-foreground">{timeAgo}</span>}
         </div>
       </div>

@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, ScrollArea } from '@ui';
+import { Button, Card, ScrollArea } from '@ui';
 
 import { useAgentTeams } from '../../api/visualization-api';
 import { useVisualizationStore } from '../../store';
@@ -55,39 +55,41 @@ export function NodeDetailPanel({ projectId }: NodeDetailPanelProps) {
       aria-hidden={!detailPanelOpen}
       aria-label="Node detail panel"
       className={cn(
-        'absolute top-0 right-0 z-10 h-full w-[380px] bg-card border-l border-border shadow-xl',
+        'absolute top-0 right-0 z-10 h-full w-[380px] border-l border-border shadow-xl',
         'flex flex-col',
         'transition-transform duration-300',
         detailPanelOpen ? 'translate-x-0' : 'translate-x-full',
       )}
     >
-      <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-        <h3 className="truncate text-sm font-semibold">{getPanelTitle(node)}</h3>
-        <Button
-          aria-label="Close detail panel"
-          size="icon"
-          variant="ghost"
-          onClick={closeDetailPanel}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </header>
+      <Card className="flex h-full flex-col rounded-none border-0">
+        <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="truncate text-sm font-semibold">{getPanelTitle(node)}</h3>
+          <Button
+            aria-label="Close detail panel"
+            size="icon"
+            variant="ghost"
+            onClick={closeDetailPanel}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </header>
 
-      {shouldRender ? (
-        <ScrollArea className="flex-1">
-          {renderNodeContent(node, {
-            featureEvents,
-            agentTeamsLoading,
-            featureName,
-            projectId,
-            getFileEdges,
-          })}
-        </ScrollArea>
-      ) : (
-        <div className="flex flex-1 items-center justify-center">
-          <p className="text-xs text-muted-foreground">Select a node to view details</p>
-        </div>
-      )}
+        {shouldRender ? (
+          <ScrollArea className="flex-1">
+            {renderNodeContent(node, {
+              featureEvents,
+              agentTeamsLoading,
+              featureName,
+              projectId,
+              getFileEdges,
+            })}
+          </ScrollArea>
+        ) : (
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-xs text-muted-foreground">Select a node to view details</p>
+          </div>
+        )}
+      </Card>
     </aside>
   );
 }

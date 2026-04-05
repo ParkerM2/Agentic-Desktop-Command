@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Folder, FolderOpen, Minus, PanelLeft, Plus, Square, X } from 'lucide-react';
 
-import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
+import { PROJECT_VIEWS, ROUTES, projectViewPath } from '@shared/constants';
 
 import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -24,14 +24,13 @@ import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
 import { WorkflowStatusBar } from '@features/workflow';
 
-
 import { useSidebar } from '@ui/sidebar';
 
 import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 export function TopBar() {
   const navigate = useNavigate();
-  const { activeProjectId, projectTabOrder, setActiveProject, removeProjectTab } = useLayoutStore();
+  const { activeProjectId, projectTabOrder, removeProjectTab, setActiveProject } = useLayoutStore();
   const { data: projects } = useProjects();
   const { toggleSidebar } = useSidebar();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -124,24 +123,18 @@ export function TopBar() {
                 <Folder className="h-3 w-3 shrink-0" />
               )}
               <span className="max-w-32 truncate font-mono">{project.name}</span>
-              <span
+              <Button
                 aria-label={`Close ${project.name} tab`}
-                className="hover:bg-muted ml-0.5 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-                role="button"
-                tabIndex={0}
+                className="ml-0.5 h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
+                size="icon"
+                variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeProjectTab(project.id);
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.stopPropagation();
-                    removeProjectTab(project.id);
-                  }
-                }}
               >
                 ×
-              </span>
+              </Button>
             </button>
           );
         })}
