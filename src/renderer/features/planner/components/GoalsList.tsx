@@ -9,6 +9,8 @@ import { Check, Plus, Trash2, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Input } from '@ui';
+
 interface GoalsListProps {
   goals: string[];
   completedGoals: string[];
@@ -54,19 +56,20 @@ export function GoalsList({ goals, completedGoals, onUpdate, onToggle }: GoalsLi
             const isComplete = completedSet.has(goal);
             return (
               <li key={`goal-${String(index)}`} className="group flex items-center gap-2">
-                <button
+                <Button
                   aria-label={isComplete ? 'Mark incomplete' : 'Mark complete'}
-                  type="button"
                   className={cn(
-                    'flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors',
+                    'h-5 w-5 shrink-0 rounded border p-0',
                     isComplete
-                      ? 'border-success bg-success text-success-foreground'
+                      ? 'border-success bg-success text-success-foreground hover:bg-success/90'
                       : 'border-border hover:border-primary',
                   )}
+                  size="icon"
+                  variant="ghost"
                   onClick={() => onToggle(goal)}
                 >
                   {isComplete ? <Check className="h-3 w-3" /> : null}
-                </button>
+                </Button>
                 <span
                   className={cn(
                     'flex-1 text-sm',
@@ -75,14 +78,15 @@ export function GoalsList({ goals, completedGoals, onUpdate, onToggle }: GoalsLi
                 >
                   {goal}
                 </span>
-                <button
+                <Button
                   aria-label="Remove goal"
-                  className="text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
-                  type="button"
+                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100"
+                  size="icon"
+                  variant="ghost"
                   onClick={() => handleRemove(index)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </li>
             );
           })}
@@ -90,32 +94,32 @@ export function GoalsList({ goals, completedGoals, onUpdate, onToggle }: GoalsLi
       )}
 
       <div className="flex items-center gap-2">
-        <input
-          className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring flex-1 rounded-md border px-2.5 py-1.5 text-sm outline-none focus:ring-1"
+        <Input
+          className="flex-1"
           placeholder="Add a goal..."
-          type="text"
           value={newGoal}
           onChange={(event) => setNewGoal(event.target.value)}
           onKeyDown={handleKeyDown}
         />
         {newGoal.trim().length > 0 ? (
           <>
-            <button
+            <Button
               aria-label="Add goal"
-              className="text-primary hover:text-primary/80 transition-colors"
-              type="button"
+              className="text-primary hover:text-primary/80"
+              size="icon"
+              variant="ghost"
               onClick={handleAdd}
             >
               <Plus className="h-4 w-4" />
-            </button>
-            <button
+            </Button>
+            <Button
               aria-label="Cancel"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-              type="button"
+              size="icon"
+              variant="ghost"
               onClick={() => setNewGoal('')}
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </>
         ) : null}
       </div>

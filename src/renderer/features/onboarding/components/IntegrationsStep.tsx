@@ -11,7 +11,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, Card, CardContent, CardHeader } from '@ui';
 
 // ── Icons ───────────────────────────────────────────────────
 
@@ -23,11 +24,6 @@ function GitHubIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-// ── Constants ───────────────────────────────────────────────
-
-const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -130,22 +126,16 @@ export function IntegrationsStep({ onBack, onNext, onSkip }: IntegrationsStepPro
           </div>
         )}
 
-        <button
+        <Button
+          className="w-full justify-center bg-foreground text-background hover:bg-foreground/90"
           disabled={authorizing}
-          type="button"
-          className={cn(
-            BUTTON_BASE,
-            'w-full justify-center bg-foreground text-background',
-            'hover:bg-foreground/90 focus:outline-none focus:ring-2 focus:ring-ring',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
           onClick={() => {
             void handleConnect();
           }}
         >
           <GitHubIcon className="size-4" />
           {authorizing ? 'Waiting...' : 'Connect GitHub'}
-        </button>
+        </Button>
       </>
     );
   }
@@ -159,13 +149,13 @@ export function IntegrationsStep({ onBack, onNext, onSkip }: IntegrationsStepPro
       </p>
 
       {/* GitHub Card */}
-      <div className="mb-5 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
+      <Card className="mb-5 w-full max-w-lg overflow-hidden">
+        <CardHeader className="flex flex-row items-center gap-2 border-b bg-muted/50 px-4 py-2.5">
           <GitHubIcon className="size-4 text-muted-foreground" />
           <span className="text-xs font-medium text-muted-foreground">GitHub</span>
-        </div>
-        <div className="space-y-4 p-5">{renderGitHubCard()}</div>
-      </div>
+        </CardHeader>
+        <CardContent className="space-y-4 p-5">{renderGitHubCard()}</CardContent>
+      </Card>
 
       {/* Additional integrations note */}
       <p className="mb-5 max-w-md text-center text-xs text-muted-foreground">
@@ -174,23 +164,15 @@ export function IntegrationsStep({ onBack, onNext, onSkip }: IntegrationsStepPro
 
       {/* Navigation */}
       <div className="flex items-center gap-3">
-        <button
-          className={cn(BUTTON_BASE, 'border border-border bg-background hover:bg-accent')}
-          type="button"
-          onClick={onBack}
-        >
+        <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="size-4" />
           Back
-        </button>
+        </Button>
 
-        <button
-          className={cn(BUTTON_BASE, 'bg-primary text-primary-foreground hover:bg-primary/90')}
-          type="button"
-          onClick={isAuthenticated ? onNext : onSkip}
-        >
+        <Button onClick={isAuthenticated ? onNext : onSkip}>
           {isAuthenticated ? 'Continue' : 'Skip for Now'}
           <ArrowRight className="size-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

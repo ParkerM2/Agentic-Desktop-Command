@@ -23,6 +23,8 @@ import {
 import { cn } from '@renderer/shared/lib/utils';
 import { useThemeStore } from '@renderer/shared/stores/theme-store';
 
+import { Button, ScrollArea } from '@ui';
+
 import { useFileDiff, useMergeDiff } from '../api/useMerge';
 
 import { FileDiffViewer } from './FileDiffViewer';
@@ -227,49 +229,49 @@ export function MergePreviewPanel({
 
         {/* View mode toggle */}
         <div className="border-border flex items-center gap-0.5 rounded-md border p-0.5">
-          <button
+          <Button
             aria-label="Split view"
             className={cn(
-              'rounded px-2 py-1 text-xs transition-colors',
-              isSplit
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
+              'h-auto rounded px-2 py-1 text-xs',
+              isSplit ? 'bg-muted text-foreground' : 'text-muted-foreground',
             )}
+            size="icon"
+            variant="ghost"
             onClick={() => setViewMode(DiffModeEnum.SplitGitHub)}
           >
             <Columns2 className="h-3.5 w-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
             aria-label="Unified view"
             className={cn(
-              'rounded px-2 py-1 text-xs transition-colors',
-              isSplit
-                ? 'text-muted-foreground hover:text-foreground'
-                : 'bg-muted text-foreground',
+              'h-auto rounded px-2 py-1 text-xs',
+              isSplit ? 'text-muted-foreground' : 'bg-muted text-foreground',
             )}
+            size="icon"
+            variant="ghost"
             onClick={() => setViewMode(DiffModeEnum.Unified)}
           >
             <Rows2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Main content: sidebar + diff viewer */}
       <div className="flex min-h-0 flex-1">
         {/* File list sidebar */}
-        <div className="border-border w-64 shrink-0 overflow-y-auto border-r">
+        <ScrollArea className="border-border w-64 shrink-0 border-r">
           {diff.files.length > 0 ? (
             <div className="py-1">
               {diff.files.map((file) => (
-                <button
+                <Button
                   key={file.file}
                   className={cn(
-                    'flex w-full items-center justify-between px-3 py-1.5 text-left text-xs',
-                    'transition-colors',
+                    'flex h-auto w-full items-center justify-between px-3 py-1.5 text-left text-xs',
                     selectedFile === file.file
                       ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-muted/50',
+                      : 'text-foreground',
                   )}
+                  variant="ghost"
                   onClick={() => setSelectedFile(file.file)}
                 >
                   <div className="flex min-w-0 items-center gap-1.5">
@@ -299,7 +301,7 @@ export function MergePreviewPanel({
                       </>
                     )}
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
           ) : (
@@ -307,7 +309,7 @@ export function MergePreviewPanel({
               No file changes detected
             </div>
           )}
-        </div>
+        </ScrollArea>
 
         {/* Diff viewer area */}
         <div className="min-w-0 flex-1 overflow-auto">

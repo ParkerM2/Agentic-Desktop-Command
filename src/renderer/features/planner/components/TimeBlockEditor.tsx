@@ -8,6 +8,17 @@ import { Plus, X } from 'lucide-react';
 
 import type { TimeBlock } from '@shared/types';
 
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui';
+
 const BLOCK_TYPES: Array<{ value: TimeBlock['type']; label: string }> = [
   { value: 'focus', label: 'Focus' },
   { value: 'meeting', label: 'Meeting' },
@@ -45,79 +56,73 @@ export function TimeBlockEditor({ editingBlock, onSave, onCancel }: TimeBlockEdi
         <h4 className="text-foreground text-sm font-medium">
           {editingBlock ? 'Edit Time Block' : 'New Time Block'}
         </h4>
-        <button
+        <Button
           aria-label="Cancel"
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          size="icon"
           type="button"
+          variant="ghost"
           onClick={onCancel}
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <label className="space-y-1">
-          <span className="text-muted-foreground text-xs">Start</span>
-          <input
-            className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-2.5 py-1.5 text-sm outline-none focus:ring-1"
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-xs">Start</Label>
+          <Input
             type="time"
             value={startTime}
             onChange={(event) => setStartTime(event.target.value)}
           />
-        </label>
-        <label className="space-y-1">
-          <span className="text-muted-foreground text-xs">End</span>
-          <input
-            className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-2.5 py-1.5 text-sm outline-none focus:ring-1"
+        </div>
+        <div className="space-y-1">
+          <Label className="text-muted-foreground text-xs">End</Label>
+          <Input
             type="time"
             value={endTime}
             onChange={(event) => setEndTime(event.target.value)}
           />
-        </label>
+        </div>
       </div>
 
-      <label className="block space-y-1">
-        <span className="text-muted-foreground text-xs">Label</span>
-        <input
-          className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-2.5 py-1.5 text-sm outline-none focus:ring-1"
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-xs">Label</Label>
+        <Input
           placeholder="What are you working on?"
-          type="text"
           value={label}
           onChange={(event) => setLabel(event.target.value)}
         />
-      </label>
+      </div>
 
-      <label className="block space-y-1">
-        <span className="text-muted-foreground text-xs">Type</span>
-        <select
-          className="border-input bg-background text-foreground focus:ring-ring w-full rounded-md border px-2.5 py-1.5 text-sm outline-none focus:ring-1"
-          value={blockType}
-          onChange={(event) => setBlockType(event.target.value as TimeBlock['type'])}
-        >
-          {BLOCK_TYPES.map((bt) => (
-            <option key={bt.value} value={bt.value}>
-              {bt.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="space-y-1">
+        <Label className="text-muted-foreground text-xs">Type</Label>
+        <Select value={blockType} onValueChange={(v) => setBlockType(v as TimeBlock['type'])}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {BLOCK_TYPES.map((bt) => (
+              <SelectItem key={bt.value} value={bt.value}>
+                {bt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="flex justify-end gap-2">
-        <button
-          className="text-muted-foreground hover:text-foreground rounded-md px-3 py-1.5 text-sm transition-colors"
-          type="button"
-          onClick={onCancel}
-        >
+        <Button size="sm" type="button" variant="ghost" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+        </Button>
+        <Button
           disabled={label.trim().length === 0}
+          size="sm"
           type="submit"
         >
           <Plus className="h-3.5 w-3.5" />
           {editingBlock ? 'Update' : 'Add Block'}
-        </button>
+        </Button>
       </div>
     </form>
   );
