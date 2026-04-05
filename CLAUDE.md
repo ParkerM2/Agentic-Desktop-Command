@@ -63,14 +63,35 @@ npm run build      # Must compile
 
 ---
 
-## Key Docs
+## Documentation Reference
 
-| Doc | When to Read |
-|-----|-------------|
-| `docs/patterns/CODEBASE-GUARDIAN.md` | File placement, naming, import rules — always |
-| `docs/patterns/LINTING.md` | ESLint rules and fix patterns |
-| `docs/patterns/PATTERNS.md` | Code conventions and examples |
-| `docs/architecture/ARCHITECTURE.md` | System architecture, IPC flow |
-| `docs/architecture/DATA-FLOW.md` | Data flow diagrams |
-| `docs/routing/FEATURES-INDEX.md` | All features, services, and IPC channels |
-| `docs/tracker.json` | Plan lifecycle (single source of truth) |
+**Master index**: `docs/INDEX.md` — full table of contents for all 47 docs
+
+### Essential (read first)
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/patterns/CODEBASE-GUARDIAN.md` | File placement, naming, import rules |
+| `docs/patterns/PATTERNS.md` | Code conventions, feature scaffold pattern |
+| `docs/architecture/ARCHITECTURE.md` | System layers, IPC flow |
+
+### Lookup (find things fast)
+
+| Doc | Purpose |
+|-----|---------|
+| `docs/routing/FEATURES-INDEX.md` | Find any feature, service, or IPC channel (30 features, 33 services) |
+| `docs/routing/AI-AGENT-ROUTING-INDEX.md` | Trace a domain end-to-end: types → contract → service → handler → feature → route |
+| `docs/tracker.json` | Plan lifecycle status (single source of truth) |
+
+### By task
+
+| I need to... | Read |
+|-------------|------|
+| Fix a lint error | `docs/patterns/LINTING.md` |
+| Style a component | `docs/patterns/DESIGN-SYSTEM.md` |
+| Trace data flow | `docs/architecture/DATA-FLOW.md` |
+| Add a feature | `docs/patterns/PATTERNS.md` → `docs/features/<name>/plan.md` |
+| Run agent teams | `docs/prompts/implementing-features/README.md` |
+| Update docs after code changes | `docs/workflows/DOC-UPDATE-MAP.md` |
+| Check feature plans/specs | `docs/features/` (10 plans), `docs/specs/` (4 specs), `docs/plans/` (6 roadmaps) |
+| Read research/analysis | `docs/research/` (5 analyses) |
