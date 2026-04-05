@@ -27,7 +27,7 @@ export function TeamLeadPanelList({ projectId, sessions }: TeamLeadPanelListProp
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-border flex items-center gap-2 border-b px-4 py-2">
+      <div className="border-border flex h-10 items-center gap-2 border-b px-4">
         <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
           Team Leads
         </span>
