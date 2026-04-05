@@ -99,12 +99,10 @@ function applyDagreLayout(
 
   for (const node of nodes) {
     const pos = g.node(node.id);
-    if (pos) {
-      const isGroup = node.type === 'fileGroup' || node.type === 'featureGroup';
-      const w = isGroup ? GROUP_NODE_WIDTH : NODE_WIDTH;
-      const h = isGroup ? GROUP_NODE_HEIGHT : NODE_HEIGHT;
-      node.position = { x: pos.x - w / 2, y: pos.y - h / 2 };
-    }
+    const isGroup = node.type === 'fileGroup' || node.type === 'featureGroup';
+    const w = isGroup ? GROUP_NODE_WIDTH : NODE_WIDTH;
+    const h = isGroup ? GROUP_NODE_HEIGHT : NODE_HEIGHT;
+    node.position = { x: pos.x - w / 2, y: pos.y - h / 2 };
   }
 }
 

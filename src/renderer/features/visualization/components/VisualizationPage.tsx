@@ -1,8 +1,8 @@
 import { ReactFlowProvider } from '@xyflow/react';
 
-import { PageContent, PageHeader, PageLayout } from '@ui';
-
 import { useLooseParams } from '@renderer/shared/hooks';
+
+import { PageHeader, PageLayout } from '@ui';
 
 import { VisualizationCanvas } from './canvas/VisualizationCanvas';
 import { NodeDetailPanel } from './panels/NodeDetailPanel';
