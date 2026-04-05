@@ -10,9 +10,18 @@ import { useState } from 'react';
 import { Bell, CircleDot, GitPullRequest, Settings } from 'lucide-react';
 
 import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
-import { cn } from '@renderer/shared/lib/utils';
 
-import { Input, Spinner } from '@ui';
+import {
+  Badge,
+  Button,
+  Input,
+  MetricCard,
+  Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@ui';
 
 import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/useGitHub';
 import { useGitHubEvents } from '../hooks/useGitHubEvents';
@@ -25,19 +34,9 @@ import { NotificationList } from './NotificationList';
 import { PrDetailModal } from './PrDetailModal';
 import { PrList } from './PrList';
 
-// ── Tab Config ───────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────
 
 type GitHubTab = 'prs' | 'issues' | 'notifications';
-
-const TAB_CONFIG: Array<{
-  id: GitHubTab;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: 'prs', label: 'Pull Requests', icon: GitPullRequest },
-  { id: 'issues', label: 'Issues', icon: CircleDot },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
-];
 
 // ── Component ────────────────────────────────────────────────
 
@@ -65,33 +64,19 @@ export function GitHubPage() {
   const openIssueCount = issues?.filter((i) => i.state === 'open').length ?? 0;
   const unreadNotifCount = notifications?.filter((n) => n.unread).length ?? 0;
 
-  function getTabCount(tab: GitHubTab): number {
-    if (tab === 'prs') return openPrCount;
-    if (tab === 'issues') return openIssueCount;
-    return unreadNotifCount;
-  }
-
-  function renderActiveTab(): React.ReactNode {
-    if (activeTab === 'prs') {
-      if (prsLoading) return renderLoader();
+  function renderTabContent(tab: string): React.ReactNode {
+    if (tab === 'prs') {
+      if (prsLoading) return <LoadingSpinner />;
       return <PrList prs={prs ?? []} onSelectPr={selectPr} />;
     }
 
-    if (activeTab === 'issues') {
-      if (issuesLoading) return renderLoader();
+    if (tab === 'issues') {
+      if (issuesLoading) return <LoadingSpinner />;
       return <IssueList issues={issues ?? []} />;
     }
 
-    if (notificationsLoading) return renderLoader();
+    if (notificationsLoading) return <LoadingSpinner />;
     return <NotificationList notifications={notifications ?? []} />;
-  }
-
-  function renderLoader(): React.ReactNode {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner className="text-muted-foreground" size="md" />
-      </div>
-    );
   }
 
   return (
@@ -132,10 +117,11 @@ export function GitHubPage() {
                 : 'No repository configured'}
             </p>
           )}
-          <button
+          <Button
             aria-label={editingRepo ? 'Save repository' : 'Change repository'}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={() => {
               if (editingRepo) {
                 handleRepoSave();
@@ -146,72 +132,77 @@ export function GitHubPage() {
             }}
           >
             <Settings className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
       <div className="mb-6 grid grid-cols-3 gap-4">
-        <div className="border-border bg-card rounded-lg border p-4">
-          <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs font-medium tracking-wider uppercase">
-            <GitPullRequest className="h-3.5 w-3.5" />
-            Open PRs
-          </div>
-          <p className="text-lg font-semibold">{String(openPrCount)}</p>
-        </div>
-        <div className="border-border bg-card rounded-lg border p-4">
-          <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs font-medium tracking-wider uppercase">
-            <CircleDot className="h-3.5 w-3.5" />
-            Open Issues
-          </div>
-          <p className="text-lg font-semibold">{String(openIssueCount)}</p>
-        </div>
-        <div className="border-border bg-card rounded-lg border p-4">
-          <div className="text-muted-foreground mb-1 flex items-center gap-2 text-xs font-medium tracking-wider uppercase">
-            <Bell className="h-3.5 w-3.5" />
-            Unread
-          </div>
-          <p className="text-lg font-semibold">{String(unreadNotifCount)}</p>
-        </div>
+        <MetricCard
+          icon={GitPullRequest}
+          label="Open PRs"
+          value={String(openPrCount)}
+          variant="compact"
+        />
+        <MetricCard
+          icon={CircleDot}
+          label="Open Issues"
+          value={String(openIssueCount)}
+          variant="compact"
+        />
+        <MetricCard
+          icon={Bell}
+          label="Unread"
+          value={String(unreadNotifCount)}
+          variant="compact"
+        />
       </div>
 
       {/* Tabs */}
-      <div className="border-border mb-6 flex gap-1 border-b">
-        {TAB_CONFIG.map((tab) => {
-          const count = getTabCount(tab.id);
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              className={cn(
-                'flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-medium transition-colors',
-                activeTab === tab.id
-                  ? 'border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground border-transparent',
-              )}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-              {count > 0 ? (
-                <span
-                  className={cn(
-                    'rounded-full px-1.5 py-0.5 text-xs',
-                    activeTab === tab.id
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-muted text-muted-foreground',
-                  )}
-                >
-                  {String(count)}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GitHubTab)}>
+        <TabsList className="mb-6 h-auto w-full justify-start rounded-none border-b bg-transparent p-0">
+          <TabsTrigger
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="prs"
+          >
+            <GitPullRequest className="h-4 w-4" />
+            Pull Requests
+            {openPrCount > 0 ? (
+              <Badge size="sm" variant="secondary">
+                {String(openPrCount)}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="issues"
+          >
+            <CircleDot className="h-4 w-4" />
+            Issues
+            {openIssueCount > 0 ? (
+              <Badge size="sm" variant="secondary">
+                {String(openIssueCount)}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="notifications"
+          >
+            <Bell className="h-4 w-4" />
+            Notifications
+            {unreadNotifCount > 0 ? (
+              <Badge size="sm" variant="secondary">
+                {String(unreadNotifCount)}
+              </Badge>
+            ) : null}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Tab Content */}
-      {renderActiveTab()}
+        <TabsContent value="prs">{renderTabContent('prs')}</TabsContent>
+        <TabsContent value="issues">{renderTabContent('issues')}</TabsContent>
+        <TabsContent value="notifications">{renderTabContent('notifications')}</TabsContent>
+      </Tabs>
 
       {/* PR Detail Modal */}
       {selectedPrNumber === null ? null : (
@@ -220,6 +211,16 @@ export function GitHubPage() {
 
       {/* Issue Create Dialog */}
       <IssueCreateForm />
+    </div>
+  );
+}
+
+// ── LoadingSpinner ───────────────────────────────────────────
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Spinner className="text-muted-foreground" size="md" />
     </div>
   );
 }

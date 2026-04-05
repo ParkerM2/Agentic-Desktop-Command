@@ -8,7 +8,20 @@ import { Plus, Target, Trash2 } from 'lucide-react';
 
 import type { FitnessGoal, FitnessGoalType } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Card,
+  CardContent,
+  EmptyState,
+  Input,
+  Label,
+  Progress,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui';
 
 import { useDeleteGoal, useFitnessGoals, useSetGoal } from '../api/useFitness';
 
@@ -66,93 +79,96 @@ export function GoalsPanel() {
           ))}
         </div>
       ) : (
-        <div className="text-muted-foreground flex h-24 items-center justify-center text-sm">
-          <Target className="mr-2 h-5 w-5 opacity-40" />
-          No goals set yet
-        </div>
+        <EmptyState
+          description="No goals set yet"
+          icon={Target}
+          size="sm"
+          title=""
+        />
       )}
 
       {/* Add goal form */}
       {showForm ? (
-        <div className="bg-card border-border rounded-lg border p-4">
-          <h4 className="text-foreground mb-3 text-sm font-medium">Set Goal</h4>
-          <div className="space-y-3">
-            <div>
-              <label className="text-muted-foreground mb-1 block text-xs" htmlFor="goal-type">
-                Goal Type
-              </label>
-              <select
-                className="bg-muted text-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
-                id="goal-type"
-                value={goalType}
-                onChange={(e) => setGoalType(e.target.value as FitnessGoalType)}
-              >
-                {GOAL_TYPES.map((gt) => (
-                  <option key={gt} value={gt}>
-                    {GOAL_TYPE_LABELS[gt]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-muted-foreground mb-1 block text-xs" htmlFor="goal-target">
-                  Target
-                </label>
-                <input
-                  className="bg-muted text-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
-                  id="goal-target"
-                  placeholder="100"
-                  type="number"
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                />
+        <Card>
+          <CardContent className="p-4">
+            <h4 className="text-foreground mb-3 text-sm font-medium">Set Goal</h4>
+            <div className="space-y-3">
+              <div>
+                <Label className="mb-1" htmlFor="goal-type">
+                  Goal Type
+                </Label>
+                <Select
+                  value={goalType}
+                  onValueChange={(v) => setGoalType(v as FitnessGoalType)}
+                >
+                  <SelectTrigger id="goal-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GOAL_TYPES.map((gt) => (
+                      <SelectItem key={gt} value={gt}>
+                        {GOAL_TYPE_LABELS[gt]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="w-24">
-                <label className="text-muted-foreground mb-1 block text-xs" htmlFor="goal-unit">
-                  Unit
-                </label>
-                <input
-                  className="bg-muted text-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
-                  id="goal-unit"
-                  placeholder="kg"
-                  type="text"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                />
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label className="mb-1" htmlFor="goal-target">
+                    Target
+                  </Label>
+                  <Input
+                    id="goal-target"
+                    placeholder="100"
+                    type="number"
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                  />
+                </div>
+                <div className="w-24">
+                  <Label className="mb-1" htmlFor="goal-unit">
+                    Unit
+                  </Label>
+                  <Input
+                    id="goal-unit"
+                    placeholder="kg"
+                    type="text"
+                    value={unit}
+                    onChange={(e) => setUnit(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  disabled={Number(target) <= 0}
+                  type="button"
+                  onClick={handleSubmit}
+                >
+                  Set Goal
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </Button>
               </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                disabled={Number(target) <= 0}
-                type="button"
-                className={cn(
-                  'bg-primary text-primary-foreground hover:bg-primary/90 flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  'disabled:opacity-50',
-                )}
-                onClick={handleSubmit}
-              >
-                Set Goal
-              </button>
-              <button
-                className="text-muted-foreground hover:bg-accent rounded-md px-3 py-2 text-sm transition-colors"
-                type="button"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ) : (
-        <button
-          className="text-primary flex items-center gap-2 text-sm font-medium"
+        <Button
+          className="text-primary"
           type="button"
+          variant="ghost"
           onClick={() => setShowForm(true)}
         >
           <Plus className="h-4 w-4" />
           Set New Goal
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -169,35 +185,34 @@ function GoalCard({ goal, onDelete }: GoalCardProps) {
   const progress = goal.target > 0 ? Math.min((goal.current / goal.target) * 100, 100) : 0;
 
   return (
-    <div className="bg-card border-border rounded-lg border p-4">
-      <div className="flex items-start justify-between">
-        <div>
-          <span className="text-muted-foreground text-xs font-medium">
-            {GOAL_TYPE_LABELS[goal.type]}
-          </span>
-          <p className="text-foreground text-sm font-semibold">
-            {String(goal.current)} / {String(goal.target)} {goal.unit}
-          </p>
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <span className="text-muted-foreground text-xs font-medium">
+              {GOAL_TYPE_LABELS[goal.type]}
+            </span>
+            <p className="text-foreground text-sm font-semibold">
+              {String(goal.current)} / {String(goal.target)} {goal.unit}
+            </p>
+          </div>
+          <Button
+            aria-label="Delete goal"
+            className="text-muted-foreground hover:text-destructive h-7 w-7"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
         </div>
-        <button
-          aria-label="Delete goal"
-          className="text-muted-foreground hover:text-destructive p-1 transition-colors"
-          type="button"
-          onClick={onDelete}
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
-      </div>
-      <div className="bg-muted mt-2 h-2 overflow-hidden rounded-full">
-        <div
-          className="bg-primary h-full rounded-full transition-all"
-          style={{ width: `${String(Math.round(progress))}%` }}
-        />
-      </div>
-      <p className="text-muted-foreground mt-1 text-xs">
-        {String(Math.round(progress))}% complete
-        {goal.deadline ? ` \u00B7 Due ${goal.deadline}` : ''}
-      </p>
-    </div>
+        <Progress className="mt-2" size="sm" value={Math.round(progress)} />
+        <p className="text-muted-foreground mt-1 text-xs">
+          {String(Math.round(progress))}% complete
+          {goal.deadline ? ` \u00B7 Due ${goal.deadline}` : ''}
+        </p>
+      </CardContent>
+    </Card>
   );
 }

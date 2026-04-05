@@ -4,9 +4,7 @@
 
 import { Dumbbell, Plus, Scale, Target, TrendingUp } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
-
-import { Button } from '@ui';
+import { Button, PageHeader, PageLayout, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import { useFitnessEvents } from '../hooks/useFitnessEvents';
 import { useFitnessUI } from '../store';
@@ -17,15 +15,6 @@ import { StatsOverview } from './StatsOverview';
 import { WorkoutForm } from './WorkoutForm';
 import { WorkoutLog } from './WorkoutLog';
 
-// ── Constants ────────────────────────────────────────────────
-
-const TABS = [
-  { id: 'overview' as const, label: 'Overview', icon: TrendingUp },
-  { id: 'workouts' as const, label: 'Workouts', icon: Dumbbell },
-  { id: 'body' as const, label: 'Body', icon: Scale },
-  { id: 'goals' as const, label: 'Goals', icon: Target },
-];
-
 // ── Component ────────────────────────────────────────────────
 
 export function FitnessPage() {
@@ -35,15 +24,11 @@ export function FitnessPage() {
   useFitnessEvents();
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto">
-      {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-foreground text-2xl font-bold">Fitness</h1>
-          <p className="text-muted-foreground text-sm">
-            Track workouts, body composition, and goals
-          </p>
-        </div>
+    <PageLayout>
+      <PageHeader
+        description="Track workouts, body composition, and goals"
+        title="Fitness"
+      >
         <Button
           type="button"
           onClick={() => {
@@ -54,39 +39,64 @@ export function FitnessPage() {
           <Plus className="h-4 w-4" />
           Log Workout
         </Button>
-      </div>
+      </PageHeader>
 
-      {/* Tabs */}
-      <div className="border-border border-b px-6">
-        <div className="flex gap-1">
-          {TABS.map((tab) => (
-            <Button
-              key={tab.id}
-              type="button"
-              variant="ghost"
-              className={cn(
-                'flex items-center gap-2 rounded-none border-b-2 px-4 py-3 text-sm font-medium',
-                activeTab === tab.id
-                  ? 'border-primary text-foreground'
-                  : 'text-muted-foreground hover:text-foreground border-transparent',
-              )}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </Button>
-          ))}
-        </div>
-      </div>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Tabs
+          className="flex flex-1 flex-col overflow-hidden"
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+        >
+          <div className="border-border border-b px-6">
+            <TabsList className="h-auto rounded-none bg-transparent p-0">
+              <TabsTrigger
+                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                value="overview"
+              >
+                <TrendingUp className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                value="workouts"
+              >
+                <Dumbbell className="h-4 w-4" />
+                Workouts
+              </TabsTrigger>
+              <TabsTrigger
+                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                value="body"
+              >
+                <Scale className="h-4 w-4" />
+                Body
+              </TabsTrigger>
+              <TabsTrigger
+                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                value="goals"
+              >
+                <Target className="h-4 w-4" />
+                Goals
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-      {/* Content */}
-      <div className="flex-1 p-6">
-        {activeTab === 'overview' ? <OverviewTab /> : null}
-        {activeTab === 'workouts' ? <WorkoutsTab showForm={showWorkoutForm} /> : null}
-        {activeTab === 'body' ? <BodyComposition /> : null}
-        {activeTab === 'goals' ? <GoalsPanel /> : null}
+          <div className="flex-1 overflow-y-auto p-6">
+            <TabsContent value="overview">
+              <OverviewTab />
+            </TabsContent>
+            <TabsContent value="workouts">
+              <WorkoutsTab showForm={showWorkoutForm} />
+            </TabsContent>
+            <TabsContent value="body">
+              <BodyComposition />
+            </TabsContent>
+            <TabsContent value="goals">
+              <GoalsPanel />
+            </TabsContent>
+          </div>
+        </Tabs>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 
