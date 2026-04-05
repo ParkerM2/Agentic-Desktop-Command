@@ -1,5 +1,5 @@
 /**
- * TeamLeadPanelList — Right column: list of team lead cards + spawn button.
+ * TeamLeadPanelList — Right column: spawn header + team lead cards below.
  */
 
 import { Plus } from 'lucide-react';
@@ -25,20 +25,27 @@ export function TeamLeadPanelList({ projectId, sessions }: TeamLeadPanelListProp
     .sort((a, b) => a.key.index - b.key.index);
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-y-auto p-3">
-      {teamLeadSessions.map((session) => (
-        <TeamLeadPanel key={`${session.key.type}-${session.key.index}`} session={session} />
-      ))}
+    <div className="flex h-full flex-col">
+      {/* Header — matches primary panel header height */}
+      <div className="border-border flex items-center border-b px-4 py-2">
+        <Button
+          className="w-full text-xs"
+          disabled={spawn.isPending}
+          size="sm"
+          variant="outline"
+          onClick={() => spawn.mutate({})}
+        >
+          <Plus className="mr-2 h-3 w-3" />
+          Spawn Team Lead
+        </Button>
+      </div>
 
-      <Button
-        className="mt-auto w-full text-xs"
-        disabled={spawn.isPending}
-        variant="outline"
-        onClick={() => spawn.mutate({})}
-      >
-        <Plus className="mr-2 h-3 w-3" />
-        Spawn Team Lead
-      </Button>
+      {/* Team lead cards */}
+      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+        {teamLeadSessions.map((session) => (
+          <TeamLeadPanel key={`${session.key.type}-${session.key.index}`} session={session} />
+        ))}
+      </div>
     </div>
   );
 }

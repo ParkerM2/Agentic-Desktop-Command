@@ -67,7 +67,7 @@ export function WorkspacePage() {
         )}
       </Panel>
 
-      <Separator className="bg-border w-1 cursor-col-resize transition-colors hover:bg-primary/30" />
+      <Separator className="bg-border w-px cursor-col-resize transition-colors hover:bg-primary/30" />
 
       {/* Team Leads — right panel */}
       <Panel defaultSize={45} minSize={25}>
