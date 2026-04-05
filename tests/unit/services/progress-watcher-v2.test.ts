@@ -81,7 +81,7 @@ function makeTaskContent(taskNumber: number, status = 'pending', name = 'Test Ta
 }
 
 function tasksDir(slug: string): string {
-  return posix.join(MOCK_CWD, '.claude', 'progress', slug, 'tasks');
+  return posix.join(MOCK_CWD, 'progress', slug, 'tasks');
 }
 
 // ── Tests ─────────────────────────────────────────────────────
