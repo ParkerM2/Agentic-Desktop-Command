@@ -12,12 +12,8 @@ import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Terminal } from 'lucide-r
 
 import { useClaudeAuth } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
-import { cn } from '@renderer/shared/lib/utils';
 
-// ── Constants ───────────────────────────────────────────────
-
-const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-colors';
+import { Button, Card, CardContent, CardHeader } from '@ui';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -72,15 +68,13 @@ export function ClaudeCliStep({ onNext, onBack }: ClaudeCliStepProps) {
       </p>
 
       {/* Card */}
-      <div className="mb-5 w-full max-w-lg overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
+      <Card className="mb-5 w-full max-w-lg overflow-hidden">
+        <CardHeader className="flex flex-row items-center gap-2 border-b bg-muted/50 px-4 py-2.5">
           <Terminal className="size-4 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">
-            Claude Authorization
-          </span>
-        </div>
+          <span className="text-xs font-medium text-muted-foreground">Claude Authorization</span>
+        </CardHeader>
 
-        <div className="space-y-4 p-5">
+        <CardContent className="space-y-4 p-5">
           {isAuthenticated ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -113,46 +107,32 @@ export function ClaudeCliStep({ onNext, onBack }: ClaudeCliStepProps) {
                 </div>
               ) : null}
 
-              <button
+              <Button
+                className="w-full justify-center"
                 disabled={authorizing}
-                type="button"
-                className={cn(
-                  BUTTON_BASE,
-                  'w-full justify-center bg-primary text-primary-foreground',
-                  'hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
                 onClick={() => {
                   void handleAuthorize();
                 }}
               >
                 <Terminal className="size-4" />
                 {authorizing ? 'Waiting...' : 'Authorize'}
-              </button>
+              </Button>
             </>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Navigation */}
       <div className="flex items-center gap-3">
-        <button
-          className={cn(BUTTON_BASE, 'border border-border bg-background hover:bg-accent')}
-          type="button"
-          onClick={onBack}
-        >
+        <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="size-4" />
           Back
-        </button>
+        </Button>
 
-        <button
-          className={cn(BUTTON_BASE, 'bg-primary text-primary-foreground hover:bg-primary/90')}
-          type="button"
-          onClick={onNext}
-        >
+        <Button onClick={onNext}>
           {isAuthenticated ? 'Continue' : 'Skip for Now'}
           <ArrowRight className="size-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );

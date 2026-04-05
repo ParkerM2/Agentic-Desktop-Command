@@ -6,12 +6,9 @@
 
 import { ArrowRight, Sparkles, Zap } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Card, CardContent } from '@ui';
 
 // ── Constants ───────────────────────────────────────────────
-
-const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors';
 
 const FEATURES = [
   {
@@ -51,30 +48,25 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
       {/* Feature highlights */}
       <div className="mb-10 grid w-full max-w-lg gap-4">
         {FEATURES.map((feature) => (
-          <div
-            key={feature.title}
-            className="bg-card border-border flex items-start gap-4 rounded-lg border p-4 text-left"
-          >
-            <div className="bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
-              <feature.icon className="text-primary h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-foreground font-medium">{feature.title}</h3>
-              <p className="text-muted-foreground mt-1 text-sm">{feature.description}</p>
-            </div>
-          </div>
+          <Card key={feature.title}>
+            <CardContent className="flex items-start gap-4 p-4 text-left">
+              <div className="bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
+                <feature.icon className="text-primary h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-foreground font-medium">{feature.title}</h3>
+                <p className="text-muted-foreground mt-1 text-sm">{feature.description}</p>
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {/* CTA */}
-      <button
-        className={cn(BUTTON_BASE, 'bg-primary text-primary-foreground hover:bg-primary/90')}
-        type="button"
-        onClick={onNext}
-      >
+      <Button size="lg" onClick={onNext}>
         Get Started
         <ArrowRight className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }

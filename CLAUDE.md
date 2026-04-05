@@ -477,3 +477,105 @@ import { MyComponent } from './MyComponent';
 ```
 
 Blank line between each group. Alphabetical within groups.
+
+
+---
+
+# AGENT TASK ASSIGNMENT
+
+You are **component-engineer** on team "ui-composition-audit".
+Workbranch: work/ui-composition-audit/migrate-group-d.
+Team leader: "team-lead".
+
+taskNumber: 5
+taskName: "Migrate Group D — merge, my-work, notes, onboarding, planner, productivity"
+taskSlug: "migrate-group-d"
+agentRole: "component-engineer"
+agentDefinition: ".claude/agents/component-engineer.md"
+wave: 2
+blockedBy: [1]
+blocks: [8]
+estimatedTokens: 21000
+complexity: "HIGH"
+status: "pending"
+workbranch: "work/ui-composition-audit/migrate-group-d"
+worktreePath: ".worktrees/ui-composition-audit/migrate-group-d"
+teamLeaderName: "team-lead"
+teamName: "ui-composition-audit"
+
+# Task #5: Migrate Group D — merge, my-work, notes, onboarding, planner, productivity
+
+## Description
+Replace raw HTML across 6 features. Merge has a manual modal (MergeConfirmModal). Notes has extensive raw form elements. Planner has 14 raw buttons. Productivity has raw range input and manual tabs. Read each file before modifying.
+
+## Acceptance Criteria
+- [ ] MergeConfirmModal manual modal replaced with Dialog, tabs replaced with Tabs
+- [ ] ConflictResolver raw buttons replaced, uses ScrollArea
+- [ ] MyWorkPage uses PageLayout, Card for project groups, Separator for dividers
+- [ ] NotesList search uses SearchInput, scrollable area uses ScrollArea
+- [ ] All raw input/textarea in notes replaced with Input/Textarea
+- [ ] QuickNote wrapped with Card
+- [ ] Onboarding steps use Card for feature cards
+- [ ] PlannerPage uses PageLayout, all raw buttons replaced with Button
+- [ ] GoalsList raw input/buttons replaced with Input/Button
+- [ ] TimeBlockEditor raw input/select/buttons replaced
+- [ ] WeeklyReflectionSection raw textarea/buttons replaced
+- [ ] ProductivityPage manual tabs replaced with Tabs compound, uses PageLayout
+- [ ] SpotifyWidget volume raw range input replaced with Slider, search uses SearchInput
+- [ ] CalendarWidget wrapped with Card
+- [ ] `npm run lint` passes
+- [ ] `npm run typecheck` passes
+
+## Files to Modify
+- `src/renderer/features/merge/components/MergeConfirmModal.tsx`
+- `src/renderer/features/merge/components/ConflictResolver.tsx`
+- `src/renderer/features/merge/components/MergePreviewPanel.tsx`
+- `src/renderer/features/my-work/components/MyWorkPage.tsx`
+- `src/renderer/features/notes/components/NotesList.tsx`
+- `src/renderer/features/notes/components/NoteEditor.tsx`
+- `src/renderer/features/notes/components/QuickNote.tsx`
+- `src/renderer/features/onboarding/components/OnboardingWizard.tsx`
+- `src/renderer/features/onboarding/components/WelcomeStep.tsx`
+- `src/renderer/features/onboarding/components/ClaudeCliStep.tsx`
+- `src/renderer/features/onboarding/components/IntegrationsStep.tsx`
+- `src/renderer/features/onboarding/components/CompleteStep.tsx`
+- `src/renderer/features/planner/components/PlannerPage.tsx`
+- `src/renderer/features/planner/components/GoalsList.tsx`
+- `src/renderer/features/planner/components/TimeBlockEditor.tsx`
+- `src/renderer/features/planner/components/WeeklyReflectionSection.tsx`
+- `src/renderer/features/productivity/components/ProductivityPage.tsx`
+- `src/renderer/features/productivity/components/SpotifyWidget.tsx`
+- `src/renderer/features/productivity/components/CalendarWidget.tsx`
+
+## Files to Read for Context
+- Each file listed above (read before editing)
+- `src/renderer/shared/components/ui/index.ts`
+
+## Rules That Apply
+- Dialog replacement: map isOpen/onClose to Dialog open/onOpenChange
+- Tabs replacement: map useState to Tabs defaultValue
+- Import from `@ui` barrel
+- Preserve all callbacks, state, and keyboard handlers
+
+## Implementation Notes
+- MergeConfirmModal: raw backdrop div → Dialog; internal tab buttons → Tabs with TabsList/TabsTrigger/TabsContent
+- ConflictResolver: has multiple action buttons (Accept Ours, Accept Theirs, etc.) — all become Button with appropriate variants (default, outline, destructive)
+- NotesList search: replace manual input+icon div with SearchInput
+- SpotifyWidget: raw `<input type="range">` → Slider; search input → SearchInput
+- ProductivityPage: map current tab state to Tabs defaultValue prop
+- Planner has many raw buttons — systematic replacement, use Button variant="outline" for toggles, variant="ghost" for icon-only
+
+## QA Checklist Sections
+- Design System Compliance
+- Dialog Behavior (MergeConfirmModal)
+- Tabs Behavior (ProductivityPage)
+- Slider Behavior (SpotifyWidget volume)
+- Raw HTML Element Check
+
+### Verification
+Run `npm run lint` and `npm run typecheck` — both must pass.
+
+### Communication
+- Report ONLY to "team-lead" via SendMessage
+- On completion: SendMessage(to: "team-lead", message: "Task #5 complete. Files: <list>.", summary: "Task #5 done")
+- On blocker: message team-lead immediately

@@ -7,9 +7,20 @@
 
 import { useState } from 'react';
 
-import { AlertTriangle, ArrowRight, GitMerge, Loader2, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, GitMerge, Loader2 } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  ScrollArea,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@ui';
 
 import { useMergeBranch, useMergeConflicts, useMergeDiff } from '../api/useMerge';
 
@@ -26,8 +37,6 @@ interface MergeConfirmModalProps {
   onOpenTerminal?: (file: string) => void;
 }
 
-type Tab = 'preview' | 'conflicts';
-
 export function MergeConfirmModal({
   repoPath,
   sourceBranch,
@@ -37,7 +46,6 @@ export function MergeConfirmModal({
   onSuccess,
   onOpenTerminal,
 }: MergeConfirmModalProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('preview');
   const [mergeError, setMergeError] = useState<string | null>(null);
 
   const mergeBranch = useMergeBranch();
@@ -99,116 +107,74 @@ export function MergeConfirmModal({
     );
   }
 
-  function handleClose() {
-    setMergeError(null);
-    onClose();
+  function handleOpenChange(open: boolean) {
+    if (!open) {
+      setMergeError(null);
+      onClose();
+    }
   }
 
-  if (!isOpen) {
-    return null;
-  }
-
-  const tabs: Array<{ id: Tab; label: string; badge?: number }> = [
-    { id: 'preview', label: 'Changes', badge: diff?.changedFiles },
-    { id: 'conflicts', label: 'Conflicts', badge: conflicts?.length },
-  ];
+  const conflictsBadge = (conflicts?.length ?? 0) > 0 ? conflicts?.length : undefined;
+  const changesBadge = (diff?.changedFiles ?? 0) > 0 ? diff?.changedFiles : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        aria-label="Close modal"
-        className="absolute inset-0 bg-black/50"
-        role="button"
-        tabIndex={0}
-        onClick={handleClose}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') handleClose();
-        }}
-      />
-
-      {/* Modal — near full-screen for diff viewing */}
-      <div className="bg-card border-border relative z-10 flex h-[85vh] w-[90vw] max-w-7xl flex-col rounded-lg border shadow-xl">
-        {/* Header */}
-        <div className="border-border flex shrink-0 items-center justify-between border-b px-6 py-4">
-          <div className="flex items-center gap-3">
-            <GitMerge className="text-primary h-5 w-5" />
-            <div>
-              <h2 className="text-foreground text-lg font-semibold">Merge Branch</h2>
-              <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
-                <span className="text-foreground font-mono text-xs font-medium">
-                  {sourceBranch}
-                </span>
-                <ArrowRight className="h-3.5 w-3.5" />
-                <span className="text-foreground font-mono text-xs font-medium">
-                  {targetBranch}
-                </span>
-              </div>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="flex h-[85vh] w-[90vw] max-w-7xl flex-col p-0">
+        <DialogHeader className="border-border flex shrink-0 flex-row items-center gap-3 border-b px-6 py-4">
+          <GitMerge className="text-primary h-5 w-5 shrink-0" />
+          <div className="flex-1">
+            <DialogTitle className="text-foreground text-lg font-semibold">
+              Merge Branch
+            </DialogTitle>
+            <div className="text-muted-foreground flex items-center gap-1.5 text-sm">
+              <span className="text-foreground font-mono text-xs font-medium">{sourceBranch}</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+              <span className="text-foreground font-mono text-xs font-medium">{targetBranch}</span>
             </div>
           </div>
-          <button
-            aria-label="Close"
-            className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
-            onClick={handleClose}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
-        {/* Tabs */}
-        <div className="border-border flex shrink-0 gap-1 border-b px-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={cn(
-                'relative px-4 py-2.5 text-sm font-medium transition-colors',
-                activeTab === tab.id
-                  ? 'text-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+        <Tabs className="flex min-h-0 flex-1 flex-col" defaultValue="preview">
+          <TabsList className="border-border shrink-0 justify-start rounded-none border-b px-6 py-0">
+            <TabsTrigger value="preview">
+              Changes
+              {changesBadge === undefined ? null : (
+                <span className="bg-muted text-muted-foreground ml-1.5 rounded-full px-1.5 py-0.5 text-xs">
+                  {changesBadge}
+                </span>
               )}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="flex items-center gap-2">
-                {tab.label}
-                {(tab.badge ?? 0) > 0 ? (
-                  <span
-                    className={cn(
-                      'rounded-full px-1.5 py-0.5 text-xs',
-                      tab.id === 'conflicts' && (tab.badge ?? 0) > 0
-                        ? 'bg-amber-500/20 text-amber-400'
-                        : 'bg-muted text-muted-foreground',
-                    )}
-                  >
-                    {tab.badge}
-                  </span>
-                ) : null}
-              </span>
-              {activeTab === tab.id ? (
-                <div className="bg-primary absolute right-0 bottom-0 left-0 h-0.5" />
-              ) : null}
-            </button>
-          ))}
-        </div>
+            </TabsTrigger>
+            <TabsTrigger value="conflicts">
+              Conflicts
+              {conflictsBadge === undefined ? null : (
+                <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
+                  {conflictsBadge}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Content — fills remaining space */}
-        <div className="min-h-0 flex-1 overflow-hidden">
-          {activeTab === 'preview' ? (
+          <TabsContent className="mt-0 min-h-0 flex-1 overflow-hidden" value="preview">
             <MergePreviewPanel
               repoPath={repoPath}
               sourceBranch={sourceBranch}
               targetBranch={targetBranch}
             />
-          ) : (
-            <div className="h-full overflow-y-auto p-6">
-              <ConflictResolver
-                repoPath={repoPath}
-                sourceBranch={sourceBranch}
-                targetBranch={targetBranch}
-                onOpenTerminal={onOpenTerminal}
-              />
-            </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent className="mt-0 min-h-0 flex-1 overflow-hidden" value="conflicts">
+            <ScrollArea className="h-full">
+              <div className="p-6">
+                <ConflictResolver
+                  repoPath={repoPath}
+                  sourceBranch={sourceBranch}
+                  targetBranch={targetBranch}
+                  onOpenTerminal={onOpenTerminal}
+                />
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
 
         {/* Error message */}
         {mergeError === null ? null : (
@@ -223,24 +189,12 @@ export function MergeConfirmModal({
         {/* Footer */}
         <div className="border-border flex shrink-0 items-center justify-between border-t px-6 py-4">
           <div className="text-muted-foreground text-xs">{getFooterMessage()}</div>
-
           <div className="flex gap-2">
-            <button
-              className={cn(
-                'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-                'transition-colors',
-              )}
-              onClick={handleClose}
-            >
+            <Button variant="ghost" onClick={() => handleOpenChange(false)}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={mergeBranch.isPending || !hasChanges}
-              className={cn(
-                'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2',
-                'text-sm font-medium transition-opacity hover:opacity-90',
-                'disabled:pointer-events-none disabled:opacity-50',
-              )}
               onClick={handleMerge}
             >
               {mergeBranch.isPending ? (
@@ -254,10 +208,10 @@ export function MergeConfirmModal({
                   Merge
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -19,12 +19,19 @@ import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
 
 import {
   Button,
+  Card,
+  CardContent,
+  CardHeader,
   EmptyState,
+  PageContent,
+  PageHeader,
+  PageLayout,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
 } from '@ui';
 
 import { useProjects } from '@features/projects';
@@ -113,34 +120,36 @@ function ProjectGroup({
   onNavigateToProject: (projectId: string) => void;
 }) {
   return (
-    <div className="border-border bg-card rounded-lg border">
-      {/* Project header */}
-      <div className="border-border flex items-center gap-2 border-b px-4 py-3">
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2 py-3">
         <FolderOpen className="text-muted-foreground h-4 w-4" />
-        <h2 className="text-foreground text-sm font-semibold">{group.projectName}</h2>
+        <span className="text-foreground text-sm font-semibold">{group.projectName}</span>
         <span className="text-muted-foreground text-xs">({group.tasks.length})</span>
-      </div>
-
-      {/* Task list */}
-      <div className="divide-border divide-y">
-        {group.tasks.map((task) => (
-          <button
-            key={task.id}
-            className="hover:bg-accent w-full px-4 py-3 text-left transition-colors"
-            type="button"
-            onClick={() => onNavigateToProject(group.projectId)}
-          >
-            <div className="mb-1 flex items-start justify-between gap-2">
-              <h3 className="text-foreground text-sm font-medium">{task.title}</h3>
-              <TaskStatusBadge status={task.status} />
-            </div>
-            {task.description ? (
-              <p className="text-muted-foreground line-clamp-2 text-xs">{task.description}</p>
-            ) : null}
-          </button>
-        ))}
-      </div>
-    </div>
+      </CardHeader>
+      <Separator />
+      <CardContent className="p-0">
+        <div className="divide-border divide-y">
+          {group.tasks.map((task) => (
+            <Button
+              key={task.id}
+              className="h-auto w-full justify-start px-4 py-3 text-left"
+              variant="ghost"
+              onClick={() => onNavigateToProject(group.projectId)}
+            >
+              <div className="w-full">
+                <div className="mb-1 flex items-start justify-between gap-2">
+                  <span className="text-foreground text-sm font-medium">{task.title}</span>
+                  <TaskStatusBadge status={task.status} />
+                </div>
+                {task.description ? (
+                  <p className="text-muted-foreground line-clamp-2 text-xs">{task.description}</p>
+                ) : null}
+              </div>
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -263,47 +272,43 @@ export function MyWorkPage() {
   const hasFilter = statusFilter !== 'all';
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <Briefcase className="text-muted-foreground h-6 w-6" />
-          <h1 className="text-foreground text-2xl font-bold">My Work</h1>
+    <PageLayout>
+      <PageHeader
+        description="All tasks across your projects"
+        title="My Work"
+      >
+        {/* Filter bar */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Filter className="text-muted-foreground h-4 w-4" />
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <span className="text-muted-foreground text-sm">
+            {totalTasks} {getTaskCountLabel(totalTasks)}
+          </span>
         </div>
-        <p className="text-muted-foreground mt-1 text-sm">All tasks across your projects</p>
-      </div>
-
-      {/* Filter bar */}
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Filter className="text-muted-foreground h-4 w-4" />
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <span className="text-muted-foreground text-sm">
-          {totalTasks} {getTaskCountLabel(totalTasks)}
-        </span>
-      </div>
-
-      {/* Content */}
-      <TaskListContent
-        hasFilter={hasFilter}
-        isError={tasksError}
-        isLoading={tasksLoading}
-        taskGroups={taskGroups}
-        onNavigateToProject={handleNavigateToProject}
-        onRetry={handleRetry}
-      />
-    </div>
+      </PageHeader>
+      <PageContent>
+        <TaskListContent
+          hasFilter={hasFilter}
+          isError={tasksError}
+          isLoading={tasksLoading}
+          taskGroups={taskGroups}
+          onNavigateToProject={handleNavigateToProject}
+          onRetry={handleRetry}
+        />
+      </PageContent>
+    </PageLayout>
   );
 }
