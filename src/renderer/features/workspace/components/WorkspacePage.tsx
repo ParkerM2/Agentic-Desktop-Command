@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
+import { useAgentDashboardEvents } from '@features/agent-dashboard';
 import { useProjects } from '@features/projects';
 
 import { useWorkspaceInit, useWorkspaceSessions } from '../api/useWorkspace';
@@ -21,6 +22,7 @@ import { PrimarySessionPanel } from './PrimarySessionPanel';
 import { TeamLeadPanelList } from './TeamLeadPanelList';
 
 export function WorkspacePage() {
+  useAgentDashboardEvents();
   const { projectId } = useLooseParams();
   const { data: projects } = useProjects();
   const setViewing = useWorkspaceStore((s) => s.setViewingProject);

@@ -5,6 +5,7 @@
  * tool call cards, panel states (compact/expanded/popup), and layout system.
  */
 
+export { useAgentDashboardEvents } from './hooks/useAgentEvents';
 export { AgentChatPanel } from './components/AgentChatPanel';
 export { AgentDashboardPage } from './components/AgentDashboardPage';
 export { AgentLayoutGrid } from './components/AgentLayoutGrid';

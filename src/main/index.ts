@@ -58,7 +58,8 @@ function createWindow(): void {
   });
 
   mainWindow.on('ready-to-show', () => {
-    const startMin = settingsServiceRef?.getSettings().startMinimized === true;
+    const isDev = !app.isPackaged;
+    const startMin = !isDev && settingsServiceRef?.getSettings().startMinimized === true;
     if (!startMin) {
       mainWindow?.show();
     }

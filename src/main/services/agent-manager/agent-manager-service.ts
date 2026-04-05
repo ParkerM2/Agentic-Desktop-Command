@@ -450,6 +450,16 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       const success = processManager.sendMessage(internal.process, message);
       if (success) {
         internal.session.lastActivityAt = new Date().toISOString();
+
+        // Emit user message to UI so it appears in chat bubbles
+        const userMessage: AgentChatMessage = {
+          id: randomUUID(),
+          agentId: sessionId,
+          role: 'user',
+          content: [{ type: 'text', text: message }],
+          timestamp: new Date().toISOString(),
+        };
+        handleChatMessage(internal, userMessage);
       }
       return success;
     },
