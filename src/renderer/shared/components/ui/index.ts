@@ -228,3 +228,22 @@ export type {
   FormSwitchProps,
   FormTextareaProps,
 } from './form';
+
+// Tier 4: App-Specific Primitives
+export { StatusIndicator, statusIndicatorVariants } from './status-indicator';
+export type { StatusIndicatorProps } from './status-indicator';
+
+export { MetricCard, metricCardVariants } from './metric-card';
+export type { MetricCardProps, MetricCardTrend, TrendDirection } from './metric-card';
+
+export { SearchInput } from './search-input';
+export type { SearchInputProps } from './search-input';
+
+export { MetadataList, MetadataItem, metadataListVariants } from './metadata-list';
+export type { MetadataItemProps, MetadataListProps, MetadataVariant } from './metadata-list';
+
+export { SectionHeader, sectionHeaderVariants } from './section-header';
+export type { SectionHeaderProps } from './section-header';
+
+export { InlineAlert, inlineAlertVariants } from './inline-alert';
+export type { InlineAlertProps } from './inline-alert';
