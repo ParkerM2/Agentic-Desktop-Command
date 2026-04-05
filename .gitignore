@@ -66,12 +66,11 @@ tests/e2e/screenshots/
 
 # Progress tracking subdirs (only specific files are excluded above)
 .claude/progress/
-.claude/tracking/customizable-sidebar-layouts/
-.claude/tracking/event-wiring-and-dead-code-cleanup/
-.claude/tracking/p0-critical-fixes/
-.claude/tracking/system-b-jsonl-progress-tracking/
-.claude/tracking/tmux-replacement/
-.claude/tracking/workspace-and-assistant-redesign/
+.claude/tracking/*/
+.claude/.current-context.json
+.claude/worktrees/
+.worktrees/
+docs/tracker.json
 
 # Generated screenshots and debug images
 *.png
