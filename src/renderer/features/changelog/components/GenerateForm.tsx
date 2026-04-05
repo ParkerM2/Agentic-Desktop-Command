@@ -1,3 +1,5 @@
+import { Button, Input, Label, Text } from '@ui';
+
 interface GenerateFormProps {
   repoPath: string;
   version: string;
@@ -24,11 +26,9 @@ export function GenerateForm({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium" htmlFor="repoPath">
-          Repository Path
-        </label>
-        <input
-          className="bg-muted text-foreground placeholder:text-muted-foreground mt-1 w-full rounded px-3 py-2 text-sm"
+        <Label htmlFor="repoPath">Repository Path</Label>
+        <Input
+          className="mt-1"
           id="repoPath"
           placeholder="/path/to/your/repo"
           type="text"
@@ -37,11 +37,9 @@ export function GenerateForm({
         />
       </div>
       <div>
-        <label className="text-sm font-medium" htmlFor="version">
-          Version
-        </label>
-        <input
-          className="bg-muted text-foreground placeholder:text-muted-foreground mt-1 w-full rounded px-3 py-2 text-sm"
+        <Label htmlFor="version">Version</Label>
+        <Input
+          className="mt-1"
           id="version"
           placeholder="v1.0.0"
           type="text"
@@ -50,30 +48,31 @@ export function GenerateForm({
         />
       </div>
       <div>
-        <label className="text-sm font-medium" htmlFor="fromTag">
-          From Tag (optional)
-        </label>
-        <input
-          className="bg-muted text-foreground placeholder:text-muted-foreground mt-1 w-full rounded px-3 py-2 text-sm"
+        <Label htmlFor="fromTag">From Tag (optional)</Label>
+        <Input
+          className="mt-1"
           id="fromTag"
           placeholder="v0.9.0"
           type="text"
           value={fromTag}
           onChange={(e) => onFromTagChange(e.target.value)}
         />
-        <p className="text-muted-foreground mt-1 text-xs">
+        <Text className="mt-1" size="sm" variant="muted">
           Leave empty to include all recent commits
-        </p>
+        </Text>
       </div>
-      <button
-        className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+      <Button
         disabled={!repoPath.trim() || !version.trim() || isPending}
         type="button"
         onClick={onGenerate}
       >
         {isPending ? 'Generating...' : 'Generate'}
-      </button>
-      {errorMessage ? <p className="text-destructive text-sm">Error: {errorMessage}</p> : null}
+      </Button>
+      {errorMessage ? (
+        <Text size="sm" variant="error">
+          Error: {errorMessage}
+        </Text>
+      ) : null}
     </div>
   );
 }

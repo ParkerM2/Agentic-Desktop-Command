@@ -4,6 +4,8 @@
  * Shows task completions across all projects (not just active project).
  */
 
+import { Card, CardContent } from '@ui';
+
 import { useAllAgents } from '@features/agents';
 import { useAllTasks } from '@features/my-work';
 
@@ -24,14 +26,16 @@ export function DailyStats() {
   const agentsRan = allSessions?.filter((s) => s.spawnedAt.startsWith(todayStr)).length ?? 0;
 
   return (
-    <div className="bg-card border-border rounded-lg border px-4 py-3">
-      <p className="text-muted-foreground text-xs">
-        <span className="text-foreground font-medium">{tasksCompleted}</span> tasks completed
-        {' \u00B7 '}
-        <span className="text-foreground font-medium">{agentsRan}</span> agents ran
-        {' \u00B7 '}
-        <span className="text-foreground font-medium">{captureCount}</span> captures
-      </p>
-    </div>
+    <Card>
+      <CardContent className="px-4 py-3">
+        <p className="text-muted-foreground text-xs">
+          <span className="text-foreground font-medium">{tasksCompleted}</span> tasks completed
+          {' \u00B7 '}
+          <span className="text-foreground font-medium">{agentsRan}</span> agents ran
+          {' \u00B7 '}
+          <span className="text-foreground font-medium">{captureCount}</span> captures
+        </p>
+      </CardContent>
+    </Card>
   );
 }

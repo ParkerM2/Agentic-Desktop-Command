@@ -25,7 +25,7 @@ import {
 import { cn } from '@renderer/shared/lib/utils';
 import { useThemeStore } from '@renderer/shared/stores/theme-store';
 
-import { Card, CardContent, CardHeader } from '@ui';
+import { Button, Card, CardContent, CardHeader, EmptyState } from '@ui';
 
 import type { DiffViewMode } from '../store';
 
@@ -171,52 +171,40 @@ function FileHeader({
 
       <div className="flex items-center gap-1">
         {/* Expand context toggle */}
-        <button
+        <Button
           aria-label={expandedContext ? 'Collapse context' : 'Expand context'}
+          size="icon"
           type="button"
-          className={cn(
-            'rounded p-1.5 text-xs transition-colors',
-            expandedContext
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground',
-          )}
+          variant={expandedContext ? 'secondary' : 'ghost'}
           onClick={onToggleExpand}
         >
           <UnfoldVertical className="h-3.5 w-3.5" />
-        </button>
+        </Button>
 
         {/* View mode toggle group */}
         <div className="border-border flex items-center gap-0.5 rounded-md border p-0.5">
-          <button
+          <Button
             aria-label="Split view"
+            size="icon"
             type="button"
-            className={cn(
-              'rounded px-2 py-1 text-xs transition-colors',
-              isSplit
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
+            variant={isSplit ? 'secondary' : 'ghost'}
             onClick={() => {
               if (!isSplit) onToggleViewMode();
             }}
           >
             <Columns2 className="h-3.5 w-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
             aria-label="Unified view"
+            size="icon"
             type="button"
-            className={cn(
-              'rounded px-2 py-1 text-xs transition-colors',
-              isSplit
-                ? 'text-muted-foreground hover:text-foreground'
-                : 'bg-muted text-foreground',
-            )}
+            variant={isSplit ? 'ghost' : 'secondary'}
             onClick={() => {
               if (isSplit) onToggleViewMode();
             }}
           >
             <Rows2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -273,9 +261,12 @@ export function DiffViewer({
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="text-muted-foreground flex h-24 items-center justify-center text-sm">
-            No changes in this file
-          </div>
+          <EmptyState
+            className="h-24"
+            description="No changes in this file"
+            size="sm"
+            title="No changes"
+          />
         </CardContent>
       </Card>
     );

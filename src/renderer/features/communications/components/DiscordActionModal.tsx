@@ -8,7 +8,17 @@ import { useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@ui';
 
 import { useMcpToolCall } from '../api/useMcpTool';
 
@@ -19,11 +29,13 @@ interface DiscordActionModalProps {
   onClose: () => void;
 }
 
+type DiscordStatus = 'online' | 'dnd' | 'idle' | 'invisible';
+
 interface FormState {
   channelId: string;
   content: string;
   userId: string;
-  status: 'online' | 'dnd' | 'idle' | 'invisible';
+  status: DiscordStatus;
   activityName: string;
 }
 
@@ -56,9 +68,15 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
 
   function handleInputChange(
     field: keyof FormState,
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    setError(null);
+    setResult(null);
+  }
+
+  function handleStatusChange(value: string): void {
+    setForm((prev) => ({ ...prev, status: value as DiscordStatus }));
     setError(null);
     setResult(null);
   }
@@ -119,22 +137,14 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
   function renderForm(): React.ReactNode {
     if (!actionType) return null;
 
-    const inputClass = cn(
-      'border-border bg-background mt-1 w-full rounded-md border px-3 py-2 text-sm',
-      'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-      'placeholder:text-muted-foreground',
-    );
-
     switch (actionType) {
       case 'send_message':
         return (
           <>
             <div>
-              <label className="text-sm font-medium" htmlFor="discord-channel">
-                Channel ID
-              </label>
-              <input
-                className={inputClass}
+              <Label htmlFor="discord-channel">Channel ID</Label>
+              <Input
+                className="mt-1"
                 id="discord-channel"
                 placeholder="1234567890123456789"
                 type="text"
@@ -145,11 +155,9 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
               />
             </div>
             <div>
-              <label className="text-sm font-medium" htmlFor="discord-content">
-                Message
-              </label>
-              <textarea
-                className={inputClass}
+              <Label htmlFor="discord-content">Message</Label>
+              <Textarea
+                className="mt-1"
                 id="discord-content"
                 placeholder="Your message..."
                 rows={3}
@@ -165,11 +173,9 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
       case 'call_user':
         return (
           <div>
-            <label className="text-sm font-medium" htmlFor="discord-user">
-              User ID
-            </label>
-            <input
-              className={inputClass}
+            <Label htmlFor="discord-user">User ID</Label>
+            <Input
+              className="mt-1"
               id="discord-user"
               placeholder="1234567890123456789"
               type="text"
@@ -192,29 +198,23 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
         return (
           <>
             <div>
-              <label className="text-sm font-medium" htmlFor="discord-status">
-                Status
-              </label>
-              <select
-                className={inputClass}
-                id="discord-status"
-                value={form.status}
-                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
-                  handleInputChange('status', e);
-                }}
-              >
-                <option value="online">Online</option>
-                <option value="dnd">Do Not Disturb</option>
-                <option value="idle">Idle</option>
-                <option value="invisible">Invisible</option>
-              </select>
+              <Label htmlFor="discord-status">Status</Label>
+              <Select value={form.status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="mt-1" id="discord-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="dnd">Do Not Disturb</SelectItem>
+                  <SelectItem value="idle">Idle</SelectItem>
+                  <SelectItem value="invisible">Invisible</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <label className="text-sm font-medium" htmlFor="discord-activity">
-                Activity Name (optional)
-              </label>
-              <input
-                className={inputClass}
+              <Label htmlFor="discord-activity">Activity Name (optional)</Label>
+              <Input
+                className="mt-1"
                 id="discord-activity"
                 placeholder="Playing a game..."
                 type="text"
@@ -237,10 +237,7 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" />
         <Dialog.Content
-          className={cn(
-            'bg-background border-border fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2',
-            'max-h-[80vh] overflow-y-auto rounded-lg border shadow-2xl',
-          )}
+          className="bg-background border-border fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 max-h-[80vh] overflow-y-auto rounded-lg border shadow-2xl"
         >
           {/* Header */}
           <div className="border-border flex items-center justify-between border-b p-4">
@@ -253,12 +250,14 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>
-              <button
+              <Button
                 aria-label="Close"
-                className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1.5"
+                size="icon"
+                type="button"
+                variant="ghost"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </Dialog.Close>
           </div>
 
@@ -281,29 +280,22 @@ export function DiscordActionModal({ actionType, onClose }: DiscordActionModalPr
 
           {/* Actions */}
           <div className="border-border flex justify-end gap-2 border-t p-4">
-            <button
+            <Button
               type="button"
-              className={cn(
-                'border-border text-muted-foreground rounded-md border px-4 py-2 text-sm',
-                'hover:bg-accent hover:text-foreground',
-              )}
+              variant="outline"
               onClick={onClose}
             >
               Close
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={mcpCall.isPending}
               type="button"
-              className={cn(
-                'bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium',
-                'hover:bg-primary/90 disabled:opacity-50',
-              )}
               onClick={() => {
                 void handleSubmit();
               }}
             >
               {mcpCall.isPending ? 'Processing...' : 'Execute'}
-            </button>
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
