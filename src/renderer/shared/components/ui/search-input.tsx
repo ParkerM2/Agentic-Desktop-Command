@@ -21,27 +21,27 @@ function SearchInput({ className, value, onClear, showClear, size, ...props }: S
   return (
     <div className="relative" data-slot="search-input">
       <Search
+        aria-hidden="true"
         className={cn(
           'pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground',
           size === 'sm' ? 'h-3 w-3' : 'h-4 w-4',
         )}
-        aria-hidden="true"
       />
       <Input
         className={cn(size === 'sm' ? 'pl-8' : 'pl-9', hasValue ? 'pr-8' : '', className)}
+        size={size}
         type="search"
         value={value}
-        size={size}
         {...props}
       />
       {hasValue && onClear !== undefined ? (
         <button
-          type="button"
-          onClick={onClear}
           aria-label="Clear search"
           className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+          type="button"
+          onClick={onClear}
         >
-          <X className={cn(size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} aria-hidden="true" />
+          <X aria-hidden="true" className={cn(size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
         </button>
       ) : null}
     </div>

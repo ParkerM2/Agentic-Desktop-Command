@@ -87,7 +87,7 @@ function InlineAlert({
       {...props}
     >
       {IconEl === undefined ? null : (
-        <IconEl className={cn(inlineAlertIconVariants({ variant }), 'h-4 w-4')} aria-hidden="true" />
+        <IconEl aria-hidden="true" className={cn(inlineAlertIconVariants({ variant }), 'h-4 w-4')} />
       )}
       <div className="min-w-0 flex-1">
         {title === undefined ? null : (
