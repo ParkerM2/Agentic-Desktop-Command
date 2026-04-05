@@ -3,12 +3,12 @@
  *
  * Left panel (55%): Primary Claude session.
  * Right column (45%): Team Lead sessions + spawn button.
- *
- * Calls initProject on mount. View is purely state-based — sessions
- * persist in WorkspaceSessionManager regardless of which project is displayed.
+ * Panels are resizable via drag handle.
  */
 
 import { useEffect } from 'react';
+
+import { Group, Panel, Separator } from 'react-resizable-panels';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -50,9 +50,9 @@ export function WorkspacePage() {
   }
 
   return (
-    <div className="flex h-full min-h-0">
-      {/* Primary Claude — left 55% */}
-      <div className="min-w-0 flex-[55]">
+    <Group className="h-full" orientation="horizontal">
+      {/* Primary Claude — left panel */}
+      <Panel defaultSize={55} minSize={30}>
         {primarySession === undefined ? (
           <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
             Starting primary session…
@@ -65,12 +65,14 @@ export function WorkspacePage() {
             status={primarySession.status}
           />
         )}
-      </div>
+      </Panel>
 
-      {/* Team Leads — right 45% */}
-      <div className="border-border min-w-0 flex-[45] border-l">
+      <Separator className="bg-border w-1 cursor-col-resize transition-colors hover:bg-primary/30" />
+
+      {/* Team Leads — right panel */}
+      <Panel defaultSize={45} minSize={25}>
         <TeamLeadPanelList projectId={projectId} sessions={sessions} />
-      </div>
-    </div>
+      </Panel>
+    </Group>
   );
 }
