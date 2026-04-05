@@ -188,13 +188,13 @@ When a Team Lead agent starts and detects existing progress:
 
 | Document | Location | Update When |
 |----------|----------|-------------|
-| `ai-docs/FEATURES-INDEX.md` | Feature/service/component inventory | New feature module, new service, new shared component/hook/store |
-| `ai-docs/ARCHITECTURE.md` | System diagram, service list, IPC flow | New service, new IPC channel, new feature module, architectural change |
-| `ai-docs/PATTERNS.md` | Code patterns and conventions | New pattern established, existing pattern modified |
-| `ai-docs/DATA-FLOW.md` | Data flow diagrams | New data path, new event, new store, new IPC channel |
-| `ai-docs/LINTING.md` | ESLint rules and fix patterns | New eslint-disable justification, new rule exception |
-| `ai-docs/user-interface-flow.md` | UX flow map, component wiring | New user-facing feature, UI layout change, gap resolution |
-| `ai-docs/CODEBASE-GUARDIAN.md` | File placement and naming rules | New directory, new structural pattern |
+| `docs/routing/FEATURES-INDEX.md` | Feature/service/component inventory | New feature module, new service, new shared component/hook/store |
+| `docs/architecture/ARCHITECTURE.md` | System diagram, service list, IPC flow | New service, new IPC channel, new feature module, architectural change |
+| `docs/patterns/PATTERNS.md` | Code patterns and conventions | New pattern established, existing pattern modified |
+| `docs/architecture/DATA-FLOW.md` | Data flow diagrams | New data path, new event, new store, new IPC channel |
+| `docs/patterns/LINTING.md` | ESLint rules and fix patterns | New eslint-disable justification, new rule exception |
+| `docs/ui/user-interface-flow.md` | UX flow map, component wiring | New user-facing feature, UI layout change, gap resolution |
+| `docs/patterns/CODEBASE-GUARDIAN.md` | File placement and naming rules | New directory, new structural pattern |
 | `CLAUDE.md` | AI agent guidelines | New path alias, new tech stack entry, new convention |
 | `PROGRESS.md` | Build progress tracker | Feature completed or milestone reached |
 
@@ -214,20 +214,19 @@ Each coding agent is responsible for updating docs alongside their own code chan
 Claude-UI/
 ├── CLAUDE.md                          # AI agent guidelines (update for new conventions)
 ├── PROGRESS.md                        # Build tracker (update on milestones)
-├── ai-docs/
-│   ├── ARCHITECTURE.md                # System architecture (update for new services/features)
-│   ├── CODEBASE-GUARDIAN.md           # File placement + naming rules
-│   ├── DATA-FLOW.md                   # Data flow diagrams (update for new IPC/events)
-│   ├── FEATURES-INDEX.md              # Feature/service/component inventory
-│   ├── LINTING.md                     # ESLint rules (update for new exceptions)
-│   ├── PATTERNS.md                    # Code patterns (update for new conventions)
-│   ├── user-interface-flow.md         # UX flow map + gap analysis
-│   └── prompts/
-│       └── implementing-features/     # THIS PLAYBOOK
 ├── docs/
+│   ├── architecture/ARCHITECTURE.md   # System architecture (update for new services/features)
+│   ├── patterns/CODEBASE-GUARDIAN.md  # File placement + naming rules
+│   ├── architecture/DATA-FLOW.md      # Data flow diagrams (update for new IPC/events)
+│   ├── routing/FEATURES-INDEX.md      # Feature/service/component inventory
+│   ├── patterns/LINTING.md            # ESLint rules (update for new exceptions)
+│   ├── patterns/PATTERNS.md           # Code patterns (update for new conventions)
+│   ├── ui/user-interface-flow.md      # UX flow map + gap analysis
+│   ├── prompts/
+│   │   └── implementing-features/     # THIS PLAYBOOK
 │   ├── tracker.json                   # Single source of truth for plan/progress lifecycle
 │   ├── plans/                         # Design documents (one per feature)
-│   └── progress/                      # Crash-safe progress files (one per active feature)
+│   └── specs/                         # Specification files (one per feature)
 ├── .claude/agents/                    # Agent prompt definitions (27 specialists)
 ├── hub/                               # Hub backend (Fastify + SQLite)
 │   └── src/
@@ -276,7 +275,7 @@ Claude-UI/
 
 When a feature adds new directories or files to the structure:
 
-1. The documentation agent adds the new paths to `ai-docs/ARCHITECTURE.md` structure section
+1. The documentation agent adds the new paths to `docs/architecture/ARCHITECTURE.md` structure section
 2. If a new feature module is created, add it to the features list with a brief description
 3. If a new service is created, add it to the service list in ARCHITECTURE.md
 4. If new IPC channels are added, add them to DATA-FLOW.md channel table
@@ -343,9 +342,9 @@ When spawning any agent via the `Task` tool, the prompt MUST include:
 ## Initialization (MANDATORY — do these BEFORE any code)
 
 1. Read `CLAUDE.md` — project rules (DO NOT SKIP)
-2. Read `ai-docs/ARCHITECTURE.md` — system architecture
-3. Read `ai-docs/PATTERNS.md` — code conventions
-4. Read `ai-docs/LINTING.md` — ESLint rules and fix patterns
+2. Read `docs/architecture/ARCHITECTURE.md` — system architecture
+3. Read `docs/patterns/PATTERNS.md` — code conventions
+4. Read `docs/patterns/LINTING.md` — ESLint rules and fix patterns
 
 ## Required Skills (USE THESE — they are NOT optional)
 
@@ -480,10 +479,10 @@ Task tool call:
 
     ## Initialization
     1. Read `CLAUDE.md`
-    2. Read `ai-docs/LINTING.md`
-    3. Read `ai-docs/PATTERNS.md`
+    2. Read `docs/patterns/LINTING.md`
+    3. Read `docs/patterns/PATTERNS.md`
     4. Read `.claude/agents/qa-reviewer.md`
-    5. Read `ai-docs/prompts/mcp_tools/electron_validation.md`
+    5. Read `docs/prompts/mcp_tools/electron_validation.md`
 
     ## Required Skills
     - invoke `superpowers:verification-before-completion` FIRST
@@ -631,7 +630,7 @@ Checklist:
 3. `src/main/ipc/index.ts` — Register handler file (if new file)
 4. `src/renderer/features/<name>/api/use<Feature>.ts` — Add React Query hook
 5. `src/renderer/features/<name>/hooks/use<Feature>Events.ts` — Add event listener (if event channel)
-6. `ai-docs/DATA-FLOW.md` — Document the new channel
+6. `docs/architecture/DATA-FLOW.md` — Document the new channel
 
 ### Adding a New Service
 
@@ -642,7 +641,7 @@ Checklist:
 3. `src/main/ipc/handlers/<name>-handlers.ts` — Register IPC handlers
 4. `src/main/ipc/index.ts` — Import and register handler file
 5. `src/shared/ipc-contract.ts` — Define channels
-6. `ai-docs/ARCHITECTURE.md` — Add to service list
+6. `docs/architecture/ARCHITECTURE.md` — Add to service list
 
 ---
 

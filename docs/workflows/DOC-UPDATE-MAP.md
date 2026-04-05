@@ -1,12 +1,12 @@
 # Documentation Update Map — MANDATORY
 
 > **EVERY code change MUST include documentation updates. EVERY. SINGLE. TIME.**
-> This includes `ai-docs/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md` itself.
+> This includes `docs/` subdirectories, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md` itself.
 > Agent definition files (`.claude/agents/*.md`) are NOT optional extras — they are the instructions
 > that future agents read. If agent docs are stale, agents produce wrong code, which wastes time and money.
 > **Failing to update docs is the same as shipping broken code. Treat it that way.**
 
-`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `ai-docs/`, `docs/features/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md`.
+`npm run check:docs` enforces that source changes include doc updates. Accepted doc paths: `docs/`, `.claude/agents/`, `docs/tracker.json`, and `CLAUDE.md`.
 
 ## Change Type → Docs to Update
 

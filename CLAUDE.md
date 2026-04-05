@@ -10,8 +10,8 @@
 - **Renderer**: `src/renderer/` — React + TanStack Router + Zustand
 - **Shared**: `src/shared/` — IPC contracts (Zod schemas), shared types
 
-Full architecture: `ai-docs/ARCHITECTURE.md`
-Data flow: `ai-docs/DATA-FLOW.md`
+Full architecture: `docs/architecture/ARCHITECTURE.md`
+Data flow: `docs/architecture/DATA-FLOW.md`
 
 ---
 
@@ -48,7 +48,7 @@ Never add business logic to handlers. Never access services from renderer.
 ## ADC v2 Refactor — COMPLETE
 
 All 9 phases shipped. Do NOT build on `terminal-service` or xterm.js — they are deprecated.
-Agent output comes from stream-json / session JSONL. See `ai-docs/V2-REFACTOR.md`.
+Agent output comes from stream-json / session JSONL. See `docs/architecture/V2-REFACTOR.md`.
 
 ---
 
@@ -67,10 +67,10 @@ npm run build      # Must compile
 
 | Doc | When to Read |
 |-----|-------------|
-| `ai-docs/CODEBASE-GUARDIAN.md` | File placement, naming, import rules — always |
-| `ai-docs/LINTING.md` | ESLint rules and fix patterns |
-| `ai-docs/PATTERNS.md` | Code conventions and examples |
-| `ai-docs/ARCHITECTURE.md` | System architecture, IPC flow |
-| `ai-docs/DATA-FLOW.md` | Data flow diagrams |
-| `ai-docs/FEATURES-INDEX.md` | All features, services, and IPC channels |
+| `docs/patterns/CODEBASE-GUARDIAN.md` | File placement, naming, import rules — always |
+| `docs/patterns/LINTING.md` | ESLint rules and fix patterns |
+| `docs/patterns/PATTERNS.md` | Code conventions and examples |
+| `docs/architecture/ARCHITECTURE.md` | System architecture, IPC flow |
+| `docs/architecture/DATA-FLOW.md` | Data flow diagrams |
+| `docs/routing/FEATURES-INDEX.md` | All features, services, and IPC channels |
 | `docs/tracker.json` | Plan lifecycle (single source of truth) |

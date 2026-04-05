@@ -1,6 +1,6 @@
 {
   "projectRulesFile": "CLAUDE.md",
-  "architectureFile": "docs/ARCHITECTURE.md",
+  "architectureFile": "docs/architecture/ARCHITECTURE.md",
   "progressDir": ".claude/progress",
   "branching": {
     "baseBranch": "auto",
@@ -8,8 +8,11 @@
     "workPrefix": "work",
     "enforce": "warn",
     "protectedBranches": ["main", "master"],
-    "useWorktrees": false,
+    "useWorktrees": true,
     "worktreeDir": ".worktrees"
+  },
+  "guards": {
+    "configGuard": false
   },
   "worktreeBootstrap": {
     "script": "scripts/generate-worktree-claude.mjs",
@@ -24,9 +27,9 @@
       "feature-module-pattern"
     ],
     "alwaysIncludeDocs": [
-      "ai-docs/CODEBASE-GUARDIAN.md",
-      "ai-docs/LINTING.md",
-      "ai-docs/PATTERNS.md"
+      "docs/patterns/CODEBASE-GUARDIAN.md",
+      "docs/patterns/LINTING.md",
+      "docs/patterns/PATTERNS.md"
     ]
   }
 }

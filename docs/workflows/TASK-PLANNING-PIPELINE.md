@@ -218,7 +218,7 @@ When the user clicks "Request Changes" in PlanViewer:
 
 This project has two categories of documentation:
 
-### Development Docs (`ai-docs/`)
+### Development Docs (`docs/`)
 For Claude instances and developers working **on** the application:
 - `ARCHITECTURE.md` — System architecture
 - `DATA-FLOW.md` — Data flow diagrams

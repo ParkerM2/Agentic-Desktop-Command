@@ -518,14 +518,14 @@ Location: `src/renderer/shared/stores/`
 ```
 ADC/
 ├── CLAUDE.md                    # AI agent guidelines
-├── ai-docs/                     # Documentation for AI agents
-│   ├── ARCHITECTURE.md          # System architecture
-│   ├── PATTERNS.md              # Code conventions
-│   ├── DATA-FLOW.md             # Data flow diagrams
-│   ├── CODEBASE-GUARDIAN.md     # Structural rules
-│   ├── LINTING.md               # ESLint rules
-│   ├── FEATURES-INDEX.md        # THIS FILE
-│   ├── user-interface-flow.md   # UX flow map + gap analysis
+├── docs/                        # Documentation for AI agents
+│   ├── architecture/ARCHITECTURE.md  # System architecture
+│   ├── patterns/PATTERNS.md     # Code conventions
+│   ├── architecture/DATA-FLOW.md  # Data flow diagrams
+│   ├── patterns/CODEBASE-GUARDIAN.md  # Structural rules
+│   ├── patterns/LINTING.md      # ESLint rules
+│   ├── routing/FEATURES-INDEX.md  # THIS FILE
+│   ├── ui/user-interface-flow.md  # UX flow map + gap analysis
 │   └── prompts/implementing-features/
 ├── docs/
 │   ├── plans/                   # Design documents

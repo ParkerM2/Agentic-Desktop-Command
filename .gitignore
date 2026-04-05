@@ -51,10 +51,7 @@ logs/security/
 # OS
 .DS_Store
 Thumbs.db
-nul
-coverage/
-playwright-report/
-test-results/
+test-artifacts/
 
 # E2E screenshots (generated, force-added on feature branches)
 tests/e2e/screenshots/
