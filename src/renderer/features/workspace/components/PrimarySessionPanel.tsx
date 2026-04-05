@@ -21,6 +21,7 @@ import { AgentChatPanel } from '@features/agent-dashboard';
 
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
+import { Text } from '@ui/typography';
 
 import { useWorkspaceSend } from '../api/useWorkspace';
 import { useWorkspaceStore } from '../store';
@@ -104,17 +105,19 @@ export function PrimarySessionPanel({
       {/* Header */}
       <div className="border-border flex h-10 items-center gap-2 border-b px-4">
         <span className={cn('h-2 w-2 rounded-full', statusColor)} />
-        <span className="text-muted-foreground text-xs font-medium">
+        <Text className="font-medium" size="sm" variant="muted">
           Primary · {projectName}
-        </span>
-        <span className="text-muted-foreground ml-auto text-xs opacity-60">claude-sonnet-4-6</span>
+        </Text>
+        <Text className="ml-auto opacity-60" size="sm" variant="muted">
+          claude-sonnet-4-6
+        </Text>
       </div>
 
       {/* Message stream */}
       <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
         {chatItems.length === 0 ? (
-          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-            {status === 'starting' ? 'Starting session…' : 'Session ready. Send a message.'}
+          <div className="flex h-full items-center justify-center">
+            <Text variant="muted">{status === 'starting' ? 'Starting session…' : 'Session ready. Send a message.'}</Text>
           </div>
         ) : (
           <AgentChatPanel messages={chatItems} />

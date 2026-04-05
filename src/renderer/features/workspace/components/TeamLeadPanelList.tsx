@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 import type { WorkspaceSession } from '@shared/ipc/workspace';
 
 import { Button } from '@ui/button';
+import { Text } from '@ui/typography';
 
 import { useSpawnTeamLead } from '../api/useWorkspace';
 
@@ -28,9 +29,7 @@ export function TeamLeadPanelList({ projectId, sessions }: TeamLeadPanelListProp
   return (
     <div className="flex h-full flex-col">
       <div className="border-border flex h-10 items-center gap-2 border-b px-4">
-        <span className="text-muted-foreground text-xs font-medium">
-          Agent Teams
-        </span>
+        <Text className="font-medium" size="sm" variant="muted">Agent Teams</Text>
         <Button
           className="ml-auto h-6 gap-1 px-2 text-[10px]"
           disabled={spawn.isPending}

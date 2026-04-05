@@ -21,6 +21,7 @@ import { AgentChatPanel } from '@features/agent-dashboard';
 
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
+import { Text } from '@ui/typography';
 
 import { useStopTeamLead, useWorkspaceSend } from '../api/useWorkspace';
 import { useWorkspaceStore } from '../store';
@@ -100,10 +101,10 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
       {/* Card header */}
       <div className="flex items-center gap-2 px-3 py-2">
         <span className={cn('h-2 w-2 rounded-full', statusColor)} />
-        <span className="text-xs font-medium">{label}</span>
-        {status === 'restarting' && (
-          <span className="text-muted-foreground text-xs">restarting…</span>
-        )}
+        <Text className="font-medium" size="sm">{label}</Text>
+        {status === 'restarting' ? (
+          <Text size="sm" variant="muted">restarting…</Text>
+        ) : null}
         <div className="ml-auto flex items-center gap-1">
           {!isImmortal && (
             <Button
@@ -133,9 +134,9 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
         <>
           <div className="border-border max-h-48 overflow-y-auto border-t">
             {chatItems.length === 0 ? (
-              <p className="text-muted-foreground p-3 text-xs">
+              <Text className="p-3" size="sm" variant="muted">
                 {status === 'starting' ? 'Starting…' : 'Ready for a plan or instructions.'}
-              </p>
+              </Text>
             ) : (
               <AgentChatPanel className="max-h-48" messages={chatItems} />
             )}
