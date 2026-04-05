@@ -71,7 +71,9 @@ export function WorkspacePage() {
 
       {/* Team Leads — right panel */}
       <Panel defaultSize={45} minSize={25}>
-        <TeamLeadPanelList projectId={projectId} sessions={sessions} />
+        <div className="h-full">
+          <TeamLeadPanelList projectId={projectId} sessions={sessions} />
+        </div>
       </Panel>
     </Group>
   );

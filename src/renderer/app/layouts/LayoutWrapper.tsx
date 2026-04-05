@@ -83,7 +83,7 @@ export function LayoutWrapper({ children, layoutId }: LayoutWrapperProps) {
   const Layout = LAYOUT_MAP[layoutId];
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-full">
       <Suspense fallback={<SidebarSkeleton />}>
         <Layout />
       </Suspense>

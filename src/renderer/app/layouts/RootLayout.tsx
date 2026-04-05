@@ -80,7 +80,7 @@ export function RootLayout() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ThemeHydrator />
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <LayoutWrapper layoutId={sidebarLayout}>
           <TopBar />
           {hubStatus?.status === 'disconnected' || hubStatus?.status === 'error' ? (
