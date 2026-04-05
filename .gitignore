@@ -38,6 +38,7 @@ logs/security/
 .claude/teams/
 .claude/tasks/
 .claude/settings.json
+.claude/settings.local.json
 .playwright-mcp/
 
 # Logs

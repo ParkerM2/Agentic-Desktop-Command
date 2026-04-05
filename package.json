@@ -35,10 +35,14 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check:agents": "node scripts/check-agents.mjs",
     "validate:tracker": "node scripts/validate-tracker.mjs",
-    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs && npm run validate:tracker"
+    "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs && npm run validate:tracker",
+    "icons:generate": "node scripts/generate-logo-svg.js && svgo resources/icon.svg -o resources/icon-optimized.svg && node scripts/build-icons.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
+    "@dagrejs/dagre": "^1.0.4",
+    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/geist-mono": "^5.2.7",
     "@git-diff-view/core": "^0.0.39",
     "@git-diff-view/react": "^0.0.39",
     "@lydell/node-pty": "^1.1.0",
@@ -67,6 +71,7 @@
     "@xterm/addon-web-links": "^0.12.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^6.0.0",
+    "@xyflow/react": "^12.10.2",
     "ag-grid-community": "^35.1.0",
     "ag-grid-react": "^35.1.0",
     "chrono-node": "^2.9.0",
@@ -100,6 +105,7 @@
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.1.0",
+    "@types/dagre": "^0.7.3",
     "@types/node": "^25.2.3",
     "@types/nodemailer": "^7.0.9",
     "@types/react": "^19.2.7",
@@ -126,11 +132,14 @@
     "eslint-plugin-unicorn": "^58.0.0",
     "gif-encoder-2": "^1.0.5",
     "globals": "^16.5.0",
+    "icon-gen": "^5.0.0",
     "memfs": "^4.17.0",
+    "opentype.js": "^1.3.4",
     "pngjs": "^7.0.0",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.6.14",
+    "svgo": "^4.0.1",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.55.0",
@@ -159,7 +168,7 @@
       ]
     },
     "mac": {
-      "icon": "resources/icon.png",
+      "icon": "resources/icon.icns",
       "category": "public.app-category.developer-tools",
       "target": [
         {

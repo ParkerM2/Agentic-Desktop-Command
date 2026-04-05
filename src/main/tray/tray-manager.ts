@@ -88,7 +88,7 @@ function loadResourceIcon(): NativeImage {
 
   if (image.isEmpty()) {
     // Fallback: create a default icon programmatically
-    return createStatusIcon({ r: 214, g: 216, b: 118 }); // primary color
+    return createStatusIcon({ r: 45, g: 212, b: 191 }); // #2DD4BF — Command teal
   }
 
   if (process.platform === 'darwin') {
@@ -100,8 +100,8 @@ function loadResourceIcon(): NativeImage {
 }
 
 const STATUS_COLORS: Record<TrayStatus, { r: number; g: number; b: number }> = {
-  idle: { r: 214, g: 216, b: 118 },
-  working: { r: 59, g: 130, b: 246 },
+  idle: { r: 45, g: 212, b: 191 },         // #2DD4BF — Command teal
+  working: { r: 45, g: 212, b: 191 },      // #2DD4BF — same teal (pulse handled in UI)
   notification: { r: 239, g: 68, b: 68 },
 };
 

@@ -59,6 +59,7 @@ import { spotifyInvoke } from './spotify';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents, tasksInvoke } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { trackerInvoke } from './tracker';
+import { visualizationInvoke } from './visualization';
 import { windowInvoke } from './window';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
@@ -113,6 +114,7 @@ export const ipcInvokeContract = {
   ...trackerInvoke,
   ...agentDashboardInvoke,
   ...workspaceInvoke,
+  ...visualizationInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -440,3 +442,16 @@ export {
   WorkspaceSessionSchema,
   WorkspaceSessionStatusSchema,
 } from './workspace';
+
+export {
+  AgentStatusSchema,
+  AgentTaskInfoSchema,
+  AgentTeamsDataSchema,
+  CodebaseEdgeSchema,
+  CodebaseFileSchema,
+  CodebaseGraphSchema,
+  FeatureAgentDataSchema,
+  SessionLogLineSchema,
+  SessionLogPageSchema,
+  TrackingEventSchema,
+} from './visualization';

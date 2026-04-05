@@ -98,6 +98,7 @@ import { createTeamWatcherService } from '../services/team-watcher/team-watcher-
 import { createTerminalService } from '../services/terminal/terminal-service';
 import { createTimeParserService } from '../services/time-parser/time-parser-service';
 import { createTrackerService } from '../services/tracker/tracker-service';
+import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
@@ -524,6 +525,9 @@ export function createServiceRegistry(
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
   const trackerService = createTrackerService(process.cwd());
 
+  // ─── Visualization service (stateless — reads from disk on each call) ───
+  const visualizationService = createVisualizationService();
+
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
     agentManagerService,
@@ -580,6 +584,7 @@ export function createServiceRegistry(
     codebaseAnalyzer,
     setupPipeline,
     trackerService,
+    visualizationService,
     userSessionManager,
     workspaceSessionManager,
     dataDir,

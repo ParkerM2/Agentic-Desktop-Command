@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "lastUpdated": "2026-03-30",
+  "lastUpdated": "2026-04-05",
   "plans": {
     "user-scoped-storage": {
       "title": "User-Scoped Data Storage",
@@ -10,7 +10,12 @@
       "statusChangedAt": "2026-02-22",
       "branch": "feature/user-scoped-storage",
       "pr": null,
-      "tags": ["storage", "auth", "data-isolation", "multi-user"]
+      "tags": [
+        "storage",
+        "auth",
+        "data-isolation",
+        "multi-user"
+      ]
     },
     "future-roadmap": {
       "title": "Future Roadmap",
@@ -20,7 +25,9 @@
       "statusChangedAt": "2026-02-16",
       "branch": null,
       "pr": null,
-      "tags": ["roadmap"]
+      "tags": [
+        "roadmap"
+      ]
     },
     "separation-of-concerns": {
       "title": "Codebase Separation of Concerns",
@@ -30,7 +37,10 @@
       "statusChangedAt": "2026-02-19",
       "branch": null,
       "pr": null,
-      "tags": ["refactor", "architecture"]
+      "tags": [
+        "refactor",
+        "architecture"
+      ]
     },
     "comprehensive-e2e-suite": {
       "title": "Comprehensive E2E Test Suite",
@@ -40,7 +50,10 @@
       "statusChangedAt": "2026-02-20",
       "branch": null,
       "pr": null,
-      "tags": ["testing", "e2e"]
+      "tags": [
+        "testing",
+        "e2e"
+      ]
     },
     "custom-theme-editor": {
       "title": "Custom Theme Editor",
@@ -50,7 +63,10 @@
       "statusChangedAt": "2026-02-20",
       "branch": null,
       "pr": 62,
-      "tags": ["ui", "themes"]
+      "tags": [
+        "ui",
+        "themes"
+      ]
     },
     "tracking-consolidation": {
       "title": "Tracking Consolidation",
@@ -60,7 +76,11 @@
       "statusChangedAt": "2026-02-22",
       "branch": null,
       "pr": 64,
-      "tags": ["tracking", "infrastructure", "cleanup"]
+      "tags": [
+        "tracking",
+        "infrastructure",
+        "cleanup"
+      ]
     },
     "ui-layout-refactor": {
       "title": "UI Layout Refactor",
@@ -70,7 +90,13 @@
       "statusChangedAt": "2026-02-21",
       "branch": "feature/ui-layout-refactor",
       "pr": null,
-      "tags": ["ui", "refactor", "sidebar", "settings", "ag-grid"]
+      "tags": [
+        "ui",
+        "refactor",
+        "sidebar",
+        "settings",
+        "ag-grid"
+      ]
     },
     "customizable-sidebar-layouts": {
       "title": "Customizable Sidebar Layout System",
@@ -80,7 +106,13 @@
       "statusChangedAt": "2026-02-22",
       "branch": null,
       "pr": 65,
-      "tags": ["ui", "sidebar", "layouts", "shadcn", "breadcrumbs"]
+      "tags": [
+        "ui",
+        "sidebar",
+        "layouts",
+        "shadcn",
+        "breadcrumbs"
+      ]
     },
     "sidebar-architecture-refactor": {
       "title": "Sidebar/Navigation Architecture Refactor",
@@ -90,7 +122,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["refactor", "sidebar", "navigation", "P0"]
+      "tags": [
+        "refactor",
+        "sidebar",
+        "navigation",
+        "P0"
+      ]
     },
     "docs-sync": {
       "title": "Documentation Sync Pass",
@@ -100,7 +137,11 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["docs", "maintenance", "P0"]
+      "tags": [
+        "docs",
+        "maintenance",
+        "P0"
+      ]
     },
     "command-palette": {
       "title": "Global Command Palette",
@@ -110,7 +151,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "ux", "navigation", "P1"]
+      "tags": [
+        "feature",
+        "ux",
+        "navigation",
+        "P1"
+      ]
     },
     "workspace-ui": {
       "title": "Workspaces Management UI",
@@ -120,7 +166,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "ui", "workspaces", "P1"]
+      "tags": [
+        "feature",
+        "ui",
+        "workspaces",
+        "P1"
+      ]
     },
     "devices-ui": {
       "title": "Devices Management Page",
@@ -130,7 +181,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "ui", "devices", "P1"]
+      "tags": [
+        "feature",
+        "ui",
+        "devices",
+        "P1"
+      ]
     },
     "productivity-hub-restructure": {
       "title": "Productivity Hub Restructure",
@@ -140,7 +196,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["refactor", "ui", "productivity", "P1"]
+      "tags": [
+        "refactor",
+        "ui",
+        "productivity",
+        "P1"
+      ]
     },
     "favorites-pinning": {
       "title": "Favorites & Pinning System",
@@ -150,7 +211,11 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "ux", "P2"]
+      "tags": [
+        "feature",
+        "ux",
+        "P2"
+      ]
     },
     "task-bulk-ops": {
       "title": "Bulk Task Operations",
@@ -160,7 +225,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "tasks", "ag-grid", "P2"]
+      "tags": [
+        "feature",
+        "tasks",
+        "ag-grid",
+        "P2"
+      ]
     },
     "agent-dashboard-view": {
       "title": "Agent Dashboard View — Headless Agents + Custom React UI",
@@ -170,7 +240,13 @@
       "statusChangedAt": "2026-04-01",
       "branch": "feature/agent-dashboard-view",
       "pr": null,
-      "tags": ["feature", "agents", "monitoring", "dashboard", "P0"]
+      "tags": [
+        "feature",
+        "agents",
+        "monitoring",
+        "dashboard",
+        "P0"
+      ]
     },
     "insights-analytics": {
       "title": "Insights Analytics Upgrade",
@@ -180,7 +256,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "analytics", "charts", "P2"]
+      "tags": [
+        "feature",
+        "analytics",
+        "charts",
+        "P2"
+      ]
     },
     "health-dashboard": {
       "title": "Service Health Dashboard",
@@ -190,7 +271,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "monitoring", "health", "P2"]
+      "tags": [
+        "feature",
+        "monitoring",
+        "health",
+        "P2"
+      ]
     },
     "ci-cd-pipeline": {
       "title": "GitHub Actions CI/CD Pipeline",
@@ -200,7 +286,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["infra", "ci-cd", "github-actions", "P3"]
+      "tags": [
+        "infra",
+        "ci-cd",
+        "github-actions",
+        "P3"
+      ]
     },
     "e2e-test-expansion": {
       "title": "E2E Test Suite Expansion",
@@ -210,7 +301,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["testing", "e2e", "coverage", "P3"]
+      "tags": [
+        "testing",
+        "e2e",
+        "coverage",
+        "P3"
+      ]
     },
     "accessibility-audit": {
       "title": "WCAG Accessibility Audit",
@@ -220,7 +316,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["quality", "accessibility", "a11y", "P3"]
+      "tags": [
+        "quality",
+        "accessibility",
+        "a11y",
+        "P3"
+      ]
     },
     "offline-resilience": {
       "title": "Offline Mode / Graceful Degradation",
@@ -230,7 +331,12 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["feature", "resilience", "offline", "P3"]
+      "tags": [
+        "feature",
+        "resilience",
+        "offline",
+        "P3"
+      ]
     },
     "eslint-warnings-cleanup": {
       "title": "Clean ESLint Warnings",
@@ -240,7 +346,28 @@
       "statusChangedAt": "2026-02-26",
       "branch": null,
       "pr": null,
-      "tags": ["cleanup", "lint", "P3"]
+      "tags": [
+        "cleanup",
+        "lint",
+        "P3"
+      ]
+    },
+    "adc-brand-suite": {
+      "title": "ADC Brand Suite",
+      "status": "IMPLEMENTED",
+      "planFile": null,
+      "created": "2026-04-04",
+      "statusChangedAt": "2026-04-05",
+      "branch": "feature/adc-brand-suite",
+      "pr": null,
+      "tags": [
+        "brand",
+        "design",
+        "icons",
+        "tray",
+        "typography",
+        "theme"
+      ]
     }
   }
 }
