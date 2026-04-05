@@ -104,7 +104,7 @@ export function PrimarySessionPanel({
       {/* Header */}
       <div className="border-border flex h-10 items-center gap-2 border-b px-4">
         <span className={cn('h-2 w-2 rounded-full', statusColor)} />
-        <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+        <span className="text-muted-foreground text-xs font-medium">
           Primary · {projectName}
         </span>
         <span className="text-muted-foreground ml-auto text-xs opacity-60">claude-sonnet-4-6</span>

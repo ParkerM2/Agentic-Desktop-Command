@@ -28,17 +28,18 @@ export function TeamLeadPanelList({ projectId, sessions }: TeamLeadPanelListProp
   return (
     <div className="flex h-full flex-col">
       <div className="border-border flex h-10 items-center gap-2 border-b px-4">
-        <span className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
-          Team Leads
+        <span className="text-muted-foreground text-xs font-medium">
+          Agent Teams
         </span>
         <Button
-          className="ml-auto h-5 w-5 p-0"
+          className="ml-auto h-6 gap-1 px-2 text-[10px]"
           disabled={spawn.isPending}
-          size="icon"
+          size="sm"
           variant="ghost"
           onClick={() => spawn.mutate({})}
         >
           <Plus className="h-3 w-3" />
+          Team Lead
         </Button>
       </div>
 
