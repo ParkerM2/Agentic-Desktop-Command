@@ -3,9 +3,7 @@
  * Shows task title and status badge for each option.
  */
 
-import { Loader2 } from 'lucide-react';
-
-import { cn } from '@renderer/shared/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from '@ui';
 
 import { useTasks } from '@features/tasks';
 
@@ -21,7 +19,7 @@ export function TaskSelector({ projectId, selectedTaskId, onSelectTask }: TaskSe
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
-        <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
+        <Spinner size="sm" className="text-muted-foreground" />
         <span className="text-muted-foreground text-sm">Loading tasks...</span>
       </div>
     );
@@ -32,26 +30,24 @@ export function TaskSelector({ projectId, selectedTaskId, onSelectTask }: TaskSe
   }
 
   return (
-    <select
-      aria-label="Select a task"
+    <Select
       value={selectedTaskId ?? ''}
-      className={cn(
-        'border-input bg-background text-foreground rounded-md border px-3 py-1.5 text-sm',
-        'focus:ring-ring focus:border-ring focus:outline-none focus:ring-1',
-        'max-w-sm',
-      )}
-      onChange={(event) => {
-        if (event.target.value.length > 0) {
-          onSelectTask(event.target.value);
+      onValueChange={(value) => {
+        if (value.length > 0) {
+          onSelectTask(value);
         }
       }}
     >
-      <option value="">Select a task...</option>
-      {tasks.map((task) => (
-        <option key={task.id} value={task.id}>
-          {task.title} [{task.status}]
-        </option>
-      ))}
-    </select>
+      <SelectTrigger aria-label="Select a task" className="max-w-sm">
+        <SelectValue placeholder="Select a task..." />
+      </SelectTrigger>
+      <SelectContent>
+        {tasks.map((task) => (
+          <SelectItem key={task.id} value={task.id}>
+            {task.title} [{task.status}]
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

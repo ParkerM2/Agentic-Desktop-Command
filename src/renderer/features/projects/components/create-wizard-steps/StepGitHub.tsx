@@ -6,6 +6,8 @@ import { AlertTriangle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Label, Switch } from '@ui';
+
 interface StepGitHubProps {
   createGitHubRepo: boolean;
   githubVisibility: 'public' | 'private';
@@ -25,28 +27,14 @@ export function StepGitHub({
 
       {/* Toggle: Create GitHub repo */}
       <div className="flex items-center justify-between">
-        <label className="text-sm" htmlFor="create-github-toggle">
+        <Label htmlFor="create-github-toggle" className="text-sm">
           Create GitHub repository
-        </label>
-        <button
-          aria-checked={createGitHubRepo}
+        </Label>
+        <Switch
           id="create-github-toggle"
-          role="switch"
-          type="button"
-          className={cn(
-            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-            createGitHubRepo ? 'bg-primary' : 'bg-muted',
-          )}
-          onClick={() => onCreateRepoChange(!createGitHubRepo)}
-        >
-          <span
-            aria-hidden="true"
-            className={cn(
-              'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform',
-              createGitHubRepo ? 'translate-x-5' : 'translate-x-0',
-            )}
-          />
-        </button>
+          checked={createGitHubRepo}
+          onCheckedChange={onCreateRepoChange}
+        />
       </div>
 
       {/* Visibility radio buttons */}
@@ -70,9 +58,9 @@ export function StepGitHub({
                 onChange={() => onVisibilityChange('private')}
               />
               <div>
-                <label className="cursor-pointer text-sm font-medium" htmlFor="visibility-private">
+                <Label className="cursor-pointer text-sm font-medium" htmlFor="visibility-private">
                   Private
-                </label>
+                </Label>
                 <p className="text-muted-foreground text-xs">
                   Only you and collaborators can see this repository
                 </p>
@@ -94,9 +82,9 @@ export function StepGitHub({
                 onChange={() => onVisibilityChange('public')}
               />
               <div>
-                <label className="cursor-pointer text-sm font-medium" htmlFor="visibility-public">
+                <Label className="cursor-pointer text-sm font-medium" htmlFor="visibility-public">
                   Public
-                </label>
+                </Label>
                 <p className="text-muted-foreground text-xs">
                   Anyone on the internet can see this repository
                 </p>

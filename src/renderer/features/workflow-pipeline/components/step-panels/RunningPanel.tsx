@@ -9,6 +9,8 @@ import type { Task } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Progress } from '@ui';
+
 import { useKillAgent } from '@features/tasks/api/useAgentMutations';
 import { ExecutionLog } from '@features/tasks/components/detail/ExecutionLog';
 import { SubtaskList } from '@features/tasks/components/detail/SubtaskList';
@@ -48,18 +50,17 @@ export function RunningPanel({ task }: RunningPanelProps) {
           </span>
         </div>
         {sessionId ? (
-          <button
+          <Button
             disabled={killAgent.isPending}
             type="button"
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              'bg-destructive/10 text-destructive hover:bg-destructive/20',
-            )}
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={handleKill}
           >
             <StopCircle className="h-3.5 w-3.5" />
             {killAgent.isPending ? 'Stopping...' : 'Stop'}
-          </button>
+          </Button>
         ) : null}
       </div>
 
@@ -69,12 +70,7 @@ export function RunningPanel({ task }: RunningPanelProps) {
           <span className="text-muted-foreground text-xs">Overall progress</span>
           <span className="text-foreground text-xs font-medium">{overallPercent}%</span>
         </div>
-        <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full rounded-full transition-all duration-300"
-            style={{ width: `${String(overallPercent)}%` }}
-          />
-        </div>
+        <Progress value={overallPercent} size="sm" />
         {progress?.message ? (
           <p className="text-muted-foreground text-xs">{progress.message}</p>
         ) : null}

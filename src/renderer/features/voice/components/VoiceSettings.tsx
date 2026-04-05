@@ -10,6 +10,18 @@ import { VOICE_LANGUAGES } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import {
+  Button,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Switch,
+} from '@ui';
+
 import { useUpdateVoiceConfig, useVoiceConfig, useVoicePermission } from '../api/useVoice';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
@@ -26,10 +38,10 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
 
   if (configLoading || config === undefined) {
     return (
-      <div className={cn('animate-pulse space-y-4', className)}>
-        <div className="bg-muted h-10 rounded-md" />
-        <div className="bg-muted h-10 rounded-md" />
-        <div className="bg-muted h-10 rounded-md" />
+      <div className={cn('space-y-4', className)}>
+        <Skeleton className="h-10 rounded-md" />
+        <Skeleton className="h-10 rounded-md" />
+        <Skeleton className="h-10 rounded-md" />
       </div>
     );
   }
@@ -39,8 +51,8 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
     updateConfig.mutate({ enabled: !config.enabled });
   }
 
-  function handleLanguageChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    updateConfig.mutate({ language: e.target.value });
+  function handleLanguageChange(value: string) {
+    updateConfig.mutate({ language: value });
   }
 
   function handleInputModeChange(mode: 'push_to_talk' | 'continuous') {
@@ -63,32 +75,16 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
       {/* Enable/Disable Voice */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <label className="text-foreground text-sm font-medium" htmlFor="voice-enabled">
+          <Label htmlFor="voice-enabled" className="text-foreground text-sm font-medium">
             Voice Input
-          </label>
+          </Label>
           <p className="text-muted-foreground text-xs">Enable voice commands and dictation</p>
         </div>
-        <button
-          aria-checked={config.enabled}
+        <Switch
           id="voice-enabled"
-          role="switch"
-          type="button"
-          className={cn(
-            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full',
-            'border-2 border-transparent transition-colors duration-200 ease-in-out',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-            config.enabled ? 'bg-primary' : 'bg-muted',
-          )}
-          onClick={handleToggleEnabled}
-        >
-          <span
-            className={cn(
-              'pointer-events-none inline-block h-5 w-5 rounded-full',
-              'bg-background shadow ring-0 transition duration-200 ease-in-out',
-              config.enabled ? 'translate-x-5' : 'translate-x-0',
-            )}
-          />
-        </button>
+          checked={config.enabled}
+          onCheckedChange={handleToggleEnabled}
+        />
       </div>
 
       {/* Permission Warning */}
@@ -106,64 +102,51 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
 
       {/* Language Selection */}
       <div className="space-y-2">
-        <label className="text-foreground text-sm font-medium" htmlFor="voice-language">
+        <Label htmlFor="voice-language" className="text-foreground text-sm font-medium">
           Language
-        </label>
-        <select
+        </Label>
+        <Select
           disabled={!config.enabled}
-          id="voice-language"
           value={config.language}
-          className={cn(
-            'border-input bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm',
-            'focus:border-primary focus:ring-primary focus:ring-1 focus:outline-none',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
-          onChange={handleLanguageChange}
+          onValueChange={handleLanguageChange}
         >
-          {VOICE_LANGUAGES.map((lang) => (
-            <option key={lang.code} value={lang.code}>
-              {lang.name}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="voice-language">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {VOICE_LANGUAGES.map((lang) => (
+              <SelectItem key={lang.code} value={lang.code}>
+                {lang.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Input Mode Selection */}
       <div className="space-y-2">
         <span className="text-foreground text-sm font-medium">Input Mode</span>
         <div className="flex gap-2">
-          <button
+          <Button
             disabled={!config.enabled}
             type="button"
-            className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm',
-              'border transition-colors',
-              config.inputMode === 'push_to_talk'
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background text-foreground hover:bg-muted',
-              !config.enabled && 'cursor-not-allowed opacity-50',
-            )}
+            variant={config.inputMode === 'push_to_talk' ? 'primary' : 'outline'}
+            className="flex-1"
             onClick={() => handleInputModeChange('push_to_talk')}
           >
             <Mic className="h-4 w-4" />
             Push to Talk
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={!config.enabled}
             type="button"
-            className={cn(
-              'flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm',
-              'border transition-colors',
-              config.inputMode === 'continuous'
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-background text-foreground hover:bg-muted',
-              !config.enabled && 'cursor-not-allowed opacity-50',
-            )}
+            variant={config.inputMode === 'continuous' ? 'primary' : 'outline'}
+            className="flex-1"
             onClick={() => handleInputModeChange('continuous')}
           >
             <Mic className="h-4 w-4" />
             Continuous
-          </button>
+          </Button>
         </div>
         <p className="text-muted-foreground text-xs">
           {config.inputMode === 'push_to_talk'
@@ -177,20 +160,15 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
         <div className="space-y-2">
           <span className="text-foreground text-sm font-medium">Voice Output</span>
           <div className="flex items-center gap-3">
-            <button
+            <Button
               disabled={isSpeaking}
               type="button"
-              className={cn(
-                'flex items-center gap-2 rounded-md px-3 py-2 text-sm',
-                'bg-secondary text-secondary-foreground hover:bg-secondary/80',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-                isSpeaking && 'cursor-not-allowed opacity-50',
-              )}
+              variant="secondary"
               onClick={handleTestVoice}
             >
               <Volume2 className="h-4 w-4" />
               Test Voice
-            </button>
+            </Button>
             <span className="text-muted-foreground text-xs">{voices.length} voices available</span>
           </div>
         </div>

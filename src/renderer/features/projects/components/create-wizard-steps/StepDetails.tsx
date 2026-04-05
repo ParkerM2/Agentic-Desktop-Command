@@ -4,7 +4,7 @@
 
 import { FolderOpen, Loader2 } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Input, Label, Textarea } from '@ui';
 
 interface StepDetailsProps {
   name: string;
@@ -30,58 +30,42 @@ export function StepDetails({
       <h3 className="text-sm font-medium">Project Details</h3>
 
       <div>
-        <label className="text-muted-foreground mb-1 block text-sm" htmlFor="create-wizard-name">
+        <Label htmlFor="create-wizard-name" className="text-muted-foreground mb-1 block text-sm">
           Project Name <span className="text-destructive">*</span>
-        </label>
-        <input
+        </Label>
+        <Input
           id="create-wizard-name"
           placeholder="my-awesome-project"
           type="text"
           value={name}
-          className={cn(
-            'border-border bg-background w-full rounded-lg border px-3 py-2 text-sm',
-            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-          )}
           onChange={(e) => onNameChange(e.target.value)}
         />
       </div>
 
       <div>
-        <label
-          className="text-muted-foreground mb-1 block text-sm"
-          htmlFor="create-wizard-description"
-        >
+        <Label htmlFor="create-wizard-description" className="text-muted-foreground mb-1 block text-sm">
           Description
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="create-wizard-description"
           placeholder="Optional project description"
           rows={2}
           value={description}
-          className={cn(
-            'border-border bg-background w-full resize-none rounded-lg border px-3 py-2 text-sm',
-            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-          )}
+          className="resize-none"
           onChange={(e) => onDescriptionChange(e.target.value)}
         />
       </div>
 
       <div>
-        <label
-          className="text-muted-foreground mb-1 block text-sm"
-          htmlFor="create-wizard-folder"
-        >
+        <Label htmlFor="create-wizard-folder" className="text-muted-foreground mb-1 block text-sm">
           Target Folder
-        </label>
+        </Label>
         <div className="flex items-center gap-2">
-          <button
-            disabled={isSelectingFolder}
+          <Button
             id="create-wizard-folder"
+            variant="outline"
             type="button"
-            className={cn(
-              'border-border bg-background flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors',
-              'hover:bg-accent disabled:opacity-50',
-            )}
+            disabled={isSelectingFolder}
             onClick={onSelectFolder}
           >
             {isSelectingFolder ? (
@@ -90,7 +74,7 @@ export function StepDetails({
               <FolderOpen className="h-4 w-4 shrink-0" />
             )}
             {isSelectingFolder ? 'Selecting...' : 'Choose Folder'}
-          </button>
+          </Button>
           {path.length > 0 ? (
             <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs">{path}</span>
           ) : (

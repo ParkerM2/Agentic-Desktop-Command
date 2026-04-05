@@ -4,9 +4,9 @@
 
 import { useState } from 'react';
 
-import { FolderGit2, GitBranch, GitMerge, Loader2, Plus, Trash2 } from 'lucide-react';
+import { FolderGit2, GitBranch, GitMerge, Plus, Trash2 } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Input, Spinner } from '@ui';
 
 import { MergeConfirmModal } from '@features/merge';
 
@@ -58,7 +58,7 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+        <Spinner size="md" className="text-muted-foreground" />
       </div>
     );
   }
@@ -70,49 +70,46 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
           <FolderGit2 className="h-4 w-4" />
           Worktrees
         </h3>
-        <button
-          className={cn(
-            'text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs',
-            'transition-colors',
-          )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground gap-1 text-xs"
           onClick={() => setShowForm(!showForm)}
         >
           <Plus className="h-3 w-3" />
           New
-        </button>
+        </Button>
       </div>
 
       {showForm ? (
         <div className="border-border space-y-2 rounded-md border p-3">
-          <input
-            className="border-input bg-background w-full rounded-md border px-3 py-1.5 text-sm"
+          <Input
+            className="text-sm"
             placeholder="Branch name"
             value={branch}
             onChange={(e) => setBranch(e.target.value)}
           />
-          <input
-            className="border-input bg-background w-full rounded-md border px-3 py-1.5 text-sm"
+          <Input
+            className="text-sm"
             placeholder="Worktree path"
             value={worktreePath}
             onChange={(e) => setWorktreePath(e.target.value)}
           />
           <div className="flex gap-2">
-            <button
+            <Button
+              size="sm"
               disabled={!branch || !worktreePath || createWorktree.isPending}
-              className={cn(
-                'bg-primary text-primary-foreground rounded-md px-3 py-1 text-xs font-medium',
-                'disabled:pointer-events-none disabled:opacity-50',
-              )}
               onClick={handleCreate}
             >
               {createWorktree.isPending ? 'Creating...' : 'Create'}
-            </button>
-            <button
-              className="text-muted-foreground hover:text-foreground text-xs"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowForm(false)}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -122,10 +119,7 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
           {worktrees.map((wt) => (
             <div
               key={wt.id}
-              className={cn(
-                'border-border flex items-center justify-between rounded-md border px-3 py-2',
-                'text-sm',
-              )}
+              className="border-border flex items-center justify-between rounded-md border px-3 py-2 text-sm"
             >
               <div className="flex items-center gap-2">
                 <GitBranch className="text-muted-foreground h-3.5 w-3.5" />
@@ -133,22 +127,23 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
                 <span className="text-muted-foreground text-xs">{wt.path}</span>
               </div>
               <div className="flex items-center gap-1">
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-primary h-7 w-7"
                   title={`Merge ${wt.branch} into ${mainBranch}`}
-                  className={cn(
-                    'text-muted-foreground hover:text-primary flex items-center gap-1 p-1 text-xs',
-                    'transition-colors',
-                  )}
                   onClick={() => handleOpenMerge(wt.branch)}
                 >
                   <GitMerge className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  className="text-muted-foreground hover:text-destructive p-1"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground hover:text-destructive h-7 w-7"
                   onClick={() => handleRemove(wt.path)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             </div>
           ))}

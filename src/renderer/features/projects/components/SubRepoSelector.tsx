@@ -8,6 +8,8 @@ import type { InvokeOutput } from '@shared/ipc-contract';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Checkbox } from '@ui';
+
 type ChildRepo = InvokeOutput<'projects.detectRepo'>['childRepos'][number];
 
 interface SubRepoSelectorProps {
@@ -42,20 +44,12 @@ export function SubRepoSelector({ repos, selected, onSelectionChange }: SubRepoS
           Selected: {String(selected.size)} of {String(repos.length)}
         </p>
         <div className="flex gap-2">
-          <button
-            className="text-primary text-xs font-medium hover:underline"
-            type="button"
-            onClick={handleSelectAll}
-          >
+          <Button variant="link" size="sm" className="text-primary h-auto p-0 text-xs" type="button" onClick={handleSelectAll}>
             Select All
-          </button>
-          <button
-            className="text-muted-foreground text-xs hover:underline"
-            type="button"
-            onClick={handleDeselectAll}
-          >
+          </Button>
+          <Button variant="link" size="sm" className="text-muted-foreground h-auto p-0 text-xs" type="button" onClick={handleDeselectAll}>
             Deselect All
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -69,11 +63,9 @@ export function SubRepoSelector({ repos, selected, onSelectionChange }: SubRepoS
               selected.has(repo.path) && 'border-primary/50 bg-accent',
             )}
           >
-            <input
+            <Checkbox
               checked={selected.has(repo.path)}
-              className="accent-primary h-4 w-4 rounded"
-              type="checkbox"
-              onChange={() => handleToggle(repo.path)}
+              onCheckedChange={() => handleToggle(repo.path)}
             />
             <FolderGit2 className="text-muted-foreground h-4 w-4 shrink-0" />
             <div className="min-w-0 flex-1">

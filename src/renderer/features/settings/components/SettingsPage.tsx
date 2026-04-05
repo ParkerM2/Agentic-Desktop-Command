@@ -4,16 +4,13 @@
  * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
  */
 
-import { useState } from 'react';
-
 import { HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
-import { Spinner, Switch } from '@ui';
+import { Spinner, Switch, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import { VoiceSettings } from '@features/voice';
 
@@ -46,16 +43,9 @@ const SETTINGS_TABS = [
   { id: 'advanced' as const, label: 'Advanced', icon: Wrench },
 ];
 
-type SettingsTabId = (typeof SETTINGS_TABS)[number]['id'];
-
-const TAB_BASE = 'flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors';
-const TAB_ACTIVE = 'border-primary text-foreground font-medium';
-const TAB_INACTIVE = 'border-transparent text-muted-foreground hover:text-foreground';
-
 // ── Component ──────────────────────────────────────────────
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTabId>('display');
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
   const { mode, colorTheme, uiScale, setMode, setUiScale } = useThemeStore();
@@ -85,160 +75,6 @@ export function SettingsPage() {
     updateSettings.mutate({ fontSize });
   }
 
-  function renderTabContent() {
-    switch (activeTab) {
-      case 'display': {
-        return (
-          <>
-            <LayoutSection />
-            <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
-            <BackgroundSettings />
-            <ColorThemeSection currentTheme={colorTheme} />
-            <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
-            <TypographySection
-              currentFontFamily={currentFontFamily}
-              currentFontSize={currentFontSize}
-              onFontFamilyChange={handleFontFamilyChange}
-              onFontSizeChange={handleFontSizeChange}
-            />
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Language
-              </h2>
-              <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
-                <span>English</span>
-                <span className="text-muted-foreground text-xs">Only language available</span>
-              </div>
-            </section>
-          </>
-        );
-      }
-      case 'profile': {
-        return (
-          <>
-            <ProfileSection />
-            <section className="mb-8">
-              <WorkspacesTab />
-            </section>
-          </>
-        );
-      }
-      case 'hub': {
-        return (
-          <section className="mb-8">
-            <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-              Hub Connection
-            </h2>
-            <HubSettings />
-          </section>
-        );
-      }
-      case 'integrations': {
-        return (
-          <>
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Claude Code
-              </h2>
-              <ClaudeAuthSettings />
-            </section>
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                GitHub
-              </h2>
-              <GitHubAuthSettings />
-            </section>
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                OAuth Providers
-              </h2>
-              <OAuthProviderSettings />
-            </section>
-          </>
-        );
-      }
-      case 'storage': {
-        return (
-          <section className="mb-8">
-            <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-              Storage Management
-            </h2>
-            <StorageManagementSection />
-          </section>
-        );
-      }
-      case 'advanced': {
-        const assistantAutoStart = settings?.assistantAutoStart !== false;
-        const { isOpen: assistantIsOpen, open: openAssistant, close: closeAssistant } =
-          useAssistantWidgetStore.getState();
-
-        return (
-          <>
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                AI Assistant
-              </h2>
-              <div className="border-border bg-card space-y-4 rounded-lg border p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Auto-start on launch</p>
-                    <p className="text-muted-foreground text-xs">
-                      Open the assistant panel when ADC starts
-                    </p>
-                  </div>
-                  <Switch
-                    checked={assistantAutoStart}
-                    onCheckedChange={(checked) => {
-                      updateSettings.mutate({ assistantAutoStart: checked });
-                      if (checked && !assistantIsOpen) openAssistant();
-                      if (!checked && assistantIsOpen) closeAssistant();
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Assistant panel</p>
-                    <p className="text-muted-foreground text-xs">
-                      {assistantIsOpen ? 'Currently open' : 'Currently closed'} · Ctrl+J to toggle
-                    </p>
-                  </div>
-                  <Switch
-                    checked={assistantIsOpen}
-                    onCheckedChange={(checked) => {
-                      if (checked) openAssistant();
-                      else closeAssistant();
-                    }}
-                  />
-                </div>
-              </div>
-            </section>
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Assistant &amp; Webhooks
-              </h2>
-              <WebhookSettings />
-            </section>
-            <HotkeySettings />
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Voice
-              </h2>
-              <div className="border-border bg-card rounded-lg border p-4">
-                <VoiceSettings />
-              </div>
-            </section>
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                About
-              </h2>
-              <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
-            </section>
-          </>
-        );
-      }
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -254,29 +90,178 @@ export function SettingsPage() {
         <h1 className="text-foreground text-2xl font-bold">Settings</h1>
       </div>
 
-      {/* Tabs */}
-      <div className="border-border border-b px-6">
-        <div className="flex gap-1">
-          {SETTINGS_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              className={cn(TAB_BASE, activeTab === tab.id ? TAB_ACTIVE : TAB_INACTIVE)}
-              type="button"
-              onClick={() => {
-                setActiveTab(tab.id);
-              }}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
-          ))}
+      <Tabs defaultValue="display" className="flex flex-1 flex-col overflow-hidden">
+        {/* Tab list */}
+        <div className="border-border border-b px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1">
+            {SETTINGS_TABS.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent px-3 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="mx-auto max-w-2xl">{renderTabContent()}</div>
-      </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto max-w-2xl">
+            <TabsContent value="display">
+              <LayoutSection />
+              <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
+              <BackgroundSettings />
+              <ColorThemeSection currentTheme={colorTheme} />
+              <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
+              <TypographySection
+                currentFontFamily={currentFontFamily}
+                currentFontSize={currentFontSize}
+                onFontFamilyChange={handleFontFamilyChange}
+                onFontSizeChange={handleFontSizeChange}
+              />
+              <section className="mb-8">
+                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                  Language
+                </h2>
+                <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
+                  <span>English</span>
+                  <span className="text-muted-foreground text-xs">Only language available</span>
+                </div>
+              </section>
+            </TabsContent>
+
+            <TabsContent value="profile">
+              <ProfileSection />
+              <section className="mb-8">
+                <WorkspacesTab />
+              </section>
+            </TabsContent>
+
+            <TabsContent value="hub">
+              <section className="mb-8">
+                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                  Hub Connection
+                </h2>
+                <HubSettings />
+              </section>
+            </TabsContent>
+
+            <TabsContent value="integrations">
+              <section className="mb-8">
+                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                  Claude Code
+                </h2>
+                <ClaudeAuthSettings />
+              </section>
+              <section className="mb-8">
+                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                  GitHub
+                </h2>
+                <GitHubAuthSettings />
+              </section>
+              <section className="mb-8">
+                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                  OAuth Providers
+                </h2>
+                <OAuthProviderSettings />
+              </section>
+            </TabsContent>
+
+            <TabsContent value="storage">
+              <section className="mb-8">
+                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                  Storage Management
+                </h2>
+                <StorageManagementSection />
+              </section>
+            </TabsContent>
+
+            <TabsContent value="advanced">
+              <AdvancedTab settings={settings} updateSettings={updateSettings} />
+            </TabsContent>
+          </div>
+        </div>
+      </Tabs>
     </div>
+  );
+}
+
+// ── Advanced tab extracted to avoid calling hooks conditionally ──
+
+interface AdvancedTabProps {
+  settings: ReturnType<typeof useSettings>['data'];
+  updateSettings: ReturnType<typeof useUpdateSettings>;
+}
+
+function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
+  const assistantAutoStart = settings?.assistantAutoStart !== false;
+  const { isOpen: assistantIsOpen, open: openAssistant, close: closeAssistant } =
+    useAssistantWidgetStore.getState();
+
+  return (
+    <>
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          AI Assistant
+        </h2>
+        <div className="border-border bg-card space-y-4 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Auto-start on launch</p>
+              <p className="text-muted-foreground text-xs">
+                Open the assistant panel when ADC starts
+              </p>
+            </div>
+            <Switch
+              checked={assistantAutoStart}
+              onCheckedChange={(checked) => {
+                updateSettings.mutate({ assistantAutoStart: checked });
+                if (checked && !assistantIsOpen) openAssistant();
+                if (!checked && assistantIsOpen) closeAssistant();
+              }}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Assistant panel</p>
+              <p className="text-muted-foreground text-xs">
+                {assistantIsOpen ? 'Currently open' : 'Currently closed'} · Ctrl+J to toggle
+              </p>
+            </div>
+            <Switch
+              checked={assistantIsOpen}
+              onCheckedChange={(checked) => {
+                if (checked) openAssistant();
+                else closeAssistant();
+              }}
+            />
+          </div>
+        </div>
+      </section>
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          Assistant &amp; Webhooks
+        </h2>
+        <WebhookSettings />
+      </section>
+      <HotkeySettings />
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          Voice
+        </h2>
+        <div className="border-border bg-card rounded-lg border p-4">
+          <VoiceSettings />
+        </div>
+      </section>
+      <section className="mb-8">
+        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+          About
+        </h2>
+        <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
+      </section>
+    </>
   );
 }

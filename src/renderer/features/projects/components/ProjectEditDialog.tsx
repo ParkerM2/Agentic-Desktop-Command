@@ -5,21 +5,32 @@
 
 import { useEffect, useState } from 'react';
 
-import { Loader2, Pencil, Trash2, X } from 'lucide-react';
+import { Loader2, Pencil, Trash2 } from 'lucide-react';
 
 import type { Project } from '@shared/types';
 
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
-import { cn } from '@renderer/shared/lib/utils';
+
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@ui';
 
 import { useWorkspaces } from '@features/workspaces';
 
 import { useRemoveProject, useUpdateProject } from '../api/useProjects';
-
-const INPUT_BASE_CLASS =
-  'border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm';
-const INPUT_FOCUS_CLASS = 'focus:ring-ring focus:border-ring focus:outline-none focus:ring-1';
-const INPUT_PLACEHOLDER_CLASS = 'placeholder:text-muted-foreground';
 
 interface ProjectEditDialogProps {
   project: Project | null;
@@ -50,28 +61,6 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
       setErrorMessage(null);
     }
   }, [project]);
-
-  // Escape key closes the dialog
-  useEffect(() => {
-    if (project === null) {
-      return;
-    }
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [project, onClose]);
-
-  if (project === null) {
-    return null;
-  }
 
   const nameIsEmpty = name.trim().length === 0;
 
@@ -139,217 +128,146 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-black/50"
-        role="button"
-        tabIndex={0}
-        onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onClose();
-        }}
-      />
+    <>
+      <Dialog open={project !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <Pencil className="text-primary h-5 w-5" />
+              Edit Project
+            </DialogTitle>
+          </DialogHeader>
 
-      {/* Modal */}
-      <div className="bg-card border-border relative z-10 w-full max-w-lg rounded-lg border shadow-xl">
-        {/* Header */}
-        <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Pencil className="text-primary h-5 w-5" />
-            <h2 className="text-foreground text-lg font-semibold">Edit Project</h2>
-          </div>
-          <button
-            aria-label="Close"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="space-y-4 px-6 py-4">
-          {/* Name */}
-          <div>
-            <label className="text-foreground mb-1 block text-sm font-medium" htmlFor="edit-name">
-              Name <span className="text-destructive">*</span>
-            </label>
-            <input
-              id="edit-name"
-              placeholder="Project name"
-              type="text"
-              value={name}
-              className={cn(
-                INPUT_BASE_CLASS,
-                INPUT_FOCUS_CLASS,
-                INPUT_PLACEHOLDER_CLASS,
-              )}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label
-              className="text-foreground mb-1 block text-sm font-medium"
-              htmlFor="edit-description"
-            >
-              Description
-            </label>
-            <textarea
-              id="edit-description"
-              placeholder="Optional project description"
-              rows={3}
-              value={description}
-              className={cn(
-                INPUT_BASE_CLASS,
-                INPUT_FOCUS_CLASS,
-                INPUT_PLACEHOLDER_CLASS,
-                'resize-none',
-              )}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          {/* Default Branch */}
-          <div>
-            <label
-              className="text-foreground mb-1 block text-sm font-medium"
-              htmlFor="edit-default-branch"
-            >
-              Default Branch
-            </label>
-            <input
-              id="edit-default-branch"
-              placeholder="main"
-              type="text"
-              value={defaultBranch}
-              className={cn(
-                INPUT_BASE_CLASS,
-                INPUT_FOCUS_CLASS,
-                INPUT_PLACEHOLDER_CLASS,
-              )}
-              onChange={(e) => setDefaultBranch(e.target.value)}
-            />
-          </div>
-
-          {/* Git URL */}
-          <div>
-            <label
-              className="text-foreground mb-1 block text-sm font-medium"
-              htmlFor="edit-git-url"
-            >
-              Git URL
-            </label>
-            <input
-              id="edit-git-url"
-              placeholder="https://github.com/user/repo.git"
-              type="text"
-              value={gitUrl}
-              className={cn(
-                INPUT_BASE_CLASS,
-                INPUT_FOCUS_CLASS,
-                INPUT_PLACEHOLDER_CLASS,
-              )}
-              onChange={(e) => setGitUrl(e.target.value)}
-            />
-          </div>
-
-          {/* Workspace */}
-          {(workspaces?.length ?? 0) > 0 ? (
+          {/* Body */}
+          <div className="space-y-4 py-2">
+            {/* Name */}
             <div>
-              <label
-                className="text-foreground mb-1 block text-sm font-medium"
-                htmlFor="edit-workspace"
-              >
-                Workspace
-              </label>
-              <select
-                id="edit-workspace"
-                value={workspaceId}
-                className={cn(
-                  INPUT_BASE_CLASS,
-                  INPUT_FOCUS_CLASS,
-                )}
-                onChange={(e) => setWorkspaceId(e.target.value)}
-              >
-                <option value="">No workspace</option>
-                {workspaces?.map((ws) => (
-                  <option key={ws.id} value={ws.id}>
-                    {ws.name}
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="edit-name">
+                Name <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="edit-name"
+                placeholder="Project name"
+                type="text"
+                value={name}
+                className="mt-1"
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
-          ) : null}
-        </div>
 
-        {/* Error message */}
-        {errorMessage === null ? null : (
-          <div className="mx-6 mb-4 rounded-md bg-destructive/10 p-3">
-            <p className="text-destructive text-sm">{errorMessage}</p>
+            {/* Description */}
+            <div>
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                placeholder="Optional project description"
+                rows={3}
+                value={description}
+                className="mt-1 resize-none"
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            {/* Default Branch */}
+            <div>
+              <Label htmlFor="edit-default-branch">Default Branch</Label>
+              <Input
+                id="edit-default-branch"
+                placeholder="main"
+                type="text"
+                value={defaultBranch}
+                className="mt-1"
+                onChange={(e) => setDefaultBranch(e.target.value)}
+              />
+            </div>
+
+            {/* Git URL */}
+            <div>
+              <Label htmlFor="edit-git-url">Git URL</Label>
+              <Input
+                id="edit-git-url"
+                placeholder="https://github.com/user/repo.git"
+                type="text"
+                value={gitUrl}
+                className="mt-1"
+                onChange={(e) => setGitUrl(e.target.value)}
+              />
+            </div>
+
+            {/* Workspace */}
+            {(workspaces?.length ?? 0) > 0 ? (
+              <div>
+                <Label htmlFor="edit-workspace">Workspace</Label>
+                <Select value={workspaceId} onValueChange={setWorkspaceId}>
+                  <SelectTrigger id="edit-workspace" className="mt-1">
+                    <SelectValue placeholder="No workspace" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No workspace</SelectItem>
+                    {workspaces?.map((ws) => (
+                      <SelectItem key={ws.id} value={ws.id}>
+                        {ws.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
           </div>
-        )}
 
-        {/* Footer */}
-        <div className="border-border flex items-center justify-between border-t px-6 py-4">
-          {/* Delete button (left side) */}
-          <button
-            className={cn(
-              'text-destructive hover:bg-destructive/10 flex items-center gap-2 rounded-md px-3 py-2 text-sm',
-              'transition-colors',
-            )}
-            onClick={() => setDeleteConfirmOpen(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete Project
-          </button>
+          {/* Error message */}
+          {errorMessage === null ? null : (
+            <div className="rounded-md bg-destructive/10 p-3">
+              <p className="text-destructive text-sm">{errorMessage}</p>
+            </div>
+          )}
 
-          {/* Cancel + Save (right side) */}
-          <div className="flex gap-2">
-            <button
-              className={cn(
-                'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-                'transition-colors',
-              )}
-              onClick={onClose}
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            {/* Delete button (left side) */}
+            <Button
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setDeleteConfirmOpen(true)}
             >
-              Cancel
-            </button>
-            <button
-              disabled={nameIsEmpty || updateProject.isPending}
-              className={cn(
-                'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2',
-                'text-sm font-medium transition-opacity hover:opacity-90',
-                'disabled:pointer-events-none disabled:opacity-50',
-              )}
-              onClick={handleSave}
-            >
-              {updateProject.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save'
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
+              <Trash2 className="h-4 w-4" />
+              Delete Project
+            </Button>
+
+            {/* Cancel + Save (right side) */}
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                disabled={nameIsEmpty || updateProject.isPending}
+                onClick={handleSave}
+              >
+                {updateProject.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation dialog */}
-      <ConfirmDialog
-        confirmLabel="Delete"
-        description={`Are you sure you want to delete "${project.name}"? This action cannot be undone.`}
-        open={deleteConfirmOpen}
-        title="Delete Project"
-        variant="destructive"
-        onConfirm={handleDeleteConfirm}
-        onOpenChange={setDeleteConfirmOpen}
-      />
-    </div>
+      {project === null ? null : (
+        <ConfirmDialog
+          confirmLabel="Delete"
+          description={`Are you sure you want to delete "${project.name}"? This action cannot be undone.`}
+          open={deleteConfirmOpen}
+          title="Delete Project"
+          variant="destructive"
+          onConfirm={handleDeleteConfirm}
+          onOpenChange={setDeleteConfirmOpen}
+        />
+      )}
+    </>
   );
 }

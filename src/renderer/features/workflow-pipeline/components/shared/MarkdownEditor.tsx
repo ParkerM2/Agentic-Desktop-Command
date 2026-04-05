@@ -5,7 +5,7 @@
 
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Textarea } from '@ui';
 
 import { MarkdownRenderer } from './MarkdownRenderer';
 
@@ -22,15 +22,10 @@ export function MarkdownEditor({ saving, value, onChange, onCancel, onSave }: Ma
     <div className="flex h-full flex-col gap-3">
       <Group className="min-h-0 flex-1" orientation="horizontal">
         <Panel defaultSize={50} minSize={20}>
-          <textarea
+          <Textarea
             aria-label="Markdown editor"
             value={value}
-            className={cn(
-              'h-full w-full resize-none rounded-md border p-4',
-              'bg-background text-foreground border-border',
-              'font-mono text-sm',
-              'focus:ring-ring focus:outline-none focus:ring-2',
-            )}
+            className="h-full w-full resize-none rounded-md border p-4 font-mono text-sm focus:ring-2"
             onChange={(e) => {
               onChange(e.target.value);
             }}
@@ -44,28 +39,16 @@ export function MarkdownEditor({ saving, value, onChange, onCancel, onSave }: Ma
         </Panel>
       </Group>
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          className={cn(
-            'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-            'bg-muted text-muted-foreground hover:bg-muted/80',
-          )}
-          onClick={onCancel}
-        >
+        <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
-        </button>
-        <button
-          disabled={saving === true}
+        </Button>
+        <Button
           type="button"
-          className={cn(
-            'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-            'bg-primary text-primary-foreground hover:bg-primary/90',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          )}
+          disabled={saving === true}
           onClick={onSave}
         >
           {saving === true ? 'Saving...' : 'Save'}
-        </button>
+        </Button>
       </div>
     </div>
   );

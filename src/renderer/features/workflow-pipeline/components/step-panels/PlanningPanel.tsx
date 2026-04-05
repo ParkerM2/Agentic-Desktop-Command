@@ -7,7 +7,7 @@ import { Loader2, StopCircle } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Progress } from '@ui';
 
 import { useKillAgent } from '@features/tasks/api/useAgentMutations';
 import { ExecutionLog } from '@features/tasks/components/detail/ExecutionLog';
@@ -36,25 +36,22 @@ export function PlanningPanel({ task }: PlanningPanelProps) {
           <span className="text-foreground text-sm font-medium">Planning in progress...</span>
         </div>
         {sessionId ? (
-          <button
+          <Button
             disabled={killAgent.isPending}
             type="button"
-            className={cn(
-              'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-              'bg-destructive/10 text-destructive hover:bg-destructive/20',
-            )}
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={handleKill}
           >
             <StopCircle className="h-3.5 w-3.5" />
             {killAgent.isPending ? 'Stopping...' : 'Stop'}
-          </button>
+          </Button>
         ) : null}
       </div>
 
       {/* Pulsing progress bar */}
-      <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-        <div className="bg-primary h-full w-1/3 animate-pulse rounded-full" />
-      </div>
+      <Progress value={33} size="sm" className="animate-pulse" />
 
       {/* Execution logs */}
       <ExecutionLog logs={task.logs ?? []} />

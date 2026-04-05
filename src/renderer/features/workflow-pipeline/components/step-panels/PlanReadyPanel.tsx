@@ -9,7 +9,7 @@ import { Edit3, FileText, MessageSquare, Play, X } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, SectionHeader } from '@ui';
 
 import { useReplanWithFeedback, useStartExecution } from '@features/tasks/api/useAgentMutations';
 import { useUpdateTaskStatus } from '@features/tasks/api/useTaskMutations';
@@ -23,9 +23,6 @@ interface PlanReadyPanelProps {
   task: Task;
   onSavePlan: (text: string) => void;
 }
-
-const ACTION_BUTTON_BASE =
-  'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors';
 
 export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -79,10 +76,7 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
   if (isEditing) {
     return (
       <div className="flex h-80 flex-col space-y-4">
-        <div className="flex items-center gap-2">
-          <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
-          <h3 className="text-foreground text-sm font-medium">Edit Plan</h3>
-        </div>
+        <SectionHeader icon={FileText} title="Edit Plan" size="sm" />
         <div className="min-h-0 flex-1">
           <MarkdownEditor
             saving={saving}
@@ -99,54 +93,49 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
   return (
     <div className="space-y-4">
       {/* Header with actions */}
-      <div className="flex items-center justify-between">
+      <SectionHeader icon={FileText} title="Agent Plan" size="sm">
         <div className="flex items-center gap-2">
-          <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
-          <h3 className="text-foreground text-sm font-medium">Agent Plan</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            className={cn(ACTION_BUTTON_BASE, 'bg-muted text-muted-foreground hover:bg-muted/80')}
-            type="button"
-            onClick={handleStartEditing}
-          >
+          <Button type="button" variant="secondary" size="sm" onClick={handleStartEditing}>
             <Edit3 className="h-3.5 w-3.5" />
             Edit
-          </button>
-          <button
-            className={cn(ACTION_BUTTON_BASE, 'bg-success/10 text-success hover:bg-success/20')}
-            disabled={startExecution.isPending}
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="text-success hover:bg-success/10 hover:text-success"
+            disabled={startExecution.isPending}
             onClick={handleApprove}
           >
             <Play className="h-3.5 w-3.5" />
-            Approve & Execute
-          </button>
-          <button
-            className={cn(ACTION_BUTTON_BASE, 'bg-warning/10 text-warning hover:bg-warning/20')}
-            disabled={replanWithFeedback.isPending}
+            Approve &amp; Execute
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
+            className="text-warning hover:bg-warning/10 hover:text-warning"
+            disabled={replanWithFeedback.isPending}
             onClick={() => {
               setFeedbackDialogOpen(true);
             }}
           >
             <MessageSquare className="h-3.5 w-3.5" />
             {replanWithFeedback.isPending ? 'Requesting...' : 'Request Changes'}
-          </button>
-          <button
-            disabled={updateStatus.isPending}
+          </Button>
+          <Button
             type="button"
-            className={cn(
-              ACTION_BUTTON_BASE,
-              'bg-destructive/10 text-destructive hover:bg-destructive/20',
-            )}
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            disabled={updateStatus.isPending}
             onClick={handleReject}
           >
             <X className="h-3.5 w-3.5" />
             Reject
-          </button>
+          </Button>
         </div>
-      </div>
+      </SectionHeader>
 
       {/* Plan content */}
       {planContent.length > 0 ? (
