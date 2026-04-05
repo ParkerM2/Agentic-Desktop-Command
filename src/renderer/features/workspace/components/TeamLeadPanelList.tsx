@@ -31,13 +31,13 @@ export function TeamLeadPanelList({ projectId, sessions }: TeamLeadPanelListProp
       <div className="border-border flex h-10 items-center gap-2 border-b px-4">
         <Text className="font-medium" size="sm" variant="muted">Agent Teams</Text>
         <Button
-          className="ml-auto h-6 gap-1 px-2 text-[10px]"
+          className="ml-auto h-7"
           disabled={spawn.isPending}
           size="sm"
-          variant="ghost"
+          variant="outline"
           onClick={() => spawn.mutate({})}
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3.5 w-3.5" />
           Team Lead
         </Button>
       </div>
