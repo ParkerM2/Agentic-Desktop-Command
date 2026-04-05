@@ -63,35 +63,37 @@ npm run build      # Must compile
 
 ---
 
-## Documentation Reference
+## Docs Reference
 
-**Master index**: `docs/INDEX.md` — full table of contents for all 47 docs
+Full index: `docs/INDEX.md`
 
-### Essential (read first)
-
-| Doc | Purpose |
-|-----|---------|
-| `docs/patterns/CODEBASE-GUARDIAN.md` | File placement, naming, import rules |
-| `docs/patterns/PATTERNS.md` | Code conventions, feature scaffold pattern |
-| `docs/architecture/ARCHITECTURE.md` | System layers, IPC flow |
-
-### Lookup (find things fast)
-
-| Doc | Purpose |
-|-----|---------|
-| `docs/routing/FEATURES-INDEX.md` | Find any feature, service, or IPC channel (30 features, 33 services) |
-| `docs/routing/AI-AGENT-ROUTING-INDEX.md` | Trace a domain end-to-end: types → contract → service → handler → feature → route |
-| `docs/tracker.json` | Plan lifecycle status (single source of truth) |
-
-### By task
-
-| I need to... | Read |
-|-------------|------|
-| Fix a lint error | `docs/patterns/LINTING.md` |
-| Style a component | `docs/patterns/DESIGN-SYSTEM.md` |
-| Trace data flow | `docs/architecture/DATA-FLOW.md` |
-| Add a feature | `docs/patterns/PATTERNS.md` → `docs/features/<name>/plan.md` |
-| Run agent teams | `docs/prompts/implementing-features/README.md` |
-| Update docs after code changes | `docs/workflows/DOC-UPDATE-MAP.md` |
-| Check feature plans/specs | `docs/features/` (10 plans), `docs/specs/` (4 specs), `docs/plans/` (6 roadmaps) |
-| Read research/analysis | `docs/research/` (5 analyses) |
+<docs-ref>
+<essential>
+<doc path="docs/patterns/CODEBASE-GUARDIAN.md" for="file-placement naming imports" />
+<doc path="docs/patterns/PATTERNS.md" for="conventions feature-scaffold routes" />
+<doc path="docs/architecture/ARCHITECTURE.md" for="system-layers ipc-flow" />
+</essential>
+<lookup>
+<doc path="docs/routing/FEATURES-INDEX.md" for="find-feature find-service find-ipc" note="30 features, 33 services, 28 IPC domains" />
+<doc path="docs/routing/AI-AGENT-ROUTING-INDEX.md" for="trace-domain-end-to-end types-to-route" />
+<doc path="docs/tracker.json" for="plan-status plan-lifecycle" />
+</lookup>
+<by-task>
+<task do="fix-lint" read="docs/patterns/LINTING.md" />
+<task do="style-component" read="docs/patterns/DESIGN-SYSTEM.md" />
+<task do="trace-data-flow" read="docs/architecture/DATA-FLOW.md" />
+<task do="add-feature" read="docs/patterns/PATTERNS.md" then="docs/features/{name}/plan.md" />
+<task do="run-agent-teams" read="docs/prompts/implementing-features/README.md" />
+<task do="update-docs-after-code-change" read="docs/workflows/DOC-UPDATE-MAP.md" />
+<task do="check-v2-refactor" read="docs/architecture/V2-REFACTOR.md" />
+<task do="hub-protocol" read="docs/contracts/hub-device-protocol.md" />
+</by-task>
+<browse>
+<dir path="docs/features/" count="10" pattern="plan.md" for="feature-plans" />
+<dir path="docs/specs/" count="4" for="design-specs ux-audits" />
+<dir path="docs/plans/" count="6" for="implementation-roadmaps" />
+<dir path="docs/research/" count="5" for="technical-analysis evaluations" />
+<dir path="docs/workflows/" count="5" for="agent-workflow task-pipeline worktree-setup" />
+<dir path="docs/prompts/" count="4" for="agent-playbooks spawn-templates qa-checklists" />
+</browse>
+</docs-ref>

@@ -1,119 +1,85 @@
-# ADC Documentation Index
+<docs-index project="ADC" total-files="47">
 
-> Master reference for all project documentation. Start here to find anything.
+<architecture desc="system design">
+<doc path="architecture/ARCHITECTURE.md" tags="layers ipc service-registry" />
+<doc path="architecture/DATA-FLOW.md" tags="request-response events streaming queries" />
+<doc path="architecture/V2-REFACTOR.md" tags="v2 migration xterm-removed stream-json" />
+</architecture>
 
----
+<contracts desc="external protocols">
+<doc path="contracts/hub-device-protocol.md" tags="hub rest-api websocket auth" />
+</contracts>
 
-## Quick Navigation
+<features desc="feature plans" pattern="{name}/plan.md">
+<doc path="features/agent-dashboard-view/plan.md" tags="agent-chat headless-ui" />
+<doc path="features/command-palette/plan.md" tags="command-palette quick-actions" />
+<doc path="features/devices-ui/plan.md" tags="devices registration" />
+<doc path="features/docs-sync/plan.md" tags="docs synchronization" />
+<doc path="features/future-roadmap/plan.md" tags="roadmap milestones" />
+<doc path="features/productivity-hub-restructure/plan.md" tags="productivity tabs" />
+<doc path="features/sidebar-architecture-refactor/plan.md" tags="sidebar layouts" />
+<doc path="features/user-scoped-storage/plan.md" tags="per-user data-isolation" />
+<doc path="features/visualization/plan.md" tags="visual-map react-flow dagre graph" />
+<doc path="features/workspace-ui/plan.md" tags="workspace agents" />
+</features>
 
-| I need to... | Read this |
-|-------------|-----------|
-| Understand the system | [ARCHITECTURE.md](architecture/ARCHITECTURE.md) |
-| Trace data through the app | [DATA-FLOW.md](architecture/DATA-FLOW.md) |
-| Find a feature/service/IPC channel | [FEATURES-INDEX.md](routing/FEATURES-INDEX.md) |
-| Find every file for a domain | [AI-AGENT-ROUTING-INDEX.md](routing/AI-AGENT-ROUTING-INDEX.md) |
-| Know where to put a new file | [CODEBASE-GUARDIAN.md](patterns/CODEBASE-GUARDIAN.md) |
-| Follow code conventions | [PATTERNS.md](patterns/PATTERNS.md) |
-| Fix a lint error | [LINTING.md](patterns/LINTING.md) |
-| Use design system tokens | [DESIGN-SYSTEM.md](patterns/DESIGN-SYSTEM.md) |
-| Run an agent team | [Implementing Features](prompts/implementing-features/README.md) |
-| Check plan status | [tracker.json](tracker.json) |
-| Update docs after a code change | [DOC-UPDATE-MAP.md](workflows/DOC-UPDATE-MAP.md) |
+<patterns desc="code rules and conventions">
+<doc path="patterns/CODEBASE-GUARDIAN.md" tags="file-placement naming imports boundaries" priority="always" />
+<doc path="patterns/DESIGN-SYSTEM.md" tags="css tokens tailwind themes styling" />
+<doc path="patterns/LINTING.md" tags="eslint plugins violations fixes" />
+<doc path="patterns/PATTERNS.md" tags="conventions feature-scaffold routes lazy-loading" />
+</patterns>
 
----
+<routing desc="code lookup tables">
+<doc path="routing/FEATURES-INDEX.md" tags="find-feature find-service find-ipc" note="30 features 33 services 28 IPC domains" />
+<doc path="routing/AI-AGENT-ROUTING-INDEX.md" tags="trace-domain types-to-route end-to-end" />
+</routing>
 
-## Directory Map
+<specs desc="design specifications">
+<doc path="specs/2026-04-02-workspace-and-assistant-redesign.md" tags="workspace assistant ux-design" />
+<doc path="specs/2026-04-03-full-ux-ui-audit.md" tags="ux-audit ui-audit comprehensive" />
+<doc path="specs/2026-04-03-progress-tracking-design.md" tags="progress tracking visualization" />
+<doc path="specs/2026-04-04-adc-brand-design.md" tags="brand identity colors typography" />
+</specs>
 
-### `architecture/` — System design
-| File | Contents |
-|------|----------|
-| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Layer diagram, IPC flow, service registry |
-| [DATA-FLOW.md](architecture/DATA-FLOW.md) | Request/response, events, streaming, queries |
-| [V2-REFACTOR.md](architecture/V2-REFACTOR.md) | Completed 9-phase refactor (xterm.js removed) |
+<plans desc="implementation roadmaps">
+<doc path="plans/2026-04-03-p0-critical-fixes.md" tags="p0 critical bugs urgent" />
+<doc path="plans/2026-04-03-plan-2-core-ux-hardening.md" tags="p2 ux hardening" />
+<doc path="plans/2026-04-03-plan-3-ai-connectivity-engine.md" tags="p3 ai connectivity sessions" />
+<doc path="plans/2026-04-03-plan-4-assistant-copilot.md" tags="p4 assistant copilot" />
+<doc path="plans/2026-04-03-plan-5-polish-and-enhancement.md" tags="p5 polish enhancement" />
+<doc path="plans/2026-04-04-adc-brand-suite.md" tags="brand suite topbar" />
+</plans>
 
-### `contracts/` — External protocols
-| File | Contents |
-|------|----------|
-| [hub-device-protocol.md](contracts/hub-device-protocol.md) | Hub REST API + WebSocket spec, auth flows |
+<research desc="technical analysis">
+<doc path="research/2026-02-14-ag-grid-evaluation.md" tags="ag-grid data-tables evaluation" />
+<doc path="research/2026-03-30-agent-dashboard-gap-analysis.md" tags="agent-dashboard gaps" />
+<doc path="research/2026-03-30-headless-agent-architecture.md" tags="headless agents architecture" />
+<doc path="research/2026-04-01-claude-code-source-leak-analysis.md" tags="claude-code patterns npm" />
+<doc path="research/agent-system-comparison.md" tags="agent-systems kanban orchestration" />
+</research>
 
-### `features/` — Feature plans
-| Feature | File |
-|---------|------|
-| [agent-dashboard-view](features/agent-dashboard-view/plan.md) | Headless agent chat UI |
-| [command-palette](features/command-palette/plan.md) | Quick command palette |
-| [devices-ui](features/devices-ui/plan.md) | Device management UI |
-| [docs-sync](features/docs-sync/plan.md) | Documentation sync |
-| [future-roadmap](features/future-roadmap/plan.md) | Roadmap tracking |
-| [productivity-hub-restructure](features/productivity-hub-restructure/plan.md) | Productivity tabs |
-| [sidebar-architecture-refactor](features/sidebar-architecture-refactor/plan.md) | Sidebar layouts |
-| [user-scoped-storage](features/user-scoped-storage/plan.md) | Per-user data isolation |
-| [visualization](features/visualization/plan.md) | Visual Map (React Flow graph) |
-| [workspace-ui](features/workspace-ui/plan.md) | Workspace UI |
+<workflows desc="processes and templates">
+<doc path="workflows/AGENT-WORKFLOW.md" tags="agent-pipeline stages intake-to-integration" />
+<doc path="workflows/TASK-PLANNING-PIPELINE.md" tags="task-lifecycle local-first" />
+<doc path="workflows/WORKTREE-BOOTSTRAP.md" tags="git worktree setup isolation" />
+<doc path="workflows/PLAN-TRACKING.md" tags="plan-status lifecycle" />
+<doc path="workflows/DOC-UPDATE-MAP.md" tags="doc-updates which-docs-to-change" />
+</workflows>
 
-### `patterns/` — Code rules & conventions
-| File | When to read |
-|------|-------------|
-| [CODEBASE-GUARDIAN.md](patterns/CODEBASE-GUARDIAN.md) | Adding/moving files, imports, naming |
-| [DESIGN-SYSTEM.md](patterns/DESIGN-SYSTEM.md) | Styling, theme tokens, CSS architecture |
-| [LINTING.md](patterns/LINTING.md) | ESLint errors, plugin conflicts |
-| [PATTERNS.md](patterns/PATTERNS.md) | New features, route setup, folder structure |
+<prompts desc="agent playbooks">
+<doc path="prompts/implementing-features/README.md" tags="team-lead playbook orchestration" />
+<doc path="prompts/implementing-features/AGENT-SPAWN-TEMPLATES.md" tags="agent-spawn coder architect tester" />
+<doc path="prompts/implementing-features/PROGRESS-FILE-TEMPLATE.md" tags="progress jsonl crash-safe" />
+<doc path="prompts/implementing-features/QA-CHECKLIST-TEMPLATE.md" tags="qa verification checklist" />
+</prompts>
 
-### `routing/` — Code lookup tables
-| File | When to read |
-|------|-------------|
-| [FEATURES-INDEX.md](routing/FEATURES-INDEX.md) | Find any feature, service, or IPC channel |
-| [AI-AGENT-ROUTING-INDEX.md](routing/AI-AGENT-ROUTING-INDEX.md) | Trace a domain end-to-end (types → route) |
+<ui desc="interface documentation">
+<doc path="ui/user-interface-flow.md" tags="navigation routes screens" />
+</ui>
 
-### `specs/` — Design specifications
-| File | Topic |
-|------|-------|
-| [2026-04-02-workspace-and-assistant-redesign.md](specs/2026-04-02-workspace-and-assistant-redesign.md) | Workspace + assistant UX |
-| [2026-04-03-full-ux-ui-audit.md](specs/2026-04-03-full-ux-ui-audit.md) | Full UX/UI audit |
-| [2026-04-03-progress-tracking-design.md](specs/2026-04-03-progress-tracking-design.md) | Progress tracking design |
-| [2026-04-04-adc-brand-design.md](specs/2026-04-04-adc-brand-design.md) | Brand identity & design |
+<meta>
+<doc path="tracker.json" tags="plan-lifecycle status source-of-truth" />
+</meta>
 
-### `plans/` — Implementation roadmaps
-| File | Phase |
-|------|-------|
-| [2026-04-03-p0-critical-fixes.md](plans/2026-04-03-p0-critical-fixes.md) | P0: Critical fixes |
-| [2026-04-03-plan-2-core-ux-hardening.md](plans/2026-04-03-plan-2-core-ux-hardening.md) | P2: Core UX hardening |
-| [2026-04-03-plan-3-ai-connectivity-engine.md](plans/2026-04-03-plan-3-ai-connectivity-engine.md) | P3: AI connectivity |
-| [2026-04-03-plan-4-assistant-copilot.md](plans/2026-04-03-plan-4-assistant-copilot.md) | P4: Assistant copilot |
-| [2026-04-03-plan-5-polish-and-enhancement.md](plans/2026-04-03-plan-5-polish-and-enhancement.md) | P5: Polish |
-| [2026-04-04-adc-brand-suite.md](plans/2026-04-04-adc-brand-suite.md) | Brand suite |
-
-### `research/` — Technical analysis
-| File | Topic |
-|------|-------|
-| [2026-02-14-ag-grid-evaluation.md](research/2026-02-14-ag-grid-evaluation.md) | AG-Grid evaluation |
-| [2026-03-30-agent-dashboard-gap-analysis.md](research/2026-03-30-agent-dashboard-gap-analysis.md) | Agent dashboard gaps |
-| [2026-03-30-headless-agent-architecture.md](research/2026-03-30-headless-agent-architecture.md) | Headless agent arch |
-| [2026-04-01-claude-code-source-leak-analysis.md](research/2026-04-01-claude-code-source-leak-analysis.md) | Claude Code patterns |
-| [agent-system-comparison.md](research/agent-system-comparison.md) | Agent system comparison |
-
-### `workflows/` — Processes & templates
-| File | When to read |
-|------|-------------|
-| [AGENT-WORKFLOW.md](workflows/AGENT-WORKFLOW.md) | Agent pipeline stages |
-| [TASK-PLANNING-PIPELINE.md](workflows/TASK-PLANNING-PIPELINE.md) | Task lifecycle |
-| [WORKTREE-BOOTSTRAP.md](workflows/WORKTREE-BOOTSTRAP.md) | Git worktree setup |
-| [PLAN-TRACKING.md](workflows/PLAN-TRACKING.md) | Plan status management |
-| [DOC-UPDATE-MAP.md](workflows/DOC-UPDATE-MAP.md) | Which docs to update per change |
-
-### `prompts/implementing-features/` — Agent playbooks
-| File | When to read |
-|------|-------------|
-| [README.md](prompts/implementing-features/README.md) | Team Lead playbook |
-| [AGENT-SPAWN-TEMPLATES.md](prompts/implementing-features/AGENT-SPAWN-TEMPLATES.md) | Agent spawn templates |
-| [PROGRESS-FILE-TEMPLATE.md](prompts/implementing-features/PROGRESS-FILE-TEMPLATE.md) | Progress JSONL format |
-| [QA-CHECKLIST-TEMPLATE.md](prompts/implementing-features/QA-CHECKLIST-TEMPLATE.md) | QA checklist |
-
-### `ui/` — Interface documentation
-| File | Contents |
-|------|----------|
-| [user-interface-flow.md](ui/user-interface-flow.md) | Complete UI navigation flow |
-
-### Other files
-| File | Contents |
-|------|----------|
-| [tracker.json](tracker.json) | Plan lifecycle status (source of truth) |
+</docs-index>
