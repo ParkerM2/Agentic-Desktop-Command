@@ -2,7 +2,7 @@
  * GuardianDetail — detail view for a guardian node.
  */
 
-import { Badge, Separator } from '@ui';
+import { Badge, MetadataItem, MetadataList, Separator } from '@ui';
 
 import { EventList } from './EventList';
 import { statusVariant } from './types';
@@ -23,26 +23,23 @@ export interface GuardianDetailProps {
 export function GuardianDetail({ data, events, eventsLoading }: GuardianDetailProps) {
   return (
     <div className="space-y-4 p-4">
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">Guardian agent</p>
-        <p className="text-sm font-medium">{data.agentName}</p>
-      </div>
-
-      {data.taskName !== null && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Feature</p>
-          <p className="text-sm">{data.taskName}</p>
-        </div>
-      )}
+      <MetadataList>
+        <MetadataItem label="Guardian agent" value={data.agentName} />
+        {data.taskName !== null && (
+          <MetadataItem label="Feature" value={data.taskName} />
+        )}
+      </MetadataList>
 
       <Badge variant={statusVariant(data.status)}>{data.status}</Badge>
 
       <Separator />
 
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-muted-foreground">Events</p>
-        <EventList agentName={data.agentName} events={events} loading={eventsLoading} />
-      </div>
+      <MetadataList>
+        <MetadataItem
+          label="Events"
+          value={<EventList agentName={data.agentName} events={events} loading={eventsLoading} />}
+        />
+      </MetadataList>
     </div>
   );
 }

@@ -2,7 +2,7 @@
  * AgentDetail — detail view for an agent-task node.
  */
 
-import { Badge, Separator } from '@ui';
+import { Badge, MetadataItem, MetadataList, Separator } from '@ui';
 
 import { EventList } from './EventList';
 import { SessionLogSection } from './SessionLogSection';
@@ -27,17 +27,12 @@ export function AgentDetail({ data, events, eventsLoading, feature, projectId }:
   return (
     <div className="flex flex-col">
       <div className="space-y-4 p-4">
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Agent</p>
-          <p className="text-sm font-medium">{data.agentName}</p>
-        </div>
-
-        {data.taskName !== null && (
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">Task</p>
-            <p className="text-sm">{data.taskName}</p>
-          </div>
-        )}
+        <MetadataList>
+          <MetadataItem label="Agent" value={data.agentName} />
+          {data.taskName !== null && (
+            <MetadataItem label="Task" value={data.taskName} />
+          )}
+        </MetadataList>
 
         <div className="flex flex-wrap gap-2">
           {data.agentRole !== null && (
@@ -50,27 +45,33 @@ export function AgentDetail({ data, events, eventsLoading, feature, projectId }:
         </div>
 
         {data.fileScope.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">File scope</p>
-            <div className="flex flex-wrap gap-1">
-              {data.fileScope.map((path) => (
-                <code
-                  key={path}
-                  className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]"
-                >
-                  {path}
-                </code>
-              ))}
-            </div>
-          </div>
+          <MetadataList>
+            <MetadataItem
+              label="File scope"
+              value={
+                <div className="flex flex-wrap gap-1">
+                  {data.fileScope.map((path) => (
+                    <code
+                      key={path}
+                      className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]"
+                    >
+                      {path}
+                    </code>
+                  ))}
+                </div>
+              }
+            />
+          </MetadataList>
         )}
 
         <Separator />
 
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground">Event timeline</p>
-          <EventList agentName={data.agentName} events={events} loading={eventsLoading} />
-        </div>
+        <MetadataList>
+          <MetadataItem
+            label="Event timeline"
+            value={<EventList agentName={data.agentName} events={events} loading={eventsLoading} />}
+          />
+        </MetadataList>
       </div>
 
       <SessionLogSection

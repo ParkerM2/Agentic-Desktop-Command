@@ -1,26 +1,25 @@
-
-import { Badge } from '@ui';
+import { Badge, StatusIndicator } from '@ui';
 
 import { useVisualizationStore } from '../../store';
 
 import type { FeatureGroupNode as FeatureGroupRFNode } from '../../lib/graph-builders';
 import type { NodeProps } from '@xyflow/react';
 
-function statusBadgeVariant(
+function statusVariant(
   status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
+): 'success' | 'warning' | 'error' | 'neutral' {
   switch (status) {
     case 'active': {
-      return 'default';
+      return 'warning';
     }
     case 'completed': {
-      return 'secondary';
+      return 'success';
     }
     case 'error': {
-      return 'destructive';
+      return 'error';
     }
     default: {
-      return 'outline';
+      return 'neutral';
     }
   }
 }
@@ -49,14 +48,16 @@ export function FeatureGroupNode({ data, selected }: NodeProps<FeatureGroupRFNod
     >
       <div className="mb-1 flex items-center justify-between gap-2">
         <span className="truncate text-sm font-semibold">{data.feature}</span>
-        <Badge className="shrink-0 text-xs" variant={statusBadgeVariant(data.status)}>
-          {data.status}
-        </Badge>
+        <StatusIndicator
+          label={data.status}
+          size="sm"
+          variant={statusVariant(data.status)}
+        />
       </div>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>
+        <Badge className="shrink-0 text-xs" variant="secondary">
           {data.agentCount} agent{data.agentCount === 1 ? '' : 's'}
-        </span>
+        </Badge>
         {data.branch !== null && (
           <span className="truncate font-mono opacity-70">{data.branch}</span>
         )}
