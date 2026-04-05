@@ -8,6 +8,8 @@ import type { Alert } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, EmptyState } from '@ui';
+
 import { useDeleteAlert } from '../api/useAlerts';
 
 interface RecurringAlertsProps {
@@ -44,10 +46,11 @@ export function RecurringAlerts({ alerts }: RecurringAlertsProps) {
 
   if (recurringAlerts.length === 0) {
     return (
-      <div className="text-muted-foreground flex flex-col items-center justify-center py-12 text-sm">
-        <Repeat className="mb-2 h-8 w-8 opacity-50" />
-        <p>No recurring alerts</p>
-      </div>
+      <EmptyState
+        icon={Repeat}
+        size="md"
+        title="No recurring alerts"
+      />
     );
   }
 
@@ -63,13 +66,15 @@ export function RecurringAlerts({ alerts }: RecurringAlertsProps) {
             <p className="text-foreground truncate text-sm font-medium">{alert.message}</p>
             <p className="text-muted-foreground text-xs">{formatRecurringSchedule(alert)}</p>
           </div>
-          <button
-            className="text-muted-foreground hover:text-destructive shrink-0 transition-colors"
+          <Button
+            className="h-7 w-7 shrink-0 p-1 text-muted-foreground hover:text-destructive"
+            size="icon"
             title="Delete recurring alert"
+            variant="ghost"
             onClick={() => deleteAlert.mutate(alert.id)}
           >
             <Trash2 className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       ))}
     </div>

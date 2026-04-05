@@ -6,6 +6,8 @@ import { Bell, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { useDismissAlert } from '../api/useAlerts';
 import { useAlertStore } from '../store';
 
@@ -37,12 +39,15 @@ export function AlertNotification() {
         >
           <Bell className="text-primary mt-0.5 h-4 w-4 shrink-0" />
           <p className="text-foreground flex-1 text-sm">{notification.message}</p>
-          <button
-            className="text-muted-foreground hover:text-foreground shrink-0"
+          <Button
+            aria-label="Dismiss notification"
+            className="h-6 w-6 shrink-0 p-0.5 text-muted-foreground"
+            size="icon"
+            variant="ghost"
             onClick={() => handleDismiss(notification.alertId)}
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       ))}
     </div>

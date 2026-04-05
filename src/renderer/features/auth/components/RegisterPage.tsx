@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, Spinner } from '@ui';
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, InlineAlert, Spinner } from '@ui';
 
 import { useRegister } from '../api/useAuth';
 
@@ -133,9 +133,7 @@ export function RegisterPage({ onNavigateToHubSetup, onNavigateToLogin, onSucces
             </form.Field>
 
             {serverError === null ? null : (
-              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {serverError}
-              </div>
+              <InlineAlert variant="error">{serverError}</InlineAlert>
             )}
 
             <form.Subscribe selector={(state) => [state.canSubmit]}>

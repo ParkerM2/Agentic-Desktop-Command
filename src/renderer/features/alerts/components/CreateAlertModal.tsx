@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 import { Bell, Calendar, Clock, Repeat, X } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Checkbox, Input, Label } from '@ui';
 
 import { useCreateAlert } from '../api/useAlerts';
 import { useAlertStore } from '../store';
@@ -124,12 +124,14 @@ export function CreateAlertModal() {
       <div className="bg-card border-border relative z-10 w-full max-w-md rounded-lg border p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-foreground text-lg font-semibold">Create Alert</h2>
-          <button
-            className="text-muted-foreground hover:text-foreground"
+          <Button
+            className="h-7 w-7 text-muted-foreground"
+            size="icon"
+            variant="ghost"
             onClick={closeCreateModal}
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Alert type */}
@@ -137,59 +139,45 @@ export function CreateAlertModal() {
           <span className="text-foreground mb-1.5 block text-sm font-medium">Type</span>
           <div className="flex gap-2">
             {typeOptions.map((option) => (
-              <button
+              <Button
                 key={option.value}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors',
-                  alertType === option.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:text-foreground',
-                )}
+                className="gap-1.5"
+                size="sm"
+                variant={alertType === option.value ? 'primary' : 'ghost'}
                 onClick={() => setAlertType(option.value)}
               >
                 <option.icon className="h-3.5 w-3.5" />
                 {option.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
 
         {/* Message */}
         <div className="mb-4">
-          <label
-            className="text-foreground mb-1.5 block text-sm font-medium"
-            htmlFor="alert-message"
-          >
+          <Label className="mb-1.5 block" htmlFor="alert-message">
             Message
-          </label>
-          <input
+          </Label>
+          <Input
             id="alert-message"
             placeholder="What should you be reminded about?"
             type="text"
             value={message}
-            className={cn(
-              'bg-background border-input text-foreground w-full rounded-md border px-3 py-2 text-sm',
-              'focus:ring-ring focus:ring-2 focus:outline-none',
-            )}
             onChange={(e) => setMessage(e.target.value)}
           />
         </div>
 
         {/* Time input — NLP */}
         <div className="mb-4">
-          <label className="text-foreground mb-1.5 block text-sm font-medium" htmlFor="alert-time">
+          <Label className="mb-1.5 block" htmlFor="alert-time">
             When (natural language)
-          </label>
-          <input
+          </Label>
+          <Input
             disabled={useManualDate}
             id="alert-time"
             placeholder='e.g. "tomorrow at 3pm", "in 2 hours", "every Monday at 9am"'
             type="text"
             value={timeInput}
-            className={cn(
-              'bg-background border-input text-foreground w-full rounded-md border px-3 py-2 text-sm',
-              'focus:ring-ring focus:ring-2 focus:outline-none',
-            )}
             onChange={(e) => handleTimeInputChange(e.target.value)}
           />
           {parsePreview === null ? null : (
@@ -204,26 +192,19 @@ export function CreateAlertModal() {
 
         {/* Manual date fallback */}
         <div className="mb-4">
-          <label
-            className="text-muted-foreground flex items-center gap-2 text-sm"
-            htmlFor="alert-manual-toggle"
-          >
-            <input
+          <Label className="text-muted-foreground flex items-center gap-2 text-sm" htmlFor="alert-manual-toggle">
+            <Checkbox
               checked={useManualDate}
               id="alert-manual-toggle"
-              type="checkbox"
-              onChange={(e) => setUseManualDate(e.target.checked)}
+              onCheckedChange={(checked) => setUseManualDate(checked === true)}
             />
             Use manual date/time
-          </label>
+          </Label>
           {useManualDate ? (
-            <input
+            <Input
+              className="mt-2"
               type="datetime-local"
               value={manualDate}
-              className={cn(
-                'bg-background border-input text-foreground mt-2 w-full rounded-md border px-3 py-2 text-sm',
-                'focus:ring-ring focus:ring-2 focus:outline-none',
-              )}
               onChange={(e) => setManualDate(e.target.value)}
             />
           ) : null}
@@ -231,23 +212,15 @@ export function CreateAlertModal() {
 
         {/* Actions */}
         <div className="flex justify-end gap-2">
-          <button
-            className="text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm transition-colors"
-            onClick={closeCreateModal}
-          >
+          <Button variant="ghost" onClick={closeCreateModal}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={message.trim().length === 0 || createAlert.isPending}
-            className={cn(
-              'bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium',
-              'transition-opacity hover:opacity-90',
-              'disabled:opacity-50',
-            )}
             onClick={handleSubmit}
           >
             {createAlert.isPending ? 'Creating...' : 'Create Alert'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

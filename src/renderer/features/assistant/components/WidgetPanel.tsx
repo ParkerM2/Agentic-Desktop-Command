@@ -14,9 +14,9 @@ import { Trash2, Volume2, VolumeX, X } from 'lucide-react';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
-import { useProjects } from '@features/projects';
+import { Button, Heading } from '@ui';
 
-import { Button } from '@ui/button';
+import { useProjects } from '@features/projects';
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
@@ -87,7 +87,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
     >
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-3 py-2">
-        <h2 className="text-foreground text-sm font-semibold">Assistant</h2>
+        <Heading as="h2" className="text-sm">Assistant</Heading>
         <div className="flex items-center gap-1">
           <Button
             aria-label={voiceOutputEnabled ? 'Disable voice output' : 'Enable voice output'}

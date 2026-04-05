@@ -13,7 +13,7 @@ import {
   Sun,
 } from 'lucide-react';
 
-import { Button, EmptyState } from '@ui';
+import { Button, Card, CardContent, EmptyState, Heading, MetricCard, PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useDailyBriefing, useGenerateBriefing, useSuggestions } from '../api/useBriefing';
 
@@ -22,32 +22,6 @@ import { SuggestionCard } from './SuggestionCard';
 function formatTime(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function StatItem(props: {
-  icon: React.ElementType;
-  label: string;
-  value: string | number;
-  variant?: 'default' | 'success' | 'warning' | 'error';
-}) {
-  const IconComponent = props.icon;
-  const variant = props.variant ?? 'default';
-
-  const colorMap = {
-    default: 'text-muted-foreground',
-    success: 'text-success',
-    warning: 'text-warning',
-    error: 'text-destructive',
-  };
-  const iconColor = colorMap[variant];
-
-  return (
-    <div className="flex items-center gap-2">
-      <IconComponent className={`h-4 w-4 ${iconColor}`} />
-      <span className="text-muted-foreground text-sm">{props.label}:</span>
-      <span className="text-foreground text-sm font-medium">{String(props.value)}</span>
-    </div>
-  );
 }
 
 function LoadingState() {
@@ -68,13 +42,6 @@ export function BriefingPage() {
 
   function handleGenerate(): void {
     generateBriefing.mutate();
-  }
-
-  function handleGenerateKeyDown(event: React.KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleGenerate();
-    }
   }
 
   function renderContent() {
@@ -105,141 +72,141 @@ export function BriefingPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Sun className="text-primary h-6 w-6" />
-            <h1 className="text-foreground text-2xl font-bold">Daily Briefing</h1>
-          </div>
-          <button
-            className="border-border bg-card text-foreground hover:bg-muted inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
-            disabled={generateBriefing.isPending}
-            type="button"
-            onClick={handleGenerate}
-            onKeyDown={handleGenerateKeyDown}
-          >
-            <RefreshCw className={`h-4 w-4 ${generateBriefing.isPending ? 'animate-spin' : ''}`} />
-            {generateBriefing.isPending ? 'Generating...' : 'Generate Now'}
-          </button>
-        </div>
+    <PageLayout>
+      <PageHeader
+        description={hasBriefing ? `Generated at ${formatTime(briefing.generatedAt)}` : undefined}
+        title="Daily Briefing"
+      >
+        <Button
+          disabled={generateBriefing.isPending}
+          variant="outline"
+          onClick={handleGenerate}
+        >
+          <RefreshCw className={`h-4 w-4 ${generateBriefing.isPending ? 'animate-spin' : ''}`} />
+          {generateBriefing.isPending ? 'Generating...' : 'Generate Now'}
+        </Button>
+      </PageHeader>
+
+      <PageContent>
+        {renderContent()}
+
         {hasBriefing ? (
-          <p className="text-muted-foreground mt-1 text-sm">
-            Generated at {formatTime(briefing.generatedAt)}
-          </p>
+          <div className="space-y-6">
+            {/* Summary */}
+            <Card>
+              <CardContent className="p-6">
+                <p className="text-foreground text-lg">{briefing.summary}</p>
+              </CardContent>
+            </Card>
+
+            {/* Stats Grid */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Task Summary */}
+              <Card>
+                <CardContent className="p-4">
+                  <Heading as="h3" className="mb-4 flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Tasks
+                  </Heading>
+                  <div className="space-y-3">
+                    <MetricCard
+                      icon={Clock}
+                      label="In Progress"
+                      value={String(briefing.taskSummary.inProgress)}
+                      variant="compact"
+                    />
+                    <MetricCard
+                      icon={AlertCircle}
+                      label="In Queue"
+                      value={String(briefing.taskSummary.dueToday)}
+                      variant="compact"
+                    />
+                    <MetricCard
+                      icon={CheckCircle2}
+                      label="Completed Yesterday"
+                      value={String(briefing.taskSummary.completedYesterday)}
+                      variant="compact"
+                    />
+                    {briefing.taskSummary.overdue > 0 ? (
+                      <MetricCard
+                        icon={AlertCircle}
+                        label="Overdue"
+                        value={String(briefing.taskSummary.overdue)}
+                        variant="compact"
+                      />
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Agent Activity */}
+              <Card>
+                <CardContent className="p-4">
+                  <Heading as="h3" className="mb-4 flex items-center gap-2 text-sm">
+                    <Cpu className="h-4 w-4" />
+                    Agent Activity
+                  </Heading>
+                  <div className="space-y-3">
+                    <MetricCard
+                      icon={Cpu}
+                      label="Running"
+                      value={String(briefing.agentActivity.runningCount)}
+                      variant="compact"
+                    />
+                    <MetricCard
+                      icon={CheckCircle2}
+                      label="Completed Today"
+                      value={String(briefing.agentActivity.completedToday)}
+                      variant="compact"
+                    />
+                    {briefing.agentActivity.errorCount > 0 ? (
+                      <MetricCard
+                        icon={AlertCircle}
+                        label="Errors"
+                        value={String(briefing.agentActivity.errorCount)}
+                        variant="compact"
+                      />
+                    ) : null}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* GitHub Notifications */}
+            {briefing.githubNotifications !== undefined && briefing.githubNotifications > 0 ? (
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <GitBranch className="text-muted-foreground h-4 w-4" />
+                    <span className="text-foreground text-sm font-medium">
+                      {String(briefing.githubNotifications)} unread GitHub notification
+                      {briefing.githubNotifications > 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {/* Suggestions */}
+            {displaySuggestions.length > 0 ? (
+              <div>
+                <Heading as="h3" className="mb-4 flex items-center gap-2 text-sm">
+                  <Lightbulb className="h-4 w-4" />
+                  Suggestions
+                </Heading>
+                <div className="space-y-3">
+                  {displaySuggestions.map((suggestion, index) => (
+                    <SuggestionCard
+                      key={`${suggestion.type}-${String(index)}`}
+                      suggestion={suggestion}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         ) : null}
-      </div>
-
-      {renderContent()}
-
-      {hasBriefing ? (
-        <div className="space-y-6">
-          {/* Summary */}
-          <div className="border-border bg-card rounded-lg border p-6">
-            <p className="text-foreground text-lg">{briefing.summary}</p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Task Summary */}
-            <div className="border-border bg-card rounded-lg border p-4">
-              <h3 className="text-foreground mb-4 flex items-center gap-2 text-sm font-semibold">
-                <CheckCircle2 className="h-4 w-4" />
-                Tasks
-              </h3>
-              <div className="space-y-3">
-                <StatItem
-                  icon={Clock}
-                  label="In Progress"
-                  value={briefing.taskSummary.inProgress}
-                />
-                <StatItem
-                  icon={AlertCircle}
-                  label="In Queue"
-                  value={briefing.taskSummary.dueToday}
-                  variant={briefing.taskSummary.dueToday > 5 ? 'warning' : 'default'}
-                />
-                <StatItem
-                  icon={CheckCircle2}
-                  label="Completed Yesterday"
-                  value={briefing.taskSummary.completedYesterday}
-                  variant="success"
-                />
-                {briefing.taskSummary.overdue > 0 && (
-                  <StatItem
-                    icon={AlertCircle}
-                    label="Overdue"
-                    value={briefing.taskSummary.overdue}
-                    variant="error"
-                  />
-                )}
-              </div>
-            </div>
-
-            {/* Agent Activity */}
-            <div className="border-border bg-card rounded-lg border p-4">
-              <h3 className="text-foreground mb-4 flex items-center gap-2 text-sm font-semibold">
-                <Cpu className="h-4 w-4" />
-                Agent Activity
-              </h3>
-              <div className="space-y-3">
-                <StatItem
-                  icon={Cpu}
-                  label="Running"
-                  value={briefing.agentActivity.runningCount}
-                  variant={briefing.agentActivity.runningCount > 0 ? 'success' : 'default'}
-                />
-                <StatItem
-                  icon={CheckCircle2}
-                  label="Completed Today"
-                  value={briefing.agentActivity.completedToday}
-                  variant="success"
-                />
-                {briefing.agentActivity.errorCount > 0 && (
-                  <StatItem
-                    icon={AlertCircle}
-                    label="Errors"
-                    value={briefing.agentActivity.errorCount}
-                    variant="error"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* GitHub Notifications */}
-          {briefing.githubNotifications !== undefined && briefing.githubNotifications > 0 && (
-            <div className="border-border bg-card rounded-lg border p-4">
-              <div className="flex items-center gap-2">
-                <GitBranch className="text-muted-foreground h-4 w-4" />
-                <span className="text-foreground text-sm font-medium">
-                  {String(briefing.githubNotifications)} unread GitHub notification
-                  {briefing.githubNotifications > 1 ? 's' : ''}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Suggestions */}
-          {displaySuggestions.length > 0 && (
-            <div>
-              <h3 className="text-foreground mb-4 flex items-center gap-2 text-sm font-semibold">
-                <Lightbulb className="h-4 w-4" />
-                Suggestions
-              </h3>
-              <div className="space-y-3">
-                {displaySuggestions.map((suggestion, index) => (
-                  <SuggestionCard
-                    key={`${suggestion.type}-${String(index)}`}
-                    suggestion={suggestion}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : null}
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }

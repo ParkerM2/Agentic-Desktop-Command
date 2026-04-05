@@ -2,13 +2,13 @@
  * AlertsPage — List of all alerts with management controls
  */
 
-import { useState } from 'react';
-
 import { Bell, Check, Clock, Plus, Repeat, Trash2 } from 'lucide-react';
 
 import type { Alert } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, EmptyState, PageContent, PageHeader, PageLayout, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import { useAlerts, useDeleteAlert, useDismissAlert } from '../api/useAlerts';
 import { useAlertEvents } from '../hooks/useAlertEvents';
@@ -59,7 +59,6 @@ export function AlertsPage() {
   const dismissAlert = useDismissAlert();
   const deleteAlert = useDeleteAlert();
   const openCreateModal = useAlertStore((s) => s.openCreateModal);
-  const [activeTab, setActiveTab] = useState<TabId>('active');
 
   const activeAlerts = alerts.filter((a) => !a.dismissed);
   const dismissedAlerts = alerts.filter((a) => a.dismissed);
@@ -77,10 +76,11 @@ export function AlertsPage() {
   function renderAlertList(alertList: Alert[]) {
     if (alertList.length === 0) {
       return (
-        <div className="text-muted-foreground flex flex-col items-center justify-center py-12 text-sm">
-          <Bell className="mb-2 h-8 w-8 opacity-50" />
-          <p>No alerts</p>
-        </div>
+        <EmptyState
+          icon={Bell}
+          size="md"
+          title="No alerts"
+        />
       );
     }
 
@@ -121,21 +121,25 @@ export function AlertsPage() {
 
               <div className="flex shrink-0 gap-1">
                 {alert.dismissed ? null : (
-                  <button
-                    className="text-muted-foreground hover:text-success rounded-md p-1 transition-colors"
+                  <Button
+                    className="h-7 w-7 p-1 text-muted-foreground hover:text-success"
+                    size="icon"
                     title="Dismiss"
+                    variant="ghost"
                     onClick={() => dismissAlert.mutate(alert.id)}
                   >
                     <Check className="h-4 w-4" />
-                  </button>
+                  </Button>
                 )}
-                <button
-                  className="text-muted-foreground hover:text-destructive rounded-md p-1 transition-colors"
+                <Button
+                  className="h-7 w-7 p-1 text-muted-foreground hover:text-destructive"
+                  size="icon"
                   title="Delete"
+                  variant="ghost"
                   onClick={() => deleteAlert.mutate(alert.id)}
                 >
                   <Trash2 className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
             </div>
           );
@@ -145,69 +149,46 @@ export function AlertsPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-6 py-4">
-        <div>
-          <h1 className="text-foreground text-xl font-semibold">Alerts</h1>
-          <p className="text-muted-foreground text-sm">
-            Manage reminders, deadlines, and notifications
-          </p>
-        </div>
-        <button
-          className={cn(
-            'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-            'transition-opacity hover:opacity-90',
-          )}
-          onClick={openCreateModal}
-        >
+    <PageLayout>
+      <PageHeader
+        description="Manage reminders, deadlines, and notifications"
+        title="Alerts"
+      >
+        <Button onClick={openCreateModal}>
           <Plus className="h-4 w-4" />
           New Alert
-        </button>
-      </div>
+        </Button>
+      </PageHeader>
 
-      {/* Tabs */}
-      <div className="border-border flex gap-0 border-b px-6">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={cn(
-              'relative px-4 py-3 text-sm transition-colors',
-              activeTab === tab.id
-                ? 'text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-            {tab.count > 0 ? (
-              <span className="bg-muted text-muted-foreground ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs">
-                {tab.count}
-              </span>
-            ) : null}
-            {activeTab === tab.id ? (
-              <span className="bg-primary absolute inset-x-0 -bottom-px h-0.5" />
-            ) : null}
-          </button>
-        ))}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <PageContent>
         {isLoading ? (
           <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
             Loading alerts...
           </div>
         ) : (
-          <>
-            {activeTab === 'active' ? renderAlertList(activeAlerts) : null}
-            {activeTab === 'dismissed' ? renderAlertList(dismissedAlerts) : null}
-            {activeTab === 'recurring' ? <RecurringAlerts alerts={alerts} /> : null}
-          </>
+          <Tabs defaultValue="active">
+            <TabsList className="mb-4">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id}>
+                  {tab.label}
+                  {tab.count > 0 ? (
+                    <span className="bg-muted text-muted-foreground ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs">
+                      {tab.count}
+                    </span>
+                  ) : null}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent value="active">{renderAlertList(activeAlerts)}</TabsContent>
+            <TabsContent value="dismissed">{renderAlertList(dismissedAlerts)}</TabsContent>
+            <TabsContent value="recurring">
+              <RecurringAlerts alerts={alerts} />
+            </TabsContent>
+          </Tabs>
         )}
-      </div>
+      </PageContent>
 
       <CreateAlertModal />
-    </div>
+    </PageLayout>
   );
 }

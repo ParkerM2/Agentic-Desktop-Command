@@ -12,7 +12,7 @@ import { useForm } from '@tanstack/react-form';
 import { X } from 'lucide-react';
 import { z } from 'zod';
 
-import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, Spinner } from '@ui';
+import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle, Form, FormInput, InlineAlert, Spinner } from '@ui';
 
 import { useLogin } from '../api/useAuth';
 import { useSavedLogins } from '../hooks/useSavedLogins';
@@ -128,23 +128,26 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
                     key={saved.email}
                     className="flex items-center gap-1 rounded-full border border-border bg-muted pl-3 pr-1 py-1 text-xs"
                   >
-                    <button
-                      className="text-foreground hover:text-primary transition-colors"
+                    <Button
+                      className="h-auto p-0 text-xs font-normal text-foreground hover:text-primary"
                       type="button"
+                      variant="link"
                       onClick={() => {
                         form.setFieldValue('email', saved.email);
                       }}
                     >
                       {saved.email}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       aria-label={`Remove saved login for ${saved.email}`}
-                      className="ml-1 flex size-4 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
+                      className="ml-1 size-4 rounded-full p-0 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
+                      size="icon"
                       type="button"
+                      variant="ghost"
                       onClick={() => { removeLogin(saved.email); }}
                     >
                       <X size={10} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -177,20 +180,20 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
             </form.Field>
 
             {login.isError && !isCoolingDown ? (
-              <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <InlineAlert variant="error">
                 {login.error instanceof Error ? login.error.message : 'Login failed'}
                 {failedAttempts >= 3 && failedAttempts < MAX_ATTEMPTS ? (
                   <span className="mt-1 block text-xs opacity-80">
                     {MAX_ATTEMPTS - failedAttempts} attempt{MAX_ATTEMPTS - failedAttempts === 1 ? '' : 's'} remaining before lockout
                   </span>
                 ) : null}
-              </div>
+              </InlineAlert>
             ) : null}
 
             {isCoolingDown ? (
-              <div className="rounded-md bg-warning/10 px-3 py-2 text-sm text-warning">
+              <InlineAlert variant="warning">
                 Too many attempts. Try again in {cooldownRemaining}s
-              </div>
+              </InlineAlert>
             ) : null}
 
             <form.Subscribe selector={(state) => [state.canSubmit]}>
