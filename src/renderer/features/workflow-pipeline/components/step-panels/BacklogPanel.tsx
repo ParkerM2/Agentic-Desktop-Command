@@ -9,7 +9,7 @@ import { Edit3, FileText } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, SectionHeader } from '@ui';
 
 import { MarkdownEditor } from '../shared/MarkdownEditor';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
@@ -41,10 +41,7 @@ export function BacklogPanel({ saving, task, onSaveDescription }: BacklogPanelPr
   if (isEditing) {
     return (
       <div className="flex h-80 flex-col space-y-4">
-        <div className="flex items-center gap-2">
-          <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
-          <h3 className="text-foreground text-sm font-medium">Edit Description</h3>
-        </div>
+        <SectionHeader icon={FileText} title="Edit Description" size="sm" />
         <div className="min-h-0 flex-1">
           <MarkdownEditor
             saving={saving}
@@ -60,23 +57,17 @@ export function BacklogPanel({ saving, task, onSaveDescription }: BacklogPanelPr
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="text-muted-foreground h-4 w-4 shrink-0" />
-          <h3 className="text-foreground text-sm font-medium">Task Description</h3>
-        </div>
-        <button
+      <SectionHeader icon={FileText} title="Task Description" size="sm">
+        <Button
           type="button"
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-            'bg-muted text-muted-foreground hover:bg-muted/80',
-          )}
+          variant="secondary"
+          size="sm"
           onClick={handleStartEditing}
         >
           <Edit3 className="h-3.5 w-3.5" />
           Edit
-        </button>
-      </div>
+        </Button>
+      </SectionHeader>
 
       {task.description.length > 0 ? (
         <div className="border-border rounded-md border p-4">

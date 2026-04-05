@@ -5,13 +5,20 @@
  * a vertical list of steps with animated status indicators.
  */
 
-import { useEffect } from 'react';
-
-import { AlertCircle, Check, Loader2, Minus, X } from 'lucide-react';
+import { AlertCircle, Check, Loader2, Minus } from 'lucide-react';
 
 import type { SetupStep, SetupStepStatus } from '@shared/types/project-setup';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@ui';
 
 import { useSetupProgress } from '../hooks/useSetupProgress';
 
@@ -72,24 +79,6 @@ export function SetupProgressModal({
   // 1. Hooks
   const { steps, isComplete, hasErrors } = useSetupProgress(projectId);
 
-  // Escape key closes dialog
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [open, onClose]);
-
   // 2. Derived state
   const hasSteps = steps.length > 0;
 
@@ -102,48 +91,17 @@ export function SetupProgressModal({
   }
 
   // 4. Render
-  if (!open) {
-    return null;
-  }
-
   return (
-    <div
-      aria-label="Project setup progress"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      role="dialog"
-    >
-      {/* Backdrop */}
-      <div
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-black/50"
-        role="button"
-        tabIndex={0}
-        onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onClose();
-        }}
-      />
-
-      {/* Modal */}
-      <div className="bg-card border-border relative z-10 w-full max-w-md rounded-lg border shadow-xl">
-        {/* Header */}
-        <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-foreground text-lg font-semibold">
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
             {isComplete ? 'Setup Complete' : 'Setting Up Project'}
-          </h2>
-          <button
-            aria-label="Close"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            type="button"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Body */}
-        <div className="px-6 py-4">
+        <div className="py-2">
           {hasSteps ? (
             <div className="divide-border divide-y">
               {steps.map((step) => (
@@ -184,33 +142,16 @@ export function SetupProgressModal({
           ) : null}
         </div>
 
-        {/* Footer */}
-        <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
+        <DialogFooter>
           {isComplete ? (
-            <button
-              type="button"
-              className={cn(
-                'bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium',
-                'transition-opacity hover:opacity-90',
-              )}
-              onClick={handleDone}
-            >
-              Done
-            </button>
+            <Button onClick={handleDone}>Done</Button>
           ) : (
-            <button
-              type="button"
-              className={cn(
-                'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-                'transition-colors',
-              )}
-              onClick={onClose}
-            >
+            <Button variant="ghost" onClick={onClose}>
               Close
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
