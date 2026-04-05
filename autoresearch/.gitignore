@@ -1,0 +1,5 @@
+# Autoresearch output (generated during runs)
+results.tsv
+findings.md
+summary.md
+session-*.log
