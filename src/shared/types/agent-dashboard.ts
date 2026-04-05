@@ -220,15 +220,24 @@ export interface AgentTextMessage {
   isStreaming?: boolean;
 }
 
+/** Compact tool activity line (shown in detailed view) */
+export interface AgentActivityItem {
+  id: string;
+  toolName: string;
+  summary: string;
+  timestamp: string;
+}
+
 /**
  * Discriminated union for chat panel items.
  *
  * Components iterate over AgentChatItem[] and switch on `kind`
- * to render either a text bubble or a tool call card.
+ * to render either a text bubble, a tool call card, or a compact activity line.
  */
 export type AgentChatItem =
   | { kind: 'text'; message: AgentTextMessage }
-  | { kind: 'tool'; toolCall: AgentToolCall };
+  | { kind: 'tool'; toolCall: AgentToolCall }
+  | { kind: 'activity'; activity: AgentActivityItem };
 
 // ── Tool Call Display (IPC-Facing) ───────────────────────────
 

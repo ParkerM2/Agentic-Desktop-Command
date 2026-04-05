@@ -59,10 +59,10 @@ Agent visibility and workflow tracking are **independent data streams** that the
 │  Layer 2: Workflow Tracking (claude-workflow plugin)         │
 │                                                             │
 │  Sources:                                                   │
-│    .claude/progress/*/events.jsonl  → workflow events        │
-│    .claude/progress/*/tasks/*.md    → task files (YAML+body) │
-│    .claude/progress/*/proof-ledger  → QA verdicts            │
-│    .claude/progress/*/workflow-state.json → FSM state        │
+│    progress/*/events.jsonl          → workflow events        │
+│    progress/*/tasks/*.md            → task files (YAML+body) │
+│    progress/*/proof-ledger          → QA verdicts            │
+│    progress/*/workflow-state.json   → FSM state              │
 │                                                             │
 │  Ticket-scoped data:                                        │
 │    - Plans, wave ordering, acceptance criteria               │
@@ -156,7 +156,7 @@ Agent visibility and workflow tracking are **independent data streams** that the
 │  │    Watches each teammate's session JSONL → parses → IPC      │ │
 │  │                                                              │ │
 │  │  ProgressWatcher                                             │ │
-│  │    fs.watch(.claude/progress/*)                               │ │
+│  │    fs.watch(progress/*)                                       │ │
 │  │    Tracks task completion, QA verdicts, workflow events       │ │
 │  │                                                              │ │
 │  │  GitService — worktrees, diffs, status, merge                │ │
@@ -197,11 +197,11 @@ All session JSONL files use same format as stream-json:
 
 ```typescript
 // PO finishes a plan → write to files (claude-workflow pipeline)
-// Plan lives at: .claude/progress/<ticket>/tasks/task-*.md
+// Plan lives at: progress/<ticket>/tasks/task-*.md
 
 // Trigger team-lead to execute:
 exec('tmux send-keys -t team-lead "Read and execute the plan at ' +
-     '.claude/progress/DASH-003/tasks/" Enter');
+     'progress/DASH-003/tasks/" Enter');
 
 // Or via file-based trigger:
 // PO writes a trigger file, TeamWatcher detects it, sends tmux command
@@ -294,13 +294,13 @@ fs.watch(teamConfigPath, () => {
 | Service | Path | Reuse Plan |
 |---------|------|------------|
 | `agent-orchestrator` | `src/main/services/agent-orchestrator/` | Adapt spawn logic for stream-json |
-| `jsonl-progress-watcher` | `src/main/services/agent-orchestrator/` | Reuse for .claude/progress/ watching |
+| `jsonl-progress-watcher` | `src/main/services/agent-orchestrator/` | Reuse for progress/ watching |
 | `git-service` | `src/main/services/git/` | Reuse as-is for diffs, worktrees |
 | `worktree-service` | `src/main/services/git/` | Reuse for parallel dev |
 | `merge-service` | `src/main/services/merge/` | Reuse for visual merge |
 | `task-service` | `src/main/services/project/` | Adapt for claude-workflow task files |
 | `qa-runner` | `src/main/services/qa/` | Reuse QA pipeline |
-| `progress-watcher` | `src/main/services/workflow/` | Reuse for .claude/progress/ sync |
+| `progress-watcher` | `src/main/services/workflow/` | Reuse for progress/ sync |
 | `terminal-service` | `src/main/services/terminal/` | Replace with AgentManager (stream-json) |
 | `dashboard-service` | `src/main/services/dashboard/` | Adapt for new data sources |
 
@@ -331,8 +331,8 @@ fs.watch(teamConfigPath, () => {
 
 | Service | Purpose |
 |---------|---------|
-| `ProgressWatcher` | Watch `.claude/progress/*/events.jsonl` for workflow events (reuse from ADC) |
-| `TaskFileReader` | Parse task YAML frontmatter + body from `.claude/progress/*/tasks/` |
+| `ProgressWatcher` | Watch `progress/*/events.jsonl` for workflow events (reuse from ADC) |
+| `TaskFileReader` | Parse task YAML frontmatter + body from `progress/*/tasks/` |
 | `WorkflowStateReader` | Read FSM state from `workflow-state.json` |
 
 ### Layer 3: Correlation (joins both layers)

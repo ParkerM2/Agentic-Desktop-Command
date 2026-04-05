@@ -1,7 +1,7 @@
 /**
  * Agent Teams Reader
  *
- * Reads .claude/tracking/ and .claude/progress/ directories from a project
+ * Reads tracking/ and progress/ directories from a project
  * to build structured agent team data for visualization.
  */
 
@@ -109,7 +109,7 @@ interface TrackingIndex {
 }
 
 export function readTrackingIndex(projectPath: string): TrackingIndex | null {
-  const indexPath = join(projectPath, '.claude', 'tracking', 'index.json');
+  const indexPath = join(projectPath, 'tracking', 'index.json');
   if (!existsSync(indexPath)) return null;
   try {
     const raw = readFileSync(indexPath, 'utf-8');
@@ -131,7 +131,7 @@ interface FeatureManifest {
 }
 
 export function readFeatureManifest(projectPath: string, feature: string): FeatureManifest | null {
-  const manifestPath = join(projectPath, '.claude', 'tracking', feature, 'manifest.json');
+  const manifestPath = join(projectPath, 'tracking', feature, 'manifest.json');
   if (!existsSync(manifestPath)) return null;
   try {
     const raw = readFileSync(manifestPath, 'utf-8');
@@ -255,7 +255,6 @@ interface AgentEvent {
 function readAgentEvents(projectPath: string, feature: string, agentName: string): AgentEvent[] {
   const filePath = join(
     projectPath,
-    '.claude',
     'tracking',
     feature,
     'agents',
@@ -320,7 +319,7 @@ function findTaskFileContent(
   taskNumber: number | null,
 ): string | null {
   if (taskNumber === null) return null;
-  const taskDir = join(projectPath, '.claude', 'progress', feature, 'tasks');
+  const taskDir = join(projectPath, 'progress', feature, 'tasks');
   if (!existsSync(taskDir)) return null;
 
   // Try common patterns: task-1.md, task-1a.md, task-1b.md
@@ -352,7 +351,7 @@ function buildFeatureData(
   const manifest = readFeatureManifest(projectPath, feature);
   const agentNames = manifest ? Object.keys(manifest.agents) : [];
 
-  const eventsPath = join(projectPath, '.claude', 'tracking', feature, 'events.jsonl');
+  const eventsPath = join(projectPath, 'tracking', feature, 'events.jsonl');
   const events = parseEventsJsonl(eventsPath);
 
   const tasks: AgentTaskInfo[] = agentNames.map((agentName) => {
@@ -399,7 +398,7 @@ function buildFeatureData(
 // ─── Public API ───────────────────────────────────────────────
 
 export function buildAgentTeamsData(projectPath: string): AgentTeamsData {
-  const trackingDir = join(projectPath, '.claude', 'tracking');
+  const trackingDir = join(projectPath, 'tracking');
 
   if (!existsSync(trackingDir)) {
     return { projectPath, features: [], hasTrackingDir: false };

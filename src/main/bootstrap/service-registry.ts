@@ -27,6 +27,7 @@ import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-or
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
 import { createAlertService } from '../services/alerts/alert-service';
+import { createAlertStore } from '../services/alerts/alert-store';
 import { createAppUpdateService } from '../services/app/app-update-service';
 import { createAssistantService } from '../services/assistant/assistant-service';
 import { createWatchEvaluator } from '../services/assistant/watch-evaluator';
@@ -261,7 +262,8 @@ export function createServiceRegistry(
   const dashboardService = createDashboardService({ dataDir, router });
   const dockerService = createDockerService();
   const plannerService = createPlannerService({ dataDir, router });
-  const alertService = createAlertService(router);
+  const alertStore = createAlertStore({ dataDir });
+  const alertService = createAlertService({ router, alertStore });
   alertService.startChecking();
 
   // ─── Git services ────────────────────────────────────────────
@@ -599,7 +601,7 @@ export function createServiceRegistry(
     notesService,
     dashboardService,
     briefingService,
-    // alertService uses alert-store internally but doesn't expose reinitialize yet
+    alertStore, // AlertStore implements ReinitializableService
     alertService,
     ideasService,
     plannerService,

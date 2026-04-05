@@ -82,7 +82,7 @@ Tools available:
 - create_note, create_milestone, create_idea, add_daily_goal — create records directly in ADC
 - list_projects — list all user projects with paths
 - query_recent_items — query notes/milestones/ideas by recency (default: last 7 days)
-- list_progress_features — list workflow features tracked in .claude/progress/
+- list_progress_features — list workflow features tracked in progress/
 - read_progress_file — read workflow-state.json or proof-ledger.jsonl for a feature
 
 When users ask what was done, completed, or accomplished recently:

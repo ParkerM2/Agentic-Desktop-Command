@@ -9,7 +9,7 @@ When agents spawn in worktrees during `/agent-team`, each gets a **custom-genera
 ```bash
 node scripts/generate-worktree-claude.mjs \
   --agent-role component-engineer \
-  --task-file .claude/progress/agent-dashboard-view/tasks/task-3.md \
+  --task-file progress/agent-dashboard-view/tasks/task-3.md \
   --worktree-path .worktrees/agent-dashboard-view/agent-chat-panel \
   --feature-slug agent-dashboard-view \
   --team-name agent-dashboard-view \

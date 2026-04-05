@@ -125,9 +125,9 @@ export interface FeatureAgentData {
 export interface AgentTeamsData {
   /** Absolute path to the project root. */
   projectPath: string;
-  /** All features found in .claude/tracking/index.json. */
+  /** All features found in tracking/index.json. */
   features: FeatureAgentData[];
-  /** Whether a .claude/tracking/ directory exists in the project. */
+  /** Whether a tracking/ directory exists in the project. */
   hasTrackingDir: boolean;
 }
 

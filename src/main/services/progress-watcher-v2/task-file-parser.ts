@@ -1,7 +1,7 @@
 /**
  * Task File Parser
  *
- * Parses `.claude/progress/<slug>/tasks/task-*.md` files into TaskProgress objects.
+ * Parses `progress/<slug>/tasks/task-*.md` files into TaskProgress objects.
  * Extracts YAML frontmatter (taskNumber, taskName, status) and body markdown
  * (acceptance criteria checklist) into typed structures.
  *

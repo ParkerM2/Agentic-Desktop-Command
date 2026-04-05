@@ -11,7 +11,7 @@ One **slug** (lowercase, hyphen-separated) used everywhere:
 | Tracker entry key | `docs/tracker.json` → `plans.<slug>` |
 | Plan/design doc | `docs/features/<slug>/plan.md` |
 | Feature branch | `feature/<slug>` |
-| Runtime progress | `.claude/progress/<slug>/` (gitignored, workflow plugin) |
+| Runtime progress | `progress/<slug>/` (gitignored, workflow plugin) |
 
 ## When Creating a New Plan or Feature
 

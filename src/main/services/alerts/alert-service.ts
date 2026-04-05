@@ -9,8 +9,7 @@ import { randomUUID } from 'node:crypto';
 
 import type { Alert, AlertLinkedTo, RecurringConfig } from '@shared/types';
 
-import { loadAlerts, saveAlerts } from './alert-store';
-
+import type { AlertStore } from './alert-store';
 import type { IpcRouter } from '../../ipc/router';
 
 export interface AlertService {
@@ -31,12 +30,16 @@ interface CreateAlertInput {
   linkedTo?: AlertLinkedTo;
 }
 
-export function createAlertService(router: IpcRouter): AlertService {
-  const alerts: Alert[] = loadAlerts();
+export function createAlertService(deps: {
+  router: IpcRouter;
+  alertStore: AlertStore;
+}): AlertService {
+  const { router, alertStore } = deps;
+  const alerts: Alert[] = alertStore.loadAlerts();
   let checkInterval: ReturnType<typeof setInterval> | null = null;
 
   function persist(): void {
-    saveAlerts(alerts);
+    alertStore.saveAlerts(alerts);
   }
 
   function findAlertIndex(id: string): number {

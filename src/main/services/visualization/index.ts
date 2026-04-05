@@ -27,7 +27,7 @@ export interface VisualizationService {
 
   /**
    * Returns agent teams data for the given project.
-   * Reads .claude/tracking/ from the project path.
+   * Reads tracking/ from the project path.
    *
    * @throws Error('Not implemented') — implemented in Task 3
    */

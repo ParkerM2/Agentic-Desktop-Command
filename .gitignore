@@ -28,12 +28,9 @@ logs/security/
 .adc/
 
 # Workflow plugin runtime data (ephemeral, not committed)
-.claude/progress/*/events.jsonl
-.claude/progress/*/current.md
-.claude/progress/*/history.md
-.claude/progress/*/proof-ledger.jsonl
-.claude/progress/*/workflow-state.json
-.claude/progress/index.md
+progress/
+tracking/
+.claude/.workflow-active
 .claude/.workflow-state/
 .claude/teams/
 .claude/tasks/
@@ -64,9 +61,6 @@ tests/e2e/screenshots/
 # Local Claude settings
 .claude/settings.local.json
 
-# Progress tracking subdirs (only specific files are excluded above)
-.claude/progress/
-.claude/tracking/*/
 .claude/.current-context.json
 .claude/worktrees/
 .worktrees/

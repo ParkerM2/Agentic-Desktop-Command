@@ -6,6 +6,7 @@
  */
 
 export { useAgentDashboardEvents } from './hooks/useAgentEvents';
+export { ActivityLine } from './components/ActivityLine';
 export { AgentChatPanel } from './components/AgentChatPanel';
 export { AgentDashboardPage } from './components/AgentDashboardPage';
 export { AgentLayoutGrid } from './components/AgentLayoutGrid';
@@ -20,3 +21,4 @@ export { TasksTab } from './components/TasksTab';
 export { TextMessage } from './components/TextMessage';
 export { ToolCallCard } from './components/ToolCallCard';
 export { UserMessage } from './components/UserMessage';
+export { buildChatItems } from './lib/buildChatItems';

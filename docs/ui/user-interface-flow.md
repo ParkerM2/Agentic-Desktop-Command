@@ -1069,7 +1069,7 @@ Hub server broadcasts event (e.g., task:updated)
 ```
 User starts progress watcher for a project
   → ipc('workflow.watchProgress', { projectPath })
-  → workflow-handlers.ts creates fs.watch() on .claude/progress/**/*.md
+  → workflow-handlers.ts creates fs.watch() on progress/**/*.md
   → On file change: parses progress, emits 'event:workflow.progressUpdate'
   → Renderer hook useWorkflowEvents() receives update → UI reflects
 ```

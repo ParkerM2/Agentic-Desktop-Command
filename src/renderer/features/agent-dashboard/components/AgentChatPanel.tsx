@@ -14,6 +14,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { ScrollArea } from '@ui';
 
+import { ActivityLine } from './ActivityLine';
 import { TextMessage } from './TextMessage';
 import { ToolCallCard } from './ToolCallCard';
 import { UserMessage } from './UserMessage';
@@ -60,6 +61,15 @@ export function AgentChatPanel({ messages, className, onViewAgent }: AgentChatPa
               <TextMessage
                 key={msg.message.id}
                 message={msg.message}
+              />
+            );
+          }
+          if (msg.kind === 'activity') {
+            return (
+              <ActivityLine
+                key={msg.activity.id}
+                summary={msg.activity.summary}
+                toolName={msg.activity.toolName}
               />
             );
           }

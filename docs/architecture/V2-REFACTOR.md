@@ -19,7 +19,7 @@ ADC is undergoing a major architectural shift from **xterm.js terminal grids** (
 Agents and workflow tracking are **independent data streams** — the UI joins them when they correlate but displays each independently.
 
 - **Layer 1 — Agent Visibility** (always on): Session JSONL watching, `~/.claude/teams/*/config.json`, tmux pane detection. Shows ALL agent activity regardless of workflow tracking.
-- **Layer 2 — Workflow Tracking** (claude-workflow plugin): `.claude/progress/*/events.jsonl`, task files, QA verdicts, FSM state. Only exists when `/new-plan` → `/agent-team` is used.
+- **Layer 2 — Workflow Tracking** (claude-workflow plugin): `progress/*/events.jsonl`, task files, QA verdicts, FSM state. Only exists when `/new-plan` → `/agent-team` is used.
 - **Layer 3 — Dashboard** (consumer): Correlates agents to tickets when possible, displays both independently when they don't match.
 
 ## Two-Session Model
@@ -91,16 +91,16 @@ The slug `agent-dashboard-view` is the single key used consistently everywhere. 
 | Tracker entry | `docs/tracker.json` → `plans.agent-dashboard-view` |
 | Plan doc | `docs/features/agent-dashboard-view/plan.md` |
 | Research doc | `docs/research/2026-03-30-headless-agent-architecture.md` |
-| Progress events | `.claude/progress/agent-dashboard-view/events.jsonl` |
-| Progress summary | `.claude/progress/agent-dashboard-view/current.md` |
-| Workflow state | `.claude/progress/agent-dashboard-view/workflow-state.json` |
-| Task files | `.claude/progress/agent-dashboard-view/tasks/task-*.md` |
+| Progress events | `progress/agent-dashboard-view/events.jsonl` |
+| Progress summary | `progress/agent-dashboard-view/current.md` |
+| Workflow state | `progress/agent-dashboard-view/workflow-state.json` |
+| Task files | `progress/agent-dashboard-view/tasks/task-*.md` |
 | Feature branch | `feature/agent-dashboard-view` |
 | Work branches | `work/agent-dashboard-view/<task-slug>` |
 | Worktrees | `.worktrees/agent-dashboard-view/<task-slug>` |
 
 **Workflow config**: `.claude/workflow.json` defines branching prefixes, worktree settings, and bootstrap config. Read it before any `/agent-team` execution.
 
-**Event tracking**: The claude-workflow plugin writes JSONL events to `.claude/progress/agent-dashboard-view/events.jsonl` using the schema defined in `prompts/implementing-features/EVENT-SCHEMA.md`. Key event types: `session.start`, `plan.created`, `task.started`, `task.completed`, `qa.passed`, `branch.merged`, `checkpoint`, `session.end`.
+**Event tracking**: The claude-workflow plugin writes JSONL events to `progress/agent-dashboard-view/events.jsonl` using the schema defined in `prompts/implementing-features/EVENT-SCHEMA.md`. Key event types: `session.start`, `plan.created`, `task.started`, `task.completed`, `qa.passed`, `branch.merged`, `checkpoint`, `session.end`.
 
 **Tracker sync**: When implementation starts, update `docs/tracker.json` status from `DRAFT` → `IN_PROGRESS`. When complete, update to `IMPLEMENTED`. The tracker is the persistent cross-session record; progress/ is the runtime crash-recovery artifact.

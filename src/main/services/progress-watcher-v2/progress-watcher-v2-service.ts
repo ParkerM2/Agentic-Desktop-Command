@@ -1,7 +1,7 @@
 /**
  * ProgressWatcherV2 Service
  *
- * Watches `.claude/progress/<slug>/tasks/task-*.md` files for real-time task state.
+ * Watches `progress/<slug>/tasks/task-*.md` files for real-time task state.
  * Parses YAML frontmatter and markdown checklists into TaskProgress objects.
  * Emits taskUpdated events when task files change.
  *
@@ -37,7 +37,7 @@ export interface ProgressWatcherV2 {
 // ─── Helpers ────────────────────────────────────────────────
 
 function getTasksDir(slug: string): string {
-  return join(process.cwd(), '.claude', 'progress', slug, 'tasks');
+  return join(process.cwd(), 'progress', slug, 'tasks');
 }
 
 function isTaskFile(filename: string): boolean {

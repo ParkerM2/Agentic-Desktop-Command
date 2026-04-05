@@ -145,7 +145,7 @@ export const APP_TOOLS: AppTool[] = [
   {
     name: 'list_progress_features',
     description:
-      'List the workflow feature names being tracked in .claude/progress/. Call this before read_progress_file to discover available features.',
+      'List the workflow feature names being tracked in progress/. Call this before read_progress_file to discover available features.',
     input_schema: {
       type: 'object',
       properties: {},
@@ -164,7 +164,7 @@ export const APP_TOOLS: AppTool[] = [
         feature: {
           type: 'string',
           description:
-            'Feature directory name under .claude/progress/ (e.g. "workspace-and-assistant-redesign")',
+            'Feature directory name under progress/ (e.g. "workspace-and-assistant-redesign")',
         },
         file: {
           type: 'string',

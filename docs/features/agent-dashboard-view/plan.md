@@ -225,7 +225,7 @@ Panel expands in-place within the layout. Shows full agent detail with tabs.
 │  │ 🤖 Let me read the task file first.   │  │
 │  │                                        │  │
 │  │ ┌─ Read ───────────────────────────┐  │  │
-│  │ │ .claude/progress/DASH-003/tasks/ │  │  │
+│  │ │ progress/DASH-003/tasks/         │  │  │
 │  │ │ task-3.md                        │  │  │
 │  │ └─────────────────────────────────┘  │  │
 │  │                                        │  │
@@ -322,7 +322,7 @@ Full scrollable conversation history. Same rendering as the expanded panel chat 
 │ 🤖  Let me read the task file first.                 │
 │                                                      │
 │ ┌─ Read ──────────────────────────────────────────┐  │
-│ │ .claude/progress/DASH-003/tasks/task-3.md       │  │
+│ │ progress/DASH-003/tasks/task-3.md                │  │
 │ │ [▸ Show content]                                │  │
 │ └─────────────────────────────────────────────────┘  │
 │                                                      │
@@ -487,7 +487,7 @@ Raw terminal output via `ghostty-web` or `xterm.js`. Only available for tmux-bac
 │  │                                              │    │
 │  │ Let me read the task file first.             │    │
 │  │                                              │    │
-│  │ Read .claude/progress/DASH-003/tasks/...     │    │
+│  │ Read progress/DASH-003/tasks/...              │    │
 │  │ ...                                          │    │
 │  ╰──────────────────────────────────────────────╯    │
 │                                                      │
@@ -586,7 +586,7 @@ Failed commands show red border + error highlighting.
 ```
 ┌──────────────────────────────────────────┐
 │                          You  12:30 PM   │
-│  Execute the plan at .claude/progress/   │
+│  Execute the plan at progress/            │
 │  DASH-003/tasks/. Create an agent team   │
 │  with 4 teammates using Sonnet.          │
 └──────────────────────────────────────────┘
@@ -749,8 +749,8 @@ User can override default at any width.
 | Chat messages | Session JSONL (assistant + user messages) | Agent Visibility |
 | Tool call cards | Session JSONL (tool_use content blocks) | Agent Visibility |
 | Token usage | Session JSONL (usage fields) | Agent Visibility |
-| Task list (phases) | `.claude/progress/*/tasks/task-N.md` | Workflow Tracking |
-| QA results | `.claude/progress/*/proof-ledger.jsonl` | Workflow Tracking |
+| Task list (phases) | `progress/*/tasks/task-N.md` | Workflow Tracking |
+| QA results | `progress/*/proof-ledger.jsonl` | Workflow Tracking |
 | Files changed | `git diff` on agent's worktree/branch | Git Service |
 | Error log | Session JSONL (error events) + stderr | Agent Visibility |
 | Team membership | `~/.claude/teams/*/config.json` | Agent Visibility |

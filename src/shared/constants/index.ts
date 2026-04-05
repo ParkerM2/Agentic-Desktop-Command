@@ -14,7 +14,4 @@ export {
   THEME_TOKEN_KEYS,
   DEFAULT_LIGHT_TOKENS,
   DEFAULT_DARK_TOKENS,
-  COLOR_THEMES,
-  COLOR_THEME_LABELS,
 } from './themes';
-export type { ColorTheme } from './themes';

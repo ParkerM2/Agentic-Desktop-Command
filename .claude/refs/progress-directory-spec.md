@@ -1,6 +1,6 @@
 # Progress Directory Specification
 
-> Ticket-scoped directory structure for `.claude/progress/`. All workflow
+> Ticket-scoped directory structure for `progress/`. All workflow
 > artifacts (research, plans, tasks, events) are organized by ticket,
 > with each workflow run isolated in its own subfolder.
 
@@ -11,7 +11,7 @@
 The previous convention created a new top-level directory for each run:
 
 ```
-.claude/progress/
+progress/
 ├── ES-1234/                ← first run
 ├── ES-1234-pr-fixes/       ← second run (separate directory)
 ├── ES-1234-audit-fixes/    ← third run (yet another)
@@ -26,7 +26,7 @@ Problems:
 ## Directory Structure
 
 ```
-.claude/progress/
+progress/
 ├── index.md                                ← global index (all tickets)
 ├── ES-{N}/                                 ← one directory per ticket
 │   ├── manifest.json                       ← ticket metadata (persists)
@@ -53,7 +53,7 @@ Problems:
 ### Ticket directory
 
 ```
-.claude/progress/ES-{N}/
+progress/ES-{N}/
 ```
 
 Always use the bare ticket ID. Never append descriptions or slugs
@@ -62,7 +62,7 @@ to the ticket directory name.
 ### Run directory
 
 ```
-.claude/progress/ES-{N}/runs/{NNN}-{slug}/
+progress/ES-{N}/runs/{NNN}-{slug}/
 ```
 
 - `{NNN}` — zero-padded 3-digit sequence (001, 002, 003...)
@@ -74,7 +74,7 @@ The slug makes each run human-identifiable at a glance.
 ### Task files
 
 ```
-.claude/progress/ES-{N}/runs/{NNN}-{slug}/tasks/task-{M}.md
+progress/ES-{N}/runs/{NNN}-{slug}/tasks/task-{M}.md
 ```
 
 Same task file format as before, but scoped to the run.
@@ -82,9 +82,9 @@ Same task file format as before, but scoped to the run.
 ### Events and state
 
 ```
-.claude/progress/ES-{N}/runs/{NNN}-{slug}/events.jsonl
-.claude/progress/ES-{N}/runs/{NNN}-{slug}/workflow-state.json
-.claude/progress/ES-{N}/runs/{NNN}-{slug}/current.md
+progress/ES-{N}/runs/{NNN}-{slug}/events.jsonl
+progress/ES-{N}/runs/{NNN}-{slug}/workflow-state.json
+progress/ES-{N}/runs/{NNN}-{slug}/current.md
 ```
 
 Each run has its own independent event log and state.
@@ -95,7 +95,7 @@ When the team-leader starts `/agent-team` or `/new-plan`:
 
 1. **Resolve the ticket directory**:
    ```bash
-   TICKET_DIR=".claude/progress/ES-{N}"
+   TICKET_DIR="progress/ES-{N}"
    mkdir -p "$TICKET_DIR/runs"
    ```
 
@@ -129,7 +129,7 @@ Before starting a new run, the team-leader SHOULD check for prior
 work on the same ticket:
 
 ```bash
-ls .claude/progress/ES-{N}/runs/ 2>/dev/null
+ls progress/ES-{N}/runs/ 2>/dev/null
 ```
 
 If prior runs exist, read their `current.md` files and any research
@@ -202,6 +202,6 @@ ticket-scoped layout:
 
 ```bash
 # Find the latest run for a ticket
-LATEST=$(ls .claude/progress/ES-{N}/runs/ | sort | tail -1)
-cat ".claude/progress/ES-{N}/runs/$LATEST/events.jsonl"
+LATEST=$(ls progress/ES-{N}/runs/ | sort | tail -1)
+cat "progress/ES-{N}/runs/$LATEST/events.jsonl"
 ```

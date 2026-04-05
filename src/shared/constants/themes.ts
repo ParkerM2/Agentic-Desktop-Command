@@ -111,11 +111,3 @@ export const DEFAULT_DARK_TOKENS: ThemeTokens = {
   'shadow-focus': '0 0 0 2px rgba(214, 216, 118, 0.2)',
 };
 
-// TODO: Remove after Task #4 updates ColorThemeSection.tsx — kept for backward compat
-export const COLOR_THEMES = ['default'] as const;
-
-export type ColorTheme = (typeof COLOR_THEMES)[number];
-
-export const COLOR_THEME_LABELS: Record<ColorTheme, string> = {
-  default: 'Default',
-} as const;

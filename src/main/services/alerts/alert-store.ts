@@ -5,8 +5,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { app } from 'electron';
-
 import type { Alert } from '@shared/types';
 
 import type { ReinitializableService } from '@main/services/data-management';
@@ -64,20 +62,3 @@ export function createAlertStore(deps: { dataDir: string }): AlertStore {
   };
 }
 
-// Legacy exports for backward compatibility
-// TODO: Migrate callers to use createAlertStore factory
-const legacyDataDir = app.getPath('userData');
-let legacyStore: AlertStore | null = null;
-
-function getLegacyStore(): AlertStore {
-  legacyStore ??= createAlertStore({ dataDir: legacyDataDir });
-  return legacyStore;
-}
-
-export function loadAlerts(): Alert[] {
-  return getLegacyStore().loadAlerts();
-}
-
-export function saveAlerts(alerts: Alert[]): void {
-  getLegacyStore().saveAlerts(alerts);
-}

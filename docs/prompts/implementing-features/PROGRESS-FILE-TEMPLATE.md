@@ -1,6 +1,6 @@
 # Progress File Template
 
-> Template for crash-recovery progress tracking. Used by the workflow plugin in `.claude/progress/`.
+> Template for crash-recovery progress tracking. Used by the workflow plugin in `progress/`.
 
 ---
 

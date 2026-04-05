@@ -9,7 +9,7 @@
  * Usage:
  *   node scripts/generate-worktree-claude.mjs \
  *     --agent-role component-engineer \
- *     --task-file .claude/progress/agent-dashboard-view/tasks/task-3.md \
+ *     --task-file progress/agent-dashboard-view/tasks/task-3.md \
  *     --worktree-path .worktrees/agent-dashboard-view/agent-chat-panel \
  *     --feature-slug agent-dashboard-view \
  *     --team-name agent-dashboard-view \
@@ -367,8 +367,8 @@ This feature uses slug \`${args['feature-slug']}\` consistently across:
 |----------|------|
 | Tracker entry | \`docs/tracker.json\` → \`plans.${args['feature-slug']}\` |
 | Plan/design doc | \`docs/features/${args['feature-slug']}/plan.md\` |
-| Progress events | \`.claude/progress/${args['feature-slug']}/events.jsonl\` |
-| Progress summary | \`.claude/progress/${args['feature-slug']}/current.md\` |
+| Progress events | \`progress/${args['feature-slug']}/events.jsonl\` |
+| Progress summary | \`progress/${args['feature-slug']}/current.md\` |
 | Feature branch | \`feature/${args['feature-slug']}\` |
 | This workbranch | \`${args['workbranch']}\` |
 | Worktree | \`${WORKTREE_PATH}\` |

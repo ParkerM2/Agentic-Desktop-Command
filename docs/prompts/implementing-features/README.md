@@ -91,7 +91,7 @@ Claude Code sessions can terminate unexpectedly (terminal close, timeout, proces
 
 ### The Progress File
 
-Progress is tracked via the team's TaskList and the `.claude/progress/` runtime directory (auto-managed by the workflow plugin). The Team Lead updates tracker.json status after each phase transition.
+Progress is tracked via the team's TaskList and the `progress/` runtime directory (auto-managed by the workflow plugin). The Team Lead updates tracker.json status after each phase transition.
 
 **When to update the progress file:**
 - After creating the team and tasks
