@@ -1,76 +1,44 @@
 #!/usr/bin/env node
 /**
- * PreToolUse Hook — Injects codebase context hints before Read/Grep/Glob.
+ * PreToolUse Hook — injects codebase path hints before Read/Grep/Glob.
  *
- * Reads the tool input from stdin (JSON), detects domain keywords,
- * and outputs a hint comment with relevant file paths.
+ * Auto-discovers all domains from src/shared/ipc/ directories.
+ * Detects domain keywords in tool input and outputs matching file paths.
  *
- * Exit codes:
- *   0 = allow (with optional stdout hint)
- *   2 = block (not used here)
+ * Zero tokens in system prompt. Silent exit 0. Never blocks.
  */
 
-import { readFileSync } from 'node:fs';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '../..');
 
-// ─── Domain keywords → file paths ─────────────────────────
+// ─── Auto-discover all IPC domains ────────────────────────
 
-const DOMAIN_MAP = {
-  visualization: {
-    service: 'src/main/services/visualization/',
-    feature: 'src/renderer/features/visualization/',
-    ipc: 'src/shared/ipc/visualization/',
-    handler: 'src/main/ipc/handlers/visualization-handlers.ts',
-    doc: 'docs/features/visualization/plan.md',
-  },
-  auth: {
-    service: 'src/main/services/auth/',
-    feature: 'src/renderer/features/auth/',
-    ipc: 'src/shared/ipc/auth/',
-    handler: 'src/main/ipc/handlers/auth-handlers.ts',
-  },
-  tasks: {
-    service: 'src/main/services/tasks/',
-    feature: 'src/renderer/features/tasks/',
-    ipc: 'src/shared/ipc/tasks/',
-    handler: 'src/main/ipc/handlers/task-handlers.ts',
-  },
-  assistant: {
-    service: 'src/main/services/assistant/',
-    feature: 'src/renderer/features/assistant/',
-    ipc: 'src/shared/ipc/assistant/',
-    handler: 'src/main/ipc/handlers/assistant-handlers.ts',
-  },
-  settings: {
-    service: 'src/main/services/settings/',
-    feature: 'src/renderer/features/settings/',
-    ipc: 'src/shared/ipc/settings/',
-    handler: 'src/main/ipc/handlers/settings-handlers.ts',
-  },
-  github: {
-    service: 'src/main/services/github/',
-    feature: 'src/renderer/features/github/',
-    ipc: 'src/shared/ipc/github/',
-    handler: 'src/main/ipc/handlers/github-handlers.ts',
-  },
-};
+function discoverDomains() {
+  const ipcDir = resolve(ROOT, 'src/shared/ipc');
+  if (!existsSync(ipcDir)) return [];
+  return readdirSync(ipcDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+}
 
-// ─── Keyword extraction ───────────────────────────────────
-
-function extractDomains(input) {
-  const text = JSON.stringify(input).toLowerCase();
-  const matches = [];
-  for (const domain of Object.keys(DOMAIN_MAP)) {
-    if (text.includes(domain)) {
-      matches.push(domain);
-    }
+function domainPaths(domain) {
+  const paths = {};
+  const candidates = {
+    contract: `src/shared/ipc/${domain}/contract.ts`,
+    service: `src/main/services/${domain}/`,
+    handler: `src/main/ipc/handlers/${domain}-handlers.ts`,
+    feature: `src/renderer/features/${domain}/`,
+    types: `src/shared/types/${domain}.ts`,
+    doc: `docs/features/${domain}/plan.md`,
+  };
+  for (const [role, p] of Object.entries(candidates)) {
+    if (existsSync(resolve(ROOT, p))) paths[role] = p;
   }
-  return matches;
+  return paths;
 }
 
 // ─── Main ─────────────────────────────────────────────────
@@ -83,23 +51,21 @@ try {
   const toolName = payload.tool_name ?? '';
   const toolInput = payload.tool_input ?? {};
 
-  // Only hint for search/read tools
   if (!['Read', 'Grep', 'Glob', 'Agent'].includes(toolName)) {
     process.exit(0);
   }
 
-  const domains = extractDomains(toolInput);
-  if (domains.length === 0) process.exit(0);
-
-  // Build hint
+  const text = JSON.stringify(toolInput).toLowerCase();
+  const domains = discoverDomains();
   const hints = [];
+
   for (const domain of domains) {
-    const paths = DOMAIN_MAP[domain];
-    const existing = Object.entries(paths)
-      .filter(([, p]) => existsSync(resolve(ROOT, p)))
-      .map(([role, p]) => `${role}=${p}`);
-    if (existing.length > 0) {
-      hints.push(`[${domain}] ${existing.join(' ')}`);
+    if (text.includes(domain)) {
+      const paths = domainPaths(domain);
+      if (Object.keys(paths).length > 0) {
+        const parts = Object.entries(paths).map(([r, p]) => `${r}=${p}`);
+        hints.push(`[${domain}] ${parts.join(' ')}`);
+      }
     }
   }
 
@@ -107,6 +73,6 @@ try {
     process.stdout.write(hints.join('\n') + '\n');
   }
 } catch {
-  // Silent fail — never block tools
+  // Silent fail
 }
 process.exit(0);
