@@ -1,0 +1,22 @@
+[
+  {"query": "I need to add a new IPC channel for the bookmarks feature with list and create operations", "should_trigger": true},
+  {"query": "how do I wire up a new handler that calls the calendar service and returns events?", "should_trigger": true},
+  {"query": "the renderer is calling window.api.invoke directly instead of using ipc() — is that wrong?", "should_trigger": true},
+  {"query": "add an event channel that notifies the renderer when a task status changes", "should_trigger": true},
+  {"query": "I'm getting a type error in my IPC handler — the input schema doesn't match the contract", "should_trigger": true},
+  {"query": "walk me through the full process of adding a new domain to the IPC system from scratch", "should_trigger": true},
+  {"query": "the preload bridge is rejecting my channel name, says it's not in the allowlist", "should_trigger": true},
+  {"query": "I need to add a Zod schema for the docker.containerList response type", "should_trigger": true},
+  {"query": "how do I emit an event from a service to the renderer? I need real-time updates", "should_trigger": true},
+  {"query": "register the new widget-handlers.ts in the ipc-wiring bootstrap file", "should_trigger": true},
+  {"query": "the button hover state is too bright, I think the primary-foreground token needs adjusting", "should_trigger": false},
+  {"query": "where is the github feature located in the renderer?", "should_trigger": false},
+  {"query": "write a React component that displays a list of projects with cards", "should_trigger": false},
+  {"query": "add a new route for /projects/$projectId/analytics with lazy loading", "should_trigger": false},
+  {"query": "the fitness page crashes when there's no workout data — add an empty state", "should_trigger": false},
+  {"query": "create a Zustand store for managing the command palette open/close state", "should_trigger": false},
+  {"query": "run the full test suite and fix any failing assertions", "should_trigger": false},
+  {"query": "update the FEATURES-INDEX.md to include the new merge feature", "should_trigger": false},
+  {"query": "the sidebar layout isn't responding to the active project correctly", "should_trigger": false},
+  {"query": "add a new git worktree for the feature/user-preferences branch", "should_trigger": false}
+]

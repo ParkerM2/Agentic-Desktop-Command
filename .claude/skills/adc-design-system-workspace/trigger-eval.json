@@ -1,0 +1,22 @@
+[
+  {"query": "the card background is too dark in the dashboard, I think the theme token is wrong", "should_trigger": true},
+  {"query": "I need to add a new color theme called 'ocean' with blue-green tones for light and dark mode", "should_trigger": true},
+  {"query": "how do I create a semi-transparent overlay using the primary color? I keep getting raw hex warnings", "should_trigger": true},
+  {"query": "which CSS variable controls the sidebar background color? I want to darken it", "should_trigger": true},
+  {"query": "I'm building a new settings panel and need to use the right design tokens for borders and backgrounds", "should_trigger": true},
+  {"query": "add a new UI primitive for a toast notification component wrapping Radix", "should_trigger": true},
+  {"query": "the text-muted-foreground color doesn't have enough contrast in the midnight theme", "should_trigger": true},
+  {"query": "what are all the available @ui components I can import? I need a select dropdown", "should_trigger": true},
+  {"query": "the focus ring color on buttons is wrong, it should use the ring token not a hardcoded rgba", "should_trigger": true},
+  {"query": "how does the ui scale slider work? I want to change the range from 75-150 to 50-200", "should_trigger": true},
+  {"query": "where are the auth handler files in this project?", "should_trigger": false},
+  {"query": "add a new IPC channel called settings.getTheme that returns the current theme config", "should_trigger": false},
+  {"query": "write a TanStack Query hook for fetching the user's notification preferences", "should_trigger": false},
+  {"query": "I need to fix a routing issue where /projects/abc/tasks redirects to the wrong page", "should_trigger": false},
+  {"query": "the AG-Grid table rows are too tall, can you reduce the row height to 36px?", "should_trigger": false},
+  {"query": "configure electron-vite to add a new path alias @lib pointing to src/renderer/lib", "should_trigger": false},
+  {"query": "the zustand store for assistant-widget needs a new toggleMinimized action", "should_trigger": false},
+  {"query": "add TypeScript types for the new milestone.update IPC response shape", "should_trigger": false},
+  {"query": "write a Playwright test that clicks the login button and verifies the dashboard loads", "should_trigger": false},
+  {"query": "fix the import order lint error in VisualizationCanvas.tsx", "should_trigger": false}
+]

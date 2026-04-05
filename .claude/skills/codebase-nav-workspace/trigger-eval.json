@@ -1,0 +1,22 @@
+[
+  {"query": "where are the auth files? I need to modify the login flow", "should_trigger": true},
+  {"query": "I want to add a new IPC channel for notifications, where do I start?", "should_trigger": true},
+  {"query": "show me how the visualization feature connects from the renderer to the main process", "should_trigger": true},
+  {"query": "which files do I need to touch to add a 'bookmarks' domain to the app?", "should_trigger": true},
+  {"query": "I'm going to work on the github integration, what files are involved?", "should_trigger": true},
+  {"query": "can you trace the tasks domain end to end? contract, handler, service, feature", "should_trigger": true},
+  {"query": "where's the settings service and its IPC handler?", "should_trigger": true},
+  {"query": "I need to fix a bug in the alerts feature but I don't know where the code lives", "should_trigger": true},
+  {"query": "what's the file structure for adding a new feature module in this project?", "should_trigger": true},
+  {"query": "find the spotify integration — I think there's a service, handler, and a renderer feature for it", "should_trigger": true},
+  {"query": "the login button color is wrong, it should be using the primary token", "should_trigger": false},
+  {"query": "add a new Zod schema for the widgets IPC channel with input validation", "should_trigger": false},
+  {"query": "write a React component for displaying user notifications with a bell icon badge", "should_trigger": false},
+  {"query": "fix the ESLint error on line 42 of task-handlers.ts — it's a promise/always-return violation", "should_trigger": false},
+  {"query": "run npm run build and check if there are any TypeScript errors", "should_trigger": false},
+  {"query": "the dashboard page is rendering slowly, can you check the React Query cache settings?", "should_trigger": false},
+  {"query": "update the tailwind config to add a custom breakpoint at 1440px", "should_trigger": false},
+  {"query": "create a new git branch called feature/user-preferences and set up the worktree", "should_trigger": false},
+  {"query": "I need to write unit tests for the hub connection service", "should_trigger": false},
+  {"query": "refactor this component to use the Card primitive from @ui instead of a raw div", "should_trigger": false}
+]
