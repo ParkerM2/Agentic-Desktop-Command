@@ -17,9 +17,10 @@
 @theme {
   /* Font families */
   --font-sans:
-    var(--app-font-sans, 'Inter'), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: var(--app-font-serif, 'Georgia'), 'Times New Roman', serif;
-  --font-mono: var(--app-font-mono, 'JetBrains Mono'), 'Fira Code', 'SF Mono', monospace;
+    'Geist Variable', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --font-mono:
+    'Geist Mono Variable', 'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Colors — using CSS variables for theme switching */
   --color-border: var(--border);
@@ -245,60 +246,70 @@
 }
 
 /* ============================================
-   DEFAULT THEME (Dark)
-   Oscura Midnight — OLED optimized deep dark
+   ADC DARK THEME
+   Command — near-monochrome OLED dark + single teal signal
+   Abyss: #0D0D0F | Void: #141416 | Lift: #1C1C1F | Rim: #2A2A2E
+   Ash: #6B6B72 | Fog: #C4C4CC | Snow: #F0F0F5 | Command: #2DD4BF
    ============================================ */
 .dark {
-  --background: #0b0b0f;
-  --foreground: #e6e6e6;
+  /* Backgrounds */
+  --background: #0d0d0f;
+  --card: #141416;
+  --popover: #1c1c1f;
+  --sidebar: #0d0d0f;
 
-  --card: #121216;
-  --card-foreground: #e6e6e6;
+  /* Text */
+  --foreground: #c4c4cc;
+  --card-foreground: #c4c4cc;
+  --popover-foreground: #c4c4cc;
+  --sidebar-foreground: #f0f0f5;
 
-  --primary: #d6d876;
-  --primary-foreground: #0b0b0f;
+  /* Primary accent — Command teal, functional signal only */
+  --primary: #2dd4bf;
+  --primary-foreground: #0d0d0f;
 
-  --secondary: #1a1a1f;
-  --secondary-foreground: #e6e6e6;
+  /* Secondary */
+  --secondary: #1c1c1f;
+  --secondary-foreground: #f0f0f5;
 
-  --muted: #1a1a1f;
-  --muted-foreground: #868f97;
+  /* Muted */
+  --muted: #1c1c1f;
+  --muted-foreground: #6b6b72;
 
-  --accent: #2a2a1f;
-  --accent-foreground: #d6d876;
+  /* Accent (hover backgrounds) */
+  --accent: #1c1c1f;
+  --accent-foreground: #2dd4bf;
 
-  --destructive: #ff5c5c;
-  --destructive-foreground: #0b0b0f;
+  /* Destructive */
+  --destructive: #ef4444;
+  --destructive-foreground: #f0f0f5;
 
-  --border: #232323;
-  --input: #232323;
-  --ring: #d6d876;
+  /* Borders and inputs */
+  --border: #2a2a2e;
+  --input: #2a2a2e;
+  --ring: #2dd4bf;
 
-  --sidebar: #0e0e12;
-  --sidebar-foreground: #e6e6e6;
+  /* Semantic colors — muted to not compete with Command teal */
+  --success: #34d399;
+  --success-foreground: #0d0d0f;
+  --success-light: #0d2a1f;
+  --warning: #fbbf24;
+  --warning-foreground: #0d0d0f;
+  --warning-light: #1f1a0d;
+  --info: #60a5fa;
+  --info-foreground: #0d0d0f;
+  --info-light: #0d1a2a;
+  --error: #f87171;
+  --error-light: #2a0d0d;
 
-  --popover: #1a1a1f;
-  --popover-foreground: #e6e6e6;
+  /* Shadows — deep for OLED dark */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.7);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.8);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.9);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.95);
+  --shadow-focus: 0 0 0 2px rgba(45, 212, 191, 0.25);
 
-  /* Semantic colors */
-  --success: #4ebe96;
-  --success-foreground: #0b0b0f;
-  --success-light: #1a2924;
-  --warning: #d2d714;
-  --warning-foreground: #0b0b0f;
-  --warning-light: #262618;
-  --info: #479ffa;
-  --info-foreground: #0b0b0f;
-  --info-light: #1a2230;
-  --error: #ff5c5c;
-  --error-light: #2a1a1a;
-
-  /* Shadows — deeper for dark mode */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.6);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.8);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.9);
-  --shadow-focus: 0 0 0 2px rgba(214, 216, 118, 0.2);
+  --radius: 12px;
 }
 
 /* ============================================
