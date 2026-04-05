@@ -22,6 +22,7 @@ import { visualizationKeys } from '../../api/queryKeys';
 import { useCodebaseGraph, useAgentTeams } from '../../api/visualization-api';
 import {
   buildAgentRFNodes,
+  buildCodebaseGroupEdges,
   buildCodebaseRFNodes,
   buildCrossLayerEdges,
 } from '../../lib/graph-builders';
@@ -119,15 +120,10 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
         ? buildCrossLayerEdges(agentNodes, codebaseNodes)
         : [];
 
-    // Codebase edges come from the schema's edges array; built inline here.
+    // Group-level dependency edges between codebase groups
     const codebaseEdges =
       showCodebaseLayer && codebaseGraph
-        ? codebaseGraph.edges.map((e) => ({
-            id: `codebase-${e.source}-${e.target}`,
-            source: e.source,
-            target: e.target,
-            type: 'dataFlow' as const,
-          }))
+        ? buildCodebaseGroupEdges(codebaseGraph)
         : [];
 
     return {
@@ -139,12 +135,20 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
   // ─── Fit view after nodes load ─────────────────────────────────
 
   useEffect(() => {
-    window.requestAnimationFrame(() => {
-      void fitView({ padding: 0.1, duration: 400 });
-    });
+    // Delay fitView to ensure nodes are measured in the DOM
+    const timer = setTimeout(() => {
+      void fitView({ padding: 0.2, duration: 300 });
+    }, 200);
+    return () => { clearTimeout(timer); };
   }, [rfNodes, fitView]);
 
   // ─── Handlers ─────────────────────────────────────────────────
+
+  const handleInit = () => {
+    setTimeout(() => {
+      void fitView({ padding: 0.2, duration: 300 });
+    }, 100);
+  };
 
   const handleNodeClick: NodeMouseHandler = (_event, node) => {
     openDetailPanel(node.id);
@@ -188,9 +192,9 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
   // ─── Canvas ────────────────────────────────────────────────────
 
   return (
+    <div className="h-full w-full">
     <ReactFlow
       elementsSelectable
-      onlyRenderVisibleElements
       edgeTypes={EDGE_TYPES}
       edges={rfEdges}
       edgesFocusable={false}
@@ -202,6 +206,7 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
       nodesDraggable={false}
       nodesFocusable={false}
       zoomOnDoubleClick={false}
+      onInit={handleInit}
       onNodeClick={handleNodeClick}
     >
       <Background variant={BackgroundVariant.Dots} />
@@ -219,5 +224,6 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
         />
       </Panel>
     </ReactFlow>
+    </div>
   );
 }

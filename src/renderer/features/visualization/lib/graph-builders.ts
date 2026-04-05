@@ -1,3 +1,5 @@
+import Dagre from '@dagrejs/dagre';
+
 import type {
   AgentTeamsDataSchema,
   CodebaseGraphSchema,
@@ -62,17 +64,66 @@ export type AgentTaskNode = Node<AgentTaskData & Record<string, unknown>, 'agent
 export type CodebaseRFNode = FileGroupNode | FileNode;
 export type AgentRFNode = FeatureGroupNode | AgentTaskNode;
 
+// ─── Layout helpers ──────────────────────────────────────────────
+
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 60;
+const GROUP_NODE_WIDTH = 180;
+const GROUP_NODE_HEIGHT = 40;
+
+/**
+ * Applies dagre layout to a flat list of nodes + edges.
+ * Mutates node positions in-place and returns the same array.
+ */
+function applyDagreLayout(
+  nodes: Node[],
+  edges: Edge[],
+  direction: 'TB' | 'LR' = 'TB',
+): void {
+  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 60 });
+
+  for (const node of nodes) {
+    const isGroup = node.type === 'fileGroup' || node.type === 'featureGroup';
+    g.setNode(node.id, {
+      width: isGroup ? GROUP_NODE_WIDTH : NODE_WIDTH,
+      height: isGroup ? GROUP_NODE_HEIGHT : NODE_HEIGHT,
+    });
+  }
+
+  for (const edge of edges) {
+    g.setEdge(edge.source, edge.target);
+  }
+
+  Dagre.layout(g);
+
+  for (const node of nodes) {
+    const pos = g.node(node.id);
+    if (pos) {
+      const isGroup = node.type === 'fileGroup' || node.type === 'featureGroup';
+      const w = isGroup ? GROUP_NODE_WIDTH : NODE_WIDTH;
+      const h = isGroup ? GROUP_NODE_HEIGHT : NODE_HEIGHT;
+      node.position = { x: pos.x - w / 2, y: pos.y - h / 2 };
+    }
+  }
+}
+
 // ─── Codebase graph builder ───────────────────────────────────────
 
 /**
  * Transforms a CodebaseGraph into React Flow nodes.
- * Returns parent fileGroup nodes before child file nodes.
+ * Shows only group-level nodes for performance — individual files
+ * are summarized in the group node's fileCount.
+ * Groups are laid out with dagre using cross-group import edges.
  */
 export function buildCodebaseRFNodes(graph: CodebaseGraph): CodebaseRFNode[] {
   const nodes: CodebaseRFNode[] = [];
+  const layoutEdges: Edge[] = [];
 
+  // Build group nodes
   for (const groupName of graph.groups) {
     const groupId = `group-${groupName}`;
+    const filesInGroup = graph.files.filter((f) => f.group === groupName);
 
     const groupNode: FileGroupNode = {
       id: groupId,
@@ -81,32 +132,36 @@ export function buildCodebaseRFNodes(graph: CodebaseGraph): CodebaseRFNode[] {
       data: {
         type: 'fileGroup',
         label: groupName,
-        fileCount: graph.files.filter((f) => f.group === groupName).length,
+        fileCount: filesInGroup.length,
       },
     };
     nodes.push(groupNode);
+  }
 
-    const filesInGroup = graph.files.filter((f) => f.group === groupName);
-    for (const file of filesInGroup) {
-      const fileNode: FileNode = {
-        id: file.path,
-        type: 'file',
-        parentId: groupId,
-        extent: 'parent',
-        position: { x: 0, y: 0 },
-        data: {
-          type: 'file',
-          label: file.fileName,
-          path: file.path,
-          relativePath: file.relativePath,
-          ext: file.ext,
-          importCount: file.importCount,
-          group: file.group,
-        },
-      };
-      nodes.push(fileNode);
+  // Build group-to-group edges from file-level imports
+  const fileToGroup = new Map<string, string>();
+  for (const file of graph.files) {
+    fileToGroup.set(file.path, `group-${file.group}`);
+  }
+
+  const edgeSet = new Set<string>();
+  for (const edge of graph.edges) {
+    const sourceGroup = fileToGroup.get(edge.source);
+    const targetGroup = fileToGroup.get(edge.target);
+    if (sourceGroup && targetGroup && sourceGroup !== targetGroup) {
+      const key = `${sourceGroup}->${targetGroup}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        layoutEdges.push({
+          id: `group-edge-${key}`,
+          source: sourceGroup,
+          target: targetGroup,
+        });
+      }
     }
   }
+
+  applyDagreLayout(nodes, layoutEdges);
 
   return nodes;
 }
@@ -130,6 +185,7 @@ export function buildAgentRFNodes(
   if (!featureData) return [];
 
   const nodes: AgentRFNode[] = [];
+  const layoutEdges: Edge[] = [];
   const groupId = `feature-${featureName}`;
 
   const groupNode: FeatureGroupNode = {
@@ -147,15 +203,12 @@ export function buildAgentRFNodes(
   };
   nodes.push(groupNode);
 
-  let childIndex = 0;
   for (const task of featureData.tasks) {
     const nodeType = task.isGuardian ? 'guardian' : 'agentTask';
     const childNode: AgentTaskNode = {
       id: `agent-${task.agentName}`,
       type: nodeType,
-      parentId: groupId,
-      extent: 'parent',
-      position: { x: xOffset, y: childIndex * 80 },
+      position: { x: xOffset, y: 0 },
       data: {
         type: nodeType,
         label: task.taskName ?? task.agentName,
@@ -172,10 +225,57 @@ export function buildAgentRFNodes(
       },
     };
     nodes.push(childNode);
-    childIndex++;
+
+    layoutEdges.push({
+      id: `layout-${groupId}-${childNode.id}`,
+      source: groupId,
+      target: childNode.id,
+    });
+  }
+
+  applyDagreLayout(nodes, layoutEdges);
+
+  // Shift all nodes by xOffset after layout
+  for (const node of nodes) {
+    node.position.x += xOffset;
   }
 
   return nodes;
+}
+
+// ─── Codebase group edge builder ─────────────────────────────────
+
+/**
+ * Builds group-to-group edges from file-level imports.
+ * Deduplicates: only one edge per group pair.
+ */
+export function buildCodebaseGroupEdges(graph: CodebaseGraph): Edge[] {
+  const fileToGroup = new Map<string, string>();
+  for (const file of graph.files) {
+    fileToGroup.set(file.path, `group-${file.group}`);
+  }
+
+  const edgeSet = new Set<string>();
+  const edges: Edge[] = [];
+
+  for (const edge of graph.edges) {
+    const sourceGroup = fileToGroup.get(edge.source);
+    const targetGroup = fileToGroup.get(edge.target);
+    if (sourceGroup && targetGroup && sourceGroup !== targetGroup) {
+      const key = `${sourceGroup}->${targetGroup}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push({
+          id: `group-dep-${key}`,
+          source: sourceGroup,
+          target: targetGroup,
+          type: 'dataFlow',
+        });
+      }
+    }
+  }
+
+  return edges;
 }
 
 // ─── Cross-layer edge builder ─────────────────────────────────────

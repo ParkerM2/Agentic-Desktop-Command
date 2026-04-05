@@ -17,6 +17,9 @@ import {
 } from './bootstrap';
 import { appLogger } from './lib/logger';
 
+// Enable remote debugging for DevTools MCP integration
+app.commandLine.appendSwitch('remote-debugging-port', '9222');
+
 import type { ErrorCollector } from './services/health/error-collector';
 import type { SettingsService } from './services/settings/settings-service';
 
@@ -55,7 +58,7 @@ function createWindow(): void {
   });
 
   mainWindow.on('ready-to-show', () => {
-    const startMin = settingsServiceRef?.getSettings().startMinimized;
+    const startMin = settingsServiceRef?.getSettings().startMinimized === true;
     if (!startMin) {
       mainWindow?.show();
     }
@@ -173,6 +176,13 @@ function initializeApp(): void {
 void (async () => {
   // Global exception handlers — registered before app.whenReady() for maximum coverage
   process.on('uncaughtException', (error) => {
+    // EPIPE = broken pipe from a dropped connection (Hub, WebSocket, etc.)
+    // Non-fatal — log and continue rather than crashing the app
+    if ('code' in error && error.code === 'EPIPE') {
+      appLogger.warn('[Main] EPIPE (broken pipe) — ignoring:', error.message);
+      return;
+    }
+
     appLogger.error('[Main] Uncaught exception:', error);
     dialog.showErrorBox(
       'ADC Error',
