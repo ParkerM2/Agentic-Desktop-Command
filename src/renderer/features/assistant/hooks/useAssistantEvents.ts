@@ -12,17 +12,27 @@ import { useAssistantWidgetStore } from '@renderer/shared/stores';
 import { assistantKeys } from '../api/queryKeys';
 import { useAssistantStore } from '../store';
 
+/** Ref shared between useAssistantEvents and useSendCommand to track the last input */
+let _lastCommand = '';
+export function setLastCommand(input: string): void {
+  _lastCommand = input;
+}
+
 export function useAssistantEvents() {
   const queryClient = useQueryClient();
-  const { incrementUnread, setCurrentResponse, setIsThinking } = useAssistantStore();
+  const { addResponseEntry, incrementUnread, setCurrentResponse, setIsThinking } = useAssistantStore();
   const { isOpen, open } = useAssistantWidgetStore();
-
   useIpcEvent('event:assistant.autostart', () => {
     open();
   });
 
   useIpcEvent('event:assistant.response', (payload) => {
     setCurrentResponse(payload.content);
+    addResponseEntry({
+      input: _lastCommand,
+      response: payload.content,
+      type: payload.type,
+    });
     if (!isOpen) {
       incrementUnread();
     }

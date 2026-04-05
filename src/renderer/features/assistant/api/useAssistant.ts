@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
+import { setLastCommand } from '../hooks/useAssistantEvents';
 import { useAssistantStore } from '../store';
 
 import { assistantKeys } from './queryKeys';
@@ -36,7 +37,8 @@ export function useSendCommand() {
         context: data.context,
       });
     },
-    onMutate: () => {
+    onMutate: (variables) => {
+      setLastCommand(variables.input);
       setIsThinking(true);
       clearCurrentResponse();
     },
