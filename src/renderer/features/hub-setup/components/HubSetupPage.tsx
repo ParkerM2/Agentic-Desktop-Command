@@ -19,8 +19,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Card, CardContent, InlineAlert, Input, Label } from '@ui';
 
 import { useHubConnect } from '@features/settings/api/useHub';
 
@@ -29,22 +28,18 @@ import { validateHubUrl } from '../lib/validateHubUrl';
 
 import type { UseMutationResult } from '@tanstack/react-query';
 
-const INPUT_CLASS =
-  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring';
-
-const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors';
-
 const DOCKER_DOWNLOAD_URL = 'https://www.docker.com/products/docker-desktop/';
 
 // ─── Extracted sub-components ────────────────────────────────
 
 function DockerLoading() {
   return (
-    <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-muted/50 p-6">
-      <Loader2 className="size-4 animate-spin text-muted-foreground" />
-      <span className="text-sm text-muted-foreground">Checking for Docker Desktop...</span>
-    </div>
+    <Card>
+      <CardContent className="flex items-center justify-center gap-2 p-6">
+        <Loader2 className="text-muted-foreground size-4 animate-spin" />
+        <span className="text-muted-foreground text-sm">Checking for Docker Desktop...</span>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -61,121 +56,101 @@ interface DockerReadyProps {
 
 function DockerReady({ setupMutation, isAutoSetupPending, autoSetupLabel, onAutoSetup }: DockerReadyProps) {
   return (
-    <div className="space-y-3 rounded-md border border-border bg-muted/50 p-4">
-      <div className="flex items-center gap-2">
-        <CheckCircle2 className="size-4 text-success" />
-        <span className="text-sm font-medium text-card-foreground">
-          Docker Desktop detected
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        We can automatically set up and configure the Hub server for you.
-        No terminal commands required.
-      </p>
-
-      {setupMutation.isError ? (
-        <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {setupMutation.error instanceof Error
-            ? setupMutation.error.message
-            : 'Auto setup failed'}
+    <Card>
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="text-success size-4" />
+          <span className="text-card-foreground text-sm font-medium">
+            Docker Desktop detected
+          </span>
         </div>
-      ) : null}
+        <p className="text-muted-foreground text-xs">
+          We can automatically set up and configure the Hub server for you.
+          No terminal commands required.
+        </p>
 
-      {setupMutation.data && !setupMutation.data.success ? (
-        <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {setupMutation.data.error}
-        </div>
-      ) : null}
+        {setupMutation.isError ? (
+          <InlineAlert variant="error">
+            {setupMutation.error instanceof Error
+              ? setupMutation.error.message
+              : 'Auto setup failed'}
+          </InlineAlert>
+        ) : null}
 
-      <button
-        disabled={isAutoSetupPending}
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'w-full bg-primary text-primary-foreground',
-          'hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )}
-        onClick={onAutoSetup}
-      >
-        {isAutoSetupPending ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <Sparkles className="size-4" />
-        )}
-        {autoSetupLabel}
-      </button>
-    </div>
+        {setupMutation.data && !setupMutation.data.success ? (
+          <InlineAlert variant="error">
+            {setupMutation.data.error}
+          </InlineAlert>
+        ) : null}
+
+        <Button
+          className="w-full"
+          disabled={isAutoSetupPending}
+          type="button"
+          onClick={onAutoSetup}
+        >
+          {isAutoSetupPending ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Sparkles className="size-4" />
+          )}
+          {autoSetupLabel}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
 function DockerNotRunning({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="space-y-3 rounded-md border border-border bg-muted/50 p-4">
-      <div className="flex items-center gap-2">
-        <Download className="size-4 text-warning" />
-        <span className="text-sm font-medium text-card-foreground">
-          Docker Desktop is installed but not running
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Start Docker Desktop, then come back here. The setup button will appear
-        automatically.
-      </p>
-      <button
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'w-full border border-border bg-background text-card-foreground',
-          'hover:bg-accent hover:text-accent-foreground',
-        )}
-        onClick={onRetry}
-      >
-        Check Again
-      </button>
-    </div>
+    <Card>
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-center gap-2">
+          <Download className="text-warning size-4" />
+          <span className="text-card-foreground text-sm font-medium">
+            Docker Desktop is installed but not running
+          </span>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Start Docker Desktop, then come back here. The setup button will appear
+          automatically.
+        </p>
+        <Button className="w-full" type="button" variant="outline" onClick={onRetry}>
+          Check Again
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
 function DockerNotInstalled({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="space-y-3 rounded-md border border-border bg-muted/50 p-4">
-      <div className="flex items-center gap-2">
-        <Download className="size-4 text-muted-foreground" />
-        <span className="text-sm font-medium text-card-foreground">
-          Docker Desktop required
-        </span>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        ADC Hub runs as a Docker container on your machine. Install Docker
-        Desktop (free), then come back here for automatic setup.
-      </p>
-      <a
-        href={DOCKER_DOWNLOAD_URL}
-        rel="noopener noreferrer"
-        target="_blank"
-        className={cn(
-          BUTTON_BASE,
-          'w-full border border-border bg-background text-card-foreground',
-          'hover:bg-accent hover:text-accent-foreground',
-          'no-underline',
-        )}
-      >
-        <ExternalLink className="size-4" />
-        Download Docker Desktop
-      </a>
-      <button
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'w-full border border-border bg-transparent text-muted-foreground',
-          'hover:bg-accent hover:text-accent-foreground',
-        )}
-        onClick={onRetry}
-      >
-        I&apos;ve installed it — check again
-      </button>
-    </div>
+    <Card>
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-center gap-2">
+          <Download className="text-muted-foreground size-4" />
+          <span className="text-card-foreground text-sm font-medium">
+            Docker Desktop required
+          </span>
+        </div>
+        <p className="text-muted-foreground text-xs">
+          ADC Hub runs as a Docker container on your machine. Install Docker
+          Desktop (free), then come back here for automatic setup.
+        </p>
+        <a
+          className="border-border bg-background text-card-foreground hover:bg-accent hover:text-accent-foreground inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-medium no-underline transition-colors"
+          href={DOCKER_DOWNLOAD_URL}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <ExternalLink className="size-4" />
+          Download Docker Desktop
+        </a>
+        <Button className="w-full" type="button" variant="outline" onClick={onRetry}>
+          I&apos;ve installed it — check again
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -284,136 +259,129 @@ export function HubSetupPage({ onSuccess, onNavigateToLogin }: HubSetupPageProps
     return 'Connect';
   }
 
-  const chevronIcon = showManual
-    ? <ChevronDown className="size-4" />
-    : <ChevronRight className="size-4" />;
-
   const showManualConnectError =
     connectMutation.isError && validationError === null && !setupMutation.isSuccess;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-lg space-y-6 rounded-lg border border-border bg-card p-8 shadow-lg">
-        {/* Header */}
-        <div className="space-y-2 text-center">
-          <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-lg bg-primary/10">
-            <Server className="size-6 text-primary" />
+      <Card className="w-full max-w-lg shadow-lg">
+        <CardContent className="space-y-6 p-8">
+          {/* Header */}
+          <div className="space-y-2 text-center">
+            <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-lg bg-primary/10">
+              <Server className="text-primary size-6" />
+            </div>
+            <h1 className="text-card-foreground text-2xl font-bold">Welcome to ADC</h1>
+            <p className="text-muted-foreground text-sm">
+              ADC Hub is your personal server that syncs tasks, projects, and agent
+              activity across devices. Let&apos;s get it running.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-card-foreground">Welcome to ADC</h1>
-          <p className="text-sm text-muted-foreground">
-            ADC Hub is your personal server that syncs tasks, projects, and agent
-            activity across devices. Let&apos;s get it running.
-          </p>
-        </div>
 
-        {/* Docker auto-setup section */}
-        <DockerSection
-          autoSetupLabel={getAutoSetupLabel()}
-          isAutoSetupPending={isAutoSetupPending}
-          isInstalled={dockerStatus.data?.installed === true}
-          isLoading={dockerStatus.isLoading}
-          isRunning={dockerStatus.data?.running === true}
-          setupMutation={setupMutation}
-          onAutoSetup={handleAutoSetup}
-          onRetry={() => { void dockerStatus.refetch(); }}
-        />
+          {/* Docker auto-setup section */}
+          <DockerSection
+            autoSetupLabel={getAutoSetupLabel()}
+            isAutoSetupPending={isAutoSetupPending}
+            isInstalled={dockerStatus.data?.installed === true}
+            isLoading={dockerStatus.isLoading}
+            isRunning={dockerStatus.data?.running === true}
+            setupMutation={setupMutation}
+            onAutoSetup={handleAutoSetup}
+            onRetry={() => { void dockerStatus.refetch(); }}
+          />
 
-        {/* Manual connection — collapsible for advanced users */}
-        <div className="border-t border-border pt-4">
-          <button
-            className="flex w-full items-center gap-2 text-sm text-muted-foreground hover:text-card-foreground"
-            type="button"
-            onClick={() => { setShowManual(!showManual); }}
-          >
-            {chevronIcon}
-            I have my own Hub server
-          </button>
-
-          {showManual ? (
-            <form
-              className="mt-4 space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void handleManualConnect();
-              }}
+          {/* Manual connection — collapsible for advanced users */}
+          <div className="border-border border-t pt-4">
+            <Button
+              className="text-muted-foreground hover:text-card-foreground w-full justify-start gap-2"
+              type="button"
+              variant="ghost"
+              onClick={() => { setShowManual(!showManual); }}
             >
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-card-foreground" htmlFor="setup-hub-url">
-                  Hub URL
-                </label>
-                <input
-                  autoComplete="url"
-                  className={INPUT_CLASS}
-                  id="setup-hub-url"
-                  placeholder="http://localhost:3200"
-                  type="url"
-                  value={hubUrl}
-                  onChange={(e) => { setHubUrl(e.target.value); }}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-card-foreground" htmlFor="setup-api-key">
-                  API Key
-                </label>
-                <input
-                  autoComplete="off"
-                  className={INPUT_CLASS}
-                  id="setup-api-key"
-                  placeholder="Your Hub API key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => { setApiKey(e.target.value); }}
-                />
-              </div>
-
-              {validationError === null ? null : (
-                <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  Hub unreachable: {validationError}
-                </div>
+              {showManual ? (
+                <ChevronDown className="size-4" />
+              ) : (
+                <ChevronRight className="size-4" />
               )}
+              I have my own Hub server
+            </Button>
 
-              {showManualConnectError ? (
-                <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {connectMutation.error instanceof Error
-                    ? connectMutation.error.message
-                    : 'Connection failed. Check your URL and API key.'}
-                </div>
-              ) : null}
-
-              <button
-                disabled={!isFormValid || isManualPending}
-                type="submit"
-                className={cn(
-                  BUTTON_BASE,
-                  'w-full bg-primary text-primary-foreground',
-                  'hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                )}
+            {showManual ? (
+              <form
+                className="mt-4 space-y-4"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleManualConnect();
+                }}
               >
-                {isManualPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="size-4" />
-                )}
-                {getManualButtonLabel()}
-              </button>
-            </form>
-          ) : null}
-        </div>
+                <div className="space-y-2">
+                  <Label htmlFor="setup-hub-url">Hub URL</Label>
+                  <Input
+                    autoComplete="url"
+                    id="setup-hub-url"
+                    placeholder="http://localhost:3200"
+                    type="url"
+                    value={hubUrl}
+                    onChange={(e) => { setHubUrl(e.target.value); }}
+                  />
+                </div>
 
-        {/* Footer link */}
-        <p className="text-center text-sm text-muted-foreground">
-          Already connected?{' '}
-          <button
-            className="font-medium text-primary underline-offset-4 hover:underline"
-            type="button"
-            onClick={onNavigateToLogin}
-          >
-            Sign in
-          </button>
-        </p>
-      </div>
+                <div className="space-y-2">
+                  <Label htmlFor="setup-api-key">API Key</Label>
+                  <Input
+                    autoComplete="off"
+                    id="setup-api-key"
+                    placeholder="Your Hub API key"
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => { setApiKey(e.target.value); }}
+                  />
+                </div>
+
+                {validationError === null ? null : (
+                  <InlineAlert variant="error">
+                    Hub unreachable: {validationError}
+                  </InlineAlert>
+                )}
+
+                {showManualConnectError ? (
+                  <InlineAlert variant="error">
+                    {connectMutation.error instanceof Error
+                      ? connectMutation.error.message
+                      : 'Connection failed. Check your URL and API key.'}
+                  </InlineAlert>
+                ) : null}
+
+                <Button
+                  className="w-full"
+                  disabled={!isFormValid || isManualPending}
+                  type="submit"
+                >
+                  {isManualPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="size-4" />
+                  )}
+                  {getManualButtonLabel()}
+                </Button>
+              </form>
+            ) : null}
+          </div>
+
+          {/* Footer link */}
+          <p className="text-muted-foreground text-center text-sm">
+            Already connected?{' '}
+            <Button
+              className="h-auto p-0 font-medium underline-offset-4 hover:underline"
+              type="button"
+              variant="link"
+              onClick={onNavigateToLogin}
+            >
+              Sign in
+            </Button>
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

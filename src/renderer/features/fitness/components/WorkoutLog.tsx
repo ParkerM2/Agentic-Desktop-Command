@@ -6,7 +6,7 @@ import { Trash2 } from 'lucide-react';
 
 import type { Workout } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Badge, Button, EmptyState } from '@ui';
 
 import { useDeleteWorkout, useWorkouts } from '../api/useFitness';
 
@@ -19,13 +19,6 @@ const TYPE_LABELS: Record<string, string> = {
   sport: 'Sport',
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  strength: 'bg-primary/10 text-primary',
-  cardio: 'bg-success/10 text-success',
-  flexibility: 'bg-info/10 text-info',
-  sport: 'bg-warning/10 text-warning',
-};
-
 // ── Component ────────────────────────────────────────────────
 
 export function WorkoutLog() {
@@ -36,9 +29,11 @@ export function WorkoutLog() {
 
   if (displayWorkouts.length === 0) {
     return (
-      <div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
-        No workouts logged yet
-      </div>
+      <EmptyState
+        description="No workouts logged yet"
+        size="sm"
+        title=""
+      />
     );
   }
 
@@ -62,6 +57,14 @@ interface WorkoutItemProps {
   onDelete: () => void;
 }
 
+function getWorkoutVariant(type: string): 'default' | 'success' | 'info' | 'warning' | 'secondary' {
+  if (type === 'strength') return 'default';
+  if (type === 'cardio') return 'success';
+  if (type === 'flexibility') return 'info';
+  if (type === 'sport') return 'warning';
+  return 'secondary';
+}
+
 function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
   const exerciseCount = workout.exercises.length;
   const totalSets = workout.exercises.reduce((sum, e) => sum + e.sets.length, 0);
@@ -70,14 +73,9 @@ function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
     <div className="flex items-center justify-between px-4 py-3">
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'rounded-full px-2 py-0.5 text-xs font-medium',
-              TYPE_COLORS[workout.type] ?? 'bg-muted text-muted-foreground',
-            )}
-          >
+          <Badge variant={getWorkoutVariant(workout.type)}>
             {TYPE_LABELS[workout.type] ?? workout.type}
-          </span>
+          </Badge>
           <span className="text-muted-foreground text-xs">{workout.date}</span>
         </div>
         <p className="text-foreground mt-1 text-sm">
@@ -91,14 +89,16 @@ function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
           </p>
         ) : null}
       </div>
-      <button
+      <Button
         aria-label="Delete workout"
-        className="text-muted-foreground hover:text-destructive rounded-md p-1.5 transition-colors"
+        className="text-muted-foreground hover:text-destructive"
+        size="icon"
         type="button"
+        variant="ghost"
         onClick={onDelete}
       >
         <Trash2 className="h-4 w-4" />
-      </button>
+      </Button>
     </div>
   );
 }
