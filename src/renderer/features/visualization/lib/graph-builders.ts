@@ -315,7 +315,7 @@ export function buildCrossLayerEdges(
           source: agentNode.id,
           target: matchedGroup.id,
           data: { isLive },
-          type: 'crossLayer',
+          type: 'agentScope',
         });
       }
     }
