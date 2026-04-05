@@ -8,8 +8,11 @@
     "workPrefix": "work",
     "enforce": "warn",
     "protectedBranches": ["main", "master"],
-    "useWorktrees": false,
+    "useWorktrees": true,
     "worktreeDir": ".worktrees"
+  },
+  "guards": {
+    "configGuard": false
   },
   "worktreeBootstrap": {
     "script": "scripts/generate-worktree-claude.mjs",

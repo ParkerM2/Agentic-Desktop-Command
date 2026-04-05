@@ -241,6 +241,16 @@
       "branch": null,
       "pr": null,
       "tags": ["cleanup", "lint", "P3"]
+    },
+    "adc-brand-suite": {
+      "title": "ADC Brand Suite — Logo, Icons, Design Tokens, Typography",
+      "status": "IN_PROGRESS",
+      "planFile": "docs/plans/2026-04-04-adc-brand-suite.md",
+      "created": "2026-04-04",
+      "statusChangedAt": "2026-04-04",
+      "branch": "feature/adc-brand-suite",
+      "pr": null,
+      "tags": ["brand", "design-tokens", "icons", "typography"]
     }
   }
 }
