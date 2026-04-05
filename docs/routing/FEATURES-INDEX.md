@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 29 |
+| Renderer Features | 30 |
 | Main Process Services | 33 |
 | IPC Handler Files | 42 |
 | IPC Domain Folders | 28 |
@@ -53,6 +53,7 @@ Location: `src/renderer/features/`
 | **voice** | Voice interface (STT/TTS) | VoiceButton, VoiceSettings (mounted in SettingsPage) | `voice.*` |
 | **screen** | Screen capture | ScreenshotButton (mounted in TopBar), ScreenshotViewer | `screen.*` |
 | **devices** | Device registration & heartbeat | DeviceCard, DeviceSelector | `devices.*` |
+| **visualization** | Codebase structure and agent activity graph (React Flow) | VisualizationPage, VisualizationCanvas (React Flow + dagre layout), LayerToggleToolbar, FileGroupNode, FileNode, AgentTaskNode, FeatureGroupNode, GuardianNode, DataFlowEdge, AgentScopeEdge, NodeDetailPanel | `visualization.getCodebaseGraph`, `visualization.getAgentTeams`, `visualization.getSessionLog` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 
