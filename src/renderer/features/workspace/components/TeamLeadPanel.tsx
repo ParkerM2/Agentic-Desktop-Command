@@ -5,7 +5,7 @@
  * Mortal Team Leads (index >= 1) show a stop button.
  */
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp, Send, X } from 'lucide-react';
 
 import type { WorkspaceSession } from '@shared/ipc/workspace';
@@ -60,7 +60,6 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
   const isImmortal = index === 0;
   const label = index === 0 ? 'Team Lead 1' : `Team Lead ${index + 1}`;
 
-  const queryClient = useQueryClient();
   const send = useWorkspaceSend();
   const stop = useStopTeamLead(projectId);
   const isCollapsed = useWorkspaceStore((s) => s.teamLeadCollapsed[agentSessionId] ?? false);
@@ -69,12 +68,12 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
   const setDraft = useWorkspaceStore((s) => s.setInputDraft);
   const clearDraft = useWorkspaceStore((s) => s.clearInputDraft);
 
-  const rawMessages = queryClient.getQueryData<AgentChatMessage[]>([
-    'agent-dashboard',
-    'messages',
-    agentSessionId,
-  ]);
-  const chatItems = messagesToChatItems(rawMessages ?? []);
+  const { data: rawMessages = [] } = useQuery<AgentChatMessage[]>({
+    queryKey: ['agent-dashboard', 'messages', agentSessionId],
+    queryFn: () => Promise.resolve([]),
+    staleTime: Infinity,
+  });
+  const chatItems = messagesToChatItems(rawMessages);
 
   function handleSend() {
     const message = draft.trim();
