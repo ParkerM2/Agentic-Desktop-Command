@@ -8,13 +8,12 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 
-import { Search, X } from 'lucide-react';
 import { Tree } from 'react-arborist';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Input } from '@ui/input';
 import { ScrollArea } from '@ui/scroll-area';
+import { SearchInput } from '@ui/search-input';
 import { Spinner } from '@ui/spinner';
 import { Text } from '@ui/typography';
 
@@ -133,31 +132,17 @@ export function FileExplorer({
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Search bar */}
-      <div className="relative px-2 pb-2">
-        <Search
-          aria-hidden="true"
-          className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-          size={14}
-        />
-        <Input
-          className="h-7 pl-7 pr-7 text-xs"
+      <div className="px-2 pb-2">
+        <SearchInput
+          className="h-7 text-xs"
           placeholder="Search files..."
           size="sm"
           value={searchQuery}
+          onClear={clearSearch}
           onChange={(e) => {
             setSearchQuery(e.target.value);
           }}
         />
-        {searchQuery.length > 0 ? (
-          <button
-            aria-label="Clear search"
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            type="button"
-            onClick={clearSearch}
-          >
-            <X size={14} />
-          </button>
-        ) : null}
       </div>
 
       {/* Tree */}

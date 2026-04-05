@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { ScrollArea } from '@ui';
+import { Badge, EmptyState, ScrollArea } from '@ui';
 
 import type { DiffFileEntry, FileChangeStatus } from '../api/useDiff';
 
@@ -20,32 +20,26 @@ interface StatusBadgeProps {
   status: FileChangeStatus;
 }
 
-const STATUS_CONFIG: Record<FileChangeStatus, { label: string; className: string }> = {
-  added: {
-    label: 'A',
-    className: 'bg-[color-mix(in_srgb,var(--success)_20%,transparent)] text-success',
-  },
-  modified: {
-    label: 'M',
-    className: 'bg-[color-mix(in_srgb,var(--warning)_20%,transparent)] text-warning',
-  },
-  deleted: {
-    label: 'D',
-    className: 'bg-[color-mix(in_srgb,var(--destructive)_20%,transparent)] text-destructive',
-  },
+const STATUS_BADGE_VARIANT: Record<FileChangeStatus, 'success' | 'warning' | 'destructive'> = {
+  added: 'success',
+  modified: 'warning',
+  deleted: 'destructive',
+};
+
+const STATUS_LABEL: Record<FileChangeStatus, string> = {
+  added: 'A',
+  modified: 'M',
+  deleted: 'D',
 };
 
 function StatusBadge({ status }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
   return (
-    <span
-      className={cn(
-        'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold',
-        config.className,
-      )}
+    <Badge
+      className="inline-flex h-5 w-5 shrink-0 items-center justify-center p-0 text-[10px] font-bold"
+      variant={STATUS_BADGE_VARIANT[status]}
     >
-      {config.label}
-    </span>
+      {STATUS_LABEL[status]}
+    </Badge>
   );
 }
 
@@ -113,9 +107,11 @@ export function DiffFileList({
 
   if (files.length === 0) {
     return (
-      <div className="text-muted-foreground p-4 text-center text-xs">
-        No file changes detected
-      </div>
+      <EmptyState
+        description="No file changes detected"
+        size="sm"
+        title="No changes"
+      />
     );
   }
 

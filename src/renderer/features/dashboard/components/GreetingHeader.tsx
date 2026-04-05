@@ -4,6 +4,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { Heading, Text } from '@ui';
+
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
@@ -35,8 +37,8 @@ export function GreetingHeader() {
 
   return (
     <div className="mb-6">
-      <h1 className="text-foreground text-2xl font-bold">{greeting}</h1>
-      <p className="text-muted-foreground mt-1 text-sm">{date}</p>
+      <Heading as="h1">{greeting}</Heading>
+      <Text className="mt-1" size="sm" variant="muted">{date}</Text>
     </div>
   );
 }
