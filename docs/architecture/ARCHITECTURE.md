@@ -33,8 +33,9 @@
 │  │ ipc-wiring   │   └───────────────┘   └────────────────────┘  │
 │  │ event-wiring │                        ├─ AgentService (5)    │
 │  └──────────────┘                        ├─ AssistantService    │
-│                                          │   ├─ executors/ (22) │
-│                                          │   └─ classifier/(16) │
+│                                          │   ├─ tool-definitions│
+│                                          │   ├─ tool-executor   │
+│                                          │   └─ tool-handlers/  │
 │                                          ├─ HubService (9)     │
 │                                          ├─ ProjectService (6)  │
 │                                          ├─ DataMgmtService (7) │
