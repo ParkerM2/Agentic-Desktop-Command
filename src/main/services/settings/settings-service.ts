@@ -17,6 +17,22 @@ import { fsLogger } from '@main/lib/logger';
 import { DEFAULT_AGENT_SETTINGS } from './settings-defaults';
 import { loadSettingsFile, saveSettingsFile } from './settings-store';
 
+export interface LayoutState {
+  openProjectTabs: string[];
+  activeProjectId: string | null;
+  lastRoutePerProject: Record<string, string>;
+  sidebarCollapsed: boolean;
+  sidebarLayout: string;
+}
+
+export interface LayoutUpdate {
+  openProjectTabs?: string[];
+  activeProjectId?: string | null;
+  lastRoutePerProject?: Record<string, string>;
+  sidebarCollapsed?: boolean;
+  sidebarLayout?: string;
+}
+
 export interface SettingsService {
   getSettings: () => AppSettings;
   updateSettings: (updates: Record<string, unknown>) => AppSettings;
@@ -36,6 +52,8 @@ export interface SettingsService {
   }) => { success: boolean };
   getAgentSettings: () => AgentSettings;
   setAgentSettings: (settings: AgentSettings) => { success: boolean };
+  getLayout: () => LayoutState;
+  saveLayout: (updates: LayoutUpdate) => { success: boolean };
 }
 
 export function createSettingsService(): SettingsService {
@@ -197,6 +215,36 @@ export function createSettingsService(): SettingsService {
         ...settings,
         maxConcurrentAgents: Math.max(1, settings.maxConcurrentAgents),
       };
+      persist();
+      return { success: true };
+    },
+
+    getLayout() {
+      return {
+        openProjectTabs: store.settings.openProjectTabs ?? [],
+        activeProjectId: store.settings.activeProjectId ?? null,
+        lastRoutePerProject: store.settings.lastRoutePerProject ?? {},
+        sidebarCollapsed: store.settings.sidebarCollapsed ?? false,
+        sidebarLayout: store.settings.sidebarLayout ?? 'sidebar-01',
+      };
+    },
+
+    saveLayout(updates) {
+      if (updates.openProjectTabs !== undefined) {
+        store.settings.openProjectTabs = updates.openProjectTabs;
+      }
+      if (updates.activeProjectId !== undefined) {
+        store.settings.activeProjectId = updates.activeProjectId;
+      }
+      if (updates.lastRoutePerProject !== undefined) {
+        store.settings.lastRoutePerProject = updates.lastRoutePerProject;
+      }
+      if (updates.sidebarCollapsed !== undefined) {
+        store.settings.sidebarCollapsed = updates.sidebarCollapsed;
+      }
+      if (updates.sidebarLayout !== undefined) {
+        store.settings.sidebarLayout = updates.sidebarLayout as AppSettings['sidebarLayout'];
+      }
       persist();
       return { success: true };
     },

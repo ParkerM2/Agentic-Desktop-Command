@@ -10,6 +10,8 @@ import { z } from 'zod';
 
 import {
   AppSettingsSchema,
+  LayoutStateSchema,
+  LayoutUpdateSchema,
   ProfileSchema,
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
@@ -107,6 +109,14 @@ export const settingsInvoke = {
     input: z.object({
       maxConcurrentAgents: z.number(),
     }),
+    output: z.object({ success: z.boolean() }),
+  },
+  'settings.getLayout': {
+    input: z.object({}),
+    output: LayoutStateSchema,
+  },
+  'settings.saveLayout': {
+    input: LayoutUpdateSchema,
     output: z.object({ success: z.boolean() }),
   },
 } as const;

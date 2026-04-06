@@ -7,6 +7,8 @@
 
 export {
   AppSettingsSchema,
+  LayoutStateSchema,
+  LayoutUpdateSchema,
   ProfileSchema,
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,

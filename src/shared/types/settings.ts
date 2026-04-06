@@ -36,6 +36,10 @@ export interface AppSettings {
   logLevel?: LogLevel;
   securitySettings?: SecuritySettings;
   dataRetention?: DataRetentionSettings;
+  openProjectTabs?: string[];
+  activeProjectId?: string | null;
+  lastRoutePerProject?: Record<string, string>;
+  sidebarCollapsed?: boolean;
 }
 
 /** All CSS variable tokens that make up a color theme */

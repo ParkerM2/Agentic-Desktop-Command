@@ -21,6 +21,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   onboardingCompleted: false,
   agentSettings: DEFAULT_AGENT_SETTINGS,
   assistantAutoStart: true,
+  openProjectTabs: [],
+  activeProjectId: null,
+  lastRoutePerProject: {},
+  sidebarCollapsed: false,
 };
 
 export const DEFAULT_PROFILES: Profile[] = [{ id: 'default', name: 'Default', isDefault: true }];
