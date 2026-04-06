@@ -6,8 +6,6 @@ import { AlertTriangle, ArrowDown, ArrowUp, Minus } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import type { CustomCellRendererProps } from 'ag-grid-react';
-
 type Priority = 'low' | 'medium' | 'high' | 'critical';
 
 interface PriorityConfig {
@@ -39,8 +37,8 @@ const PRIORITY_CONFIG: Record<Priority, PriorityConfig> = {
   },
 };
 
-export function PriorityCell(props: CustomCellRendererProps) {
-  const priority = (props.value as Priority | undefined) ?? 'medium';
+export function PriorityCell({ value }: { value: string }) {
+  const priority = (value as Priority | undefined) ?? 'medium';
   const config = PRIORITY_CONFIG[priority];
   const Icon = config.icon;
 

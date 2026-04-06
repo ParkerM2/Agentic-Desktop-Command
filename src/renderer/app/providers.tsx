@@ -25,6 +25,8 @@ const queryClient = new QueryClient({
   },
 });
 
+export { queryClient };
+
 interface ProvidersProps {
   children: ReactNode;
 }

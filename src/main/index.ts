@@ -63,6 +63,9 @@ function createWindow(): void {
     if (!startMin) {
       mainWindow?.show();
     }
+    if (isDev) {
+      mainWindow?.webContents.openDevTools({ mode: 'detach' });
+    }
   });
 
   // Emit assistant autostart after renderer finishes loading

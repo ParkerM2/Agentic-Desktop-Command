@@ -4,10 +4,12 @@
 
 import { useState } from 'react';
 
-import { Music, Pause, Play, Search, SkipBack, SkipForward, Volume2 } from 'lucide-react';
+import { Music, Pause, Play, SkipBack, SkipForward, Volume2 } from 'lucide-react';
 
 import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, Card, CardContent, SearchInput, Slider } from '@ui';
 
 import {
   useSpotifyAddToQueue,
@@ -131,15 +133,14 @@ function NowPlaying({
 
       {/* Volume */}
       <div className="flex items-center gap-2">
-        <Volume2 className="text-muted-foreground h-4 w-4" />
-        <input
-          className="accent-primary h-1.5 flex-1 cursor-pointer"
-          max="100"
-          min="0"
-          type="range"
-          value={volume}
-          onChange={(e) => {
-            volumeMutation.mutate(Number(e.target.value));
+        <Volume2 className="text-muted-foreground h-4 w-4 shrink-0" />
+        <Slider
+          className="flex-1"
+          max={100}
+          min={0}
+          value={[volume]}
+          onValueChange={(values) => {
+            volumeMutation.mutate(values[0] ?? volume);
           }}
         />
         <span className="text-muted-foreground w-8 text-right text-xs">{String(volume)}%</span>
@@ -158,88 +159,87 @@ export function SpotifyWidget() {
   const addToQueueMutation = useSpotifyAddToQueue();
 
   return (
-    <div className="bg-card border-border space-y-4 rounded-lg border p-4">
-      <IntegrationRequired
-        description="Link your Spotify account to control playback and search tracks."
-        provider="spotify"
-        title="Connect Spotify"
-      />
-      <h3 className="text-foreground text-sm font-semibold">Spotify</h3>
-
-      {/* Now Playing */}
-      {isLoading ? <p className="text-muted-foreground text-sm">Loading playback...</p> : null}
-
-      {!isLoading && playback ? (
-        <NowPlaying
-          album={playback.album ?? 'Unknown'}
-          artist={playback.artist ?? 'Unknown'}
-          durationMs={playback.durationMs ?? 0}
-          isPlaying={playback.isPlaying}
-          progressMs={playback.progressMs ?? 0}
-          track={playback.track ?? 'No track'}
-          volume={playback.volume ?? 50}
+    <Card>
+      <CardContent className="space-y-4 p-4">
+        <IntegrationRequired
+          description="Link your Spotify account to control playback and search tracks."
+          provider="spotify"
+          title="Connect Spotify"
         />
-      ) : null}
+        <h3 className="text-foreground text-sm font-semibold">Spotify</h3>
 
-      {!isLoading && !playback ? (
-        <p className="text-muted-foreground text-sm">No active playback</p>
-      ) : null}
+        {/* Now Playing */}
+        {isLoading ? <p className="text-muted-foreground text-sm">Loading playback...</p> : null}
 
-      {/* Search */}
-      <div className="space-y-2">
-        <div className="relative">
-          <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
-          <input
-            className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-ring w-full rounded-md border py-2 pr-3 pl-9 text-sm focus:ring-1 focus:outline-none"
+        {!isLoading && playback ? (
+          <NowPlaying
+            album={playback.album ?? 'Unknown'}
+            artist={playback.artist ?? 'Unknown'}
+            durationMs={playback.durationMs ?? 0}
+            isPlaying={playback.isPlaying}
+            progressMs={playback.progressMs ?? 0}
+            track={playback.track ?? 'No track'}
+            volume={playback.volume ?? 50}
+          />
+        ) : null}
+
+        {!isLoading && !playback ? (
+          <p className="text-muted-foreground text-sm">No active playback</p>
+        ) : null}
+
+        {/* Search */}
+        <div className="space-y-2">
+          <SearchInput
             placeholder="Search tracks..."
-            type="text"
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
             }}
           />
-        </div>
 
-        {searchResults && searchResults.length > 0 ? (
-          <div className="max-h-48 space-y-1 overflow-y-auto">
-            {searchResults.map((track) => (
-              <div
-                key={track.uri}
-                className="hover:bg-accent flex items-center justify-between rounded-md px-2 py-1.5"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-foreground truncate text-sm">{track.name}</p>
-                  <p className="text-muted-foreground truncate text-xs">
-                    {track.artist} - {track.album}
-                  </p>
+          {searchResults && searchResults.length > 0 ? (
+            <div className="max-h-48 space-y-1 overflow-y-auto">
+              {searchResults.map((track) => (
+                <div
+                  key={track.uri}
+                  className="hover:bg-accent flex items-center justify-between rounded-md px-2 py-1.5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground truncate text-sm">{track.name}</p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {track.artist} - {track.album}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      className="h-auto p-1 text-xs"
+                      size="icon"
+                      title="Play"
+                      variant="ghost"
+                      onClick={() => {
+                        playMutation.mutate({ uri: track.uri });
+                      }}
+                    >
+                      <Play className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      className="h-auto p-1 text-xs"
+                      size="icon"
+                      title="Add to queue"
+                      variant="ghost"
+                      onClick={() => {
+                        addToQueueMutation.mutate(track.uri);
+                      }}
+                    >
+                      +
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <button
-                    className="text-muted-foreground hover:text-foreground p-1 text-xs"
-                    title="Play"
-                    type="button"
-                    onClick={() => {
-                      playMutation.mutate({ uri: track.uri });
-                    }}
-                  >
-                    <Play className="h-3 w-3" />
-                  </button>
-                  <button
-                    className="text-muted-foreground hover:text-foreground p-1 text-xs"
-                    title="Add to queue"
-                    type="button"
-                    onClick={() => {
-                      addToQueueMutation.mutate(track.uri);
-                    }}
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

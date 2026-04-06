@@ -131,16 +131,25 @@ function MyForm() {
 
 ### Page Layout Pattern
 
-Every page should use `PageLayout` for consistent structure:
+Every page uses the `PageHeader` compound component for consistent structure.
+All pages must use the compositional API — no legacy `title` prop.
 
+**Simple page (title + actions):**
 ```typescript
 import { PageLayout, PageHeader, PageContent, Button } from '@ui';
 
 function SettingsPage() {
   return (
     <PageLayout>
-      <PageHeader title="Settings" description="Manage your preferences">
-        <Button variant="primary">Save</Button>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="Manage your preferences">
+            Settings
+          </PageHeader.Title>
+          <PageHeader.Actions>
+            <Button>Save</Button>
+          </PageHeader.Actions>
+        </PageHeader.Row>
       </PageHeader>
       <PageContent>
         {/* Page-specific content */}
@@ -150,17 +159,50 @@ function SettingsPage() {
 }
 ```
 
+**Tabbed page:**
+```typescript
+function FitnessPage() {
+  return (
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Fitness</PageHeader.Title>
+        </PageHeader.Row>
+        <PageHeader.Tabs defaultValue="overview">
+          <PageHeader.TabList>
+            <PageHeader.Tab value="overview">Overview</PageHeader.Tab>
+            <PageHeader.Tab value="workouts">Workouts</PageHeader.Tab>
+          </PageHeader.TabList>
+          <PageContent>
+            <PageHeader.TabContent value="overview">...</PageHeader.TabContent>
+            <PageHeader.TabContent value="workouts">...</PageHeader.TabContent>
+          </PageContent>
+        </PageHeader.Tabs>
+      </PageHeader>
+    </PageLayout>
+  );
+}
+```
+
+**Available sub-components:** `PageHeader.Row`, `PageHeader.Title`, `PageHeader.Actions`, `PageHeader.Tabs`, `PageHeader.TabList`, `PageHeader.Tab`, `PageHeader.TabContent`
+
 ### Button Variant Guide
 
-| Use Case | Variant |
-|----------|---------|
-| Primary action (Save, Submit) | `variant="primary"` |
-| Secondary action (Cancel) | `variant="secondary"` |
-| Destructive (Delete, Remove) | `variant="destructive"` |
-| Subtle/icon buttons | `variant="ghost"` |
-| Bordered subtle | `variant="outline"` |
-| Link-style | `variant="link"` |
-| Icon-only | `variant="ghost" size="icon"` |
+| Use Case | Variant | Size |
+|----------|---------|------|
+| Primary action (Save, Submit) | `variant="primary"` | `size="md"` (default) |
+| Secondary action (Cancel) | `variant="secondary"` | |
+| Destructive (Delete, Remove) | `variant="destructive"` | |
+| Subtle/icon buttons | `variant="ghost"` | |
+| Muted icon (subtle, foreground on hover) | `variant="ghost-muted"` | |
+| Delete/remove icon (destructive hover) | `variant="ghost-destructive"` | |
+| Bordered subtle | `variant="outline"` | |
+| Link-style | `variant="link"` | |
+| Standard icon button (36px) | `variant="ghost"` | `size="icon"` |
+| Toolbar icon button (28px) | `variant="ghost"` | `size="icon-sm"` |
+| Inline icon button (24px) | `variant="ghost"` | `size="icon-xs"` |
+
+**Note:** `Button` defaults `type="button"`. The `icon-sm` and `icon-xs` sizes include `[&_svg]` selectors to size child icons automatically — no className needed on the icon element.
 
 ### Micro-Interaction Conventions
 

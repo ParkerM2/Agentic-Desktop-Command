@@ -7,7 +7,7 @@ import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
 
 import type { Task } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Code } from '@ui';
 
 import { useRestartFromCheckpoint } from '@features/tasks/api/useAgentMutations';
 import { useUpdateTaskStatus } from '@features/tasks/api/useTaskMutations';
@@ -55,37 +55,34 @@ export function ErrorPanel({ task }: ErrorPanelProps) {
 
       {/* Error message box */}
       <div className="bg-destructive/5 border-destructive/20 rounded-md border p-4">
-        <pre className="text-destructive whitespace-pre-wrap font-mono text-xs leading-relaxed">
+        <Code className="text-destructive whitespace-pre-wrap text-xs leading-relaxed">
           {errorMessage}
-        </pre>
+        </Code>
       </div>
 
       {/* Recovery actions */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
           disabled={restartFromCheckpoint.isPending}
           type="button"
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-            'bg-primary/10 text-primary hover:bg-primary/20',
-          )}
+          variant="ghost"
+          size="sm"
+          className="text-primary hover:bg-primary/10 hover:text-primary"
           onClick={handleRetry}
         >
           <RotateCcw className="h-3.5 w-3.5" />
           {restartFromCheckpoint.isPending ? 'Retrying...' : 'Retry from Checkpoint'}
-        </button>
-        <button
+        </Button>
+        <Button
           disabled={updateStatus.isPending}
           type="button"
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-            'bg-muted text-muted-foreground hover:bg-muted/80',
-          )}
+          variant="secondary"
+          size="sm"
           onClick={handleRequeue}
         >
           <RefreshCw className="h-3.5 w-3.5" />
           {updateStatus.isPending ? 'Requeueing...' : 'Requeue'}
-        </button>
+        </Button>
       </div>
     </div>
   );

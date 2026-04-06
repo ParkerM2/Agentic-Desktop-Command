@@ -259,6 +259,11 @@ export function createWorkspaceSessionManager(
     },
 
     dispose() {
+      for (const session of sessions.values()) {
+        if (session.agentSessionId) {
+          agentManager.stopSession(session.agentSessionId);
+        }
+      }
       sessions.clear();
     },
   };

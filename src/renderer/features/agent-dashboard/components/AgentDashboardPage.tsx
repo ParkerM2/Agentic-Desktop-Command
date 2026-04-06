@@ -20,7 +20,7 @@ import type {
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Separator } from '@ui';
+import { PageHeader, PageLayout } from '@ui';
 
 import { AgentLayoutGrid } from './AgentLayoutGrid';
 import { AgentLayoutSingle } from './AgentLayoutSingle';
@@ -121,21 +121,22 @@ export function AgentDashboardPage({
   // ─── Render ────────────────────────────────────────────
 
   return (
-    <div className={cn('flex h-full flex-col', className)}>
-      {/* Toolbar */}
-      <div className="shrink-0 px-4 py-3">
-        <AgentLayoutToolbar
-          filters={state.filters}
-          layoutMode={state.layoutMode}
-          projectOptions={projectOptions}
-          onFilterChange={handleFilterChange}
-          onLayoutChange={handleLayoutChange}
-        />
-      </div>
+    <PageLayout className={className}>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Agent Dashboard</PageHeader.Title>
+          <PageHeader.Actions>
+            <AgentLayoutToolbar
+              filters={state.filters}
+              layoutMode={state.layoutMode}
+              projectOptions={projectOptions}
+              onFilterChange={handleFilterChange}
+              onLayoutChange={handleLayoutChange}
+            />
+          </PageHeader.Actions>
+        </PageHeader.Row>
+      </PageHeader>
 
-      <Separator />
-
-      {/* Layout Content */}
       <div className="min-h-0 flex-1 p-4">
         {state.layoutMode === 'single' ? (
           <AgentLayoutSingle
@@ -165,6 +166,6 @@ export function AgentDashboardPage({
           onViewAgent={handleViewAgent}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }

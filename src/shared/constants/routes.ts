@@ -38,6 +38,7 @@ export const PROJECT_VIEWS = {
   GITHUB: 'github',
   CHANGELOG: 'changelog',
   INSIGHTS: 'insights',
+  TOOLS: 'tools',
   WORKFLOW: 'workflow',
   VISUALIZATION: 'visualization',
 } as const;
@@ -53,6 +54,7 @@ export const ROUTE_PATTERNS = {
   PROJECT_GITHUB: '/projects/$projectId/github',
   PROJECT_CHANGELOG: '/projects/$projectId/changelog',
   PROJECT_INSIGHTS: '/projects/$projectId/insights',
+  PROJECT_TOOLS: '/projects/$projectId/tools',
   PROJECT_WORKFLOW: '/projects/$projectId/workflow',
   PROJECT_VISUALIZATION: '/projects/$projectId/visualization',
 } as const;

@@ -39,8 +39,31 @@ export { EmptyState, emptyStateVariants } from './empty-state';
 export type { EmptyStateProps } from './empty-state';
 
 // Tier 1: Layout & Typography
-export { PageContent, PageHeader, PageLayout } from './page-layout';
-export type { PageContentProps, PageHeaderProps, PageLayoutProps } from './page-layout';
+export {
+  PageContent,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderRow,
+  PageHeaderTab,
+  PageHeaderTabContent,
+  PageHeaderTabList,
+  PageHeaderTabs,
+  PageHeaderTitle,
+  PageLayout,
+} from './page-layout';
+export { usePageHeader } from './page-header-context';
+export type {
+  PageContentProps,
+  PageHeaderActionsProps,
+  PageHeaderProps,
+  PageHeaderRowProps,
+  PageHeaderTabContentProps,
+  PageHeaderTabListProps,
+  PageHeaderTabProps,
+  PageHeaderTabsProps,
+  PageHeaderTitleProps,
+  PageLayoutProps,
+} from './page-layout';
 
 export { Code, Heading, headingVariants, Text, textVariants } from './typography';
 export type { CodeProps, HeadingProps, TextProps } from './typography';
@@ -118,6 +141,17 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './dropdown-menu';
+
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './table';
 
 // Tier 2: Radix Wrappers — Feedback & Navigation
 export {
@@ -228,3 +262,22 @@ export type {
   FormSwitchProps,
   FormTextareaProps,
 } from './form';
+
+// Tier 4: App-Specific Primitives
+export { StatusIndicator, statusIndicatorVariants } from './status-indicator';
+export type { StatusIndicatorProps } from './status-indicator';
+
+export { MetricCard, metricCardVariants } from './metric-card';
+export type { MetricCardProps, MetricCardTrend, TrendDirection } from './metric-card';
+
+export { SearchInput } from './search-input';
+export type { SearchInputProps } from './search-input';
+
+export { MetadataList, MetadataItem, metadataListVariants } from './metadata-list';
+export type { MetadataItemProps, MetadataListProps, MetadataVariant } from './metadata-list';
+
+export { SectionHeader, sectionHeaderVariants } from './section-header';
+export type { SectionHeaderProps } from './section-header';
+
+export { InlineAlert, inlineAlertVariants } from './inline-alert';
+export type { InlineAlertProps } from './inline-alert';

@@ -9,7 +9,7 @@ import type { Project } from '@shared/types';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
-import { Badge } from '@ui';
+import { Badge, Button } from '@ui';
 
 import { useGitStatus } from '../api/useGit';
 import {
@@ -69,13 +69,10 @@ export function ProjectList() {
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Projects</h1>
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-3 py-1.5 text-sm"
-          onClick={handleAdd}
-        >
+        <Button size="sm" onClick={handleAdd}>
           <Plus className="h-4 w-4" />
           Add Project
-        </button>
+        </Button>
       </div>
 
       {projects && projects.length > 0 ? (
@@ -103,15 +100,17 @@ export function ProjectList() {
                 </div>
                 <p className="text-muted-foreground text-xs">{project.path}</p>
               </div>
-              <button
-                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-md p-1.5"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeProject.mutate(project.id);
                 }}
               >
                 <Trash2 className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           ))}
         </div>

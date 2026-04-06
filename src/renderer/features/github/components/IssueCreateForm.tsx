@@ -4,9 +4,20 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { AlertTriangle, CircleDot, Loader2, X } from 'lucide-react';
+import { AlertTriangle, CircleDot, Loader2 } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  InlineAlert,
+  Input,
+  Label,
+  Textarea,
+} from '@ui';
 
 import { useCreateIssue } from '../api/useGitHub';
 import { useGitHubStore } from '../store';
@@ -72,71 +83,33 @@ export function IssueCreateForm() {
     );
   }
 
-  if (!issueCreateDialogOpen) {
-    return null;
-  }
-
-  const isFormValid = title.trim().length > 0 && owner.length > 0 && repo.length > 0;
+  const isFormValid = title.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-black/50"
-        role="button"
-        tabIndex={0}
-        onClick={handleClose}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') handleClose();
-        }}
-      />
-
-      {/* Modal */}
-      <div
-        aria-labelledby="create-issue-dialog-title"
-        className="bg-card border-border relative z-10 w-full max-w-lg rounded-lg border shadow-xl"
-        role="dialog"
-      >
-        {/* Header */}
-        <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <div className="flex items-center gap-3">
+    <Dialog open={issueCreateDialogOpen} onOpenChange={setIssueCreateDialogOpen}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
             <CircleDot className="text-primary h-5 w-5" />
-            <h2 className="text-foreground text-lg font-semibold" id="create-issue-dialog-title">
-              New Issue
-            </h2>
-            <span className="text-muted-foreground text-xs">
+            New Issue
+            <span className="text-muted-foreground text-xs font-normal">
               {owner}/{repo}
             </span>
-          </div>
-          <button
-            aria-label="Close dialog"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            type="button"
-            onClick={handleClose}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Body */}
-        <div className="space-y-4 px-6 py-4">
+        <div className="space-y-4">
           {/* Title field */}
           <div className="space-y-1.5">
-            <label className="text-foreground text-sm font-medium" htmlFor="create-issue-title">
+            <Label htmlFor="create-issue-title">
               Title <span className="text-destructive">*</span>
-            </label>
-            <input
+            </Label>
+            <Input
               aria-required="true"
               id="create-issue-title"
               placeholder="Issue title..."
               type="text"
               value={title}
-              className={cn(
-                'bg-card border-border text-foreground placeholder:text-muted-foreground',
-                'h-9 w-full rounded-md border px-3 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-              )}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && isFormValid && !createIssue.isPending) {
@@ -148,73 +121,44 @@ export function IssueCreateForm() {
 
           {/* Body field */}
           <div className="space-y-1.5">
-            <label className="text-foreground text-sm font-medium" htmlFor="create-issue-body">
-              Body
-            </label>
-            <textarea
+            <Label htmlFor="create-issue-body">Body</Label>
+            <Textarea
               id="create-issue-body"
               placeholder="Describe the issue..."
+              resize="none"
               rows={4}
               value={body}
-              className={cn(
-                'bg-card border-border text-foreground placeholder:text-muted-foreground',
-                'w-full resize-none rounded-md border px-3 py-2 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-              )}
               onChange={(e) => setBody(e.target.value)}
             />
           </div>
 
           {/* Labels field */}
           <div className="space-y-1.5">
-            <label className="text-foreground text-sm font-medium" htmlFor="create-issue-labels">
-              Labels
-            </label>
-            <input
+            <Label htmlFor="create-issue-labels">Labels</Label>
+            <Input
               id="create-issue-labels"
               placeholder="bug, enhancement, help wanted (comma-separated)"
               type="text"
               value={labelsInput}
-              className={cn(
-                'bg-card border-border text-foreground placeholder:text-muted-foreground',
-                'h-9 w-full rounded-md border px-3 text-sm',
-                'focus:border-primary focus:ring-ring focus:ring-1 focus:outline-none',
-              )}
               onChange={(e) => setLabelsInput(e.target.value)}
             />
           </div>
 
           {/* Error message */}
           {error === null ? null : (
-            <div className="rounded-md bg-red-500/10 p-3">
-              <div className="flex items-center gap-2 text-sm text-red-400">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                {error}
-              </div>
-            </div>
+            <InlineAlert icon={AlertTriangle} variant="error">
+              {error}
+            </InlineAlert>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
-          <button
-            type="button"
-            className={cn(
-              'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-              'transition-colors',
-            )}
-            onClick={handleClose}
-          >
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={handleClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={!isFormValid || createIssue.isPending}
             type="button"
-            className={cn(
-              'bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2',
-              'text-sm font-medium transition-opacity hover:opacity-90',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
             onClick={handleSubmit}
           >
             {createIssue.isPending ? (
@@ -228,9 +172,9 @@ export function IssueCreateForm() {
                 Create Issue
               </>
             )}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

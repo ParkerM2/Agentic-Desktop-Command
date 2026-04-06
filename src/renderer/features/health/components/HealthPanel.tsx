@@ -23,6 +23,8 @@ import type { ErrorEntry, ErrorSeverity } from '@shared/types';
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
+import { Badge, Button, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+
 import {
   useClearErrorLog,
   useErrorLog,
@@ -40,13 +42,6 @@ type SeverityFilter = 'all' | ErrorSeverity;
 
 // -- Constants --
 
-const SEVERITY_TABS: Array<{ label: string; value: SeverityFilter }> = [
-  { label: 'All', value: 'all' },
-  { label: 'Errors', value: 'error' },
-  { label: 'Warnings', value: 'warning' },
-  { label: 'Info', value: 'info' },
-];
-
 const SERVICE_STATUS_CONFIG = {
   healthy: { dotClass: 'bg-success', label: 'Healthy' },
   unhealthy: { dotClass: 'bg-destructive', label: 'Unhealthy' },
@@ -54,27 +49,6 @@ const SERVICE_STATUS_CONFIG = {
 } as const;
 
 // -- Sub-components --
-
-function SeverityBadge({ severity }: { severity: ErrorSeverity }) {
-  const config: Record<ErrorSeverity, { classes: string; label: string }> = {
-    error: { classes: 'bg-destructive/10 text-destructive', label: 'error' },
-    warning: { classes: 'bg-warning/10 text-warning', label: 'warning' },
-    info: { classes: 'bg-info/10 text-info', label: 'info' },
-  };
-
-  const { classes, label } = config[severity];
-
-  return (
-    <span
-      className={cn(
-        'inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium',
-        classes,
-      )}
-    >
-      {label}
-    </span>
-  );
-}
 
 function SeverityIcon({ severity }: { severity: ErrorSeverity }) {
   if (severity === 'error') {
@@ -96,6 +70,12 @@ function SeverityIcon({ severity }: { severity: ErrorSeverity }) {
   return (
     <Info aria-hidden="true" className="text-info h-3.5 w-3.5 shrink-0" />
   );
+}
+
+function getSeverityVariant(severity: ErrorSeverity): 'destructive' | 'warning' | 'info' {
+  if (severity === 'error') return 'destructive';
+  if (severity === 'warning') return 'warning';
+  return 'info';
 }
 
 function ErrorLogEntry({ entry }: { entry: ErrorEntry }) {
@@ -141,7 +121,9 @@ function ErrorLogEntry({ entry }: { entry: ErrorEntry }) {
         <SeverityIcon severity={entry.severity} />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <SeverityBadge severity={entry.severity} />
+            <Badge size="sm" variant={getSeverityVariant(entry.severity)}>
+              {entry.severity}
+            </Badge>
             <span className="text-muted-foreground text-[10px]">
               {entry.category}
             </span>
@@ -176,9 +158,10 @@ function ErrorLogEntry({ entry }: { entry: ErrorEntry }) {
               </pre>
             ) : null}
           </div>
-          <button
-            className="text-muted-foreground hover:text-foreground mt-2 flex items-center gap-1 text-[10px] transition-colors"
+          <Button
+            className="mt-2 h-auto p-0 text-[10px]"
             type="button"
+            variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
               handleCopy();
@@ -195,7 +178,7 @@ function ErrorLogEntry({ entry }: { entry: ErrorEntry }) {
                 Copy details
               </>
             )}
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>
@@ -294,14 +277,15 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
         <h3 className="text-foreground text-sm font-semibold">
           System Health
         </h3>
-        <button
+        <Button
           aria-label="Close health panel"
-          className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
+          size="icon"
           type="button"
+          variant="ghost"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Service Health Table */}
@@ -337,48 +321,65 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
       ) : null}
 
       {/* Severity Filter Tabs */}
-      <div className="border-border flex border-b">
-        {SEVERITY_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            className={cn(
-              'flex-1 px-3 py-2 text-xs font-medium transition-colors',
-              filter === tab.value
-                ? 'border-primary text-foreground border-b-2'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-            onClick={() => {
-              setFilter(tab.value);
-            }}
+      <Tabs
+        value={filter}
+        onValueChange={(v) => setFilter(v as SeverityFilter)}
+      >
+        <TabsList className="h-auto w-full rounded-none border-b bg-transparent p-0">
+          <TabsTrigger
+            className="flex-1 rounded-none border-b-2 border-transparent px-3 py-2 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="all"
           >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+            All
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex-1 rounded-none border-b-2 border-transparent px-3 py-2 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="error"
+          >
+            Errors
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex-1 rounded-none border-b-2 border-transparent px-3 py-2 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="warning"
+          >
+            Warnings
+          </TabsTrigger>
+          <TabsTrigger
+            className="flex-1 rounded-none border-b-2 border-transparent px-3 py-2 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+            value="info"
+          >
+            Info
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Error Log */}
-      <div className="max-h-96 overflow-y-auto">
-        {filteredEntries.length > 0 ? (
-          filteredEntries.map((entry) => (
-            <ErrorLogEntry key={entry.id} entry={entry} />
-          ))
-        ) : (
-          <div className="px-4 py-8 text-center">
-            <p className="text-muted-foreground text-xs">
-              {filter === 'all'
-                ? 'No errors recorded'
-                : `No ${filter} entries`}
-            </p>
-          </div>
-        )}
-      </div>
+        {/* Error Log — shared content area for all filter tabs */}
+        {(['all', 'error', 'warning', 'info'] as const).map((tab) => (
+          <TabsContent key={tab} className="mt-0" value={tab}>
+            <ScrollArea className="max-h-96">
+              {filteredEntries.length > 0 ? (
+                filteredEntries.map((entry) => (
+                  <ErrorLogEntry key={entry.id} entry={entry} />
+                ))
+              ) : (
+                <div className="px-4 py-8 text-center">
+                  <p className="text-muted-foreground text-xs">
+                    {filter === 'all'
+                      ? 'No errors recorded'
+                      : `No ${filter} entries`}
+                  </p>
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+        ))}
+      </Tabs>
 
       {/* Footer Actions */}
       <div className="border-border flex items-center justify-end gap-2 border-t px-4 py-2">
-        <button
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors"
+        <Button
+          className="h-auto gap-1 px-2 py-1 text-xs"
           type="button"
+          variant="ghost"
           onClick={handleCopyAll}
         >
           {copyAllDone ? (
@@ -392,17 +393,18 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
               Copy All
             </>
           )}
-        </button>
-        <button
-          className="text-muted-foreground hover:text-destructive flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors"
+        </Button>
+        <Button
+          className="text-muted-foreground hover:text-destructive h-auto gap-1 px-2 py-1 text-xs"
           type="button"
+          variant="ghost"
           onClick={() => {
             setConfirmClearOpen(true);
           }}
         >
           <Trash2 className="h-3 w-3" />
           Clear
-        </button>
+        </Button>
       </div>
 
       {/* Clear Confirmation */}

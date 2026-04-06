@@ -1,16 +1,14 @@
 /**
- * PrStatusCell — AG-Grid cell renderer for PR badge + CI status dot.
+ * PrStatusCell — cell renderer for PR badge + CI status dot.
  * Shows dash when no PR exists.
  */
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import type { CustomCellRendererProps } from 'ag-grid-react';
-
 type PrState = 'open' | 'closed' | 'merged';
-type CiStatus = 'pending' | 'success' | 'failure';
+type CiStatus = 'pending' | 'success' | 'failure' | 'passing' | 'failing' | 'none';
 
-interface PrData {
+export interface PrData {
   state?: PrState;
   ciStatus?: CiStatus;
   number?: number;
@@ -25,11 +23,14 @@ const PR_STATE_CLASSES: Record<PrState, string> = {
 const CI_STATUS_CLASSES: Record<CiStatus, string> = {
   pending: 'bg-warning',
   success: 'bg-success',
+  passing: 'bg-success',
   failure: 'bg-destructive',
+  failing: 'bg-destructive',
+  none: 'bg-muted-foreground',
 };
 
-export function PrStatusCell(props: CustomCellRendererProps) {
-  const data = props.value as PrData | null | undefined;
+export function PrStatusCell({ value }: { value: PrData | null | undefined }) {
+  const data = value;
 
   if (data?.state === undefined) {
     return <span className="text-muted-foreground text-sm">&mdash;</span>;

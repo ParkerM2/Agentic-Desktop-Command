@@ -11,6 +11,8 @@ import { AlertCircle, Mic, MicOff } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { useVoiceConfig } from '../api/useVoice';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
@@ -182,19 +184,18 @@ export function VoiceButton({
 
   return (
     <div className="relative inline-flex flex-col items-center gap-1">
-      <button
+      <Button
         aria-label={getAriaLabel(isListening, isPushToTalk)}
         aria-pressed={isListening}
         disabled={isDisabled}
         type="button"
+        size="icon"
         className={cn(
-          'relative flex items-center justify-center rounded-full transition-all duration-200',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+          'relative rounded-full transition-all duration-200',
           sizeClasses[size],
           isListening
-            ? 'bg-destructive text-destructive-foreground focus-visible:ring-destructive'
+            ? 'bg-destructive text-destructive-foreground hover:bg-destructive focus-visible:ring-destructive'
             : 'bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary',
-          isDisabled && 'cursor-not-allowed opacity-50',
           hasError && 'bg-destructive/20 text-destructive',
           className,
         )}
@@ -214,7 +215,7 @@ export function VoiceButton({
             className={cn('absolute inset-0 rounded-full', 'bg-destructive/30 animate-ping')}
           />
         ) : null}
-      </button>
+      </Button>
 
       {/* Interim transcript preview */}
       {showInterimTranscript ? (

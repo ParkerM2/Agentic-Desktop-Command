@@ -20,4 +20,5 @@ export { NotificationList } from './components/NotificationList';
 export { PrDetailModal } from './components/PrDetailModal';
 export { PrList } from './components/PrList';
 export { useGitHubEvents } from './hooks/useGitHubEvents';
+export { useGitHubProjectSync } from './hooks/useGitHubProjectSync';
 export { useGitHubStore } from './store';

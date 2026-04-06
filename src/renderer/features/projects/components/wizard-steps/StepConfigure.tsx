@@ -2,7 +2,16 @@
  * StepConfigure — Wizard step for project settings (name, workspace)
  */
 
-import { cn } from '@renderer/shared/lib/utils';
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@ui';
 
 interface WorkspaceOption {
   id: string;
@@ -40,58 +49,51 @@ export function StepConfigure({
     <div className="space-y-4">
       <h3 className="text-sm font-medium">Project Settings</h3>
       <div>
-        <label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-name">
+        <Label htmlFor="wizard-name" className="text-muted-foreground mb-1 block text-sm">
           Project Name
-        </label>
-        <input
+        </Label>
+        <Input
           id="wizard-name"
           placeholder="My Project"
           type="text"
           value={projectName}
-          className={cn(
-            'border-border bg-background w-full rounded-lg border px-3 py-2 text-sm',
-            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-          )}
           onChange={(e) => onNameChange(e.target.value)}
         />
       </div>
       <div>
-        <label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-description">
+        <Label htmlFor="wizard-description" className="text-muted-foreground mb-1 block text-sm">
           Description
-        </label>
-        <textarea
+        </Label>
+        <Textarea
           id="wizard-description"
           placeholder="Optional project description"
           rows={2}
           value={description}
-          className={cn(
-            'border-border bg-background w-full resize-none rounded-lg border px-3 py-2 text-sm',
-            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-          )}
+          className="resize-none"
           onChange={(e) => onDescriptionChange(e.target.value)}
         />
       </div>
       {workspaces.length > 0 ? (
         <div>
-          <label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-workspace">
+          <Label htmlFor="wizard-workspace" className="text-muted-foreground mb-1 block text-sm">
             Workspace
-          </label>
-          <select
-            id="wizard-workspace"
+          </Label>
+          <Select
             value={workspaceId ?? ''}
-            className={cn(
-              'border-border bg-background w-full rounded-lg border px-3 py-2 text-sm',
-              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-            )}
-            onChange={(e) => onWorkspaceChange(e.target.value || null)}
+            onValueChange={(val) => onWorkspaceChange(val.length > 0 ? val : null)}
           >
-            <option value="">No workspace</option>
-            {workspaces.map((ws) => (
-              <option key={ws.id} value={ws.id}>
-                {ws.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="wizard-workspace">
+              <SelectValue placeholder="No workspace" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No workspace</SelectItem>
+              {workspaces.map((ws) => (
+                <SelectItem key={ws.id} value={ws.id}>
+                  {ws.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       ) : null}
       <div className="text-muted-foreground text-sm">

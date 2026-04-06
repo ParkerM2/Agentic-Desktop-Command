@@ -1,5 +1,5 @@
 /**
- * ActionsCell — AG-Grid cell renderer with context-sensitive action buttons.
+ * ActionsCell — cell renderer with context-sensitive action buttons.
  * Actions vary by task status: planning/execution/kill/restart/delete.
  */
 
@@ -22,17 +22,16 @@ import { Button } from '@ui';
 
 import { useDeleteTask, useUpdateTaskStatus } from '../../api/useTaskMutations';
 
-import type { CustomCellRendererProps } from 'ag-grid-react';
-
-interface ActionsCellData {
+export interface ActionsCellData {
   id: string;
   status: string;
   title: string;
   description: string;
-  projectId: string;
+  projectId?: string;
 }
 
-interface ActionsCellProps extends CustomCellRendererProps {
+interface ActionsCellProps {
+  data: ActionsCellData;
   onStartPlanning?: (taskId: string) => void;
   onStartExecution?: (taskId: string) => void;
   onRequestChanges?: (taskId: string) => void;
@@ -43,15 +42,11 @@ interface ActionsCellProps extends CustomCellRendererProps {
 const ICON_SIZE = 'h-3.5 w-3.5';
 
 export function ActionsCell(props: ActionsCellProps) {
-  const data = props.data as ActionsCellData | undefined;
+  const { data } = props;
   const deleteTask = useDeleteTask();
   const updateStatus = useUpdateTaskStatus();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [killConfirmOpen, setKillConfirmOpen] = useState(false);
-
-  if (!data) {
-    return null;
-  }
 
   const { id: taskId, status } = data;
 

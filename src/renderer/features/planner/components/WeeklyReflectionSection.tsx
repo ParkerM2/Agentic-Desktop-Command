@@ -6,6 +6,8 @@ import { useState } from 'react';
 
 import { MessageSquare } from 'lucide-react';
 
+import { Button, Card, CardContent, Textarea } from '@ui';
+
 import { useUpdateWeeklyReflection } from '../api/useWeeklyReview';
 
 interface WeeklyReflectionSectionProps {
@@ -40,48 +42,53 @@ export function WeeklyReflectionSection({ weekStart, reflection }: WeeklyReflect
   }
 
   return (
-    <div className="bg-card border-border rounded-lg border p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-foreground text-sm font-semibold">Weekly Reflection</h2>
-        {isEditing ? null : (
-          <button
-            className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-xs transition-colors"
-            onClick={handleStartEdit}
-          >
-            <MessageSquare className="h-3 w-3" />
-            {reflection ? 'Edit' : 'Add'}
-          </button>
-        )}
-      </div>
-
-      {isEditing ? (
-        <div className="space-y-2">
-          <textarea
-            className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm outline-none focus:ring-1"
-            placeholder="Reflect on your week. What went well? What could be improved?"
-            rows={4}
-            value={reflectionText}
-            onChange={(e) => setReflectionText(e.target.value)}
-          />
-          <div className="flex justify-end gap-2">
-            <button
-              className="text-muted-foreground hover:text-foreground rounded-md px-3 py-1 text-xs transition-colors"
-              onClick={() => setIsEditing(false)}
+    <Card>
+      <CardContent className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-foreground text-sm font-semibold">Weekly Reflection</h2>
+          {isEditing ? null : (
+            <Button
+              className="text-muted-foreground hover:text-primary h-auto gap-1 p-0 text-xs"
+              size="sm"
+              variant="ghost"
+              onClick={handleStartEdit}
             >
-              Cancel
-            </button>
-            <button
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-3 py-1 text-xs font-medium transition-colors"
-              disabled={updateReflection.isPending}
-              onClick={handleSave}
-            >
-              {updateReflection.isPending ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+              <MessageSquare className="h-3 w-3" />
+              {reflection ? 'Edit' : 'Add'}
+            </Button>
+          )}
         </div>
-      ) : (
-        <ReflectionDisplay text={reflection} />
-      )}
-    </div>
+
+        {isEditing ? (
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Reflect on your week. What went well? What could be improved?"
+              resize="none"
+              rows={4}
+              value={reflectionText}
+              onChange={(e) => setReflectionText(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={updateReflection.isPending}
+                size="sm"
+                onClick={handleSave}
+              >
+                {updateReflection.isPending ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <ReflectionDisplay text={reflection} />
+        )}
+      </CardContent>
+    </Card>
   );
 }

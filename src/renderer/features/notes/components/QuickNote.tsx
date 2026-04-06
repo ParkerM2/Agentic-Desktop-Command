@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 import { Plus, Send, X } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Card, CardContent, CardHeader, Input, Textarea } from '@ui';
 
 import { useCreateNote } from '../api/useNotes';
 
@@ -41,64 +41,55 @@ export function QuickNote() {
 
   if (!isOpen) {
     return (
-      <button
+      <Button
         aria-label="Quick add note"
-        type="button"
-        className={cn(
-          'bg-primary text-primary-foreground fixed right-6 bottom-6 z-50 rounded-full p-3 shadow-lg transition-transform',
-          'hover:scale-105 active:scale-95',
-        )}
+        className="fixed right-6 bottom-6 z-50 rounded-full p-3 shadow-lg"
+        size="icon"
         onClick={() => setIsOpen(true)}
       >
         <Plus className="h-5 w-5" />
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="bg-card border-border fixed right-6 bottom-6 z-50 w-80 rounded-lg border shadow-xl">
-      {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-3 py-2">
+    <Card className="fixed right-6 bottom-6 z-50 w-80 shadow-xl">
+      <CardHeader className="flex flex-row items-center justify-between py-2">
         <span className="text-foreground text-sm font-medium">Quick Note</span>
-        <button
+        <Button
           aria-label="Close quick note"
-          className="text-muted-foreground hover:bg-accent rounded-md p-1 transition-colors"
-          type="button"
+          size="icon"
+          variant="ghost"
           onClick={() => setIsOpen(false)}
         >
           <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Form */}
-      <div className="space-y-2 p-3">
-        <input
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-2 pb-3">
+        <Input
           aria-label="Note title"
-          className="bg-muted text-foreground placeholder:text-muted-foreground w-full rounded-md px-3 py-2 text-sm outline-none"
           placeholder="Title..."
-          type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <textarea
+        <Textarea
           aria-label="Note content"
-          className="bg-muted text-foreground placeholder:text-muted-foreground h-24 w-full resize-none rounded-md px-3 py-2 text-sm outline-none"
+          className="h-24 resize-none"
           placeholder="Write a note... (Ctrl+Enter to save)"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+        <Button
+          className="w-full"
           disabled={title.trim().length === 0}
-          type="button"
           onClick={handleSubmit}
         >
           <Send className="h-4 w-4" />
           Save Note
-        </button>
-      </div>
-    </div>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

@@ -13,8 +13,9 @@
 
 1. **IPC**: Zod schema in `src/shared/ipc/<domain>/contract.ts` → thin handler in `src/main/ipc/handlers/` → barrel in `src/shared/ipc/index.ts`. No business logic in handlers.
 2. **Services**: Factory `createXService()` returning interface. `import type` for all interfaces.
-3. **UI**: Use `@ui` primitives — never raw `<button>` `<input>` `<label>`. Import from `@ui`.
-4. **Features**: `index.ts` barrel + `api/` + `components/` + `hooks/` + `store.ts`. Zustand = UI state only.
+3. **UI**: Use `@ui` primitives — never raw `<button>` `<input>` `<label>`. Use `Heading`/`Text` from `@ui` instead of raw `<h1>`/`<p>`/`<span>` for content text. Import from `@ui`.
+4. **Features**: `index.ts` barrel + `api/` + `components/` + `hooks/` + `store.ts`. Zustand = UI state only. Run `node scripts/scaffold-features.mjs` to audit compliance.
+4a. **Page Layout**: ALL pages use `PageHeader` compound component (`.Row`, `.Title`, `.Actions`, `.Tabs`, `.TabList`, `.Tab`, `.TabContent`). No legacy `title` prop. See `docs/patterns/PATTERNS.md`.
 5. **v2**: Do NOT build on `terminal-service` or xterm.js — deprecated. Use stream-json / JSONL.
 6. **Docs**: EVERY code change MUST update relevant docs. Non-negotiable.
 7. **Verify**: `npm run lint` + `npm run typecheck` + `npm run build` before marking done.

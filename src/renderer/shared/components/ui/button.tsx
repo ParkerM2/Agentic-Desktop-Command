@@ -16,6 +16,8 @@ const buttonVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-sm',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
+        'ghost-muted': 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        'ghost-destructive': 'text-muted-foreground hover:bg-destructive/10 hover:text-destructive',
         outline:
           'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
@@ -25,6 +27,8 @@ const buttonVariants = cva(
         md: 'h-9 px-4 py-2',
         lg: 'h-10 rounded-md px-6',
         icon: 'h-9 w-9',
+        'icon-sm': 'h-7 w-7 rounded-sm [&_svg]:h-3.5 [&_svg]:w-3.5',
+        'icon-xs': 'h-6 w-6 rounded-sm p-1 [&_svg]:h-3.5 [&_svg]:w-3.5',
       },
     },
     defaultVariants: {
@@ -42,12 +46,13 @@ interface ButtonProps
   asChild?: boolean;
 }
 
-function Button({ className, variant, size, asChild = false, ...props }: ButtonProps) {
+function Button({ className, variant, size, asChild = false, type = 'button', ...props }: ButtonProps) {
   const Comp = asChild ? Slot : 'button';
   return (
     <Comp
       className={cn(buttonVariants({ variant, size, className }))}
       data-slot="button"
+      type={asChild ? undefined : type}
       {...props}
     />
   );

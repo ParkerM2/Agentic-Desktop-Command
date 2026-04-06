@@ -9,16 +9,20 @@ import { Hash, MessageSquare, Search, Settings, UserCircle } from 'lucide-react'
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, StatusIndicator } from '@ui';
+
 import { useCommunicationsStore } from '../store';
 
 import { SlackActionModal } from './SlackActionModal';
 
 import type { SlackActionType } from './SlackActionModal';
 
-const STATUS_COLORS: Record<string, string> = {
-  connected: 'bg-success',
-  disconnected: 'bg-muted-foreground',
-  error: 'bg-destructive',
+type ServiceStatus = 'connected' | 'disconnected' | 'error';
+
+const STATUS_VARIANT: Record<ServiceStatus, 'success' | 'neutral' | 'error'> = {
+  connected: 'success',
+  disconnected: 'neutral',
+  error: 'error',
 };
 
 interface QuickAction {
@@ -81,19 +85,23 @@ export function SlackPanel() {
       <div className="bg-card border-border rounded-lg border p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h3 className="text-foreground text-sm font-semibold">Slack</h3>
-            <span className={cn('inline-block h-2 w-2 rounded-full', STATUS_COLORS[slackStatus])} />
-            <span className="text-muted-foreground text-xs capitalize">{slackStatus}</span>
+            <span className="text-foreground text-sm font-semibold">Slack</span>
+            <StatusIndicator
+              label={slackStatus}
+              size="sm"
+              variant={STATUS_VARIANT[slackStatus]}
+            />
           </div>
           {slackStatus === 'disconnected' ? (
-            <button
-              className="text-primary hover:text-primary/80 flex items-center gap-1 text-xs font-medium transition-colors"
+            <Button
+              size="sm"
               type="button"
+              variant="ghost"
               onClick={handleConnect}
             >
               <Settings className="h-3 w-3" />
               Connect
-            </button>
+            </Button>
           ) : null}
         </div>
 

@@ -2,9 +2,11 @@
  * AgentDashboard — Shows running orchestrator agent sessions
  */
 
-import { Bot, Square, Loader2, Clock } from 'lucide-react';
+import { Bot, Clock, Loader2, Square } from 'lucide-react';
 
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
+
+import { Button, EmptyState, PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useAllAgents, useStopAgent } from '../api/useAgents';
 import { useAgentEvents } from '../hooks/useAgentEvents';
@@ -40,55 +42,64 @@ export function AgentDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-6 text-xl font-bold">Agents</h1>
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Agents</PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
 
-      {sessions && sessions.length > 0 ? (
-        <div className="space-y-3">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="border-border flex items-center justify-between rounded-lg border p-4"
-            >
-              <div className="flex items-center gap-3">
-                <Bot className={cn('h-5 w-5', statusColors[session.status] ?? 'text-zinc-400')} />
-                <div>
-                  <p className="text-sm font-medium">
-                    {session.phase === 'planning' ? 'Planning' : 'Executing'} — {session.taskId.slice(0, 12)}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {statusLabels[session.status] ?? session.status}
-                    {session.pid > 0 ? ` · PID ${String(session.pid)}` : ''}
-                  </p>
+      <PageContent>
+        {sessions && sessions.length > 0 ? (
+          <div className="space-y-3">
+            {sessions.map((session) => (
+              <div
+                key={session.id}
+                className="border-border flex items-center justify-between rounded-lg border p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <Bot className={cn('h-5 w-5', statusColors[session.status] ?? 'text-zinc-400')} />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {session.phase === 'planning' ? 'Planning' : 'Executing'} — {session.taskId.slice(0, 12)}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      {statusLabels[session.status] ?? session.status}
+                      {session.pid > 0 ? ` · PID ${String(session.pid)}` : ''}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground flex items-center gap-1 text-xs">
+                    <Clock className="h-3 w-3" />
+                    {formatRelativeTime(session.spawnedAt)}
+                  </span>
+
+                  {(session.status === 'active' || session.status === 'spawning') ? (
+                    <Button
+                      className="h-8 w-8 p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      size="icon"
+                      title="Stop"
+                      variant="ghost"
+                      onClick={() => stopAgent.mutate(session.id)}
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : null}
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                  <Clock className="h-3 w-3" />
-                  {formatRelativeTime(session.spawnedAt)}
-                </span>
-
-                {(session.status === 'active' || session.status === 'spawning') && (
-                  <button
-                    className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1.5"
-                    title="Stop"
-                    onClick={() => stopAgent.mutate(session.id)}
-                  >
-                    <Square className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="border-border rounded-lg border border-dashed p-12 text-center">
-          <Bot className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-          <p className="text-lg font-medium">No agents running</p>
-          <p className="text-muted-foreground mt-1 text-sm">Execute a task to start an agent</p>
-        </div>
-      )}
-    </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            description="Execute a task to start an agent"
+            icon={Bot}
+            size="lg"
+            title="No agents running"
+          />
+        )}
+      </PageContent>
+    </PageLayout>
   );
 }

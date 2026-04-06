@@ -7,6 +7,8 @@ import { AlertCircle, GitBranch, Layers, Zap } from 'lucide-react';
 
 import type { Suggestion, SuggestionType } from '@shared/types';
 
+import { Button, Card, CardContent, Heading } from '@ui';
+
 const SUGGESTION_ICONS: Record<SuggestionType, React.ElementType> = {
   stale_project: GitBranch,
   parallel_tasks: Layers,
@@ -50,27 +52,31 @@ export function SuggestionCard({ suggestion }: SuggestionCardProps) {
   }
 
   return (
-    <div className="border-border bg-card rounded-lg border p-4">
-      <div className="flex items-start gap-3">
-        <div className={`mt-0.5 ${iconColor}`}>
-          <IconComponent className="h-5 w-5" />
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <div className={`mt-0.5 ${iconColor}`}>
+            <IconComponent className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <Heading as="h4" className="text-sm">{suggestion.title}</Heading>
+            <p className="text-muted-foreground mt-1 text-sm">{suggestion.description}</p>
+            {suggestion.action === undefined ? null : (
+              <Button
+                className="mt-3 gap-1"
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={handleAction}
+                onKeyDown={handleKeyDown}
+              >
+                <Zap className="h-3 w-3" />
+                {suggestion.action.label}
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex-1">
-          <h4 className="text-foreground text-sm font-medium">{suggestion.title}</h4>
-          <p className="text-muted-foreground mt-1 text-sm">{suggestion.description}</p>
-          {suggestion.action === undefined ? null : (
-            <button
-              className="border-border bg-card text-foreground hover:bg-muted mt-3 inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
-              type="button"
-              onClick={handleAction}
-              onKeyDown={handleKeyDown}
-            >
-              <Zap className="h-3 w-3" />
-              {suggestion.action.label}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

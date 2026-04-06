@@ -251,42 +251,31 @@ export function RoadmapPage() {
       : 0;
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="mx-auto max-w-3xl">
-        {/* Header */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <Map className="text-primary h-6 w-6" />
-              <h1 className="text-2xl font-bold">Roadmap</h1>
-            </div>
-            <p className="text-muted-foreground mt-1 text-sm">Project milestones and progress</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowGenerate(!showGenerate);
-                setShowForm(false);
-              }}
-            >
-              <Sparkles className="h-4 w-4" />
-              Generate with AI
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setShowForm(!showForm);
-                setShowGenerate(false);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              New Milestone
-            </Button>
-          </div>
-        </div>
-
+    <div className="space-y-6 p-6">
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setShowGenerate(!showGenerate);
+            setShowForm(false);
+          }}
+        >
+          <Sparkles className="h-4 w-4" />
+          Generate with AI
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            setShowForm(!showForm);
+            setShowGenerate(false);
+          }}
+        >
+          <Plus className="h-4 w-4" />
+          New Milestone
+        </Button>
+      </div>
         {/* Generate with AI Panel */}
         {showGenerate ? (
           <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
@@ -421,7 +410,6 @@ export function RoadmapPage() {
             </p>
           </div>
         ) : null}
-      </div>
     </div>
   );
 }

@@ -501,12 +501,7 @@ export function createServiceRegistry(
   // ─── Assistant service ───────────────────────────────────────
   const assistantService = createAssistantService({
     getWindow: getMainWindow,
-    getApiKey: () => settingsService.getSettings().anthropicApiKey,
-    notesService,
-    milestonesService: milestonesService ?? null,
-    ideasService: ideasService ?? null,
-    plannerService,
-    projectService,
+    agentManager: agentManagerService,
   });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;

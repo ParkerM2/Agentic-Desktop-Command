@@ -4,6 +4,7 @@
 
 // Components
 export { AssistantWidget } from './components/AssistantWidget';
+export { SidebarAssistantButton } from './components/SidebarAssistantButton';
 
 // Store
 export { useAssistantStore } from './store';

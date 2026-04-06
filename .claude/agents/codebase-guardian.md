@@ -217,11 +217,15 @@ VIOLATIONS — search for these in src/renderer/:
   <textarea  — Must use <Textarea> from @ui
   <label     — Must use <Label> from @ui
   <select    — Must use <Select> from @ui
+  <h1>-<h4>  — Must use <Heading> from @ui (except inside @ui primitives)
+  <p>        — Must use <Text> from @ui (except inside @ui primitives)
+  PageHeader title= — DEPRECATED. Must use compositional <PageHeader><PageHeader.Row>...
 
 EXCEPTIONS (allowed):
   - Inside the design system itself (src/renderer/shared/components/ui/)
   - Hidden file inputs for upload triggers
-  - AG-Grid cell renderers that need raw elements for grid API compatibility
+  - TanStack Table inline cell render functions in column defs
+  - <span> inside buttons/nav items (inline text, not typography)
 ```
 
 **Check:** Grep for raw HTML form elements in `src/renderer/features/` and `src/renderer/app/`. Flag any that should use `@ui` primitives.

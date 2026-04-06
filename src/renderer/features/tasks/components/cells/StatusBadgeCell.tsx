@@ -1,5 +1,5 @@
 /**
- * StatusBadgeCell — AG-Grid cell renderer for task status with colored badge.
+ * StatusBadgeCell — cell renderer for task status with colored badge.
  * Shows a pulsing dot for active statuses (planning, running).
  * Shows watchdog alert overlay when an active alert exists for the task.
  */
@@ -13,8 +13,6 @@ import { useUpdateTaskStatus } from '../../api/useTaskMutations';
 import { useTaskUI } from '../../store';
 
 import { WatchdogDropdown } from './WatchdogDropdown';
-
-import type { CustomCellRendererProps } from 'ag-grid-react';
 
 type WatchdogAlertPayload = EventPayload<'event:agent.orchestrator.watchdogAlert'>;
 
@@ -51,12 +49,17 @@ const FALLBACK_CONFIG: StatusConfig = {
   className: 'bg-muted text-muted-foreground border-border',
 };
 
-export function StatusBadgeCell(props: CustomCellRendererProps) {
-  const status = (props.value as string | undefined) ?? 'backlog';
+export function StatusBadgeCell({
+  value,
+  data,
+}: {
+  value: string;
+  data?: StatusBadgeRowData;
+}) {
+  const status = value;
   const config = STATUS_CONFIG[status] ?? FALLBACK_CONFIG;
-  const rowData = props.data as StatusBadgeRowData | undefined;
-  const alert = rowData?.watchdogAlert ?? null;
-  const taskId = rowData?.id ?? '';
+  const alert = data?.watchdogAlert ?? null;
+  const taskId = data?.id ?? '';
 
   const updateStatus = useUpdateTaskStatus();
   const toggleRowExpansion = useTaskUI((s) => s.toggleRowExpansion);

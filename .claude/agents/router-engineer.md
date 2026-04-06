@@ -24,16 +24,16 @@ Before modifying routing, read:
    - `communication.routes.ts` — Alerts, briefing
    - `settings.routes.ts` — Settings page
    - `misc.routes.ts` — Insights, changelog, health, screen, fitness
-6. `src/renderer/app/layouts/sidebar-layouts/shared-nav.ts` — Shared nav items (personalItems, developmentItems)
-7. `src/renderer/app/layouts/sidebar-layouts/SidebarLayout*.tsx` — 16 sidebar layout variants
+6. `src/renderer/app/layouts/sidebar-layouts/shared-nav.ts` — Shared nav items (personalItems, developmentItems). Settings/AddProject/HubIndicator removed from sidebar.
+7. `src/renderer/app/layouts/sidebar-layouts/SidebarLayout*.tsx` — 16 sidebar layout variants (all use shared-nav.ts)
 8. `src/renderer/app/layouts/LayoutWrapper.tsx` — Switches between sidebar layouts
 9. `src/renderer/app/layouts/ContentHeader.tsx` — SidebarTrigger + Breadcrumbs
 10. `src/renderer/app/layouts/AppBreadcrumbs.tsx` — Breadcrumb trail from route staticData
-7. `src/renderer/app/layouts/ProjectTabBar.tsx` — Project tab bar
-8. `src/renderer/app/layouts/RootLayout.tsx` — Root layout wrapper
-9. `src/renderer/app/layouts/TopBar.tsx` — Top bar with CommandBar trigger
-10. `src/renderer/app/layouts/CommandBar.tsx` — Global command palette (Cmd+K)
-11. `src/renderer/app/layouts/UserMenu.tsx` — Avatar + logout dropdown
+11. `src/renderer/app/layouts/ProjectTabBar.tsx` — Project tab bar
+12. `src/renderer/app/layouts/RootLayout.tsx` — Root layout wrapper
+13. `src/renderer/app/layouts/TitleBar.tsx` — Title bar with Settings cog, screenshot, health, hub status
+14. `src/renderer/app/layouts/CommandBar.tsx` — Global command palette (Cmd+K)
+15. `src/renderer/app/layouts/UserMenu.tsx` — Avatar + name + dropdown (renders in sidebar header)
 
 ## Scope — Files You Own
 
@@ -129,8 +129,8 @@ const routeTree = rootRoute.addChildren([
 
 import { Calendar } from 'lucide-react';
 
-// Add to navItems array (for project views) or as standalone button (for top-level)
-// For top-level routes, add a new button like the Dashboard button
+// Add to personalItems (top-level) or developmentItems (project-scoped) in shared-nav.ts
+// Nav items: Home, My Work, Fitness, Productivity (personal) | Workspace, Tasks, Terminals, Visual Map, Tools (development)
 ```
 
 ## Adding a New Project View

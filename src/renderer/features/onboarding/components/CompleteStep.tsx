@@ -6,14 +6,9 @@
 
 import { Check, Loader2, Rocket } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Card, CardContent } from '@ui';
 
 import { useUpdateSettings } from '@features/settings';
-
-// ── Constants ───────────────────────────────────────────────
-
-const BUTTON_BASE =
-  'inline-flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-medium transition-colors';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -51,33 +46,30 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
       </p>
 
       {/* Quick tips */}
-      <div className="bg-card border-border mb-8 w-full max-w-md rounded-lg border p-6 text-left">
-        <h3 className="text-foreground mb-4 font-semibold">Quick Tips</h3>
-        <ul className="text-muted-foreground space-y-3 text-sm">
-          <li className="flex gap-3">
-            <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />
-            <span>Add a project folder to get started with task management.</span>
-          </li>
-          <li className="flex gap-3">
-            <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />
-            <span>Create tasks and let Claude agents help you build features.</span>
-          </li>
-          <li className="flex gap-3">
-            <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />
-            <span>Check Settings anytime to configure integrations and preferences.</span>
-          </li>
-        </ul>
-      </div>
+      <Card className="mb-8 w-full max-w-md text-left">
+        <CardContent className="p-6">
+          <h3 className="text-foreground mb-4 font-semibold">Quick Tips</h3>
+          <ul className="text-muted-foreground space-y-3 text-sm">
+            <li className="flex gap-3">
+              <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />
+              <span>Add a project folder to get started with task management.</span>
+            </li>
+            <li className="flex gap-3">
+              <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />
+              <span>Create tasks and let Claude agents help you build features.</span>
+            </li>
+            <li className="flex gap-3">
+              <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />
+              <span>Check Settings anytime to configure integrations and preferences.</span>
+            </li>
+          </ul>
+        </CardContent>
+      </Card>
 
       {/* CTA */}
-      <button
+      <Button
         disabled={updateSettings.isPending}
-        type="button"
-        className={cn(
-          BUTTON_BASE,
-          'bg-primary text-primary-foreground hover:bg-primary/90',
-          'disabled:cursor-not-allowed disabled:opacity-50',
-        )}
+        size="lg"
         onClick={handleFinish}
       >
         {updateSettings.isPending ? (
@@ -88,7 +80,7 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
             Launch ADC
           </>
         )}
-      </button>
+      </Button>
     </div>
   );
 }

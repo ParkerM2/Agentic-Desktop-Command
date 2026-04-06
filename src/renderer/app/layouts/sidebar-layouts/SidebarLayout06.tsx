@@ -1,17 +1,18 @@
 /** SidebarLayout06 — Grouped navigation with action buttons */
 
 import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { Settings } from 'lucide-react';
 
 import { projectViewPath } from '@shared/constants';
 
-import { HubConnectionIndicator } from '@renderer/shared/components/HubConnectionIndicator';
 import { useLayoutStore } from '@renderer/shared/stores';
+
+import { SidebarAssistantButton } from '@features/assistant';
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -25,11 +26,10 @@ import {
 import { UserMenu } from '../UserMenu';
 
 import {
-  addProjectItem,
   developmentItems,
   personalItems,
-  settingsItem,
 } from './shared-nav';
+
 
 export function SidebarLayout06() {
   const navigate = useNavigate();
@@ -62,6 +62,10 @@ export function SidebarLayout06() {
 
   return (
     <Sidebar collapsible="offcanvas">
+      <SidebarHeader>
+        <UserMenu collapsed={!open} />
+      </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Development</SidebarGroupLabel>
@@ -69,12 +73,7 @@ export function SidebarLayout06() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={isPersonalActive(addProjectItem.path)}
-                  onClick={() => handlePersonalNav(addProjectItem.path)}
-                >
-                  <addProjectItem.icon />
-                  <span>{addProjectItem.label}</span>
-                </SidebarMenuButton>
+                 />
               </SidebarMenuItem>
               {developmentItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
@@ -113,19 +112,7 @@ export function SidebarLayout06() {
       </SidebarContent>
 
       <SidebarFooter>
-        <UserMenu collapsed={!open} />
-        <HubConnectionIndicator collapsed={!open} />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={isPersonalActive(settingsItem.path)}
-              onClick={() => handlePersonalNav(settingsItem.path)}
-            >
-              <Settings />
-              <span>{settingsItem.label}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarAssistantButton />
       </SidebarFooter>
 
       <SidebarRail />

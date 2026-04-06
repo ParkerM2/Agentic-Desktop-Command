@@ -22,11 +22,11 @@ import {
 import { cn } from '@renderer/shared/lib/utils';
 import { useThemeStore } from '@renderer/shared/stores/theme-store';
 
+import { Button, ScrollArea } from '@ui';
+
 import { useFileDiff, useMergeConflicts } from '../api/useMerge';
 
 import { FileDiffViewer } from './FileDiffViewer';
-
-const TRANSITION_COLORS = 'transition-colors';
 
 interface ConflictResolverProps {
   repoPath: string;
@@ -93,7 +93,7 @@ function ConflictFileDiff({
   if (!data) return null;
 
   return (
-    <div className="max-h-64 overflow-auto">
+    <ScrollArea className="max-h-64">
       <FileDiffViewer
         diffText={data.diff}
         fileName={data.filePath}
@@ -101,7 +101,7 @@ function ConflictFileDiff({
         lang={getFileLang(data.filePath)}
         viewMode={DiffModeEnum.Unified}
       />
-    </div>
+    </ScrollArea>
   );
 }
 
@@ -215,9 +215,11 @@ export function ConflictResolver({
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <button
+                  <Button
                     aria-label={isExpanded ? 'Collapse diff' : 'Expand diff'}
-                    className="text-muted-foreground hover:text-foreground p-0.5 transition-colors"
+                    className="h-auto p-0.5"
+                    size="icon"
+                    variant="ghost"
                     onClick={() => handleToggleExpand(file)}
                   >
                     <ChevronRight
@@ -226,7 +228,7 @@ export function ConflictResolver({
                         isExpanded ? 'rotate-90' : '',
                       )}
                     />
-                  </button>
+                  </Button>
                   {isResolved ? (
                     <Check className="h-3.5 w-3.5 text-emerald-400" />
                   ) : (
@@ -247,49 +249,42 @@ export function ConflictResolver({
                     <span className="text-xs text-emerald-400">Resolved</span>
                   ) : (
                     <>
-                      <button
-                        className={cn(
-                          'flex items-center gap-1 rounded px-2 py-0.5 text-xs',
-                          'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                          TRANSITION_COLORS,
-                        )}
+                      <Button
+                        className="h-auto gap-1 px-2 py-0.5 text-xs"
+                        size="sm"
+                        variant="ghost"
                         onClick={() => handleAcceptOurs(file)}
                       >
                         <GitBranch className="h-3 w-3" />
                         Accept Ours
-                      </button>
-                      <button
-                        className={cn(
-                          'flex items-center gap-1 rounded px-2 py-0.5 text-xs',
-                          'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                          TRANSITION_COLORS,
-                        )}
+                      </Button>
+                      <Button
+                        className="h-auto gap-1 px-2 py-0.5 text-xs"
+                        size="sm"
+                        variant="ghost"
                         onClick={() => handleAcceptTheirs(file)}
                       >
                         <GitBranch className="h-3 w-3" />
                         Accept Theirs
-                      </button>
-                      <button
-                        className={cn(
-                          'text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs',
-                          TRANSITION_COLORS,
-                        )}
+                      </Button>
+                      <Button
+                        className="h-auto gap-1 px-2 py-0.5 text-xs"
+                        size="sm"
+                        variant="ghost"
                         onClick={() => handleOpenInEditor(file)}
                       >
                         <ExternalLink className="h-3 w-3" />
                         Open
-                      </button>
-                      <button
-                        className={cn(
-                          'flex items-center gap-1 rounded px-2 py-0.5 text-xs',
-                          'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30',
-                          TRANSITION_COLORS,
-                        )}
+                      </Button>
+                      <Button
+                        className="h-auto gap-1 rounded px-2 py-0.5 text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                        size="sm"
+                        variant="ghost"
                         onClick={() => handleMarkResolved(file)}
                       >
                         <Check className="h-3 w-3" />
                         Mark Resolved
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>

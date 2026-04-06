@@ -9,50 +9,29 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronDown, ChevronUp, Send, X } from 'lucide-react';
 
 import type { WorkspaceSession } from '@shared/ipc/workspace';
-import type {
-  AgentChatItem,
-  AgentChatMessage,
-  ContentBlock,
-} from '@shared/types/agent-dashboard';
-
-import { cn } from '@renderer/shared/lib/utils';
+import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
 import { AgentChatPanel } from '@features/agent-dashboard';
 
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
+import { StatusIndicator } from '@ui/status-indicator';
 import { Text } from '@ui/typography';
 
 import { useStopTeamLead, useWorkspaceSend } from '../api/useWorkspace';
+import { messagesToChatItems } from '../lib/chat-utils';
 import { useWorkspaceStore } from '../store';
 
 interface TeamLeadPanelProps {
   session: WorkspaceSession;
 }
 
-function getStatusColor(status: string): string {
-  if (status === 'live') return 'bg-green-500';
-  if (status === 'restarting' || status === 'starting') return 'animate-pulse bg-yellow-500';
-  return 'bg-red-500';
-}
-
-function contentBlocksToString(blocks: ContentBlock[]): string {
-  return blocks
-    .flatMap((b) => (b.type === 'text' ? [b.text] : []))
-    .join('');
-}
-
-function messagesToChatItems(messages: AgentChatMessage[]): AgentChatItem[] {
-  return messages.map((msg) => ({
-    kind: 'text' as const,
-    message: {
-      id: msg.id,
-      role: msg.role,
-      content: contentBlocksToString(msg.content),
-      timestamp: msg.timestamp,
-      isStreaming: msg.isStreaming,
-    },
-  }));
+function sessionStatusVariant(
+  status: string,
+): 'success' | 'warning' | 'error' | 'neutral' {
+  if (status === 'live') return 'success';
+  if (status === 'restarting' || status === 'starting') return 'warning';
+  return 'error';
 }
 
 export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
@@ -94,13 +73,11 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
     stop.mutate({ index });
   }
 
-  const statusColor = getStatusColor(status);
-
   return (
     <div className="border-border rounded-lg border">
       {/* Card header */}
       <div className="flex items-center gap-2 px-3 py-2">
-        <span className={cn('h-2 w-2 rounded-full', statusColor)} />
+        <StatusIndicator size="sm" variant={sessionStatusVariant(status)} />
         <Text className="font-medium" size="sm">{label}</Text>
         {status === 'restarting' ? (
           <Text size="sm" variant="muted">restarting…</Text>

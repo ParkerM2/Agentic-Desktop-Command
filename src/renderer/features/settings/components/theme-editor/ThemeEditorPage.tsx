@@ -25,6 +25,8 @@ import {
   DialogTitle,
   Input,
   Label,
+  PageHeader,
+  PageLayout,
   ScrollArea,
   Separator,
 } from '@ui';
@@ -158,7 +160,14 @@ export function ThemeEditorPage() {
 
   // ── Render ──────────────────────────────────────────────
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Theme Editor</PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
+
+      <div className="flex flex-1 flex-col overflow-hidden">
       {/* Top bar */}
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-3">
@@ -277,6 +286,7 @@ export function ThemeEditorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageLayout>
   );
 }

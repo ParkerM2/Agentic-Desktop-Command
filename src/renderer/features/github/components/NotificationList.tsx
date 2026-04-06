@@ -6,6 +6,8 @@ import { Bell, BellDot, CircleDot, GitPullRequest } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Card, EmptyState } from '@ui';
+
 import type { GitHubNotification } from '../api/useGitHub';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -52,10 +54,11 @@ interface NotificationListProps {
 export function NotificationList({ notifications }: NotificationListProps) {
   if (notifications.length === 0) {
     return (
-      <div className="text-muted-foreground flex flex-col items-center justify-center gap-2 py-12">
-        <Bell className="h-8 w-8 opacity-50" />
-        <p className="text-sm">No notifications</p>
-      </div>
+      <EmptyState
+        description="No notifications"
+        icon={Bell}
+        title="All caught up"
+      />
     );
   }
 
@@ -71,45 +74,47 @@ export function NotificationList({ notifications }: NotificationListProps) {
           </span>
         </div>
       ) : null}
-      <div className="border-border bg-card divide-border divide-y rounded-lg border">
-        {notifications.map((notification) => {
-          const Icon = getNotificationIcon(notification.type);
+      <Card>
+        <div className="divide-border divide-y">
+          {notifications.map((notification) => {
+            const Icon = getNotificationIcon(notification.type);
 
-          return (
-            <div
-              key={notification.id}
-              className={cn('flex items-start gap-3 p-4', notification.unread && 'bg-accent/50')}
-            >
-              <Icon
-                className={cn(
-                  'mt-0.5 h-4 w-4 shrink-0',
-                  notification.unread ? 'text-primary' : 'text-muted-foreground',
-                )}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'truncate text-sm',
-                      notification.unread ? 'font-medium' : 'text-muted-foreground',
-                    )}
-                  >
-                    {notification.title}
-                  </span>
+            return (
+              <div
+                key={notification.id}
+                className={cn('flex items-start gap-3 p-4', notification.unread && 'bg-accent/50')}
+              >
+                <Icon
+                  className={cn(
+                    'mt-0.5 h-4 w-4 shrink-0',
+                    notification.unread ? 'text-primary' : 'text-muted-foreground',
+                  )}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'truncate text-sm',
+                        notification.unread ? 'font-medium' : 'text-muted-foreground',
+                      )}
+                    >
+                      {notification.title}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground mt-1 flex items-center gap-3 text-xs">
+                    <span>{notification.repoName}</span>
+                    <span>{formatReason(notification.reason)}</span>
+                    <span>{formatRelativeTime(notification.updatedAt)}</span>
+                  </div>
                 </div>
-                <div className="text-muted-foreground mt-1 flex items-center gap-3 text-xs">
-                  <span>{notification.repoName}</span>
-                  <span>{formatReason(notification.reason)}</span>
-                  <span>{formatRelativeTime(notification.updatedAt)}</span>
-                </div>
+                {notification.unread ? (
+                  <div className="bg-primary mt-1.5 h-2 w-2 shrink-0 rounded-full" />
+                ) : null}
               </div>
-              {notification.unread ? (
-                <div className="bg-primary mt-1.5 h-2 w-2 shrink-0 rounded-full" />
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }

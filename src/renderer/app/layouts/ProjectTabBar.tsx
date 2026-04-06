@@ -6,18 +6,20 @@
  */
 
 import { useNavigate } from '@tanstack/react-router';
-import { X, Plus, FolderOpen } from 'lucide-react';
+import { FolderOpen, Plus, X } from 'lucide-react';
 
-import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
+import { PROJECT_VIEWS, ROUTES, projectViewPath } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
+
+import { Button } from '@ui';
 
 import { useProjects } from '@features/projects';
 
 export function ProjectTabBar() {
   const navigate = useNavigate();
-  const { activeProjectId, projectTabOrder, setActiveProject, removeProjectTab } = useLayoutStore();
+  const { activeProjectId, projectTabOrder, removeProjectTab, setActiveProject } = useLayoutStore();
   const { data: projects } = useProjects();
 
   const openProjects = projectTabOrder
@@ -29,7 +31,7 @@ export function ProjectTabBar() {
     void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
   }
 
-  function handleCloseTab(e: React.MouseEvent | React.KeyboardEvent, projectId: string) {
+  function handleCloseTab(e: React.MouseEvent, projectId: string) {
     e.stopPropagation();
     removeProjectTab(projectId);
   }
@@ -56,17 +58,15 @@ export function ProjectTabBar() {
           >
             <FolderOpen className="h-3.5 w-3.5 shrink-0" />
             <span className="max-w-32 truncate">{project.name}</span>
-            <span
-              className="hover:bg-muted ml-1 rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-              role="button"
-              tabIndex={0}
+            <Button
+              aria-label={`Close ${project.name} tab`}
+              className="ml-1 h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
+              size="icon"
+              variant="ghost"
               onClick={(e) => handleCloseTab(e, project.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') handleCloseTab(e, project.id);
-              }}
             >
               <X className="h-3 w-3" />
-            </span>
+            </Button>
           </button>
         );
       })}

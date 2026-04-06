@@ -2,6 +2,8 @@ import { Edit, Save } from 'lucide-react';
 
 import type { ChangeCategory, ChangelogEntry, ChangeType } from '@shared/types';
 
+import { Button, EmptyState } from '@ui';
+
 import { EditableCategory } from './EditableCategory';
 
 interface EntryPreviewProps {
@@ -47,27 +49,30 @@ export function EntryPreview({
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">No changes found in the commit history</p>
+          <EmptyState
+            description="No changes found in the commit history"
+            size="sm"
+            title="No changes"
+          />
         )}
       </div>
 
       <div className="flex gap-2">
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+        <Button
           disabled={categories.length === 0 || isSaving}
           type="button"
           onClick={onSave}
         >
           <Save className="h-4 w-4" />
           {isSaving ? 'Saving...' : 'Save to Changelog'}
-        </button>
-        <button
-          className="bg-muted text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm transition-colors"
+        </Button>
+        <Button
           type="button"
+          variant="outline"
           onClick={onBack}
         >
           Back
-        </button>
+        </Button>
       </div>
     </div>
   );

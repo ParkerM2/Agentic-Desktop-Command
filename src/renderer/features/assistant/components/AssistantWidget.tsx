@@ -1,9 +1,9 @@
 /**
- * AssistantWidget — Top-level orchestrator for the floating assistant widget
+ * AssistantWidget — Keyboard shortcuts + popup panel overlay
  *
- * Mounted in RootLayout. Renders WidgetFab + conditional WidgetPanel.
- * Handles keyboard shortcuts (Cmd/Ctrl+J toggle, Escape close).
- * Subscribes to assistant IPC events and manages unread state.
+ * Mounted in RootLayout. Handles Cmd/Ctrl+J toggle and Escape close.
+ * Only renders the floating WidgetPanel when mode is 'popup'.
+ * Inline mode is handled by SidebarAssistantButton.
  */
 
 import { useCallback, useEffect, useRef } from 'react';
@@ -13,24 +13,22 @@ import { useAssistantWidgetStore } from '@renderer/shared/stores';
 import { useAssistantEvents } from '../hooks/useAssistantEvents';
 import { useAssistantStore } from '../store';
 
-import { WidgetFab } from './WidgetFab';
 import { WidgetPanel } from './WidgetPanel';
 
 export function AssistantWidget() {
   useAssistantEvents();
 
-  const { close, isOpen, toggle } = useAssistantWidgetStore();
-  const { resetUnread, unreadCount } = useAssistantStore();
+  const { mode, close, toggle } = useAssistantWidgetStore();
+  const { resetUnread } = useAssistantStore();
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // Reset unread when opening
   const handleToggle = useCallback(() => {
-    if (!isOpen) {
+    if (mode === 'closed') {
       previousFocusRef.current = document.activeElement as HTMLElement | null;
       resetUnread();
     }
     toggle();
-  }, [isOpen, toggle, resetUnread]);
+  }, [mode, toggle, resetUnread]);
 
   const handleClose = useCallback(() => {
     close();
@@ -40,15 +38,13 @@ export function AssistantWidget() {
   // Global keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Cmd/Ctrl+J — toggle widget
       if ((e.metaKey || e.ctrlKey) && e.key === 'j') {
         e.preventDefault();
         handleToggle();
         return;
       }
 
-      // Escape — close panel (only when open)
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && mode !== 'closed') {
         e.preventDefault();
         handleClose();
       }
@@ -56,24 +52,14 @@ export function AssistantWidget() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, handleToggle, handleClose]);
+  }, [mode, handleToggle, handleClose]);
 
-  // Reset unread when widget is opened
   useEffect(() => {
-    if (isOpen) {
+    if (mode !== 'closed') {
       resetUnread();
     }
-  }, [isOpen, resetUnread]);
+  }, [mode, resetUnread]);
 
-  return (
-    <>
-      <WidgetFab
-        hasUnread={unreadCount > 0}
-        isOpen={isOpen}
-        unreadCount={unreadCount}
-        onClick={handleToggle}
-      />
-      {isOpen ? <WidgetPanel onClose={handleClose} /> : null}
-    </>
-  );
+  // Only render the floating panel in popup mode
+  return mode === 'popup' ? <WidgetPanel onClose={handleClose} /> : null;
 }

@@ -9,6 +9,9 @@ import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores
 
 import {
   Button,
+  Card,
+  CardContent,
+  EmptyState,
   Input,
   Select,
   SelectContent,
@@ -98,132 +101,123 @@ export function IdeationPage() {
   const items = ideas ?? [];
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <Lightbulb className="text-primary h-6 w-6" />
-              <h1 className="text-2xl font-bold">Ideation</h1>
-            </div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Brainstorm and organize project ideas
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowGenerate(!showGenerate);
-                setShowForm(false);
-              }}
-            >
-              <Sparkles className="h-4 w-4" />
-              Generate with AI
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setShowForm(!showForm);
-                setShowGenerate(false);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              New Idea
-            </Button>
-          </div>
-        </div>
-
+    <div className="space-y-6 p-6">
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setShowGenerate(!showGenerate);
+            setShowForm(false);
+          }}
+        >
+          <Sparkles className="h-4 w-4" />
+          Generate with AI
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            setShowForm(!showForm);
+            setShowGenerate(false);
+          }}
+        >
+          <Plus className="h-4 w-4" />
+          New Idea
+        </Button>
+      </div>
         {/* Generate with AI Panel */}
         {showGenerate ? (
-          <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm">
-              Describe what ideas you want the assistant to generate. It will create them directly in your ideation board.
-            </p>
-            <Textarea
-              resize="none"
-              rows={3}
-              value={generatePrompt}
-              onChange={(e) => setGeneratePrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.metaKey) handleGenerate();
-              }}
-            />
-            <div className="flex gap-2">
-              <Button
-                disabled={sendCommand.isPending || !generatePrompt.trim()}
-                type="button"
-                onClick={handleGenerate}
-              >
-                {sendCommand.isPending ? (
-                  <>
-                    <Spinner className="h-4 w-4" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    Generate
-                  </>
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowGenerate(false)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
+          <Card className="mb-6">
+            <CardContent className="space-y-3 p-4">
+              <p className="text-muted-foreground text-sm">
+                Describe what ideas you want the assistant to generate. It will create them directly in your ideation board.
+              </p>
+              <Textarea
+                resize="none"
+                rows={3}
+                value={generatePrompt}
+                onChange={(e) => setGeneratePrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.metaKey) handleGenerate();
+                }}
+              />
+              <div className="flex gap-2">
+                <Button
+                  disabled={sendCommand.isPending || !generatePrompt.trim()}
+                  type="button"
+                  onClick={handleGenerate}
+                >
+                  {sendCommand.isPending ? (
+                    <>
+                      <Spinner className="h-4 w-4" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Generate
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowGenerate(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : null}
 
         {/* Create Form */}
         {showForm ? (
-          <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <Input
-              placeholder="Idea title"
-              type="text"
-              value={formTitle}
-              onChange={(e) => setFormTitle(e.target.value)}
-            />
-            <Textarea
-              placeholder="Description"
-              resize="none"
-              rows={2}
-              value={formDescription}
-              onChange={(e) => setFormDescription(e.target.value)}
-            />
-            <Select
-              value={formCategory}
-              onValueChange={(v) => setFormCategory(v as IdeaCategory)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_OPTIONS.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {CATEGORY_CONFIG[cat].label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-2">
-              <Button type="button" onClick={handleCreate}>
-                Create
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowForm(false)}
+          <Card className="mb-6">
+            <CardContent className="space-y-3 p-4">
+              <Input
+                placeholder="Idea title"
+                type="text"
+                value={formTitle}
+                onChange={(e) => setFormTitle(e.target.value)}
+              />
+              <Textarea
+                placeholder="Description"
+                resize="none"
+                rows={2}
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+              />
+              <Select
+                value={formCategory}
+                onValueChange={(v) => setFormCategory(v as IdeaCategory)}
               >
-                Cancel
-              </Button>
-            </div>
-          </div>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {CATEGORY_CONFIG[cat].label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex gap-2">
+                <Button type="button" onClick={handleCreate}>
+                  Create
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : null}
 
         {/* Filters */}
@@ -255,90 +249,85 @@ export function IdeationPage() {
               const catConfig = CATEGORY_CONFIG[idea.category];
 
               return (
-                <div
-                  key={idea.id}
-                  className="border-border bg-card flex flex-col rounded-lg border p-4"
-                >
-                  {/* Category Badge */}
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Tag className={cn('h-3.5 w-3.5', catConfig.colorClass)} />
-                      <span className={cn('text-xs font-medium', catConfig.colorClass)}>
-                        {catConfig.label}
-                      </span>
+                <Card key={idea.id} className="flex flex-col">
+                  <CardContent className="flex flex-1 flex-col p-4">
+                    {/* Category Badge */}
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Tag className={cn('h-3.5 w-3.5', catConfig.colorClass)} />
+                        <span className={cn('text-xs font-medium', catConfig.colorClass)}>
+                          {catConfig.label}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          aria-label={`Edit ${idea.title}`}
+                          className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
+                          size="icon"
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setEditingIdea(idea)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          aria-label={`Delete ${idea.title}`}
+                          className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
+                          size="icon"
+                          type="button"
+                          variant="ghost"
+                          onClick={() => deleteIdea.mutate(idea.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
+
+                    {/* Title & Description */}
+                    <h3 className="mb-1 text-sm font-medium">{idea.title}</h3>
+                    <p className="text-muted-foreground mb-3 flex-1 text-xs leading-relaxed">
+                      {idea.description}
+                    </p>
+
+                    {/* Votes */}
+                    <div className="flex items-center gap-2">
                       <Button
-                        aria-label={`Edit ${idea.title}`}
                         className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
                         size="icon"
                         type="button"
                         variant="ghost"
-                        onClick={() => setEditingIdea(idea)}
+                        onClick={() => voteIdea.mutate({ id: idea.id, delta: 1 })}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <ChevronUp className="h-4 w-4" />
                       </Button>
+                      <span className="text-sm font-medium">{idea.votes}</span>
                       <Button
-                        aria-label={`Delete ${idea.title}`}
                         className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
                         size="icon"
                         type="button"
                         variant="ghost"
-                        onClick={() => deleteIdea.mutate(idea.id)}
+                        onClick={() => voteIdea.mutate({ id: idea.id, delta: -1 })}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <ChevronDown className="h-4 w-4" />
                       </Button>
+                      <span className="text-muted-foreground bg-muted/50 ml-auto rounded-full px-2 py-0.5 text-xs capitalize">
+                        {idea.status}
+                      </span>
                     </div>
-                  </div>
-
-                  {/* Title & Description */}
-                  <h3 className="mb-1 text-sm font-medium">{idea.title}</h3>
-                  <p className="text-muted-foreground mb-3 flex-1 text-xs leading-relaxed">
-                    {idea.description}
-                  </p>
-
-                  {/* Votes */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      onClick={() => voteIdea.mutate({ id: idea.id, delta: 1 })}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm font-medium">{idea.votes}</span>
-                    <Button
-                      className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                      onClick={() => voteIdea.mutate({ id: idea.id, delta: -1 })}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <span className="text-muted-foreground bg-muted/50 ml-auto rounded-full px-2 py-0.5 text-xs capitalize">
-                      {idea.status}
-                    </span>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
         ) : null}
 
         {!isLoading && items.length === 0 ? (
-          <div className="border-border rounded-lg border border-dashed p-12 text-center">
-            <Lightbulb className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-lg font-medium">No ideas in this category</p>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Try a different filter or add a new idea
-            </p>
-          </div>
+          <EmptyState
+            description="Try a different filter or add a new idea"
+            icon={Lightbulb}
+            title="No ideas in this category"
+          />
         ) : null}
-      </div>
-
       {/* Edit dialog */}
       <IdeaEditForm idea={editingIdea} onClose={() => setEditingIdea(null)} />
     </div>

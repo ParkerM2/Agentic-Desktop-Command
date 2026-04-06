@@ -4,6 +4,8 @@
 
 import { Loader2, StickyNote } from 'lucide-react';
 
+import { PageLayout } from '@ui';
+
 import { useNotes } from '../api/useNotes';
 import { useNoteEvents } from '../hooks/useNoteEvents';
 import { useNotesUI } from '../store';
@@ -31,23 +33,25 @@ export function NotesPage() {
   }
 
   return (
-    <div className="flex h-full">
-      {/* Left panel — notes list */}
-      <div className="border-border w-72 shrink-0 border-r">
-        <NotesList />
-      </div>
+    <PageLayout>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left panel — notes list */}
+        <div className="border-border w-72 shrink-0 border-r">
+          <NotesList />
+        </div>
 
-      {/* Right panel — editor or empty state */}
-      <div className="flex-1">
-        {selectedNote ? (
-          <NoteEditor note={selectedNote} />
-        ) : (
-          <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3">
-            <StickyNote className="h-12 w-12 opacity-30" />
-            <p className="text-sm">Select a note or create a new one</p>
-          </div>
-        )}
+        {/* Right panel — editor or empty state */}
+        <div className="flex-1">
+          {selectedNote ? (
+            <NoteEditor note={selectedNote} />
+          ) : (
+            <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-3">
+              <StickyNote className="h-12 w-12 opacity-30" />
+              <p className="text-sm">Select a note or create a new one</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }

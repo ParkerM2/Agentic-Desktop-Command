@@ -9,7 +9,7 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 30 |
+| Renderer Features | 36 |
 | Main Process Services | 33 |
 | IPC Handler Files | 42 |
 | IPC Domain Folders | 28 |
@@ -90,7 +90,7 @@ Location: `src/main/services/`
 | **calendar** | Google Calendar integration | listEvents, createEvent | - |
 | **changelog** | Project changelog CRUD | list, addEntry | - |
 | **fitness** | Health metrics (manual) | getMetrics, logWorkout | - |
-| **git** | Git operations (simple-git + `gh` CLI for PRs) | getStatus, listBranches, createBranch, commit, push, resolveConflict, createPr, listWorktrees, detectStructure | `event:git.*` |
+| **git** | Git operations (simple-git + `gh` CLI for PRs) | getStatus, listBranches, createBranch, commit, push, resolveConflict, createPr, listWorktrees, detectStructure, getRemoteUrl | `event:git.*` |
 | **github** | GitHub API integration (gh CLI) | listPRs, listIssues, getRepo, authStatus, getRepos | - |
 | **hub** | Hub server connection. Sub-modules: `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` | connect, disconnect, sync | `event:hub.*` |
 | **ideas** | Idea CRUD | list, create, update, delete | - |
@@ -347,7 +347,7 @@ Each split directory contains a `FEATURE.md` documenting its purpose, public API
 | `src/renderer/app/routes/FEATURE.md` | 8 route group files |
 | `src/renderer/features/planner/FEATURE.md` | Planner components: weekly review, day compact, stats |
 | `src/renderer/features/settings/FEATURE.md` | Settings page: OAuth, webhooks, appearance sections |
-| `src/renderer/features/tasks/FEATURE.md` | Task dashboard: AG-Grid, cell renderers, detail rows |
+| `src/renderer/features/tasks/FEATURE.md` | Task dashboard: TanStack Table + shadcn Table primitives, detail rows |
 | `src/shared/ipc/FEATURE.md` | Domain-based IPC contract structure |
 | `src/shared/types/hub/FEATURE.md` | Hub protocol type modules |
 
@@ -462,7 +462,7 @@ All primitives follow the **shadcn/ui pattern**: CVA variants, `data-slot` attri
 | **1: Display** | Skeleton | `ui/skeleton.tsx` | `Skeleton` — pulse-animated placeholder, variants: line, circle, card |
 | **1: Display** | Spinner | `ui/spinner.tsx` | `Spinner`, `spinnerVariants` — wraps Lucide Loader2, sizes: sm, md, lg |
 | **1: Display** | EmptyState | `ui/empty-state.tsx` | `EmptyState`, `emptyStateVariants` — centered icon + title + description + action slot, sizes: sm, md, lg |
-| **1: Layout** | PageLayout | `ui/page-layout.tsx` | `PageLayout`, `PageHeader`, `PageContent` — consistent full-width page shell, mobile responsive |
+| **1: Layout** | PageLayout | `ui/page-layout.tsx` + `ui/page-header-context.ts` | `PageLayout`, `PageHeader` (compound: `.Row`, `.Title`, `.Actions`, `.Tabs`, `.TabList`, `.Tab`, `.TabContent`), `PageContent` — compositional full-width page shell |
 | **1: Layout** | Typography | `ui/typography.tsx` | `Heading` (h1-h4 via `as` prop), `Text` (default/muted/error/success), `Code` |
 | **1: Layout** | Grid | `ui/grid.tsx` | `Grid` — responsive CSS Grid, cols 1-12, gap variants, mobile-first |
 | **1: Layout** | Stack | `ui/stack.tsx` | `Stack` — flex column, gap/align/justify |

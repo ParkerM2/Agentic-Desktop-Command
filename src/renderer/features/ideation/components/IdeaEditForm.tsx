@@ -1,16 +1,21 @@
 /**
  * IdeaEditForm — Modal dialog for editing an existing idea.
- * Mirrors the ProjectEditDialog pattern: fixed overlay, card modal, escape-to-close.
  */
 
 import { useEffect, useState } from 'react';
 
-import { Loader2, Pencil, X } from 'lucide-react';
+import { Loader2, Pencil } from 'lucide-react';
 
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
 
 import {
   Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  InlineAlert,
   Input,
   Label,
   Select,
@@ -79,28 +84,6 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
     }
   }, [idea]);
 
-  // Escape key closes the dialog
-  useEffect(() => {
-    if (idea === null) {
-      return;
-    }
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [idea, onClose]);
-
-  if (idea === null) {
-    return null;
-  }
-
   const titleIsEmpty = title.trim().length === 0;
 
   function handleSave() {
@@ -130,47 +113,16 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-black/50"
-        role="button"
-        tabIndex={0}
-        onClick={onClose}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') onClose();
-        }}
-      />
-
-      {/* Modal */}
-      <div
-        aria-labelledby="edit-idea-dialog-title"
-        className="bg-card border-border relative z-10 w-full max-w-lg rounded-lg border shadow-xl"
-        role="dialog"
-      >
-        {/* Header */}
-        <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <div className="flex items-center gap-3">
+    <Dialog open={idea !== null} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
             <Pencil className="text-primary h-5 w-5" />
-            <h2 className="text-foreground text-lg font-semibold" id="edit-idea-dialog-title">
-              Edit Idea
-            </h2>
-          </div>
-          <Button
-            aria-label="Close dialog"
-            className="text-muted-foreground"
-            size="icon"
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+            Edit Idea
+          </DialogTitle>
+        </DialogHeader>
 
-        {/* Body */}
-        <div className="space-y-4 px-6 py-4">
+        <div className="space-y-4">
           {/* Title */}
           <div className="space-y-1.5">
             <Label htmlFor="edit-idea-title">
@@ -246,19 +198,14 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
 
           {/* Error message */}
           {errorMessage === null ? null : (
-            <div className="rounded-md bg-destructive/10 p-3">
-              <p className="text-destructive text-sm">{errorMessage}</p>
-            </div>
+            <InlineAlert variant="error">
+              {errorMessage}
+            </InlineAlert>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="border-border flex items-center justify-end gap-2 border-t px-6 py-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={onClose}
-          >
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
@@ -275,8 +222,8 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
               'Save'
             )}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
