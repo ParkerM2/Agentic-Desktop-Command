@@ -520,7 +520,7 @@ Test count verified by running `grep -cE "^\s+test\('[^']+'"` on each file.
 
 ## Notes and Observations
 
-1. **Briefing and Planner navigate old sidebar labels.** `05-briefing.spec.ts` calls `navigateToSidebarItem(page, 'Briefing')` and `09-alerts-comms.spec.ts` calls `navigateToSidebarItem(page, 'Comms')`. These labels are NOT in `TOP_LEVEL_NAV_ITEMS` (which lists Dashboard, My Work, Fitness, Productivity). Similarly, `03-sidebar-mechanics.spec.ts` navigates to Briefing, Notes, Alerts in `sidebar persists` and `active state changes` tests — but Notes, Alerts, Briefing, Comms, Planner are NOT in the current `TOP_LEVEL_NAV_ITEMS` constant. These tests may fail if those sidebar items were removed during the ui-layout-refactor.
+1. **Briefing and Planner navigate old sidebar labels.** `05-briefing.spec.ts` calls `navigateToSidebarItem(page, 'Briefing')` and `09-alerts-comms.spec.ts` calls `navigateToSidebarItem(page, 'Comms')`. These labels are NOT in `TOP_LEVEL_NAV_ITEMS` (which lists Dashboard, My Work, Fitness, Productivity). Similarly, `03-sidebar-mechanics.spec.ts` navigates to Briefing, Notes, Alerts in `sidebar persists` and `active state changes` tests, and `08-personal-tools.spec.ts` navigates to 'Planner' in its `Planner Page` describe block — but Notes, Alerts, Briefing, Comms, Planner are NOT in the current `TOP_LEVEL_NAV_ITEMS` constant. Affected specs: 03, 05, 08, 09. These tests may fail if those sidebar items were removed during the ui-layout-refactor.
 
 2. **Tasks page references AG-Grid.** `11-project-scoped-pages.spec.ts` asserts `.ag-theme-quartz` class. Project docs note AG-Grid was replaced with TanStack Table (PR #79). This test assertion is likely broken.
 
