@@ -9,23 +9,36 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { handleGitTool } from './tool-handlers/git-tools';
+import {
+  executeTasksCreate,
+  executeTasksDelete,
+  executeTasksList,
+  executeTasksUpdate,
+} from './tool-handlers/task-tools';
+
 import type { IdeasService } from '../ideas/ideas-service';
 import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
 import type { PlannerService } from '../planner/planner-service';
 import type { ProjectService } from '../project/project-service';
+import type { TaskRepository } from '../tasks/types';
+import type { GitToolDeps } from './tool-handlers/git-tools';
 
 const QUERY_KEY_NOTES = 'notes';
 const QUERY_KEY_MILESTONES = 'milestones';
 const QUERY_KEY_IDEAS = 'ideas';
 const QUERY_KEY_PLANNER = 'planner';
+const ERR_TASK_UNAVAILABLE = 'Task service unavailable';
 
 export interface ToolExecutorDeps {
   notesService: NotesService | null;
   milestonesService: MilestonesService | null;
   ideasService: IdeasService | null;
   plannerService: PlannerService | null;
-  projectService: Pick<ProjectService, 'listProjectsSync'> | null;
+  projectService: Pick<ProjectService, 'listProjectsSync' | 'getProjectPath'> | null;
+  taskRepository: TaskRepository | null;
+  gitToolDeps: GitToolDeps;
   sendEvent: (channel: string, payload: unknown) => void;
 }
 
@@ -132,7 +145,7 @@ function executeReadProgressFile(input: ToolInput): ToolResult {
 }
 
 export function createToolExecutor(deps: ToolExecutorDeps) {
-  const { notesService, milestonesService, ideasService, plannerService, projectService, sendEvent } = deps;
+  const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, gitToolDeps, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
     sendEvent('event:assistant.toolExecuted', {
@@ -194,7 +207,7 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     return ok(updatedPlan, QUERY_KEY_PLANNER);
   }
 
-  function execute(toolName: string, input: ToolInput): ToolResult {
+  async function execute(toolName: string, input: ToolInput): Promise<ToolResult> {
     let result: ToolResult;
 
     switch (toolName) {
@@ -222,21 +235,33 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
       case 'read_progress_file':
         result = executeReadProgressFile(input);
         break;
-      // ── Task CRUD stubs (Task 5 will implement) ──
-      // falls through
+      // ── Task CRUD ──
       case 'tasks_create':
-      // falls through
+        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
+        result = await executeTasksCreate(input, taskRepository);
+        break;
       case 'tasks_list':
-      // falls through
+        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
+        result = await executeTasksList(input, taskRepository);
+        break;
       case 'tasks_update':
-      // falls through
+        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
+        result = await executeTasksUpdate(input, taskRepository);
+        break;
       case 'tasks_delete':
-      // ── Git/GitHub stubs (Task 6 will implement) ──
-      // falls through
+        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
+        result = await executeTasksDelete(input, taskRepository);
+        break;
+      // ── Git & GitHub tools ──
       case 'git_status':
-      // falls through
-      case 'github_list_prs':
-        return fail('Not yet implemented');
+      case 'github_list_prs': {
+        const gitResult = await handleGitTool(toolName, input, gitToolDeps);
+        if (gitResult) {
+          result = gitResult;
+          break;
+        }
+        return fail(`Unknown tool: ${toolName}`);
+      }
       default:
         return fail(`Unknown tool: ${toolName}`);
     }
