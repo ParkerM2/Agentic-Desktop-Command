@@ -1,4 +1,4 @@
-<codebase-ref project="ADC" stack="electron39 react19 typescript zustand5 tanstack-router tanstack-query tailwindv4 ag-grid35 xyflow12">
+<codebase-ref project="ADC" stack="electron39 react19 typescript zustand5 tanstack-router tanstack-query tanstack-table tailwindv4 xyflow12">
 
 <src-map>
 <main desc="Electron main process">

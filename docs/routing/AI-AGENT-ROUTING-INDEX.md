@@ -687,7 +687,7 @@ Spotify playback integration.
 
 ### tasks
 
-Task management — local + Hub tasks, AG-Grid dashboard, task execution.
+Task management — local + Hub tasks, TanStack Table dashboard, task execution.
 
 | Layer | Path |
 |-------|------|

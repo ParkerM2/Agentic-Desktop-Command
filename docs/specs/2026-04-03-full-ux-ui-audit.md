@@ -242,10 +242,10 @@ Two-panel workspace: left = primary Claude session (always-on), right = team lea
 **Files:** `src/renderer/features/tasks/`
 
 #### What It Does
-AG-Grid table of project tasks with status filter chips, keyword search, expandable detail rows showing plan, QA report, subtasks, execution log, PR status. Full agent lifecycle controls (run, stop, retry, launch).
+TanStack Table of project tasks with status filter chips, keyword search, expandable detail rows showing plan, QA report, subtasks, execution log, PR status. Full agent lifecycle controls (run, stop, retry, launch). (Migrated from AG-Grid to TanStack Table + @ui Table primitives on 2026-04-06.)
 
 #### What's Working
-- Full AG-Grid implementation with custom cell renderers
+- TanStack Table implementation with custom cell renderers
 - Comprehensive IPC channel coverage
 - Real-time event listeners (status changes, progress, log append)
 - Task creation dialog with validation
