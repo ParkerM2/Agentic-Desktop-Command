@@ -137,6 +137,7 @@ export interface ServiceRegistryResult {
   notificationManager: ReturnType<typeof createNotificationManager>;
   briefingService: ReturnType<typeof createBriefingService>;
   hotkeyManager: ReturnType<typeof createHotkeyManager>;
+  quickInput: ReturnType<typeof createQuickInputWindow>;
   settingsService: ReturnType<typeof createSettingsService>;
   cleanupService: ReturnType<typeof createCleanupService>;
   crashRecovery: ReturnType<typeof createCrashRecovery>;
@@ -410,6 +411,13 @@ export function createServiceRegistry(
       if (assistantServiceRef) {
         assistantServiceRef.sendCommand(command);
       }
+      // Bring main window to foreground so user can see the assistant response
+      const win = getMainWindow();
+      if (win) {
+        if (win.isMinimized()) win.restore();
+        win.show();
+        win.focus();
+      }
     },
   });
 
@@ -644,6 +652,7 @@ export function createServiceRegistry(
     notificationManager,
     briefingService,
     hotkeyManager,
+    quickInput,
     settingsService,
     hubApiClient,
     taskRepository,
