@@ -20,7 +20,7 @@ import { Button, Heading } from '@ui';
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
 
-import { WidgetInput } from './WidgetInput';
+import { AssistantInputBar } from './AssistantInputBar';
 import { WidgetMessageArea } from './WidgetMessageArea';
 
 interface WidgetPanelProps {
@@ -129,7 +129,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
       <WidgetMessageArea />
 
       {/* Input */}
-      <WidgetInput disabled={sendCommand.isPending} onSubmit={handleSendCommand} />
+      <AssistantInputBar disabled={sendCommand.isPending} onSubmit={handleSendCommand} />
     </div>
   );
 }
