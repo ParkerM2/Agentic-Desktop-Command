@@ -281,3 +281,6 @@ export type { SectionHeaderProps } from './section-header';
 
 export { InlineAlert, inlineAlertVariants } from './inline-alert';
 export type { InlineAlertProps } from './inline-alert';
+
+export { ThinkingIndicator, thinkingVariants } from './thinking-indicator';
+export type { ThinkingIndicatorProps } from './thinking-indicator';

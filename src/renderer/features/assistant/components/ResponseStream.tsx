@@ -4,9 +4,11 @@
 
 import { useEffect, useRef } from 'react';
 
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
+
+import { ThinkingIndicator } from '@ui';
 
 import { useAssistantStore } from '../store';
 
@@ -69,10 +71,7 @@ export function ResponseStream() {
         ))}
 
         {isThinking ? (
-          <div className="text-muted-foreground flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Thinking...</span>
-          </div>
+          <ThinkingIndicator label="Assistant" size="md" />
         ) : null}
       </div>
     </div>
