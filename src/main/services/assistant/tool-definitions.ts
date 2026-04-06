@@ -116,6 +116,51 @@ export const APP_TOOLS: AppTool[] = [
     queryKeyRoots: ['planner'],
   },
 
+  // ── Briefing ─────────────────────────────────────────────────────────────
+  {
+    name: 'generate_briefing',
+    description:
+      'Generate the daily briefing. Use when the user asks for their daily briefing, summary, or overview of the day.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+    queryKeyRoots: ['briefing'],
+  },
+
+  // ── Changelog ───────────────────────────────────────────────────────────
+  {
+    name: 'generate_changelog',
+    description:
+      'Generate a changelog entry from git history. Use when the user asks to generate a changelog, release notes, or git summary.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'Project ID to generate changelog for' },
+        version: { type: 'string', description: 'Version string for this changelog entry, e.g. "1.2.0"' },
+        fromTag: { type: 'string', description: 'Optional git tag to start from (generates diff from this tag to HEAD)' },
+      },
+      required: ['projectId', 'version'],
+    },
+    queryKeyRoots: ['changelog'],
+  },
+
+  // ── Insights ────────────────────────────────────────────────────────────
+  {
+    name: 'get_insights',
+    description:
+      'Get project insights and metrics. Use when the user asks about project analytics, productivity metrics, task distribution, or time tracking stats.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'Optional project ID to filter insights' },
+      },
+      required: [],
+    },
+    queryKeyRoots: [],
+  },
+
   // ── Context & Memory ─────────────────────────────────────────────────────
   {
     name: 'list_projects',

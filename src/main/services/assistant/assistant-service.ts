@@ -2,15 +2,16 @@
  * AssistantService — Global headless Claude CLI assistant.
  *
  * Spawns a single headless Claude CLI session via the AgentManagerService
- * that lives for the entire app lifetime. Filters the stream-json output
- * to only emit human-readable assistant text responses.
+ * that lives for the entire app lifetime. Intercepts tool_use blocks from
+ * Claude responses, routes them through the ToolExecutor, and returns
+ * tool_results back to the session.
  *
  * No API key required — the CLI handles its own auth.
  */
 
 import type { BrowserWindow } from 'electron';
 
-import type { AgentChatMessage } from '@shared/types/agent-dashboard';
+import type { AgentChatMessage, ToolUseBlock } from '@shared/types/agent-dashboard';
 
 import { serviceLogger } from '@main/lib/logger';
 
@@ -18,6 +19,7 @@ import { createHistoryStore } from './history-store';
 import { buildSystemPrompt } from './tool-definitions';
 
 import type { AgentManagerService } from '../agent-manager';
+import type { ToolExecutor } from './tool-executor';
 
 const ASSISTANT_MODEL = 'claude-sonnet-4-6';
 const EVT_THINKING = 'event:assistant.thinking';
@@ -43,6 +45,7 @@ export interface AssistantService {
 export interface AssistantServiceDeps {
   getWindow: () => BrowserWindow | null;
   agentManager: AgentManagerService;
+  toolExecutor: ToolExecutor | null;
 }
 
 /**
@@ -56,8 +59,17 @@ function extractText(message: AgentChatMessage): string {
     .join('');
 }
 
+/**
+ * Extract tool_use blocks from an AgentChatMessage.
+ */
+function extractToolUseBlocks(message: AgentChatMessage): ToolUseBlock[] {
+  return message.content.filter(
+    (block): block is ToolUseBlock => block.type === 'tool_use',
+  );
+}
+
 export function createAssistantService(deps: AssistantServiceDeps): AssistantService {
-  const { getWindow, agentManager } = deps;
+  const { getWindow, agentManager, toolExecutor } = deps;
   const historyStore = createHistoryStore();
 
   let sessionId: string | null = null;
@@ -69,8 +81,53 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
   }
 
   /**
+   * Handle tool_use blocks: execute each tool and send results back to the session.
+   */
+  async function handleToolUseBlocks(sid: string, blocks: ToolUseBlock[]): Promise<void> {
+    if (!toolExecutor) {
+      serviceLogger.warn('[Assistant] Tool executor not available, skipping tool calls');
+      return;
+    }
+
+    for (const block of blocks) {
+      serviceLogger.info(`[Assistant] Executing tool: ${block.name} (id: ${block.id})`);
+
+      try {
+        const result = await toolExecutor.execute(block.name, block.input);
+
+        // Send tool_result back to the Claude session
+        const toolResultContent = JSON.stringify(
+          result.success ? result.data : { error: result.error },
+        );
+
+        // Format as a tool_result message for the Claude CLI
+        const toolResultMessage = JSON.stringify({
+          type: 'tool_result',
+          tool_use_id: block.id,
+          content: toolResultContent,
+          is_error: !result.success,
+        });
+
+        agentManager.sendMessage(sid, toolResultMessage);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Tool execution failed';
+        serviceLogger.error(`[Assistant] Tool execution error (${block.name}):`, message);
+
+        const errorResult = JSON.stringify({
+          type: 'tool_result',
+          tool_use_id: block.id,
+          content: JSON.stringify({ error: message }),
+          is_error: true,
+        });
+
+        agentManager.sendMessage(sid, errorResult);
+      }
+    }
+  }
+
+  /**
    * Subscribe to agent manager events for the global session.
-   * Filters to only emit assistant text content as response events.
+   * Intercepts tool_use blocks and forwards text responses to renderer.
    */
   function subscribeToSession(sid: string): void {
     if (eventCleanup) eventCleanup();
@@ -82,18 +139,25 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
         const message = event.data as AgentChatMessage;
         if (message.role !== 'assistant') return;
 
+        // Check for tool_use blocks — execute them
+        const toolBlocks = extractToolUseBlocks(message);
+        if (toolBlocks.length > 0) {
+          void handleToolUseBlocks(sid, toolBlocks);
+        }
+
+        // Forward text content to renderer
         const text = extractText(message);
-        if (text.length === 0) return;
+        if (text.length > 0) {
+          sendEvent(EVT_RESPONSE, { content: text, type: 'text' });
+          sendEvent(EVT_THINKING, { isThinking: false });
 
-        sendEvent(EVT_RESPONSE, { content: text, type: 'text' });
-        sendEvent(EVT_THINKING, { isThinking: false });
-
-        historyStore.addEntry({
-          id: `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`,
-          input: lastInput,
-          responseSummary: text.slice(0, 200),
-          timestamp: new Date().toISOString(),
-        });
+          historyStore.addEntry({
+            id: `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`,
+            input: lastInput,
+            responseSummary: text.slice(0, 200),
+            timestamp: new Date().toISOString(),
+          });
+        }
       }
 
       if (event.type === 'status.changed') {
@@ -126,7 +190,6 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
       if (session && session.status !== 'completed' && session.status !== 'failed') {
         return true;
       }
-      // Session died — clean up
       if (eventCleanup) eventCleanup();
       eventCleanup = null;
       sessionId = null;
@@ -174,7 +237,6 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
         }
 
         lastInput = input;
-        // sessionId is guaranteed non-null after ensureSession() returns true
         const sid = sessionId ?? '';
         const success = agentManager.sendMessage(sid, input);
         if (!success) {
@@ -183,7 +245,6 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
             type: 'error',
           });
           sendEvent(EVT_THINKING, { isThinking: false });
-          // Force respawn on next attempt
           if (eventCleanup) eventCleanup();
           eventCleanup = null;
           sessionId = null;
@@ -201,7 +262,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
     stop() {
       if (sessionId) {
         serviceLogger.info('[Assistant] Stopping global session:', sessionId);
-        // The agent manager handles killing the process
+        agentManager.stopSession(sessionId);
         if (eventCleanup) eventCleanup();
         eventCleanup = null;
         sessionId = null;

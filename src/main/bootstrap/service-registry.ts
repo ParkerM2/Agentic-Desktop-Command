@@ -30,6 +30,7 @@ import { createAlertService } from '../services/alerts/alert-service';
 import { createAlertStore } from '../services/alerts/alert-store';
 import { createAppUpdateService } from '../services/app/app-update-service';
 import { createAssistantService } from '../services/assistant/assistant-service';
+import { createToolExecutor } from '../services/assistant/tool-executor';
 import { createWatchEvaluator } from '../services/assistant/watch-evaluator';
 import { createWatchStore } from '../services/assistant/watch-store';
 import { createUserSessionManager } from '../services/auth';
@@ -507,9 +508,28 @@ export function createServiceRegistry(
   const watchEvaluator = createWatchEvaluator(watchStore);
 
   // ─── Assistant service ───────────────────────────────────────
+  const toolExecutor = createToolExecutor({
+    notesService,
+    milestonesService: milestonesService ?? null,
+    ideasService: ideasService ?? null,
+    plannerService,
+    projectService,
+    taskRepository,
+    briefingService,
+    changelogService: changelogService ?? null,
+    gitToolDeps: {
+      projectService,
+      gitService,
+      githubService,
+    },
+    sendEvent: (channel, payload) => {
+      getMainWindow()?.webContents.send(channel, payload);
+    },
+  });
   const assistantService = createAssistantService({
     getWindow: getMainWindow,
     agentManager: agentManagerService,
+    toolExecutor,
   });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;

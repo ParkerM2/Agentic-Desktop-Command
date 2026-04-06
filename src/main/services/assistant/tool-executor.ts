@@ -17,6 +17,8 @@ import {
   executeTasksUpdate,
 } from './tool-handlers/task-tools';
 
+import type { BriefingService } from '../briefing/briefing-service';
+import type { ChangelogService } from '../changelog/changelog-service';
 import type { IdeasService } from '../ideas/ideas-service';
 import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
@@ -38,6 +40,8 @@ export interface ToolExecutorDeps {
   plannerService: PlannerService | null;
   projectService: Pick<ProjectService, 'listProjectsSync' | 'getProjectPath'> | null;
   taskRepository: TaskRepository | null;
+  briefingService: BriefingService | null;
+  changelogService: ChangelogService | null;
   gitToolDeps: GitToolDeps;
   sendEvent: (channel: string, payload: unknown) => void;
 }
@@ -145,7 +149,7 @@ function executeReadProgressFile(input: ToolInput): ToolResult {
 }
 
 export function createToolExecutor(deps: ToolExecutorDeps) {
-  const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, gitToolDeps, sendEvent } = deps;
+  const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, briefingService, changelogService, gitToolDeps, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
     sendEvent('event:assistant.toolExecuted', {
@@ -207,65 +211,62 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     return ok(updatedPlan, QUERY_KEY_PLANNER);
   }
 
+  // ── Handler map ─────────────────────────────────────────────
+  type ToolHandler = (input: ToolInput) => ToolResult | Promise<ToolResult>;
+
+  async function executeGenerateBriefing(): Promise<ToolResult> {
+    if (!briefingService) return fail('Briefing service unavailable');
+    const briefing = await briefingService.generateBriefing();
+    return ok(briefing, 'briefing');
+  }
+
+  async function executeGenerateChangelog(input: ToolInput): Promise<ToolResult> {
+    if (!changelogService) return fail('Changelog service unavailable');
+    const repoPath = projectService?.getProjectPath(getString(input, 'projectId')) ?? '';
+    if (repoPath.length === 0) return fail('Project not found');
+    const entry = await changelogService.generateFromGit(
+      repoPath,
+      getString(input, 'version', '0.0.0'),
+      typeof input.fromTag === 'string' ? input.fromTag : undefined,
+    );
+    return ok(entry, 'changelog');
+  }
+
+  async function executeTaskTool(name: string, input: ToolInput): Promise<ToolResult> {
+    if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
+    if (name === 'tasks_create') return await executeTasksCreate(input, taskRepository);
+    if (name === 'tasks_list') return await executeTasksList(input, taskRepository);
+    if (name === 'tasks_update') return await executeTasksUpdate(input, taskRepository);
+    if (name === 'tasks_delete') return await executeTasksDelete(input, taskRepository);
+    return fail(`Unknown task tool: ${name}`);
+  }
+
+  // Map uses string keys to avoid camelCase naming convention lint
+  const handlerMap = new Map<string, ToolHandler>([
+    ['create_note', executeCreateNote],
+    ['create_milestone', executeCreateMilestone],
+    ['create_idea', executeCreateIdea],
+    ['add_daily_goal', executeAddDailyGoal],
+    ['list_projects', () => executeListProjects(projectService)],
+    ['query_recent_items', (input) => executeQueryRecentItems(input, notesService, milestonesService, ideasService)],
+    ['list_progress_features', () => executeListProgressFeatures()],
+    ['read_progress_file', (input) => executeReadProgressFile(input)],
+    ['generate_briefing', () => executeGenerateBriefing()],
+    ['generate_changelog', (input) => executeGenerateChangelog(input)],
+    ['get_insights', () => ({ success: true, data: { message: 'Use the Insights page for detailed analytics.' }, queryKeyRoots: [] })],
+    ['tasks_create', (input) => executeTaskTool('tasks_create', input)],
+    ['tasks_list', (input) => executeTaskTool('tasks_list', input)],
+    ['tasks_update', (input) => executeTaskTool('tasks_update', input)],
+    ['tasks_delete', (input) => executeTaskTool('tasks_delete', input)],
+    ['git_status', async (input) => (await handleGitTool('git_status', input, gitToolDeps)) ?? fail('Git tool failed')],
+    ['github_list_prs', async (input) => (await handleGitTool('github_list_prs', input, gitToolDeps)) ?? fail('GitHub tool failed')],
+  ]);
+
   async function execute(toolName: string, input: ToolInput): Promise<ToolResult> {
-    let result: ToolResult;
+    const handler = handlerMap.get(toolName);
+    if (!handler) return fail(`Unknown tool: ${toolName}`);
 
-    switch (toolName) {
-      case 'create_note':
-        result = executeCreateNote(input);
-        break;
-      case 'create_milestone':
-        result = executeCreateMilestone(input);
-        break;
-      case 'create_idea':
-        result = executeCreateIdea(input);
-        break;
-      case 'add_daily_goal':
-        result = executeAddDailyGoal(input);
-        break;
-      case 'list_projects':
-        result = executeListProjects(projectService);
-        break;
-      case 'query_recent_items':
-        result = executeQueryRecentItems(input, notesService, milestonesService, ideasService);
-        break;
-      case 'list_progress_features':
-        result = executeListProgressFeatures();
-        break;
-      case 'read_progress_file':
-        result = executeReadProgressFile(input);
-        break;
-      // ── Task CRUD ──
-      case 'tasks_create':
-        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
-        result = await executeTasksCreate(input, taskRepository);
-        break;
-      case 'tasks_list':
-        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
-        result = await executeTasksList(input, taskRepository);
-        break;
-      case 'tasks_update':
-        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
-        result = await executeTasksUpdate(input, taskRepository);
-        break;
-      case 'tasks_delete':
-        if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
-        result = await executeTasksDelete(input, taskRepository);
-        break;
-      // ── Git & GitHub tools ──
-      case 'git_status':
-      case 'github_list_prs': {
-        const gitResult = await handleGitTool(toolName, input, gitToolDeps);
-        if (gitResult) {
-          result = gitResult;
-          break;
-        }
-        return fail(`Unknown tool: ${toolName}`);
-      }
-      default:
-        return fail(`Unknown tool: ${toolName}`);
-    }
-
+    const result = await handler(input);
     if (result.success) {
       emitExecuted(toolName, result);
     }
