@@ -4,8 +4,9 @@ import { useNavigate, useRouterState } from '@tanstack/react-router';
 
 import { projectViewPath } from '@shared/constants';
 
-import { HubConnectionIndicator } from '@renderer/shared/components/HubConnectionIndicator';
 import { useLayoutStore } from '@renderer/shared/stores';
+
+import { SidebarAssistantButton } from '@features/assistant';
 
 import {
   Sidebar,
@@ -25,11 +26,10 @@ import {
 import { UserMenu } from '../UserMenu';
 
 import {
-  addProjectItem,
   developmentItems,
   personalItems,
-  settingsItem,
 } from './shared-nav';
+
 
 export function SidebarLayout13() {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ export function SidebarLayout13() {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
-        <span className="text-lg font-bold tracking-tight">ADC</span>
+        <UserMenu collapsed={!open} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -73,13 +73,7 @@ export function SidebarLayout13() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={isPersonalActive(addProjectItem.path)}
-                  tooltip={addProjectItem.label}
-                  onClick={() => handlePersonalNav(addProjectItem.path)}
-                >
-                  <addProjectItem.icon />
-                  <span>{addProjectItem.label}</span>
-                </SidebarMenuButton>
+                 />
               </SidebarMenuItem>
               {developmentItems.map((item) => (
                 <SidebarMenuItem key={item.label}>
@@ -120,20 +114,7 @@ export function SidebarLayout13() {
       </SidebarContent>
 
       <SidebarFooter>
-        <UserMenu collapsed={!open} />
-        <HubConnectionIndicator collapsed={!open} />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={isPersonalActive(settingsItem.path)}
-              tooltip={settingsItem.label}
-              onClick={() => handlePersonalNav(settingsItem.path)}
-            >
-              <settingsItem.icon />
-              <span>{settingsItem.label}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarAssistantButton />
       </SidebarFooter>
 
       <SidebarRail />

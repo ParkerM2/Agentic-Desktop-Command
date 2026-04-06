@@ -81,6 +81,11 @@ export interface GitService {
     repoPath: string,
     branch?: string,
   ) => Promise<GitFileChange[]>;
+  /** Get the URL for a named remote (defaults to 'origin') */
+  getRemoteUrl: (
+    repoPath: string,
+    remote?: string,
+  ) => Promise<string>;
 }
 
 export interface GitFileChange {
@@ -291,6 +296,15 @@ export function createGitService(polyrepoService: PolyrepoService): GitService {
           deletions: df.deletions,
         };
       });
+    },
+
+    async getRemoteUrl(repoPath, remote) {
+      validateRepoPath(repoPath);
+      const git = simpleGit(repoPath);
+      const targetRemote = remote ?? 'origin';
+      const remotes = await git.getRemotes(true);
+      const found = remotes.find((r) => r.name === targetRemote);
+      return found?.refs.fetch ?? '';
     },
   };
 }

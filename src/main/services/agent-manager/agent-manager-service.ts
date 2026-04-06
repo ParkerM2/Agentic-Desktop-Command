@@ -471,7 +471,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
         return false;
       }
 
-      // Clean up all event listeners
+      // Clean up all event listeners (removes onExit handler so it doesn't double-fire)
       for (const cleanup of internal.cleanups) {
         cleanup();
       }
@@ -491,6 +491,20 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       if (internal.session.status !== 'completed' && internal.session.status !== 'failed') {
         updateSessionStatus(internal, 'completed');
       }
+
+      // Emit session.ended so subscribers (AssistantService, WorkspaceSessionManager) can clean up.
+      // The normal onExit handler was removed above, so we must emit manually.
+      router.emit('event:agent-dashboard.sessionEnded', {
+        sessionId: internal.session.id,
+        status: 'completed',
+        exitCode: undefined,
+      });
+
+      emitEvent({
+        type: 'session.ended',
+        sessionId: internal.session.id,
+        data: { code: 0, signal: null },
+      });
 
       agentLogger.info(`[AgentManager] Session stopped: ${sessionId}`);
       return true;

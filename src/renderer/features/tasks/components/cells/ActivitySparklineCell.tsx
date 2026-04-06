@@ -1,15 +1,13 @@
 /**
- * ActivitySparklineCell — AG-Grid cell renderer with SVG polyline sparkline.
+ * ActivitySparklineCell — cell renderer with SVG polyline sparkline.
  * Renders a mini chart from a number array (~120px wide, 28px tall).
  */
-
-import type { CustomCellRendererProps } from 'ag-grid-react';
 
 const SPARKLINE_WIDTH = 120;
 const SPARKLINE_HEIGHT = 28;
 
-export function ActivitySparklineCell(props: CustomCellRendererProps) {
-  const data: number[] = Array.isArray(props.value) ? (props.value as number[]) : [];
+export function ActivitySparklineCell({ value }: { value: unknown }) {
+  const data: number[] = Array.isArray(value) ? (value as number[]) : [];
 
   if (data.length === 0) {
     return <span className="text-muted-foreground text-xs">No data</span>;

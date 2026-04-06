@@ -1,6 +1,6 @@
 # Task Management
 
-Full task dashboard feature module with AG-Grid integration, real-time agent/QA updates, and expandable detail rows.
+Task dashboard with TanStack Table + shadcn Table primitives, real-time agent/QA updates, and expandable detail rows.
 
 ## Key Files
 
@@ -15,10 +15,8 @@ Full task dashboard feature module with AG-Grid integration, real-time agent/QA 
 
 ## Components
 
-- **`components/grid/TaskDataGrid.tsx`** — Main AG-Grid wrapper with column defs and expandable detail rows
-- **`components/grid/ag-grid-modules.ts`** — Module registration + AG-Grid Theming API configuration (reads CSS custom properties at runtime)
+- **`components/grid/TaskDataGrid.tsx`** — TanStack Table with shadcn `Table`/`TableRow`/`TableCell` primitives, column defs with inline cell rendering, expandable detail rows
 - **`components/TaskFiltersToolbar.tsx`** — Status filter chips and search; **`components/TaskStatusBadge.tsx`** — Status pill; **`components/CreateTaskDialog.tsx`** — New task modal
-- Cell renderers (in `cells/`): **`ActionsCell`**, **`ActivitySparklineCell`**, **`AgentCell`**, **`CostCell`**, **`ExpandToggleCell`**, **`PriorityCell`**, **`PrStatusCell`**, **`ProgressBarCell`**, **`RelativeTimeCell`**, **`StatusBadgeCell`**, **`TitleCell`**, **`WatchdogDropdown`**, **`WorkspaceCell`**
 - Detail panels (in `detail/`): **`TaskDetailRow`**, **`ExecutionLog`**, **`PlanViewer`**, **`PrStatusPanel`**, **`QaReportViewer`**, **`SubtaskList`**, **`TaskControls`**
 
 ## How It Connects

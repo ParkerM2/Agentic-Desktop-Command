@@ -5,7 +5,7 @@
  * Manages stdin/stdout streams, process health monitoring, and clean shutdown.
  */
 
-import { spawn } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 
 import { agentLogger } from '@main/lib/logger';
 
@@ -84,6 +84,40 @@ const CLAUDE_SESSION_VARS = new Set([
 const KILL_GRACE_PERIOD_MS = 5000;
 
 /**
+ * Resolve the full path to the `claude` binary.
+ *
+ * Electron's main process often inherits a minimal PATH that doesn't include
+ * npm global bins or nvm shims. We resolve once at startup so every spawn
+ * uses the absolute path, avoiding ENOENT.
+ */
+let _resolvedClaudePath: string | null = null;
+
+function resolveClaudeBinary(): string {
+  if (_resolvedClaudePath) return _resolvedClaudePath;
+
+  try {
+    const cmd = process.platform === 'win32' ? 'where claude' : 'which claude';
+    const result = execSync(cmd, {
+      encoding: 'utf-8',
+      timeout: 5000,
+      env: process.env,
+      // On Windows, run in shell so `where` works with the full user PATH
+      shell: process.platform === 'win32' ? 'cmd.exe' : undefined,
+    }).trim();
+
+    // `where` on Windows returns multiple lines — take the first .cmd or first match
+    const lines = result.split(/\r?\n/).filter((l) => l.length > 0);
+    const cmdMatch = lines.find((l) => l.endsWith('.cmd'));
+    _resolvedClaudePath = cmdMatch ?? lines[0];
+    agentLogger.info(`[AgentManager] Resolved claude binary: ${_resolvedClaudePath}`);
+    return _resolvedClaudePath;
+  } catch {
+    agentLogger.warn('[AgentManager] Could not resolve claude path, falling back to "claude"');
+    return 'claude';
+  }
+}
+
+/**
  * Build a clean environment for the Claude process.
  * Strips session-detection vars so Claude doesn't think it's nested.
  * When agentFlags are present, sets CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1.
@@ -151,14 +185,18 @@ export function createProcessManager(): ProcessManager {
       const args = buildSpawnArgs(config);
       const env = buildCleanEnv(config);
 
+      const claudeBin = resolveClaudeBinary();
       agentLogger.info(`[AgentManager] Spawning claude process in ${config.cwd}`);
-      agentLogger.info(`[AgentManager] Args: claude ${args.join(' ')}`);
+      agentLogger.info(`[AgentManager] Binary: ${claudeBin}`);
+      agentLogger.info(`[AgentManager] Args: ${args.join(' ')}`);
 
-      const child = spawn('claude', args, {
+      const child = spawn(claudeBin, args, {
         cwd: config.cwd,
         env,
         stdio: ['pipe', 'pipe', 'pipe'],
         detached: process.platform !== 'win32',
+        // On Windows, spawn through shell so .cmd shims resolve correctly
+        shell: process.platform === 'win32',
       });
 
       const now = new Date();

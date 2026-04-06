@@ -1,11 +1,9 @@
 /**
- * AgentCell — AG-Grid cell renderer showing agent avatar (initials) + name.
+ * AgentCell — cell renderer showing agent avatar (initials) + name.
  */
 
-import type { CustomCellRendererProps } from 'ag-grid-react';
-
-export function AgentCell(props: CustomCellRendererProps) {
-  const agentName = String(props.value ?? '');
+export function AgentCell({ value }: { value: string }) {
+  const agentName = value;
 
   if (agentName === '') {
     return <span className="text-muted-foreground text-sm">Unassigned</span>;

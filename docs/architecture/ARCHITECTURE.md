@@ -427,7 +427,7 @@ AFTER (Local-first):
 - `TaskStatus` is unified to Hub enum values everywhere (`backlog`, `planning`, `plan_ready`, `queued`, `running`, `paused`, `review`, `done`, `error`)
 - Legacy on-disk statuses (`queue`, `in_progress`, `ai_review`, etc.) are auto-mapped to Hub values via `LEGACY_STATUS_MAP` in `src/shared/types/task.ts`
 
-The Task Table displays tasks in a filterable, sortable AG-Grid dashboard view.
+The Task Table displays tasks in a filterable, sortable TanStack Table view using shadcn Table primitives.
 
 ## Design System & Theme Architecture
 
@@ -741,14 +741,14 @@ Every 30s: deviceService.sendHeartbeat(deviceId)
                                                               UPDATE last_seen_at
 ```
 
-### AG-Grid Task Table
+### Task Table (TanStack Table + shadcn)
 
-The task dashboard uses AG-Grid Community v35.1.0 for the main data grid with dynamic light/dark theming:
+The task dashboard uses TanStack Table (`@tanstack/react-table`) with shadcn `Table` primitives from `@ui`:
 
-- **TaskDataGrid** — Main grid component wrapped in `<Card>` from `@ui` for consistent container styling, with column definitions, row selection, sorting, and dynamic light/dark theme switching via `useThemeStore().mode`
-- **Cell renderers** — 12 custom cell renderers (StatusBadge, ProgressBar, ActivitySparkline, Agent, PrStatus, Cost, Priority, Actions, ExpandToggle, Workspace, Title, RelativeTime)
-- **Detail rows** — DIY master/detail via `isFullWidthRow` + `fullWidthCellRenderer` (Community workaround for Enterprise-only feature)
-- **TaskFiltersToolbar** — Filter controls above the grid
+- **TaskDataGrid** — TanStack Table instance with `useReactTable`, column defs with inline cell rendering via `flexRender`, rendered through `Table`/`TableHeader`/`TableBody`/`TableRow`/`TableCell` from `@ui`
+- **Column defs** — Status (Badge), Title, Priority, Progress (inline bar), Cost, Updated (relative time), Expand toggle
+- **Detail rows** — Expandable via store `expandedRowIds` Set, renders `TaskDetailRow` in a full-width `TableCell`
+- **TaskFiltersToolbar** — Filter controls in the PageHeader actions area
 - **TaskDetailRow** — Expanded row showing subtasks, execution log, PR status, and task controls
 
 ### Shared UI Components

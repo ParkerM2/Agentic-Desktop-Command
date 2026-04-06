@@ -5,8 +5,6 @@
  * This file creates the root/layout routes, assembles the tree, and exports AppRouter.
  */
 
-import { lazy, Suspense } from 'react';
-
 import {
   createHashHistory,
   createRouter,
@@ -150,54 +148,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-const isDev = process.env.NODE_ENV !== 'production';
-
-const TanStackDevtools = isDev
-  ? lazy(() =>
-      import('@tanstack/react-devtools').then((m) => ({
-        default: m.TanStackDevtools,
-      })),
-    )
-  : () => null;
-
-const ReactQueryDevtoolsPanel = isDev
-  ? lazy(() =>
-      import('@tanstack/react-query-devtools').then((m) => ({
-        default: m.ReactQueryDevtoolsPanel,
-      })),
-    )
-  : () => null;
-
-const TanStackRouterDevtoolsPanel = isDev
-  ? lazy(() =>
-      import('@tanstack/react-router-devtools').then((m) => ({
-        default: m.TanStackRouterDevtoolsPanel,
-      })),
-    )
-  : () => null;
-
 export function AppRouter() {
   return (
     <RootErrorBoundary>
       <RouterProvider router={router} />
-      {isDev ? (
-        <Suspense>
-          <TanStackDevtools
-            plugins={[
-              {
-                id: 'react-query',
-                name: 'React Query',
-                render: <ReactQueryDevtoolsPanel />,
-              },
-              {
-                id: 'react-router',
-                name: 'Router',
-                render: <TanStackRouterDevtoolsPanel router={router} />,
-              },
-            ]}
-          />
-        </Suspense>
-      ) : null}
     </RootErrorBoundary>
   );
 }

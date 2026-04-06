@@ -76,6 +76,10 @@ export const gitInvoke = {
     input: z.object({ repoPath: z.string() }),
     output: z.object({ structure: RepoStructureSchema }),
   },
+  'git.getRemoteUrl': {
+    input: z.object({ repoPath: z.string(), remote: z.string().optional() }),
+    output: z.object({ url: z.string() }),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────

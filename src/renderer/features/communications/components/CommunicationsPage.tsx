@@ -2,7 +2,7 @@
  * CommunicationsPage — Overview of connected communication services
  */
 
-import { PageContent, PageHeader, PageLayout, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useCommunicationsEvents } from '../hooks/useCommunicationsEvents';
 import { useCommunicationsStore } from '../store';
@@ -27,46 +27,43 @@ export function CommunicationsPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        description="Manage your Slack and Discord integrations"
-        title="Communications"
-      />
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="Manage your Slack and Discord integrations">
+            Communications
+          </PageHeader.Title>
+        </PageHeader.Row>
+        <PageHeader.Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as TabId)}
+        >
+          <PageHeader.TabList>
+            {TABS.map((tab) => (
+              <PageHeader.Tab key={tab.id} value={tab.id}>
+                {tab.label}
+              </PageHeader.Tab>
+            ))}
+          </PageHeader.TabList>
 
-      <PageContent>
-        <div className="mx-auto max-w-4xl">
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as TabId)}
-          >
-            <TabsList className="mb-6">
-              {TABS.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value="overview">
+          <PageContent>
+            <PageHeader.TabContent value="overview">
               <div className="space-y-4">
                 <SlackPanel />
                 <DiscordPanel />
               </div>
-            </TabsContent>
-
-            <TabsContent value="slack">
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="slack">
               <SlackPanel />
-            </TabsContent>
-
-            <TabsContent value="discord">
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="discord">
               <DiscordPanel />
-            </TabsContent>
-
-            <TabsContent value="rules">
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="rules">
               <NotificationRules />
-            </TabsContent>
-          </Tabs>
-        </div>
-      </PageContent>
+            </PageHeader.TabContent>
+          </PageContent>
+        </PageHeader.Tabs>
+      </PageHeader>
     </PageLayout>
   );
 }

@@ -5,8 +5,9 @@ import { ChevronDown } from 'lucide-react';
 
 import { projectViewPath } from '@shared/constants';
 
-import { HubConnectionIndicator } from '@renderer/shared/components/HubConnectionIndicator';
 import { useLayoutStore } from '@renderer/shared/stores';
+
+import { SidebarAssistantButton } from '@features/assistant';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@ui/collapsible';
 import {
@@ -29,8 +30,8 @@ import { UserMenu } from '../UserMenu';
 import {
   developmentItems,
   personalItems,
-  settingsItem,
 } from './shared-nav';
+
 
 const codeItems = developmentItems.slice(0, 3);
 const planItems = developmentItems.slice(3, 6);
@@ -68,7 +69,7 @@ export function SidebarLayout09() {
   return (
     <Sidebar className="w-[350px]">
       <SidebarHeader>
-        <span className="text-lg font-bold tracking-tight">ADC</span>
+        <UserMenu collapsed={!open} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -191,19 +192,7 @@ export function SidebarLayout09() {
       </SidebarContent>
 
       <SidebarFooter>
-        <UserMenu collapsed={!open} />
-        <HubConnectionIndicator collapsed={!open} />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={isPersonalActive(settingsItem.path)}
-              onClick={() => handlePersonalNav(settingsItem.path)}
-            >
-              <settingsItem.icon />
-              <span>{settingsItem.label}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarAssistantButton />
       </SidebarFooter>
 
       <SidebarRail />

@@ -21,14 +21,16 @@ export function contentBlocksToString(blocks: ContentBlock[]): string {
 }
 
 export function messagesToChatItems(messages: AgentChatMessage[]): AgentChatItem[] {
-  return messages.map((msg) => ({
-    kind: 'text' as const,
-    message: {
-      id: msg.id,
-      role: msg.role,
-      content: contentBlocksToString(msg.content),
-      timestamp: msg.timestamp,
-      isStreaming: msg.isStreaming,
-    },
-  }));
+  return messages
+    .map((msg) => ({
+      kind: 'text' as const,
+      message: {
+        id: msg.id,
+        role: msg.role,
+        content: contentBlocksToString(msg.content),
+        timestamp: msg.timestamp,
+        isStreaming: msg.isStreaming,
+      },
+    }))
+    .filter((item) => item.message.content.trim().length > 0 || item.message.isStreaming === true);
 }

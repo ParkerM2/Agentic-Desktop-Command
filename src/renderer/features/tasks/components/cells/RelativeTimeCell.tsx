@@ -1,14 +1,12 @@
 /**
- * RelativeTimeCell — AG-Grid cell renderer for relative timestamps.
+ * RelativeTimeCell — cell renderer for relative timestamps.
  * Displays "2m ago", "1h ago", "3d ago" from ISO date strings.
  */
 
 import { formatRelativeTime } from '@renderer/shared/lib/utils';
 
-import type { CustomCellRendererProps } from 'ag-grid-react';
-
-export function RelativeTimeCell(props: CustomCellRendererProps) {
-  const dateString = props.value as string | null | undefined;
+export function RelativeTimeCell({ value }: { value: string | null | undefined }) {
+  const dateString = value;
 
   if (dateString === null || dateString === undefined) {
     return <span className="text-muted-foreground text-sm">&mdash;</span>;

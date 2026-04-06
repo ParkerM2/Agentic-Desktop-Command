@@ -10,7 +10,7 @@ import type { ThemeMode } from '@shared/types';
 
 import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
-import { Spinner, Switch, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
 
 import { VoiceSettings } from '@features/voice';
 
@@ -84,33 +84,23 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* Header */}
-      <div className="border-border border-b px-6 py-4">
-        <h1 className="text-foreground text-2xl font-bold">Settings</h1>
-      </div>
-
-      <Tabs defaultValue="display" className="flex flex-1 flex-col overflow-hidden">
-        {/* Tab list */}
-        <div className="border-border border-b px-6">
-          <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1">
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Settings</PageHeader.Title>
+        </PageHeader.Row>
+        <PageHeader.Tabs defaultValue="display">
+          <PageHeader.TabList>
             {SETTINGS_TABS.map((tab) => (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex items-center gap-1.5 rounded-none border-b-2 border-transparent px-3 py-2 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-              >
+              <PageHeader.Tab key={tab.id} value={tab.id}>
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
-              </TabsTrigger>
+              </PageHeader.Tab>
             ))}
-          </TabsList>
-        </div>
+          </PageHeader.TabList>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-2xl">
-            <TabsContent value="display">
+          <PageContent>
+            <PageHeader.TabContent value="display">
               <LayoutSection />
               <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
               <BackgroundSettings />
@@ -131,25 +121,25 @@ export function SettingsPage() {
                   <span className="text-muted-foreground text-xs">Only language available</span>
                 </div>
               </section>
-            </TabsContent>
+            </PageHeader.TabContent>
 
-            <TabsContent value="profile">
+            <PageHeader.TabContent value="profile">
               <ProfileSection />
               <section className="mb-8">
                 <WorkspacesTab />
               </section>
-            </TabsContent>
+            </PageHeader.TabContent>
 
-            <TabsContent value="hub">
+            <PageHeader.TabContent value="hub">
               <section className="mb-8">
                 <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                   Hub Connection
                 </h2>
                 <HubSettings />
               </section>
-            </TabsContent>
+            </PageHeader.TabContent>
 
-            <TabsContent value="integrations">
+            <PageHeader.TabContent value="integrations">
               <section className="mb-8">
                 <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                   Claude Code
@@ -168,24 +158,24 @@ export function SettingsPage() {
                 </h2>
                 <OAuthProviderSettings />
               </section>
-            </TabsContent>
+            </PageHeader.TabContent>
 
-            <TabsContent value="storage">
+            <PageHeader.TabContent value="storage">
               <section className="mb-8">
                 <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                   Storage Management
                 </h2>
                 <StorageManagementSection />
               </section>
-            </TabsContent>
+            </PageHeader.TabContent>
 
-            <TabsContent value="advanced">
+            <PageHeader.TabContent value="advanced">
               <AdvancedTab settings={settings} updateSettings={updateSettings} />
-            </TabsContent>
-          </div>
-        </div>
-      </Tabs>
-    </div>
+            </PageHeader.TabContent>
+          </PageContent>
+        </PageHeader.Tabs>
+      </PageHeader>
+    </PageLayout>
   );
 }
 

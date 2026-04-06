@@ -12,26 +12,17 @@ import {
   Briefcase,
   ChevronDown,
   Dumbbell,
-  GitBranch,
   Headphones,
   Home,
-  Lightbulb,
   ListTodo,
-  Map,
-  Monitor,
   Network,
   PanelLeft,
   PanelLeftClose,
-  Plus,
-  ScrollText,
-  Settings,
   Terminal,
-  Workflow,
 } from 'lucide-react';
 
 import { ROUTES, PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 
-import { HubConnectionIndicator } from '@renderer/shared/components/HubConnectionIndicator';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
@@ -54,25 +45,19 @@ const COLLAPSED_STYLE = 'justify-center px-0';
 
 /** Personal nav items (not project-scoped) */
 const personalItems: NavItem[] = [
-  { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
+  { label: 'Home', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
-  { label: 'Agents', icon: Monitor, path: ROUTES.AGENTS },
   { label: 'Fitness', icon: Dumbbell, path: ROUTES.FITNESS },
   { label: 'Productivity', icon: Headphones, path: ROUTES.PRODUCTIVITY },
 ];
 
 /** Development nav items (project-scoped) */
 const developmentItems: NavItem[] = [
+  { label: 'Workspace', icon: Bot, path: PROJECT_VIEWS.AGENTS },
   { label: 'Tasks', icon: ListTodo, path: PROJECT_VIEWS.TASKS },
   { label: 'Terminals', icon: Terminal, path: PROJECT_VIEWS.TERMINALS },
-  { label: 'Workspace', icon: Bot, path: PROJECT_VIEWS.AGENTS },
-  { label: 'Pipeline', icon: Workflow, path: PROJECT_VIEWS.WORKFLOW },
   { label: 'Visual Map', icon: Network, path: PROJECT_VIEWS.VISUALIZATION },
-  { label: 'Roadmap', icon: Map, path: PROJECT_VIEWS.ROADMAP },
-  { label: 'Ideation', icon: Lightbulb, path: PROJECT_VIEWS.IDEATION },
-  { label: 'GitHub', icon: GitBranch, path: PROJECT_VIEWS.GITHUB },
-  { label: 'Changelog', icon: ScrollText, path: PROJECT_VIEWS.CHANGELOG },
-  { label: 'Insights', icon: BarChart3, path: PROJECT_VIEWS.INSIGHTS },
+  { label: 'Tools', icon: BarChart3, path: PROJECT_VIEWS.TOOLS },
 ];
 
 export function Sidebar() {
@@ -138,36 +123,16 @@ export function Sidebar() {
     );
   }
 
-  function renderAddProjectButton() {
-    return (
-      <button
-        title={sidebarCollapsed ? 'Add Project' : undefined}
-        className={cn(
-          NAV_BASE_STYLE,
-          NAV_HOVER_STYLE,
-          INACTIVE_STYLE,
-          sidebarCollapsed && COLLAPSED_STYLE,
-        )}
-        onClick={() => void navigate({ to: ROUTES.PROJECTS })}
-      >
-        <Plus className="h-4 w-4 shrink-0" />
-        {sidebarCollapsed ? null : <span>Add Project</span>}
-      </button>
-    );
-  }
-
   return (
     <aside
       className="bg-sidebar text-sidebar-foreground flex h-full w-full flex-col overflow-hidden"
     >
-      {/* Header */}
-      <div className="border-border flex h-12 items-center justify-between border-b px-3">
-        {sidebarCollapsed ? null : (
-          <span className="text-foreground text-sm font-semibold">ADC</span>
-        )}
+      {/* Header — User menu */}
+      <div className="border-border flex h-12 items-center justify-between border-b px-1.5">
+        <UserMenu collapsed={sidebarCollapsed} />
         <button
           aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-1.5"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground shrink-0 rounded-md p-1.5"
           onClick={toggleSidebar}
         >
           {sidebarCollapsed ? (
@@ -183,7 +148,6 @@ export function Sidebar() {
         {sidebarCollapsed ? (
           <>
             {/* Collapsed: icon-only items without section headers */}
-            <div className="my-1">{renderAddProjectButton()}</div>
             <div className="space-y-1">
               {developmentItems.map(renderDevelopmentItem)}
             </div>
@@ -196,11 +160,10 @@ export function Sidebar() {
             {/* Development section */}
             <Collapsible defaultOpen>
               <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider">
-                <span>Development</span>
+                Development
                 <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=closed]:-rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1">
-                {renderAddProjectButton()}
                 {developmentItems.map(renderDevelopmentItem)}
               </CollapsibleContent>
             </Collapsible>
@@ -208,7 +171,7 @@ export function Sidebar() {
             {/* Personal section */}
             <Collapsible defaultOpen>
               <CollapsibleTrigger className="group text-muted-foreground hover:text-foreground flex w-full items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider">
-                <span>Personal</span>
+                Personal
                 <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=closed]:-rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-1">
@@ -218,25 +181,6 @@ export function Sidebar() {
           </>
         )}
       </nav>
-
-      {/* Footer: User menu + Hub indicator + Settings */}
-      <div className="border-border border-t p-2">
-        <UserMenu collapsed={sidebarCollapsed} />
-        <HubConnectionIndicator collapsed={sidebarCollapsed} />
-        <button
-          title={sidebarCollapsed ? 'Settings' : undefined}
-          className={cn(
-            NAV_BASE_STYLE,
-            NAV_HOVER_STYLE,
-            currentPath.startsWith(ROUTES.SETTINGS) ? ACTIVE_STYLE : INACTIVE_STYLE,
-            sidebarCollapsed && COLLAPSED_STYLE,
-          )}
-          onClick={() => void navigate({ to: ROUTES.SETTINGS })}
-        >
-          <Settings className="h-4 w-4 shrink-0" />
-          {sidebarCollapsed ? null : <span>Settings</span>}
-        </button>
-      </div>
     </aside>
   );
 }

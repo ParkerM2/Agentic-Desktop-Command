@@ -6,9 +6,6 @@ import {
   Card,
   CardContent,
   MetricCard,
-  PageContent,
-  PageHeader,
-  PageLayout,
   Progress,
   Text,
 } from '@ui';
@@ -92,13 +89,7 @@ export function InsightsPage() {
   const projectItems = projects ?? [];
 
   return (
-    <PageLayout>
-      <PageHeader
-        description="Project metrics and activity"
-        title="Insights"
-      />
-
-      <PageContent>
+    <div className="space-y-6 p-6">
         {metricsLoading ? (
           <div className="text-muted-foreground flex items-center justify-center py-12">
             Loading metrics...
@@ -170,7 +161,6 @@ export function InsightsPage() {
             </div>
           </>
         )}
-      </PageContent>
-    </PageLayout>
+    </div>
   );
 }

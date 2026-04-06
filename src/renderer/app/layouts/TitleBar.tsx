@@ -8,7 +8,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import { Minus, Square, X } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { Minus, Settings, Square, X } from 'lucide-react';
+
+import { ROUTES } from '@shared/constants';
 
 import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -20,6 +23,7 @@ import { HealthIndicator } from '@features/health';
 import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 export function TitleBar() {
+  const navigate = useNavigate();
   const [isMaximized, setIsMaximized] = useState(false);
 
   // Query maximize state on mount and when window events occur
@@ -73,8 +77,17 @@ export function TitleBar() {
       {/* Spacer — fills remaining drag area */}
       <div className="flex-1" />
 
-      {/* Utility buttons — screenshot, health, hub status */}
+      {/* Utility buttons — settings, screenshot, health, hub status */}
       <div className="electron-no-drag flex items-center gap-0.5 px-1">
+        <Button
+          aria-label="Settings"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground h-7 w-7"
+          size="icon"
+          variant="ghost"
+          onClick={() => void navigate({ to: ROUTES.SETTINGS })}
+        >
+          <Settings className="h-3.5 w-3.5" />
+        </Button>
         <TitleBarScreenshot />
         <HealthIndicator />
         <HubStatus />

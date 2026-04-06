@@ -39,8 +39,31 @@ export { EmptyState, emptyStateVariants } from './empty-state';
 export type { EmptyStateProps } from './empty-state';
 
 // Tier 1: Layout & Typography
-export { PageContent, PageHeader, PageLayout } from './page-layout';
-export type { PageContentProps, PageHeaderProps, PageLayoutProps } from './page-layout';
+export {
+  PageContent,
+  PageHeader,
+  PageHeaderActions,
+  PageHeaderRow,
+  PageHeaderTab,
+  PageHeaderTabContent,
+  PageHeaderTabList,
+  PageHeaderTabs,
+  PageHeaderTitle,
+  PageLayout,
+} from './page-layout';
+export { usePageHeader } from './page-header-context';
+export type {
+  PageContentProps,
+  PageHeaderActionsProps,
+  PageHeaderProps,
+  PageHeaderRowProps,
+  PageHeaderTabContentProps,
+  PageHeaderTabListProps,
+  PageHeaderTabProps,
+  PageHeaderTabsProps,
+  PageHeaderTitleProps,
+  PageLayoutProps,
+} from './page-layout';
 
 export { Code, Heading, headingVariants, Text, textVariants } from './typography';
 export type { CodeProps, HeadingProps, TextProps } from './typography';
@@ -118,6 +141,17 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from './dropdown-menu';
+
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './table';
 
 // Tier 2: Radix Wrappers — Feedback & Navigation
 export {

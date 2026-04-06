@@ -2,7 +2,7 @@
  * DashboardPage — Main dashboard layout composing all widgets
  */
 
-import { PageContent, PageLayout } from '@ui';
+import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useDashboardEvents } from '../hooks/useDashboardEvents';
 
@@ -18,6 +18,11 @@ export function DashboardPage() {
 
   return (
     <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Home</PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
       <PageContent>
         <div className="mx-auto max-w-5xl">
           {/* Greeting */}

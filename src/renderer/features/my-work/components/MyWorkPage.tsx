@@ -273,13 +273,12 @@ export function MyWorkPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        description="All tasks across your projects"
-        title="My Work"
-      >
-        {/* Filter bar */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="All tasks across your projects">
+            My Work
+          </PageHeader.Title>
+          <PageHeader.Actions>
             <Filter className="text-muted-foreground h-4 w-4" />
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
               <SelectTrigger className="w-[140px]">
@@ -293,11 +292,11 @@ export function MyWorkPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <span className="text-muted-foreground text-sm">
-            {totalTasks} {getTaskCountLabel(totalTasks)}
-          </span>
-        </div>
+            <span className="text-muted-foreground text-sm">
+              {totalTasks} {getTaskCountLabel(totalTasks)}
+            </span>
+          </PageHeader.Actions>
+        </PageHeader.Row>
       </PageHeader>
       <PageContent>
         <TaskListContent

@@ -7,19 +7,21 @@
  */
 
 import { useNavigate } from '@tanstack/react-router';
-import { ChevronUp, LogOut } from 'lucide-react';
+import { ChevronDown, LogOut } from 'lucide-react';
 
 import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
 import {
+  Badge,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Text,
 } from '@ui';
 
 import { useAuthStore, useLogout } from '@features/auth';
@@ -65,24 +67,22 @@ export function UserMenu({ collapsed }: UserMenuProps) {
           title={collapsed ? displayLabel : undefined}
           type="button"
           className={cn(
-            'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
+            'group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
             'text-muted-foreground hover:bg-accent hover:text-foreground',
             collapsed && 'justify-center px-0',
           )}
         >
-          {/* Avatar */}
-          <span
-            aria-hidden="true"
-            className="bg-primary text-primary-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-medium"
+          <Badge
+            className="bg-primary text-primary-foreground flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium"
           >
             {initial}
-          </span>
+          </Badge>
           {collapsed ? null : (
             <>
-              <span className="text-foreground min-w-0 flex-1 truncate text-left text-sm font-medium">
+              <Text className="min-w-0 flex-1 truncate text-left font-medium" size="md" variant="default">
                 {displayLabel}
-              </span>
-              <ChevronUp className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-0 group-data-[state=closed]:rotate-180" />
+              </Text>
+              <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
             </>
           )}
         </button>
@@ -91,12 +91,12 @@ export function UserMenu({ collapsed }: UserMenuProps) {
       <DropdownMenuContent
         align={collapsed ? 'start' : 'end'}
         className="w-56"
-        side="top"
+        side="bottom"
         sideOffset={4}
       >
         <DropdownMenuLabel>
-          <p className="truncate text-sm font-medium">{user.displayName}</p>
-          <p className="text-muted-foreground truncate text-xs font-normal">{user.email}</p>
+          <Text className="truncate font-medium" size="md" variant="default">{user.displayName}</Text>
+          <Text className="truncate font-normal" size="sm" variant="muted">{user.email}</Text>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem

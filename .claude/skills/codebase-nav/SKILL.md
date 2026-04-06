@@ -60,9 +60,18 @@ src/renderer/features/{d}/
 └── store.ts           # Zustand (UI state only)
 ```
 
+## Structure Compliance
+
+All 36 renderer features are enforced to follow the canonical structure above. Run the scaffold audit to verify:
+
+```bash
+node scripts/scaffold-features.mjs          # audit (report only)
+node scripts/scaffold-features.mjs --fix    # create missing files
+```
+
 ## Common Domains
 
-auth, tasks, visualization, github, assistant, settings, projects, agents, agent-dashboard, alerts, briefing, changelog, dashboard, fitness, hub, ideas, insights, merge, milestones, notes, notifications, planner, qa, spotify, terminals, voice, workflow, workspace
+agent-dashboard, agents, alerts, assistant, auth, briefing, changelog, communications, dashboard, devices, diff-viewer, file-explorer, fitness, github, health, hub-setup, ideation, insights, merge, my-work, notes, onboarding, planner, productivity, projects, roadmap, screen, settings, tasks, terminals, visualization, voice, workflow, workflow-pipeline, workspace, workspaces
 
 ## Path Aliases
 

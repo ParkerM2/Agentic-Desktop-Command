@@ -62,16 +62,15 @@ export function TitleBarScreenshot() {
   return (
     <Button
       aria-label={captured ? 'Screenshot copied' : 'Take screenshot'}
-      className="text-muted-foreground hover:bg-muted hover:text-foreground h-7 w-7 rounded-sm"
-      size="icon"
+      size="icon-sm"
       title={captured ? 'Screenshot copied' : 'Take screenshot'}
       variant="ghost"
       onClick={handleClick}
     >
       {captured ? (
-        <Check className="h-3.5 w-3.5 text-success" />
+        <Check className="text-success" />
       ) : (
-        <Camera className="h-3.5 w-3.5" />
+        <Camera />
       )}
     </Button>
   );

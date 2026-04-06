@@ -6,7 +6,6 @@ import { useState } from 'react';
 
 import { Link } from '@tanstack/react-router';
 import {
-  Calendar,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
@@ -18,7 +17,7 @@ import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Textarea } from '@ui';
+import { Button, PageContent, PageHeader, PageLayout, Textarea } from '@ui';
 
 import {
   useDay,
@@ -114,90 +113,86 @@ export function PlannerPage() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* Header */}
-      <header className="border-border flex items-center justify-between border-b px-6 py-3">
-        <div className="flex items-center gap-3">
-          <Calendar className="text-primary h-5 w-5" />
-          <h1 className="text-foreground text-lg font-semibold">Daily Planner</h1>
-        </div>
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Daily Planner</PageHeader.Title>
+          <PageHeader.Actions>
+            {isToday(selectedDate) ? null : (
+              <Button
+                className="text-primary hover:text-primary/80 px-2.5 py-1 text-xs"
+                size="sm"
+                type="button"
+                variant="ghost"
+                onClick={handleGoToday}
+              >
+                Today
+              </Button>
+            )}
 
-        <div className="flex items-center gap-2">
-          {isToday(selectedDate) ? null : (
-            <Button
-              className="text-primary hover:text-primary/80 px-2.5 py-1 text-xs"
-              size="sm"
-              type="button"
-              variant="ghost"
-              onClick={handleGoToday}
-            >
-              Today
-            </Button>
-          )}
+            <div className="border-border flex items-center rounded-md border">
+              <Button
+                aria-label="Previous day"
+                className="h-auto p-1.5"
+                size="icon"
+                type="button"
+                variant="ghost"
+                onClick={handlePrevDay}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-foreground min-w-[180px] px-2 text-center text-sm font-medium">
+                {formatDateLabel(selectedDate)}
+              </span>
+              <Button
+                aria-label="Next day"
+                className="h-auto p-1.5"
+                size="icon"
+                type="button"
+                variant="ghost"
+                onClick={handleNextDay}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
 
-          <div className="border-border flex items-center rounded-md border">
-            <Button
-              aria-label="Previous day"
-              className="h-auto p-1.5"
-              size="icon"
-              type="button"
-              variant="ghost"
-              onClick={handlePrevDay}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-foreground min-w-[180px] px-2 text-center text-sm font-medium">
-              {formatDateLabel(selectedDate)}
-            </span>
-            <Button
-              aria-label="Next day"
-              className="h-auto p-1.5"
-              size="icon"
-              type="button"
-              variant="ghost"
-              onClick={handleNextDay}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+            <div className="border-border ml-2 flex rounded-md border">
+              <Button
+                type="button"
+                variant={viewMode === 'day' ? 'primary' : 'ghost'}
+                className={cn(
+                  'h-auto rounded-r-none px-3 py-1 text-xs',
+                  viewMode === 'day' ? '' : 'text-muted-foreground',
+                )}
+                onClick={() => setViewMode('day')}
+              >
+                Day
+              </Button>
+              <Button
+                type="button"
+                variant={viewMode === 'week' ? 'primary' : 'ghost'}
+                className={cn(
+                  'h-auto rounded-l-none px-3 py-1 text-xs',
+                  viewMode === 'week' ? '' : 'text-muted-foreground',
+                )}
+                onClick={() => setViewMode('week')}
+              >
+                Week
+              </Button>
+            </div>
 
-          <div className="border-border ml-2 flex rounded-md border">
-            <Button
-              type="button"
-              variant={viewMode === 'day' ? 'primary' : 'ghost'}
-              className={cn(
-                'h-auto rounded-r-none px-3 py-1 text-xs',
-                viewMode === 'day' ? '' : 'text-muted-foreground',
-              )}
-              onClick={() => setViewMode('day')}
+            <Link
+              className="text-muted-foreground hover:text-primary ml-2 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+              to={ROUTES.PLANNER_WEEKLY}
             >
-              Day
-            </Button>
-            <Button
-              type="button"
-              variant={viewMode === 'week' ? 'primary' : 'ghost'}
-              className={cn(
-                'h-auto rounded-l-none px-3 py-1 text-xs',
-                viewMode === 'week' ? '' : 'text-muted-foreground',
-              )}
-              onClick={() => setViewMode('week')}
-            >
-              Week
-            </Button>
-          </div>
+              <CalendarDays className="h-3.5 w-3.5" />
+              Weekly Review
+            </Link>
+          </PageHeader.Actions>
+        </PageHeader.Row>
+      </PageHeader>
 
-          <Link
-            className="text-muted-foreground hover:text-primary ml-2 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-            to={ROUTES.PLANNER_WEEKLY}
-          >
-            <CalendarDays className="h-3.5 w-3.5" />
-            Weekly Review
-          </Link>
-        </div>
-      </header>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <PageContent>
         {viewMode === 'week' ? (
           <WeekOverview selectedDate={selectedDate} onSelectDate={setSelectedDate} />
         ) : null}
@@ -275,7 +270,7 @@ export function PlannerPage() {
             }
           />
         </div>
-      </div>
-    </div>
+      </PageContent>
+    </PageLayout>
   );
 }

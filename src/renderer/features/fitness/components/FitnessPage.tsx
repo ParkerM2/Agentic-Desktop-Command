@@ -4,7 +4,7 @@
 
 import { Dumbbell, Plus, Scale, Target, TrendingUp } from 'lucide-react';
 
-import { Button, PageHeader, PageLayout, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { Button, PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useFitnessEvents } from '../hooks/useFitnessEvents';
 import { useFitnessUI } from '../store';
@@ -25,77 +25,63 @@ export function FitnessPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        description="Track workouts, body composition, and goals"
-        title="Fitness"
-      >
-        <Button
-          type="button"
-          onClick={() => {
-            setActiveTab('workouts');
-            setShowWorkoutForm(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Log Workout
-        </Button>
-      </PageHeader>
-
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Tabs
-          className="flex flex-1 flex-col overflow-hidden"
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="Track workouts, body composition, and goals">
+            Fitness
+          </PageHeader.Title>
+          <PageHeader.Actions>
+            <Button
+              type="button"
+              onClick={() => {
+                setActiveTab('workouts');
+                setShowWorkoutForm(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Log Workout
+            </Button>
+          </PageHeader.Actions>
+        </PageHeader.Row>
+        <PageHeader.Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as typeof activeTab)}
         >
-          <div className="border-border border-b px-6">
-            <TabsList className="h-auto rounded-none bg-transparent p-0">
-              <TabsTrigger
-                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                value="overview"
-              >
-                <TrendingUp className="h-4 w-4" />
-                Overview
-              </TabsTrigger>
-              <TabsTrigger
-                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                value="workouts"
-              >
-                <Dumbbell className="h-4 w-4" />
-                Workouts
-              </TabsTrigger>
-              <TabsTrigger
-                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                value="body"
-              >
-                <Scale className="h-4 w-4" />
-                Body
-              </TabsTrigger>
-              <TabsTrigger
-                className="flex items-center gap-2 rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                value="goals"
-              >
-                <Target className="h-4 w-4" />
-                Goals
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <PageHeader.TabList>
+            <PageHeader.Tab value="overview">
+              <TrendingUp className="h-4 w-4" />
+              Overview
+            </PageHeader.Tab>
+            <PageHeader.Tab value="workouts">
+              <Dumbbell className="h-4 w-4" />
+              Workouts
+            </PageHeader.Tab>
+            <PageHeader.Tab value="body">
+              <Scale className="h-4 w-4" />
+              Body
+            </PageHeader.Tab>
+            <PageHeader.Tab value="goals">
+              <Target className="h-4 w-4" />
+              Goals
+            </PageHeader.Tab>
+          </PageHeader.TabList>
 
-          <div className="flex-1 overflow-y-auto p-6">
-            <TabsContent value="overview">
+          <PageContent>
+            <PageHeader.TabContent value="overview">
               <OverviewTab />
-            </TabsContent>
-            <TabsContent value="workouts">
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="workouts">
               <WorkoutsTab showForm={showWorkoutForm} />
-            </TabsContent>
-            <TabsContent value="body">
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="body">
               <BodyComposition />
-            </TabsContent>
-            <TabsContent value="goals">
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="goals">
               <GoalsPanel />
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
+            </PageHeader.TabContent>
+          </PageContent>
+        </PageHeader.Tabs>
+      </PageHeader>
     </PageLayout>
   );
 }

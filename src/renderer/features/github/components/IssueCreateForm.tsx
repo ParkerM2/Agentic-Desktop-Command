@@ -83,7 +83,7 @@ export function IssueCreateForm() {
     );
   }
 
-  const isFormValid = title.trim().length > 0 && owner.length > 0 && repo.length > 0;
+  const isFormValid = title.trim().length > 0;
 
   return (
     <Dialog open={issueCreateDialogOpen} onOpenChange={setIssueCreateDialogOpen}>

@@ -43,7 +43,11 @@ export function AgentDashboard() {
 
   return (
     <PageLayout>
-      <PageHeader title="Agents" />
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Agents</PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
 
       <PageContent>
         {sessions && sessions.length > 0 ? (

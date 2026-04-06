@@ -8,7 +8,7 @@ import type { Alert } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, EmptyState, PageContent, PageHeader, PageLayout, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { Button, EmptyState, PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useAlerts, useDeleteAlert, useDismissAlert } from '../api/useAlerts';
 import { useAlertEvents } from '../hooks/useAlertEvents';
@@ -150,43 +150,49 @@ export function AlertsPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        description="Manage reminders, deadlines, and notifications"
-        title="Alerts"
-      >
-        <Button onClick={openCreateModal}>
-          <Plus className="h-4 w-4" />
-          New Alert
-        </Button>
-      </PageHeader>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="Manage reminders, deadlines, and notifications">
+            Alerts
+          </PageHeader.Title>
+          <PageHeader.Actions>
+            <Button onClick={openCreateModal}>
+              <Plus className="h-4 w-4" />
+              New Alert
+            </Button>
+          </PageHeader.Actions>
+        </PageHeader.Row>
+        <PageHeader.Tabs defaultValue="active">
+          <PageHeader.TabList>
+            {tabs.map((tab) => (
+              <PageHeader.Tab key={tab.id} value={tab.id}>
+                {tab.label}
+                {tab.count > 0 ? (
+                  <span className="bg-muted text-muted-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs">
+                    {tab.count}
+                  </span>
+                ) : null}
+              </PageHeader.Tab>
+            ))}
+          </PageHeader.TabList>
 
-      <PageContent>
-        {isLoading ? (
-          <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
-            Loading alerts...
-          </div>
-        ) : (
-          <Tabs defaultValue="active">
-            <TabsList className="mb-4">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id}>
-                  {tab.label}
-                  {tab.count > 0 ? (
-                    <span className="bg-muted text-muted-foreground ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs">
-                      {tab.count}
-                    </span>
-                  ) : null}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-            <TabsContent value="active">{renderAlertList(activeAlerts)}</TabsContent>
-            <TabsContent value="dismissed">{renderAlertList(dismissedAlerts)}</TabsContent>
-            <TabsContent value="recurring">
-              <RecurringAlerts alerts={alerts} />
-            </TabsContent>
-          </Tabs>
-        )}
-      </PageContent>
+          <PageContent>
+            {isLoading ? (
+              <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
+                Loading alerts...
+              </div>
+            ) : (
+              <>
+                <PageHeader.TabContent value="active">{renderAlertList(activeAlerts)}</PageHeader.TabContent>
+                <PageHeader.TabContent value="dismissed">{renderAlertList(dismissedAlerts)}</PageHeader.TabContent>
+                <PageHeader.TabContent value="recurring">
+                  <RecurringAlerts alerts={alerts} />
+                </PageHeader.TabContent>
+              </>
+            )}
+          </PageContent>
+        </PageHeader.Tabs>
+      </PageHeader>
 
       <CreateAlertModal />
     </PageLayout>

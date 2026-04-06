@@ -4,7 +4,7 @@ import { GitBranch, ScrollText, X } from 'lucide-react';
 
 import type { ChangeCategory, ChangelogEntry, ChangeType } from '@shared/types';
 
-import { Button, Card, CardContent, EmptyState, Heading, PageContent, PageHeader, PageLayout } from '@ui';
+import { Button, Card, CardContent, EmptyState, Heading } from '@ui';
 
 import { useAddChangelogEntry, useChangelog, useGenerateChangelog } from '../api/useChangelog';
 
@@ -97,21 +97,14 @@ export function ChangelogPage() {
   const errorMessage = generateChangelog.isError ? generateChangelog.error.message : null;
 
   return (
-    <PageLayout>
-      <PageHeader
-        description="Version history and release notes"
-        title="Changelog"
-      >
-        <Button
-          type="button"
-          onClick={() => setShowGenerateDialog(true)}
-        >
+    <div className="space-y-6 p-6">
+      {/* Actions */}
+      <div className="flex items-center gap-2">
+        <Button onClick={() => setShowGenerateDialog(true)}>
           <GitBranch className="h-4 w-4" />
           Generate from Git
         </Button>
-      </PageHeader>
-
-      <PageContent>
+      </div>
         {/* Generate Dialog */}
         {showGenerateDialog ? (
           <Card className="mb-6">
@@ -182,7 +175,6 @@ export function ChangelogPage() {
             title="No changelog entries"
           />
         ) : null}
-      </PageContent>
-    </PageLayout>
+    </div>
   );
 }

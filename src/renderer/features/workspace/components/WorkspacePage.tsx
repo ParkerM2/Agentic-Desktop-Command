@@ -12,6 +12,9 @@ import { Group, Panel, Separator } from 'react-resizable-panels';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
+import { PageHeader, PageLayout } from '@ui';
+
+
 import { useAgentDashboardEvents } from '@features/agent-dashboard';
 import { useProjects } from '@features/projects';
 
@@ -43,14 +46,28 @@ export function WorkspacePage() {
 
   if (projectId === undefined) {
     return (
-      <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-        Open a project to start a workspace session.
-      </div>
+      <PageLayout>
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title>Workspace</PageHeader.Title>
+          </PageHeader.Row>
+        </PageHeader>
+        <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+          Open a project to start a workspace session.
+        </div>
+      </PageLayout>
     );
   }
 
   return (
-    <Group className="h-full" orientation="horizontal">
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Workspace</PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
+
+      <Group className="h-full" orientation="horizontal">
       {/* Primary Claude — left panel */}
       <Panel defaultSize={55} minSize={30}>
         {primarySession === undefined ? (
@@ -76,5 +93,6 @@ export function WorkspacePage() {
         </div>
       </Panel>
     </Group>
+    </PageLayout>
   );
 }

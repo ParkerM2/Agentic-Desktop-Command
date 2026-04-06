@@ -13,8 +13,14 @@ export function VisualizationPage() {
 
   return (
     <PageLayout>
-      <PageHeader description="Codebase structure and agent activity" title="Visual Map" />
-      <div style={{ height: 'calc(100vh - 120px)', position: 'relative' }}>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="Codebase structure and agent activity">
+            Visual Map
+          </PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
+      <div className="relative flex-1">
         <ReactFlowProvider>
           <VisualizationCanvas projectId={projectId} />
           <NodeDetailPanel projectId={projectId} />

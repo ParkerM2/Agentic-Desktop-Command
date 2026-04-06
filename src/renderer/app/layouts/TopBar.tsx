@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useNavigate } from '@tanstack/react-router';
-import { Folder, FolderOpen, Minus, PanelLeft, Plus, Square, X } from 'lucide-react';
+import { Folder, FolderOpen, Minus, PanelLeft, Plus, Settings, Square, X } from 'lucide-react';
 
 import { PROJECT_VIEWS, ROUTES, projectViewPath } from '@shared/constants';
 
@@ -153,6 +153,14 @@ export function TopBar() {
       {/* Utility buttons */}
       <div className="electron-no-drag flex items-center gap-0.5 px-1">
         <WorkflowStatusBar />
+        <Button
+          aria-label="Settings"
+          size="icon-sm"
+          variant="ghost"
+          onClick={() => void navigate({ to: ROUTES.SETTINGS })}
+        >
+          <Settings />
+        </Button>
         <TitleBarScreenshot />
         <HealthIndicator />
         <HubStatus />

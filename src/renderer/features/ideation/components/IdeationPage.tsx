@@ -13,9 +13,6 @@ import {
   CardContent,
   EmptyState,
   Input,
-  PageContent,
-  PageHeader,
-  PageLayout,
   Select,
   SelectContent,
   SelectItem,
@@ -104,11 +101,9 @@ export function IdeationPage() {
   const items = ideas ?? [];
 
   return (
-    <PageLayout>
-      <PageHeader
-        description="Brainstorm and organize project ideas"
-        title="Ideation"
-      >
+    <div className="space-y-6 p-6">
+      {/* Actions */}
+      <div className="flex items-center gap-2">
         <Button
           type="button"
           variant="outline"
@@ -130,9 +125,7 @@ export function IdeationPage() {
           <Plus className="h-4 w-4" />
           New Idea
         </Button>
-      </PageHeader>
-
-      <PageContent>
+      </div>
         {/* Generate with AI Panel */}
         {showGenerate ? (
           <Card className="mb-6">
@@ -335,10 +328,8 @@ export function IdeationPage() {
             title="No ideas in this category"
           />
         ) : null}
-      </PageContent>
-
       {/* Edit dialog */}
       <IdeaEditForm idea={editingIdea} onClose={() => setEditingIdea(null)} />
-    </PageLayout>
+    </div>
   );
 }

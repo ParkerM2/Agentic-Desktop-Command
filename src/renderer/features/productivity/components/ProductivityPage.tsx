@@ -4,15 +4,7 @@
 
 import { Bell, Calendar, CalendarDays, Globe, Headphones, LayoutGrid, Newspaper, StickyNote } from 'lucide-react';
 
-import {
-  PageContent,
-  PageHeader,
-  PageLayout,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@ui';
+import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { AlertsPage } from '@features/alerts';
 import { BriefingPage } from '@features/briefing';
@@ -45,65 +37,63 @@ export function ProductivityPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        description="Calendar, music, and productivity tools in one place"
-        title="Productivity"
-      />
-      <Tabs
-        className="flex min-h-0 flex-1 flex-col"
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-      >
-        <TabsList className="border-border w-full justify-start rounded-none border-b px-6 py-0">
-          {TABS.map((tab) => (
-            <TabsTrigger key={tab.id} className="gap-1.5" value={tab.id}>
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title description="Calendar, music, and productivity tools in one place">
+            Productivity
+          </PageHeader.Title>
+        </PageHeader.Row>
+        <PageHeader.Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+        >
+          <PageHeader.TabList>
+            {TABS.map((tab) => (
+              <PageHeader.Tab key={tab.id} value={tab.id}>
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </PageHeader.Tab>
+            ))}
+          </PageHeader.TabList>
 
-        <PageContent>
-          <TabsContent className="mt-0" value="overview">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <PageContent>
+            <PageHeader.TabContent value="overview">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <CalendarWidget />
+                <SpotifyWidget />
+              </div>
+            </PageHeader.TabContent>
+
+            <PageHeader.TabContent value="calendar">
               <CalendarWidget />
+            </PageHeader.TabContent>
+
+            <PageHeader.TabContent value="spotify">
               <SpotifyWidget />
-            </div>
-          </TabsContent>
+            </PageHeader.TabContent>
 
-          <TabsContent className="mt-0" value="calendar">
-            <div className="mx-auto max-w-2xl">
-              <CalendarWidget />
-            </div>
-          </TabsContent>
+            <PageHeader.TabContent value="briefing">
+              <BriefingPage />
+            </PageHeader.TabContent>
 
-          <TabsContent className="mt-0" value="spotify">
-            <div className="mx-auto max-w-md">
-              <SpotifyWidget />
-            </div>
-          </TabsContent>
+            <PageHeader.TabContent value="notes">
+              <NotesPage />
+            </PageHeader.TabContent>
 
-          <TabsContent className="mt-0 h-full" value="briefing">
-            <BriefingPage />
-          </TabsContent>
+            <PageHeader.TabContent value="planner">
+              <PlannerPage />
+            </PageHeader.TabContent>
 
-          <TabsContent className="mt-0 h-full" value="notes">
-            <NotesPage />
-          </TabsContent>
+            <PageHeader.TabContent value="alerts">
+              <AlertsPage />
+            </PageHeader.TabContent>
 
-          <TabsContent className="mt-0 h-full" value="planner">
-            <PlannerPage />
-          </TabsContent>
-
-          <TabsContent className="mt-0 h-full" value="alerts">
-            <AlertsPage />
-          </TabsContent>
-
-          <TabsContent className="mt-0 h-full" value="comms">
-            <CommunicationsPage />
-          </TabsContent>
-        </PageContent>
-      </Tabs>
+            <PageHeader.TabContent value="comms">
+              <CommunicationsPage />
+            </PageHeader.TabContent>
+          </PageContent>
+        </PageHeader.Tabs>
+      </PageHeader>
     </PageLayout>
   );
 }

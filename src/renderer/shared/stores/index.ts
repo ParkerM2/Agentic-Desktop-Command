@@ -1,4 +1,5 @@
 export { useAssistantWidgetStore } from './assistant-widget-store';
+export type { AssistantMode } from './assistant-widget-store';
 export { useRouteHistoryStore } from './route-history-store';
 export { ThemeHydrator } from './ThemeHydrator';
 export { useThemeStore } from './theme-store';

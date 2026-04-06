@@ -58,4 +58,9 @@ export function registerGitHandlers(
   router.handle('git.createPr', ({ projectPath, title, body, baseBranch, headBranch }) =>
     gitService.createPr(projectPath, title, body, baseBranch, headBranch),
   );
+
+  router.handle('git.getRemoteUrl', async ({ repoPath, remote }) => {
+    const url = await gitService.getRemoteUrl(repoPath, remote);
+    return { url };
+  });
 }

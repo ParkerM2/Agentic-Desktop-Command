@@ -123,6 +123,17 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
+  const toolsRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_TOOLS,
+    staticData: { breadcrumbLabel: 'Tools' },
+    pendingComponent: ProjectSkeleton,
+    component: lazyRouteComponent(
+      () => import('@features/tools'),
+      'ToolsPage',
+    ),
+  });
+
   const workflowRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_WORKFLOW,
@@ -156,6 +167,7 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ideationRoute,
     changelogRoute,
     insightsRoute,
+    toolsRoute,
     workflowRoute,
     visualizationRoute,
   ] as const;

@@ -1,0 +1,6 @@
+import { create } from 'zustand';
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- Scaffold placeholder
+interface HubSetupState {}
+
+export const useHubSetupStore = create<HubSetupState>()(() => ({}));

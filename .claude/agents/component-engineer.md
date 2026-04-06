@@ -21,7 +21,7 @@ Then read existing components as reference:
 5. `src/renderer/features/tasks/components/CreateTaskDialog.tsx` — Dialog component
 6. `src/renderer/features/tasks/components/TaskFiltersToolbar.tsx` — Toolbar component
 7. `src/renderer/features/tasks/components/TaskStatusBadge.tsx` — Badge component
-8. `src/renderer/features/tasks/components/cells/` — AG-Grid cell renderers (12 files)
+8. `src/renderer/features/tasks/components/cells/` — Task table cell components
 9. `src/renderer/features/tasks/components/detail/` — Expandable detail row components (7 files)
 10. `src/renderer/features/projects/components/ProjectListPage.tsx` — Page component
 11. `src/renderer/features/projects/components/AddProjectDialog.tsx` — Dialog with form validation
@@ -70,7 +70,8 @@ NEVER modify:
 |----------|-----------|
 | **Form** | `Button`, `Input`, `Textarea`, `Label` |
 | **Display** | `Badge`, `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`, `Spinner` |
-| **Layout** | `PageLayout`, `PageHeader`, `PageTitle`, `PageDescription`, `PageContent`, `PageActions`, `Typography`, `Grid`, `Stack`, `HStack`, `VStack`, `Flex`, `Container`, `Separator` |
+| **Layout** | `PageLayout`, `PageHeader` (compound: `.Row`, `.Title`, `.Actions`, `.Tabs`, `.TabList`, `.Tab`, `.TabContent`), `PageContent`, `Heading`, `Text`, `Grid`, `Stack`, `Flex`, `Container`, `Separator` |
+| **Data** | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell`, `TableFooter`, `TableCaption` — use with TanStack Table for data grids |
 | **Radix** | `Dialog`, `AlertDialog`, `Select`, `DropdownMenu`, `Tooltip`, `Tabs`, `Switch`, `Checkbox`, `Toast`, `ScrollArea`, `Popover`, `Progress`, `Slider`, `Collapsible` |
 | **Form System** | `Form`, `FormField`, `FormInput`, `FormTextarea`, `FormSelect`, `FormCheckbox`, `FormSwitch`, `useForm` |
 

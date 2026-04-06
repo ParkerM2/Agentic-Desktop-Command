@@ -13,7 +13,7 @@ import type { Project, RepoType } from '@shared/types';
 import { formatRelativeTime } from '@renderer/shared/lib/utils';
 import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
-import { Badge, Button, Card, CardContent, Input, Separator, Spinner } from '@ui';
+import { Badge, Button, Card, CardContent, Input, PageHeader, PageLayout, Separator, Spinner } from '@ui';
 
 import { useAllTasks } from '@features/tasks';
 
@@ -208,9 +208,11 @@ export function ProjectListPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Spinner className="h-6 w-6" />
-      </div>
+      <PageLayout>
+        <div className="flex h-full items-center justify-center">
+          <Spinner className="h-6 w-6" />
+        </div>
+      </PageLayout>
     );
   }
 
@@ -255,10 +257,17 @@ export function ProjectListPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Projects</PageHeader.Title>
+        </PageHeader.Row>
+      </PageHeader>
+
+      <div className="mx-auto max-w-4xl p-8">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Projects</h1>
+        <div />
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => setWizardOpen(true)}>
             <Wand2 className="h-4 w-4" />
@@ -332,6 +341,7 @@ export function ProjectListPage() {
       />
 
       <ProjectEditDialog project={editingProject} onClose={() => setEditingProject(null)} />
-    </div>
+      </div>
+    </PageLayout>
   );
 }

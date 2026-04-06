@@ -1,18 +1,20 @@
 /**
- * WorkspaceCell — AG-Grid cell renderer for workspace name + online/offline dot.
+ * WorkspaceCell — cell renderer for workspace name + online/offline dot.
  */
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import type { CustomCellRendererProps } from 'ag-grid-react';
-
-interface WorkspaceData {
+export interface WorkspaceData {
   name?: string;
   isOnline?: boolean;
 }
 
-export function WorkspaceCell(props: CustomCellRendererProps) {
-  const raw = props.value as WorkspaceData | string | null | undefined;
+export function WorkspaceCell({
+  value,
+}: {
+  value: WorkspaceData | string | null | undefined;
+}) {
+  const raw = value;
 
   if (raw === null || raw === undefined) {
     return <span className="text-muted-foreground text-sm">&mdash;</span>;

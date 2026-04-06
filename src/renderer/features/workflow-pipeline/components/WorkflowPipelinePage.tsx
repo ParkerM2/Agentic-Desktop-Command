@@ -9,6 +9,8 @@ import type { Task, TaskStatus } from '@shared/types';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
+import { PageContent, PageHeader, PageLayout } from '@ui';
+
 import { useTask } from '@features/tasks';
 
 import { useUpdateTaskDescription, useUpdateTaskPlan } from '../api/useUpdateTask';
@@ -129,45 +131,48 @@ export function WorkflowPipelinePage() {
   );
 
   return (
-    <div className="flex h-full flex-col gap-6 p-6">
-      {/* Header with task selector */}
-      <div className="flex items-center gap-4">
-        <h1 className="text-foreground text-lg font-semibold">Workflow Pipeline</h1>
-        <TaskSelector
-          projectId={projectId}
-          selectedTaskId={selectedTaskId}
-          onSelectTask={setSelectedTaskId}
-        />
-      </div>
+    <PageLayout>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title>Workflow Pipeline</PageHeader.Title>
+          <PageHeader.Actions>
+            <TaskSelector
+              projectId={projectId}
+              selectedTaskId={selectedTaskId}
+              onSelectTask={setSelectedTaskId}
+            />
+          </PageHeader.Actions>
+        </PageHeader.Row>
+      </PageHeader>
 
-      {/* Pipeline diagram + step panel */}
-      {task ? (
-        <>
-          <PipelineDiagram
-            selectedStep={selectedStep}
-            taskStatus={task.status}
-            onStepClick={handleStepClick}
-          />
+      <PageContent>
+        {task ? (
+          <div className="space-y-6">
+            <PipelineDiagram
+              selectedStep={selectedStep}
+              taskStatus={task.status}
+              onStepClick={handleStepClick}
+            />
 
-          {/* Step content panel */}
-          <div className="bg-card border-border flex-1 overflow-auto rounded-lg border p-6">
-            {selectedStep
-              ? renderStepPanel(
-                  selectedStep,
-                  task,
-                  handleSaveDescription,
-                  handleSavePlan,
-                  updateDescription.isPending,
-                  updatePlan.isPending,
-                )
-              : null}
+            <div className="bg-card border-border flex-1 overflow-auto rounded-lg border p-6">
+              {selectedStep
+                ? renderStepPanel(
+                    selectedStep,
+                    task,
+                    handleSaveDescription,
+                    handleSavePlan,
+                    updateDescription.isPending,
+                    updatePlan.isPending,
+                  )
+                : null}
+            </div>
           </div>
-        </>
-      ) : (
-        <div className="text-muted-foreground flex flex-1 items-center justify-center">
-          Select a task to view its workflow pipeline
-        </div>
-      )}
-    </div>
+        ) : (
+          <div className="text-muted-foreground flex flex-1 items-center justify-center">
+            Select a task to view its workflow pipeline
+          </div>
+        )}
+      </PageContent>
+    </PageLayout>
   );
 }

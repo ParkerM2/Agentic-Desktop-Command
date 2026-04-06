@@ -73,18 +73,24 @@ export function BriefingPage() {
 
   return (
     <PageLayout>
-      <PageHeader
-        description={hasBriefing ? `Generated at ${formatTime(briefing.generatedAt)}` : undefined}
-        title="Daily Briefing"
-      >
-        <Button
-          disabled={generateBriefing.isPending}
-          variant="outline"
-          onClick={handleGenerate}
-        >
-          <RefreshCw className={`h-4 w-4 ${generateBriefing.isPending ? 'animate-spin' : ''}`} />
-          {generateBriefing.isPending ? 'Generating...' : 'Generate Now'}
-        </Button>
+      <PageHeader>
+        <PageHeader.Row>
+          <PageHeader.Title
+            description={hasBriefing ? `Generated at ${formatTime(briefing.generatedAt)}` : undefined}
+          >
+            Daily Briefing
+          </PageHeader.Title>
+          <PageHeader.Actions>
+            <Button
+              disabled={generateBriefing.isPending}
+              variant="outline"
+              onClick={handleGenerate}
+            >
+              <RefreshCw className={`h-4 w-4 ${generateBriefing.isPending ? 'animate-spin' : ''}`} />
+              {generateBriefing.isPending ? 'Generating...' : 'Generate Now'}
+            </Button>
+          </PageHeader.Actions>
+        </PageHeader.Row>
       </PageHeader>
 
       <PageContent>

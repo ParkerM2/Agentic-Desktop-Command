@@ -1,14 +1,15 @@
 /** SidebarLayout05 — Collapsible Submenus with search input */
 
 import { useNavigate, useRouterState } from '@tanstack/react-router';
-import { ChevronDown, Settings } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 import { projectViewPath } from '@shared/constants';
 
-import { HubConnectionIndicator } from '@renderer/shared/components/HubConnectionIndicator';
 import { useLayoutStore } from '@renderer/shared/stores';
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@ui';
+
+import { SidebarAssistantButton } from '@features/assistant';
 
 import {
   Sidebar,
@@ -18,7 +19,6 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInput,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -32,11 +32,10 @@ import {
 import { UserMenu } from '../UserMenu';
 
 import {
-  addProjectItem,
   developmentItems,
   personalItems,
-  settingsItem,
 } from './shared-nav';
+
 
 export function SidebarLayout05() {
   const navigate = useNavigate();
@@ -70,8 +69,7 @@ export function SidebarLayout05() {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
-        <span className="text-foreground px-2 text-sm font-semibold">ADC</span>
-        <SidebarInput placeholder="Search..." />
+        <UserMenu collapsed={!open} />
       </SidebarHeader>
 
       <SidebarContent>
@@ -88,12 +86,7 @@ export function SidebarLayout05() {
                 <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
-                      isActive={isPersonalActive(addProjectItem.path)}
-                      onClick={() => handlePersonalNav(addProjectItem.path)}
-                    >
-                      <addProjectItem.icon />
-                      <span>{addProjectItem.label}</span>
-                    </SidebarMenuButton>
+                     />
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton>
@@ -149,19 +142,7 @@ export function SidebarLayout05() {
       </SidebarContent>
 
       <SidebarFooter>
-        <UserMenu collapsed={!open} />
-        <HubConnectionIndicator collapsed={!open} />
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={isPersonalActive(settingsItem.path)}
-              onClick={() => handlePersonalNav(settingsItem.path)}
-            >
-              <Settings />
-              <span>{settingsItem.label}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarAssistantButton />
       </SidebarFooter>
 
       <SidebarRail />

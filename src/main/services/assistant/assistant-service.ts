@@ -1,33 +1,24 @@
 /**
- * AssistantService — Anthropic SDK tool_use assistant.
+ * AssistantService — Headless Claude CLI assistant.
  *
- * Replaces the previous `claude --print` CLI subprocess with a direct
- * Anthropic SDK call that supports tool_use. When Claude calls a tool,
- * the tool executor fires the corresponding service method and emits
- * an invalidation event so the renderer's React Query cache stays fresh.
+ * Spawns a headless Claude CLI session via the AgentManagerService and
+ * filters the stream-json output to only emit human-readable assistant
+ * text responses. No API key required — the CLI handles its own auth.
  *
- * Falls back gracefully when no API key is configured.
+ * Sessions are keyed by projectPath so switching projects keeps both alive.
  */
 
 import type { BrowserWindow } from 'electron';
 
-import Anthropic from '@anthropic-ai/sdk';
-
+import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
 import { createHistoryStore } from './history-store';
-import { APP_TOOLS } from './tool-definitions';
-import { createToolExecutor } from './tool-executor';
 
-import type { IdeasService } from '../ideas/ideas-service';
-import type { MilestonesService } from '../milestones/milestones-service';
-import type { NotesService } from '../notes/notes-service';
-import type { PlannerService } from '../planner/planner-service';
-import type { ProjectService } from '../project/project-service';
+import type { AgentManagerService } from '../agent-manager';
 
-
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
-const MAX_TOKENS = 4096;
-const MAX_TOOL_ITERATIONS = 10;
+const ASSISTANT_MODEL = 'claude-sonnet-4-6';
+const EVT_THINKING = 'event:assistant.thinking';
+const EVT_RESPONSE = 'event:assistant.response';
 
 export interface AssistantService {
   sendCommand: (
@@ -41,194 +32,162 @@ export interface AssistantService {
 
 export interface AssistantServiceDeps {
   getWindow: () => BrowserWindow | null;
-  getApiKey: () => string | undefined;
-  notesService: NotesService | null;
-  milestonesService: MilestonesService | null;
-  ideasService: IdeasService | null;
-  plannerService: PlannerService | null;
-  projectService: Pick<ProjectService, 'listProjectsSync'> | null;
+  agentManager: AgentManagerService;
 }
 
-function buildSystemPrompt(
-  projectService: AssistantServiceDeps['projectService'],
-  context?: { activeView?: string; activeProjectId?: string },
-): string {
-  const projects = projectService?.listProjectsSync() ?? [];
-  const projectList =
-    projects.length > 0
-      ? projects.map((p) => `  - ${p.name} (id: ${p.id}, path: ${p.path})`).join('\n')
-      : '  (no projects added yet)';
-
-  const base = `You are the AI co-pilot for ADC — a personal developer OS that reduces noise across development and personal tasks.
-
-ADC features:
-- Roadmap: project milestones with sub-tasks and progress tracking
-- Ideation: feature ideas with voting and categories (feature/improvement/bug/performance)
-- Notes: tagged notes per project
-- Daily Planner: time blocks and goals with completion tracking
-- Agent Dashboard: Claude AI coding agents with real-time session monitoring
-- Workflow Pipeline: multi-step AI coding task orchestration
-- Dashboard: daily overview with quick capture and today's schedule
-- Communications: Slack and Discord integrations
-- Briefing: AI-generated daily briefings
-- Fitness tracker, Changelog, Screen capture
-
-Current date/time: ${new Date().toISOString()}
-
-User's projects:
-${projectList}
-
-Tools available:
-- create_note, create_milestone, create_idea, add_daily_goal — create records directly in ADC
-- list_projects — list all user projects with paths
-- query_recent_items — query notes/milestones/ideas by recency (default: last 7 days)
-- list_progress_features — list workflow features tracked in progress/
-- read_progress_file — read workflow-state.json or proof-ledger.jsonl for a feature
-
-When users ask what was done, completed, or accomplished recently:
-1. Call list_progress_features to discover tracked features
-2. Call read_progress_file for relevant features to read their workflow state and proof ledger
-3. Call query_recent_items to check notes, milestones, and ideas added recently
-4. Synthesize the findings into a clear answer
-
-When asked to create something, use the appropriate tool immediately — do NOT just describe it.
-Always confirm what you created with key details. Be concise and action-oriented.`;
-
-  const viewContext = context?.activeView
-    ? `\nUser is currently on the ${context.activeView} screen.`
-    : '';
-
-  const projectContext = context?.activeProjectId
-    ? `\nActive project ID: ${context.activeProjectId}. Pass this as projectId in tool calls when relevant.`
-    : '';
-
-  return base + viewContext + projectContext;
+/**
+ * Extract plain text from an AgentChatMessage's content blocks.
+ * Only returns human-readable text — filters out tool_use and other block types.
+ */
+function extractText(message: AgentChatMessage): string {
+  return message.content
+    .filter((block): block is { type: 'text'; text: string } => block.type === 'text')
+    .map((block) => block.text)
+    .join('');
 }
 
-function collectToolResults(
-  content: Anthropic.ContentBlock[],
-  toolExecutor: ReturnType<typeof createToolExecutor>,
-): Anthropic.ToolResultBlockParam[] {
-  const results: Anthropic.ToolResultBlockParam[] = [];
-  for (const block of content) {
-    if (block.type === 'tool_use') {
-      const result = toolExecutor.execute(block.name, block.input as Record<string, unknown>);
-      results.push({
-        type: 'tool_result',
-        tool_use_id: block.id,
-        content: result.success
-          ? JSON.stringify(result.data)
-          : `Error: ${result.error ?? 'Tool execution failed'}`,
-        is_error: !result.success,
-      });
-    }
-  }
-  return results;
-}
-
-async function runConversationLoop(
-  client: Anthropic,
-  messages: Anthropic.MessageParam[],
-  systemPrompt: string,
-  toolExecutor: ReturnType<typeof createToolExecutor>,
-  sendEvent: (channel: string, payload: unknown) => void,
-): Promise<string> {
-  let fullResponse = '';
-  let iterations = 0;
-
-  while (iterations < MAX_TOOL_ITERATIONS) {
-    iterations++;
-
-     
-    const response = await client.messages.create({
-      model: DEFAULT_MODEL,
-      max_tokens: MAX_TOKENS,
-      system: systemPrompt,
-      tools: APP_TOOLS,
-      messages,
-    });
-
-    for (const block of response.content) {
-      if (block.type === 'text') {
-        fullResponse += block.text;
-        sendEvent('event:assistant.response', { content: block.text, type: 'text' });
-      }
-    }
-
-    if (response.stop_reason === 'end_turn') break;
-
-    if (response.stop_reason === 'tool_use') {
-      messages.push(
-        { role: 'assistant', content: response.content },
-        { role: 'user', content: collectToolResults(response.content, toolExecutor) },
-      );
-      continue;
-    }
-
-    break;
-  }
-
-  return fullResponse;
+interface ProjectSession {
+  sessionId: string;
+  eventCleanup: (() => void) | null;
+  lastInput: string;
 }
 
 export function createAssistantService(deps: AssistantServiceDeps): AssistantService {
-  const { getWindow, getApiKey } = deps;
+  const { getWindow, agentManager } = deps;
   const historyStore = createHistoryStore();
+
+  /** Active sessions keyed by normalized projectPath */
+  const projectSessions = new Map<string, ProjectSession>();
 
   function sendEvent(channel: string, payload: unknown): void {
     getWindow()?.webContents.send(channel, payload);
   }
 
-  const toolExecutor = createToolExecutor({
-    notesService: deps.notesService,
-    milestonesService: deps.milestonesService,
-    ideasService: deps.ideasService,
-    plannerService: deps.plannerService,
-    projectService: deps.projectService,
-    sendEvent,
-  });
+  function normalizeKey(projectPath: string): string {
+    return projectPath.replaceAll('\\', '/').toLowerCase();
+  }
 
-  return {
-    sendCommand(input, _projectPath, context) {
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        sendEvent('event:assistant.response', {
-          content:
-            'Claude API key is not configured. Add your Anthropic API key in Settings to use the assistant.',
-          type: 'error',
+  /**
+   * Subscribe to agent manager events for a project session.
+   * Filters to only emit assistant text content as response events.
+   */
+  function subscribeToSession(key: string, sid: string): void {
+    const ps = projectSessions.get(key);
+    if (!ps) return;
+
+    if (ps.eventCleanup) ps.eventCleanup();
+
+    const cleanup = agentManager.onEvent((event) => {
+      if (event.sessionId !== sid) return;
+
+      if (event.type === 'message.received') {
+        const message = event.data as AgentChatMessage;
+        if (message.role !== 'assistant') return;
+
+        const text = extractText(message);
+        if (text.length === 0) return;
+
+        sendEvent(EVT_RESPONSE, { content: text, type: 'text' });
+        sendEvent(EVT_THINKING, { isThinking: false });
+
+        const currentPs = projectSessions.get(key);
+        historyStore.addEntry({
+          id: `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`,
+          input: currentPs?.lastInput ?? '',
+          responseSummary: text.slice(0, 200),
+          timestamp: new Date().toISOString(),
         });
-        return;
       }
 
-      const id = `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`;
-      sendEvent('event:assistant.thinking', { isThinking: true });
-
-      const client = new Anthropic({ apiKey });
-      const systemPrompt = buildSystemPrompt(deps.projectService, context);
-      const messages: Anthropic.MessageParam[] = [{ role: 'user', content: input }];
-
-      void (async () => {
-        try {
-          const fullResponse = await runConversationLoop(
-            client,
-            messages,
-            systemPrompt,
-            toolExecutor,
-            sendEvent,
-          );
-          historyStore.addEntry({
-            id,
-            input,
-            responseSummary: fullResponse.slice(0, 200),
-            timestamp: new Date().toISOString(),
-          });
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : 'Unknown error';
-          sendEvent('event:assistant.response', { content: `Error: ${message}`, type: 'error' });
-        } finally {
-          sendEvent('event:assistant.thinking', { isThinking: false });
+      if (event.type === 'status.changed') {
+        const { newStatus } = event.data as { newStatus: string };
+        if (newStatus === 'running') {
+          sendEvent(EVT_THINKING, { isThinking: true });
+        } else if (newStatus === 'idle' || newStatus === 'completed') {
+          sendEvent(EVT_THINKING, { isThinking: false });
         }
-      })();
+      }
+
+      if (event.type === 'session.ended') {
+        sendEvent(EVT_THINKING, { isThinking: false });
+        const currentPs = projectSessions.get(key);
+        if (currentPs) {
+          if (currentPs.eventCleanup) currentPs.eventCleanup();
+          projectSessions.delete(key);
+        }
+      }
+    });
+
+    ps.eventCleanup = cleanup;
+  }
+
+  /**
+   * Ensure an assistant session exists for the given project.
+   * Spawns one if needed, reuses if alive. Each projectPath gets its own session.
+   */
+  function ensureSession(projectPath: string): string {
+    const key = normalizeKey(projectPath);
+    const existing = projectSessions.get(key);
+
+    if (existing) {
+      const session = agentManager.getSession(existing.sessionId);
+      if (session && session.status !== 'completed' && session.status !== 'failed') {
+        return existing.sessionId;
+      }
+      // Session died — clean up stale entry
+      if (existing.eventCleanup) existing.eventCleanup();
+      projectSessions.delete(key);
+    }
+
+    const cwd = projectPath.length > 0 ? projectPath : process.cwd();
+    const session = agentManager.spawnProjectOwner({
+      projectPath: cwd,
+      prompt: 'You are the ADC assistant. Respond concisely to user queries about their project, tasks, and development work. Await user messages.',
+      model: ASSISTANT_MODEL,
+      name: `assistant-${key.split('/').pop() ?? 'default'}`,
+    });
+
+    const ps: ProjectSession = {
+      sessionId: session.id,
+      eventCleanup: null,
+      lastInput: '',
+    };
+    projectSessions.set(key, ps);
+    subscribeToSession(key, session.id);
+    return session.id;
+  }
+
+  return {
+    sendCommand(input, projectPath, _context) {
+      const key = normalizeKey(projectPath);
+      sendEvent(EVT_THINKING, { isThinking: true });
+
+      try {
+        const sid = ensureSession(projectPath);
+        // Update lastInput on the correct project session
+        const ps = projectSessions.get(key);
+        if (ps) ps.lastInput = input;
+
+        const success = agentManager.sendMessage(sid, input);
+        if (!success) {
+          sendEvent(EVT_RESPONSE, {
+            content: 'Failed to send message to assistant session. The session may have crashed — try again.',
+            type: 'error',
+          });
+          sendEvent(EVT_THINKING, { isThinking: false });
+          // Force respawn on next attempt
+          const stale = projectSessions.get(key);
+          if (stale?.eventCleanup) stale.eventCleanup();
+          projectSessions.delete(key);
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        sendEvent(EVT_RESPONSE, {
+          content: `Error starting assistant session: ${message}`,
+          type: 'error',
+        });
+        sendEvent(EVT_THINKING, { isThinking: false });
+      }
     },
 
     getHistory() {
