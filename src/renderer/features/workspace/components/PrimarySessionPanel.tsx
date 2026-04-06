@@ -16,9 +16,11 @@ import { AgentChatPanel } from '@features/agent-dashboard';
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { StatusIndicator } from '@ui/status-indicator';
+import { ThinkingIndicator } from '@ui/thinking-indicator';
 import { Text } from '@ui/typography';
 
 import { useWorkspaceSend } from '../api/useWorkspace';
+import { useSessionThinking } from '../hooks/useSessionThinking';
 import { messagesToChatItems } from '../lib/chat-utils';
 import { useWorkspaceStore } from '../store';
 
@@ -44,6 +46,7 @@ export function PrimarySessionPanel({
   status,
 }: PrimarySessionPanelProps) {
   const send = useWorkspaceSend();
+  const isThinking = useSessionThinking(sessionId);
   const draft = useWorkspaceStore((s) => s.inputDrafts[sessionId] ?? '');
   const setDraft = useWorkspaceStore((s) => s.setInputDraft);
   const clearDraft = useWorkspaceStore((s) => s.clearInputDraft);
@@ -100,6 +103,13 @@ export function PrimarySessionPanel({
           <AgentChatPanel messages={chatItems} />
         )}
       </div>
+
+      {/* Thinking indicator */}
+      {isThinking ? (
+        <div className="border-border border-t px-4 py-2">
+          <ThinkingIndicator label={`Primary · ${projectName}`} size="sm" />
+        </div>
+      ) : null}
 
       {/* Input */}
       <div className="border-border flex gap-2 border-t p-3">

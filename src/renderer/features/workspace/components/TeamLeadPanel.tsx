@@ -16,9 +16,11 @@ import { AgentChatPanel } from '@features/agent-dashboard';
 import { Button } from '@ui/button';
 import { Input } from '@ui/input';
 import { StatusIndicator } from '@ui/status-indicator';
+import { ThinkingIndicator } from '@ui/thinking-indicator';
 import { Text } from '@ui/typography';
 
 import { useStopTeamLead, useWorkspaceSend } from '../api/useWorkspace';
+import { useSessionThinking } from '../hooks/useSessionThinking';
 import { messagesToChatItems } from '../lib/chat-utils';
 import { useWorkspaceStore } from '../store';
 
@@ -42,6 +44,7 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
 
   const send = useWorkspaceSend();
   const stop = useStopTeamLead(projectId);
+  const isThinking = useSessionThinking(agentSessionId);
   const isCollapsed = useWorkspaceStore((s) => s.teamLeadCollapsed[agentSessionId] ?? false);
   const toggle = useWorkspaceStore((s) => s.toggleTeamLeadCollapsed);
   const draft = useWorkspaceStore((s) => s.inputDrafts[agentSessionId] ?? '');
@@ -118,6 +121,13 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
               <AgentChatPanel className="max-h-48" messages={chatItems} />
             )}
           </div>
+
+          {/* Thinking indicator */}
+          {isThinking ? (
+            <div className="border-border border-t px-3 py-1.5">
+              <ThinkingIndicator label={label} size="xs" />
+            </div>
+          ) : null}
 
           {/* Input */}
           <div className="border-border flex gap-2 border-t p-2">

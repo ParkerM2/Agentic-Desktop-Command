@@ -18,7 +18,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ThinkingIndicator,
+  Spinner,
   Textarea,
 } from '@ui';
 
@@ -145,7 +145,10 @@ export function IdeationPage() {
                   onClick={handleGenerate}
                 >
                   {sendCommand.isPending ? (
-                    <ThinkingIndicator label="Generating..." size="sm" variant="inline" />
+                    <>
+                      <Spinner className="h-4 w-4" />
+                      Generating...
+                    </>
                   ) : (
                     <>
                       <Sparkles className="h-4 w-4" />
