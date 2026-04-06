@@ -16,6 +16,7 @@ import {
   wireIpcHandlers,
 } from './bootstrap';
 import { appLogger } from './lib/logger';
+import { createTrayManager } from './tray/tray-manager';
 
 import type { ErrorCollector } from './services/health/error-collector';
 import type { SettingsService } from './services/settings/settings-service';
@@ -212,4 +213,28 @@ void (async () => {
   await app.whenReady();
   initializeApp();
   createWindow();
+
+  // Initialize system tray after window is available
+  const mainWindow = getMainWindow();
+  if (mainWindow) {
+    const trayManager = createTrayManager({
+      mainWindow,
+      onQuickCommand: () => {
+        mainWindow.webContents.send('event:quickCommand');
+      },
+      onShowWindow: () => {
+        const win = getMainWindow();
+        if (win) {
+          if (win.isMinimized()) win.restore();
+          win.show();
+          win.focus();
+        }
+      },
+      onQuit: () => {
+        (app as unknown as Record<string, boolean>).isQuitting = true;
+        app.quit();
+      },
+    });
+    trayManager.initialize();
+  }
 })();
