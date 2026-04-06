@@ -30,4 +30,9 @@ export function registerWorkspaceHandlers(
   router.handle('workspace.sendMessage', async ({ sessionId, message }) => {
     return await workspace.sendMessage(sessionId, message);
   });
+
+  router.handle('workspace.initAllProjects', async ({ projects }) => {
+    await workspace.initAllProjects(projects);
+    return { success: true };
+  });
 }

@@ -21,7 +21,12 @@ import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { MutationErrorToast } from '@renderer/shared/components/MutationErrorToast';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
 import { useIpcEvent } from '@renderer/shared/hooks';
-import { ThemeHydrator, useLayoutStore, useRouteHistoryStore } from '@renderer/shared/stores';
+import {
+  LayoutHydrator,
+  ThemeHydrator,
+  useLayoutStore,
+  useRouteHistoryStore,
+} from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
 import { useErrorEvents } from '@features/health';
@@ -59,6 +64,7 @@ export function RootLayout() {
     return (
       <div className="bg-background flex h-screen items-center justify-center">
         <ThemeHydrator />
+        <LayoutHydrator />
         <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
@@ -80,6 +86,7 @@ export function RootLayout() {
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <ThemeHydrator />
+      <LayoutHydrator />
       <div className="min-h-0 flex-1 overflow-hidden">
         <LayoutWrapper layoutId={sidebarLayout}>
           <TopBar />

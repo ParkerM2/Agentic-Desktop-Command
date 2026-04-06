@@ -33,6 +33,7 @@ export interface WorkspaceSessionManager {
     projectId: string,
     projectPath: string,
   ) => Promise<{ primarySessionId: string; teamLeadSessionId: string }>;
+  initAllProjects: (projects: Array<{ id: string; path: string }>) => Promise<void>;
   getSessions: (projectId: string) => WorkspaceSession[];
   spawnTeamLead: (projectId: string, planPath?: string) => Promise<WorkspaceSession>;
   stopTeamLead: (projectId: string, index: number) => Promise<{ success: boolean }>;
@@ -184,6 +185,18 @@ export function createWorkspaceSessionManager(
       const primarySessionId = spawnPrimary(projectId, projectPath);
       const teamLeadSessionId = spawnImmortalTeamLead(projectId, projectPath);
       return Promise.resolve({ primarySessionId, teamLeadSessionId });
+    },
+
+    async initAllProjects(projects) {
+      const SPAWN_DELAY_MS = 100;
+      for (const project of projects) {
+        await this.initProject(project.id, project.path);
+        if (project !== projects.at(-1)) {
+          await new Promise<void>((resolve) => {
+          setTimeout(resolve, SPAWN_DELAY_MS);
+        });
+        }
+      }
     },
 
     getSessions(projectId) {
