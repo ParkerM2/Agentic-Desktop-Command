@@ -30,6 +30,7 @@ import { createAlertService } from '../services/alerts/alert-service';
 import { createAlertStore } from '../services/alerts/alert-store';
 import { createAppUpdateService } from '../services/app/app-update-service';
 import { createAssistantService } from '../services/assistant/assistant-service';
+import { createToolExecutor } from '../services/assistant/tool-executor';
 import { createWatchEvaluator } from '../services/assistant/watch-evaluator';
 import { createWatchStore } from '../services/assistant/watch-store';
 import { createUserSessionManager } from '../services/auth';
@@ -137,6 +138,7 @@ export interface ServiceRegistryResult {
   notificationManager: ReturnType<typeof createNotificationManager>;
   briefingService: ReturnType<typeof createBriefingService>;
   hotkeyManager: ReturnType<typeof createHotkeyManager>;
+  quickInput: ReturnType<typeof createQuickInputWindow>;
   settingsService: ReturnType<typeof createSettingsService>;
   cleanupService: ReturnType<typeof createCleanupService>;
   crashRecovery: ReturnType<typeof createCrashRecovery>;
@@ -408,7 +410,14 @@ export function createServiceRegistry(
     onCommand: (command) => {
       appLogger.info('[Main] Quick command received:', command);
       if (assistantServiceRef) {
-        assistantServiceRef.sendCommand(command, '');
+        assistantServiceRef.sendCommand(command);
+      }
+      // Bring main window to foreground so user can see the assistant response
+      const win = getMainWindow();
+      if (win) {
+        if (win.isMinimized()) win.restore();
+        win.show();
+        win.focus();
       }
     },
   });
@@ -499,9 +508,28 @@ export function createServiceRegistry(
   const watchEvaluator = createWatchEvaluator(watchStore);
 
   // ─── Assistant service ───────────────────────────────────────
+  const toolExecutor = createToolExecutor({
+    notesService,
+    milestonesService: milestonesService ?? null,
+    ideasService: ideasService ?? null,
+    plannerService,
+    projectService,
+    taskRepository,
+    briefingService,
+    changelogService: changelogService ?? null,
+    gitToolDeps: {
+      projectService,
+      gitService,
+      githubService,
+    },
+    sendEvent: (channel, payload) => {
+      getMainWindow()?.webContents.send(channel, payload);
+    },
+  });
   const assistantService = createAssistantService({
     getWindow: getMainWindow,
     agentManager: agentManagerService,
+    toolExecutor,
   });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;
@@ -644,6 +672,7 @@ export function createServiceRegistry(
     notificationManager,
     briefingService,
     hotkeyManager,
+    quickInput,
     settingsService,
     hubApiClient,
     taskRepository,

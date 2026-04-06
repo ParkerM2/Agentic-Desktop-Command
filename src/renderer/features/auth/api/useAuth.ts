@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LoginInput, RegisterInput } from '@shared/types/auth';
 
 import { ipc } from '@renderer/shared/lib/ipc';
+import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useAuthStore } from '../store';
 
@@ -55,6 +56,7 @@ export function useLogout() {
     mutationFn: () => ipc('auth.logout', {}),
     onSuccess: () => {
       clearAuth();
+      useLayoutStore.getState().clearLayout();
       queryClient.clear();
     },
   });
@@ -93,6 +95,7 @@ export function useForceLogout(): () => Promise<void> {
       // Hub unreachable — ignore, we'll clear local state regardless
     }
     clearAuth();
+    useLayoutStore.getState().clearLayout();
   }, [clearAuth]);
 }
 

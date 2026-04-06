@@ -220,7 +220,8 @@ void (async () => {
     const trayManager = createTrayManager({
       mainWindow,
       onQuickCommand: () => {
-        mainWindow.webContents.send('event:quickCommand');
+        // Show the quick input popup — its onCommand callback routes through the assistant service
+        registryRef?.quickInput.show();
       },
       onShowWindow: () => {
         const win = getMainWindow();

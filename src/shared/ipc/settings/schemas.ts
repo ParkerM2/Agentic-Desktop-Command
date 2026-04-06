@@ -78,6 +78,10 @@ export const AppSettingsSchema = z.object({
   keepRunning: z.boolean().optional(),
   assistantAutoStart: z.boolean().optional(),
   dataRetention: DataRetentionSettingsSchema.optional(),
+  openProjectTabs: z.array(z.string()).optional(),
+  activeProjectId: z.string().nullable().optional(),
+  lastRoutePerProject: z.record(z.string(), z.string()).optional(),
+  sidebarCollapsed: z.boolean().optional(),
 });
 
 // ── Profile Schemas ─────────────────────────────────────────────
@@ -132,6 +136,24 @@ export const ScreenshotSchema = z.object({
   source: ScreenSourceSchema,
   width: z.number(),
   height: z.number(),
+});
+
+// ── Layout Persistence Schemas ─────────────────────────────────
+
+export const LayoutStateSchema = z.object({
+  openProjectTabs: z.array(z.string()),
+  activeProjectId: z.string().nullable(),
+  lastRoutePerProject: z.record(z.string(), z.string()),
+  sidebarCollapsed: z.boolean(),
+  sidebarLayout: z.string(),
+});
+
+export const LayoutUpdateSchema = z.object({
+  openProjectTabs: z.array(z.string()).optional(),
+  activeProjectId: z.string().nullable().optional(),
+  lastRoutePerProject: z.record(z.string(), z.string()).optional(),
+  sidebarCollapsed: z.boolean().optional(),
+  sidebarLayout: z.string().optional(),
 });
 
 export const ScreenPermissionStatusSchema = z.enum([

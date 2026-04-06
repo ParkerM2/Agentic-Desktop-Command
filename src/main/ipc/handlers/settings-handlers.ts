@@ -62,4 +62,8 @@ export function registerSettingsHandlers(
   });
 
   router.handle('app.getVersion', () => Promise.resolve(service.getAppVersion()));
+
+  router.handle('settings.getLayout', () => Promise.resolve(service.getLayout()));
+
+  router.handle('settings.saveLayout', (updates) => Promise.resolve(service.saveLayout(updates)));
 }

@@ -58,6 +58,8 @@ function createMockSettingsService(): SettingsService {
     updateWebhookConfig: vi.fn(),
     getAgentSettings: vi.fn(),
     setAgentSettings: vi.fn(),
+    getLayout: vi.fn(),
+    saveLayout: vi.fn(),
   };
 }
 

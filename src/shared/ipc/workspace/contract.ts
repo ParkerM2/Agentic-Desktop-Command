@@ -25,6 +25,12 @@ export const workspaceInvoke = {
     input: z.object({ sessionId: z.string(), message: z.string() }),
     output: SuccessResponseSchema,
   },
+  'workspace.initAllProjects': {
+    input: z.object({
+      projects: z.array(z.object({ id: z.string(), path: z.string() })),
+    }),
+    output: SuccessResponseSchema,
+  },
 } as const;
 
 export const workspaceEvents = {

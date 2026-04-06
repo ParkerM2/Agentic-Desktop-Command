@@ -9,14 +9,10 @@
  * The inline chat panel includes a pop-out button to switch to the floating popup.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-import { ArrowUp, Maximize2, MessageSquare, X } from 'lucide-react';
+import { Maximize2, MessageSquare, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
-
-import { useProjects } from '@features/projects';
 
 import { Button } from '@ui/button';
 import {
@@ -25,68 +21,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@ui/sidebar';
-import { Textarea } from '@ui/textarea';
 
 import { useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
 
+import { AssistantInputBar } from './AssistantInputBar';
 import { WidgetMessageArea } from './WidgetMessageArea';
-
-// ─── Inline Input ─────────────────────────────────────────
-
-function InlineInput({ onSubmit, disabled }: { onSubmit: (v: string) => void; disabled?: boolean }) {
-  const [draft, setDraft] = useState('');
-  const ref = useRef<HTMLTextAreaElement>(null);
-
-  const adjustHeight = useCallback(() => {
-    const el = ref.current;
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = `${String(Math.min(el.scrollHeight, 64))}px`;
-    }
-  }, []);
-
-  useEffect(() => { adjustHeight(); }, [draft, adjustHeight]);
-
-  function handleSubmit() {
-    const trimmed = draft.trim();
-    if (trimmed.length === 0) return;
-    onSubmit(trimmed);
-    setDraft('');
-  }
-
-  return (
-    <div className="flex items-end gap-1.5 p-2">
-      <Textarea
-        ref={ref}
-        aria-label="Message assistant"
-        className="max-h-16 min-h-0 flex-1 px-2 py-1.5 text-xs"
-        disabled={disabled}
-        placeholder="Ask anything..."
-        resize="none"
-        rows={1}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit();
-          }
-        }}
-      />
-      <Button
-        aria-label="Send"
-        className="h-7 w-7 shrink-0 p-1"
-        disabled={disabled === true || draft.trim().length === 0}
-        size="icon"
-        variant="primary"
-        onClick={handleSubmit}
-      >
-        <ArrowUp className="h-3.5 w-3.5" />
-      </Button>
-    </div>
-  );
-}
 
 // ─── Main Component ───────────────────────────────────────
 
@@ -98,7 +38,6 @@ export function SidebarAssistantButton() {
   const sendCommand = useSendCommand();
   const isThinking = useAssistantStore((s) => s.isThinking);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
-  const { data: projects } = useProjects();
 
   const isActive = mode !== 'closed';
   const showInline = mode === 'inline' && sidebarExpanded;
@@ -117,10 +56,8 @@ export function SidebarAssistantButton() {
   }
 
   function handleSend(input: string) {
-    const activeProject = projects?.find((p) => p.id === activeProjectId);
     sendCommand.mutate({
       input,
-      projectPath: activeProject?.path ?? '',
       context: { activeProjectId: activeProjectId ?? undefined },
     });
   }
@@ -194,9 +131,7 @@ export function SidebarAssistantButton() {
       </div>
 
       {/* Input */}
-      <div className="border-border border-t">
-        <InlineInput disabled={isThinking} onSubmit={handleSend} />
-      </div>
+      <AssistantInputBar compact disabled={isThinking} onSubmit={handleSend} />
     </div>
   );
 }

@@ -16,12 +16,11 @@ import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores
 
 import { Button, Heading } from '@ui';
 
-import { useProjects } from '@features/projects';
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
 
-import { WidgetInput } from './WidgetInput';
+import { AssistantInputBar } from './AssistantInputBar';
 import { WidgetMessageArea } from './WidgetMessageArea';
 
 interface WidgetPanelProps {
@@ -36,7 +35,6 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const voiceOutputEnabled = useAssistantWidgetStore((s) => s.voiceOutputEnabled);
   const toggleVoiceOutput = useAssistantWidgetStore((s) => s.toggleVoiceOutput);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
-  const { data: projects } = useProjects();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -59,10 +57,8 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   }
 
   function handleSendCommand(input: string) {
-    const activeProject = projects?.find((p) => p.id === activeProjectId);
     sendCommand.mutate({
       input,
-      projectPath: activeProject?.path ?? '',
       context: {
         activeView: getActiveView(pathname),
         activeProjectId: activeProjectId ?? undefined,
@@ -133,7 +129,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
       <WidgetMessageArea />
 
       {/* Input */}
-      <WidgetInput disabled={sendCommand.isPending} onSubmit={handleSendCommand} />
+      <AssistantInputBar disabled={sendCommand.isPending} onSubmit={handleSendCommand} />
     </div>
   );
 }
