@@ -16,7 +16,6 @@ import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores
 
 import { Button, Heading } from '@ui';
 
-import { useProjects } from '@features/projects';
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
@@ -36,7 +35,6 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const voiceOutputEnabled = useAssistantWidgetStore((s) => s.voiceOutputEnabled);
   const toggleVoiceOutput = useAssistantWidgetStore((s) => s.toggleVoiceOutput);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
-  const { data: projects } = useProjects();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -59,10 +57,8 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   }
 
   function handleSendCommand(input: string) {
-    const activeProject = projects?.find((p) => p.id === activeProjectId);
     sendCommand.mutate({
       input,
-      projectPath: activeProject?.path ?? '',
       context: {
         activeView: getActiveView(pathname),
         activeProjectId: activeProjectId ?? undefined,

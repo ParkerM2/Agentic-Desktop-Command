@@ -222,6 +222,21 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
       case 'read_progress_file':
         result = executeReadProgressFile(input);
         break;
+      // ── Task CRUD stubs (Task 5 will implement) ──
+      // falls through
+      case 'tasks_create':
+      // falls through
+      case 'tasks_list':
+      // falls through
+      case 'tasks_update':
+      // falls through
+      case 'tasks_delete':
+      // ── Git/GitHub stubs (Task 6 will implement) ──
+      // falls through
+      case 'git_status':
+      // falls through
+      case 'github_list_prs':
+        return fail('Not yet implemented');
       default:
         return fail(`Unknown tool: ${toolName}`);
     }

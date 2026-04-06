@@ -23,7 +23,6 @@ import {
 } from '@ui';
 
 import { useSendCommand } from '@features/assistant';
-import { useProjects } from '@features/projects';
 
 
 import { useCreateIdea, useDeleteIdea, useIdeas, useVoteIdea } from '../api/useIdeas';
@@ -70,7 +69,6 @@ export function IdeationPage() {
   const sendCommand = useSendCommand();
   const openWidget = useAssistantWidgetStore((s) => s.open);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
-  const { data: projects } = useProjects();
 
   function handleCreate(): void {
     if (!formTitle.trim()) return;
@@ -87,11 +85,9 @@ export function IdeationPage() {
 
   function handleGenerate(): void {
     if (!generatePrompt.trim() || sendCommand.isPending) return;
-    const activeProject = projects?.find((p) => p.id === activeProjectId);
     openWidget();
     sendCommand.mutate({
       input: generatePrompt.trim(),
-      projectPath: activeProject?.path ?? '',
       context: { activeView: 'ideation', activeProjectId: activeProjectId ?? undefined },
     });
     setShowGenerate(false);

@@ -408,7 +408,7 @@ export function createServiceRegistry(
     onCommand: (command) => {
       appLogger.info('[Main] Quick command received:', command);
       if (assistantServiceRef) {
-        assistantServiceRef.sendCommand(command, '');
+        assistantServiceRef.sendCommand(command);
       }
     },
   });

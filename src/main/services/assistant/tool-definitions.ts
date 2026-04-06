@@ -1,6 +1,9 @@
 /**
  * Tool definitions for the assistant's tool_use capability.
  * Each tool maps to an app service method that creates or reads data.
+ *
+ * Also exports buildSystemPrompt() for constructing the global
+ * assistant session's system prompt with project context and tools.
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
@@ -9,6 +12,13 @@ export type AppTool = Anthropic.Tool & {
   /** React Query key root to invalidate when this tool executes */
   queryKeyRoots: string[];
 };
+
+/** Minimal project info passed when starting the assistant session. */
+export interface AssistantProjectInfo {
+  id: string;
+  name: string;
+  path: string;
+}
 
 export const APP_TOOLS: AppTool[] = [
   // ── Notes ────────────────────────────────────────────────────────────────
@@ -176,6 +186,105 @@ export const APP_TOOLS: AppTool[] = [
     },
     queryKeyRoots: [],
   },
+
+  // ── Task CRUD Tools ──────────────────────────────────────────────────────────
+  {
+    name: 'tasks_create',
+    description:
+      'Create a new task in a project. Use when the user asks to add a task, to-do item, or action item.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'ID of the project to create the task in' },
+        title: { type: 'string', description: 'Short title for the task' },
+        description: { type: 'string', description: 'Detailed task description' },
+        priority: {
+          type: 'string',
+          enum: ['low', 'medium', 'high', 'critical'],
+          description: 'Task priority level',
+        },
+      },
+      required: ['projectId', 'title'],
+    },
+    queryKeyRoots: ['tasks'],
+  },
+  {
+    name: 'tasks_list',
+    description:
+      'List all tasks for a project. Use when the user asks about their tasks, to-dos, or backlog.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'ID of the project to list tasks for' },
+      },
+      required: ['projectId'],
+    },
+    queryKeyRoots: [],
+  },
+  {
+    name: 'tasks_update',
+    description:
+      'Update an existing task. Use when the user asks to change a task status, title, or other fields.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'ID of the task to update' },
+        updates: {
+          type: 'object',
+          description: 'Fields to update (title, description, status, priority)',
+          properties: {
+            title: { type: 'string' },
+            description: { type: 'string' },
+            status: { type: 'string', enum: ['todo', 'in-progress', 'done', 'blocked'] },
+            priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+          },
+        },
+      },
+      required: ['taskId', 'updates'],
+    },
+    queryKeyRoots: ['tasks'],
+  },
+  {
+    name: 'tasks_delete',
+    description: 'Delete a task. Use when the user asks to remove or delete a task.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'ID of the task to delete' },
+        projectId: { type: 'string', description: 'ID of the project the task belongs to' },
+      },
+      required: ['taskId', 'projectId'],
+    },
+    queryKeyRoots: ['tasks'],
+  },
+
+  // ── Git Tools ──────────────────────────────────────────────────────────────
+  {
+    name: 'git_status',
+    description:
+      'Get the git status of a project. Use when the user asks about uncommitted changes, branch status, or working tree state.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'ID of the project to check git status for' },
+      },
+      required: ['projectId'],
+    },
+    queryKeyRoots: [],
+  },
+  {
+    name: 'github_list_prs',
+    description:
+      'List open pull requests for a project. Use when the user asks about PRs, code reviews, or merge requests.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'ID of the project to list PRs for' },
+      },
+      required: ['projectId'],
+    },
+    queryKeyRoots: [],
+  },
 ];
 
 export function getToolNames(): string[] {
@@ -185,4 +294,32 @@ export function getToolNames(): string[] {
 export function getQueryKeysForTool(toolName: string): string[][] {
   const tool = APP_TOOLS.find((t) => t.name === toolName);
   return tool ? [tool.queryKeyRoots] : [];
+}
+
+/**
+ * Build the system prompt for the global assistant session.
+ * Includes role description, available projects, and tool instructions.
+ */
+export function buildSystemPrompt(projects: AssistantProjectInfo[]): string {
+  const projectList =
+    projects.length > 0
+      ? projects.map((p) => `  - "${p.name}" (id: ${p.id}, path: ${p.path})`).join('\n')
+      : '  (no projects added yet)';
+
+  const toolList = APP_TOOLS.map((t) => `  - ${t.name}: ${t.description}`).join('\n');
+
+  return `You are ADC's built-in assistant. You help users manage their projects, tasks, and development workflow.
+
+## Available Projects
+${projectList}
+
+## Available Tools
+${toolList}
+
+## Instructions
+- Always use in-app tools instead of CLI commands when available.
+- When the user mentions a project by name, resolve it to the project ID from the list above.
+- Respond concisely. Use markdown formatting for readability.
+- When creating items (notes, tasks, milestones), confirm what you created.
+- Await user messages.`;
 }

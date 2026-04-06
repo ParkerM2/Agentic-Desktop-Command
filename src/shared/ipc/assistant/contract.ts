@@ -10,10 +10,21 @@ import { CommandHistoryEntrySchema } from './schemas';
 
 /** Invoke channels for assistant operations */
 export const assistantInvoke = {
+  'assistant.start': {
+    input: z.object({
+      projects: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          path: z.string(),
+        }),
+      ),
+    }),
+    output: z.object({ success: z.boolean() }),
+  },
   'assistant.sendCommand': {
     input: z.object({
       input: z.string(),
-      projectPath: z.string(),
       context: z
         .object({
           activeView: z.string().optional(),

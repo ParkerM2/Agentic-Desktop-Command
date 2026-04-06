@@ -16,7 +16,7 @@ import { ArrowUp, Maximize2, MessageSquare, X } from 'lucide-react';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
-import { useProjects } from '@features/projects';
+
 
 import { Button } from '@ui/button';
 import {
@@ -98,7 +98,6 @@ export function SidebarAssistantButton() {
   const sendCommand = useSendCommand();
   const isThinking = useAssistantStore((s) => s.isThinking);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
-  const { data: projects } = useProjects();
 
   const isActive = mode !== 'closed';
   const showInline = mode === 'inline' && sidebarExpanded;
@@ -117,10 +116,8 @@ export function SidebarAssistantButton() {
   }
 
   function handleSend(input: string) {
-    const activeProject = projects?.find((p) => p.id === activeProjectId);
     sendCommand.mutate({
       input,
-      projectPath: activeProject?.path ?? '',
       context: { activeProjectId: activeProjectId ?? undefined },
     });
   }

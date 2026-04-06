@@ -1,18 +1,21 @@
 /**
- * AssistantService — Headless Claude CLI assistant.
+ * AssistantService — Global headless Claude CLI assistant.
  *
- * Spawns a headless Claude CLI session via the AgentManagerService and
- * filters the stream-json output to only emit human-readable assistant
- * text responses. No API key required — the CLI handles its own auth.
+ * Spawns a single headless Claude CLI session via the AgentManagerService
+ * that lives for the entire app lifetime. Filters the stream-json output
+ * to only emit human-readable assistant text responses.
  *
- * Sessions are keyed by projectPath so switching projects keeps both alive.
+ * No API key required — the CLI handles its own auth.
  */
 
 import type { BrowserWindow } from 'electron';
 
 import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import { createHistoryStore } from './history-store';
+import { buildSystemPrompt } from './tool-definitions';
 
 import type { AgentManagerService } from '../agent-manager';
 
@@ -20,12 +23,19 @@ const ASSISTANT_MODEL = 'claude-sonnet-4-6';
 const EVT_THINKING = 'event:assistant.thinking';
 const EVT_RESPONSE = 'event:assistant.response';
 
+export interface AssistantProject {
+  id: string;
+  name: string;
+  path: string;
+}
+
 export interface AssistantService {
-  sendCommand: (
-    input: string,
-    projectPath: string,
-    context?: { activeView?: string; activeProjectId?: string },
-  ) => void;
+  /** Start the global assistant session. Call after auth + hydration. */
+  start: (projects: AssistantProject[]) => void;
+  /** Send a command to the global assistant session. */
+  sendCommand: (input: string, context?: { activeView?: string; activeProjectId?: string }) => void;
+  /** Stop the global assistant session (call on app quit). */
+  stop: () => void;
   getHistory: () => ReturnType<ReturnType<typeof createHistoryStore>['getEntries']>;
   clearHistory: () => void;
 }
@@ -46,36 +56,24 @@ function extractText(message: AgentChatMessage): string {
     .join('');
 }
 
-interface ProjectSession {
-  sessionId: string;
-  eventCleanup: (() => void) | null;
-  lastInput: string;
-}
-
 export function createAssistantService(deps: AssistantServiceDeps): AssistantService {
   const { getWindow, agentManager } = deps;
   const historyStore = createHistoryStore();
 
-  /** Active sessions keyed by normalized projectPath */
-  const projectSessions = new Map<string, ProjectSession>();
+  let sessionId: string | null = null;
+  let eventCleanup: (() => void) | null = null;
+  let lastInput = '';
 
   function sendEvent(channel: string, payload: unknown): void {
     getWindow()?.webContents.send(channel, payload);
   }
 
-  function normalizeKey(projectPath: string): string {
-    return projectPath.replaceAll('\\', '/').toLowerCase();
-  }
-
   /**
-   * Subscribe to agent manager events for a project session.
+   * Subscribe to agent manager events for the global session.
    * Filters to only emit assistant text content as response events.
    */
-  function subscribeToSession(key: string, sid: string): void {
-    const ps = projectSessions.get(key);
-    if (!ps) return;
-
-    if (ps.eventCleanup) ps.eventCleanup();
+  function subscribeToSession(sid: string): void {
+    if (eventCleanup) eventCleanup();
 
     const cleanup = agentManager.onEvent((event) => {
       if (event.sessionId !== sid) return;
@@ -90,10 +88,9 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
         sendEvent(EVT_RESPONSE, { content: text, type: 'text' });
         sendEvent(EVT_THINKING, { isThinking: false });
 
-        const currentPs = projectSessions.get(key);
         historyStore.addEntry({
           id: `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`,
-          input: currentPs?.lastInput ?? '',
+          input: lastInput,
           responseSummary: text.slice(0, 200),
           timestamp: new Date().toISOString(),
         });
@@ -110,64 +107,75 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
 
       if (event.type === 'session.ended') {
         sendEvent(EVT_THINKING, { isThinking: false });
-        const currentPs = projectSessions.get(key);
-        if (currentPs) {
-          if (currentPs.eventCleanup) currentPs.eventCleanup();
-          projectSessions.delete(key);
-        }
+        if (eventCleanup) eventCleanup();
+        eventCleanup = null;
+        sessionId = null;
       }
     });
 
-    ps.eventCleanup = cleanup;
+    eventCleanup = cleanup;
   }
 
   /**
-   * Ensure an assistant session exists for the given project.
-   * Spawns one if needed, reuses if alive. Each projectPath gets its own session.
+   * Ensure the global assistant session is alive.
+   * Returns true if usable, false if not.
    */
-  function ensureSession(projectPath: string): string {
-    const key = normalizeKey(projectPath);
-    const existing = projectSessions.get(key);
-
-    if (existing) {
-      const session = agentManager.getSession(existing.sessionId);
+  function ensureSession(): boolean {
+    if (sessionId) {
+      const session = agentManager.getSession(sessionId);
       if (session && session.status !== 'completed' && session.status !== 'failed') {
-        return existing.sessionId;
+        return true;
       }
-      // Session died — clean up stale entry
-      if (existing.eventCleanup) existing.eventCleanup();
-      projectSessions.delete(key);
+      // Session died — clean up
+      if (eventCleanup) eventCleanup();
+      eventCleanup = null;
+      sessionId = null;
     }
-
-    const cwd = projectPath.length > 0 ? projectPath : process.cwd();
-    const session = agentManager.spawnProjectOwner({
-      projectPath: cwd,
-      prompt: 'You are the ADC assistant. Respond concisely to user queries about their project, tasks, and development work. Await user messages.',
-      model: ASSISTANT_MODEL,
-      name: `assistant-${key.split('/').pop() ?? 'default'}`,
-    });
-
-    const ps: ProjectSession = {
-      sessionId: session.id,
-      eventCleanup: null,
-      lastInput: '',
-    };
-    projectSessions.set(key, ps);
-    subscribeToSession(key, session.id);
-    return session.id;
+    return false;
   }
 
   return {
-    sendCommand(input, projectPath, _context) {
-      const key = normalizeKey(projectPath);
+    start(projects) {
+      if (ensureSession()) {
+        serviceLogger.info('[Assistant] Session already running, skipping start');
+        return;
+      }
+
+      try {
+        const systemPrompt = buildSystemPrompt(projects);
+        const session = agentManager.spawnProjectOwner({
+          projectPath: process.cwd(),
+          prompt: systemPrompt,
+          model: ASSISTANT_MODEL,
+          name: 'assistant-global',
+        });
+
+        sessionId = session.id;
+        subscribeToSession(session.id);
+        serviceLogger.info('[Assistant] Global session started:', session.id);
+        sendEvent('event:assistant.autostart', { autoStarted: true });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        serviceLogger.error('[Assistant] Failed to start global session:', message);
+      }
+    },
+
+    sendCommand(input, _context) {
       sendEvent(EVT_THINKING, { isThinking: true });
 
       try {
-        const sid = ensureSession(projectPath);
-        // Update lastInput on the correct project session
-        const ps = projectSessions.get(key);
-        if (ps) ps.lastInput = input;
+        if (!ensureSession()) {
+          sendEvent(EVT_RESPONSE, {
+            content: 'Assistant session is not running. It will auto-start after login.',
+            type: 'error',
+          });
+          sendEvent(EVT_THINKING, { isThinking: false });
+          return;
+        }
 
+        lastInput = input;
+        // sessionId is guaranteed non-null after ensureSession() returns true
+        const sid = sessionId ?? '';
         const success = agentManager.sendMessage(sid, input);
         if (!success) {
           sendEvent(EVT_RESPONSE, {
@@ -176,17 +184,27 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
           });
           sendEvent(EVT_THINKING, { isThinking: false });
           // Force respawn on next attempt
-          const stale = projectSessions.get(key);
-          if (stale?.eventCleanup) stale.eventCleanup();
-          projectSessions.delete(key);
+          if (eventCleanup) eventCleanup();
+          eventCleanup = null;
+          sessionId = null;
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         sendEvent(EVT_RESPONSE, {
-          content: `Error starting assistant session: ${message}`,
+          content: `Error sending to assistant session: ${message}`,
           type: 'error',
         });
         sendEvent(EVT_THINKING, { isThinking: false });
+      }
+    },
+
+    stop() {
+      if (sessionId) {
+        serviceLogger.info('[Assistant] Stopping global session:', sessionId);
+        // The agent manager handles killing the process
+        if (eventCleanup) eventCleanup();
+        eventCleanup = null;
+        sessionId = null;
       }
     },
 
