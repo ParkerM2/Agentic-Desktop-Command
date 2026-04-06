@@ -77,8 +77,9 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   return (
     <div
       ref={panelRef}
+      style={{ left: 'calc(var(--sidebar-width) + 0.5rem)' }}
       className={cn(
-        'fixed right-6 bottom-20 z-50',
+        'fixed bottom-2 z-50',
         'bg-card border-border flex w-[380px] flex-col rounded-lg border',
         'shadow-xl',
         'animate-slide-up-panel',
