@@ -15,7 +15,7 @@
 4. [App Shell & Navigation](#4-app-shell--navigation)
 5. [Dashboard (Home)](#5-dashboard-home)
 6. [Projects](#6-projects)
-7. [Task Management (AG-Grid)](#7-task-management-ag-grid)
+7. [Task Management (TanStack Table)](#7-task-management-tanstack-table)
 8. [Terminals](#8-terminals)
 9. [Agents](#9-agents)
 10. [GitHub Integration](#10-github-integration)
@@ -459,7 +459,7 @@ User clicks pencil icon on project card
 
 ---
 
-## 7. Task Management (AG-Grid)
+## 7. Task Management (TanStack Table)
 
 **Route**: `/projects/$projectId/tasks`
 **Component**: `TaskDataGrid`
@@ -560,7 +560,7 @@ Hub broadcasts WebSocket event
   → src/renderer/features/tasks/hooks/useTaskEvents.ts
     → useIpcEvent('event:hub.taskUpdated', ...)
     → queryClient.invalidateQueries({ queryKey: taskKeys.lists() })
-  → AG-Grid re-renders with fresh data
+  → TanStack Table re-renders with fresh data
 ```
 
 **Key files**:
@@ -570,8 +570,7 @@ Hub broadcasts WebSocket event
 - `src/renderer/features/tasks/hooks/useTaskEvents.ts` — WebSocket event handling
 - `src/renderer/features/tasks/store.ts` — UI state (expanded rows, filters)
 - `src/main/ipc/handlers/task-handlers.ts` — all task IPC handlers + transforms
-- `src/renderer/features/tasks/components/grid/ag-grid-modules.ts` — AG-Grid module registration
-- `src/renderer/features/tasks/components/grid/ag-grid-modules.ts` — AG-Grid modules + Theming API config
+- `src/renderer/features/tasks/components/grid/TaskDataGrid.tsx` — TanStack Table grid + column definitions
 
 ---
 

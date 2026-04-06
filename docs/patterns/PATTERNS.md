@@ -521,7 +521,7 @@ User selects custom theme → useThemeStore.setColorTheme(themeId)
   → applyCustomTokens() calls setProperty() for all 33 CSS tokens
   → All Tailwind classes (bg-primary, etc.) automatically use new values
   → color-mix() expressions automatically use new values
-  → AG-Grid reads the same CSS vars automatically via its Theming API
+  → TanStack Table + @ui Table primitives automatically use new values
 
 User selects default theme → useThemeStore.setColorTheme('default')
   → removeProperty() clears all custom CSS var overrides
@@ -534,7 +534,7 @@ User selects default theme → useThemeStore.setColorTheme('default')
 Custom themes inject CSS variables at runtime via `document.documentElement.style.setProperty('--token', value)`.
 The theme store's `applyCustomTokens()` function applies all 33 tokens when a custom theme is selected.
 To clear custom tokens: `removeProperty('--token')` for each key.
-AG-Grid reads the same CSS vars automatically via its Theming API configuration in `ag-grid-modules.ts`.
+TanStack Table + `@ui` Table primitives read the same CSS vars automatically via Tailwind utility classes.
 
 The Theme Editor page (`/settings/themes`) provides:
 - Color pickers organized in sections (Base, Card & Surface, Brand, Semantic, Controls, Sidebar, Utility)
@@ -579,34 +579,13 @@ For branded buttons that need a dark appearance on light backgrounds and vice ve
 <Button className="bg-[#24292f] text-white hover:bg-[#24292f]/90">
 ```
 
-## AG-Grid Theming Pattern
+## TanStack Table Pattern
 
-AG-Grid v35 uses the quartz theme with design-system token overrides. Theme configuration is defined programmatically via the AG-Grid Theming API in `src/renderer/features/tasks/components/grid/ag-grid-modules.ts`, reading CSS custom properties at runtime.
-
-### How It Works
-
-1. **Base theme**: `ag-theme-quartz` (imported from `ag-grid-community/styles/`)
-2. **Override class**: `ag-theme-claude` stacked with quartz for compound specificity
-3. **Theming API**: AG-Grid's `themeQuartz.withPart(isDark ? colorSchemeDark : colorSchemeLight).withParams()` dynamically selects the color scheme based on app theme mode at runtime (defined in `ag-grid-theme.ts`). `TaskDataGrid` reads `useThemeStore().mode` and passes the correct theme via `useMemo`.
-4. **Custom themes**: Because AG-Grid reads CSS custom properties, custom themes applied via `setProperty()` are automatically picked up — no AG-Grid-specific reconfiguration needed
-5. **Interactive states**: Use `color-mix()` for hover/selection (NEVER hardcode hex/rgb)
-6. **Light/dark mode**: Color scheme part (`colorSchemeDark` or `colorSchemeLight`) is dynamically selected based on app theme mode, handles native scrollbar/control rendering
-
-### Component Usage
-
-```tsx
-<Card className="border-border bg-card min-h-0 flex-1 overflow-hidden rounded-lg border">
-  <div className={cn('ag-theme-quartz ag-theme-claude h-full')}>
-    <AgGridReact ... />
-  </div>
-</Card>
-```
+Task data grids use TanStack Table with `@ui` Table primitives (`Table`, `TableHeader`, `TableRow`, `TableHead`, `TableBody`, `TableCell`). Theming is handled entirely through Tailwind utility classes reading CSS custom properties — no special theme configuration needed.
 
 ### Rules
-- **ALWAYS** use compound selector `.ag-theme-quartz.ag-theme-claude` (not `.ag-theme-claude` alone)
-- **ALWAYS** wrap grid in `<Card>` from `@ui` for visual containment
-- **NEVER** hardcode colors in the theme CSS -- use `var()` and `color-mix()` only
-- **ALWAYS** set `--ag-data-background-color` alongside `--ag-background-color` — omitting it causes white viewport in dark mode
+- **ALWAYS** wrap table in `<Card>` from `@ui` for visual containment
+- **NEVER** hardcode colors — use Tailwind utilities (`bg-card`, `text-foreground`, etc.)
 - **ALWAYS** add `?? []` fallback when passing `task.subtasks` to child components
 - **ALWAYS** add `?? ''` fallback when accessing `task.description` in search/filter logic
 
