@@ -15,8 +15,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
   Textarea,
+  ThinkingIndicator,
 } from '@ui';
 
 import { useSendCommand } from '@features/assistant';
@@ -294,10 +294,7 @@ export function RoadmapPage() {
                 onClick={handleGenerate}
               >
                 {sendCommand.isPending ? (
-                  <>
-                    <Spinner className="h-4 w-4" />
-                    Generating...
-                  </>
+                  <ThinkingIndicator label="Generating..." size="sm" variant="inline" />
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4" />

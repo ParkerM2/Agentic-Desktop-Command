@@ -8,10 +8,12 @@
 
 import { useEffect, useRef } from 'react';
 
-import { AlertCircle, Loader2, MessageSquare } from 'lucide-react';
+import { AlertCircle, MessageSquare } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
+
+import { ThinkingIndicator } from '@ui';
 
 import { useSpeechSynthesis } from '@features/voice';
 
@@ -121,10 +123,7 @@ export function WidgetMessageArea() {
         ))}
 
         {isThinking ? (
-          <div className="text-muted-foreground flex items-center gap-1.5 text-xs">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>Thinking...</span>
-          </div>
+          <ThinkingIndicator label="Assistant" size="sm" />
         ) : null}
       </div>
     </div>
