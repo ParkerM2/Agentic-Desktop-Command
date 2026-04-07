@@ -103,7 +103,10 @@ import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
+
 import { createWorkflowTemplateService } from '../services/workflow-templates';
+
+import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
@@ -453,6 +456,22 @@ export function createServiceRegistry(
   const workflowTemplateService = createWorkflowTemplateService({ dataDir });
   const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
 
+  // ─── WorkflowEngine service ──────────────────────────────────
+  const workflowEngineService = createWorkflowEngineService({
+    agentOrchestrator,
+    gitService,
+    progressBaseDir: dataDir,
+    onStateChanged: (event) => {
+      router.emit('event:workflow-engine.stateChanged', event);
+    },
+    onCompleted: (event) => {
+      router.emit('event:workflow-engine.completed', event);
+    },
+    onError: (event) => {
+      router.emit('event:workflow-engine.error', event);
+    },
+  });
+
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
 
@@ -615,6 +634,7 @@ export function createServiceRegistry(
     visualizationService,
     userSessionManager,
     workspaceSessionManager,
+    workflowEngineService,
     dataDir,
     providers,
     tokenStore,

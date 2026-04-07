@@ -51,6 +51,7 @@ import { registerVisualizationHandlers } from './handlers/visualization-handlers
 import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
 import { registerWindowHandlers } from './handlers/window-handlers';
+import { registerWorkflowEngineHandlers } from './handlers/workflow-engine-handlers';
 import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkflowTemplateHandlers } from './handlers/workflow-template-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
@@ -112,7 +113,10 @@ import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VisualizationService } from '../services/visualization';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
+
 import type { WorkflowTemplateService } from '../services/workflow-templates';
+
+import type { WorkflowEngineService } from '../services/workflow-engine';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
@@ -175,6 +179,7 @@ export interface Services {
   progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
+  workflowEngineService: WorkflowEngineService;
   dataDir: string;
   providers: Map<string, OAuthConfig>;
   tokenStore: TokenStore;
@@ -278,6 +283,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.dataDir,
   );
   registerWindowHandlers(router);
+  registerWorkflowEngineHandlers(router, services.workflowEngineService);
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   if (services.teamWatcherService) {
