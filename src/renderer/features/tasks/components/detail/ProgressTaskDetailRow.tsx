@@ -194,12 +194,6 @@ function stepStatusDotClass(status: StepStatus): string {
   return 'bg-muted-foreground/30';
 }
 
-/** Returns the first N characters of content with an ellipsis if truncated. */
-function truncate(content: string, maxLen: number): string {
-  if (content.length <= maxLen) return content;
-  return `${content.slice(0, maxLen)}…`;
-}
-
 type PrBadgeVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'success';
 
 function prStatusVariant(status: string | undefined): PrBadgeVariant {
@@ -296,12 +290,11 @@ interface ContentBlockProps {
   content: string;
   expanded: boolean;
   onToggle: () => void;
-  previewLength?: number;
 }
 
-function ContentBlock({ content, expanded, onToggle, previewLength = 300 }: ContentBlockProps) {
+function ContentBlock({ content, expanded, onToggle }: ContentBlockProps) {
   const summaryBlock = extractSummaryBlock(content);
-  const previewMarkdown = summaryBlock ?? truncate(content, previewLength);
+  const previewMarkdown = summaryBlock ?? content;
 
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
@@ -591,19 +584,16 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
           { key: 'plan' as PipelineTab, label: 'Plan', status: planStatus },
           { key: 'execute' as PipelineTab, label: 'Execute', status: executeStatus },
         ]).map((tab) => (
-          <button
+          <Button
             key={tab.key}
-            type="button"
-            className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === tab.key
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className="flex-1 justify-center gap-2"
+            size="sm"
+            variant={activeTab === tab.key ? 'secondary' : 'ghost'}
             onClick={() => { setActiveTab(tab.key); }}
           >
             <span className={`inline-block h-2 w-2 rounded-full ${stepStatusDotClass(tab.status)}`} />
             {tab.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -665,14 +655,14 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
           {/* Right: Action dropdowns + links + workflow + archive */}
           <Flex align="center" gap="sm" wrap="nowrap">
             <ActionDropdown
-              disabled={isActionActive || task.hasResearch}
+              disabled={isActionActive}
               label="Research"
               options={RESEARCH_OPTIONS}
               slug={task.slug}
               onAction={(prompt) => { void startResearch(task.slug, prompt); }}
             />
             <ActionDropdown
-              disabled={isActionActive || !task.hasResearch || task.hasPlan}
+              disabled={isActionActive || !task.hasResearch}
               label="Plan"
               options={PLAN_OPTIONS}
               slug={task.slug}

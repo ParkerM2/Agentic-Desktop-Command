@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { extractSummaryBlock } from '../../../src/renderer/features/tasks/components/detail/summary-block-parser';
+import { extractSummaryBlock } from '../../../../../src/renderer/features/tasks/components/detail/summary-block-parser';
 
 describe('extractSummaryBlock', () => {
   it('extracts content between summary markers', () => {
