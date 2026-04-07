@@ -7,6 +7,7 @@
 
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { GitService } from '../git/git-service';
+import type { WorkflowTemplateService } from '../workflow-templates/workflow-template-service';
 
 // ─── State Enum ──────────────────────────────────────────────
 
@@ -138,6 +139,7 @@ export interface WorkflowErrorEvent {
 export interface WorkflowEngineDeps {
   agentOrchestrator: AgentOrchestrator;
   gitService: GitService;
+  templateService: WorkflowTemplateService;
   progressBaseDir: string;
   onStateChanged: (event: WorkflowStateChangedEvent) => void;
   onCompleted: (event: WorkflowCompletedEvent) => void;
@@ -147,6 +149,17 @@ export interface WorkflowEngineDeps {
 // ─── Service Interface ─────────────────────────────────────────
 
 export interface WorkflowEngineService {
+  /**
+   * Apply a template to a feature: resolve the three-layer merge, write a
+   * snapshot to disk, then start the engine from that snapshot.
+   * Returns the runId for the new engine instance.
+   */
+  applyTemplate: (
+    templateId: string,
+    featureName: string,
+    projectPath: string,
+    overrides: Record<string, unknown>,
+  ) => string;
   /** Start a new workflow run, returns the runId */
   start: (config: WorkflowRunConfig) => string;
   /** Stop a running engine by runId */

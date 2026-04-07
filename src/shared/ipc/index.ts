@@ -62,10 +62,8 @@ import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
 import { windowInvoke } from './window';
 import { workflowEvents, workflowInvoke } from './workflow';
-
-import { workflowTemplatesInvoke } from './workflow-templates';
-
 import { workflowEngineEvents, workflowEngineInvoke } from './workflow-engine';
+import { workflowTemplatesInvoke } from './workflow-templates';
 import { workspaceEvents, workspaceInvoke } from './workspace';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
@@ -485,6 +483,8 @@ export type {
   WorkflowTemplate,
 } from './workflow-templates';
 
+export {
+  WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
   WorkflowEngineRecordSchema,
   WorkflowErrorEventSchema,

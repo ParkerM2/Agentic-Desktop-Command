@@ -8,6 +8,7 @@
 import { z } from 'zod';
 
 import {
+  WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
   WorkflowEngineRecordSchema,
   WorkflowErrorEventSchema,
@@ -18,6 +19,10 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const workflowEngineInvoke = {
+  'workflow-engine.apply': {
+    input: WorkflowApplyInputSchema,
+    output: z.object({ runId: z.string() }),
+  },
   'workflow-engine.start': {
     input: WorkflowRunConfigSchema,
     output: z.object({ runId: z.string() }),
