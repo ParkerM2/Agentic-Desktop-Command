@@ -100,6 +100,22 @@ export function ProgressContextHydrator() {
       },
     );
 
+    const unsubWorkflowStep = window.api.on(
+      'event:progress.workflowStep',
+      (payload: EventPayload<'event:progress.workflowStep'>) => {
+        void (async () => {
+          try {
+            const task = await ipc('progress.getTask', { slug: payload.slug });
+            if (task !== null) {
+              upsertTask(task);
+            }
+          } catch {
+            // Best-effort re-fetch
+          }
+        })();
+      },
+    );
+
     return () => {
       unsubCreated();
       unsubUpdated();
@@ -107,6 +123,7 @@ export function ProgressContextHydrator() {
       unsubActionStarted();
       unsubActionCompleted();
       unsubActionFailed();
+      unsubWorkflowStep();
     };
   }, [
     setTasks,
