@@ -60,7 +60,7 @@ function PageHeaderBase({
       <div
         data-slot="page-header"
         className={cn(
-          'border-border flex w-full flex-col border-b',
+          'border-border flex min-h-0 w-full flex-1 flex-col border-b',
           className,
         )}
         {...props}
@@ -138,7 +138,7 @@ type PageHeaderTabsProps = React.ComponentProps<typeof TabsPrimitive.Root>;
 function PageHeaderTabs({ className, ...props }: PageHeaderTabsProps) {
   return (
     <TabsPrimitive.Root
-      className={cn('w-full', className)}
+      className={cn('flex min-h-0 w-full flex-1 flex-col', className)}
       data-slot="page-header-tabs"
       {...props}
     />
@@ -202,7 +202,7 @@ type PageContentProps = React.ComponentProps<'div'>;
 function PageContent({ className, ...props }: PageContentProps) {
   return (
     <div
-      className={cn('w-full flex-1 overflow-auto px-6 py-4', className)}
+      className={cn('min-h-0 w-full flex-1 overflow-auto px-6 py-4', className)}
       data-slot="page-content"
       {...props}
     />
