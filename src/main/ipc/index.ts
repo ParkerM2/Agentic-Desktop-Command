@@ -288,6 +288,13 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
+
+  // Stub: workspaces CRUD (Hub-backed, no local service yet)
+  router.handle('workspaces.list', () => Promise.resolve([]));
+  router.handle('workspaces.create', () => { throw new Error('Hub not configured'); });
+  router.handle('workspaces.update', () => { throw new Error('Hub not configured'); });
+  router.handle('workspaces.delete', () => { throw new Error('Hub not configured'); });
+
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
       router,
