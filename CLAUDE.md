@@ -30,6 +30,119 @@
 - File placement rules: `docs/patterns/CODEBASE-GUARDIAN.md`
 - Plan status: `docs/tracker.json`
 
+## Progress Task Pipeline
+
+Local-first task management backed by the `progress/` filesystem. **The task list grid reads from `progress.*` IPC channels — NOT `hub.tasks.*`.**
+
+**IPC domain:** `progress`
+**Contract:** `src/shared/ipc/progress/contract.ts`
+**Types:** `src/shared/types/progress.ts` — `ProgressTask`, `ProgressStatus`, `ProgressPriority`
+**Service:** `src/main/services/progress/progress-service.ts` — `createProgressService(projectPath, agentManagerService)`
+**Handler:** `src/main/ipc/handlers/progress-handlers.ts`
+**Renderer store:** `src/renderer/shared/stores/progress-context-store.ts` — `useProgressContext()`
+**Hydrator:** `src/renderer/shared/stores/ProgressContextHydrator.tsx` (mounted in RootLayout)
+
+### `progress/` Directory Structure
+
+```
+progress/
+├── <slug>/
+│   ├── task.md              ← root file (or description.md / ticket.md) — YAML frontmatter
+│   ├── research/
+│   │   └── research.md
+│   ├── plans/
+│   │   └── plan.md
+│   └── tasks/
+│       └── task-1.md        ← team subtask files
+└── archived/
+    └── <slug>/
+```
+
+### Invoke Channels (12 total)
+
+| Channel | Input | Output | Description |
+|---------|-------|--------|-------------|
+| `progress.listTasks` | `{}` | `ProgressTask[]` | List all non-archived tasks |
+| `progress.getTask` | `{ slug }` | `ProgressTask \| null` | Get single task with full content |
+| `progress.createTask` | `{ slug, title, description, priority? }` | `ProgressTask` | Create `progress/<slug>/task.md` |
+| `progress.updateTask` | `{ slug, updates }` | `ProgressTask` | Rewrite frontmatter fields |
+| `progress.archiveTask` | `{ slug }` | `{ success }` | Move to `progress/archived/<slug>/` |
+| `progress.deleteTask` | `{ slug }` | `{ success }` | Remove directory entirely |
+| `progress.listArchived` | `{}` | `ProgressTask[]` | List archived tasks |
+| `progress.startResearch` | `{ slug }` | `{ sessionId }` | Spawn research agent session |
+| `progress.createPlan` | `{ slug }` | `{ sessionId }` | Spawn planning agent session |
+| `progress.spinUpTeam` | `{ slug }` | `{ sessionId, action }` | Spawn team-lead to decompose plan |
+| `progress.runWorkflow` | `{ slug }` | `{ started: true }` | Run full Research→Plan→Team pipeline |
+| `progress.cancelAction` | `{ slug }` | `{ success }` | Stop active agent session for task |
+| `progress.runLogCleanup` | `{ maxAgeDays? }` | `{ deleted }` | Clean old JSONL session logs |
+
+### Event Channels (7 total)
+
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:progress.taskUpdated` | `{ slug, task }` | Any frontmatter or directory change |
+| `event:progress.taskCreated` | `{ slug, task }` | Task directory created |
+| `event:progress.taskArchived` | `{ slug }` | Task moved to archived/ |
+| `event:progress.actionStarted` | `{ slug, action, sessionId }` | Research/plan/team session spawned |
+| `event:progress.actionCompleted` | `{ slug, action }` | Session exited with code 0 |
+| `event:progress.actionFailed` | `{ slug, action, error }` | Session exited non-zero |
+| `event:progress.workflowStep` | `{ slug, step, status }` | Step progress during runWorkflow |
+
+### Status Flow
+
+```
+backlog → researching → research_done → planning → plan_ready → executing → review → done → archived
+                                                                                    ↘ error
+```
+
+Status is stored in frontmatter AND reconciled from directory contents on every read:
+- `research/research.md` exists → bumped to at least `research_done`
+- `plans/plan.md` exists → bumped to at least `plan_ready`
+- `tasks/task-*.md` exist → bumped to at least `executing`
+
+Frontmatter wins only if it represents higher progress than the directory state.
+
+### Agent Naming Convention
+
+Agents MUST use descriptive names: `{role}-{slug}` (e.g., `research-auth-refactor`, `team-lead-auth-refactor`, `service-engineer-auth-service`).
+
+## Workspace Agent Commands
+
+IPC channels for plan handoff and team-lead orchestration. Accessible from any session (primary, assistant, UI):
+
+| Channel | Purpose |
+|---------|---------|
+| `workspace.handOffPlan` | Send a plan file to an idle team-lead (or spawn a new one). Input: `{ projectId, planPath, instructions? }` |
+| `workspace.executeTask` | Send an ad-hoc task to a team-lead. Input: `{ projectId, taskDescription, planPath? }` |
+| `workspace.provisionTeammate` | Provision an isolated worktree for a teammate agent. Input: `{ projectId, agentRole, slug, teamName, taskInstructions? }` |
+| `workspace.teardownTeammate` | Tear down a teammate's worktree after completion. Input: `{ projectId, slug }` |
+| `workspace.spawnTeamLead` | Spawn a new mortal team-lead (with optional planPath). |
+| `workspace.sendMessage` | Send a message to any active session by sessionId. |
+
+### Renderer Hooks
+
+```typescript
+import { useHandOffPlan, useExecuteTask, useProvisionTeammate, useTeardownTeammate } from '@features/workspace/api/useWorkspace';
+```
+
+### Team-Lead Isolation
+
+Every team-lead runs in its own git worktree (`.worktrees/team-lead-{projectId}-{index}/`) with:
+- Custom CLAUDE.md generated from `.claude/agents/team-leader.md` + project rules
+- Enforcement hooks in `.claude/settings.local.json` that block Edit/Write/NotebookEdit
+- Full `.claude/` context (agents, skills, commands, settings)
+
+This prevents hook bleed-through between sessions. The team-lead physically cannot write code.
+
+### Teammate Isolation
+
+Team-leads call `workspace.provisionTeammate` before spawning a teammate agent. This creates:
+- Isolated worktree at `.worktrees/{slug}/`
+- Role-specific CLAUDE.md from `.claude/agents/{agentRole}.md`
+- No enforcement hooks (teammates need Edit/Write)
+
+After the teammate completes, the team-lead calls `workspace.teardownTeammate` to clean up.
+
 ## Skills Available
 
 Use installed skills proactively — invoke before doing work manually:

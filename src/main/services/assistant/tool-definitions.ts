@@ -330,6 +330,49 @@ export const APP_TOOLS: AppTool[] = [
     },
     queryKeyRoots: [],
   },
+  // ── Workspace Agent Handoff ─────────────────────────────────────────────────
+  {
+    name: 'hand_off_plan',
+    description:
+      'Hand off a plan file to a team-lead agent for execution. Use when the user asks to "send this to a team-lead", "have the team-lead execute this", "hand this off", or references delegating a plan to an agent. Routes to an idle team-lead or spawns a new one.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'ID of the project the plan belongs to' },
+        planPath: {
+          type: 'string',
+          description: 'Path to the plan file (e.g. "docs/features/my-feature/plan.md")',
+        },
+        instructions: {
+          type: 'string',
+          description: 'Optional additional instructions for the team-lead beyond what is in the plan',
+        },
+      },
+      required: ['projectId', 'planPath'],
+    },
+    queryKeyRoots: ['workspace'],
+  },
+  {
+    name: 'execute_task',
+    description:
+      'Send a task to a team-lead agent for execution. Use when the user asks to "have the team-lead do X", "delegate this to an agent", or wants to send ad-hoc work (not a plan file) to a team-lead. Routes to an idle team-lead or spawns a new one.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'ID of the project' },
+        taskDescription: {
+          type: 'string',
+          description: 'Full description of the task to execute',
+        },
+        planPath: {
+          type: 'string',
+          description: 'Optional plan file for context',
+        },
+      },
+      required: ['projectId', 'taskDescription'],
+    },
+    queryKeyRoots: ['workspace'],
+  },
 ];
 
 export function getToolNames(): string[] {
@@ -366,5 +409,6 @@ ${toolList}
 - When the user mentions a project by name, resolve it to the project ID from the list above.
 - Respond concisely. Use markdown formatting for readability.
 - When creating items (notes, tasks, milestones), confirm what you created.
+- When the user says things like "send this to a team-lead", "have the team-lead execute this plan", "hand this off", "delegate this", or refers to sending work to an agent — use the hand_off_plan or execute_task tools. These route work to an idle team-lead agent (or spawn a new one).
 - Await user messages.`;
 }

@@ -51,6 +51,7 @@ import {
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
+import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
 import { securityInvoke } from './security';
@@ -121,6 +122,8 @@ export const ipcInvokeContract = {
   ...workflowTemplatesInvoke,
 
   ...workflowEngineInvoke,
+
+  ...progressInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -157,6 +160,7 @@ export const ipcEventContract = {
   ...workspaceEvents,
   ...workflowEvents,
   ...workflowEngineEvents,
+  ...progressEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -493,3 +497,11 @@ export {
   WorkflowStateSchema,
 } from './workflow-engine';
 export type { AgentDefinition } from './workflow-engine';
+
+export {
+  progressActionSchema,
+  progressPrioritySchema,
+  progressStatusSchema,
+  progressTaskSchema,
+  workflowStepStatusSchema,
+} from './progress';

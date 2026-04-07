@@ -35,4 +35,20 @@ export function registerWorkspaceHandlers(
     await workspace.initAllProjects(projects);
     return { success: true };
   });
+
+  router.handle('workspace.handOffPlan', ({ projectId, planPath, instructions }) => {
+    return Promise.resolve(workspace.handOffPlan(projectId, planPath, instructions));
+  });
+
+  router.handle('workspace.executeTask', ({ projectId, taskDescription, planPath }) => {
+    return Promise.resolve(workspace.executeTask(projectId, taskDescription, planPath));
+  });
+
+  router.handle('workspace.provisionTeammate', ({ projectId, agentRole, slug, teamName, taskInstructions }) => {
+    return Promise.resolve(workspace.provisionTeammate(projectId, agentRole, slug, teamName, taskInstructions));
+  });
+
+  router.handle('workspace.teardownTeammate', ({ projectId, slug }) => {
+    return Promise.resolve(workspace.teardownTeammate(projectId, slug));
+  });
 }

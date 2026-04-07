@@ -45,7 +45,7 @@ export function TeamLeadPanelList({ projectId, sessions }: TeamLeadPanelListProp
       <div className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto p-3">
         <div className="space-y-3">
           {teamLeadSessions.map((session) => (
-            <TeamLeadPanel key={`${session.key.type}-${session.key.index}`} session={session} />
+            <TeamLeadPanel key={`${session.key.type}-${String(session.key.index)}`} session={session} />
           ))}
         </div>
       </div>

@@ -16,6 +16,7 @@ import {
   AgentDashboardStatusSchema,
   AgentSessionSchema,
   AgentSessionTypeSchema,
+  AgentTokenUsageSchema,
   FileChangeSchema,
   QaDashboardSessionSchema,
   StreamJsonEventSchema,
@@ -117,6 +118,44 @@ export const agentDashboardInvoke = {
   'agent-dashboard.listQaSessions': {
     input: z.object({}),
     output: z.array(QaDashboardSessionSchema),
+  },
+
+  /** Get all agent sessions associated with a task slug */
+  'agent-dashboard.getSessionsForTask': {
+    input: z.object({ slug: z.string() }),
+    output: z.array(
+      z.object({
+        sessionId: z.string(),
+        name: z.string(),
+        role: z.string(),
+        taskSlug: z.string(),
+        taskNumber: z.number().nullable(),
+        status: AgentDashboardStatusSchema,
+        branch: z.string().nullable(),
+        model: z.string(),
+        tokenUsage: AgentTokenUsageSchema,
+        startedAt: z.string(),
+        lastActivityAt: z.string(),
+        exitCode: z.number().nullable(),
+        isTeamLead: z.boolean(),
+      }),
+    ),
+  },
+
+  /** Get paginated session log (JSONL entries) for a session */
+  'agent-dashboard.getSessionLog': {
+    input: z.object({
+      sessionId: z.string(),
+      offset: z.number().optional(),
+      limit: z.number().optional(),
+    }),
+    output: z.array(z.record(z.string(), z.unknown())),
+  },
+
+  /** Get the git diff for a session's working branch */
+  'agent-dashboard.getGitDiff': {
+    input: z.object({ sessionId: z.string() }),
+    output: z.object({ diff: z.string() }),
   },
 } as const;
 

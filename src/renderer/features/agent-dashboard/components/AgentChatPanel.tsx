@@ -25,11 +25,13 @@ interface AgentChatPanelProps {
   messages: AgentChatItem[];
   className?: string;
   onViewAgent?: (agentId: string) => void;
+  /** Show "Send to Team Lead" buttons on messages containing plan paths. Default true. */
+  showHandOff?: boolean;
 }
 
 // ─── Component ─────────────────────────────────────────────
 
-export function AgentChatPanel({ messages, className, onViewAgent }: AgentChatPanelProps) {
+export function AgentChatPanel({ messages, className, onViewAgent, showHandOff = true }: AgentChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export function AgentChatPanel({ messages, className, onViewAgent }: AgentChatPa
               <TextMessage
                 key={msg.message.id}
                 message={msg.message}
+                showHandOff={showHandOff}
               />
             );
           }

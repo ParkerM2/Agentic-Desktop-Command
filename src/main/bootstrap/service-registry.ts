@@ -76,6 +76,7 @@ import {
   createSlackWatcher,
 } from '../services/notifications';
 import { createPlannerService } from '../services/planner/planner-service';
+import { createProgressService } from '../services/progress';
 import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
 import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
@@ -106,6 +107,7 @@ import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkflowTemplateService } from '../services/workflow-templates';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
+import { createWorktreeProvisioner } from '../services/worktree-provisioner';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
 
@@ -474,8 +476,15 @@ export function createServiceRegistry(
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
 
+  // ─── Worktree provisioner (isolates team-lead sessions) ──────
+  const worktreeProvisioner = createWorktreeProvisioner();
+
   // ─── Workspace session manager ───────────────────────────────
-  const workspaceSessionManager = createWorkspaceSessionManager(agentManagerService, getMainWindow);
+  const workspaceSessionManager = createWorkspaceSessionManager(
+    agentManagerService,
+    worktreeProvisioner,
+    getMainWindow,
+  );
 
   const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
 
@@ -542,6 +551,7 @@ export function createServiceRegistry(
       gitService,
       githubService,
     },
+    workspaceSessionManager,
     sendEvent: (channel, payload) => {
       getMainWindow()?.webContents.send(channel, payload);
     },
@@ -571,12 +581,16 @@ export function createServiceRegistry(
   const trackerService = createTrackerService(process.cwd());
 
   // ─── Visualization service (stateless — reads from disk on each call) ───
-  const visualizationService = createVisualizationService();
+  const visualizationService = createVisualizationService(agentManagerService);
+
+  // ─── Progress service (task pipeline — reads/writes progress/ dir) ──────
+  const progressService = createProgressService(process.cwd(), agentManagerService);
 
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
     agentManagerService,
     agentOrchestrator,
+    progressService,
     progressWatcherV2,
     teamWatcherService: null,
     projectService,

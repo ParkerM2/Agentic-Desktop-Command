@@ -180,6 +180,20 @@ export function registerAgentDashboardHandlers(
     Promise.resolve(qaRunner.listSessions().map(mapQaSessionToDashboard)),
   );
 
+  // ── Per-Session Data Handlers ───────────────────────────────
+
+  router.handle('agent-dashboard.getSessionsForTask', (_input) =>
+    Promise.resolve([]),
+  );
+
+  router.handle('agent-dashboard.getSessionLog', (_input) =>
+    Promise.resolve([]),
+  );
+
+  router.handle('agent-dashboard.getGitDiff', (_input) =>
+    Promise.resolve({ diff: '' }),
+  );
+
   // ── Event Forwarding ─────────────────────────────────────
   // Agent manager events are emitted directly by the service via router.
   // Only teammate join/leave events need forwarding from TeamWatcher.

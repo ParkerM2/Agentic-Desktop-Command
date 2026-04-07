@@ -9,10 +9,10 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 36 |
-| Main Process Services | 33 |
-| IPC Handler Files | 42 |
-| IPC Domain Folders | 28 |
+| Renderer Features | 37 |
+| Main Process Services | 36 |
+| IPC Handler Files | 43 |
+| IPC Domain Folders | 29 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -56,6 +56,7 @@ Location: `src/renderer/features/`
 | **visualization** | Codebase structure and agent activity graph (React Flow) | VisualizationPage, VisualizationCanvas (React Flow + dagre layout), LayerToggleToolbar, FileGroupNode, FileNode, AgentTaskNode, FeatureGroupNode, GuardianNode, DataFlowEdge, AgentScopeEdge, NodeDetailPanel | `visualization.getCodebaseGraph`, `visualization.getAgentTeams`, `visualization.getSessionLog` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
+| **tasks (progress)** | FS-backed task pipeline grid. Reads from `useProgressContext` (not Hub). Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
 
 ### Feature Module Structure
 
@@ -119,6 +120,10 @@ Location: `src/main/services/`
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
 | **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 | **data-management** | Storage lifecycle auditing, cleanup, inspection. Sub-modules: `store-registry.ts` (22+ data store entries), `store-cleaners.ts` (per-store cleanup functions), `cleanup-service.ts` (periodic orchestrator), `storage-inspector.ts` (disk usage calculator), `crash-recovery.ts` (orphan detection), `data-export.ts` (archive export/import), `index.ts` (barrel) | runCleanup, getUsage, getRegistry, getRetention, updateRetention, clearStore, exportData, importData | `event:dataManagement.cleanupComplete` |
+| **progress** | FS-backed task pipeline service. Scans `progress/` directory (slug-based subdirs with `research/`, `plans/`, `tasks/` sub-structure). Provides CRUD, status reconciliation (frontmatter vs. directory contents), and Research→Plan→Team agent session spawning. FS watcher emits real-time task update events. Factory: `createProgressService(projectPath, agentManagerService)`. Sub-modules: `task-file-io.ts` (frontmatter read/write). | listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction | `event:progress.taskUpdated`, `event:progress.taskCreated`, `event:progress.taskArchived`, `event:progress.actionStarted`, `event:progress.actionCompleted`, `event:progress.actionFailed`, `event:progress.workflowStep` |
+| **agent-manager** | Headless Claude process spawning via stream-json protocol. Manages Project Owner and Team Lead sessions. Sub-modules: `process-manager.ts`, `stream-json-parser.ts`, `agent-connection-strategy.ts`, `subprocess-strategy.ts` | spawnProjectOwner, spawnTeamLead, listSessions, getSession, sendMessage, stopSession | `event:agent-dashboard.*` |
+| **worktree-provisioner** | Isolated git worktree provisioning for agent sessions. Creates worktrees, copies `.claude/` context (agents, skills, commands, settings), generates agent-specific CLAUDE.md from agent definitions, writes enforcement hooks (blocks Edit/Write for team-leads). Prevents hook bleed-through between sessions. | provision, teardown, exists | - |
+| **workspace** | Always-on session lifecycle per project. Spawns immortal primary + team-lead[0] on project open (auto-restart on crash). Mortal team-lead[1..N] user-spawnable. Team-leads are provisioned into isolated worktrees via WorktreeProvisioner. Plan handoff routes plans to idle team-leads or spawns new ones. Teammate provisioning gives each agent an isolated worktree with role-specific CLAUDE.md. | initProject, getSessions, spawnTeamLead, stopTeamLead, sendMessage, handOffPlan, executeTask, provisionTeammate, teardownTeammate | `event:workspace.sessionReady`, `event:workspace.sessionCrashed`, `event:workspace.sessionRestarted`, `event:workspace.planHandedOff` |
 
 ### Main Process Libraries
 
@@ -179,6 +184,7 @@ Location: `src/main/ipc/handlers/`
 | `security-handlers.ts` | security.getSettings, security.updateSettings, security.exportAudit |
 | `agent-orchestrator-handlers.ts` | agent.startPlanning, agent.startExecution, agent.replanWithFeedback, agent.killSession, agent.restartFromCheckpoint, agent.getOrchestratorSession, agent.listOrchestratorSessions |
 | `window-handlers.ts` | window.minimize, window.maximize, window.close, window.isMaximized |
+| `progress-handlers.ts` | progress.* (listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction, runLogCleanup + 7 event channels) |
 
 ### IPC Utilities (`src/main/ipc/`)
 
@@ -226,6 +232,7 @@ Location: `src/main/ipc/handlers/`
 | `health.ts` | ErrorEntry, ErrorStats, ErrorSeverity, ErrorTier, ErrorCategory, ErrorContext, ServiceHealth, ServiceHealthStatus, HealthStatus |
 | `data-management.ts` | DataLifecycle, RetentionPolicy, DataStoreEntry, DataStoreUsage, DataRetentionSettings, DataExportArchive |
 | `security.ts` | SecuritySettings, SecurityMode, CspMode, SecurityAuditExport, DEFAULT_SECURITY_SETTINGS |
+| `progress.ts` | ProgressTask, ProgressStatus (`backlog \| researching \| research_done \| planning \| plan_ready \| executing \| review \| done \| archived \| error`), ProgressPriority (`low \| normal \| high \| urgent`) |
 
 ### Route Groups (`src/renderer/app/routes/`)
 
@@ -301,6 +308,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `window` | Window controls (minimize, maximize, close, isMaximized) |
 | `tracker` | Plan tracker (list, get, update docs/tracker.json via IPC) |
 | `workflow` | Workflow execution |
+| `progress` | Task pipeline CRUD + Research→Plan→Team actions + FS-watch events (13 invoke + 7 event channels) |
 
 Each domain folder contains:
 ```
@@ -511,6 +519,18 @@ Location: `src/renderer/shared/stores/`
 | `theme-store.ts` | Dark/light mode, color theme, UI scale |
 | `toast-store.ts` | Toast notification queue (max 3, auto-dismiss 5s) |
 | `ThemeHydrator.tsx` | Component that hydrates theme CSS vars on `<html>` (co-located with theme-store) |
+
+---
+
+## Progress Service (Task Pipeline)
+
+- **Types**: `src/shared/types/progress.ts`, `src/shared/types/agent-session-detail.ts`
+- **IPC Contract**: `src/shared/ipc/progress/` (schemas, contract, barrel)
+- **Service**: `src/main/services/progress/` (progress-service, task-file-io, session-writer, log-cleanup)
+- **Handlers**: `src/main/ipc/handlers/progress-handlers.ts`
+- **Stores**: `src/renderer/shared/stores/progress-context-store.ts`, agent-context-store.ts (expanded)
+- **Hydrators**: `src/renderer/shared/stores/ProgressContextHydrator.tsx`, AgentContextHydrator.tsx
+- **UI**: `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx`, `detail/ProgressTaskDetailRow.tsx`, `detail/TeamActivityPanel.tsx`, `detail/AgentDetailExpander.tsx`
 
 ---
 

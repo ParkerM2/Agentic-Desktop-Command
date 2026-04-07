@@ -55,6 +55,18 @@ function makeMockAgentManager() {
   };
 }
 
+function makeMockProvisioner() {
+  return {
+    provision: vi.fn(({ slug }: { slug: string }) => ({
+      worktreePath: `/tmp/worktrees/${slug}`,
+      branch: `worktree/${slug}`,
+      claudeMdPath: `/tmp/worktrees/${slug}/CLAUDE.md`,
+    })),
+    teardown: vi.fn(),
+    exists: vi.fn().mockReturnValue(false),
+  };
+}
+
 function makeMockWindow() {
   return {
     webContents: {
@@ -67,28 +79,38 @@ function makeMockWindow() {
 
 describe('WorkspaceSessionManager', () => {
   let agentManager: ReturnType<typeof makeMockAgentManager>;
+  let mockProvisioner: ReturnType<typeof makeMockProvisioner>;
   let mockWindow: ReturnType<typeof makeMockWindow>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     agentManager = makeMockAgentManager();
+    mockProvisioner = makeMockProvisioner();
     mockWindow = makeMockWindow();
   });
 
   function createManager() {
     return createWorkspaceSessionManager(
       agentManager as never,
+      mockProvisioner as never,
       () => mockWindow as never,
     );
   }
 
   describe('initProject()', () => {
-    it('spawns primary and team lead sessions', async () => {
+    it('spawns primary and team lead sessions with worktree provisioning', async () => {
       const manager = createManager();
       const result = await manager.initProject('proj-1', '/projects/my-app');
 
       expect(agentManager.spawnProjectOwner).toHaveBeenCalledTimes(1);
       expect(agentManager.spawnTeamLead).toHaveBeenCalledTimes(1);
+      expect(mockProvisioner.provision).toHaveBeenCalledTimes(1);
+      expect(mockProvisioner.provision).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agentType: 'team-lead',
+          agentRole: 'team-leader',
+        }),
+      );
       expect(result.primarySessionId).toBeTruthy();
       expect(result.teamLeadSessionId).toBeTruthy();
     });
@@ -210,7 +232,7 @@ describe('WorkspaceSessionManager', () => {
   });
 
   describe('dispose()', () => {
-    it('clears all sessions', async () => {
+    it('clears all sessions and tears down worktrees', async () => {
       const manager = createManager();
       await manager.initProject('proj-1', '/projects/my-app');
 
@@ -218,6 +240,7 @@ describe('WorkspaceSessionManager', () => {
 
       const sessions = manager.getSessions('proj-1');
       expect(sessions).toEqual([]);
+      expect(mockProvisioner.teardown).toHaveBeenCalled();
     });
   });
 });

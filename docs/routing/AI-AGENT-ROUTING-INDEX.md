@@ -54,6 +54,7 @@ Each row traces a domain from shared types through to the rendered route.
 | terminals | `types/terminal.ts` | `ipc/terminals/` | `services/terminal/` | `handlers/terminal-handlers.ts` | `features/terminals/` | `project.routes.ts` |
 | voice | `types/voice.ts` | `ipc/misc/voice.contract.ts` | `services/voice/` | `handlers/voice-handlers.ts` | `features/voice/` | -- |
 | workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspaces/` | -- |
+| progress | `types/progress.ts` | `ipc/progress/` | `services/progress/` | `handlers/progress-handlers.ts` | `features/tasks/` (ProgressTaskGrid) | `project.routes.ts` |
 
 ---
 
@@ -767,6 +768,68 @@ Workspace management via Hub.
 | Event Hook | `renderer/features/workspaces/hooks/useWorkspaceEvents.ts` |
 | Store | `renderer/features/workspaces/store.ts` |
 | Components | `WorkspaceCard`, `WorkspacesTab`, `WorkspaceEditor` |
+
+---
+
+### progress
+
+FS-backed task pipeline — Research → Plan → Team agent session orchestration, backed by the `progress/` directory.
+
+**Note:** The task list grid reads from `progress.*` channels, NOT `hub.tasks.*`. `hub.tasks.*` channels remain for backward compat but are not the primary task data source.
+
+#### Invoke Data Flow
+
+```
+Renderer (useProgressContext store)
+  → IPC invoke (progress.*)
+  → progress-handlers.ts (thin handlers)
+  → ProgressService (progress-service.ts)
+  → progress/ filesystem (read/write YAML frontmatter + markdown files)
+```
+
+#### Event Data Flow
+
+```
+progress/ filesystem (FS watch via node:fs watch)
+  → ProgressService (debounced FS watcher, 200ms debounce)
+  → IPC event (event:progress.taskUpdated / taskCreated / taskArchived / action*)
+  → ProgressContextHydrator (renderer sync component in RootLayout)
+  → useProgressContext (Zustand store)
+  → React components (ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel)
+```
+
+#### Agent Session Flow
+
+```
+useProgressContext.startResearch(slug)
+  → progress.startResearch IPC
+  → ProgressService.startResearch(slug)
+  → AgentManagerService.spawnProjectOwner({ projectPath, prompt, name: "progress-research-<slug>" })
+  → session spawned, IPC event:progress.actionStarted emitted
+  → on session end (session.ended): IPC event:progress.actionCompleted (or actionFailed)
+  → ProgressService re-reads task directory → emits event:progress.taskUpdated
+  → useProgressContext store updated → grid row reflects new status
+```
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/types/progress.ts` |
+| IPC Contract | `shared/ipc/progress/contract.ts` |
+| IPC Schemas | `shared/ipc/progress/schemas.ts` |
+| IPC Barrel | `shared/ipc/progress/index.ts` |
+| Service | `main/services/progress/progress-service.ts` |
+| Service Sub-modules | `task-file-io.ts` (frontmatter read/write), `log-cleanup.ts` (7-day JSONL cleanup) |
+| Service Barrel | `main/services/progress/index.ts` |
+| Handler | `main/ipc/handlers/progress-handlers.ts` |
+| Event Wiring | `main/bootstrap/event-wiring.ts` → `event:progress.*` |
+| Bootstrap | `main/bootstrap/service-registry.ts` — `createProgressService(process.cwd(), agentManagerService)` |
+| Renderer Store | `renderer/shared/stores/progress-context-store.ts` — `useProgressContext()` |
+| Hydrator | `renderer/shared/stores/ProgressContextHydrator.tsx` — mounted in `app/layouts/RootLayout.tsx` |
+| Feature Components | `renderer/features/tasks/components/grid/ProgressTaskGrid.tsx` |
+| Detail Row | `renderer/features/tasks/components/detail/ProgressTaskDetailRow.tsx` |
+| Team Panel | `renderer/features/tasks/components/detail/TeamActivityPanel.tsx` |
+| Agent Detail | `renderer/features/tasks/components/detail/AgentDetailExpander.tsx` |
+| Route | `renderer/app/routes/project.routes.ts` → `/projects/$projectId/tasks` |
 
 ---
 

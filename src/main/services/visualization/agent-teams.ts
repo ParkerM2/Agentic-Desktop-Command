@@ -1,11 +1,14 @@
 /**
  * Agent Teams Reader
  *
- * Reads tracking/ and progress/ directories from a project
- * to build structured agent team data for visualization.
+ * Reads the `progress/` directory from a project and queries
+ * AgentManagerService for live session state to build structured
+ * agent team data for visualization.
+ *
+ * Replaces the legacy `tracking/` + JSONL approach.
  */
 
-import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type {
@@ -13,8 +16,8 @@ import type {
   AgentTaskInfo,
   AgentTeamsData,
   FeatureAgentData,
-  TrackingEvent,
 } from './types';
+import type { AgentManagerService } from '../agent-manager/agent-manager-service';
 
 // ─── Agent Name Helpers ───────────────────────────────────────
 
@@ -95,324 +98,343 @@ export function parseTaskFile(content: string): ParsedTaskFile {
   return result;
 }
 
-// ─── Tracking Index ───────────────────────────────────────────
+// ─── Progress Root File Reader ────────────────────────────────
 
-interface TrackingIndexEntry {
-  feature: string;
+const ROOT_FILE_CANDIDATES = ['task.md', 'description.md', 'ticket.md'] as const;
+
+interface ProgressRootInfo {
+  title: string;
   status: string;
   branch: string | null;
-  agentCount: number;
 }
 
-interface TrackingIndex {
-  features: TrackingIndexEntry[];
-}
-
-export function readTrackingIndex(projectPath: string): TrackingIndex | null {
-  const indexPath = join(projectPath, 'tracking', 'index.json');
-  if (!existsSync(indexPath)) return null;
-  try {
-    const raw = readFileSync(indexPath, 'utf-8');
-    return JSON.parse(raw) as TrackingIndex;
-  } catch {
-    return null;
-  }
-}
-
-// ─── Feature Manifest ─────────────────────────────────────────
-
-interface ManifestAgent {
-  status: string;
-}
-
-interface FeatureManifest {
-  feature: string;
-  agents: Record<string, ManifestAgent>;
-}
-
-export function readFeatureManifest(projectPath: string, feature: string): FeatureManifest | null {
-  const manifestPath = join(projectPath, 'tracking', feature, 'manifest.json');
-  if (!existsSync(manifestPath)) return null;
-  try {
-    const raw = readFileSync(manifestPath, 'utf-8');
-    return JSON.parse(raw) as FeatureManifest;
-  } catch {
-    return null;
-  }
-}
-
-// ─── JSONL Tail Reader ────────────────────────────────────────
-
-const CHUNK_SIZE = 8192;
-const MAX_LINES = 200;
-
-/** Scans a buffer backward for newlines and returns the trim start offset, or -1. */
-function scanChunkForBoundary(
-  buf: Buffer,
-  readSize: number,
-  newlineCount: number,
-): { boundary: number; newlineCount: number } {
-  let count = newlineCount;
-  for (let i = readSize - 1; i >= 0; i--) {
-    if (buf[i] === 0x0a) {
-      count++;
-      if (count > MAX_LINES) {
-        return { boundary: i + 1, newlineCount: count };
-      }
-    }
-  }
-  return { boundary: -1, newlineCount: count };
-}
-
-/** Parses raw JSONL text into TrackingEvent objects, skipping malformed lines. */
-function parseJsonlLines(text: string): TrackingEvent[] {
-  const events: TrackingEvent[] = [];
-  for (const line of text.split('\n')) {
-    if (line.trim().length === 0) continue;
+function readProgressRoot(taskDir: string, slug: string): ProgressRootInfo {
+  for (const candidate of ROOT_FILE_CANDIDATES) {
+    const filePath = join(taskDir, candidate);
+    if (!existsSync(filePath)) continue;
     try {
-      events.push(JSON.parse(line) as TrackingEvent);
+      const raw = readFileSync(filePath, 'utf-8');
+      const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
+      if (!frontmatterMatch) continue;
+
+      const fm = frontmatterMatch[1];
+      const titleMatch = /^title:\s*["']?(.+?)["']?\s*$/m.exec(fm);
+      const statusMatch = /^status:\s*(\S+)/m.exec(fm);
+      const branchMatch = /^branch:\s*(\S+)/m.exec(fm);
+
+      return {
+        title: titleMatch ? titleMatch[1].trim() : slug,
+        status: statusMatch ? statusMatch[1].trim() : 'backlog',
+        branch: branchMatch ? branchMatch[1].trim() : null,
+      };
     } catch {
-      // skip malformed lines
+      // Try next candidate
     }
   }
-  return events;
+  return { title: slug, status: 'backlog', branch: null };
 }
 
-/** Tail-reads fd backward in chunks, collecting buffers for the last MAX_LINES lines. */
-function tailReadFd(fd: number, fileSize: number): Buffer[] {
-  const chunks: Buffer[] = [];
-  let remaining = fileSize;
-  let newlineCount = 0;
+// ─── Progress Directory Scanner ───────────────────────────────
 
-  while (remaining > 0) {
-    const readSize = Math.min(CHUNK_SIZE, remaining);
-    remaining -= readSize;
-    const buf = Buffer.alloc(readSize);
-    readSync(fd, buf, 0, readSize, remaining);
+interface ProgressEntry {
+  slug: string;
+  title: string;
+  status: string;
+  branch: string | null;
+  taskDir: string;
+}
 
-    const { boundary, newlineCount: updatedCount } = scanChunkForBoundary(
-      buf,
-      readSize,
-      newlineCount,
-    );
-    newlineCount = updatedCount;
+function scanProgressDir(projectPath: string): ProgressEntry[] {
+  const progressDir = join(projectPath, 'progress');
+  if (!existsSync(progressDir)) return [];
 
-    if (boundary >= 0) {
-      chunks.unshift(buf.subarray(boundary));
-      break;
-    }
-    chunks.unshift(buf);
+  let entries: string[];
+  try {
+    entries = readdirSync(progressDir);
+  } catch {
+    return [];
   }
 
-  return chunks;
+  const results: ProgressEntry[] = [];
+
+  for (const entry of entries) {
+    // Skip archived directory and non-directories
+    if (entry === 'archived') continue;
+
+    const taskDir = join(progressDir, entry);
+    try {
+      const s = statSync(taskDir);
+      if (!s.isDirectory()) continue;
+    } catch {
+      continue;
+    }
+
+    const { title, status, branch } = readProgressRoot(taskDir, entry);
+    results.push({ slug: entry, title, status, branch, taskDir });
+  }
+
+  return results;
 }
+
+// ─── Task File Scanner ────────────────────────────────────────
+
+function scanTaskFiles(taskDir: string): string[] {
+  const tasksDir = join(taskDir, 'tasks');
+  if (!existsSync(tasksDir)) return [];
+
+  try {
+    const files = readdirSync(tasksDir);
+    return files.filter((f) => /^task-\d+.*\.md$/.test(f)).sort();
+  } catch {
+    return [];
+  }
+}
+
+// ─── Session Status Mapper ────────────────────────────────────
+
+type LiveSessions = ReturnType<AgentManagerService['listSessions']>;
+type LiveSession = LiveSessions[number];
 
 /**
- * Reads the last MAX_LINES lines of a JSONL file using backward seeks.
- * Avoids loading the full file into memory.
+ * Map AgentManagerService session status to visualization AgentStatus.
+ *
+ * AgentSession.status: 'running' | 'idle' | 'needs-attention' | 'failed' | 'completed'
+ * AgentStatus (viz): 'pending' | 'active' | 'idle' | 'completed' | 'error'
  */
-export function parseEventsJsonl(filePath: string): TrackingEvent[] {
-  if (!existsSync(filePath)) return [];
-
-  let stat: ReturnType<typeof statSync>;
-  try {
-    stat = statSync(filePath);
-  } catch {
-    return [];
-  }
-
-  const fileSize = stat.size;
-  if (fileSize === 0) return [];
-
-  let fd: number;
-  try {
-    fd = openSync(filePath, 'r');
-  } catch {
-    return [];
-  }
-
-  try {
-    const chunks = tailReadFd(fd, fileSize);
-    const text = Buffer.concat(chunks).toString('utf-8');
-    return parseJsonlLines(text);
-  } finally {
-    try {
-      closeSync(fd);
-    } catch {
-      // ignore close errors
+function sessionStatusToAgentStatus(sessionStatus: string): AgentStatus {
+  switch (sessionStatus) {
+    case 'running':
+    case 'needs-attention': {
+      return 'active';
+    }
+    case 'idle': {
+      return 'idle';
+    }
+    case 'completed': {
+      return 'completed';
+    }
+    case 'failed': {
+      return 'error';
+    }
+    default: {
+      return 'pending';
     }
   }
 }
 
-// ─── Per-Agent JSONL ──────────────────────────────────────────
+// ─── Single-Agent Task Node ───────────────────────────────────
 
-interface AgentEvent {
-  ts: string;
-  type: string;
-  sid: string;
+function makeSingleAgentTask(opts: {
+  agentName: string;
+  taskName: string;
+  agentRole: string;
+  session: LiveSession | null | undefined;
+  forceStatus?: AgentStatus;
+}): AgentTaskInfo {
+  const { agentName, taskName, agentRole, session, forceStatus } = opts;
+  const status = forceStatus ?? (session ? sessionStatusToAgentStatus(session.status) : 'active');
+  return {
+    agentName,
+    taskNumber: null,
+    taskName,
+    agentRole,
+    wave: null,
+    blockedBy: [],
+    status,
+    lastEventTs: session ? session.lastActivityAt : null,
+    lastSid: session ? session.id : null,
+    fileScope: [],
+    eventCount: 0,
+    isGuardian: false,
+  };
 }
 
-function readAgentEvents(projectPath: string, feature: string, agentName: string): AgentEvent[] {
-  const filePath = join(
-    projectPath,
-    'tracking',
-    feature,
-    'agents',
-    `${agentName}.jsonl`,
+// ─── Task File → AgentTaskInfo ────────────────────────────────
+
+function parseTaskFileContent(taskFilePath: string): ParsedTaskFile | null {
+  try {
+    const content = readFileSync(taskFilePath, 'utf-8');
+    return parseTaskFile(content);
+  } catch {
+    return null;
+  }
+}
+
+function buildTaskInfoFromFile(
+  taskDir: string,
+  taskFile: string,
+  slug: string,
+  sessions: LiveSessions,
+  teamSession: LiveSession | null | undefined,
+  forceStatus?: AgentStatus,
+): AgentTaskInfo {
+  const taskFilePath = join(taskDir, 'tasks', taskFile);
+  const parsed = parseTaskFileContent(taskFilePath);
+
+  const taskNumber = parsed?.taskNumber ?? agentNameToTaskNumber(taskFile);
+  const agentRole = parsed?.agentRole ?? null;
+  const agentName = `task-${taskNumber ?? taskFile}`;
+  const isGuardian = agentName.startsWith('guardian') || agentRole === 'codebase-guardian';
+
+  let derivedStatus: AgentStatus;
+  let lastEventTs: string | null = null;
+  let lastSid: string | null = null;
+
+  if (forceStatus === undefined) {
+    const taskSessionName = `progress-task-${taskNumber ?? taskFile}-${slug}`;
+    const matchedSession = sessions.find((s) => s.name === taskSessionName) ?? teamSession ?? null;
+    derivedStatus = matchedSession ? sessionStatusToAgentStatus(matchedSession.status) : 'pending';
+    lastEventTs = matchedSession ? matchedSession.lastActivityAt : null;
+    lastSid = matchedSession ? matchedSession.id : null;
+  } else {
+    derivedStatus = forceStatus;
+  }
+
+  return {
+    agentName,
+    taskNumber: parsed?.taskNumber ?? taskNumber,
+    taskName: parsed?.taskName ?? null,
+    agentRole,
+    wave: parsed?.wave ?? null,
+    blockedBy: parsed?.blockedBy ?? [],
+    status: derivedStatus,
+    lastEventTs,
+    lastSid,
+    fileScope: parsed?.fileScope ?? [],
+    eventCount: 0,
+    isGuardian,
+  };
+}
+
+// ─── Per-Status Task Builders ─────────────────────────────────
+
+function buildResearchingTasks(sessions: LiveSessions, slug: string): AgentTaskInfo[] {
+  const session = sessions.find((s) => s.name === `progress-research-${slug}`);
+  return [makeSingleAgentTask({ agentName: 'research-agent', taskName: 'Research Agent', agentRole: 'researcher', session })];
+}
+
+function buildPlanningTasks(sessions: LiveSessions, slug: string): AgentTaskInfo[] {
+  const session = sessions.find((s) => s.name === `progress-plan-${slug}`);
+  return [makeSingleAgentTask({ agentName: 'planning-agent', taskName: 'Planning Agent', agentRole: 'planner', session })];
+}
+
+function buildCompletedSingleTasks(status: string): AgentTaskInfo[] {
+  const isResearch = status === 'research_done';
+  return [makeSingleAgentTask({
+    agentName: isResearch ? 'research-agent' : 'planning-agent',
+    taskName: isResearch ? 'Research Agent' : 'Planning Agent',
+    agentRole: isResearch ? 'researcher' : 'planner',
+    session: null,
+    forceStatus: 'completed',
+  })];
+}
+
+function buildExecutingTasks(
+  taskDir: string,
+  slug: string,
+  sessions: LiveSessions,
+): AgentTaskInfo[] {
+  const taskFiles = scanTaskFiles(taskDir);
+  const teamSession = sessions.find((s) => s.name === `progress-team-${slug}`);
+
+  if (taskFiles.length === 0) {
+    return [makeSingleAgentTask({
+      agentName: 'team-lead',
+      taskName: 'Team Lead',
+      agentRole: 'team-lead',
+      session: teamSession,
+    })];
+  }
+
+  return taskFiles.map((taskFile) =>
+    buildTaskInfoFromFile(taskDir, taskFile, slug, sessions, teamSession),
   );
-  if (!existsSync(filePath)) return [];
-  try {
-    const raw = readFileSync(filePath, 'utf-8');
-    const lines = raw.split('\n').filter((l) => l.trim().length > 0);
-    const events: AgentEvent[] = [];
-    for (const line of lines) {
-      try {
-        events.push(JSON.parse(line) as AgentEvent);
-      } catch {
-        // skip
-      }
-    }
-    return events;
-  } catch {
-    return [];
-  }
 }
 
-// ─── Status Derivation ────────────────────────────────────────
-
-const ACTIVE_WINDOW_MS = 120_000;
-
-export function deriveAgentStatus(agentEvents: AgentEvent[]): AgentStatus {
-  if (agentEvents.length === 0) return 'pending';
-
-  // Find last agent.idle event
-  let lastIdleTs: string | null = null;
-  for (let i = agentEvents.length - 1; i >= 0; i--) {
-    if (agentEvents[i].type === 'agent.idle') {
-      lastIdleTs = agentEvents[i].ts;
-      break;
-    }
-  }
-
-  if (lastIdleTs !== null) {
-    const age = Date.now() - new Date(lastIdleTs).getTime();
-    if (age <= ACTIVE_WINDOW_MS) return 'active';
-    return 'idle';
-  }
-
-  // Check for completion or error events
-  const lastEvent = agentEvents.at(-1);
-  if (!lastEvent) return 'pending';
-  if (lastEvent.type === 'agent.completed' || lastEvent.type === 'task.completed') {
-    return 'completed';
-  }
-  if (lastEvent.type === 'agent.error') return 'error';
-
-  return 'pending';
-}
-
-// ─── Task File Finder ─────────────────────────────────────────
-
-function findTaskFileContent(
-  projectPath: string,
-  feature: string,
-  taskNumber: number | null,
-): string | null {
-  if (taskNumber === null) return null;
-  const taskDir = join(projectPath, 'progress', feature, 'tasks');
-  if (!existsSync(taskDir)) return null;
-
-  // Try common patterns: task-1.md, task-1a.md, task-1b.md
-  const candidates = [
-    join(taskDir, `task-${taskNumber}.md`),
-    join(taskDir, `task-${taskNumber}a.md`),
-    join(taskDir, `task-${taskNumber}b.md`),
-  ];
-  for (const c of candidates) {
-    if (existsSync(c)) {
-      try {
-        return readFileSync(c, 'utf-8');
-      } catch {
-        return null;
-      }
-    }
-  }
-  return null;
+function buildDoneTasks(taskDir: string): AgentTaskInfo[] {
+  const taskFiles = scanTaskFiles(taskDir);
+  return taskFiles.map((taskFile) =>
+    buildTaskInfoFromFile(taskDir, taskFile, '', [], null, 'completed'),
+  );
 }
 
 // ─── Feature Builder ──────────────────────────────────────────
 
+function buildTasksForStatus(
+  status: string,
+  slug: string,
+  taskDir: string,
+  sessions: LiveSessions,
+): AgentTaskInfo[] {
+  switch (status) {
+    case 'researching': {
+      return buildResearchingTasks(sessions, slug);
+    }
+    case 'planning': {
+      return buildPlanningTasks(sessions, slug);
+    }
+    case 'research_done':
+    case 'plan_ready': {
+      return buildCompletedSingleTasks(status);
+    }
+    case 'executing':
+    case 'review': {
+      return buildExecutingTasks(taskDir, slug, sessions);
+    }
+    case 'done': {
+      return buildDoneTasks(taskDir);
+    }
+    default: {
+      return [];
+    }
+  }
+}
+
 function buildFeatureData(
-  projectPath: string,
-  entry: TrackingIndexEntry,
+  entry: ProgressEntry,
+  sessions: LiveSessions,
 ): FeatureAgentData {
-  const { feature, status, branch } = entry;
+  const { slug, status, branch, taskDir } = entry;
 
-  const manifest = readFeatureManifest(projectPath, feature);
-  const agentNames = manifest ? Object.keys(manifest.agents) : [];
-
-  const eventsPath = join(projectPath, 'tracking', feature, 'events.jsonl');
-  const events = parseEventsJsonl(eventsPath);
-
-  const tasks: AgentTaskInfo[] = agentNames.map((agentName) => {
-    const taskNumber = agentNameToTaskNumber(agentName);
-    const agentEvents = readAgentEvents(projectPath, feature, agentName);
-
-    const lastEvent = agentEvents.at(-1) ?? null;
-    const lastEventTs = lastEvent ? lastEvent.ts : null;
-    const lastSid = lastEvent ? lastEvent.sid : null;
-
-    const taskContent = findTaskFileContent(projectPath, feature, taskNumber);
-    const parsed = taskContent ? parseTaskFile(taskContent) : null;
-
-    const agentRole = parsed?.agentRole ?? null;
-    const isGuardian =
-      agentName.startsWith('guardian') || agentRole === 'codebase-guardian';
-
-    return {
-      agentName,
-      taskNumber: parsed?.taskNumber ?? taskNumber,
-      taskName: parsed?.taskName ?? null,
-      agentRole,
-      wave: parsed?.wave ?? null,
-      blockedBy: parsed?.blockedBy ?? [],
-      status: deriveAgentStatus(agentEvents),
-      lastEventTs,
-      lastSid,
-      fileScope: parsed?.fileScope ?? [],
-      eventCount: agentEvents.length,
-      isGuardian,
-    };
-  });
+  const tasks = buildTasksForStatus(status, slug, taskDir, sessions);
 
   return {
-    feature,
+    feature: slug,
     status,
-    branch: branch ?? null,
-    agentCount: agentNames.length,
+    branch,
+    agentCount: tasks.length,
     tasks,
-    events,
+    events: [],
   };
 }
 
 // ─── Public API ───────────────────────────────────────────────
 
-export function buildAgentTeamsData(projectPath: string): AgentTeamsData {
-  const trackingDir = join(projectPath, 'tracking');
+export function buildAgentTeamsData(
+  projectPath: string,
+  agentManagerService: AgentManagerService,
+): AgentTeamsData {
+  const progressDir = join(projectPath, 'progress');
 
-  if (!existsSync(trackingDir)) {
+  if (!existsSync(progressDir)) {
     return { projectPath, features: [], hasTrackingDir: false };
   }
 
-  const index = readTrackingIndex(projectPath);
-  if (!index) {
+  const progressEntries = scanProgressDir(projectPath);
+  if (progressEntries.length === 0) {
     return { projectPath, features: [], hasTrackingDir: true };
   }
 
+  // Snapshot all live sessions once — avoids repeated listSessions() calls
+  const sessions = agentManagerService.listSessions();
+
   const features: FeatureAgentData[] = [];
-  for (const entry of index.features) {
+  for (const entry of progressEntries) {
+    // Only show features that are in an active pipeline stage (skip backlog/archived/error)
+    if (entry.status === 'backlog' || entry.status === 'archived') continue;
+
     try {
-      features.push(buildFeatureData(projectPath, entry));
+      features.push(buildFeatureData(entry, sessions));
     } catch {
       // Skip features that fail to load — graceful degradation
     }

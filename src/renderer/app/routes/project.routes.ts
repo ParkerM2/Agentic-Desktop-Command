@@ -42,7 +42,7 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
       () => import('@features/tasks'),
-      'TaskDataGrid',
+      'ProgressTaskGrid',
     ),
   });
 

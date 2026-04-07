@@ -6,6 +6,10 @@
  * useWorkspaceSend    — mutation to send a message to a session.
  * useSpawnTeamLead    — mutation to spawn an additional Team Lead.
  * useStopTeamLead     — mutation to stop a mortal Team Lead.
+ * useHandOffPlan      — mutation to hand off a plan to an idle or new team-lead.
+ * useExecuteTask      — mutation to send an ad-hoc task to a team-lead.
+ * useProvisionTeammate — mutation to provision a worktree for a teammate agent.
+ * useTeardownTeammate  — mutation to tear down a teammate's worktree.
  *
  * Message streaming for each session reuses useAgentStream from agent-dashboard.
  */
@@ -35,6 +39,10 @@ export function useWorkspaceSessions(projectId: string | null) {
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
   });
   useIpcEvent('event:workspace.sessionRestarted', () => {
+    if (!projectId) return;
+    void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
+  });
+  useIpcEvent('event:workspace.planHandedOff', () => {
     if (!projectId) return;
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
   });
@@ -90,5 +98,77 @@ export function useStopTeamLead(projectId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
     },
+  });
+}
+
+/**
+ * Hand off a plan to a team-lead for execution.
+ * Reuses an idle team-lead or spawns a new one.
+ */
+export function useHandOffPlan(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ planPath, instructions }: { planPath: string; instructions?: string }) =>
+      ipc('workspace.handOffPlan', { projectId, planPath, instructions }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
+    },
+  });
+}
+
+/**
+ * Execute an ad-hoc task via a team-lead.
+ * Reuses an idle team-lead or spawns a new one.
+ */
+export function useExecuteTask(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      taskDescription,
+      planPath,
+    }: {
+      taskDescription: string;
+      planPath?: string;
+    }) => ipc('workspace.executeTask', { projectId, taskDescription, planPath }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
+    },
+  });
+}
+
+/**
+ * Provision an isolated worktree for a teammate agent.
+ * Called by components that manage team-lead → teammate spawning.
+ */
+export function useProvisionTeammate(projectId: string) {
+  return useMutation({
+    mutationFn: ({
+      agentRole,
+      slug,
+      teamName,
+      taskInstructions,
+    }: {
+      agentRole: string;
+      slug: string;
+      teamName: string;
+      taskInstructions?: string;
+    }) =>
+      ipc('workspace.provisionTeammate', {
+        projectId,
+        agentRole,
+        slug,
+        teamName,
+        taskInstructions,
+      }),
+  });
+}
+
+/**
+ * Tear down a teammate's worktree after task completion.
+ */
+export function useTeardownTeammate(projectId: string) {
+  return useMutation({
+    mutationFn: ({ slug }: { slug: string }) =>
+      ipc('workspace.teardownTeammate', { projectId, slug }),
   });
 }
