@@ -17,6 +17,7 @@ import type { ProgressTask } from '@shared/types/progress';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
+import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 import { useProgressContext } from '@renderer/shared/stores/progress-context-store';
 
 import {
@@ -74,6 +75,7 @@ interface ActionOption {
   label: string;
   description: string;
   prompt?: string; // undefined = use default built-in prompt
+  handler?: 'teamLead'; // special handler instead of default prompt-based action
 }
 
 const RESEARCH_OPTIONS: ActionOption[] = [
@@ -89,7 +91,8 @@ const PLAN_OPTIONS: ActionOption[] = [
 ];
 
 const TEAM_OPTIONS: ActionOption[] = [
-  { label: 'Run Team (default)', description: 'Decompose plan into agent tasks and execute' },
+  { label: 'Team Lead', description: 'Hand off plan to a team-lead session (spawns one if needed)', handler: 'teamLead' },
+  { label: 'Direct Execute', description: 'Decompose plan into agent tasks and execute directly', prompt: undefined },
   { label: '/agent-team', description: 'Use the agent-team skill for orchestrated execution', prompt: 'Use /agent-team to execute the plan at progress/{slug}/plans/plan.md' },
   { label: 'Solo Execute', description: 'Execute the plan yourself without spawning sub-agents', prompt: 'Read the plan at progress/{slug}/plans/plan.md and implement it yourself step by step. Do not spawn sub-agents.' },
 ];
@@ -100,12 +103,31 @@ interface ActionDropdownProps {
   disabled: boolean;
   slug: string;
   onAction: (prompt?: string) => void;
+  onSpecialAction?: (handler: string) => void;
 }
 
-function ActionDropdown({ label, options, disabled, slug, onAction }: ActionDropdownProps) {
+function ActionDropdown({ label, options, disabled, slug, onAction, onSpecialAction }: ActionDropdownProps) {
   function resolvePrompt(option: ActionOption): string | undefined {
     if (option.prompt === undefined) return undefined;
     return option.prompt.replaceAll('{slug}', slug);
+  }
+
+  function handleOptionClick(option: ActionOption) {
+    if (option.handler && onSpecialAction) {
+      onSpecialAction(option.handler);
+    } else {
+      onAction(resolvePrompt(option));
+    }
+  }
+
+  // Default click uses the first option's behavior
+  function handleDefaultClick() {
+    const first = options[0];
+    if (first.handler && onSpecialAction) {
+      onSpecialAction(first.handler);
+    } else {
+      onAction();
+    }
   }
 
   return (
@@ -115,7 +137,7 @@ function ActionDropdown({ label, options, disabled, slug, onAction }: ActionDrop
         disabled={disabled}
         size="sm"
         variant="outline"
-        onClick={() => { onAction(); }}
+        onClick={handleDefaultClick}
       >
         {label}
       </Button>
@@ -134,7 +156,7 @@ function ActionDropdown({ label, options, disabled, slug, onAction }: ActionDrop
           {options.map((option) => (
             <DropdownMenuItem
               key={option.label}
-              onClick={() => { onAction(resolvePrompt(option)); }}
+              onClick={() => { handleOptionClick(option); }}
             >
               <div className="space-y-0.5">
                 <Text className="font-medium" size="sm">{option.label}</Text>
@@ -289,6 +311,7 @@ interface PlanSectionProps {
   onToggle: () => void;
   onCreatePlan: (prompt?: string) => void;
   onSpinUpTeam: (prompt?: string) => void;
+  onSpecialAction: (handler: string) => void;
 }
 
 function PlanSection({
@@ -301,6 +324,7 @@ function PlanSection({
   onToggle,
   onCreatePlan,
   onSpinUpTeam,
+  onSpecialAction,
 }: PlanSectionProps) {
   const isPlanning = activeAction === 'plan';
 
@@ -338,6 +362,7 @@ function PlanSection({
             options={TEAM_OPTIONS}
             slug={task.slug}
             onAction={onSpinUpTeam}
+            onSpecialAction={onSpecialAction}
           />
         </Stack>
       ) : (
@@ -354,9 +379,10 @@ interface TeamSectionProps {
   activeAction: string | undefined;
   isActionActive: boolean;
   onSpinUpTeam: (prompt?: string) => void;
+  onSpecialAction: (handler: string) => void;
 }
 
-function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamSectionProps) {
+function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam, onSpecialAction }: TeamSectionProps) {
   const isExecuting = activeAction === 'team';
   const isComplete = task.status === 'done' || task.status === 'review';
   const showActivityPanel = task.status === 'executing' || task.status === 'review';
@@ -375,6 +401,7 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamS
       options={TEAM_OPTIONS}
       slug={task.slug}
       onAction={onSpinUpTeam}
+      onSpecialAction={onSpecialAction}
     />
   );
 
@@ -419,6 +446,8 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
     spinUpTeam,
     startResearch,
   } = useProgressContext();
+  const handOffPlan = useAgentContext((s) => s.handOffPlan);
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
 
   const [researchExpanded, setResearchExpanded] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
@@ -449,6 +478,22 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   // Jira / PR visibility
   const hasJira = task.jiraTicket !== undefined && task.jiraUrl !== undefined;
   const hasPr = task.prNumber !== undefined && task.prUrl !== undefined;
+
+  // Team Lead handoff: uses workspace.handOffPlan to send plan to a team-lead
+  // session (spawns one if none available). This is the pre-built setup with
+  // worktrees, CLAUDE.md generation, and enforcement hooks.
+  function handleTeamLeadHandoff() {
+    if (!activeProjectId) return;
+    const planPath = `progress/${task.slug}/plans/plan.md`;
+    void handOffPlan(activeProjectId, planPath);
+  }
+
+  // Dispatch handler for special actions from dropdowns
+  function handleSpecialAction(handler: string) {
+    if (handler === 'teamLead') {
+      handleTeamLeadHandoff();
+    }
+  }
 
   // Retry logic: trigger whichever step is missing
   function handleRetry() {
@@ -562,6 +607,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         isActionActive={isActionActive}
         task={task}
         onCreatePlan={(prompt) => { void createPlan(task.slug, prompt); }}
+        onSpecialAction={handleSpecialAction}
         onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
         onToggle={() => { setPlanExpanded((prev) => !prev); }}
       />
@@ -573,6 +619,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         activeAction={activeAction}
         isActionActive={isActionActive}
         task={task}
+        onSpecialAction={handleSpecialAction}
         onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
       />
 
