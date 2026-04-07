@@ -8,13 +8,14 @@
  * Local useState is used only for expand/collapse of content sections.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 import type { ProgressTask } from '@shared/types/progress';
 
+import { ipc } from '@renderer/shared/lib/ipc';
 import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
 import { useProgressContext } from '@renderer/shared/stores/progress-context-store';
 
@@ -221,6 +222,7 @@ function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: Cont
 
 interface ResearchSectionProps {
   task: ProgressTask;
+  content: string;
   activeAction: string | undefined;
   activeSessionId: string | undefined;
   isActionActive: boolean;
@@ -231,6 +233,7 @@ interface ResearchSectionProps {
 
 function ResearchSection({
   task,
+  content,
   activeAction,
   activeSessionId,
   isActionActive,
@@ -263,7 +266,7 @@ function ResearchSection({
       <Heading as="h4">Research</Heading>
       {task.hasResearch ? (
         <ContentBlock
-          content={task.researchContent ?? ''}
+          content={content}
           expanded={expanded}
           onToggle={onToggle}
         />
@@ -278,6 +281,7 @@ function ResearchSection({
 
 interface PlanSectionProps {
   task: ProgressTask;
+  content: string;
   activeAction: string | undefined;
   activeSessionId: string | undefined;
   isActionActive: boolean;
@@ -289,6 +293,7 @@ interface PlanSectionProps {
 
 function PlanSection({
   task,
+  content,
   activeAction,
   activeSessionId,
   isActionActive,
@@ -323,7 +328,7 @@ function PlanSection({
       {task.hasPlan ? (
         <Stack gap="sm">
           <ContentBlock
-            content={task.planContent ?? ''}
+            content={content}
             expanded={expanded}
             onToggle={onToggle}
           />
@@ -417,6 +422,24 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
 
   const [researchExpanded, setResearchExpanded] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
+  const [researchContent, setResearchContent] = useState<string | null>(null);
+  const [planContent, setPlanContent] = useState<string | null>(null);
+
+  // Fetch full task content (listTasks doesn't include it)
+  useEffect(() => {
+    if (!task.hasResearch && !task.hasPlan) return;
+    void (async () => {
+      try {
+        const full = await ipc('progress.getTask', { slug: task.slug });
+        if (full) {
+          setResearchContent(full.researchContent ?? null);
+          setPlanContent(full.planContent ?? null);
+        }
+      } catch {
+        // Best-effort content load
+      }
+    })();
+  }, [task.slug, task.hasResearch, task.hasPlan]);
 
   const activeSession = task.slug in activeSessions ? activeSessions[task.slug] : null;
   const activeAction = activeSession ? activeSession.action : undefined;
@@ -520,6 +543,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
       <ResearchSection
         activeAction={activeAction}
         activeSessionId={activeSessionId}
+        content={researchContent ?? ''}
         expanded={researchExpanded}
         isActionActive={isActionActive}
         task={task}
@@ -533,6 +557,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
       <PlanSection
         activeAction={activeAction}
         activeSessionId={activeSessionId}
+        content={planContent ?? ''}
         expanded={planExpanded}
         isActionActive={isActionActive}
         task={task}
