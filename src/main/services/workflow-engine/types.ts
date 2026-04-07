@@ -5,6 +5,7 @@
  * transition map, run configuration, engine records, and typed events.
  */
 
+import type { AgentDefinition } from '@shared/ipc/workflow-engine';
 import type { QaVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
 
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
@@ -185,4 +186,6 @@ export interface WorkflowEngineService {
   get: (runId: string) => WorkflowEngineRecord | undefined;
   /** List all engine records (active and completed) */
   list: () => WorkflowEngineRecord[];
+  /** List all agent definitions from .claude/agents/*.md */
+  listAgentDefinitions: () => Promise<AgentDefinition[]>;
 }

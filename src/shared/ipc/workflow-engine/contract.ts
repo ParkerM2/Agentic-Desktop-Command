@@ -8,6 +8,7 @@
 import { z } from 'zod';
 
 import {
+  AgentDefinitionSchema,
   WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
   WorkflowEngineRecordSchema,
@@ -38,6 +39,10 @@ export const workflowEngineInvoke = {
   'workflow-engine.list': {
     input: z.object({}),
     output: z.array(WorkflowEngineRecordSchema),
+  },
+  'workflow-engine.listAgentDefs': {
+    input: z.object({}),
+    output: z.array(AgentDefinitionSchema),
   },
 } as const;
 

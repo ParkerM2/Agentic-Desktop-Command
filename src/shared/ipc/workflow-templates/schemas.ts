@@ -27,6 +27,12 @@ export const WorkflowTeamSchema = z.object({
   spawnQaPerTask: z.boolean(),
   /** Whether a guardian agent runs after all waves complete */
   enableGuardian: z.boolean(),
+  /**
+   * Agent role slugs to include in the team (e.g. "schema-designer", "component-engineer").
+   * Corresponds to .claude/agents/<slug>.md definition files.
+   * An empty array means no restriction — all available roles are eligible.
+   */
+  roles: z.array(z.string()).default([]),
 });
 
 export const WorkflowModeSchema = z.enum([
