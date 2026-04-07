@@ -48,6 +48,8 @@ export interface ProgressService {
         | 'prNumber'
         | 'prUrl'
         | 'prStatus'
+        | 'workflow'
+        | 'workflowPhase'
       >
     >,
   ) => Promise<ProgressTask>;
@@ -57,7 +59,7 @@ export interface ProgressService {
   startResearch: (slug: string, prompt?: string) => Promise<{ sessionId: string }>;
   createPlan: (slug: string, prompt?: string) => Promise<{ sessionId: string }>;
   spinUpTeam: (slug: string, prompt?: string) => Promise<{ sessionId: string; action: string }>;
-  runWorkflow: (slug: string) => Promise<{ started: true }>;
+  runWorkflow: (slug: string, templateId?: string) => Promise<{ started: true }>;
   cancelAction: (slug: string) => Promise<{ success: boolean }>;
   runLogCleanup: () => Promise<{ deletedFiles: number }>;
   onTaskUpdated: (listener: (slug: string, task: ProgressTask) => void) => () => void;
@@ -214,6 +216,8 @@ async function buildTask(
     prNumber: asOptionalNumber(frontmatter.prNumber),
     prUrl: asOptionalString(frontmatter.prUrl),
     prStatus: asOptionalString(frontmatter.prStatus),
+    workflow: asOptionalString(frontmatter.workflow),
+    workflowPhase: asOptionalString(frontmatter.workflowPhase),
     createdAt: asString(frontmatter.createdAt) || new Date().toISOString(),
     updatedAt: asString(frontmatter.updatedAt) || new Date().toISOString(),
     hasResearch,
@@ -280,6 +284,12 @@ function createEmitter<T extends unknown[]>(): {
 interface ActiveSession {
   sessionId: string;
   action: string;
+}
+
+// ─── Summary Instruction Builder ─────────────────────────────
+
+function buildSummaryInstruction(summarySpec: { maxChars: number; tableFields: string[] }): string {
+  return `\n\nIMPORTANT: Include a \`<!-- summary -->\` section at the top of your output with: a synopsis paragraph (max ${String(summarySpec.maxChars)} characters) and a key-facts table with columns: ${summarySpec.tableFields.join(', ')}. Wrap it in \`<!-- summary -->\` / \`<!-- /summary -->\` HTML comment markers.`;
 }
 
 // ─── Factory ─────────────────────────────────────────────────
@@ -551,6 +561,8 @@ export function createProgressService(
           | 'prNumber'
           | 'prUrl'
           | 'prStatus'
+          | 'workflow'
+          | 'workflowPhase'
         >
       >,
     ): Promise<ProgressTask> {
@@ -618,13 +630,17 @@ export function createProgressService(
       await service.updateTask(slug, { status: 'researching' });
 
       const researchOutPath = `progress/${slug}/research/research.md`;
-      const defaultPrompt =
+      const defaultResearchPrompt =
         `Deep research on "${task.title}". ` +
         `Read existing files in progress/${slug}/. ` +
         `Write a comprehensive research document to ${researchOutPath}. ` +
         `Include background, technical analysis, risks, and recommendations.`;
 
-      return spawnAndTrack(slug, 'research', customPrompt ?? defaultPrompt);
+      const defaultSummarySpec = { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] };
+      const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
+      const fullPrompt = (customPrompt ?? defaultResearchPrompt) + summaryInstruction;
+
+      return spawnAndTrack(slug, 'research', fullPrompt);
     },
 
     async createPlan(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {
@@ -637,12 +653,16 @@ export function createProgressService(
 
       const researchPath = `progress/${slug}/research/research.md`;
       const planOutPath = `progress/${slug}/plans/plan.md`;
-      const defaultPrompt =
+      const defaultPlanPrompt =
         `Read the research document at ${researchPath}. ` +
         `Create a detailed, actionable implementation plan at ${planOutPath}. ` +
         `Include numbered tasks suitable for agent execution, file scope, and acceptance criteria.`;
 
-      return spawnAndTrack(slug, 'plan', customPrompt ?? defaultPrompt);
+      const defaultSummarySpec = { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] };
+      const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
+      const fullPrompt = (customPrompt ?? defaultPlanPrompt) + summaryInstruction;
+
+      return spawnAndTrack(slug, 'plan', fullPrompt);
     },
 
     async spinUpTeam(slug: string, customPrompt?: string): Promise<{ sessionId: string; action: string }> {
@@ -665,12 +685,18 @@ export function createProgressService(
       return { sessionId, action: 'team' };
     },
 
-    async runWorkflow(slug: string): Promise<{ started: true }> {
+    async runWorkflow(slug: string, templateId?: string): Promise<{ started: true }> {
       await init();
 
       const runStep = async (): Promise<void> => {
         const task = await service.getTask(slug);
         if (!task) throw new Error(`Task not found: ${slug}`);
+
+        // Record workflow template and starting phase
+        await service.updateTask(slug, {
+          workflow: templateId ?? 'default',
+          workflowPhase: 'research',
+        });
 
         if (!task.hasResearch) {
           workflowStep.emit(slug, 'research', 'started');
@@ -687,6 +713,7 @@ export function createProgressService(
         }
 
         if (!task.hasPlan) {
+          await service.updateTask(slug, { workflowPhase: 'planning' });
           workflowStep.emit(slug, 'plan', 'started');
           try {
             await service.createPlan(slug);
@@ -701,6 +728,7 @@ export function createProgressService(
         }
 
         if (!task.hasTeamTasks) {
+          await service.updateTask(slug, { workflowPhase: 'implementation' });
           workflowStep.emit(slug, 'team', 'started');
           try {
             await service.spinUpTeam(slug);

@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { join } from 'node:path';
 
 import { WorkflowTemplateSchema } from '@shared/ipc/workflow-templates';
-import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
+import type { PluginArtifact, WorkflowTemplate } from '@shared/ipc/workflow-templates';
 
 import { DEFAULT_TEMPLATES } from './default-templates';
 
@@ -31,6 +31,8 @@ export interface WorkflowTemplateService {
   ) => WorkflowTemplate;
   delete: (id: string) => { success: boolean };
   duplicate: (id: string, name?: string) => WorkflowTemplate;
+  scanArtifacts: (projectPath: string) => PluginArtifact[];
+  writeArtifact: (projectPath: string, type: string, name: string, content: string) => { path: string };
 }
 
 function ensureDir(dir: string): void {
@@ -79,6 +81,31 @@ function loadAllFromDir(dir: string): WorkflowTemplate[] {
   }
 
   return results;
+}
+
+function scanDirEntries(
+  dir: string,
+  type: PluginArtifact['type'],
+  filter: 'directories' | 'md-files',
+): PluginArtifact[] {
+  if (!existsSync(dir)) {
+    return [];
+  }
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    const results: PluginArtifact[] = [];
+    for (const entry of entries) {
+      if (filter === 'directories' && entry.isDirectory()) {
+        results.push({ name: entry.name, type, path: join(dir, entry.name) });
+      }
+      if (filter === 'md-files' && entry.isFile() && entry.name.endsWith('.md')) {
+        results.push({ name: entry.name.replace(/\.md$/, ''), type, path: join(dir, entry.name) });
+      }
+    }
+    return results;
+  } catch {
+    return [];
+  }
 }
 
 export function createWorkflowTemplateService(deps: { dataDir: string }): WorkflowTemplateService {
@@ -170,6 +197,50 @@ export function createWorkflowTemplateService(deps: { dataDir: string }): Workfl
       };
       saveTemplateFile(userTemplatesDir, duplicated);
       return duplicated;
+    },
+
+    scanArtifacts(projectPath) {
+      const claudeDir = join(projectPath, '.claude');
+      if (!existsSync(claudeDir)) {
+        return [];
+      }
+
+      return [
+        ...scanDirEntries(join(claudeDir, 'skills'), 'skill', 'directories'),
+        ...scanDirEntries(join(claudeDir, 'commands'), 'command', 'directories'),
+        ...scanDirEntries(join(claudeDir, 'agents'), 'agent', 'md-files'),
+      ];
+    },
+
+    writeArtifact(projectPath, type, name, content) {
+      let targetPath: string;
+
+      switch (type) {
+        case 'agent': {
+          const agentsDir = join(projectPath, '.claude', 'agents');
+          ensureDir(agentsDir);
+          targetPath = join(agentsDir, `${name}.md`);
+          break;
+        }
+        case 'skill': {
+          const skillDir = join(projectPath, '.claude', 'skills', name);
+          ensureDir(skillDir);
+          targetPath = join(skillDir, 'skill.md');
+          break;
+        }
+        case 'command': {
+          const commandDir = join(projectPath, '.claude', 'commands', name);
+          ensureDir(commandDir);
+          targetPath = join(commandDir, 'command.md');
+          break;
+        }
+        default: {
+          throw new Error(`Unknown artifact type: ${type}`);
+        }
+      }
+
+      writeFileSync(targetPath, content, 'utf-8');
+      return { path: targetPath };
     },
   };
 }

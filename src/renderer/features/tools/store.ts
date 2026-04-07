@@ -1,11 +1,15 @@
 import { create } from 'zustand';
 
-/** Minimal placeholder store for future Tools config state. */
-interface ToolsState {
-  /** Reserved for future use */
-  _placeholder: boolean;
+interface ToolsUIState {
+  activeTab: 'config' | 'workflow';
+  selectedTemplateId: string | null;
+  setActiveTab: (tab: 'config' | 'workflow') => void;
+  setSelectedTemplateId: (id: string | null) => void;
 }
 
-export const useToolsStore = create<ToolsState>()(() => ({
-  _placeholder: false,
+export const useToolsUI = create<ToolsUIState>((set) => ({
+  activeTab: 'workflow',
+  selectedTemplateId: null,
+  setActiveTab: (activeTab) => set({ activeTab }),
+  setSelectedTemplateId: (selectedTemplateId) => set({ selectedTemplateId }),
 }));

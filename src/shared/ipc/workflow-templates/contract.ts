@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { WorkflowTemplateSchema } from './schemas';
+import { ArtifactTypeSchema, PluginArtifactSchema, WorkflowTemplateSchema } from './schemas';
 
 // ─── Input helpers ────────────────────────────────────────────
 
@@ -57,5 +57,18 @@ export const workflowTemplatesInvoke = {
   'workflowTemplates.duplicate': {
     input: z.object({ id: z.string(), name: z.string().optional() }),
     output: z.object({ template: WorkflowTemplateSchema }),
+  },
+  'workflowTemplates.scanArtifacts': {
+    input: z.object({ projectPath: z.string() }),
+    output: z.object({ artifacts: z.array(PluginArtifactSchema) }),
+  },
+  'workflowTemplates.writeArtifact': {
+    input: z.object({
+      projectPath: z.string(),
+      type: ArtifactTypeSchema,
+      name: z.string().min(1),
+      content: z.string(),
+    }),
+    output: z.object({ path: z.string() }),
   },
 } as const;

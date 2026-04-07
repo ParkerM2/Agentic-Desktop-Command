@@ -44,6 +44,10 @@ export interface ProgressTask {
   /** Content — populated on getTask, not listTasks */
   researchContent?: string;
   planContent?: string;
+
+  /** Workflow template and current phase — set when runWorkflow is called */
+  workflow?: string;
+  workflowPhase?: string;
 }
 
 export type PrStatus = 'draft' | 'open' | 'merged' | 'closed';

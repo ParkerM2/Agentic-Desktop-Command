@@ -1,29 +1,26 @@
 /**
- * ToolsPage — Claude Config suite placeholder
+ * ToolsPage — Tabbed layout for Claude Config and ADC Workflow
  *
- * Shows upcoming tool categories: Skills, Commands, Agents, Plugins, Config.
- * Each card previews a future management surface.
+ * Config tab: upcoming tool categories (Skills, Commands, Agents, Plugins, Config).
+ * Workflow tab: placeholder for the workflow editor.
  */
 
-import {
-  Bot,
-  Puzzle,
-  Settings2,
-  Sparkles,
-  Terminal,
-} from 'lucide-react';
+import { Bot, Cog, Puzzle, Settings2, Sparkles, Terminal, Workflow } from 'lucide-react';
 
 import {
+  Badge,
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-  Heading,
   PageContent,
   PageHeader,
   PageLayout,
-  Text,
 } from '@ui';
+
+import { useToolsUI } from '../store';
+
+import { WorkflowEditor } from './WorkflowEditor';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -62,43 +59,56 @@ const TOOL_CARDS: ToolCard[] = [
 ];
 
 export function ToolsPage() {
+  const { activeTab, setActiveTab } = useToolsUI();
+
   return (
     <PageLayout>
       <PageHeader>
         <PageHeader.Row>
-          <PageHeader.Title description="Manage Claude skills, commands, agents, and plugins">
+          <PageHeader.Title description="Workflow configuration and Claude tooling">
             Tools
           </PageHeader.Title>
         </PageHeader.Row>
+        <PageHeader.Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+        >
+          <PageHeader.TabList>
+            <PageHeader.Tab value="config">
+              <Cog className="h-4 w-4" />
+              Claude Config
+            </PageHeader.Tab>
+            <PageHeader.Tab value="workflow">
+              <Workflow className="h-4 w-4" />
+              ADC Workflow
+            </PageHeader.Tab>
+          </PageHeader.TabList>
+
+          <PageContent>
+            <PageHeader.TabContent value="config">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {TOOL_CARDS.map((card) => (
+                  <Card key={card.name} className="opacity-70">
+                    <CardHeader>
+                      <div className="mb-2 flex items-center gap-2">
+                        <card.icon className="text-muted-foreground h-5 w-5" />
+                        <CardTitle>{card.name}</CardTitle>
+                        <Badge className="ml-auto text-xs" variant="outline">
+                          Coming soon
+                        </Badge>
+                      </div>
+                      <CardDescription>{card.description}</CardDescription>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="workflow">
+              <WorkflowEditor />
+            </PageHeader.TabContent>
+          </PageContent>
+        </PageHeader.Tabs>
       </PageHeader>
-
-      <PageContent>
-        <div className="space-y-6">
-          <div>
-            <Heading as="h3" className="mb-1">
-              Claude Config Suite
-            </Heading>
-            <Text variant="muted">
-              These tools are coming soon. Each surface will let you manage a
-              different aspect of your Claude workflow.
-            </Text>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {TOOL_CARDS.map((card) => (
-              <Card key={card.name} className="opacity-70">
-                <CardHeader>
-                  <div className="mb-2 flex items-center gap-2">
-                    <card.icon className="text-muted-foreground h-5 w-5" />
-                    <CardTitle>{card.name}</CardTitle>
-                  </div>
-                  <CardDescription>{card.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </PageContent>
     </PageLayout>
   );
 }

@@ -1,4 +1,5 @@
 // Tools — public API
 export { ToolsPage } from './components/ToolsPage';
-export { useToolsStore } from './store';
+export { WorkflowEditor } from './components/WorkflowEditor';
+export { useToolsUI } from './store';
 export * from './api/queryKeys';

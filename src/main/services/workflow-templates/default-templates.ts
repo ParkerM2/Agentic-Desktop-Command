@@ -6,9 +6,15 @@
  * cannot be deleted by the user (isBuiltin: true).
  */
 
-import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
+import type { WorkflowPhase, WorkflowTemplate } from '@shared/ipc/workflow-templates';
 
 const EPOCH = '2026-01-01T00:00:00.000Z';
+
+const DEFAULT_PHASES: WorkflowPhase[] = [
+  { name: 'brainstorming', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+  { name: 'planning', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+  { name: 'implementation', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+];
 
 export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
   {
@@ -54,6 +60,7 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       warningRules: ['missing-tests', 'missing-docs'],
       maxFileSizeLines: 300,
     },
+    phases: DEFAULT_PHASES,
     isBuiltin: true,
     createdAt: EPOCH,
     updatedAt: EPOCH,
@@ -93,6 +100,7 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       warningRules: ['missing-tests'],
       maxFileSizeLines: 500,
     },
+    phases: DEFAULT_PHASES,
     isBuiltin: true,
     createdAt: EPOCH,
     updatedAt: EPOCH,
@@ -132,6 +140,7 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       warningRules: [],
       maxFileSizeLines: 1000,
     },
+    phases: DEFAULT_PHASES,
     isBuiltin: true,
     createdAt: EPOCH,
     updatedAt: EPOCH,
@@ -176,6 +185,7 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       warningRules: [],
       maxFileSizeLines: 1000,
     },
+    phases: DEFAULT_PHASES,
     isBuiltin: true,
     createdAt: EPOCH,
     updatedAt: EPOCH,
