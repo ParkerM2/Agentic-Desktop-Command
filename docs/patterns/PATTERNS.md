@@ -1176,6 +1176,10 @@ Key rules:
 - Thin sync hooks (`useThemeSync`, `useLayoutSync`) bridge settings queries → stores
 
 ### Pattern: Adding a New Feature with IPC Data
+
+See **[Caching Layer Quickguide](./CACHING-LAYER-QUICKGUIDE.md)** for the full step-by-step reference.
+
+Summary:
 1. Add query key factory in `api/queryKeys.ts`
 2. Add query hooks in `api/use<Name>.ts`
 3. Add mutation hooks in `api/use<Name>Mutations.ts`
