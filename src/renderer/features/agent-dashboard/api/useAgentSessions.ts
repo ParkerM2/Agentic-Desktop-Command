@@ -40,3 +40,43 @@ export function useAgentSession(sessionId: string | null) {
     staleTime: 2_000,
   });
 }
+
+/** Fetch all agent sessions associated with a task slug */
+export function useSessionsForTask(slug: string | null) {
+  return useQuery({
+    queryKey: agentDashboardKeys.sessionsForTask(slug ?? ''),
+    queryFn: () =>
+      ipc('agent-dashboard.getSessionsForTask', { slug: slug ?? '' }),
+    enabled: slug !== null && slug !== '',
+    staleTime: 5_000,
+  });
+}
+
+/** Fetch paginated session log entries for a session */
+export function useSessionLog(
+  sessionId: string | null,
+  options?: { offset?: number; limit?: number },
+) {
+  return useQuery({
+    queryKey: agentDashboardKeys.sessionLog(sessionId ?? ''),
+    queryFn: () =>
+      ipc('agent-dashboard.getSessionLog', {
+        sessionId: sessionId ?? '',
+        offset: options?.offset,
+        limit: options?.limit,
+      }),
+    enabled: sessionId !== null,
+    staleTime: 5_000,
+  });
+}
+
+/** Fetch the git diff for a session's working branch */
+export function useGitDiff(sessionId: string | null) {
+  return useQuery({
+    queryKey: agentDashboardKeys.gitDiff(sessionId ?? ''),
+    queryFn: () =>
+      ipc('agent-dashboard.getGitDiff', { sessionId: sessionId ?? '' }),
+    enabled: sessionId !== null,
+    staleTime: 10_000,
+  });
+}

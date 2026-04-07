@@ -2,21 +2,20 @@
  * TeamActivityPanel
  *
  * Table showing all agents working on a given task.
- * Reads from the global useAgentContext store and renders each agent
- * as an expandable row with an AgentDetailExpander.
+ * Uses useSessionsForTask (React Query) to fetch agent sessions for a slug
+ * and renders each agent as an expandable row with an AgentDetailExpander.
  */
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import type { AgentSessionDetail } from '@shared/types/agent-session-detail';
-
-import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
 
 import {
   Badge,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  Spinner,
   Stack,
   Table,
   TableBody,
@@ -26,6 +25,8 @@ import {
   TableRow,
   Text,
 } from '@ui';
+
+import { useSessionsForTask } from '@features/agent-dashboard';
 
 import { AgentDetailExpander } from './AgentDetailExpander';
 
@@ -134,7 +135,7 @@ function AgentRow({ agent, isExpanded, onToggle }: AgentRowProps) {
         <CollapsibleContent asChild>
           <TableRow>
             <TableCell className="p-0" colSpan={5}>
-              <AgentDetailExpander sessionId={agent.sessionId} />
+              <AgentDetailExpander agent={agent} sessionId={agent.sessionId} />
             </TableCell>
           </TableRow>
         </CollapsibleContent>
@@ -146,15 +147,8 @@ function AgentRow({ agent, isExpanded, onToggle }: AgentRowProps) {
 // ─── TeamActivityPanel ──────────────────────────────────
 
 export function TeamActivityPanel({ taskSlug }: TeamActivityPanelProps) {
-  const agentIds = useAgentContext((s) => s.taskAgentMap[taskSlug] ?? []);
-  const allSessions = useAgentContext((s) => s.agentSessions);
+  const { data: agents = [], isLoading } = useSessionsForTask(taskSlug);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
-  const agents = useMemo(() => {
-    if (agentIds.length === 0) return [];
-    const idSet = new Set(agentIds);
-    return allSessions.filter((s) => idSet.has(s.sessionId));
-  }, [agentIds, allSessions]);
 
   function handleToggleRow(sessionId: string) {
     setExpandedRows((prev) => {
@@ -166,6 +160,10 @@ export function TeamActivityPanel({ taskSlug }: TeamActivityPanelProps) {
       }
       return next;
     });
+  }
+
+  if (isLoading) {
+    return <Spinner size="sm" />;
   }
 
   if (agents.length === 0) {

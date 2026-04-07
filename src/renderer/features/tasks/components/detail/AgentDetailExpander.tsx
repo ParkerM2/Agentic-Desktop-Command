@@ -3,10 +3,15 @@
  *
  * Expandable detail view for a single agent session.
  * Shows session info, recent messages, tool calls, errors, and git diff.
- * All data sourced from the global useAgentContext store.
+ *
+ * Agent session detail is passed as a prop from the parent TeamActivityPanel.
+ * Git diff is fetched via React Query (useGitDiff).
+ *
+ * TODO(task-11): recentMessages, recentToolCalls, and errors are still read
+ * from useAgentContext because they are accumulated from live IPC events
+ * with no query-based equivalent. These should be migrated once an
+ * event-to-cache pipeline (e.g. EventBridge → setQueryData) is in place.
  */
-
-import { useCallback, useState } from 'react';
 
 import type { AgentError, AgentSessionDetail, ToolCallSummary } from '@shared/types/agent-session-detail';
 
@@ -25,10 +30,13 @@ import {
   Text,
 } from '@ui';
 
+import { useGitDiff } from '@features/agent-dashboard';
+
 // ─── Types ───────────────────────────────────────────────
 
 interface AgentDetailExpanderProps {
   sessionId: string;
+  agent: AgentSessionDetail;
 }
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -236,39 +244,25 @@ interface GitDiffSectionProps {
 }
 
 function GitDiffSection({ sessionId }: GitDiffSectionProps) {
-  const [diff, setDiff] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleFetchDiff = useCallback(() => {
-    setIsLoading(true);
-    setError(null);
-
-    void useAgentContext
-      .getState()
-      .fetchGitDiff(sessionId)
-      .then((result) => {
-        setDiff(result);
-        setIsLoading(false);
-        return result;
-      })
-      .catch((fetchError: unknown) => {
-        const message = fetchError instanceof Error ? fetchError.message : 'Failed to fetch diff';
-        setError(message);
-        setIsLoading(false);
-      });
-  }, [sessionId]);
+  const { data, isLoading, error, refetch } = useGitDiff(sessionId);
+  const diff = data?.diff ?? null;
+  const errorMessage = error instanceof Error ? error.message : null;
 
   return (
     <Stack gap="sm">
       <Flex align="center" gap="sm">
         <Heading as="h4">Git Diff</Heading>
-        <Button disabled={isLoading} size="sm" variant="outline" onClick={handleFetchDiff}>
+        <Button
+          disabled={isLoading}
+          size="sm"
+          variant="outline"
+          onClick={() => { void refetch(); }}
+        >
           {isLoading ? 'Loading...' : 'Fetch Diff'}
         </Button>
       </Flex>
       {isLoading ? <Spinner size="sm" /> : null}
-      {error ? <Text className="text-destructive" size="sm">{error}</Text> : null}
+      {errorMessage ? <Text className="text-destructive" size="sm">{errorMessage}</Text> : null}
       {diff === null ? null : (
         <ScrollArea className="max-h-64">
           <Code className="block whitespace-pre-wrap break-all">{diff}</Code>
@@ -280,21 +274,13 @@ function GitDiffSection({ sessionId }: GitDiffSectionProps) {
 
 // ─── AgentDetailExpander ────────────────────────────────
 
-export function AgentDetailExpander({ sessionId }: AgentDetailExpanderProps) {
-  const agent = useAgentContext((s) =>
-    s.agentSessions.find((a) => a.sessionId === sessionId),
-  );
+export function AgentDetailExpander({ sessionId, agent }: AgentDetailExpanderProps) {
+  // TODO(task-11): recentMessages, recentToolCalls, and errors are event-accumulated
+  // in the Zustand store with no IPC query equivalent. Migrate these once EventBridge
+  // writes incoming events into React Query cache via setQueryData.
   const messages = useAgentContext((s) => s.recentMessages[sessionId] ?? []);
   const toolCalls = useAgentContext((s) => s.recentToolCalls[sessionId] ?? []);
   const errors = useAgentContext((s) => s.errors[sessionId] ?? []);
-
-  if (!agent) {
-    return (
-      <Stack className="px-4 py-3" gap="sm">
-        <Text size="sm" variant="muted">Session not found</Text>
-      </Stack>
-    );
-  }
 
   return (
     <Stack className="bg-muted/30 px-4 py-3" gap="md">
