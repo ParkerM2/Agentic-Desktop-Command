@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown, ChevronRight, Play, Plus } from 'lucide-react';
+import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Play, Plus } from 'lucide-react';
 
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
@@ -50,6 +50,9 @@ import {
   TableHeader,
   TableRow,
   Text,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@ui';
 
 import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
@@ -316,6 +319,9 @@ function createProgressColumns(
   selectedSlugs: Set<string>,
   onToggleExpand: (slug: string) => void,
   onToggleSelect: (slug: string) => void,
+  activeSessions: Record<string, { sessionId: string; action: string }>,
+  onRunWorkflow: (slug: string) => void,
+  onArchive: (slug: string) => void,
 ): Array<ColumnDef<ProgressTask>> {
   return [
     {
@@ -511,6 +517,65 @@ function createProgressColumns(
         </Text>
       ),
     },
+    {
+      id: 'runWorkflow',
+      header: '',
+      size: 40,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const { slug, status } = row.original;
+        const isDisabled = slug in activeSessions || status === 'archived';
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Run workflow"
+                disabled={isDisabled}
+                size="icon-xs"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRunWorkflow(slug);
+                }}
+              >
+                <Play />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Run workflow</TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      id: 'archive',
+      header: '',
+      size: 40,
+      enableSorting: false,
+      cell: ({ row }) => {
+        const { slug, status } = row.original;
+        const isDisabled = slug in activeSessions || status === 'archived';
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Archive task"
+                className="text-muted-foreground hover:text-destructive"
+                disabled={isDisabled}
+                size="icon-xs"
+                variant="ghost"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onArchive(slug);
+                }}
+              >
+                <Archive />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Archive task</TooltipContent>
+          </Tooltip>
+        );
+      },
+    },
   ];
 }
 
@@ -520,8 +585,10 @@ export function ProgressTaskGrid() {
   // Store
   const tasks = useProgressContext((s) => s.tasks);
   const isLoading = useProgressContext((s) => s.isLoading);
+  const activeSessions = useProgressContext((s) => s.activeSessions);
   const createTask = useProgressContext((s) => s.createTask);
   const runWorkflow = useProgressContext((s) => s.runWorkflow);
+  const archiveTask = useProgressContext((s) => s.archiveTask);
 
   // Local UI state
   const [expandedSlugs, setExpandedSlugs] = useState<Set<string>>(new Set());
@@ -571,6 +638,14 @@ export function ProgressTaskGrid() {
     }
   }
 
+  function handleInlineRunWorkflow(slug: string) {
+    void runWorkflow(slug);
+  }
+
+  function handleInlineArchive(slug: string) {
+    void archiveTask(slug);
+  }
+
   // Filtered data
   const filteredTasks = useMemo(() => {
     let filtered = tasks;
@@ -594,9 +669,17 @@ export function ProgressTaskGrid() {
   // Stable column defs
   const columns = useMemo(
     () =>
-      createProgressColumns(expandedSlugs, selectedSlugs, handleToggleExpand, handleToggleSelect),
-     
-    [expandedSlugs, selectedSlugs],
+      createProgressColumns(
+        expandedSlugs,
+        selectedSlugs,
+        handleToggleExpand,
+        handleToggleSelect,
+        activeSessions,
+        handleInlineRunWorkflow,
+        handleInlineArchive,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [expandedSlugs, selectedSlugs, activeSessions],
   );
 
   // Table instance
