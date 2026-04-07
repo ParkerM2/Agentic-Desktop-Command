@@ -68,7 +68,12 @@ function serializeYamlValue(value: unknown): string {
     }
     return value;
   }
-  return String(value);
+  // For any other serializable type (Date, etc.), convert via JSON or empty fallback
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return 'null';
+  }
 }
 
 /**

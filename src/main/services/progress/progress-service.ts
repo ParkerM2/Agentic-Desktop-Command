@@ -13,7 +13,7 @@
  */
 
 import { watch } from 'node:fs';
-import { access, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, readdir, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { serviceLogger } from '@main/lib/logger';
@@ -70,15 +70,15 @@ export interface ProgressTask {
 // ─── Service Interface ────────────────────────────────────────
 
 export interface ProgressService {
-  listTasks(): Promise<ProgressTask[]>;
-  getTask(slug: string): Promise<ProgressTask | null>;
-  createTask(
+  listTasks: () => Promise<ProgressTask[]>;
+  getTask: (slug: string) => Promise<ProgressTask | null>;
+  createTask: (
     slug: string,
     title: string,
     description: string,
     priority?: ProgressPriority,
-  ): Promise<ProgressTask>;
-  updateTask(
+  ) => Promise<ProgressTask>;
+  updateTask: (
     slug: string,
     updates: Partial<
       Pick<
@@ -94,25 +94,25 @@ export interface ProgressService {
         | 'prStatus'
       >
     >,
-  ): Promise<ProgressTask>;
-  archiveTask(slug: string): Promise<void>;
-  deleteTask(slug: string): Promise<void>;
-  listArchived(): Promise<ProgressTask[]>;
-  startResearch(slug: string): Promise<{ sessionId: string }>;
-  createPlan(slug: string): Promise<{ sessionId: string }>;
-  spinUpTeam(slug: string): Promise<{ sessionId: string; action: string }>;
-  runWorkflow(slug: string): Promise<{ started: true }>;
-  cancelAction(slug: string): Promise<{ success: boolean }>;
-  onTaskUpdated(listener: (slug: string, task: ProgressTask) => void): () => void;
-  onTaskCreated(listener: (slug: string, task: ProgressTask) => void): () => void;
-  onTaskArchived(listener: (slug: string) => void): () => void;
-  onActionStarted(
+  ) => Promise<ProgressTask>;
+  archiveTask: (slug: string) => Promise<void>;
+  deleteTask: (slug: string) => Promise<void>;
+  listArchived: () => Promise<ProgressTask[]>;
+  startResearch: (slug: string) => Promise<{ sessionId: string }>;
+  createPlan: (slug: string) => Promise<{ sessionId: string }>;
+  spinUpTeam: (slug: string) => Promise<{ sessionId: string; action: string }>;
+  runWorkflow: (slug: string) => Promise<{ started: true }>;
+  cancelAction: (slug: string) => Promise<{ success: boolean }>;
+  onTaskUpdated: (listener: (slug: string, task: ProgressTask) => void) => () => void;
+  onTaskCreated: (listener: (slug: string, task: ProgressTask) => void) => () => void;
+  onTaskArchived: (listener: (slug: string) => void) => () => void;
+  onActionStarted: (
     listener: (slug: string, action: string, sessionId: string) => void,
-  ): () => void;
-  onActionCompleted(listener: (slug: string, action: string) => void): () => void;
-  onActionFailed(listener: (slug: string, action: string, error: string) => void): () => void;
-  onWorkflowStep(listener: (slug: string, step: string, status: string) => void): () => void;
-  dispose(): void;
+  ) => () => void;
+  onActionCompleted: (listener: (slug: string, action: string) => void) => () => void;
+  onActionFailed: (listener: (slug: string, action: string, error: string) => void) => () => void;
+  onWorkflowStep: (listener: (slug: string, step: string, status: string) => void) => () => void;
+  dispose: () => void;
 }
 
 // ─── Status Ordering ──────────────────────────────────────────
@@ -212,8 +212,7 @@ async function buildTask(
 
   try {
     const result = await readFrontmatter(rootFilePath);
-    frontmatter = result.frontmatter;
-    content = result.content;
+    ({ frontmatter, content } = result);
   } catch {
     return null;
   }
@@ -283,7 +282,7 @@ async function buildTask(
     }
   }
 
-  // Attach long-form markdown body as part of description if present and description is empty
+  // Attach long-form markdown body as description if frontmatter description is empty
   if (!task.description && content.trim().length > 0) {
     task.description = content.trim();
   }
@@ -292,8 +291,6 @@ async function buildTask(
 }
 
 // ─── Event Emitter ────────────────────────────────────────────
-
-type ListenerMap<T extends unknown[]> = Map<string, Array<(...args: T) => void>>;
 
 function createEmitter<T extends unknown[]>(): {
   emit: (...args: T) => void;
@@ -320,10 +317,6 @@ function createEmitter<T extends unknown[]>(): {
     },
   };
 }
-
-// Suppress unused variable warning — ListenerMap is kept for documentation clarity
-const _unusedListenerMap: ListenerMap<[string]> | null = null;
-void _unusedListenerMap;
 
 // ─── Active Session Tracking ──────────────────────────────────
 
@@ -408,18 +401,20 @@ export function createProgressService(
       debounceTimers.delete(slug);
 
       const taskDir = join(progressDir, slug);
-      buildTask(taskDir, slug, false)
-        .then((task) => {
+
+      void (async () => {
+        try {
+          const task = await buildTask(taskDir, slug, false);
           if (task) {
             taskUpdated.emit(slug, task);
           }
-        })
-        .catch((err: unknown) => {
+        } catch (err: unknown) {
           serviceLogger.warn(
             `[ProgressService] Failed to re-read task after FS change: ${slug}`,
             err instanceof Error ? err.message : String(err),
           );
-        });
+        }
+      })();
     }, 200);
 
     debounceTimers.set(slug, timer);
@@ -437,7 +432,7 @@ export function createProgressService(
         }
       });
 
-      fsWatcher.on('error', (err) => {
+      fsWatcher.on('error', (err: Error) => {
         serviceLogger.warn(`[ProgressService] FS watcher error:`, err.message);
       });
     } catch (err) {
@@ -473,19 +468,20 @@ export function createProgressService(
       const data = event.data as { code?: number | null } | null;
       const exitCode = data?.code ?? null;
 
-      if (exitCode === 0 || exitCode === null) {
+      if (exitCode === null || exitCode === 0) {
         actionCompleted.emit(slug, action);
 
-        const taskDir = join(progressDir, slug);
-        buildTask(taskDir, slug, false)
-          .then((task) => {
+        void (async () => {
+          try {
+            const taskDir = join(progressDir, slug);
+            const task = await buildTask(taskDir, slug, false);
             if (task) {
               taskUpdated.emit(slug, task);
             }
-          })
-          .catch(() => {
+          } catch {
             // Ignore post-session reconciliation errors
-          });
+          }
+        })();
       } else {
         const errorMsg = `Session exited with code ${String(exitCode)}`;
         actionFailed.emit(slug, action, errorMsg);
@@ -501,20 +497,19 @@ export function createProgressService(
   let initPromise: Promise<void> | null = null;
 
   function init(): Promise<void> {
-    if (!initPromise) {
-      initPromise = ensureProgressDir().then(() => {
-        startWatcher();
-      });
-    }
+    initPromise ??= (async () => {
+      await ensureProgressDir();
+      startWatcher();
+    })();
     return initPromise;
   }
 
   // ─── Public API ───────────────────────────────────────────────
 
-  return {
+  const service: ProgressService = {
     async listTasks(): Promise<ProgressTask[]> {
       await init();
-      return scanDir(progressDir);
+      return await scanDir(progressDir);
     },
 
     async getTask(slug: string): Promise<ProgressTask | null> {
@@ -522,7 +517,7 @@ export function createProgressService(
       const taskDir = join(progressDir, slug);
       const exists = await directoryExists(taskDir);
       if (!exists) return null;
-      return buildTask(taskDir, slug, true);
+      return await buildTask(taskDir, slug, true);
     },
 
     async createTask(
@@ -587,11 +582,13 @@ export function createProgressService(
       const { frontmatter, content } = await readFrontmatter(rootFilePath);
 
       const now = new Date().toISOString();
+      // Spread updates but exclude keys explicitly set to undefined
+      const updatesEntries = Object.entries(updates as Record<string, unknown>).filter(
+        ([, v]) => v !== undefined,
+      );
       const updated: Record<string, unknown> = {
         ...frontmatter,
-        ...Object.fromEntries(
-          Object.entries(updates).filter(([, v]) => v !== undefined),
-        ),
+        ...Object.fromEntries(updatesEntries),
         updatedAt: now,
       };
 
@@ -625,16 +622,16 @@ export function createProgressService(
 
     async listArchived(): Promise<ProgressTask[]> {
       await init();
-      return scanDir(archivedDir);
+      return await scanDir(archivedDir);
     },
 
     async startResearch(slug: string): Promise<{ sessionId: string }> {
       await init();
 
-      const task = await this.getTask(slug);
+      const task = await service.getTask(slug);
       if (!task) throw new Error(`Task not found: ${slug}`);
 
-      await this.updateTask(slug, { status: 'researching' });
+      await service.updateTask(slug, { status: 'researching' });
 
       const researchOutPath = `progress/${slug}/research/research.md`;
       const prompt =
@@ -649,10 +646,10 @@ export function createProgressService(
     async createPlan(slug: string): Promise<{ sessionId: string }> {
       await init();
 
-      const task = await this.getTask(slug);
+      const task = await service.getTask(slug);
       if (!task) throw new Error(`Task not found: ${slug}`);
 
-      await this.updateTask(slug, { status: 'planning' });
+      await service.updateTask(slug, { status: 'planning' });
 
       const researchPath = `progress/${slug}/research/research.md`;
       const planOutPath = `progress/${slug}/plans/plan.md`;
@@ -667,7 +664,7 @@ export function createProgressService(
     async spinUpTeam(slug: string): Promise<{ sessionId: string; action: string }> {
       await init();
 
-      const task = await this.getTask(slug);
+      const task = await service.getTask(slug);
       if (!task) throw new Error(`Task not found: ${slug}`);
 
       const planPath = join(projectPath, 'progress', slug, 'plans', 'plan.md');
@@ -687,19 +684,19 @@ export function createProgressService(
     async runWorkflow(slug: string): Promise<{ started: true }> {
       await init();
 
-      const startStep = async (): Promise<void> => {
-        const task = await this.getTask(slug);
+      const runStep = async (): Promise<void> => {
+        const task = await service.getTask(slug);
         if (!task) throw new Error(`Task not found: ${slug}`);
 
         if (!task.hasResearch) {
           workflowStep.emit(slug, 'research', 'started');
           try {
-            await this.startResearch(slug);
+            await service.startResearch(slug);
             workflowStep.emit(slug, 'research', 'completed');
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             workflowStep.emit(slug, 'research', 'failed');
-            await this.updateTask(slug, { status: 'error' });
+            await service.updateTask(slug, { status: 'error' });
             throw new Error(`Research step failed: ${message}`);
           }
           return;
@@ -708,12 +705,12 @@ export function createProgressService(
         if (!task.hasPlan) {
           workflowStep.emit(slug, 'plan', 'started');
           try {
-            await this.createPlan(slug);
+            await service.createPlan(slug);
             workflowStep.emit(slug, 'plan', 'completed');
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             workflowStep.emit(slug, 'plan', 'failed');
-            await this.updateTask(slug, { status: 'error' });
+            await service.updateTask(slug, { status: 'error' });
             throw new Error(`Plan step failed: ${message}`);
           }
           return;
@@ -722,19 +719,19 @@ export function createProgressService(
         if (!task.hasTeamTasks) {
           workflowStep.emit(slug, 'team', 'started');
           try {
-            await this.spinUpTeam(slug);
+            await service.spinUpTeam(slug);
             workflowStep.emit(slug, 'team', 'completed');
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             workflowStep.emit(slug, 'team', 'failed');
-            await this.updateTask(slug, { status: 'error' });
+            await service.updateTask(slug, { status: 'error' });
             throw new Error(`Team step failed: ${message}`);
           }
         }
       };
 
       // Fire and forget — workflow runs asynchronously
-      startStep().catch((err: unknown) => {
+      void runStep().catch((err: unknown) => {
         serviceLogger.error(
           `[ProgressService] runWorkflow error for ${slug}:`,
           err instanceof Error ? err.message : String(err),
@@ -744,10 +741,10 @@ export function createProgressService(
       return { started: true };
     },
 
-    async cancelAction(slug: string): Promise<{ success: boolean }> {
+    cancelAction(slug: string): Promise<{ success: boolean }> {
       const active = activeSessions.get(slug);
       if (!active) {
-        return { success: false };
+        return Promise.resolve({ success: false });
       }
 
       const stopped = agentManagerService.stopSession(active.sessionId);
@@ -756,7 +753,7 @@ export function createProgressService(
         actionCompleted.emit(slug, active.action);
       }
 
-      return { success: stopped };
+      return Promise.resolve({ success: stopped });
     },
 
     onTaskUpdated(listener: (slug: string, task: ProgressTask) => void): () => void {
@@ -818,4 +815,6 @@ export function createProgressService(
       serviceLogger.info('[ProgressService] Disposed');
     },
   };
+
+  return service;
 }
