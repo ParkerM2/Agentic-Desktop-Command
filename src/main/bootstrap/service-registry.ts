@@ -76,6 +76,7 @@ import {
   createSlackWatcher,
 } from '../services/notifications';
 import { createPlannerService } from '../services/planner/planner-service';
+import { createProgressService } from '../services/progress';
 import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
 import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
@@ -573,10 +574,14 @@ export function createServiceRegistry(
   // ─── Visualization service (stateless — reads from disk on each call) ───
   const visualizationService = createVisualizationService();
 
+  // ─── Progress service (task pipeline — reads/writes progress/ dir) ──────
+  const progressService = createProgressService(process.cwd(), agentManagerService);
+
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
     agentManagerService,
     agentOrchestrator,
+    progressService,
     progressWatcherV2,
     teamWatcherService: null,
     projectService,
