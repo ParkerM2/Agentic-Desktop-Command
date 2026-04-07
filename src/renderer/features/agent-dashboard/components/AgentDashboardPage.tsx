@@ -143,10 +143,10 @@ export function AgentDashboardPage({
       return (
         <div className="flex h-full flex-col items-center justify-center">
           <Bot className="mb-4 h-12 w-12 text-muted-foreground" />
-          <p className="text-lg font-medium text-foreground">No agents running</p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <Text className="text-lg font-medium text-foreground">No agents running</Text>
+          <Text className="mt-1 text-sm text-muted-foreground">
             Start a session to see agent activity here
-          </p>
+          </Text>
         </div>
       );
     }
