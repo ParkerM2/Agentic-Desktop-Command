@@ -1,15 +1,21 @@
 /**
  * VisualizationCanvas — main ReactFlow canvas combining codebase and agent layers.
  * Must be rendered inside <ReactFlowProvider> (Task 11).
+ *
+ * Uses useNodesState/useEdgesState for interactive drag persistence,
+ * built-in <Controls /> for zoom/fit/lock, and native sub-flow grouping.
  */
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 import {
   Background,
   BackgroundVariant,
+  Controls,
   MiniMap,
   ReactFlow,
+  useEdgesState,
+  useNodesState,
   useReactFlow,
 } from '@xyflow/react';
 
@@ -23,10 +29,9 @@ import {
   buildHierarchicalCodebaseNodes,
 } from '../../lib/graph-builders';
 import { useVisualizationStore } from '../../store';
-import { EDGE_TYPES } from '../edges';
 import { NODE_TYPES } from '../nodes';
 
-import type { Node, NodeMouseHandler } from '@xyflow/react';
+import type { Edge, Node, NodeMouseHandler } from '@xyflow/react';
 
 // ─── Per-type minimap colours ─────────────────────────────────────
 
@@ -64,7 +69,7 @@ function applySearchFilter(nodes: Node[], searchFilter: string): Node[] {
     const matches = label.toLowerCase().includes(query);
     return {
       ...node,
-      style: matches ? undefined : { opacity: 0.3 },
+      style: matches ? node.style : { ...node.style, opacity: 0.3 },
     };
   });
 }
@@ -84,6 +89,7 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     selectedFeature,
     layoutDirection,
     searchFilter,
+    showEdgeLabels,
     setSelectedFeature,
     openDetailPanel,
   } = useVisualizationStore();
@@ -96,23 +102,22 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
   const codebaseGraph = codebaseQuery.data;
   const agentTeams = agentQuery.data;
 
-  // ─── Derived feature list ──────────────────────────────────────
+  // ─── Interactive node/edge state (drag positions persist) ──────
 
-  const features = useMemo(
-    () => agentTeams?.features.map((f) => f.feature) ?? [],
-    [agentTeams],
-  );
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as Edge[]);
 
   // Default selectedFeature to first feature when data arrives
   useEffect(() => {
-    if (selectedFeature === null && features.length > 0) {
-      setSelectedFeature(features[0] ?? null);
+    const featureList = agentTeams?.features.map((f) => f.feature) ?? [];
+    if (selectedFeature === null && featureList.length > 0) {
+      setSelectedFeature(featureList[0] ?? null);
     }
-  }, [features, selectedFeature, setSelectedFeature]);
+  }, [agentTeams, selectedFeature, setSelectedFeature]);
 
-  // ─── Graph assembly ────────────────────────────────────────────
+  // ─── Update nodes/edges when data or settings change ───────────
 
-  const { nodes: rfNodes, edges: rfEdges } = useMemo(() => {
+  useEffect(() => {
     const codebaseNodes =
       showCodebaseLayer && codebaseGraph
         ? buildHierarchicalCodebaseNodes(codebaseGraph, layoutDirection)
@@ -129,10 +134,9 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
         ? buildCrossLayerEdges(agentNodes, codebaseNodes)
         : [];
 
-    // Group-level dependency edges between codebase groups
     const codebaseEdges =
       showCodebaseLayer && codebaseGraph
-        ? buildCodebaseGroupEdges(codebaseGraph)
+        ? buildCodebaseGroupEdges(codebaseGraph, showEdgeLabels)
         : [];
 
     const allNodes = applySearchFilter(
@@ -140,10 +144,8 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
       searchFilter,
     );
 
-    return {
-      nodes: allNodes,
-      edges: [...codebaseEdges, ...crossEdges],
-    };
+    setNodes(allNodes);
+    setEdges([...codebaseEdges, ...crossEdges]);
   }, [
     codebaseGraph,
     agentTeams,
@@ -152,17 +154,22 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     selectedFeature,
     layoutDirection,
     searchFilter,
+    showEdgeLabels,
+    setNodes,
+    setEdges,
   ]);
 
   // ─── Fit view after nodes load ─────────────────────────────────
 
   useEffect(() => {
-    // Delay fitView to ensure nodes are measured in the DOM
+    if (nodes.length === 0) return;
     const timer = setTimeout(() => {
       void fitView({ padding: 0.2, duration: 300 });
     }, 200);
-    return () => { clearTimeout(timer); };
-  }, [rfNodes, fitView]);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [nodes.length, fitView]);
 
   // ─── Handlers ─────────────────────────────────────────────────
 
@@ -192,25 +199,26 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
 
   return (
     <div className="h-full w-full">
-    <ReactFlow
-      elementsSelectable
-      nodesDraggable
-      edgeTypes={EDGE_TYPES}
-      edges={rfEdges}
-      edgesFocusable={false}
-      maxZoom={3}
-      minZoom={0.05}
-      nodeTypes={NODE_TYPES}
-      nodes={rfNodes}
-      nodesConnectable={false}
-      nodesFocusable={false}
-      zoomOnDoubleClick={false}
-      onInit={handleInit}
-      onNodeClick={handleNodeClick}
-    >
-      <Background variant={BackgroundVariant.Dots} />
-      {rfNodes.length > 0 ? <MiniMap nodeColor={getNodeColor} /> : null}
-    </ReactFlow>
+      <ReactFlow
+        elementsSelectable
+        nodesDraggable
+        edges={edges}
+        edgesFocusable={false}
+        maxZoom={3}
+        minZoom={0.05}
+        nodeTypes={NODE_TYPES}
+        nodes={nodes}
+        nodesConnectable={false}
+        zoomOnDoubleClick={false}
+        onEdgesChange={onEdgesChange}
+        onInit={handleInit}
+        onNodeClick={handleNodeClick}
+        onNodesChange={onNodesChange}
+      >
+        <Controls showInteractive={false} />
+        <Background variant={BackgroundVariant.Dots} />
+        {nodes.length > 0 ? <MiniMap nodeColor={getNodeColor} /> : null}
+      </ReactFlow>
     </div>
   );
 }

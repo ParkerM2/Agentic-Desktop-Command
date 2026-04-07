@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { ReactFlowProvider, useReactFlow } from '@xyflow/react';
+import { ReactFlowProvider } from '@xyflow/react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -33,7 +33,6 @@ function VisualizationPageContent({ projectId }: { projectId: string }) {
     toggleEdgeLabels,
   } = useVisualizationStore();
 
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
   const queryClient = useQueryClient();
 
   const codebaseQuery = useCodebaseGraph(projectId);
@@ -58,18 +57,6 @@ function VisualizationPageContent({ projectId }: { projectId: string }) {
     });
   }, [queryClient, projectId]);
 
-  const handleZoomIn = useCallback(() => {
-    void zoomIn({ duration: 200 });
-  }, [zoomIn]);
-
-  const handleZoomOut = useCallback(() => {
-    void zoomOut({ duration: 200 });
-  }, [zoomOut]);
-
-  const handleFitView = useCallback(() => {
-    void fitView({ padding: 0.2, duration: 300 });
-  }, [fitView]);
-
   // ─── Loading check (for disabling toolbar actions) ────────────
 
   const isPending = codebaseQuery.isPending || agentQuery.isPending;
@@ -91,7 +78,6 @@ function VisualizationPageContent({ projectId }: { projectId: string }) {
               showAgentLayer={showAgentLayer}
               showCodebaseLayer={showCodebaseLayer}
               showEdgeLabels={showEdgeLabels}
-              onFitView={handleFitView}
               onRefresh={handleRefresh}
               onSelectFeature={setSelectedFeature}
               onSetLayoutDirection={setLayoutDirection}
@@ -99,8 +85,6 @@ function VisualizationPageContent({ projectId }: { projectId: string }) {
               onToggleAgent={toggleAgentLayer}
               onToggleCodebase={toggleCodebaseLayer}
               onToggleEdgeLabels={toggleEdgeLabels}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
             />
           </PageHeader.Actions>
         </PageHeader.Row>

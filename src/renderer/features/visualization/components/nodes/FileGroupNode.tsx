@@ -1,4 +1,10 @@
-import { Handle, Position, useReactFlow } from '@xyflow/react';
+import {
+  Handle,
+  NodeResizer,
+  NodeToolbar,
+  Position,
+  useReactFlow,
+} from '@xyflow/react';
 import {
   ChevronDown,
   ChevronRight,
@@ -46,10 +52,11 @@ const LAYER_BORDER: Record<string, string> = {
   preload: 'border-slate-500/30',
 };
 
-export function FileGroupNode({ id, data }: NodeProps<FileGroupRFNode>) {
+export function FileGroupNode({ id, data, selected }: NodeProps<FileGroupRFNode>) {
   const { getViewport } = useReactFlow();
   const { zoom } = getViewport();
-  const { expandedGroups, toggleExpandedGroup } = useVisualizationStore();
+  const { expandedGroups, toggleExpandedGroup, openDetailPanel } =
+    useVisualizationStore();
   const isExpanded = expandedGroups.has(id);
 
   const isParent = data.isParent === true;
@@ -59,76 +66,112 @@ export function FileGroupNode({ id, data }: NodeProps<FileGroupRFNode>) {
   const layerBorder = LAYER_BORDER[parentLayer] ?? 'border-border/60';
 
   return (
-    <div
-      className={cn(
-        'min-w-40 rounded-md border backdrop-blur-sm',
-        isParent
-          ? cn(
-              'min-w-52 border-2 font-semibold',
-              layerBorder,
-              layerBg,
-              'bg-card/90',
-            )
-          : cn('border-border/60 bg-card/80', layerBg),
-      )}
-    >
-      <Handle position={Position.Top} type="target" />
+    <>
+      <NodeToolbar isVisible={selected} position={Position.Top}>
+        <div className="flex gap-1 rounded-md border border-border bg-background p-1 shadow-md">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              openDetailPanel(id);
+            }}
+          >
+            Details
+          </Button>
+          {isParent ? null : (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                toggleExpandedGroup(id);
+              }}
+            >
+              {isExpanded ? 'Collapse' : 'Expand'}
+            </Button>
+          )}
+        </div>
+      </NodeToolbar>
+
+      {isParent ? (
+        <NodeResizer
+          isVisible={selected}
+          lineClassName="!border-primary/40"
+          minHeight={100}
+          minWidth={200}
+        />
+      ) : null}
 
       <div
         className={cn(
-          'flex items-center gap-1.5 px-2',
-          isParent ? 'py-2.5' : 'py-1.5',
+          'min-w-40 rounded-md border backdrop-blur-sm',
+          isParent
+            ? cn(
+                'min-w-52 border-2 font-semibold',
+                layerBorder,
+                layerBg,
+                'bg-card/90',
+              )
+            : cn('border-border/60 bg-card/80', layerBg),
         )}
       >
-        {isParent ? null : (
-          <Button
-            aria-label={isExpanded ? 'Collapse group' : 'Expand group'}
-            className="h-5 w-5 shrink-0"
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              toggleExpandedGroup(id);
-            }}
-          >
-            {isExpanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
-          </Button>
-        )}
+        <Handle position={Position.Top} type="target" />
 
-        <LayerIcon
+        <div
           className={cn(
-            'shrink-0',
-            isParent
-              ? 'h-5 w-5 text-foreground/70'
-              : 'h-4 w-4 text-muted-foreground',
-          )}
-        />
-
-        <span
-          className={cn(
-            'truncate',
-            isParent ? 'text-sm font-semibold' : 'text-xs font-medium',
+            'flex items-center gap-1.5 px-2',
+            isParent ? 'py-2.5' : 'py-1.5',
           )}
         >
-          {data.label}
-        </span>
+          {isParent ? null : (
+            <Button
+              aria-label={isExpanded ? 'Collapse group' : 'Expand group'}
+              className="h-5 w-5 shrink-0"
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                toggleExpandedGroup(id);
+              }}
+            >
+              {isExpanded ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronRight className="h-3 w-3" />
+              )}
+            </Button>
+          )}
 
-        {zoom >= 0.5 ? (
+          <LayerIcon
+            className={cn(
+              'shrink-0',
+              isParent
+                ? 'h-5 w-5 text-foreground/70'
+                : 'h-4 w-4 text-muted-foreground',
+            )}
+          />
+
           <span
             className={cn(
-              'ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground',
-              isParent ? 'text-xs' : 'text-[10px]',
+              'truncate',
+              isParent ? 'text-sm font-semibold' : 'text-xs font-medium',
             )}
           >
-            {data.fileCount}
+            {data.label}
           </span>
-        ) : null}
-      </div>
 
-      <Handle position={Position.Bottom} type="source" />
-    </div>
+          {zoom >= 0.5 ? (
+            <span
+              className={cn(
+                'ml-auto shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground',
+                isParent ? 'text-xs' : 'text-[10px]',
+              )}
+            >
+              {data.fileCount}
+            </span>
+          ) : null}
+        </div>
+
+        <Handle position={Position.Bottom} type="source" />
+      </div>
+    </>
   );
 }
