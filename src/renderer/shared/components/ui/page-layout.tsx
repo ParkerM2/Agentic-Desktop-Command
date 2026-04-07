@@ -1,25 +1,30 @@
 /**
  * PageLayout — Compositional page structure primitives
  *
- * Compound component pattern for standardized page layouts.
- * Every feature page composes from these building blocks:
+ * Scroll is handled automatically — PageContent always scrolls.
+ * PageHeader always stays fixed at the top. No per-page config needed.
  *
+ * NON-TABBED pages:
  *   <PageLayout>
  *     <PageHeader>
- *       <PageHeader.Row>
- *         <PageHeader.Title>Tasks</PageHeader.Title>
- *         <PageHeader.Actions><Button>New</Button></PageHeader.Actions>
- *       </PageHeader.Row>
- *       <PageHeader.Tabs defaultValue="list">
+ *       <PageHeader.Row> ... </PageHeader.Row>
+ *     </PageHeader>
+ *     <PageContent> ... </PageContent>
+ *   </PageLayout>
+ *
+ * TABBED pages (Tabs wraps header + content so Radix context connects them):
+ *   <PageLayout>
+ *     <PageHeader.Tabs defaultValue="list">
+ *       <PageHeader>
+ *         <PageHeader.Row> ... </PageHeader.Row>
  *         <PageHeader.TabList>
  *           <PageHeader.Tab value="list">List</PageHeader.Tab>
- *           <PageHeader.Tab value="board">Board</PageHeader.Tab>
  *         </PageHeader.TabList>
- *         <PageContent>
- *           <PageHeader.TabContent value="list">...</PageHeader.TabContent>
- *         </PageContent>
- *       </PageHeader.Tabs>
- *     </PageHeader>
+ *       </PageHeader>
+ *       <PageContent>
+ *         <PageHeader.TabContent value="list"> ... </PageHeader.TabContent>
+ *       </PageContent>
+ *     </PageHeader.Tabs>
  *   </PageLayout>
  */
 
@@ -47,6 +52,7 @@ function PageLayout({ className, ...props }: PageLayoutProps) {
 }
 
 // ─── PageHeader ─────────────────────────────────────────
+// Always compact (shrink-0). Never grows. Tab triggers live here.
 
 type PageHeaderProps = React.ComponentProps<'div'>;
 
@@ -131,7 +137,8 @@ function PageHeaderActions({ className, ...props }: PageHeaderActionsProps) {
 }
 
 // ─── PageHeader.Tabs ────────────────────────────────────
-// Renders a tab bar pinned to the bottom of the header
+// Wraps both PageHeader and PageContent so Radix context connects
+// TabList (in header) with TabContent (in content area).
 
 type PageHeaderTabsProps = React.ComponentProps<typeof TabsPrimitive.Root>;
 
@@ -181,7 +188,6 @@ function PageHeaderTab({ className, ...props }: PageHeaderTabProps) {
 }
 
 // ─── PageHeader.TabContent ──────────────────────────────
-// For rendering tab panels below the header (inside PageContent)
 
 type PageHeaderTabContentProps = React.ComponentProps<typeof TabsPrimitive.Content>;
 
@@ -196,6 +202,7 @@ function PageHeaderTabContent({ className, ...props }: PageHeaderTabContentProps
 }
 
 // ─── PageContent ────────────────────────────────────────
+// The scrollable render area. Always flex-1 + overflow-auto.
 
 type PageContentProps = React.ComponentProps<'div'>;
 
