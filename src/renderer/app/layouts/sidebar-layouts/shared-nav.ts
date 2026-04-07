@@ -7,15 +7,17 @@
 
 
 import {
-  BarChart3,
   Bot,
   Briefcase,
   Dumbbell,
+  GitBranch,
   Headphones,
   Home,
   ListTodo,
+  Map,
   Network,
   Terminal,
+  Wrench,
 } from 'lucide-react';
 
 import { PROJECT_VIEWS, ROUTES } from '@shared/constants';
@@ -45,6 +47,8 @@ export const developmentItems: NavItem[] = [
   { label: 'Workspace', icon: Bot, path: PROJECT_VIEWS.AGENTS },
   { label: 'Tasks', icon: ListTodo, path: PROJECT_VIEWS.TASKS },
   { label: 'Terminals', icon: Terminal, path: PROJECT_VIEWS.TERMINALS },
+  { label: 'Planning', icon: Map, path: PROJECT_VIEWS.PLANNING },
+  { label: 'Git', icon: GitBranch, path: PROJECT_VIEWS.GIT },
+  { label: 'Tools', icon: Wrench, path: PROJECT_VIEWS.TOOLS },
   { label: 'Visual Map', icon: Network, path: PROJECT_VIEWS.VISUALIZATION },
-  { label: 'Tools', icon: BarChart3, path: PROJECT_VIEWS.TOOLS },
 ];

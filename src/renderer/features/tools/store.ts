@@ -1,15 +1,11 @@
 import { create } from 'zustand';
 
-type ToolsTab = 'roadmap' | 'ideation' | 'insights' | 'changelog' | 'github';
-
+/** Minimal placeholder store for future Tools config state. */
 interface ToolsState {
-  activeTab: ToolsTab;
-  setActiveTab: (tab: ToolsTab) => void;
+  /** Reserved for future use */
+  _placeholder: boolean;
 }
 
-export const useToolsStore = create<ToolsState>()((set) => ({
-  activeTab: 'roadmap',
-  setActiveTab: (tab) => set({ activeTab: tab }),
+export const useToolsStore = create<ToolsState>()(() => ({
+  _placeholder: false,
 }));
-
-export type { ToolsTab };

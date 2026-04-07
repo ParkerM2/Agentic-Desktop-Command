@@ -57,8 +57,8 @@ export const LAYOUT_CONFIGS: Record<SidebarLayoutId, SidebarLayoutConfig> = {
     className: 'w-[350px]',
     devSubGroups: [
       { label: 'Code', startIndex: 0, endIndex: 3 },
-      { label: 'Plan', startIndex: 3, endIndex: 6 },
-      { label: 'Track', startIndex: 6, endIndex: 9 },
+      { label: 'Plan', startIndex: 3, endIndex: 5 },
+      { label: 'Track', startIndex: 5, endIndex: 7 },
     ],
   },
   'sidebar-10': { groupStyle: 'flat', variant: 'floating', showTooltips: true },

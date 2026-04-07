@@ -68,59 +68,72 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
-  const githubRoute = createRoute({
+  const planningRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
-    path: ROUTE_PATTERNS.PROJECT_GITHUB,
-    staticData: { breadcrumbLabel: 'GitHub' },
+    path: ROUTE_PATTERNS.PROJECT_PLANNING,
+    staticData: { breadcrumbLabel: 'Planning' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/github'),
-      'GitHubPage',
+      () => import('@features/planning'),
+      'PlanningPage',
     ),
   });
 
-  const roadmapRoute = createRoute({
+  const gitRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_GIT,
+    staticData: { breadcrumbLabel: 'Git' },
+    pendingComponent: ProjectSkeleton,
+    component: lazyRouteComponent(
+      () => import('@features/git-overview'),
+      'GitPage',
+    ),
+  });
+
+  // ── Legacy redirect routes ──────────────────────────────────
+  const roadmapRedirect = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_ROADMAP,
-    staticData: { breadcrumbLabel: 'Roadmap' },
-    pendingComponent: ProjectSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/roadmap'),
-      'RoadmapPage',
-    ),
+    beforeLoad: ({ params }) => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTE_PATTERNS.PROJECT_PLANNING, params });
+    },
   });
 
-  const ideationRoute = createRoute({
+  const ideationRedirect = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_IDEATION,
-    staticData: { breadcrumbLabel: 'Ideation' },
-    pendingComponent: ProjectSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/ideation'),
-      'IdeationPage',
-    ),
+    beforeLoad: ({ params }) => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTE_PATTERNS.PROJECT_PLANNING, params });
+    },
   });
 
-  const changelogRoute = createRoute({
-    getParentRoute: () => appLayoutRoute,
-    path: ROUTE_PATTERNS.PROJECT_CHANGELOG,
-    staticData: { breadcrumbLabel: 'Changelog' },
-    pendingComponent: ProjectSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/changelog'),
-      'ChangelogPage',
-    ),
-  });
-
-  const insightsRoute = createRoute({
+  const insightsRedirect = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_INSIGHTS,
-    staticData: { breadcrumbLabel: 'Insights' },
-    pendingComponent: ProjectSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/insights'),
-      'InsightsPage',
-    ),
+    beforeLoad: ({ params }) => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTE_PATTERNS.PROJECT_PLANNING, params });
+    },
+  });
+
+  const githubRedirect = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_GITHUB,
+    beforeLoad: ({ params }) => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTE_PATTERNS.PROJECT_GIT, params });
+    },
+  });
+
+  const changelogRedirect = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_CHANGELOG,
+    beforeLoad: ({ params }) => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTE_PATTERNS.PROJECT_GIT, params });
+    },
   });
 
   const toolsRoute = createRoute({
@@ -162,13 +175,16 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     tasksRoute,
     terminalsRoute,
     agentsRoute,
-    githubRoute,
-    roadmapRoute,
-    ideationRoute,
-    changelogRoute,
-    insightsRoute,
+    planningRoute,
+    gitRoute,
     toolsRoute,
     workflowRoute,
     visualizationRoute,
+    // Legacy redirects
+    roadmapRedirect,
+    ideationRedirect,
+    insightsRedirect,
+    githubRedirect,
+    changelogRedirect,
   ] as const;
 }

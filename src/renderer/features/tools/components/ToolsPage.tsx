@@ -1,81 +1,104 @@
 /**
- * ToolsPage — Consolidated project tools with tabbed navigation
+ * ToolsPage — Claude Config suite placeholder
  *
- * Combines Roadmap, Ideation, Insights, Changelog, and GitHub
- * into a single tabbed view. All tools are project-scoped.
+ * Shows upcoming tool categories: Skills, Commands, Agents, Plugins, Config.
+ * Each card previews a future management surface.
  */
 
 import {
-  BarChart3,
-  GitBranch,
-  Lightbulb,
-  Map,
-  ScrollText,
+  Bot,
+  Puzzle,
+  Settings2,
+  Sparkles,
+  Terminal,
 } from 'lucide-react';
 
-import { PageContent, PageHeader, PageLayout } from '@ui';
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Heading,
+  PageContent,
+  PageHeader,
+  PageLayout,
+  Text,
+} from '@ui';
 
-import { ChangelogPage } from '@features/changelog';
-import { GitHubPage } from '@features/github';
-import { IdeationPage } from '@features/ideation';
-import { InsightsPage } from '@features/insights';
-import { RoadmapPage } from '@features/roadmap';
+import type { LucideIcon } from 'lucide-react';
 
-import { useToolsStore } from '../store';
+interface ToolCard {
+  icon: LucideIcon;
+  name: string;
+  description: string;
+}
 
-import type { ToolsTab } from '../store';
-
-const TABS: Array<{ id: ToolsTab; label: string; icon: typeof Map }> = [
-  { id: 'roadmap', label: 'Roadmap', icon: Map },
-  { id: 'ideation', label: 'Ideation', icon: Lightbulb },
-  { id: 'insights', label: 'Insights', icon: BarChart3 },
-  { id: 'changelog', label: 'Changelog', icon: ScrollText },
-  { id: 'github', label: 'GitHub', icon: GitBranch },
+const TOOL_CARDS: ToolCard[] = [
+  {
+    icon: Sparkles,
+    name: 'Skills',
+    description: 'Manage reusable skill definitions for Claude sessions',
+  },
+  {
+    icon: Terminal,
+    name: 'Commands',
+    description: 'Custom slash commands and automation shortcuts',
+  },
+  {
+    icon: Bot,
+    name: 'Agents',
+    description: 'Configure agent roles, tools, and spawn templates',
+  },
+  {
+    icon: Puzzle,
+    name: 'Plugins',
+    description: 'Install and manage Claude Code plugins',
+  },
+  {
+    icon: Settings2,
+    name: 'Config',
+    description: 'Global and project-level Claude configuration',
+  },
 ];
 
 export function ToolsPage() {
-  const { activeTab, setActiveTab } = useToolsStore();
-
   return (
     <PageLayout>
       <PageHeader>
         <PageHeader.Row>
-          <PageHeader.Title description="Project development tools">
+          <PageHeader.Title description="Manage Claude skills, commands, agents, and plugins">
             Tools
           </PageHeader.Title>
         </PageHeader.Row>
-        <PageHeader.Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as ToolsTab)}
-        >
-          <PageHeader.TabList>
-            {TABS.map((tab) => (
-              <PageHeader.Tab key={tab.id} value={tab.id}>
-                <tab.icon className="h-4 w-4" />
-                {tab.label}
-              </PageHeader.Tab>
-            ))}
-          </PageHeader.TabList>
-
-          <PageContent className="p-0">
-            <PageHeader.TabContent value="roadmap">
-              <RoadmapPage />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="ideation">
-              <IdeationPage />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="insights">
-              <InsightsPage />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="changelog">
-              <ChangelogPage />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="github">
-              <GitHubPage />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
       </PageHeader>
+
+      <PageContent>
+        <div className="space-y-6">
+          <div>
+            <Heading as="h3" className="mb-1">
+              Claude Config Suite
+            </Heading>
+            <Text variant="muted">
+              These tools are coming soon. Each surface will let you manage a
+              different aspect of your Claude workflow.
+            </Text>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TOOL_CARDS.map((card) => (
+              <Card key={card.name} className="opacity-70">
+                <CardHeader>
+                  <div className="mb-2 flex items-center gap-2">
+                    <card.icon className="text-muted-foreground h-5 w-5" />
+                    <CardTitle>{card.name}</CardTitle>
+                  </div>
+                  <CardDescription>{card.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </PageContent>
     </PageLayout>
   );
 }
