@@ -34,11 +34,13 @@ import {
   Flex,
   Heading,
   InlineAlert,
+  Separator,
   Spinner,
   Stack,
   Text,
 } from '@ui';
 
+import { extractSummaryBlock } from './summary-block-parser';
 import { TeamActivityPanel } from './TeamActivityPanel';
 
 // ─── Live Agent Preview ──────────────────────────────────
@@ -297,13 +299,18 @@ interface ContentBlockProps {
   previewLength?: number;
 }
 
-function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: ContentBlockProps) {
+function ContentBlock({ content, expanded, onToggle, previewLength = 300 }: ContentBlockProps) {
+  const summaryBlock = extractSummaryBlock(content);
+  const previewMarkdown = summaryBlock ?? truncate(content, previewLength);
+
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       {expanded ? null : (
-        <Text className="line-clamp-3 text-muted-foreground" size="sm">
-          {truncate(content, previewLength)}
-        </Text>
+        <div className={summaryBlock ? '' : 'line-clamp-6'}>
+          <Markdown components={mdComponents} remarkPlugins={remarkPlugins}>
+            {previewMarkdown}
+          </Markdown>
+        </div>
       )}
       <CollapsibleContent>
         <Markdown components={mdComponents} remarkPlugins={remarkPlugins}>
@@ -312,7 +319,7 @@ function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: Cont
       </CollapsibleContent>
       <CollapsibleTrigger asChild>
         <Button className="mt-2 h-7 px-2 text-xs text-muted-foreground" size="sm" variant="ghost">
-          {expanded ? 'Show less' : 'Show full'}
+          {expanded ? 'Collapse' : 'View full'}
         </Button>
       </CollapsibleTrigger>
     </Collapsible>
@@ -326,10 +333,8 @@ interface ResearchSectionProps {
   content: string;
   activeAction: string | undefined;
   activeSessionId: string | undefined;
-  isActionActive: boolean;
   expanded: boolean;
   onToggle: () => void;
-  onStart: (prompt?: string) => void;
 }
 
 function ResearchSection({
@@ -337,14 +342,12 @@ function ResearchSection({
   content,
   activeAction,
   activeSessionId,
-  isActionActive,
   expanded,
   onToggle,
-  onStart,
 }: ResearchSectionProps) {
   const isResearching = activeAction === 'research';
 
-  const researchBody = isResearching ? (
+  const emptyBody = isResearching ? (
     <Stack gap="sm">
       <Flex align="center" gap="sm">
         <Spinner className="text-muted-foreground" size="sm" />
@@ -353,13 +356,7 @@ function ResearchSection({
       <LiveAgentPreview sessionId={activeSessionId} />
     </Stack>
   ) : (
-    <ActionDropdown
-      disabled={isActionActive}
-      label="Deep Research"
-      options={RESEARCH_OPTIONS}
-      slug={task.slug}
-      onAction={onStart}
-    />
+    <Text size="sm" variant="muted">No research yet. Use the footer actions to start.</Text>
   );
 
   return (
@@ -372,7 +369,7 @@ function ResearchSection({
           onToggle={onToggle}
         />
       ) : (
-        researchBody
+        emptyBody
       )}
     </Stack>
   );
@@ -385,12 +382,8 @@ interface PlanSectionProps {
   content: string;
   activeAction: string | undefined;
   activeSessionId: string | undefined;
-  isActionActive: boolean;
   expanded: boolean;
   onToggle: () => void;
-  onCreatePlan: (prompt?: string) => void;
-  onSpinUpTeam: (prompt?: string) => void;
-  onSpecialAction: (handler: string) => void;
 }
 
 function PlanSection({
@@ -398,54 +391,34 @@ function PlanSection({
   content,
   activeAction,
   activeSessionId,
-  isActionActive,
   expanded,
   onToggle,
-  onCreatePlan,
-  onSpinUpTeam,
-  onSpecialAction,
 }: PlanSectionProps) {
   const isPlanning = activeAction === 'plan';
 
-  const planBody = isPlanning ? (
+  const emptyBody = isPlanning ? (
     <Stack gap="sm">
       <Flex align="center" gap="sm">
         <Spinner className="text-muted-foreground" size="sm" />
-      <Text size="sm" variant="muted">Creating plan...</Text>
+        <Text size="sm" variant="muted">Creating plan...</Text>
       </Flex>
       <LiveAgentPreview sessionId={activeSessionId} />
     </Stack>
   ) : (
-    <ActionDropdown
-      disabled={isActionActive || !task.hasResearch}
-      label="Create Plan"
-      options={PLAN_OPTIONS}
-      slug={task.slug}
-      onAction={onCreatePlan}
-    />
+    <Text size="sm" variant="muted">No plan yet. Use the footer actions to create one.</Text>
   );
 
   return (
     <Stack gap="sm">
       <Heading as="h4">Implementation Plan</Heading>
       {task.hasPlan ? (
-        <Stack gap="sm">
-          <ContentBlock
-            content={content}
-            expanded={expanded}
-            onToggle={onToggle}
-          />
-          <ActionDropdown
-            disabled={isActionActive}
-            label="Spin Up Team"
-            options={TEAM_OPTIONS}
-            slug={task.slug}
-            onAction={onSpinUpTeam}
-            onSpecialAction={onSpecialAction}
-          />
-        </Stack>
+        <ContentBlock
+          content={content}
+          expanded={expanded}
+          onToggle={onToggle}
+        />
       ) : (
-        planBody
+        emptyBody
       )}
     </Stack>
   );
@@ -456,32 +429,22 @@ function PlanSection({
 interface TeamSectionProps {
   task: ProgressTask;
   activeAction: string | undefined;
-  isActionActive: boolean;
-  onSpinUpTeam: (prompt?: string) => void;
-  onSpecialAction: (handler: string) => void;
 }
 
-function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam, onSpecialAction }: TeamSectionProps) {
+function TeamSection({ task, activeAction }: TeamSectionProps) {
   const isExecuting = activeAction === 'team';
   const isComplete = task.status === 'done' || task.status === 'review';
   const showActivityPanel = task.status === 'executing' || task.status === 'review';
   const completionLabel = task.status === 'done' ? 'Pipeline Complete' : 'Ready for Review';
   const teamStatusLabel = task.status === 'done' ? 'Completed' : 'In Review';
 
-  const teamBody = isExecuting ? (
+  const emptyBody = isExecuting ? (
     <Flex align="center" gap="sm">
       <Spinner className="text-muted-foreground" size="sm" />
       <Text size="sm" variant="muted">Spinning up team...</Text>
     </Flex>
   ) : (
-    <ActionDropdown
-      disabled={isActionActive || !task.hasPlan}
-      label="Spin Up Team"
-      options={TEAM_OPTIONS}
-      slug={task.slug}
-      onAction={onSpinUpTeam}
-      onSpecialAction={onSpecialAction}
-    />
+    <Text size="sm" variant="muted">No team tasks yet. Use the footer actions to spin up a team.</Text>
   );
 
   return (
@@ -500,7 +463,7 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam, onSpeci
           </Button>
         </Flex>
       ) : (
-        teamBody
+        emptyBody
       )}
       {showActivityPanel ? (
         <TeamActivityPanel taskSlug={task.slug} />
@@ -600,61 +563,28 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   );
 
   return (
-    <Stack className="px-4 py-4" gap="sm">
+    <div className="flex max-h-[60vh] flex-col">
 
       {/* ── Error Banner ─────────────────────────────── */}
       {task.status === 'error' ? (
-        <InlineAlert title="Pipeline failed" variant="error">
-          <Flex align="center" className="mt-2" gap="sm">
-            <Text size="sm">An error occurred during pipeline execution.</Text>
-            <Button
-              disabled={isActionActive}
-              size="sm"
-              variant="destructive"
-              onClick={handleRetry}
-            >
-              Retry
-            </Button>
-          </Flex>
-        </InlineAlert>
+        <div className="px-4 pt-4">
+          <InlineAlert title="Pipeline failed" variant="error">
+            <Flex align="center" className="mt-2" gap="sm">
+              <Text size="sm">An error occurred during pipeline execution.</Text>
+              <Button
+                disabled={isActionActive}
+                size="sm"
+                variant="destructive"
+                onClick={handleRetry}
+              >
+                Retry
+              </Button>
+            </Flex>
+          </InlineAlert>
+        </div>
       ) : null}
 
-      {/* ── Top Bar: links + actions ─────────────────── */}
-      <Flex align="center" gap="sm" wrap="wrap">
-        {hasJira ? (
-          <Button asChild size="sm" variant="outline">
-            <a href={task.jiraUrl} rel="noreferrer" target="_blank">
-              <Badge size="sm" variant="info">{task.jiraTicket}</Badge>
-            </a>
-          </Button>
-        ) : (
-          <Button disabled size="sm" variant="outline">Link Ticket</Button>
-        )}
-        {hasPr ? (
-          <Button asChild size="sm" variant="outline">
-            <a href={task.prUrl} rel="noreferrer" target="_blank">
-              <Flex align="center" gap="sm">
-                <Text size="sm">#{task.prNumber}</Text>
-                {task.prStatus === undefined ? null : (
-                  <Badge size="sm" variant={prStatusVariant(task.prStatus)}>{task.prStatus}</Badge>
-                )}
-              </Flex>
-            </a>
-          </Button>
-        ) : (
-          <Button disabled size="sm" variant="outline">Link PR</Button>
-        )}
-        <Flex className="ml-auto" gap="sm" wrap="nowrap">
-          <Button disabled={isActionActive} size="sm" variant="primary" onClick={() => { void runWorkflow(task.slug); }}>
-            Run Workflow
-          </Button>
-          <Button disabled={isActionActive} size="sm" variant="destructive" onClick={() => { void archiveTask(task.slug); }}>
-            Archive
-          </Button>
-        </Flex>
-      </Flex>
-
-      {/* ── Pipeline Tabs ────────────────────────────── */}
+      {/* ── Pipeline Tabs (fixed at top) ─────────────── */}
       <div className="flex gap-0 border-b border-border">
         {([
           { key: 'research' as PipelineTab, label: 'Research', status: researchStatus },
@@ -677,45 +607,119 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         ))}
       </div>
 
-      {/* ── Tab Content ──────────────────────────────── */}
-      {activeTab === 'research' ? (
-        <ResearchSection
-          activeAction={activeAction}
-          activeSessionId={activeSessionId}
-          content={researchContent ?? ''}
-          expanded={researchExpanded}
-          isActionActive={isActionActive}
-          task={task}
-          onStart={(prompt) => { void startResearch(task.slug, prompt); }}
-          onToggle={() => { setResearchExpanded((prev) => !prev); }}
-        />
-      ) : null}
+      {/* ── Scrollable Tab Content ────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        {activeTab === 'research' ? (
+          <ResearchSection
+            activeAction={activeAction}
+            activeSessionId={activeSessionId}
+            content={researchContent ?? ''}
+            expanded={researchExpanded}
+            task={task}
+            onToggle={() => { setResearchExpanded((prev) => !prev); }}
+          />
+        ) : null}
 
-      {activeTab === 'plan' ? (
-        <PlanSection
-          activeAction={activeAction}
-          activeSessionId={activeSessionId}
-          content={planContent ?? ''}
-          expanded={planExpanded}
-          isActionActive={isActionActive}
-          task={task}
-          onCreatePlan={(prompt) => { void createPlan(task.slug, prompt); }}
-          onSpecialAction={handleSpecialAction}
-          onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
-          onToggle={() => { setPlanExpanded((prev) => !prev); }}
-        />
-      ) : null}
+        {activeTab === 'plan' ? (
+          <PlanSection
+            activeAction={activeAction}
+            activeSessionId={activeSessionId}
+            content={planContent ?? ''}
+            expanded={planExpanded}
+            task={task}
+            onToggle={() => { setPlanExpanded((prev) => !prev); }}
+          />
+        ) : null}
 
-      {activeTab === 'execute' ? (
-        <TeamSection
-          activeAction={activeAction}
-          isActionActive={isActionActive}
-          task={task}
-          onSpecialAction={handleSpecialAction}
-          onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
-        />
-      ) : null}
+        {activeTab === 'execute' ? (
+          <TeamSection
+            activeAction={activeAction}
+            task={task}
+          />
+        ) : null}
+      </div>
 
-    </Stack>
+      {/* ── Sticky Footer ────────────────────────────── */}
+      <div className="sticky bottom-0 border-t border-border bg-muted px-4 py-2">
+        <Flex align="center" gap="sm" wrap="wrap">
+          {/* Left: Info counts */}
+          <Flex align="center" gap="sm">
+            <Badge size="sm" variant="secondary">
+              Docs: {task.hasResearch ? 1 : 0}
+            </Badge>
+            <Badge size="sm" variant="secondary">
+              Plans: {task.hasPlan ? 1 : 0}
+            </Badge>
+            {hasPr ? (
+              <Badge size="sm" variant={prStatusVariant(task.prStatus)}>
+                PR #{task.prNumber}
+              </Badge>
+            ) : (
+              <Badge size="sm" variant="outline">PR: N/A</Badge>
+            )}
+          </Flex>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Right: Action dropdowns + links + workflow + archive */}
+          <Flex align="center" gap="sm" wrap="nowrap">
+            <ActionDropdown
+              disabled={isActionActive || task.hasResearch}
+              label="Research"
+              options={RESEARCH_OPTIONS}
+              slug={task.slug}
+              onAction={(prompt) => { void startResearch(task.slug, prompt); }}
+            />
+            <ActionDropdown
+              disabled={isActionActive || !task.hasResearch || task.hasPlan}
+              label="Plan"
+              options={PLAN_OPTIONS}
+              slug={task.slug}
+              onAction={(prompt) => { void createPlan(task.slug, prompt); }}
+            />
+            <ActionDropdown
+              disabled={isActionActive || !task.hasPlan}
+              label="Execute"
+              options={TEAM_OPTIONS}
+              slug={task.slug}
+              onAction={(prompt) => { void spinUpTeam(task.slug, prompt); }}
+              onSpecialAction={handleSpecialAction}
+            />
+
+            <Separator className="h-4" orientation="vertical" />
+
+            {hasJira ? (
+              <Button asChild size="sm" variant="outline">
+                <a href={task.jiraUrl} rel="noreferrer" target="_blank">
+                  <Badge size="sm" variant="info">{task.jiraTicket}</Badge>
+                </a>
+              </Button>
+            ) : (
+              <Button disabled size="sm" variant="outline">Link Ticket</Button>
+            )}
+            {hasPr ? (
+              <Button asChild size="sm" variant="outline">
+                <a href={task.prUrl} rel="noreferrer" target="_blank">
+                  <Text size="sm">#{task.prNumber}</Text>
+                </a>
+              </Button>
+            ) : (
+              <Button disabled size="sm" variant="outline">Link PR</Button>
+            )}
+
+            <Separator className="h-4" orientation="vertical" />
+
+            <Button disabled={isActionActive} size="sm" variant="primary" onClick={() => { void runWorkflow(task.slug); }}>
+              Run Workflow
+            </Button>
+            <Button className="text-destructive hover:text-destructive" disabled={isActionActive} size="sm" variant="outline" onClick={() => { void archiveTask(task.slug); }}>
+              Archive
+            </Button>
+          </Flex>
+        </Flex>
+      </div>
+
+    </div>
   );
 }
