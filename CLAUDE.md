@@ -37,6 +37,14 @@ Local-first task management backed by the `progress/` filesystem. **The task lis
 **IPC domain:** `progress`
 **Contract:** `src/shared/ipc/progress/contract.ts`
 **Types:** `src/shared/types/progress.ts` — `ProgressTask`, `ProgressStatus`, `ProgressPriority`
+
+**Additional ProgressTask fields:**
+- `lastSessionId?: string` — ID of last agent session that worked on this task
+- `lastAgentName?: string` — Name of last agent
+- `completedAt?: string` — When task was last successfully completed
+- `archivedAt?: string` — When task was archived
+- `teamName?: string` — Team that worked on this task
+- `sessionHistory?: Array<{sessionId, agentName, action, exitCode, timestamp}>` — Rolling history (last 20)
 **Service:** `src/main/services/progress/progress-service.ts` — `createProgressService(projectPath, agentManagerService)`
 **Handler:** `src/main/ipc/handlers/progress-handlers.ts`
 **Renderer store:** `src/renderer/shared/stores/progress-context-store.ts` — `useProgressContext()`
@@ -87,6 +95,22 @@ progress/
 | `event:progress.actionCompleted` | `{ slug, action }` | Session exited with code 0 |
 | `event:progress.actionFailed` | `{ slug, action, error }` | Session exited non-zero |
 | `event:progress.workflowStep` | `{ slug, step, status }` | Step progress during runWorkflow |
+
+### Workflow Template Event Channels
+
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:workflowTemplates.created` | `{ templateId }` | Template created |
+| `event:workflowTemplates.updated` | `{ templateId }` | Template updated |
+| `event:workflowTemplates.deleted` | `{ templateId }` | Template deleted |
+
+### Additional IPC Channels
+
+| Channel | Input | Output | Description |
+|---------|-------|--------|-------------|
+| `workflowTemplates.scanArtifacts` | `{}` | artifact list | Scans `.claude/skills/`, `.claude/commands/`, `.claude/agents/` |
+| `workflowTemplates.writeArtifact` | `{ type, name, content }` | `{ success }` | Writes generated artifact to correct `.claude/` location |
+| `workflow-engine.listArchived` | `{}` | archived run states | Returns archived workflow run state files |
 
 ### Status Flow
 

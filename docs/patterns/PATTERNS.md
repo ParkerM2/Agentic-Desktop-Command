@@ -161,28 +161,30 @@ function SettingsPage() {
 
 **Tabbed page:**
 ```typescript
-function FitnessPage() {
+function TabbedPage() {
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title>Fitness</PageHeader.Title>
-        </PageHeader.Row>
-        <PageHeader.Tabs defaultValue="overview">
+      <PageHeader.Tabs defaultValue="overview">
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title>Page Title</PageHeader.Title>
+          </PageHeader.Row>
           <PageHeader.TabList>
             <PageHeader.Tab value="overview">Overview</PageHeader.Tab>
-            <PageHeader.Tab value="workouts">Workouts</PageHeader.Tab>
+            <PageHeader.Tab value="details">Details</PageHeader.Tab>
           </PageHeader.TabList>
-          <PageContent>
-            <PageHeader.TabContent value="overview">...</PageHeader.TabContent>
-            <PageHeader.TabContent value="workouts">...</PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+        </PageHeader>
+        <PageContent>
+          <PageHeader.TabContent value="overview">...</PageHeader.TabContent>
+          <PageHeader.TabContent value="details">...</PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }
 ```
+
+**Key:** `PageHeader.Tabs` wraps both `PageHeader` and `PageContent` as siblings. `TabList` stays in the header, `TabContent` goes in `PageContent`. `PageContent` is always the scrollable render area.
 
 **Available sub-components:** `PageHeader.Row`, `PageHeader.Title`, `PageHeader.Actions`, `PageHeader.Tabs`, `PageHeader.TabList`, `PageHeader.Tab`, `PageHeader.TabContent`
 

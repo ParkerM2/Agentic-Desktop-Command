@@ -56,6 +56,7 @@ Location: `src/renderer/features/`
 | **visualization** | Codebase structure and agent activity graph (React Flow) | VisualizationPage, VisualizationCanvas (React Flow + dagre layout), LayerToggleToolbar, FileGroupNode, FileNode, AgentTaskNode, FeatureGroupNode, GuardianNode, DataFlowEdge, AgentScopeEdge, NodeDetailPanel | `visualization.getCodebaseGraph`, `visualization.getAgentTeams`, `visualization.getSessionLog` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
+| **tools** | Workflow template editor, plugin artifact scanning | WorkflowEditor, WorkflowSidebar, PhaseSection, ToolsPage | `workflowTemplates.*`, `workflow-engine.*` |
 | **tasks (progress)** | FS-backed task pipeline grid. Reads from `useProgressContext` (not Hub). Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
 
 ### Feature Module Structure
@@ -185,6 +186,8 @@ Location: `src/main/ipc/handlers/`
 | `agent-orchestrator-handlers.ts` | agent.startPlanning, agent.startExecution, agent.replanWithFeedback, agent.killSession, agent.restartFromCheckpoint, agent.getOrchestratorSession, agent.listOrchestratorSessions |
 | `window-handlers.ts` | window.minimize, window.maximize, window.close, window.isMaximized |
 | `progress-handlers.ts` | progress.* (listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction, runLogCleanup + 7 event channels) |
+| `workflow-template-handlers.ts` | workflowTemplates.* (list, get, create, update, delete, scanArtifacts, writeArtifact + 3 event channels) |
+| `workflow-engine-handlers.ts` | workflow-engine.* (start, stop, getStatus, listArchived) |
 
 ### IPC Utilities (`src/main/ipc/`)
 
@@ -309,6 +312,8 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `tracker` | Plan tracker (list, get, update docs/tracker.json via IPC) |
 | `workflow` | Workflow execution |
 | `progress` | Task pipeline CRUD + Research→Plan→Team actions + FS-watch events (13 invoke + 7 event channels) |
+| `workflow-templates` | Workflow template CRUD, artifact scanning/writing (7 invoke + 3 event channels) |
+| `workflow-engine` | Workflow execution engine, archived run state (4 invoke channels) |
 
 Each domain folder contains:
 ```

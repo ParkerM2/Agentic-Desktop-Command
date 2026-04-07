@@ -55,6 +55,8 @@ Each row traces a domain from shared types through to the rendered route.
 | voice | `types/voice.ts` | `ipc/misc/voice.contract.ts` | `services/voice/` | `handlers/voice-handlers.ts` | `features/voice/` | -- |
 | workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspaces/` | -- |
 | progress | `types/progress.ts` | `ipc/progress/` | `services/progress/` | `handlers/progress-handlers.ts` | `features/tasks/` (ProgressTaskGrid) | `project.routes.ts` |
+| workflow-templates | -- | `ipc/workflow-templates/` | `services/workflow-templates/` | `handlers/workflow-template-handlers.ts` | `features/tools/` | `misc.routes.ts` |
+| workflow-engine | -- | `ipc/workflow-engine/` | `services/workflow-engine/` | `handlers/workflow-engine-handlers.ts` | -- | -- |
 
 ---
 
@@ -833,6 +835,39 @@ useProgressContext.startResearch(slug)
 
 ---
 
+### workflow-templates
+
+Workflow template CRUD, plugin artifact scanning (`.claude/skills/`, `.claude/commands/`, `.claude/agents/`), and artifact generation.
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/ipc/workflow-templates/schemas.ts` (Zod schemas, inferred types) |
+| IPC Contract | `shared/ipc/workflow-templates/contract.ts` |
+| IPC Barrel | `shared/ipc/workflow-templates/index.ts` |
+| Service | `main/services/workflow-templates/` |
+| Handler | `main/ipc/handlers/workflow-template-handlers.ts` |
+| Event Wiring | `event:workflowTemplates.created`, `event:workflowTemplates.updated`, `event:workflowTemplates.deleted` |
+| Feature Module | `renderer/features/tools/` |
+| Components | `WorkflowEditor`, `WorkflowSidebar`, `PhaseSection`, `ToolsPage` |
+| Route | `renderer/app/routes/misc.routes.ts` → `/tools` |
+
+---
+
+### workflow-engine
+
+Workflow execution engine — runs workflow templates, tracks run state, archives completed runs.
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/ipc/workflow-engine/schemas.ts` (Zod schemas, inferred types) |
+| IPC Contract | `shared/ipc/workflow-engine/contract.ts` |
+| IPC Barrel | `shared/ipc/workflow-engine/index.ts` |
+| Service | `main/services/workflow-engine/` |
+| Handler | `main/ipc/handlers/workflow-engine-handlers.ts` |
+| Feature Module | -- (consumed by `features/tools/`) |
+
+---
+
 ## 3. Wiring Completeness Matrix
 
 Shows which layers exist for each domain. `Y` = exists, `-` = not applicable or intentionally absent.
@@ -876,6 +911,8 @@ Shows which layers exist for each domain. `Y` = exists, `-` = not applicable or 
 | terminals | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
 | voice | Y | Y | Y | Y | Y | Y | Y | - | Y | - |
 | workspaces | Y | Y | - | Y | - | Y | Y | Y | Y | - |
+| workflow-templates | - | Y | Y | Y | Y | - | - | - | Y | Y |
+| workflow-engine | - | Y | Y | Y | - | - | - | - | - | - |
 
 **Fully wired domains** (all applicable layers present): agents, alerts, notes, planner, tasks, terminals.
 
