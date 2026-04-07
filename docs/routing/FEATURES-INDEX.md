@@ -10,7 +10,7 @@
 | Category | Count |
 |----------|-------|
 | Renderer Features | 37 |
-| Main Process Services | 34 |
+| Main Process Services | 36 |
 | IPC Handler Files | 43 |
 | IPC Domain Folders | 29 |
 | Hub Type Modules | 9 |
@@ -120,7 +120,10 @@ Location: `src/main/services/`
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
 | **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 | **data-management** | Storage lifecycle auditing, cleanup, inspection. Sub-modules: `store-registry.ts` (22+ data store entries), `store-cleaners.ts` (per-store cleanup functions), `cleanup-service.ts` (periodic orchestrator), `storage-inspector.ts` (disk usage calculator), `crash-recovery.ts` (orphan detection), `data-export.ts` (archive export/import), `index.ts` (barrel) | runCleanup, getUsage, getRegistry, getRetention, updateRetention, clearStore, exportData, importData | `event:dataManagement.cleanupComplete` |
-| **progress** | FS-backed task pipeline service. Scans `progress/` directory (slug-based subdirs with `research/`, `plans/`, `tasks/` sub-structure). Provides CRUD, status reconciliation (frontmatter vs. directory contents), and Research→Plan→Team agent session spawning. FS watcher emits real-time task update events. Factory: `createProgressService(projectPath, agentManagerService)`. Sub-modules: `task-file-io.ts` (frontmatter read/write), `log-cleanup.ts` (session JSONL cleanup). | listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction, runLogCleanup | `event:progress.taskUpdated`, `event:progress.taskCreated`, `event:progress.taskArchived`, `event:progress.actionStarted`, `event:progress.actionCompleted`, `event:progress.actionFailed`, `event:progress.workflowStep` |
+| **progress** | FS-backed task pipeline service. Scans `progress/` directory (slug-based subdirs with `research/`, `plans/`, `tasks/` sub-structure). Provides CRUD, status reconciliation (frontmatter vs. directory contents), and Research→Plan→Team agent session spawning. FS watcher emits real-time task update events. Factory: `createProgressService(projectPath, agentManagerService)`. Sub-modules: `task-file-io.ts` (frontmatter read/write). | listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction | `event:progress.taskUpdated`, `event:progress.taskCreated`, `event:progress.taskArchived`, `event:progress.actionStarted`, `event:progress.actionCompleted`, `event:progress.actionFailed`, `event:progress.workflowStep` |
+| **agent-manager** | Headless Claude process spawning via stream-json protocol. Manages Project Owner and Team Lead sessions. Sub-modules: `process-manager.ts`, `stream-json-parser.ts`, `agent-connection-strategy.ts`, `subprocess-strategy.ts` | spawnProjectOwner, spawnTeamLead, listSessions, getSession, sendMessage, stopSession | `event:agent-dashboard.*` |
+| **worktree-provisioner** | Isolated git worktree provisioning for agent sessions. Creates worktrees, copies `.claude/` context (agents, skills, commands, settings), generates agent-specific CLAUDE.md from agent definitions, writes enforcement hooks (blocks Edit/Write for team-leads). Prevents hook bleed-through between sessions. | provision, teardown, exists | - |
+| **workspace** | Always-on session lifecycle per project. Spawns immortal primary + team-lead[0] on project open (auto-restart on crash). Mortal team-lead[1..N] user-spawnable. Team-leads are provisioned into isolated worktrees via WorktreeProvisioner. Plan handoff routes plans to idle team-leads or spawns new ones. Teammate provisioning gives each agent an isolated worktree with role-specific CLAUDE.md. | initProject, getSessions, spawnTeamLead, stopTeamLead, sendMessage, handOffPlan, executeTask, provisionTeammate, teardownTeammate | `event:workspace.sessionReady`, `event:workspace.sessionCrashed`, `event:workspace.sessionRestarted`, `event:workspace.planHandedOff` |
 
 ### Main Process Libraries
 

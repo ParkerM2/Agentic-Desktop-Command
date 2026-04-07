@@ -362,6 +362,9 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
         teamName: config.teamName,
       });
 
+      // Team-lead is spawned as a TOP-LEVEL session (no agentFlags).
+      // This allows it to use the Agent tool to spawn subagents.
+      // Team members (spawned with --agent-id) cannot spawn further agents.
       let managedProcess: ReturnType<typeof processManager.spawn>;
       try {
         managedProcess = processManager.spawn({
@@ -369,10 +372,6 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
           prompt: config.prompt,
           model: config.model,
           name: config.name,
-          agentFlags: {
-            agentId: `${config.name ?? session.name}@${config.teamName}`,
-            teamName: config.teamName,
-          },
         });
       } catch (error) {
         agentLogger.error(

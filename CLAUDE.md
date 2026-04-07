@@ -58,7 +58,7 @@ progress/
     └── <slug>/
 ```
 
-### Invoke Channels (13 total)
+### Invoke Channels (12 total)
 
 | Channel | Input | Output | Description |
 |---------|-------|--------|-------------|
@@ -74,7 +74,6 @@ progress/
 | `progress.spinUpTeam` | `{ slug }` | `{ sessionId, action }` | Spawn team-lead to decompose plan |
 | `progress.runWorkflow` | `{ slug }` | `{ started: true }` | Run full Research→Plan→Team pipeline |
 | `progress.cancelAction` | `{ slug }` | `{ success }` | Stop active agent session for task |
-| `progress.runLogCleanup` | `{}` | `{ deletedFiles }` | Delete JSONL session logs older than 7 days |
 
 ### Event Channels (7 total)
 
@@ -101,6 +100,43 @@ Status is stored in frontmatter AND reconciled from directory contents on every 
 - `tasks/task-*.md` exist → bumped to at least `executing`
 
 Frontmatter wins only if it represents higher progress than the directory state.
+
+## Workspace Agent Commands
+
+IPC channels for plan handoff and team-lead orchestration. Accessible from any session (primary, assistant, UI):
+
+| Channel | Purpose |
+|---------|---------|
+| `workspace.handOffPlan` | Send a plan file to an idle team-lead (or spawn a new one). Input: `{ projectId, planPath, instructions? }` |
+| `workspace.executeTask` | Send an ad-hoc task to a team-lead. Input: `{ projectId, taskDescription, planPath? }` |
+| `workspace.provisionTeammate` | Provision an isolated worktree for a teammate agent. Input: `{ projectId, agentRole, slug, teamName, taskInstructions? }` |
+| `workspace.teardownTeammate` | Tear down a teammate's worktree after completion. Input: `{ projectId, slug }` |
+| `workspace.spawnTeamLead` | Spawn a new mortal team-lead (with optional planPath). |
+| `workspace.sendMessage` | Send a message to any active session by sessionId. |
+
+### Renderer Hooks
+
+```typescript
+import { useHandOffPlan, useExecuteTask, useProvisionTeammate, useTeardownTeammate } from '@features/workspace/api/useWorkspace';
+```
+
+### Team-Lead Isolation
+
+Every team-lead runs in its own git worktree (`.worktrees/team-lead-{projectId}-{index}/`) with:
+- Custom CLAUDE.md generated from `.claude/agents/team-leader.md` + project rules
+- Enforcement hooks in `.claude/settings.local.json` that block Edit/Write/NotebookEdit
+- Full `.claude/` context (agents, skills, commands, settings)
+
+This prevents hook bleed-through between sessions. The team-lead physically cannot write code.
+
+### Teammate Isolation
+
+Team-leads call `workspace.provisionTeammate` before spawning a teammate agent. This creates:
+- Isolated worktree at `.worktrees/{slug}/`
+- Role-specific CLAUDE.md from `.claude/agents/{agentRole}.md`
+- No enforcement hooks (teammates need Edit/Write)
+
+After the teammate completes, the team-lead calls `workspace.teardownTeammate` to clean up.
 
 ## Skills Available
 

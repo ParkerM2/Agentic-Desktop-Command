@@ -1,11 +1,25 @@
 /**
  * Agent Teams Reader
  *
- * Reads tracking/ and progress/ directories from a project
- * to build structured agent team data for visualization.
+ * Reads the progress/ directory from a project to build structured
+ * agent team data for visualization. Replaces the old tracking/-based
+ * implementation with the progress-driven task pipeline.
+ *
+ * Data sources:
+ * - progress/<slug>/  — task directories (frontmatter status)
+ * - progress/<slug>/tasks/task-*.md  — agent task files (executing state)
+ *
+ * Status mapping to visualization nodes:
+ * - researching      → single "Research Agent" node (active)
+ * - planning         → single "Planning Agent" node (active)
+ * - research_done    → single "Research Agent" node (completed)
+ * - plan_ready       → single "Planning Agent" node (completed)
+ * - executing/review → FeatureGroup with AgentTask children from task files
+ * - done             → FeatureGroup with all agents completed
+ * - backlog/error    → FeatureGroup with no agent children
  */
 
-import { closeSync, existsSync, openSync, readFileSync, readSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type {
@@ -13,8 +27,15 @@ import type {
   AgentTaskInfo,
   AgentTeamsData,
   FeatureAgentData,
-  TrackingEvent,
 } from './types';
+
+// ─── Constants ───────────────────────────────────────────────
+
+/** Directories inside progress/ to skip when scanning for features. */
+const SKIP_DIRS = new Set(['archived']);
+
+/** Root file candidates in order of preference (same as task-file-io). */
+const ROOT_FILE_CANDIDATES = ['task.md', 'description.md', 'ticket.md'] as const;
 
 // ─── Agent Name Helpers ───────────────────────────────────────
 
@@ -52,6 +73,7 @@ interface ParsedTaskFile {
   wave: number | null;
   blockedBy: number[];
   fileScope: string[];
+  status: string | null;
 }
 
 export function parseTaskFile(content: string): ParsedTaskFile {
@@ -62,6 +84,7 @@ export function parseTaskFile(content: string): ParsedTaskFile {
     wave: null,
     blockedBy: [],
     fileScope: [],
+    status: null,
   };
 
   // Extract frontmatter block
@@ -83,11 +106,19 @@ export function parseTaskFile(content: string): ParsedTaskFile {
       const items = blockedByMatch[1].split(',').map((s) => s.trim()).filter(Boolean);
       result.blockedBy = items.map(Number).filter((n) => !Number.isNaN(n));
     }
+
+    const statusMatch = /^status:\s*"?([^"\n]+)"?/m.exec(fm);
+    if (statusMatch) result.status = statusMatch[1].trim();
   }
 
-  // Extract task name from heading: "# Task #N: <name>"
+  // Extract task name from heading: "# Task #N: <name>" or frontmatter title
   const headingMatch = /^# Task #\d+:\s*(.+)$/m.exec(content);
-  if (headingMatch) result.taskName = headingMatch[1].trim();
+  if (headingMatch) {
+    result.taskName = headingMatch[1].trim();
+  } else if (frontmatterMatch) {
+    const titleMatch = /^title:\s*"?([^"\n]+)"?/m.exec(frontmatterMatch[1]);
+    if (titleMatch) result.taskName = titleMatch[1].trim();
+  }
 
   // Extract file scope
   result.fileScope = extractFileScope(content);
@@ -95,324 +126,342 @@ export function parseTaskFile(content: string): ParsedTaskFile {
   return result;
 }
 
-// ─── Tracking Index ───────────────────────────────────────────
+// ─── Frontmatter Reader (sync) ───────────────────────────────
 
-interface TrackingIndexEntry {
-  feature: string;
+interface FrontmatterData {
+  title: string;
   status: string;
-  branch: string | null;
-  agentCount: number;
-}
-
-interface TrackingIndex {
-  features: TrackingIndexEntry[];
-}
-
-export function readTrackingIndex(projectPath: string): TrackingIndex | null {
-  const indexPath = join(projectPath, 'tracking', 'index.json');
-  if (!existsSync(indexPath)) return null;
-  try {
-    const raw = readFileSync(indexPath, 'utf-8');
-    return JSON.parse(raw) as TrackingIndex;
-  } catch {
-    return null;
-  }
-}
-
-// ─── Feature Manifest ─────────────────────────────────────────
-
-interface ManifestAgent {
-  status: string;
-}
-
-interface FeatureManifest {
-  feature: string;
-  agents: Record<string, ManifestAgent>;
-}
-
-export function readFeatureManifest(projectPath: string, feature: string): FeatureManifest | null {
-  const manifestPath = join(projectPath, 'tracking', feature, 'manifest.json');
-  if (!existsSync(manifestPath)) return null;
-  try {
-    const raw = readFileSync(manifestPath, 'utf-8');
-    return JSON.parse(raw) as FeatureManifest;
-  } catch {
-    return null;
-  }
-}
-
-// ─── JSONL Tail Reader ────────────────────────────────────────
-
-const CHUNK_SIZE = 8192;
-const MAX_LINES = 200;
-
-/** Scans a buffer backward for newlines and returns the trim start offset, or -1. */
-function scanChunkForBoundary(
-  buf: Buffer,
-  readSize: number,
-  newlineCount: number,
-): { boundary: number; newlineCount: number } {
-  let count = newlineCount;
-  for (let i = readSize - 1; i >= 0; i--) {
-    if (buf[i] === 0x0a) {
-      count++;
-      if (count > MAX_LINES) {
-        return { boundary: i + 1, newlineCount: count };
-      }
-    }
-  }
-  return { boundary: -1, newlineCount: count };
-}
-
-/** Parses raw JSONL text into TrackingEvent objects, skipping malformed lines. */
-function parseJsonlLines(text: string): TrackingEvent[] {
-  const events: TrackingEvent[] = [];
-  for (const line of text.split('\n')) {
-    if (line.trim().length === 0) continue;
-    try {
-      events.push(JSON.parse(line) as TrackingEvent);
-    } catch {
-      // skip malformed lines
-    }
-  }
-  return events;
-}
-
-/** Tail-reads fd backward in chunks, collecting buffers for the last MAX_LINES lines. */
-function tailReadFd(fd: number, fileSize: number): Buffer[] {
-  const chunks: Buffer[] = [];
-  let remaining = fileSize;
-  let newlineCount = 0;
-
-  while (remaining > 0) {
-    const readSize = Math.min(CHUNK_SIZE, remaining);
-    remaining -= readSize;
-    const buf = Buffer.alloc(readSize);
-    readSync(fd, buf, 0, readSize, remaining);
-
-    const { boundary, newlineCount: updatedCount } = scanChunkForBoundary(
-      buf,
-      readSize,
-      newlineCount,
-    );
-    newlineCount = updatedCount;
-
-    if (boundary >= 0) {
-      chunks.unshift(buf.subarray(boundary));
-      break;
-    }
-    chunks.unshift(buf);
-  }
-
-  return chunks;
+  description: string;
 }
 
 /**
- * Reads the last MAX_LINES lines of a JSONL file using backward seeks.
- * Avoids loading the full file into memory.
+ * Reads a markdown file's YAML frontmatter synchronously.
+ * Returns extracted title, status, and description fields.
  */
-export function parseEventsJsonl(filePath: string): TrackingEvent[] {
-  if (!existsSync(filePath)) return [];
+function readRootFrontmatter(filePath: string): FrontmatterData {
+  const defaults: FrontmatterData = { title: '', status: 'backlog', description: '' };
 
-  let stat: ReturnType<typeof statSync>;
-  try {
-    stat = statSync(filePath);
-  } catch {
-    return [];
-  }
-
-  const fileSize = stat.size;
-  if (fileSize === 0) return [];
-
-  let fd: number;
-  try {
-    fd = openSync(filePath, 'r');
-  } catch {
-    return [];
-  }
-
-  try {
-    const chunks = tailReadFd(fd, fileSize);
-    const text = Buffer.concat(chunks).toString('utf-8');
-    return parseJsonlLines(text);
-  } finally {
-    try {
-      closeSync(fd);
-    } catch {
-      // ignore close errors
-    }
-  }
-}
-
-// ─── Per-Agent JSONL ──────────────────────────────────────────
-
-interface AgentEvent {
-  ts: string;
-  type: string;
-  sid: string;
-}
-
-function readAgentEvents(projectPath: string, feature: string, agentName: string): AgentEvent[] {
-  const filePath = join(
-    projectPath,
-    'tracking',
-    feature,
-    'agents',
-    `${agentName}.jsonl`,
-  );
-  if (!existsSync(filePath)) return [];
   try {
     const raw = readFileSync(filePath, 'utf-8');
-    const lines = raw.split('\n').filter((l) => l.trim().length > 0);
-    const events: AgentEvent[] = [];
-    for (const line of lines) {
-      try {
-        events.push(JSON.parse(line) as AgentEvent);
-      } catch {
-        // skip
-      }
-    }
-    return events;
+    const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(raw);
+    if (!match) return defaults;
+
+    const yaml = match[1];
+    const result = { ...defaults };
+
+    const titleMatch = /^title:\s*"?([^"\n]+)"?/m.exec(yaml);
+    if (titleMatch) result.title = titleMatch[1].trim();
+
+    const statusMatch = /^status:\s*"?([^"\n]+)"?/m.exec(yaml);
+    if (statusMatch) result.status = statusMatch[1].trim();
+
+    const descMatch = /^description:\s*"?([^"\n]+)"?/m.exec(yaml);
+    if (descMatch) result.description = descMatch[1].trim();
+
+    return result;
+  } catch {
+    return defaults;
+  }
+}
+
+// ─── Progress Directory Scanner ──────────────────────────────
+
+interface ProgressEntry {
+  slug: string;
+  title: string;
+  status: string;
+  description: string;
+  hasTaskFiles: boolean;
+  taskFileCount: number;
+}
+
+/**
+ * Detects the root file for a progress task directory (sync).
+ * Returns the filename if found, null otherwise.
+ */
+function detectRootFileSync(dirPath: string): string | null {
+  for (const candidate of ROOT_FILE_CANDIDATES) {
+    if (existsSync(join(dirPath, candidate))) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Scans progress/ for non-archived task directories and reads
+ * their root file frontmatter to get slug, title, and status.
+ */
+function scanProgressDir(progressDir: string): ProgressEntry[] {
+  if (!existsSync(progressDir)) return [];
+
+  let entries: string[];
+  try {
+    entries = readdirSync(progressDir);
   } catch {
     return [];
   }
-}
 
-// ─── Status Derivation ────────────────────────────────────────
+  const results: ProgressEntry[] = [];
 
-const ACTIVE_WINDOW_MS = 120_000;
+  for (const entry of entries) {
+    if (SKIP_DIRS.has(entry)) continue;
 
-export function deriveAgentStatus(agentEvents: AgentEvent[]): AgentStatus {
-  if (agentEvents.length === 0) return 'pending';
-
-  // Find last agent.idle event
-  let lastIdleTs: string | null = null;
-  for (let i = agentEvents.length - 1; i >= 0; i--) {
-    if (agentEvents[i].type === 'agent.idle') {
-      lastIdleTs = agentEvents[i].ts;
-      break;
+    const entryPath = join(progressDir, entry);
+    try {
+      const s = statSync(entryPath);
+      if (!s.isDirectory()) continue;
+    } catch {
+      continue;
     }
-  }
 
-  if (lastIdleTs !== null) {
-    const age = Date.now() - new Date(lastIdleTs).getTime();
-    if (age <= ACTIVE_WINDOW_MS) return 'active';
-    return 'idle';
-  }
+    const rootFile = detectRootFileSync(entryPath);
+    let frontmatter: FrontmatterData = { title: entry, status: 'backlog', description: '' };
 
-  // Check for completion or error events
-  const lastEvent = agentEvents.at(-1);
-  if (!lastEvent) return 'pending';
-  if (lastEvent.type === 'agent.completed' || lastEvent.type === 'task.completed') {
-    return 'completed';
-  }
-  if (lastEvent.type === 'agent.error') return 'error';
+    if (rootFile) {
+      frontmatter = readRootFrontmatter(join(entryPath, rootFile));
+    }
 
-  return 'pending';
-}
+    // Check for tasks/ subdirectory
+    const tasksDir = join(entryPath, 'tasks');
+    let taskFileCount = 0;
 
-// ─── Task File Finder ─────────────────────────────────────────
-
-function findTaskFileContent(
-  projectPath: string,
-  feature: string,
-  taskNumber: number | null,
-): string | null {
-  if (taskNumber === null) return null;
-  const taskDir = join(projectPath, 'progress', feature, 'tasks');
-  if (!existsSync(taskDir)) return null;
-
-  // Try common patterns: task-1.md, task-1a.md, task-1b.md
-  const candidates = [
-    join(taskDir, `task-${taskNumber}.md`),
-    join(taskDir, `task-${taskNumber}a.md`),
-    join(taskDir, `task-${taskNumber}b.md`),
-  ];
-  for (const c of candidates) {
-    if (existsSync(c)) {
+    if (existsSync(tasksDir)) {
       try {
-        return readFileSync(c, 'utf-8');
+        const taskFiles = readdirSync(tasksDir);
+        taskFileCount = taskFiles.filter((f) => /^task-\d+/.test(f) && f.endsWith('.md')).length;
       } catch {
-        return null;
+        // Ignore — default to 0
       }
     }
+
+    // Status reconciliation: bump status if directory contents show more progress
+    let status = frontmatter.status;
+    const hasResearch = existsSync(join(entryPath, 'research', 'research.md'));
+    const hasPlan = existsSync(join(entryPath, 'plans', 'plan.md'));
+
+    if (hasResearch && statusRank(status) < statusRank('research_done')) {
+      status = 'research_done';
+    }
+    if (hasPlan && statusRank(status) < statusRank('plan_ready')) {
+      status = 'plan_ready';
+    }
+    if (taskFileCount > 0 && statusRank(status) < statusRank('executing')) {
+      status = 'executing';
+    }
+
+    results.push({
+      slug: entry,
+      title: frontmatter.title || entry,
+      status,
+      description: frontmatter.description,
+      hasTaskFiles: taskFileCount > 0,
+      taskFileCount,
+    });
   }
-  return null;
+
+  return results;
+}
+
+// ─── Status Helpers ──────────────────────────────────────────
+
+const STATUS_RANK: Record<string, number> = {
+  backlog: 0,
+  researching: 1,
+  research_done: 2,
+  planning: 3,
+  plan_ready: 4,
+  executing: 5,
+  review: 6,
+  done: 7,
+  archived: 8,
+  error: 9,
+};
+
+function statusRank(status: string): number {
+  return STATUS_RANK[status] ?? 0;
+}
+
+// ─── Single-Phase Node Builder ───────────────────────────────
+
+/**
+ * Creates a single AgentTaskInfo node for phases that have one agent
+ * (research, planning). The node label and role reflect the phase.
+ */
+function buildSinglePhaseNode(
+  phase: 'research' | 'planning',
+  isCompleted: boolean,
+): AgentTaskInfo {
+  const labels: Record<string, string> = {
+    research: 'Research Agent',
+    planning: 'Planning Agent',
+  };
+
+  const agentStatus: AgentStatus = isCompleted ? 'completed' : 'active';
+
+  return {
+    agentName: `${phase}-agent`,
+    taskNumber: null,
+    taskName: labels[phase],
+    agentRole: phase,
+    wave: null,
+    blockedBy: [],
+    status: agentStatus,
+    lastEventTs: null,
+    lastSid: null,
+    fileScope: [],
+    eventCount: 0,
+    isGuardian: false,
+  };
+}
+
+// ─── Task File Reader ────────────────────────────────────────
+
+/**
+ * Reads all task-*.md files from progress/<slug>/tasks/ and converts
+ * them to AgentTaskInfo nodes for visualization.
+ */
+function readTaskFiles(
+  progressDir: string,
+  slug: string,
+  featureStatus: string,
+): AgentTaskInfo[] {
+  const tasksDir = join(progressDir, slug, 'tasks');
+  if (!existsSync(tasksDir)) return [];
+
+  let files: string[];
+  try {
+    files = readdirSync(tasksDir);
+  } catch {
+    return [];
+  }
+
+  const taskFiles = files
+    .filter((f) => /^task-\d+/.test(f) && f.endsWith('.md'))
+    .sort();
+
+  const tasks: AgentTaskInfo[] = [];
+
+  for (const fileName of taskFiles) {
+    const filePath = join(tasksDir, fileName);
+    let content: string;
+    try {
+      content = readFileSync(filePath, 'utf-8');
+    } catch {
+      continue;
+    }
+
+    const parsed = parseTaskFile(content);
+
+    // Derive task number from filename if not in frontmatter
+    const taskNumber = parsed.taskNumber ?? agentNameToTaskNumber(fileName);
+
+    // Derive agent name from filename
+    const agentName = fileName.replace(/\.md$/, '');
+
+    // Map task status to AgentStatus
+    let status: AgentStatus;
+    if (featureStatus === 'done') {
+      status = 'completed';
+    } else if (parsed.status === 'done' || parsed.status === 'completed') {
+      status = 'completed';
+    } else if (parsed.status === 'error') {
+      status = 'error';
+    } else if (parsed.status === 'in_progress' || parsed.status === 'active') {
+      status = 'active';
+    } else {
+      status = 'pending';
+    }
+
+    const agentRole = parsed.agentRole ?? null;
+    const isGuardian =
+      agentName.startsWith('guardian') || agentRole === 'codebase-guardian';
+
+    tasks.push({
+      agentName,
+      taskNumber,
+      taskName: parsed.taskName ?? null,
+      agentRole,
+      wave: parsed.wave ?? null,
+      blockedBy: parsed.blockedBy,
+      status,
+      lastEventTs: null,
+      lastSid: null,
+      fileScope: parsed.fileScope,
+      eventCount: 0,
+      isGuardian,
+    });
+  }
+
+  return tasks;
 }
 
 // ─── Feature Builder ──────────────────────────────────────────
 
 function buildFeatureData(
-  projectPath: string,
-  entry: TrackingIndexEntry,
+  progressDir: string,
+  entry: ProgressEntry,
 ): FeatureAgentData {
-  const { feature, status, branch } = entry;
+  const { slug, status } = entry;
 
-  const manifest = readFeatureManifest(projectPath, feature);
-  const agentNames = manifest ? Object.keys(manifest.agents) : [];
+  let tasks: AgentTaskInfo[];
 
-  const eventsPath = join(projectPath, 'tracking', feature, 'events.jsonl');
-  const events = parseEventsJsonl(eventsPath);
-
-  const tasks: AgentTaskInfo[] = agentNames.map((agentName) => {
-    const taskNumber = agentNameToTaskNumber(agentName);
-    const agentEvents = readAgentEvents(projectPath, feature, agentName);
-
-    const lastEvent = agentEvents.at(-1) ?? null;
-    const lastEventTs = lastEvent ? lastEvent.ts : null;
-    const lastSid = lastEvent ? lastEvent.sid : null;
-
-    const taskContent = findTaskFileContent(projectPath, feature, taskNumber);
-    const parsed = taskContent ? parseTaskFile(taskContent) : null;
-
-    const agentRole = parsed?.agentRole ?? null;
-    const isGuardian =
-      agentName.startsWith('guardian') || agentRole === 'codebase-guardian';
-
-    return {
-      agentName,
-      taskNumber: parsed?.taskNumber ?? taskNumber,
-      taskName: parsed?.taskName ?? null,
-      agentRole,
-      wave: parsed?.wave ?? null,
-      blockedBy: parsed?.blockedBy ?? [],
-      status: deriveAgentStatus(agentEvents),
-      lastEventTs,
-      lastSid,
-      fileScope: parsed?.fileScope ?? [],
-      eventCount: agentEvents.length,
-      isGuardian,
-    };
-  });
+  switch (status) {
+    case 'researching': {
+      tasks = [buildSinglePhaseNode('research', false)];
+      break;
+    }
+    case 'research_done': {
+      tasks = [buildSinglePhaseNode('research', true)];
+      break;
+    }
+    case 'planning': {
+      tasks = [buildSinglePhaseNode('planning', false)];
+      break;
+    }
+    case 'plan_ready': {
+      tasks = [buildSinglePhaseNode('planning', true)];
+      break;
+    }
+    case 'executing':
+    case 'review':
+    case 'done': {
+      tasks = readTaskFiles(progressDir, slug, status);
+      break;
+    }
+    default: {
+      // backlog, error, archived — no agent nodes
+      tasks = [];
+      break;
+    }
+  }
 
   return {
-    feature,
+    feature: slug,
     status,
-    branch: branch ?? null,
-    agentCount: agentNames.length,
+    branch: null,
+    agentCount: tasks.length,
     tasks,
-    events,
+    events: [],
   };
 }
 
 // ─── Public API ───────────────────────────────────────────────
 
 export function buildAgentTeamsData(projectPath: string): AgentTeamsData {
-  const trackingDir = join(projectPath, 'tracking');
+  const progressDir = join(projectPath, 'progress');
 
-  if (!existsSync(trackingDir)) {
+  if (!existsSync(progressDir)) {
     return { projectPath, features: [], hasTrackingDir: false };
   }
 
-  const index = readTrackingIndex(projectPath);
-  if (!index) {
+  const entries = scanProgressDir(progressDir);
+  if (entries.length === 0) {
     return { projectPath, features: [], hasTrackingDir: true };
   }
 
   const features: FeatureAgentData[] = [];
-  for (const entry of index.features) {
+  for (const entry of entries) {
     try {
-      features.push(buildFeatureData(projectPath, entry));
+      features.push(buildFeatureData(progressDir, entry));
     } catch {
       // Skip features that fail to load — graceful degradation
     }

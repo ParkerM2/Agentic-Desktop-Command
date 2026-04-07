@@ -12,6 +12,7 @@
 
 import { useRef, useEffect, useMemo } from 'react';
 
+import { Send } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -20,12 +21,35 @@ import remarkGfm from 'remark-gfm';
 import type { AgentTextMessage } from '@shared/types/agent-dashboard';
 
 import { cn } from '@renderer/shared/lib/utils';
+import { useAgentContext, useLayoutStore } from '@renderer/shared/stores';
+
+import { Button } from '@ui/button';
 
 // ─── Props ─────────────────────────────────────────────────
 
 interface TextMessageProps {
   message: AgentTextMessage;
   className?: string;
+  /** Whether to show "Send to Team Lead" for plan paths. Default true. */
+  showHandOff?: boolean;
+}
+
+// ─── Plan File Detection ─────────────────────────────────
+
+/**
+ * Extract a plan file path from message content.
+ * Looks for common plan path patterns in markdown (backtick-wrapped or bare).
+ */
+function extractPlanPath(text: string): string | null {
+  // Match backtick-wrapped paths containing 'plan' and ending in .md
+  const backtickMatch = /`([^`]*plan[^`]*\.md)`/i.exec(text);
+  if (backtickMatch) return backtickMatch[1];
+
+  // Match bare paths like docs/features/X/plan.md
+  const bareMatch = /(?:^|\s)((?:[\w./-]+\/)?[\w.-]*plan[\w.-]*\.md)/im.exec(text);
+  if (bareMatch) return bareMatch[1];
+
+  return null;
 }
 
 // ─── Structured Content Detection ──────────────────────────
@@ -150,10 +174,19 @@ const markdownComponents: React.ComponentProps<typeof Markdown>['components'] = 
 
 // ─── Component ─────────────────────────────────────────────
 
-export function TextMessage({ message, className }: TextMessageProps) {
+export function TextMessage({ message, className, showHandOff = true }: TextMessageProps) {
   const endRef = useRef<HTMLDivElement>(null);
   const plugins = useMemo(() => [remarkGfm], []);
   const structured = isStructuredContent(message.content);
+  const handOffPlan = useAgentContext((s) => s.handOffPlan);
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+
+  // Detect plan file path in assistant messages (not user, not streaming)
+  const planPath =
+    message.role === 'assistant' && message.isStreaming !== true
+      ? extractPlanPath(message.content)
+      : null;
+  const shouldShowHandOff = showHandOff && planPath !== null && activeProjectId !== null;
 
   useEffect(() => {
     if (message.isStreaming === true) {
@@ -173,6 +206,20 @@ export function TextMessage({ message, className }: TextMessageProps) {
     </div>
   );
 
+  const handOffButton = shouldShowHandOff ? (
+    <div className="border-border/30 mt-2 border-t pt-2">
+      <Button
+        className="h-7 gap-1.5 text-xs"
+        size="sm"
+        variant="outline"
+        onClick={() => void handOffPlan(activeProjectId, planPath)}
+      >
+        <Send className="h-3 w-3" />
+        Send to Team Lead
+      </Button>
+    </div>
+  ) : null;
+
   // ── Card layout: left-aligned for structured content ────
   if (structured) {
     return (
@@ -185,6 +232,7 @@ export function TextMessage({ message, className }: TextMessageProps) {
           )}
         >
           <div className="max-w-none break-words">{markdownContent}</div>
+          {handOffButton}
           {timestamp}
           <div ref={endRef} />
         </div>
@@ -203,6 +251,7 @@ export function TextMessage({ message, className }: TextMessageProps) {
         )}
       >
         <div className="max-w-none break-words">{markdownContent}</div>
+        {handOffButton}
         {timestamp}
         <div ref={endRef} />
       </div>

@@ -26,11 +26,13 @@ import type { PlannerService } from '../planner/planner-service';
 import type { ProjectService } from '../project/project-service';
 import type { TaskRepository } from '../tasks/types';
 import type { GitToolDeps } from './tool-handlers/git-tools';
+import type { WorkspaceSessionManager } from '../workspace/workspace-session-manager';
 
 const QUERY_KEY_NOTES = 'notes';
 const QUERY_KEY_MILESTONES = 'milestones';
 const QUERY_KEY_IDEAS = 'ideas';
 const QUERY_KEY_PLANNER = 'planner';
+const QUERY_KEY_WORKSPACE = 'workspace';
 const ERR_TASK_UNAVAILABLE = 'Task service unavailable';
 
 export interface ToolExecutorDeps {
@@ -43,6 +45,7 @@ export interface ToolExecutorDeps {
   briefingService: BriefingService | null;
   changelogService: ChangelogService | null;
   gitToolDeps: GitToolDeps;
+  workspaceSessionManager: WorkspaceSessionManager | null;
   sendEvent: (channel: string, payload: unknown) => void;
 }
 
@@ -149,7 +152,7 @@ function executeReadProgressFile(input: ToolInput): ToolResult {
 }
 
 export function createToolExecutor(deps: ToolExecutorDeps) {
-  const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, briefingService, changelogService, gitToolDeps, sendEvent } = deps;
+  const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, briefingService, changelogService, gitToolDeps, workspaceSessionManager, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
     sendEvent('event:assistant.toolExecuted', {
@@ -241,6 +244,46 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     return fail(`Unknown task tool: ${name}`);
   }
 
+  function executeHandOffPlan(input: ToolInput): ToolResult {
+    if (!workspaceSessionManager) return fail('Workspace service unavailable');
+    const projectId = getString(input, 'projectId');
+    const planPath = getString(input, 'planPath');
+    const instructions = typeof input.instructions === 'string' ? input.instructions : undefined;
+    if (projectId.length === 0 || planPath.length === 0) {
+      return fail('projectId and planPath are required');
+    }
+    const result = workspaceSessionManager.handOffPlan(projectId, planPath, instructions);
+    return ok(
+      {
+        message: result.action === 'reused'
+          ? `Plan handed off to existing Team Lead ${String(result.teamLeadIndex + 1)} (session ${result.sessionId})`
+          : `Spawned new Team Lead ${String(result.teamLeadIndex + 1)} with plan (session ${result.sessionId})`,
+        ...result,
+      },
+      QUERY_KEY_WORKSPACE,
+    );
+  }
+
+  function executeExecuteTask(input: ToolInput): ToolResult {
+    if (!workspaceSessionManager) return fail('Workspace service unavailable');
+    const projectId = getString(input, 'projectId');
+    const taskDescription = getString(input, 'taskDescription');
+    const planPath = typeof input.planPath === 'string' ? input.planPath : undefined;
+    if (projectId.length === 0 || taskDescription.length === 0) {
+      return fail('projectId and taskDescription are required');
+    }
+    const result = workspaceSessionManager.executeTask(projectId, taskDescription, planPath);
+    return ok(
+      {
+        message: result.action === 'reused'
+          ? `Task sent to existing Team Lead ${String(result.teamLeadIndex + 1)}`
+          : `Spawned new Team Lead ${String(result.teamLeadIndex + 1)} with task`,
+        ...result,
+      },
+      QUERY_KEY_WORKSPACE,
+    );
+  }
+
   // Map uses string keys to avoid camelCase naming convention lint
   const handlerMap = new Map<string, ToolHandler>([
     ['create_note', executeCreateNote],
@@ -260,6 +303,8 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     ['tasks_delete', (input) => executeTaskTool('tasks_delete', input)],
     ['git_status', async (input) => (await handleGitTool('git_status', input, gitToolDeps)) ?? fail('Git tool failed')],
     ['github_list_prs', async (input) => (await handleGitTool('github_list_prs', input, gitToolDeps)) ?? fail('GitHub tool failed')],
+    ['hand_off_plan', executeHandOffPlan],
+    ['execute_task', executeExecuteTask],
   ]);
 
   async function execute(toolName: string, input: ToolInput): Promise<ToolResult> {

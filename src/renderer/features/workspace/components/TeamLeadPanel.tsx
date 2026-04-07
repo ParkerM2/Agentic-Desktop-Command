@@ -227,7 +227,7 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
                 {status === 'starting' ? 'Starting…' : 'Ready for a plan or instructions.'}
               </Text>
             ) : (
-              <AgentChatPanel messages={chatItems} />
+              <AgentChatPanel messages={chatItems} showHandOff={false} />
             )}
           </div>
 

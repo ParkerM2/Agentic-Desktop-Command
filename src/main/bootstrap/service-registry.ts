@@ -107,6 +107,7 @@ import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkflowTemplateService } from '../services/workflow-templates';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
+import { createWorktreeProvisioner } from '../services/worktree-provisioner';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
 
@@ -475,8 +476,15 @@ export function createServiceRegistry(
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
 
+  // ─── Worktree provisioner (isolates team-lead sessions) ──────
+  const worktreeProvisioner = createWorktreeProvisioner();
+
   // ─── Workspace session manager ───────────────────────────────
-  const workspaceSessionManager = createWorkspaceSessionManager(agentManagerService, getMainWindow);
+  const workspaceSessionManager = createWorkspaceSessionManager(
+    agentManagerService,
+    worktreeProvisioner,
+    getMainWindow,
+  );
 
   const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
 
@@ -543,6 +551,7 @@ export function createServiceRegistry(
       gitService,
       githubService,
     },
+    workspaceSessionManager,
     sendEvent: (channel, payload) => {
       getMainWindow()?.webContents.send(channel, payload);
     },

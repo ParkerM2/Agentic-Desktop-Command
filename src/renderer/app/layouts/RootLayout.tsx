@@ -22,6 +22,7 @@ import { MutationErrorToast } from '@renderer/shared/components/MutationErrorToa
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
 import { useIpcEvent } from '@renderer/shared/hooks';
 import {
+  AgentContextHydrator,
   LayoutHydrator,
   ProgressContextHydrator,
   ThemeHydrator,
@@ -88,6 +89,7 @@ export function RootLayout() {
       <ThemeHydrator />
       <LayoutHydrator />
       <ProgressContextHydrator />
+      <AgentContextHydrator />
       <div className="min-h-0 flex-1 overflow-hidden">
         <LayoutWrapper>
           <TopBar />
