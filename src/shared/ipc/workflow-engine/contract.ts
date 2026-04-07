@@ -40,6 +40,10 @@ export const workflowEngineInvoke = {
     input: z.object({}),
     output: z.array(WorkflowEngineRecordSchema),
   },
+  'workflow-engine.listArchived': {
+    input: z.object({}),
+    output: z.array(WorkflowEngineRecordSchema),
+  },
   'workflow-engine.listAgentDefs': {
     input: z.object({}),
     output: z.array(AgentDefinitionSchema),

@@ -8,7 +8,7 @@
  * State is serialized after every transition for crash recovery.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
@@ -378,6 +378,28 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
 
     list(): WorkflowEngineRecord[] {
       return [...engines.values()].map(toPublicRecord);
+    },
+
+    listArchived(): WorkflowEngineRecord[] {
+      const archiveDir = join(progressBaseDir, 'workflow-engine', 'archive');
+      if (!existsSync(archiveDir)) return [];
+
+      const files = readdirSync(archiveDir).filter((f) => f.endsWith('.json'));
+      const records: WorkflowEngineRecord[] = [];
+
+      for (const file of files) {
+        try {
+          const content = readFileSync(join(archiveDir, file), 'utf-8');
+          const parsed = JSON.parse(content) as WorkflowEngineRecord;
+          records.push(parsed);
+        } catch {
+          // Skip corrupt files
+        }
+      }
+
+      return records.sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
     },
 
     async listAgentDefinitions(): Promise<AgentDefinition[]> {
