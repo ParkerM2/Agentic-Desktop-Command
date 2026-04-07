@@ -31,6 +31,8 @@ import {
   Text,
 } from '@ui';
 
+import { TeamActivityPanel } from './TeamActivityPanel';
+
 // ─── Types ───────────────────────────────────────────────
 
 interface ProgressTaskDetailRowProps {
@@ -227,6 +229,7 @@ interface TeamSectionProps {
 function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamSectionProps) {
   const isExecuting = activeAction === 'team';
   const isComplete = task.status === 'done' || task.status === 'review';
+  const showActivityPanel = task.status === 'executing' || task.status === 'review';
   const completionLabel = task.status === 'done' ? 'Pipeline Complete' : 'Ready for Review';
   const teamStatusLabel = task.status === 'done' ? 'Completed' : 'In Review';
 
@@ -264,6 +267,9 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamS
       ) : (
         teamBody
       )}
+      {showActivityPanel ? (
+        <TeamActivityPanel taskSlug={task.slug} />
+      ) : null}
       {isComplete ? (
         <Badge className="self-start" size="md" variant="success">
           {completionLabel}
@@ -289,8 +295,8 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   const [planExpanded, setPlanExpanded] = useState(false);
 
   const activeSession = task.slug in activeSessions ? activeSessions[task.slug] : null;
-  const activeAction = activeSession ? activeSession.action : null;
-  const isActionActive = activeAction !== null;
+  const activeAction = activeSession ? activeSession.action : undefined;
+  const isActionActive = activeAction !== undefined;
 
   // Jira / PR visibility
   const hasJira = task.jiraTicket !== undefined && task.jiraUrl !== undefined;
