@@ -11,6 +11,7 @@ import { z } from 'zod';
 import {
   progressActionCompletedPayloadSchema,
   progressActionFailedPayloadSchema,
+  progressActionInputSchema,
   progressActionStartedPayloadSchema,
   progressCreateTaskInputSchema,
   progressGetTaskInputSchema,
@@ -60,15 +61,15 @@ export const progressInvoke = {
     output: z.array(progressTaskSchema),
   },
   'progress.startResearch': {
-    input: progressSlugInputSchema,
+    input: progressActionInputSchema,
     output: progressSessionOutputSchema,
   },
   'progress.createPlan': {
-    input: progressSlugInputSchema,
+    input: progressActionInputSchema,
     output: progressSessionOutputSchema,
   },
   'progress.spinUpTeam': {
-    input: progressSlugInputSchema,
+    input: progressActionInputSchema,
     output: progressSpinUpTeamOutputSchema,
   },
   'progress.runWorkflow': {

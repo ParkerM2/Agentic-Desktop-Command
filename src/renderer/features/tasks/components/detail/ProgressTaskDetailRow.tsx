@@ -10,6 +10,7 @@
 
 import { useState } from 'react';
 
+import { ChevronDown } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 import type { ProgressTask } from '@shared/types/progress';
@@ -23,6 +24,10 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Flex,
   Heading,
   InlineAlert,
@@ -59,6 +64,86 @@ function LiveAgentPreview({ sessionId }: LiveAgentPreviewProps) {
         {preview}
       </Text>
     </div>
+  );
+}
+
+// ─── Action Menu Options ─────────────────────────────────
+
+interface ActionOption {
+  label: string;
+  description: string;
+  prompt?: string; // undefined = use default built-in prompt
+}
+
+const RESEARCH_OPTIONS: ActionOption[] = [
+  { label: 'Deep Research (default)', description: 'Comprehensive research with background, analysis, risks' },
+  { label: '/deep-research', description: 'Use the deep-research skill for multi-phase investigation', prompt: 'Use /deep-research to investigate this task thoroughly. Read existing files in progress/{slug}/ first.' },
+  { label: 'Quick Survey', description: 'Fast scan of relevant code and docs', prompt: 'Do a quick survey of the codebase for this task. Read existing files, scan relevant source code, and write a brief research summary to progress/{slug}/research/research.md.' },
+];
+
+const PLAN_OPTIONS: ActionOption[] = [
+  { label: 'Implementation Plan (default)', description: 'Detailed plan with numbered tasks and file scope' },
+  { label: '/new-plan', description: 'Use the new-plan skill for deep technical planning', prompt: 'Use /new-plan to create a detailed implementation plan. Read research at progress/{slug}/research/research.md first.' },
+  { label: 'Quick Plan', description: 'Simple task breakdown without deep analysis', prompt: 'Read research at progress/{slug}/research/research.md. Create a simple, concise implementation plan at progress/{slug}/plans/plan.md with numbered tasks.' },
+];
+
+const TEAM_OPTIONS: ActionOption[] = [
+  { label: 'Run Team (default)', description: 'Decompose plan into agent tasks and execute' },
+  { label: '/agent-team', description: 'Use the agent-team skill for orchestrated execution', prompt: 'Use /agent-team to execute the plan at progress/{slug}/plans/plan.md' },
+  { label: 'Solo Execute', description: 'Execute the plan yourself without spawning sub-agents', prompt: 'Read the plan at progress/{slug}/plans/plan.md and implement it yourself step by step. Do not spawn sub-agents.' },
+];
+
+interface ActionDropdownProps {
+  label: string;
+  options: ActionOption[];
+  disabled: boolean;
+  slug: string;
+  onAction: (prompt?: string) => void;
+}
+
+function ActionDropdown({ label, options, disabled, slug, onAction }: ActionDropdownProps) {
+  function resolvePrompt(option: ActionOption): string | undefined {
+    if (option.prompt === undefined) return undefined;
+    return option.prompt.replaceAll('{slug}', slug);
+  }
+
+  return (
+    <Flex align="center" gap="none">
+      <Button
+        className="rounded-r-none"
+        disabled={disabled}
+        size="sm"
+        variant="outline"
+        onClick={() => { onAction(); }}
+      >
+        {label}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            className="rounded-l-none border-l-0 px-1.5"
+            disabled={disabled}
+            size="sm"
+            variant="outline"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          {options.map((option) => (
+            <DropdownMenuItem
+              key={option.label}
+              onClick={() => { onAction(resolvePrompt(option)); }}
+            >
+              <div className="space-y-0.5">
+                <Text className="font-medium" size="sm">{option.label}</Text>
+                <Text size="sm" variant="muted">{option.description}</Text>
+              </div>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </Flex>
   );
 }
 
@@ -141,7 +226,7 @@ interface ResearchSectionProps {
   isActionActive: boolean;
   expanded: boolean;
   onToggle: () => void;
-  onStart: () => void;
+  onStart: (prompt?: string) => void;
 }
 
 function ResearchSection({
@@ -164,9 +249,13 @@ function ResearchSection({
       <LiveAgentPreview sessionId={activeSessionId} />
     </Stack>
   ) : (
-    <Button disabled={isActionActive} size="sm" variant="outline" onClick={onStart}>
-      Deep Research
-    </Button>
+    <ActionDropdown
+      disabled={isActionActive}
+      label="Deep Research"
+      options={RESEARCH_OPTIONS}
+      slug={task.slug}
+      onAction={onStart}
+    />
   );
 
   return (
@@ -194,8 +283,8 @@ interface PlanSectionProps {
   isActionActive: boolean;
   expanded: boolean;
   onToggle: () => void;
-  onCreatePlan: () => void;
-  onSpinUpTeam: () => void;
+  onCreatePlan: (prompt?: string) => void;
+  onSpinUpTeam: (prompt?: string) => void;
 }
 
 function PlanSection({
@@ -219,14 +308,13 @@ function PlanSection({
       <LiveAgentPreview sessionId={activeSessionId} />
     </Stack>
   ) : (
-    <Button
+    <ActionDropdown
       disabled={isActionActive || !task.hasResearch}
-      size="sm"
-      variant="outline"
-      onClick={onCreatePlan}
-    >
-      Create Plan
-    </Button>
+      label="Create Plan"
+      options={PLAN_OPTIONS}
+      slug={task.slug}
+      onAction={onCreatePlan}
+    />
   );
 
   return (
@@ -239,15 +327,13 @@ function PlanSection({
             expanded={expanded}
             onToggle={onToggle}
           />
-          <Button
-            className="self-start"
+          <ActionDropdown
             disabled={isActionActive}
-            size="sm"
-            variant="primary"
-            onClick={onSpinUpTeam}
-          >
-            Spin Up Team
-          </Button>
+            label="Spin Up Team"
+            options={TEAM_OPTIONS}
+            slug={task.slug}
+            onAction={onSpinUpTeam}
+          />
         </Stack>
       ) : (
         planBody
@@ -262,7 +348,7 @@ interface TeamSectionProps {
   task: ProgressTask;
   activeAction: string | undefined;
   isActionActive: boolean;
-  onSpinUpTeam: () => void;
+  onSpinUpTeam: (prompt?: string) => void;
 }
 
 function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamSectionProps) {
@@ -278,14 +364,13 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamS
       <Text size="sm" variant="muted">Spinning up team...</Text>
     </Flex>
   ) : (
-    <Button
+    <ActionDropdown
       disabled={isActionActive || !task.hasPlan}
-      size="sm"
-      variant="outline"
-      onClick={onSpinUpTeam}
-    >
-      Spin Up Team
-    </Button>
+      label="Spin Up Team"
+      options={TEAM_OPTIONS}
+      slug={task.slug}
+      onAction={onSpinUpTeam}
+    />
   );
 
   return (
@@ -438,7 +523,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         expanded={researchExpanded}
         isActionActive={isActionActive}
         task={task}
-        onStart={() => { void startResearch(task.slug); }}
+        onStart={(prompt) => { void startResearch(task.slug, prompt); }}
         onToggle={() => { setResearchExpanded((prev) => !prev); }}
       />
 
@@ -451,8 +536,8 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         expanded={planExpanded}
         isActionActive={isActionActive}
         task={task}
-        onCreatePlan={() => { void createPlan(task.slug); }}
-        onSpinUpTeam={() => { void spinUpTeam(task.slug); }}
+        onCreatePlan={(prompt) => { void createPlan(task.slug, prompt); }}
+        onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
         onToggle={() => { setPlanExpanded((prev) => !prev); }}
       />
 
@@ -463,7 +548,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         activeAction={activeAction}
         isActionActive={isActionActive}
         task={task}
-        onSpinUpTeam={() => { void spinUpTeam(task.slug); }}
+        onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
       />
 
     </Stack>

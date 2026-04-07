@@ -52,12 +52,16 @@ export function registerProgressHandlers(
 
   router.handle('progress.listArchived', () => progressService.listArchived());
 
-  router.handle('progress.startResearch', ({ slug }) => progressService.startResearch(slug));
+  router.handle('progress.startResearch', ({ slug, prompt }) =>
+    progressService.startResearch(slug, prompt),
+  );
 
-  router.handle('progress.createPlan', ({ slug }) => progressService.createPlan(slug));
+  router.handle('progress.createPlan', ({ slug, prompt }) =>
+    progressService.createPlan(slug, prompt),
+  );
 
-  router.handle('progress.spinUpTeam', async ({ slug }) => {
-    const result = await progressService.spinUpTeam(slug);
+  router.handle('progress.spinUpTeam', async ({ slug, prompt }) => {
+    const result = await progressService.spinUpTeam(slug, prompt);
     return { sessionId: result.sessionId, teamLeadIndex: 0, action: result.action };
   });
 

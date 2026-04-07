@@ -7,6 +7,7 @@
 export {
   progressActionCompletedPayloadSchema,
   progressActionFailedPayloadSchema,
+  progressActionInputSchema,
   progressActionSchema,
   progressActionStartedPayloadSchema,
   progressCreateTaskInputSchema,

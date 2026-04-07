@@ -84,6 +84,11 @@ export const progressSlugInputSchema = z.object({
   slug: z.string(),
 });
 
+export const progressActionInputSchema = z.object({
+  slug: z.string(),
+  prompt: z.string().optional(),
+});
+
 // ── Invoke Output Schemas ───────────────────────────────────────
 
 export const progressLogCleanupOutputSchema = z.object({

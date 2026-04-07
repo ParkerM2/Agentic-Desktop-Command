@@ -54,9 +54,9 @@ export interface ProgressService {
   archiveTask: (slug: string) => Promise<void>;
   deleteTask: (slug: string) => Promise<void>;
   listArchived: () => Promise<ProgressTask[]>;
-  startResearch: (slug: string) => Promise<{ sessionId: string }>;
-  createPlan: (slug: string) => Promise<{ sessionId: string }>;
-  spinUpTeam: (slug: string) => Promise<{ sessionId: string; action: string }>;
+  startResearch: (slug: string, prompt?: string) => Promise<{ sessionId: string }>;
+  createPlan: (slug: string, prompt?: string) => Promise<{ sessionId: string }>;
+  spinUpTeam: (slug: string, prompt?: string) => Promise<{ sessionId: string; action: string }>;
   runWorkflow: (slug: string) => Promise<{ started: true }>;
   cancelAction: (slug: string) => Promise<{ success: boolean }>;
   runLogCleanup: () => Promise<{ deletedFiles: number }>;
@@ -609,7 +609,7 @@ export function createProgressService(
       return await scanDir(archivedDir);
     },
 
-    async startResearch(slug: string): Promise<{ sessionId: string }> {
+    async startResearch(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {
       await init();
 
       const task = await service.getTask(slug);
@@ -618,16 +618,16 @@ export function createProgressService(
       await service.updateTask(slug, { status: 'researching' });
 
       const researchOutPath = `progress/${slug}/research/research.md`;
-      const prompt =
+      const defaultPrompt =
         `Deep research on "${task.title}". ` +
         `Read existing files in progress/${slug}/. ` +
         `Write a comprehensive research document to ${researchOutPath}. ` +
         `Include background, technical analysis, risks, and recommendations.`;
 
-      return spawnAndTrack(slug, 'research', prompt);
+      return spawnAndTrack(slug, 'research', customPrompt ?? defaultPrompt);
     },
 
-    async createPlan(slug: string): Promise<{ sessionId: string }> {
+    async createPlan(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {
       await init();
 
       const task = await service.getTask(slug);
@@ -637,15 +637,15 @@ export function createProgressService(
 
       const researchPath = `progress/${slug}/research/research.md`;
       const planOutPath = `progress/${slug}/plans/plan.md`;
-      const prompt =
+      const defaultPrompt =
         `Read the research document at ${researchPath}. ` +
         `Create a detailed, actionable implementation plan at ${planOutPath}. ` +
         `Include numbered tasks suitable for agent execution, file scope, and acceptance criteria.`;
 
-      return spawnAndTrack(slug, 'plan', prompt);
+      return spawnAndTrack(slug, 'plan', customPrompt ?? defaultPrompt);
     },
 
-    async spinUpTeam(slug: string): Promise<{ sessionId: string; action: string }> {
+    async spinUpTeam(slug: string, customPrompt?: string): Promise<{ sessionId: string; action: string }> {
       await init();
 
       const task = await service.getTask(slug);
@@ -654,14 +654,14 @@ export function createProgressService(
       const planPath = join(projectPath, 'progress', slug, 'plans', 'plan.md');
       const hasPlanFile = await fileExists(planPath);
 
-      const prompt = hasPlanFile
+      const defaultPrompt = hasPlanFile
         ? `Read the implementation plan at progress/${slug}/plans/plan.md. ` +
           `Decompose it into task files under progress/${slug}/tasks/. ` +
           `Then spawn agent workers to execute each task sequentially or in parallel as appropriate.`
         : `Implement the feature described in progress/${slug}/task.md. ` +
           `Create task files under progress/${slug}/tasks/ and execute them.`;
 
-      const { sessionId } = spawnAndTrack(slug, 'team', prompt);
+      const { sessionId } = spawnAndTrack(slug, 'team', customPrompt ?? defaultPrompt);
       return { sessionId, action: 'team' };
     },
 

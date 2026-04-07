@@ -43,9 +43,9 @@ interface ProgressContextState {
   ) => Promise<ProgressTask>;
   updateTask: (slug: string, updates: Partial<ProgressTask>) => Promise<void>;
   archiveTask: (slug: string) => Promise<void>;
-  startResearch: (slug: string) => Promise<void>;
-  createPlan: (slug: string) => Promise<void>;
-  spinUpTeam: (slug: string) => Promise<void>;
+  startResearch: (slug: string, prompt?: string) => Promise<void>;
+  createPlan: (slug: string, prompt?: string) => Promise<void>;
+  spinUpTeam: (slug: string, prompt?: string) => Promise<void>;
   runWorkflow: (slug: string) => Promise<void>;
   cancelAction: (slug: string) => Promise<void>;
 }
@@ -122,16 +122,16 @@ export const useProgressContext = create<ProgressContextState>((set, get) => ({
     get().removeTask(slug);
   },
 
-  startResearch: async (slug) => {
-    await ipc('progress.startResearch', { slug });
+  startResearch: async (slug, prompt?) => {
+    await ipc('progress.startResearch', { slug, prompt });
   },
 
-  createPlan: async (slug) => {
-    await ipc('progress.createPlan', { slug });
+  createPlan: async (slug, prompt?) => {
+    await ipc('progress.createPlan', { slug, prompt });
   },
 
-  spinUpTeam: async (slug) => {
-    await ipc('progress.spinUpTeam', { slug });
+  spinUpTeam: async (slug, prompt?) => {
+    await ipc('progress.spinUpTeam', { slug, prompt });
   },
 
   runWorkflow: async (slug) => {
