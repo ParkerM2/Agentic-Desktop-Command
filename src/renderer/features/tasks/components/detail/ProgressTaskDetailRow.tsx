@@ -288,9 +288,9 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   const [researchExpanded, setResearchExpanded] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
 
-  const activeSession = activeSessions[task.slug];
-  const activeAction = activeSession?.action;
-  const isActionActive = activeAction !== undefined;
+  const activeSession = task.slug in activeSessions ? activeSessions[task.slug] : null;
+  const activeAction = activeSession ? activeSession.action : null;
+  const isActionActive = activeAction !== null;
 
   // Jira / PR visibility
   const hasJira = task.jiraTicket !== undefined && task.jiraUrl !== undefined;

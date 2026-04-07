@@ -2,8 +2,7 @@
  * Unit Tests for Agent Teams Reader
  *
  * Tests agent name parsing, file scope extraction, task file parsing,
- * tracking index/manifest reading, JSONL event parsing, status derivation,
- * and the full buildAgentTeamsData public API.
+ * progress directory scanning, and the full buildAgentTeamsData public API.
  * Mocks node:fs and node:path for memfs compatibility.
  */
 
@@ -14,6 +13,7 @@ import type { Volume } from 'memfs';
 // ── Path Mocking ──────────────────────────────────────────────────
 
 vi.mock('node:path', async (importOriginal) => {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   const original = await importOriginal<typeof import('node:path')>();
   return {
     ...original,
@@ -45,10 +45,6 @@ const {
   agentNameToTaskNumber,
   extractFileScope,
   parseTaskFile,
-  readTrackingIndex,
-  readFeatureManifest,
-  parseEventsJsonl,
-  deriveAgentStatus,
   buildAgentTeamsData,
 } = await import('@main/services/visualization/agent-teams');
 
@@ -62,7 +58,7 @@ function resetFs(files: Record<string, string> = {}): void {
   const vol = getMockVol();
   vol.reset();
   for (const [filePath, content] of Object.entries(files)) {
-    const posixPath = filePath.replace(/\\/g, '/');
+    const posixPath = filePath.replaceAll('\\', '/');
     const dir = posixPath.substring(0, posixPath.lastIndexOf('/'));
     if (dir.length > 0 && !vol.existsSync(dir)) {
       vol.mkdirSync(dir, { recursive: true });
@@ -71,7 +67,7 @@ function resetFs(files: Record<string, string> = {}): void {
   }
 }
 
-// ── Tests ──────────────────────────────────────────���────────────────
+// ── Tests ──────────────────────────────────────────────────────────
 
 describe('Agent Teams', () => {
   beforeEach(() => {
@@ -84,7 +80,7 @@ describe('Agent Teams', () => {
     resetFs();
   });
 
-  // ── agentNameToTaskNumber() ────────────────────────────────���──
+  // ── agentNameToTaskNumber() ───────────────────────────────────
 
   describe('agentNameToTaskNumber()', () => {
     it('extracts task number from agent name', () => {
@@ -162,7 +158,7 @@ Some description text
     });
   });
 
-  // ── parseTaskFile() ──────────────────────────────────���────────
+  // ── parseTaskFile() ───────────────────────────────────────────
 
   describe('parseTaskFile()', () => {
     it('parses full frontmatter and heading', () => {
@@ -220,272 +216,163 @@ agentRole: service-engineer
       const result = parseTaskFile(content);
       expect(result.agentRole).toBe('service-engineer');
     });
-  });
 
-  // ── readTrackingIndex() ────────────────────────────────��──────
+    it('parses status from frontmatter', () => {
+      const content = `---
+taskNumber: 1
+status: done
+---
 
-  describe('readTrackingIndex()', () => {
-    it('returns null when index.json does not exist', () => {
-      expect(readTrackingIndex('/project')).toBeNull();
+# Task #1: First Task
+`;
+      const result = parseTaskFile(content);
+      expect(result.status).toBe('done');
     });
 
-    it('reads and parses index.json', () => {
-      const indexData = {
-        features: [
-          { feature: 'my-feature', status: 'active', branch: 'feature/my-feature', agentCount: 3 },
-        ],
-      };
-      resetFs({
-        '/project/tracking/index.json': JSON.stringify(indexData),
-      });
-      const result = readTrackingIndex('/project');
-      expect(result).not.toBeNull();
-      expect(result!.features).toHaveLength(1);
-      expect(result!.features[0].feature).toBe('my-feature');
-    });
+    it('extracts title from frontmatter when no heading present', () => {
+      const content = `---
+title: "My Task Title"
+---
 
-    it('returns null for malformed JSON', () => {
-      resetFs({
-        '/project/tracking/index.json': 'not json',
-      });
-      expect(readTrackingIndex('/project')).toBeNull();
-    });
-  });
-
-  // ── readFeatureManifest() ─────────────────────────────────────
-
-  describe('readFeatureManifest()', () => {
-    it('returns null when manifest does not exist', () => {
-      expect(readFeatureManifest('/project', 'my-feature')).toBeNull();
-    });
-
-    it('reads and parses manifest.json', () => {
-      const manifest = {
-        feature: 'my-feature',
-        agents: {
-          'coder-task-1': { status: 'running' },
-          'qa-task-1': { status: 'pending' },
-        },
-      };
-      resetFs({
-        '/project/tracking/my-feature/manifest.json': JSON.stringify(manifest),
-      });
-      const result = readFeatureManifest('/project', 'my-feature');
-      expect(result).not.toBeNull();
-      expect(Object.keys(result!.agents)).toHaveLength(2);
-    });
-
-    it('returns null for malformed JSON', () => {
-      resetFs({
-        '/project/tracking/my-feature/manifest.json': '{bad',
-      });
-      expect(readFeatureManifest('/project', 'my-feature')).toBeNull();
-    });
-  });
-
-  // ── parseEventsJsonl() ────────────────────────────────────────
-
-  describe('parseEventsJsonl()', () => {
-    it('returns empty array for non-existent file', () => {
-      expect(parseEventsJsonl('/nonexistent.jsonl')).toEqual([]);
-    });
-
-    it('returns empty array for empty file', () => {
-      resetFs({ '/events.jsonl': '' });
-      expect(parseEventsJsonl('/events.jsonl')).toEqual([]);
-    });
-
-    it('parses JSONL lines', () => {
-      const lines = [
-        JSON.stringify({ ts: '2026-01-01T00:00:00Z', type: 'agent_start', agent: 'coder-task-1', sid: 'sid1', data: {} }),
-        JSON.stringify({ ts: '2026-01-01T00:01:00Z', type: 'tool_call', agent: null, sid: 'sid1', data: { tool: 'bash' } }),
-      ];
-      resetFs({ '/events.jsonl': lines.join('\n') + '\n' });
-
-      const result = parseEventsJsonl('/events.jsonl');
-      expect(result).toHaveLength(2);
-      expect(result[0].type).toBe('agent_start');
-      expect(result[1].type).toBe('tool_call');
-    });
-
-    it('skips malformed lines', () => {
-      const lines = [
-        JSON.stringify({ ts: '2026-01-01', type: 'start', agent: null, sid: 's1', data: {} }),
-        'not valid json',
-        JSON.stringify({ ts: '2026-01-02', type: 'end', agent: null, sid: 's1', data: {} }),
-      ];
-      resetFs({ '/events.jsonl': lines.join('\n') + '\n' });
-
-      const result = parseEventsJsonl('/events.jsonl');
-      expect(result).toHaveLength(2);
-    });
-  });
-
-  // ── deriveAgentStatus() ───────────────────────────────────────
-
-  describe('deriveAgentStatus()', () => {
-    it('returns pending for empty events', () => {
-      expect(deriveAgentStatus([])).toBe('pending');
-    });
-
-    it('returns active when last idle event is recent', () => {
-      const now = Date.now();
-      vi.spyOn(Date, 'now').mockReturnValue(now);
-      const events = [
-        { ts: new Date(now - 60_000).toISOString(), type: 'agent.idle', sid: 's1' },
-      ];
-      expect(deriveAgentStatus(events)).toBe('active');
-    });
-
-    it('returns idle when last idle event is old', () => {
-      const now = Date.now();
-      vi.spyOn(Date, 'now').mockReturnValue(now);
-      const events = [
-        { ts: new Date(now - 300_000).toISOString(), type: 'agent.idle', sid: 's1' },
-      ];
-      expect(deriveAgentStatus(events)).toBe('idle');
-    });
-
-    it('returns completed for agent.completed event', () => {
-      const events = [
-        { ts: '2026-01-01T00:00:00Z', type: 'agent.completed', sid: 's1' },
-      ];
-      expect(deriveAgentStatus(events)).toBe('completed');
-    });
-
-    it('returns completed for task.completed event', () => {
-      const events = [
-        { ts: '2026-01-01T00:00:00Z', type: 'task.completed', sid: 's1' },
-      ];
-      expect(deriveAgentStatus(events)).toBe('completed');
-    });
-
-    it('returns error for agent.error event', () => {
-      const events = [
-        { ts: '2026-01-01T00:00:00Z', type: 'agent.error', sid: 's1' },
-      ];
-      expect(deriveAgentStatus(events)).toBe('error');
-    });
-
-    it('returns pending for unknown last event type', () => {
-      const events = [
-        { ts: '2026-01-01T00:00:00Z', type: 'agent.start', sid: 's1' },
-      ];
-      expect(deriveAgentStatus(events)).toBe('pending');
-    });
-
-    it('uses the last idle event, not just the last event', () => {
-      const now = Date.now();
-      vi.spyOn(Date, 'now').mockReturnValue(now);
-      // idle event is recent, but there's a later non-idle event
-      const events = [
-        { ts: new Date(now - 30_000).toISOString(), type: 'agent.idle', sid: 's1' },
-        { ts: new Date(now - 10_000).toISOString(), type: 'tool_call', sid: 's1' },
-      ];
-      // The idle event is found by scanning backward, and it's recent
-      expect(deriveAgentStatus(events)).toBe('active');
+Some body content.
+`;
+      const result = parseTaskFile(content);
+      expect(result.taskName).toBe('My Task Title');
     });
   });
 
   // ── buildAgentTeamsData() ─────────────────────────────────────
 
   describe('buildAgentTeamsData()', () => {
-    it('returns hasTrackingDir: false when tracking dir missing', () => {
+    it('returns hasTrackingDir: false when progress dir missing', () => {
       const result = buildAgentTeamsData('/project');
       expect(result.hasTrackingDir).toBe(false);
       expect(result.features).toEqual([]);
       expect(result.projectPath).toBe('/project');
     });
 
-    it('returns hasTrackingDir: true with empty features when no index', () => {
+    it('returns hasTrackingDir: true with empty features for empty progress dir', () => {
       const vol = getMockVol();
-      vol.mkdirSync('/project/tracking', { recursive: true });
+      vol.mkdirSync('/project/progress', { recursive: true });
 
       const result = buildAgentTeamsData('/project');
       expect(result.hasTrackingDir).toBe(true);
       expect(result.features).toEqual([]);
     });
 
-    it('builds feature data from tracking index and manifest', () => {
-      const now = Date.now();
-      vi.spyOn(Date, 'now').mockReturnValue(now);
-
-      const index = {
-        features: [
-          { feature: 'my-feature', status: 'active', branch: 'feature/my-feature', agentCount: 1 },
-        ],
-      };
-      const manifest = {
-        feature: 'my-feature',
-        agents: {
-          'coder-task-1': { status: 'running' },
-        },
-      };
-
-      const agentEvent = JSON.stringify({
-        ts: new Date(now - 10_000).toISOString(),
-        type: 'agent.idle',
-        sid: 'sid-abc',
-      });
-
+    it('discovers features from progress directories with root files', () => {
       resetFs({
-        '/project/tracking/index.json': JSON.stringify(index),
-        '/project/tracking/my-feature/manifest.json': JSON.stringify(manifest),
-        '/project/tracking/my-feature/events.jsonl': '',
-        '/project/tracking/my-feature/agents/coder-task-1.jsonl': agentEvent + '\n',
+        '/project/progress/my-feature/task.md': `---
+title: My Feature
+status: backlog
+---
+
+Feature description.
+`,
       });
 
       const result = buildAgentTeamsData('/project');
       expect(result.features).toHaveLength(1);
       expect(result.features[0].feature).toBe('my-feature');
-      expect(result.features[0].status).toBe('active');
-      expect(result.features[0].branch).toBe('feature/my-feature');
-      expect(result.features[0].tasks).toHaveLength(1);
-      expect(result.features[0].tasks[0].agentName).toBe('coder-task-1');
-      expect(result.features[0].tasks[0].taskNumber).toBe(1);
-      expect(result.features[0].tasks[0].status).toBe('active');
-      expect(result.features[0].tasks[0].lastSid).toBe('sid-abc');
+      expect(result.features[0].status).toBe('backlog');
+      expect(result.features[0].tasks).toEqual([]);
     });
 
-    it('identifies guardian agents', () => {
-      const index = {
-        features: [
-          { feature: 'feat', status: 'active', branch: null, agentCount: 1 },
-        ],
-      };
-      const manifest = {
-        feature: 'feat',
-        agents: {
-          'guardian-task-5': { status: 'pending' },
-        },
-      };
+    it('skips archived directory', () => {
       resetFs({
-        '/project/tracking/index.json': JSON.stringify(index),
-        '/project/tracking/feat/manifest.json': JSON.stringify(manifest),
-        '/project/tracking/feat/events.jsonl': '',
+        '/project/progress/active-feature/task.md': `---
+title: Active
+status: backlog
+---
+`,
+        '/project/progress/archived/old-feature/task.md': `---
+title: Old
+status: done
+---
+`,
       });
 
       const result = buildAgentTeamsData('/project');
-      expect(result.features[0].tasks[0].isGuardian).toBe(true);
+      expect(result.features).toHaveLength(1);
+      expect(result.features[0].feature).toBe('active-feature');
     });
 
-    it('reads task file metadata when available', () => {
-      const index = {
-        features: [
-          { feature: 'feat', status: 'active', branch: null, agentCount: 1 },
-        ],
-      };
-      const manifest = {
-        feature: 'feat',
-        agents: {
-          'coder-task-2': { status: 'running' },
-        },
-      };
+    it('creates single research agent node for researching status', () => {
+      resetFs({
+        '/project/progress/my-feature/task.md': `---
+title: My Feature
+status: researching
+---
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('researching');
+      expect(result.features[0].tasks).toHaveLength(1);
+      expect(result.features[0].tasks[0].agentName).toBe('research-agent');
+      expect(result.features[0].tasks[0].taskName).toBe('Research Agent');
+      expect(result.features[0].tasks[0].status).toBe('active');
+      expect(result.features[0].tasks[0].agentRole).toBe('research');
+    });
+
+    it('creates single completed research node for research_done status', () => {
+      resetFs({
+        '/project/progress/my-feature/task.md': `---
+title: My Feature
+status: research_done
+---
+`,
+        '/project/progress/my-feature/research/research.md': 'Research results.',
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('research_done');
+      expect(result.features[0].tasks).toHaveLength(1);
+      expect(result.features[0].tasks[0].agentName).toBe('research-agent');
+      expect(result.features[0].tasks[0].status).toBe('completed');
+    });
+
+    it('creates single planning agent node for planning status', () => {
+      resetFs({
+        '/project/progress/my-feature/task.md': `---
+title: My Feature
+status: planning
+---
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('planning');
+      expect(result.features[0].tasks).toHaveLength(1);
+      expect(result.features[0].tasks[0].agentName).toBe('planning-agent');
+      expect(result.features[0].tasks[0].taskName).toBe('Planning Agent');
+      expect(result.features[0].tasks[0].status).toBe('active');
+    });
+
+    it('creates completed planning node for plan_ready status', () => {
+      resetFs({
+        '/project/progress/my-feature/task.md': `---
+title: My Feature
+status: plan_ready
+---
+`,
+        '/project/progress/my-feature/plans/plan.md': 'The plan.',
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('plan_ready');
+      expect(result.features[0].tasks).toHaveLength(1);
+      expect(result.features[0].tasks[0].agentName).toBe('planning-agent');
+      expect(result.features[0].tasks[0].status).toBe('completed');
+    });
+
+    it('reads task files for executing status', () => {
       const taskContent = `---
 taskNumber: 2
 agentRole: "service-engineer"
 wave: 1
 blockedBy: []
+status: pending
 ---
 
 # Task #2: Build Service
@@ -494,35 +381,193 @@ blockedBy: []
 - src/main/services/foo.ts — the service
 `;
       resetFs({
-        '/project/tracking/index.json': JSON.stringify(index),
-        '/project/tracking/feat/manifest.json': JSON.stringify(manifest),
-        '/project/tracking/feat/events.jsonl': '',
-        '/project/progress/feat/tasks/task-2.md': taskContent,
+        '/project/progress/feat/task.md': `---
+title: My Feature
+status: executing
+---
+`,
+        '/project/progress/feat/tasks/task-2-build-service.md': taskContent,
       });
 
       const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('executing');
+      expect(result.features[0].tasks).toHaveLength(1);
+
       const task = result.features[0].tasks[0];
+      expect(task.taskNumber).toBe(2);
       expect(task.taskName).toBe('Build Service');
       expect(task.agentRole).toBe('service-engineer');
       expect(task.wave).toBe(1);
       expect(task.fileScope).toContain('src/main/services/foo.ts');
+      expect(task.status).toBe('pending');
     });
 
-    it('gracefully handles features that fail to load', () => {
-      // Create an index with a feature that has no manifest (will work gracefully)
-      const index = {
-        features: [
-          { feature: 'good-feat', status: 'active', branch: null, agentCount: 0 },
-        ],
-      };
+    it('marks all tasks completed when feature is done', () => {
       resetFs({
-        '/project/tracking/index.json': JSON.stringify(index),
-        '/project/tracking/good-feat/events.jsonl': '',
+        '/project/progress/feat/task.md': `---
+title: Done Feature
+status: done
+---
+`,
+        '/project/progress/feat/tasks/task-1-first.md': `---
+taskNumber: 1
+status: pending
+---
+
+# Task #1: First
+`,
+        '/project/progress/feat/tasks/task-2-second.md': `---
+taskNumber: 2
+status: pending
+---
+
+# Task #2: Second
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('done');
+      expect(result.features[0].tasks).toHaveLength(2);
+      expect(result.features[0].tasks[0].status).toBe('completed');
+      expect(result.features[0].tasks[1].status).toBe('completed');
+    });
+
+    it('identifies guardian agents by name prefix', () => {
+      resetFs({
+        '/project/progress/feat/task.md': `---
+title: Feature
+status: executing
+---
+`,
+        '/project/progress/feat/tasks/task-5-guardian-check.md': `---
+taskNumber: 5
+---
+
+# Task #5: Guardian Check
+`,
+      });
+
+      // The file is named "task-5-guardian-check.md" but guardian detection
+      // uses the agentName which is the filename without .md
+      const result = buildAgentTeamsData('/project');
+      // agentName will be "task-5-guardian-check" — does not start with "guardian"
+      expect(result.features[0].tasks[0].isGuardian).toBe(false);
+    });
+
+    it('identifies guardian agents by agentRole', () => {
+      resetFs({
+        '/project/progress/feat/task.md': `---
+title: Feature
+status: executing
+---
+`,
+        '/project/progress/feat/tasks/task-5-qa.md': `---
+taskNumber: 5
+agentRole: codebase-guardian
+---
+
+# Task #5: QA Review
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].tasks[0].isGuardian).toBe(true);
+    });
+
+    it('reconciles status upward based on directory contents', () => {
+      // Root file says backlog, but research exists
+      resetFs({
+        '/project/progress/feat/task.md': `---
+title: Feature
+status: backlog
+---
+`,
+        '/project/progress/feat/research/research.md': 'Research done.',
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('research_done');
+    });
+
+    it('reconciles status to executing when task files exist', () => {
+      resetFs({
+        '/project/progress/feat/task.md': `---
+title: Feature
+status: backlog
+---
+`,
+        '/project/progress/feat/tasks/task-1-first.md': `---
+taskNumber: 1
+---
+
+# Task #1: First
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].status).toBe('executing');
+    });
+
+    it('handles directories without root files gracefully', () => {
+      const vol = getMockVol();
+      vol.mkdirSync('/project/progress/no-root-file', { recursive: true });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features).toHaveLength(1);
+      expect(result.features[0].feature).toBe('no-root-file');
+      // Uses slug as title when no root file
+      expect(result.features[0].status).toBe('backlog');
+    });
+
+    it('skips non-directory entries in progress', () => {
+      resetFs({
+        '/project/progress/index.md': '# Progress Index',
+        '/project/progress/my-feature/task.md': `---
+title: Feature
+status: backlog
+---
+`,
       });
 
       const result = buildAgentTeamsData('/project');
       expect(result.features).toHaveLength(1);
-      expect(result.features[0].tasks).toEqual([]);
+      expect(result.features[0].feature).toBe('my-feature');
+    });
+
+    it('sets agentCount to match tasks length', () => {
+      resetFs({
+        '/project/progress/feat/task.md': `---
+title: Feature
+status: executing
+---
+`,
+        '/project/progress/feat/tasks/task-1-a.md': `---
+taskNumber: 1
+---
+`,
+        '/project/progress/feat/tasks/task-2-b.md': `---
+taskNumber: 2
+---
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].agentCount).toBe(2);
+      expect(result.features[0].tasks).toHaveLength(2);
+    });
+
+    it('sets branch to null and events to empty array', () => {
+      resetFs({
+        '/project/progress/feat/task.md': `---
+title: Feature
+status: backlog
+---
+`,
+      });
+
+      const result = buildAgentTeamsData('/project');
+      expect(result.features[0].branch).toBeNull();
+      expect(result.features[0].events).toEqual([]);
     });
   });
 });

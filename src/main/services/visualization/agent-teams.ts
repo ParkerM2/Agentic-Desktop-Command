@@ -187,6 +187,72 @@ function detectRootFileSync(dirPath: string): string | null {
 }
 
 /**
+ * Counts task-*.md files inside a tasks/ subdirectory.
+ */
+function countTaskFiles(entryPath: string): number {
+  const tasksDir = join(entryPath, 'tasks');
+  if (!existsSync(tasksDir)) return 0;
+  try {
+    const taskFiles = readdirSync(tasksDir);
+    return taskFiles.filter((f) => /^task-\d+/.test(f) && f.endsWith('.md')).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Reconciles a frontmatter status upward based on directory contents.
+ * If the directory has research/plan/task files beyond what status claims,
+ * the status is bumped to match.
+ */
+function reconcileStatus(entryPath: string, baseStatus: string, taskFileCount: number): string {
+  let status = baseStatus;
+  const hasResearch = existsSync(join(entryPath, 'research', 'research.md'));
+  const hasPlan = existsSync(join(entryPath, 'plans', 'plan.md'));
+
+  if (hasResearch && statusRank(status) < statusRank('research_done')) {
+    status = 'research_done';
+  }
+  if (hasPlan && statusRank(status) < statusRank('plan_ready')) {
+    status = 'plan_ready';
+  }
+  if (taskFileCount > 0 && statusRank(status) < statusRank('executing')) {
+    status = 'executing';
+  }
+  return status;
+}
+
+/**
+ * Builds a ProgressEntry for a single directory inside progress/.
+ */
+function buildProgressEntry(progressDir: string, entry: string): ProgressEntry | null {
+  const entryPath = join(progressDir, entry);
+  try {
+    const s = statSync(entryPath);
+    if (!s.isDirectory()) return null;
+  } catch {
+    return null;
+  }
+
+  const rootFile = detectRootFileSync(entryPath);
+  const frontmatter = rootFile
+    ? readRootFrontmatter(join(entryPath, rootFile))
+    : { title: entry, status: 'backlog', description: '' };
+
+  const taskFileCount = countTaskFiles(entryPath);
+  const reconciledStatus = reconcileStatus(entryPath, frontmatter.status, taskFileCount);
+
+  return {
+    slug: entry,
+    title: frontmatter.title || entry,
+    status: reconciledStatus,
+    description: frontmatter.description,
+    hasTaskFiles: taskFileCount > 0,
+    taskFileCount,
+  };
+}
+
+/**
  * Scans progress/ for non-archived task directories and reads
  * their root file frontmatter to get slug, title, and status.
  */
@@ -205,57 +271,10 @@ function scanProgressDir(progressDir: string): ProgressEntry[] {
   for (const entry of entries) {
     if (SKIP_DIRS.has(entry)) continue;
 
-    const entryPath = join(progressDir, entry);
-    try {
-      const s = statSync(entryPath);
-      if (!s.isDirectory()) continue;
-    } catch {
-      continue;
+    const built = buildProgressEntry(progressDir, entry);
+    if (built) {
+      results.push(built);
     }
-
-    const rootFile = detectRootFileSync(entryPath);
-    let frontmatter: FrontmatterData = { title: entry, status: 'backlog', description: '' };
-
-    if (rootFile) {
-      frontmatter = readRootFrontmatter(join(entryPath, rootFile));
-    }
-
-    // Check for tasks/ subdirectory
-    const tasksDir = join(entryPath, 'tasks');
-    let taskFileCount = 0;
-
-    if (existsSync(tasksDir)) {
-      try {
-        const taskFiles = readdirSync(tasksDir);
-        taskFileCount = taskFiles.filter((f) => /^task-\d+/.test(f) && f.endsWith('.md')).length;
-      } catch {
-        // Ignore — default to 0
-      }
-    }
-
-    // Status reconciliation: bump status if directory contents show more progress
-    let status = frontmatter.status;
-    const hasResearch = existsSync(join(entryPath, 'research', 'research.md'));
-    const hasPlan = existsSync(join(entryPath, 'plans', 'plan.md'));
-
-    if (hasResearch && statusRank(status) < statusRank('research_done')) {
-      status = 'research_done';
-    }
-    if (hasPlan && statusRank(status) < statusRank('plan_ready')) {
-      status = 'plan_ready';
-    }
-    if (taskFileCount > 0 && statusRank(status) < statusRank('executing')) {
-      status = 'executing';
-    }
-
-    results.push({
-      slug: entry,
-      title: frontmatter.title || entry,
-      status,
-      description: frontmatter.description,
-      hasTaskFiles: taskFileCount > 0,
-      taskFileCount,
-    });
   }
 
   return results;
