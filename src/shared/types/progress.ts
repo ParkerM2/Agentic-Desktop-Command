@@ -48,6 +48,22 @@ export interface ProgressTask {
   /** Workflow template and current phase — set when runWorkflow is called */
   workflow?: string;
   workflowPhase?: string;
+
+  /** Session tracking — persisted to frontmatter on session end */
+  lastSessionId?: string;
+  lastAgentName?: string;
+  completedAt?: string;
+  archivedAt?: string;
+  teamName?: string;
+
+  /** Lightweight session history — array of past session outcomes */
+  sessionHistory?: Array<{
+    sessionId: string;
+    agentName: string;
+    action: string;
+    exitCode: number | null;
+    timestamp: string;
+  }>;
 }
 
 export type PrStatus = 'draft' | 'open' | 'merged' | 'closed';
