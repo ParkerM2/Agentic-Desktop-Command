@@ -18,6 +18,8 @@ export interface FileGroupData {
   type: 'fileGroup';
   label: string;
   fileCount: number;
+  isParent?: boolean;
+  parentLayer?: string;
 }
 
 export interface FileNodeData {
@@ -81,7 +83,7 @@ function applyDagreLayout(
   direction: 'TB' | 'LR' = 'TB',
 ): void {
   const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: direction, nodesep: 40, ranksep: 60 });
+  g.setGraph({ rankdir: direction, nodesep: 60, ranksep: 100 });
 
   for (const node of nodes) {
     const isGroup = node.type === 'fileGroup' || node.type === 'featureGroup';
@@ -106,6 +108,29 @@ function applyDagreLayout(
   }
 }
 
+// ─── Layer classification helpers ────────────────────────────────
+
+type ArchLayer = 'main' | 'features' | 'shared' | 'renderer' | 'preload';
+
+const LAYER_LABELS: Record<ArchLayer, string> = {
+  main: 'Main Process',
+  features: 'Features',
+  shared: 'Shared',
+  renderer: 'Renderer',
+  preload: 'Preload',
+};
+
+function classifyGroupLayer(groupName: string): ArchLayer {
+  const lower = groupName.toLowerCase();
+  if (lower.startsWith('main/') || lower === 'main') return 'main';
+  if (lower.startsWith('features/') || lower === 'features') return 'features';
+  if (lower.startsWith('shared/') || lower === 'shared') return 'shared';
+  if (lower.startsWith('preload') || lower === 'preload') return 'preload';
+  if (lower.startsWith('renderer/') || lower === 'renderer') return 'renderer';
+  // Default non-matching groups to renderer
+  return 'renderer';
+}
+
 // ─── Codebase graph builder ───────────────────────────────────────
 
 /**
@@ -114,7 +139,10 @@ function applyDagreLayout(
  * are summarized in the group node's fileCount.
  * Groups are laid out with dagre using cross-group import edges.
  */
-export function buildCodebaseRFNodes(graph: CodebaseGraph): CodebaseRFNode[] {
+export function buildCodebaseRFNodes(
+  graph: CodebaseGraph,
+  direction: 'TB' | 'LR' = 'TB',
+): CodebaseRFNode[] {
   const nodes: CodebaseRFNode[] = [];
   const layoutEdges: Edge[] = [];
 
@@ -159,7 +187,124 @@ export function buildCodebaseRFNodes(graph: CodebaseGraph): CodebaseRFNode[] {
     }
   }
 
-  applyDagreLayout(nodes, layoutEdges);
+  applyDagreLayout(nodes, layoutEdges, direction);
+
+  return nodes;
+}
+
+// ─── Hierarchical codebase graph builder ─────────────────────────
+
+const PARENT_NODE_WIDTH = 220;
+const PARENT_NODE_HEIGHT = 50;
+
+/** Classify groups into architecture layers. */
+function classifyGroups(groups: readonly string[]): Map<ArchLayer, string[]> {
+  const layerGroups = new Map<ArchLayer, string[]>();
+  for (const groupName of groups) {
+    const layer = classifyGroupLayer(groupName);
+    const existing = layerGroups.get(layer) ?? [];
+    existing.push(groupName);
+    layerGroups.set(layer, existing);
+  }
+  return layerGroups;
+}
+
+/** Build cross-group layout edges from file-level imports. */
+function buildCrossGroupLayoutEdges(graph: CodebaseGraph): Edge[] {
+  const fileToGroup = new Map<string, string>();
+  for (const file of graph.files) {
+    fileToGroup.set(file.path, `group-${file.group}`);
+  }
+
+  const edgeSet = new Set<string>();
+  const edges: Edge[] = [];
+  for (const edge of graph.edges) {
+    const sourceGroup = fileToGroup.get(edge.source);
+    const targetGroup = fileToGroup.get(edge.target);
+    if (sourceGroup && targetGroup && sourceGroup !== targetGroup) {
+      const key = `${sourceGroup}->${targetGroup}`;
+      if (!edgeSet.has(key)) {
+        edgeSet.add(key);
+        edges.push({ id: `group-edge-${key}`, source: sourceGroup, target: targetGroup });
+      }
+    }
+  }
+  return edges;
+}
+
+/** Apply dagre layout to hierarchical nodes that include parent-sized nodes. */
+function applyHierarchicalDagreLayout(
+  nodes: Node[],
+  edges: Edge[],
+  direction: 'TB' | 'LR',
+): void {
+  const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: direction, nodesep: 60, ranksep: 100 });
+
+  for (const node of nodes) {
+    const isParent = node.data.isParent === true;
+    g.setNode(node.id, {
+      width: isParent ? PARENT_NODE_WIDTH : GROUP_NODE_WIDTH,
+      height: isParent ? PARENT_NODE_HEIGHT : GROUP_NODE_HEIGHT,
+    });
+  }
+
+  for (const edge of edges) {
+    g.setEdge(edge.source, edge.target);
+  }
+
+  Dagre.layout(g);
+
+  for (const node of nodes) {
+    const pos = g.node(node.id);
+    const isParent = node.data.isParent === true;
+    const w = isParent ? PARENT_NODE_WIDTH : GROUP_NODE_WIDTH;
+    const h = isParent ? PARENT_NODE_HEIGHT : GROUP_NODE_HEIGHT;
+    node.position = { x: pos.x - w / 2, y: pos.y - h / 2 };
+  }
+}
+
+/**
+ * Builds hierarchical codebase nodes with parent layer grouping.
+ * Groups are classified into architecture layers (Main, Features, Shared, Renderer, Preload).
+ * Parent nodes represent layers; child nodes are file groups within each layer.
+ */
+export function buildHierarchicalCodebaseNodes(
+  graph: CodebaseGraph,
+  direction: 'TB' | 'LR' = 'TB',
+): CodebaseRFNode[] {
+  const nodes: CodebaseRFNode[] = [];
+  const layoutEdges: Edge[] = [];
+  const layerGroups = classifyGroups(graph.groups);
+
+  // Create parent + child nodes for each layer
+  for (const [layer, groups] of layerGroups) {
+    const parentId = `layer-${layer}`;
+    const totalFiles = groups.reduce((sum, gName) => {
+      return sum + graph.files.filter((f) => f.group === gName).length;
+    }, 0);
+
+    nodes.push({
+      id: parentId,
+      type: 'fileGroup',
+      position: { x: 0, y: 0 },
+      data: { type: 'fileGroup', label: LAYER_LABELS[layer], fileCount: totalFiles, isParent: true, parentLayer: layer },
+    });
+
+    for (const groupName of groups) {
+      const groupId = `group-${groupName}`;
+      nodes.push({
+        id: groupId,
+        type: 'fileGroup',
+        position: { x: 0, y: 0 },
+        data: { type: 'fileGroup', label: groupName, fileCount: graph.files.filter((f) => f.group === groupName).length, parentLayer: layer },
+      });
+      layoutEdges.push({ id: `hierarchy-${parentId}-${groupId}`, source: parentId, target: groupId });
+    }
+  }
+
+  layoutEdges.push(...buildCrossGroupLayoutEdges(graph));
+  applyHierarchicalDagreLayout(nodes, layoutEdges, direction);
 
   return nodes;
 }
@@ -246,6 +391,7 @@ export function buildAgentRFNodes(
 /**
  * Builds group-to-group edges from file-level imports.
  * Deduplicates: only one edge per group pair.
+ * Stores the number of file-level imports as `data.weight`.
  */
 export function buildCodebaseGroupEdges(graph: CodebaseGraph): Edge[] {
   const fileToGroup = new Map<string, string>();
@@ -253,24 +399,30 @@ export function buildCodebaseGroupEdges(graph: CodebaseGraph): Edge[] {
     fileToGroup.set(file.path, `group-${file.group}`);
   }
 
-  const edgeSet = new Set<string>();
-  const edges: Edge[] = [];
+  const edgeWeights = new Map<string, number>();
+  const edgePairs = new Map<string, { source: string; target: string }>();
 
   for (const edge of graph.edges) {
     const sourceGroup = fileToGroup.get(edge.source);
     const targetGroup = fileToGroup.get(edge.target);
     if (sourceGroup && targetGroup && sourceGroup !== targetGroup) {
       const key = `${sourceGroup}->${targetGroup}`;
-      if (!edgeSet.has(key)) {
-        edgeSet.add(key);
-        edges.push({
-          id: `group-dep-${key}`,
-          source: sourceGroup,
-          target: targetGroup,
-          type: 'dataFlow',
-        });
+      edgeWeights.set(key, (edgeWeights.get(key) ?? 0) + 1);
+      if (!edgePairs.has(key)) {
+        edgePairs.set(key, { source: sourceGroup, target: targetGroup });
       }
     }
+  }
+
+  const edges: Edge[] = [];
+  for (const [key, pair] of edgePairs) {
+    edges.push({
+      id: `group-dep-${key}`,
+      source: pair.source,
+      target: pair.target,
+      type: 'dataFlow',
+      data: { weight: edgeWeights.get(key) ?? 1 },
+    });
   }
 
   return edges;

@@ -11,6 +11,9 @@ interface VisualizationState {
   selectedNodeId: string | null;
   selectedFeature: string | null;
   expandedGroups: Set<string>;
+  layoutDirection: 'TB' | 'LR';
+  searchFilter: string;
+  showEdgeLabels: boolean;
   toggleCodebaseLayer: () => void;
   toggleAgentLayer: () => void;
   setSelectedNode: (nodeId: string | null) => void;
@@ -18,6 +21,9 @@ interface VisualizationState {
   openDetailPanel: (nodeId: string) => void;
   closeDetailPanel: () => void;
   toggleExpandedGroup: (groupId: string) => void;
+  setLayoutDirection: (dir: 'TB' | 'LR') => void;
+  setSearchFilter: (s: string) => void;
+  toggleEdgeLabels: () => void;
 }
 
 export const useVisualizationStore = create<VisualizationState>()((set) => ({
@@ -27,6 +33,9 @@ export const useVisualizationStore = create<VisualizationState>()((set) => ({
   selectedNodeId: null,
   selectedFeature: null,
   expandedGroups: new Set<string>(),
+  layoutDirection: 'TB' as const,
+  searchFilter: '',
+  showEdgeLabels: false,
 
   toggleCodebaseLayer: () =>
     set((state) => ({ showCodebaseLayer: !state.showCodebaseLayer })),
@@ -52,4 +61,11 @@ export const useVisualizationStore = create<VisualizationState>()((set) => ({
       }
       return { expandedGroups: next };
     }),
+
+  setLayoutDirection: (dir) => set({ layoutDirection: dir }),
+
+  setSearchFilter: (s) => set({ searchFilter: s }),
+
+  toggleEdgeLabels: () =>
+    set((state) => ({ showEdgeLabels: !state.showEdgeLabels })),
 }));

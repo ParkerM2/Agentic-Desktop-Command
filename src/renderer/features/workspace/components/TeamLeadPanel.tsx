@@ -121,8 +121,8 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
     const card = cardRef.current;
     if (!card) return Infinity;
     // Scroll container is the overflow-y-auto parent
-    const scrollParent = card.closest('[class*="overflow-y"]') as HTMLElement | null;
-    if (!scrollParent) return Infinity;
+    const scrollParent = card.closest('[class*="overflow-y"]');
+    if (!scrollParent || !(scrollParent instanceof HTMLElement)) return Infinity;
     const containerHeight = scrollParent.clientHeight;
     // Sum heights of all sibling cards (excluding this one) + gaps
     const siblingCards = scrollParent.querySelectorAll(':scope > div > div');
