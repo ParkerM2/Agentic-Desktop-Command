@@ -10,42 +10,39 @@
 
 import { useEffect, useState } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
 import { Outlet, useRouterState } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 
 import { AppUpdateNotification } from '@renderer/shared/components/AppUpdateNotification';
 import { AuthNotification } from '@renderer/shared/components/AuthNotification';
 import { RouteErrorBoundary } from '@renderer/shared/components/error-boundaries';
+import { EventBridge } from '@renderer/shared/components/EventBridge';
 import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { MutationErrorToast } from '@renderer/shared/components/MutationErrorToast';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
-import { useIpcEvent } from '@renderer/shared/hooks';
-import {
-  AgentContextHydrator,
-  LayoutHydrator,
-  ProgressContextHydrator,
-  ThemeHydrator,
-  useRouteHistoryStore,
-} from '@renderer/shared/stores';
+import { useLayoutSync, useThemeSync } from '@renderer/shared/hooks';
+import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
 import { useErrorEvents } from '@features/health';
 import { OnboardingWizard } from '@features/onboarding';
 import { useSettings } from '@features/settings';
-import { hubKeys, useHubStatus } from '@features/settings/api/useHub';
+import { useHubStatus } from '@features/settings/api/useHub';
 import { WorkflowPermissionModal } from '@features/workflow';
 
 import { LayoutWrapper } from './LayoutWrapper';
 import { TopBar } from './TopBar';
 
 export function RootLayout() {
-  const queryClient = useQueryClient();
   const { data: settings, isLoading } = useSettings();
   const { data: hubStatus } = useHubStatus();
   const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const pushRoute = useRouteHistoryStore((s) => s.pushRoute);
+
+  // Sync theme & layout from IPC settings into Zustand stores
+  useThemeSync();
+  useLayoutSync();
 
   // Activate error/health event listeners
   useErrorEvents();
@@ -55,17 +52,11 @@ export function RootLayout() {
     pushRoute(pathname);
   }, [pathname, pushRoute]);
 
-  useIpcEvent('event:hub.connectionChanged', () => {
-    void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
-  });
-
   // Show loading state while fetching settings
   if (isLoading) {
     return (
       <div className="bg-background flex h-screen items-center justify-center">
-        <ThemeHydrator />
-        <LayoutHydrator />
-        <ProgressContextHydrator />
+        <EventBridge />
         <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
@@ -86,10 +77,7 @@ export function RootLayout() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <ThemeHydrator />
-      <LayoutHydrator />
-      <ProgressContextHydrator />
-      <AgentContextHydrator />
+      <EventBridge />
       <div className="min-h-0 flex-1 overflow-hidden">
         <LayoutWrapper>
           <TopBar />

@@ -20,6 +20,16 @@
 6. **Docs**: EVERY code change MUST update relevant docs. Non-negotiable.
 7. **Verify**: `npm run lint` + `npm run typecheck` + `npm run build` before marking done.
 
+## Caching Layer Rules
+
+1. `store.ts` MUST NOT contain `useQuery`, `useMutation`, `ipc()`, or domain data types — stores hold UI state only
+2. `api/` files MUST NOT import from Zustand stores
+3. No `useIpcEvent` in feature code for data freshness — EventBridge owns all invalidation
+4. No `refetchInterval` on any query — events drive freshness
+5. Every feature with IPC data MUST have `api/queryKeys.ts` with factory pattern
+6. Query keys MUST use factory pattern, not inline arrays
+7. Mutations MUST invalidate via `onSuccess`/`onSettled`, not external event listeners
+
 ## Finding Things
 
 - Features/services/IPC lookup: `docs/routing/FEATURES-INDEX.md`

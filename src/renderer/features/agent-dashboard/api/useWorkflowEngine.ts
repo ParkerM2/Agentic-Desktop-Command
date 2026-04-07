@@ -26,7 +26,6 @@ export function useWorkflowRuns() {
   return useQuery({
     queryKey: workflowEngineKeys.runs(),
     queryFn: () => ipc('workflow-engine.list', {}),
-    refetchInterval: 3_000,
     staleTime: 2_000,
   });
 }
@@ -46,7 +45,6 @@ export function useWorkflowRun(runId: string | null) {
     queryKey: workflowEngineKeys.run(runId ?? ''),
     queryFn: () => ipc('workflow-engine.get', { runId: runId ?? '' }),
     enabled: runId !== null,
-    refetchInterval: 2_000,
     staleTime: 1_000,
   });
 }

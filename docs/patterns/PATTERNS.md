@@ -1154,4 +1154,31 @@ Key rules:
 - **Track file positions**: Use a Map to remember the last read byte offset per file
 - **Debounce**: 500ms debounce on file change events to batch rapid writes
 - **Incremental**: Never re-read the entire file — only read from the last known position
+
+## Data Flow: EventBridge + React Query + UI Stores
+
+### Layer 1: EventBridge (`src/renderer/shared/components/EventBridge.tsx`)
+- Single component mounted in RootLayout
+- Declarative registry: IPC event → query keys to invalidate
+- Replaces all Hydrator components and hub-query-sync
+- Special handler: `'append'` for streaming data (agent messages)
+
+### Layer 2: Feature Queries (`features/<name>/api/`)
+- `queryKeys.ts` — factory functions for hierarchical query keys
+- `use<Name>.ts` — useQuery hooks (reads)
+- `use<Name>Mutations.ts` — useMutation hooks (writes)
+- No polling — EventBridge drives freshness
+- Mutations invalidate via onSuccess/onSettled
+
+### Layer 3: UI Stores (`features/<name>/store.ts` or `shared/stores/`)
+- ONLY: selection state, layout state, filter state, form drafts, theme preferences
+- NEVER: task arrays, session objects, domain entities, server response data
+- Thin sync hooks (`useThemeSync`, `useLayoutSync`) bridge settings queries → stores
+
+### Pattern: Adding a New Feature with IPC Data
+1. Add query key factory in `api/queryKeys.ts`
+2. Add query hooks in `api/use<Name>.ts`
+3. Add mutation hooks in `api/use<Name>Mutations.ts`
+4. Register relevant IPC events in EventBridge registry
+5. Store UI-only state in `store.ts` (if needed)
 - **Type-safe entries**: Parse each line and emit typed events (tool_use, phase_change, plan_ready, etc.)

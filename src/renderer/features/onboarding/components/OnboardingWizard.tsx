@@ -6,7 +6,6 @@
  */
 
 import { cn } from '@renderer/shared/lib/utils';
-import { ThemeHydrator } from '@renderer/shared/stores';
 
 import { getStepIndex, getTotalSteps, useOnboardingStore } from '../store';
 
@@ -79,8 +78,6 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
   return (
     <div className="bg-background flex min-h-screen flex-col">
-      <ThemeHydrator />
-
       {/* Header with progress */}
       <header className="border-border flex items-center justify-between border-b px-6 py-4">
         <span className="text-foreground text-lg font-semibold">Setup</span>

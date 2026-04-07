@@ -1093,3 +1093,14 @@ The `src/shared/ipc/misc/` folder bundles 17 smaller domain contracts. Here's wh
 | `voice.contract.ts` | `voice.*` | `voice-handlers.ts` | `services/voice/` |
 | `webhook.contract.ts` | `webhooks.*` | `webhook-settings-handlers.ts` | `services/settings/` |
 | `workspaces.contract.ts` | `workspaces.*` | `workspace-handlers.ts` | -- (Hub API) |
+
+---
+
+## 8. Event → Query Invalidation
+
+**Central hub:** `src/renderer/shared/components/EventBridge.tsx`
+
+All IPC events that affect cached data flow through EventBridge. To add a new event:
+1. Add the event channel to the `EVENT_REGISTRY` in EventBridge.tsx
+2. Map it to the query key prefixes it should invalidate
+3. No feature-level event subscriptions needed for data freshness

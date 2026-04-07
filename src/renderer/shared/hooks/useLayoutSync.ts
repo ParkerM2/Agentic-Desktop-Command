@@ -1,18 +1,21 @@
 /**
- * LayoutHydrator — Restores persisted layout state on app startup.
+ * useLayoutSync — Restores persisted layout state on app startup.
  *
- * Renders nothing. Place once in the root layout so the layout store
- * picks up persisted sidebar state, project tabs, and active project
- * before first paint.
+ * On mount, fetches layout via IPC, hydrates the layout store, then fetches the
+ * project list, starts the assistant, and spawns workspace sessions for all
+ * persisted project tabs. Replaces the LayoutHydrator component.
+ *
+ * Call once in the root layout so the layout store picks up persisted sidebar
+ * state, project tabs, and active project before first paint.
  */
 
 import { useEffect } from 'react';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { useLayoutStore } from './layout-store';
+import { useLayoutStore } from '../stores/layout-store';
 
-export function LayoutHydrator() {
+export function useLayoutSync(): void {
   const hydrate = useLayoutStore((s) => s.hydrate);
 
   useEffect(() => {
@@ -49,6 +52,4 @@ export function LayoutHydrator() {
       }
     })();
   }, [hydrate]);
-
-  return null;
 }

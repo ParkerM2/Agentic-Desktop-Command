@@ -51,7 +51,6 @@ export function useWorkspaceSessions(projectId: string | null) {
     queryKey: workspaceKeys.sessions(projectId ?? ''),
     queryFn: () => ipc('workspace.getSessions', { projectId: projectId ?? '' }),
     enabled: projectId !== null,
-    refetchInterval: 5000,
   });
 }
 

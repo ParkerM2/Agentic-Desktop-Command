@@ -1,17 +1,18 @@
 /**
  * ActiveAgents — Shows running agent sessions from both the orchestrator
- * and workspace/progress systems. Reads from useAgentContext (workspace
- * sessions) and useAllAgents (orchestrator) to provide a unified view.
+ * and workspace/progress systems. Reads from useWorkspaceSessions (React Query)
+ * and useAllAgents (orchestrator) to provide a unified view.
  */
 
 import { Bot, CheckCircle2, Loader2, XCircle } from 'lucide-react';
 
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
-import { useAgentContext } from '@renderer/shared/stores';
+import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
 import { Card, CardContent, EmptyState, Text } from '@ui';
 
 import { useAllAgents } from '@features/agents';
+import { useWorkspaceSessions } from '@features/workspace/api/useWorkspace';
 
 // ─── Status Mapping ────────────────────────────────────────
 
@@ -51,9 +52,10 @@ interface AgentEntry {
 // ─── Component ──────────────────────────────────────────────
 
 export function ActiveAgents() {
-  // Workspace sessions (primary + team-leads from AgentManagerService)
-  const workspaceSessions = useAgentContext((s) => s.sessions);
-  const wsLoading = useAgentContext((s) => s.isLoading);
+  // Workspace sessions via React Query (primary + team-leads from AgentManagerService)
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: workspaceSessions = [], isLoading: wsLoading } =
+    useWorkspaceSessions(activeProjectId);
 
   // Orchestrator sessions (legacy agent orchestrator)
   const { data: orchSessions, isLoading: orchLoading } = useAllAgents();
@@ -125,7 +127,7 @@ export function ActiveAgents() {
                           isActive(entry.status) && 'animate-spin',
                         )}
                       />
-                      <Text size="sm" className="font-medium">{entry.label}</Text>
+                      <Text className="font-medium" size="sm">{entry.label}</Text>
                     </div>
                     <Text size="sm" variant="muted">{entry.status}</Text>
                   </div>
