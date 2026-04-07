@@ -35,4 +35,12 @@ export function registerWorkflowTemplateHandlers(
   router.handle('workflowTemplates.duplicate', ({ id, name }) =>
     Promise.resolve({ template: workflowTemplateService.duplicate(id, name) }),
   );
+
+  router.handle('workflowTemplates.scanArtifacts', ({ projectPath }) =>
+    Promise.resolve({ artifacts: workflowTemplateService.scanArtifacts(projectPath) }),
+  );
+
+  router.handle('workflowTemplates.writeArtifact', ({ projectPath, type, name, content }) =>
+    Promise.resolve(workflowTemplateService.writeArtifact(projectPath, type, name, content)),
+  );
 }

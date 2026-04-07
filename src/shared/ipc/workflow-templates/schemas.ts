@@ -75,6 +75,23 @@ export const WorkflowGuardianSchema = z.object({
   maxFileSizeLines: z.number().int().min(1),
 });
 
+// ─── Phase & Summary Sub-schemas ─────────────────────────────
+
+export const SummarySpecSchema = z.object({
+  maxChars: z.number().min(100).max(1000).default(300),
+  tableFields: z.array(z.string()).default(['Approach', 'Risk', 'Estimate']),
+});
+
+export const WorkflowPhaseSchema = z.object({
+  name: z.string().min(1),
+  strategy: z.string().min(1),
+  prompt: z.string().default(''),
+  summarySpec: SummarySpecSchema.default({ maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] }),
+});
+
+export type WorkflowPhase = z.infer<typeof WorkflowPhaseSchema>;
+export type SummarySpec = z.infer<typeof SummarySpecSchema>;
+
 // ─── Root Template Schema ────────────────────────────────────
 
 export const WorkflowTemplateSchema = z.object({
@@ -96,6 +113,12 @@ export const WorkflowTemplateSchema = z.object({
   permissions: WorkflowPermissionsSchema,
   /** Guardian review configuration */
   guardian: WorkflowGuardianSchema,
+  /** Ordered workflow phases (brainstorming → planning → implementation) */
+  phases: z.array(WorkflowPhaseSchema).default([
+    { name: 'brainstorming', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+    { name: 'planning', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+    { name: 'implementation', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+  ]),
   /** Whether this is a built-in template (cannot be deleted) */
   isBuiltin: z.boolean().default(false),
   /** ISO 8601 creation timestamp */
@@ -113,3 +136,15 @@ export type WorkflowMode = z.infer<typeof WorkflowModeSchema>;
 export type WorkflowQa = z.infer<typeof WorkflowQaSchema>;
 export type WorkflowPermissions = z.infer<typeof WorkflowPermissionsSchema>;
 export type WorkflowGuardian = z.infer<typeof WorkflowGuardianSchema>;
+
+// ─── Artifact Schemas ────────────────────────────────────────
+
+export const ArtifactTypeSchema = z.enum(['skill', 'command', 'agent']);
+
+export const PluginArtifactSchema = z.object({
+  name: z.string(),
+  type: ArtifactTypeSchema,
+  path: z.string(),
+});
+
+export type PluginArtifact = z.infer<typeof PluginArtifactSchema>;

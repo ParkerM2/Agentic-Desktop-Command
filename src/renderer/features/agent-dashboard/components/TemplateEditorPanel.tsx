@@ -73,6 +73,11 @@ const DEFAULTS: TemplateFormValues = {
     warningRules: [],
     maxFileSizeLines: 300,
   },
+  phases: [
+    { name: 'brainstorming', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+    { name: 'planning', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+    { name: 'implementation', strategy: 'skip', prompt: '', summarySpec: { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] } },
+  ],
 };
 
 // ─── Component ───────────────────────────────────────────────
@@ -105,6 +110,7 @@ export function TemplateEditorPanel() {
           blockingRules: [...existing.guardian.blockingRules],
           warningRules: [...existing.guardian.warningRules],
         },
+        phases: existing.phases.map((p) => ({ ...p, summarySpec: { ...p.summarySpec } })),
       });
     } else if (isNew) {
       setValues(DEFAULTS);
