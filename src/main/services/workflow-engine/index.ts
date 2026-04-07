@@ -11,6 +11,7 @@ export type {
   WorkflowEngineRecord,
   WorkflowEngineService,
   WorkflowRunConfig,
+  WorkflowRuntimeRecord,
   WorkflowStateChangedEvent,
   WorkflowCompletedEvent,
   WorkflowErrorEvent,
