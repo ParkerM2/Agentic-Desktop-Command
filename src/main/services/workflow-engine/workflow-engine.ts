@@ -17,21 +17,22 @@ import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
 
 import { runPlan } from './states/plan';
 import { runPreflight } from './states/preflight';
+import { runSetup } from './states/setup';
+import { runSpawning } from './states/spawn';
 import { VALID_TRANSITIONS, WorkflowState } from './types';
 
 import type {
-  WavePlan,
   WorkflowEngineDeps,
   WorkflowEngineRecord,
   WorkflowEngineService,
   WorkflowRunConfig,
+  WorkflowRuntimeRecord,
 } from './types';
 
 // ─── In-memory augmented record ──────────────────────────────
 
 /** Extended record with runtime-only fields (not serialized to IPC) */
-interface EngineRuntimeRecord extends WorkflowEngineRecord {
-  wavePlan: WavePlan | null;
+interface EngineRuntimeRecord extends WorkflowRuntimeRecord {
   aborted: boolean;
 }
 
@@ -166,19 +167,7 @@ function toPublicRecord(runtime: EngineRuntimeRecord): WorkflowEngineRecord {
   };
 }
 
-// ─── State stubs (tasks 4 + 6 own full implementations) ──────
-
-function runSetup(record: WorkflowEngineRecord): Promise<WorkflowState> {
-  // Full implementation in Task #4 (context-injection)
-  console.warn(`[WorkflowEngine/SETUP] Stub — runId: ${record.runId}`);
-  return Promise.resolve(WorkflowState.SPAWNING);
-}
-
-function runSpawning(record: WorkflowEngineRecord): Promise<WorkflowState> {
-  // Full implementation in Task #4 (context-injection)
-  console.warn(`[WorkflowEngine/SPAWNING] Stub — runId: ${record.runId}`);
-  return Promise.resolve(WorkflowState.QA_GATE);
-}
+// ─── State stubs (task 6 owns QA_GATE / GUARDIAN / FINALIZING) ──────
 
 function runQaGate(record: WorkflowEngineRecord): Promise<WorkflowState> {
   // Full implementation in Task #6 (verdicts-cleanup)
@@ -201,7 +190,7 @@ function runFinalizing(record: WorkflowEngineRecord): Promise<WorkflowState> {
 // ─── Factory ──────────────────────────────────────────────────
 
 export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowEngineService {
-  const { agentOrchestrator: _agentOrchestrator, gitService, progressBaseDir } = deps;
+  const { agentOrchestrator, gitService, progressBaseDir } = deps;
 
   /** All engine records, keyed by runId */
   const engines = new Map<string, EngineRuntimeRecord>();
@@ -248,10 +237,10 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
         return nextState;
       }
       case WorkflowState.SETUP: {
-        return await runSetup(runtime);
+        return await runSetup(runtime, gitService);
       }
       case WorkflowState.SPAWNING: {
-        return await runSpawning(runtime);
+        return await runSpawning(runtime, agentOrchestrator);
       }
       case WorkflowState.QA_GATE: {
         return await runQaGate(runtime);
@@ -356,6 +345,7 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
         stateFilePath,
         wavePlan: null,
         aborted: false,
+        claudeMdBySlug: new Map(),
       };
 
       engines.set(runId, runtime);

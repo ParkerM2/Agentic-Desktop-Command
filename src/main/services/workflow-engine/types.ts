@@ -146,6 +146,19 @@ export interface WorkflowEngineDeps {
   onError: (event: WorkflowErrorEvent) => void;
 }
 
+// ─── Runtime Record ────────────────────────────────────────────
+
+/**
+ * Runtime-only extension of WorkflowEngineRecord, used by state handlers.
+ * These fields are not serialized to IPC — they live only in memory.
+ */
+export interface WorkflowRuntimeRecord extends WorkflowEngineRecord {
+  /** Wave plan populated by PLAN state, consumed by SETUP + SPAWNING */
+  wavePlan: WavePlan | null;
+  /** CLAUDE.md content keyed by taskSlug — set by SETUP, read by SPAWNING */
+  claudeMdBySlug: Map<string, string>;
+}
+
 // ─── Service Interface ─────────────────────────────────────────
 
 export interface WorkflowEngineService {
