@@ -17,7 +17,6 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import { Button } from '@ui';
 
 import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
@@ -86,16 +85,15 @@ export function TopBar() {
   return (
     <div className="electron-drag border-border bg-card flex h-10 shrink-0 items-stretch border-b">
       {/* Sidebar toggle */}
-      <div className="electron-no-drag border-border flex shrink-0 items-center border-r">
-        <Button
+      <div className="electron-no-drag flex shrink-0 items-stretch">
+        <button
           aria-label="Toggle sidebar"
-          className="text-muted-foreground hover:bg-accent hover:text-foreground h-10 w-10 rounded-none"
-          size="icon"
-          variant="ghost"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-r"
+          type="button"
           onClick={toggleSidebar}
         >
-          <PanelLeft className="h-4 w-4" />
-        </Button>
+          <PanelLeft className="h-3.5 w-3.5" />
+        </button>
       </div>
 
       {/* Project tabs — VSCode-style: right border per tab, horizontal scroll */}
