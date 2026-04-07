@@ -16,10 +16,11 @@ import {
   PageContent,
   PageHeader,
   PageLayout,
-  Text,
 } from '@ui';
 
 import { useToolsUI } from '../store';
+
+import { WorkflowEditor } from './WorkflowEditor';
 
 import type { LucideIcon } from 'lucide-react';
 
@@ -103,9 +104,7 @@ export function ToolsPage() {
               </div>
             </PageHeader.TabContent>
             <PageHeader.TabContent value="workflow">
-              <Text className="text-muted-foreground">
-                Workflow editor will be added here.
-              </Text>
+              <WorkflowEditor />
             </PageHeader.TabContent>
           </PageContent>
         </PageHeader.Tabs>
