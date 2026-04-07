@@ -20,15 +20,6 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
-import { useProgressTasks } from '../../api/useProgress';
-import {
-  useArchiveProgressTask,
-  useCreatePlan,
-  useRunWorkflow,
-  useSpinUpTeam,
-  useStartResearch,
-} from '../../api/useProgressMutations';
-
 import {
   Badge,
   Button,
@@ -47,6 +38,15 @@ import {
   Stack,
   Text,
 } from '@ui';
+
+import { useProgressTasks } from '../../api/useProgress';
+import {
+  useArchiveProgressTask,
+  useCreatePlan,
+  useRunWorkflow,
+  useSpinUpTeam,
+  useStartResearch,
+} from '../../api/useProgressMutations';
 
 import { extractSummaryBlock } from './summary-block-parser';
 import { TeamActivityPanel } from './TeamActivityPanel';

@@ -4,12 +4,9 @@
  * React Query, theme, i18n, toast — everything wraps here.
  */
 
-import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-import { setupHubQuerySync } from '@renderer/shared/lib/hub-query-sync';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,9 +29,5 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  useEffect(() => {
-    return setupHubQuerySync(queryClient);
-  }, []);
-
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

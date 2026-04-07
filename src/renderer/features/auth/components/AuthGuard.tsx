@@ -12,7 +12,7 @@ import { Outlet, useNavigate } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
 
-import { ThemeHydrator } from '@renderer/shared/stores';
+import { useThemeSync } from '@renderer/shared/hooks';
 
 import { Spinner } from '@ui';
 
@@ -25,6 +25,9 @@ export function AuthGuard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isInitializing = useAuthStore((s) => s.isInitializing);
   const navigate = useNavigate();
+
+  // Apply theme before RootLayout mounts (AuthGuard wraps it)
+  useThemeSync();
 
   // Restore session via auth.restore IPC on app startup
   useAuthInit();
@@ -45,7 +48,6 @@ export function AuthGuard() {
   if (isInitializing) {
     return (
       <div className="bg-background flex h-screen items-center justify-center">
-        <ThemeHydrator />
         <Spinner className="text-muted-foreground" size="lg" />
       </div>
     );
