@@ -14,6 +14,7 @@ import ReactMarkdown from 'react-markdown';
 
 import type { ProgressTask } from '@shared/types/progress';
 
+import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
 import { useProgressContext } from '@renderer/shared/stores/progress-context-store';
 
 import {
@@ -32,6 +33,34 @@ import {
 } from '@ui';
 
 import { TeamActivityPanel } from './TeamActivityPanel';
+
+// ─── Live Agent Preview ──────────────────────────────────
+
+interface LiveAgentPreviewProps {
+  sessionId: string | undefined;
+}
+
+/** Shows the latest assistant message from a running agent session. */
+function LiveAgentPreview({ sessionId }: LiveAgentPreviewProps) {
+  const messages = useAgentContext(
+    (s) => (sessionId ? s.recentMessages[sessionId] ?? [] : []),
+  );
+
+  if (messages.length === 0) return null;
+
+  // Show the last assistant message preview
+  const latest = messages.at(-1) as { preview?: string; timestamp?: string } | undefined;
+  const preview = latest?.preview ?? '';
+  if (preview.length === 0) return null;
+
+  return (
+    <div className="bg-muted/50 mt-2 rounded-md border px-3 py-2">
+      <Text className="line-clamp-3 whitespace-pre-wrap font-mono" size="sm" variant="muted">
+        {preview}
+      </Text>
+    </div>
+  );
+}
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -108,6 +137,7 @@ function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: Cont
 interface ResearchSectionProps {
   task: ProgressTask;
   activeAction: string | undefined;
+  activeSessionId: string | undefined;
   isActionActive: boolean;
   expanded: boolean;
   onToggle: () => void;
@@ -117,6 +147,7 @@ interface ResearchSectionProps {
 function ResearchSection({
   task,
   activeAction,
+  activeSessionId,
   isActionActive,
   expanded,
   onToggle,
@@ -125,10 +156,13 @@ function ResearchSection({
   const isResearching = activeAction === 'research';
 
   const researchBody = isResearching ? (
-    <Flex align="center" gap="sm">
-      <Spinner className="text-muted-foreground" size="sm" />
-      <Text size="sm" variant="muted">Researching...</Text>
-    </Flex>
+    <Stack gap="sm">
+      <Flex align="center" gap="sm">
+        <Spinner className="text-muted-foreground" size="sm" />
+        <Text size="sm" variant="muted">Researching...</Text>
+      </Flex>
+      <LiveAgentPreview sessionId={activeSessionId} />
+    </Stack>
   ) : (
     <Button disabled={isActionActive} size="sm" variant="outline" onClick={onStart}>
       Deep Research
@@ -156,6 +190,7 @@ function ResearchSection({
 interface PlanSectionProps {
   task: ProgressTask;
   activeAction: string | undefined;
+  activeSessionId: string | undefined;
   isActionActive: boolean;
   expanded: boolean;
   onToggle: () => void;
@@ -166,6 +201,7 @@ interface PlanSectionProps {
 function PlanSection({
   task,
   activeAction,
+  activeSessionId,
   isActionActive,
   expanded,
   onToggle,
@@ -175,10 +211,13 @@ function PlanSection({
   const isPlanning = activeAction === 'plan';
 
   const planBody = isPlanning ? (
-    <Flex align="center" gap="sm">
-      <Spinner className="text-muted-foreground" size="sm" />
+    <Stack gap="sm">
+      <Flex align="center" gap="sm">
+        <Spinner className="text-muted-foreground" size="sm" />
       <Text size="sm" variant="muted">Creating plan...</Text>
-    </Flex>
+      </Flex>
+      <LiveAgentPreview sessionId={activeSessionId} />
+    </Stack>
   ) : (
     <Button
       disabled={isActionActive || !task.hasResearch}
@@ -296,6 +335,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
 
   const activeSession = task.slug in activeSessions ? activeSessions[task.slug] : null;
   const activeAction = activeSession ? activeSession.action : undefined;
+  const activeSessionId = activeSession ? activeSession.sessionId : undefined;
   const isActionActive = activeAction !== undefined;
 
   // Jira / PR visibility
@@ -394,6 +434,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
       {/* ── Research Section ─────────────────────────── */}
       <ResearchSection
         activeAction={activeAction}
+        activeSessionId={activeSessionId}
         expanded={researchExpanded}
         isActionActive={isActionActive}
         task={task}
@@ -406,6 +447,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
       {/* ── Plan Section ─────────────────────────────── */}
       <PlanSection
         activeAction={activeAction}
+        activeSessionId={activeSessionId}
         expanded={planExpanded}
         isActionActive={isActionActive}
         task={task}
