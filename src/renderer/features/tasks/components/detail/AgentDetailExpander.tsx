@@ -6,16 +6,13 @@
  *
  * Agent session detail is passed as a prop from the parent TeamActivityPanel.
  * Git diff is fetched via React Query (useGitDiff).
- *
- * TODO(task-11): recentMessages, recentToolCalls, and errors are still read
- * from useAgentContext because they are accumulated from live IPC events
- * with no query-based equivalent. These should be migrated once an
- * event-to-cache pipeline (e.g. EventBridge → setQueryData) is in place.
+ * Recent messages come from EventBridge → React Query cache via useAgentMessagePreviews.
+ * Tool calls and errors sections show empty state (no live event source).
  */
 
 import type { AgentError, AgentSessionDetail, ToolCallSummary } from '@shared/types/agent-session-detail';
 
-import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
+import type { AgentMessagePreview } from '@renderer/shared/components/EventBridge';
 
 import {
   Badge,
@@ -30,7 +27,7 @@ import {
   Text,
 } from '@ui';
 
-import { useGitDiff } from '@features/agent-dashboard';
+import { useAgentMessagePreviews, useGitDiff } from '@features/agent-dashboard';
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -116,17 +113,7 @@ function SessionInfoSection({ agent }: SessionInfoSectionProps) {
 // ─── RecentMessagesSection ──────────────────────────────
 
 interface RecentMessagesSectionProps {
-  messages: unknown[];
-}
-
-interface MessageShape {
-  timestamp?: string;
-  role?: string;
-  content?: string;
-}
-
-function isMessageShape(value: unknown): value is MessageShape {
-  return typeof value === 'object' && value !== null;
+  messages: AgentMessagePreview[];
 }
 
 function RecentMessagesSection({ messages }: RecentMessagesSectionProps) {
@@ -144,24 +131,17 @@ function RecentMessagesSection({ messages }: RecentMessagesSectionProps) {
       <Heading as="h4">Recent Messages</Heading>
       <ScrollArea className="max-h-48">
         <Stack gap="sm">
-          {messages.map((msg, idx) => {
-            const m = isMessageShape(msg) ? msg : {};
-            const timestamp = typeof m.timestamp === 'string' ? formatTimestamp(m.timestamp) : '';
-            const role = typeof m.role === 'string' ? m.role : 'unknown';
-            const content = typeof m.content === 'string' ? m.content : JSON.stringify(msg);
-
-            return (
-              <Flex key={`msg-${String(idx)}`} gap="sm">
-                {timestamp ? (
-                  <Text className="shrink-0 font-mono" size="sm" variant="muted">{timestamp}</Text>
-                ) : null}
-                <Badge size="sm" variant={role === 'assistant' ? 'info' : 'secondary'}>
-                  {role}
-                </Badge>
-                <Text className="truncate" size="sm">{content}</Text>
-              </Flex>
-            );
-          })}
+          {messages.map((msg) => (
+            <Flex key={msg.id} gap="sm">
+              <Text className="shrink-0 font-mono" size="sm" variant="muted">
+                {formatTimestamp(msg.timestamp)}
+              </Text>
+              <Badge size="sm" variant={msg.role === 'assistant' ? 'info' : 'secondary'}>
+                {msg.role}
+              </Badge>
+              <Text className="truncate" size="sm">{msg.preview}</Text>
+            </Flex>
+          ))}
         </Stack>
       </ScrollArea>
     </Stack>
@@ -275,18 +255,17 @@ function GitDiffSection({ sessionId }: GitDiffSectionProps) {
 // ─── AgentDetailExpander ────────────────────────────────
 
 export function AgentDetailExpander({ sessionId, agent }: AgentDetailExpanderProps) {
-  // TODO(task-11): recentMessages, recentToolCalls, and errors are event-accumulated
-  // in the Zustand store with no IPC query equivalent. Migrate these once EventBridge
-  // writes incoming events into React Query cache via setQueryData.
-  const messages = useAgentContext((s) => s.recentMessages[sessionId] ?? []);
-  const toolCalls = useAgentContext((s) => s.recentToolCalls[sessionId] ?? []);
-  const errors = useAgentContext((s) => s.errors[sessionId] ?? []);
+  // Message previews come from EventBridge → React Query cache
+  const messagePreviews = useAgentMessagePreviews(sessionId);
+  // Tool calls and errors have no live event writer — always empty
+  const toolCalls: ToolCallSummary[] = [];
+  const errors: AgentError[] = [];
 
   return (
     <Stack className="bg-muted/30 px-4 py-3" gap="md">
       <SessionInfoSection agent={agent} />
       <Separator />
-      <RecentMessagesSection messages={messages} />
+      <RecentMessagesSection messages={messagePreviews} />
       <Separator />
       <ToolCallsSection toolCalls={toolCalls} />
       <ErrorsSection errors={errors} />

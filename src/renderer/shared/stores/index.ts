@@ -1,5 +1,3 @@
-export { useAgentContext } from './agent-context-store';
-export type { HandOffResult, ProvisionResult } from './agent-context-store';
 export { useAssistantWidgetStore } from './assistant-widget-store';
 export type { AssistantMode } from './assistant-widget-store';
 export { useRouteHistoryStore } from './route-history-store';

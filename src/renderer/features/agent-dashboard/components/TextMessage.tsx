@@ -20,8 +20,9 @@ import remarkGfm from 'remark-gfm';
 
 import type { AgentTextMessage } from '@shared/types/agent-dashboard';
 
+import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
-import { useAgentContext, useLayoutStore } from '@renderer/shared/stores';
+import { useLayoutStore } from '@renderer/shared/stores';
 
 import { Button } from '@ui/button';
 
@@ -178,7 +179,6 @@ export function TextMessage({ message, className, showHandOff = true }: TextMess
   const endRef = useRef<HTMLDivElement>(null);
   const plugins = useMemo(() => [remarkGfm], []);
   const structured = isStructuredContent(message.content);
-  const handOffPlan = useAgentContext((s) => s.handOffPlan);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
 
   // Detect plan file path in assistant messages (not user, not streaming)
@@ -212,7 +212,7 @@ export function TextMessage({ message, className, showHandOff = true }: TextMess
         className="h-7 gap-1.5 text-xs"
         size="sm"
         variant="outline"
-        onClick={() => void handOffPlan(activeProjectId, planPath)}
+        onClick={() => void ipc('workspace.handOffPlan', { projectId: activeProjectId, planPath })}
       >
         <Send className="h-3 w-3" />
         Send to Team Lead

@@ -17,7 +17,6 @@ import remarkGfm from 'remark-gfm';
 import type { ProgressTask } from '@shared/types/progress';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
 import {
@@ -39,6 +38,8 @@ import {
   Text,
 } from '@ui';
 
+import { useAgentMessagePreviews } from '@features/agent-dashboard';
+
 import { useProgressTasks } from '../../api/useProgress';
 import {
   useArchiveProgressTask,
@@ -59,14 +60,12 @@ interface LiveAgentPreviewProps {
 
 /** Shows the latest assistant message from a running agent session. */
 function LiveAgentPreview({ sessionId }: LiveAgentPreviewProps) {
-  const messages = useAgentContext(
-    (s) => (sessionId ? s.recentMessages[sessionId] ?? [] : []),
-  );
+  const messages = useAgentMessagePreviews(sessionId);
 
   if (messages.length === 0) return null;
 
   // Show the last assistant message preview
-  const latest = messages.at(-1) as { preview?: string; timestamp?: string } | undefined;
+  const latest = messages.at(-1);
   const preview = latest?.preview ?? '';
   if (preview.length === 0) return null;
 
