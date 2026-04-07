@@ -35,6 +35,7 @@ export { useTaskUI } from './store';
 
 // Components
 export { CreatePrDialog } from './components/CreatePrDialog';
+export { ProgressTaskGrid } from './components/grid/ProgressTaskGrid';
 export { TaskDataGrid } from './components/grid/TaskDataGrid';
 export { TaskFiltersToolbar } from './components/TaskFiltersToolbar';
 export { TaskResultView } from './components/detail/TaskResultView';
