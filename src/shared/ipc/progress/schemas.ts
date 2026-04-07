@@ -86,6 +86,10 @@ export const progressSlugInputSchema = z.object({
 
 // ── Invoke Output Schemas ───────────────────────────────────────
 
+export const progressLogCleanupOutputSchema = z.object({
+  deletedFiles: z.number(),
+});
+
 export const progressSuccessOutputSchema = z.object({
   success: z.boolean(),
 });
@@ -141,4 +145,29 @@ export const progressWorkflowStepPayloadSchema = z.object({
   slug: z.string(),
   step: progressActionSchema,
   status: workflowStepStatusSchema,
+});
+
+// ── Session Summary Schema ─────────────────────────────────────
+
+export const sessionSummarySchema = z.object({
+  sessionId: z.string(),
+  agentName: z.string(),
+  agentRole: z.string(),
+  taskSlug: z.string(),
+  model: z.string(),
+  provider: z.string(),
+  startedAt: z.string(),
+  endedAt: z.string().nullable(),
+  durationMs: z.number(),
+  inputTokens: z.number(),
+  outputTokens: z.number(),
+  totalTokens: z.number(),
+  costUsd: z.number(),
+  toolCallCount: z.number(),
+  toolCallsByName: z.record(z.string(), z.number()),
+  errorCount: z.number(),
+  messageCount: z.number(),
+  filesChanged: z.number(),
+  status: z.enum(['completed', 'failed', 'killed']),
+  exitCode: z.number().nullable(),
 });

@@ -11,6 +11,7 @@ export {
   progressActionStartedPayloadSchema,
   progressCreateTaskInputSchema,
   progressGetTaskInputSchema,
+  progressLogCleanupOutputSchema,
   progressPrioritySchema,
   progressRunWorkflowOutputSchema,
   progressSessionOutputSchema,
@@ -24,6 +25,7 @@ export {
   progressTaskUpdatedPayloadSchema,
   progressUpdateTaskInputSchema,
   progressWorkflowStepPayloadSchema,
+  sessionSummarySchema,
   workflowStepStatusSchema,
 } from './schemas';
 

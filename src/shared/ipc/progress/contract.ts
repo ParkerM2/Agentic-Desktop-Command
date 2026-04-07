@@ -14,6 +14,7 @@ import {
   progressActionStartedPayloadSchema,
   progressCreateTaskInputSchema,
   progressGetTaskInputSchema,
+  progressLogCleanupOutputSchema,
   progressRunWorkflowOutputSchema,
   progressSessionOutputSchema,
   progressSlugInputSchema,
@@ -77,6 +78,10 @@ export const progressInvoke = {
   'progress.cancelAction': {
     input: progressSlugInputSchema,
     output: progressSuccessOutputSchema,
+  },
+  'progress.runLogCleanup': {
+    input: z.object({}),
+    output: progressLogCleanupOutputSchema,
   },
 } as const;
 

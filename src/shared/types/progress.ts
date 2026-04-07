@@ -45,3 +45,44 @@ export interface ProgressTask {
   researchContent?: string;
   planContent?: string;
 }
+
+export type PrStatus = 'draft' | 'open' | 'merged' | 'closed';
+
+export interface SessionSummary {
+  sessionId: string;
+  agentName: string;
+  agentRole: string;
+  taskSlug: string;
+  model: string;
+  provider: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationMs: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  costUsd: number;
+  toolCallCount: number;
+  toolCallsByName: Record<string, number>;
+  errorCount: number;
+  messageCount: number;
+  filesChanged: number;
+  status: 'completed' | 'failed' | 'killed';
+  exitCode: number | null;
+}
+
+export type FilteredLogEntryType =
+  | 'assistant_message'
+  | 'user_message'
+  | 'tool_use'
+  | 'tool_result'
+  | 'usage'
+  | 'error'
+  | 'system_init';
+
+export interface FilteredLogEntry {
+  type: FilteredLogEntryType;
+  timestamp: string;
+  sessionId: string;
+  data: Record<string, unknown>;
+}
