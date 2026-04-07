@@ -286,6 +286,12 @@ interface ActiveSession {
   action: string;
 }
 
+// ─── Summary Instruction Builder ─────────────────────────────
+
+function buildSummaryInstruction(summarySpec: { maxChars: number; tableFields: string[] }): string {
+  return `\n\nIMPORTANT: Include a \`<!-- summary -->\` section at the top of your output with: a synopsis paragraph (max ${String(summarySpec.maxChars)} characters) and a key-facts table with columns: ${summarySpec.tableFields.join(', ')}. Wrap it in \`<!-- summary -->\` / \`<!-- /summary -->\` HTML comment markers.`;
+}
+
 // ─── Factory ─────────────────────────────────────────────────
 
 export function createProgressService(
@@ -624,13 +630,17 @@ export function createProgressService(
       await service.updateTask(slug, { status: 'researching' });
 
       const researchOutPath = `progress/${slug}/research/research.md`;
-      const defaultPrompt =
+      const defaultResearchPrompt =
         `Deep research on "${task.title}". ` +
         `Read existing files in progress/${slug}/. ` +
         `Write a comprehensive research document to ${researchOutPath}. ` +
         `Include background, technical analysis, risks, and recommendations.`;
 
-      return spawnAndTrack(slug, 'research', customPrompt ?? defaultPrompt);
+      const defaultSummarySpec = { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] };
+      const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
+      const fullPrompt = (customPrompt ?? defaultResearchPrompt) + summaryInstruction;
+
+      return spawnAndTrack(slug, 'research', fullPrompt);
     },
 
     async createPlan(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {
@@ -643,12 +653,16 @@ export function createProgressService(
 
       const researchPath = `progress/${slug}/research/research.md`;
       const planOutPath = `progress/${slug}/plans/plan.md`;
-      const defaultPrompt =
+      const defaultPlanPrompt =
         `Read the research document at ${researchPath}. ` +
         `Create a detailed, actionable implementation plan at ${planOutPath}. ` +
         `Include numbered tasks suitable for agent execution, file scope, and acceptance criteria.`;
 
-      return spawnAndTrack(slug, 'plan', customPrompt ?? defaultPrompt);
+      const defaultSummarySpec = { maxChars: 300, tableFields: ['Approach', 'Risk', 'Estimate'] };
+      const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
+      const fullPrompt = (customPrompt ?? defaultPlanPrompt) + summaryInstruction;
+
+      return spawnAndTrack(slug, 'plan', fullPrompt);
     },
 
     async spinUpTeam(slug: string, customPrompt?: string): Promise<{ sessionId: string; action: string }> {
