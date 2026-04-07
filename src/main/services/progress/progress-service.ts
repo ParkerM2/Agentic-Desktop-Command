@@ -400,50 +400,77 @@ export function createProgressService(
 
   // ─── Session Spawning Helpers ─────────────────────────────────
 
+  function handleSessionEnd(
+    slug: string,
+    action: string,
+    exitCode: number | null,
+  ): void {
+    activeSessions.delete(slug);
+
+    if (exitCode === null || exitCode === 0) {
+      actionCompleted.emit(slug, action);
+
+      void (async () => {
+        try {
+          const taskDir = join(progressDir, slug);
+          const task = await buildTask(taskDir, slug, false);
+          if (task) {
+            taskUpdated.emit(slug, task);
+          }
+        } catch {
+          // Ignore post-session reconciliation errors
+        }
+      })();
+    } else {
+      const errorMsg = `Session exited with code ${String(exitCode)}`;
+      actionFailed.emit(slug, action, errorMsg);
+    }
+  }
+
   function spawnAndTrack(
     slug: string,
     action: string,
     prompt: string,
   ): { sessionId: string } {
+    // Subscribe to events BEFORE spawning to avoid race condition where
+    // a fast session ends before the listener is registered.
+    let targetSessionId: string | null = null;
+    let handled = false;
+
+    const unsubscribe = agentManagerService.onEvent((event) => {
+      if (handled) return;
+      if (targetSessionId === null || event.sessionId !== targetSessionId) return;
+      if (event.type !== 'session.ended') return;
+
+      handled = true;
+      unsubscribe();
+
+      const data = event.data as { code?: number | null } | null;
+      const exitCode = data?.code ?? null;
+      handleSessionEnd(slug, action, exitCode);
+    });
+
     const session = agentManagerService.spawnProjectOwner({
       projectPath,
       prompt,
       name: `progress-${action}-${slug}`,
     });
 
+    targetSessionId = session.id;
     activeSessions.set(slug, { sessionId: session.id, action });
     actionStarted.emit(slug, action, session.id);
 
-    // Listen for session end to reconcile status
-    const unsubscribe = agentManagerService.onEvent((event) => {
-      if (event.sessionId !== session.id) return;
-      if (event.type !== 'session.ended') return;
-
+    // Check if session already ended during spawn (safety net).
+    // Since we subscribed before spawning, the event listener covers
+    // the normal case. This catches edge cases where getSession already
+    // shows a terminal status but the event hasn't dispatched yet.
+    const currentStatus = agentManagerService.getSession(session.id)?.status;
+    if (currentStatus === 'completed' || currentStatus === 'failed') {
+      handled = true;
       unsubscribe();
-      activeSessions.delete(slug);
-
-      const data = event.data as { code?: number | null } | null;
-      const exitCode = data?.code ?? null;
-
-      if (exitCode === null || exitCode === 0) {
-        actionCompleted.emit(slug, action);
-
-        void (async () => {
-          try {
-            const taskDir = join(progressDir, slug);
-            const task = await buildTask(taskDir, slug, false);
-            if (task) {
-              taskUpdated.emit(slug, task);
-            }
-          } catch {
-            // Ignore post-session reconciliation errors
-          }
-        })();
-      } else {
-        const errorMsg = `Session exited with code ${String(exitCode)}`;
-        actionFailed.emit(slug, action, errorMsg);
-      }
-    });
+      const exitCode = currentStatus === 'completed' ? 0 : 1;
+      handleSessionEnd(slug, action, exitCode);
+    }
 
     return { sessionId: session.id };
   }
