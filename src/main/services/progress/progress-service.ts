@@ -17,6 +17,7 @@ import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/typ
 
 import { serviceLogger } from '@main/lib/logger';
 
+import { runLogCleanup as runLogCleanupFn } from './log-cleanup';
 import { detectRootFile, readFrontmatter, writeFrontmatter } from './task-file-io';
 
 import type { AgentManagerService } from '../agent-manager/agent-manager-service';
@@ -58,6 +59,7 @@ export interface ProgressService {
   spinUpTeam: (slug: string) => Promise<{ sessionId: string; action: string }>;
   runWorkflow: (slug: string) => Promise<{ started: true }>;
   cancelAction: (slug: string) => Promise<{ success: boolean }>;
+  runLogCleanup: () => Promise<{ deletedFiles: number }>;
   onTaskUpdated: (listener: (slug: string, task: ProgressTask) => void) => () => void;
   onTaskCreated: (listener: (slug: string, task: ProgressTask) => void) => () => void;
   onTaskArchived: (listener: (slug: string) => void) => () => void;
@@ -709,6 +711,11 @@ export function createProgressService(
       }
 
       return Promise.resolve({ success: stopped });
+    },
+
+    async runLogCleanup(): Promise<{ deletedFiles: number }> {
+      await init();
+      return await runLogCleanupFn(progressDir);
     },
 
     onTaskUpdated(listener: (slug: string, task: ProgressTask) => void): () => void {

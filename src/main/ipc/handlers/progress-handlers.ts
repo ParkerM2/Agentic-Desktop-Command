@@ -65,6 +65,8 @@ export function registerProgressHandlers(
 
   router.handle('progress.cancelAction', ({ slug }) => progressService.cancelAction(slug));
 
+  router.handle('progress.runLogCleanup', () => progressService.runLogCleanup());
+
   // ── Event Forwarding ─────────────────────────────────────────
   // Subscribe to service events and forward them to the renderer via router.emit().
 
