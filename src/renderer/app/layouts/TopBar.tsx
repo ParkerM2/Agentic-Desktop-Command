@@ -87,7 +87,7 @@ export function TopBar() {
   return (
     <div className="electron-drag border-border bg-card flex h-10 shrink-0 items-stretch border-b">
       {/* Sidebar toggle */}
-      <div className="electron-no-drag flex items-center">
+      <div className="electron-no-drag border-border flex shrink-0 items-center border-r">
         <Button
           aria-label="Toggle sidebar"
           className="text-muted-foreground hover:bg-accent hover:text-foreground h-10 w-10 rounded-none"
@@ -98,10 +98,9 @@ export function TopBar() {
           <PanelLeft className="h-4 w-4" />
         </Button>
       </div>
-      <div className="bg-border my-2 w-px shrink-0" />
 
-      {/* Project tabs */}
-      <div className="electron-no-drag flex min-w-0 items-stretch overflow-hidden">
+      {/* Project tabs — VSCode-style: right border per tab, horizontal scroll */}
+      <div className="electron-no-drag flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden">
         {openProjects.map((project) => {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
@@ -109,11 +108,10 @@ export function TopBar() {
             <button
               key={project.id}
               className={cn(
-                'group flex h-full items-center gap-1.5 px-4 text-xs transition-colors',
-                'border-b-2',
+                'border-border group flex h-full shrink-0 items-center gap-1.5 border-r px-3 text-xs transition-colors',
                 isActive
-                  ? 'border-b-primary text-foreground'
-                  : 'border-b-transparent text-muted-foreground hover:text-foreground',
+                  ? 'bg-background text-foreground'
+                  : 'bg-card text-muted-foreground hover:text-foreground',
               )}
               onClick={() => handleSelectProject(project.id)}
             >
@@ -122,33 +120,35 @@ export function TopBar() {
               ) : (
                 <Folder className="h-3 w-3 shrink-0" />
               )}
-              <span className="max-w-32 truncate font-mono">{project.name}</span>
-              <Button
+              <span className="max-w-32 truncate">{project.name}</span>
+              <button
                 aria-label={`Close ${project.name} tab`}
-                className="ml-0.5 h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100"
-                size="icon"
-                variant="ghost"
+                className="text-muted-foreground hover:text-foreground ml-0.5 flex h-4 w-4 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeProjectTab(project.id);
                 }}
               >
-                ×
-              </Button>
+                <X className="h-3 w-3" />
+              </button>
             </button>
           );
         })}
+
+        {/* Add tab — sticky, grows with list until hitting settings */}
         <button
-          className="text-muted-foreground hover:text-foreground flex h-full items-center px-3 transition-colors"
+          className="border-border text-muted-foreground hover:text-foreground flex h-full shrink-0 items-center border-r px-3 transition-colors"
           title="Open project"
+          type="button"
           onClick={handleAddProject}
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
-      </div>
 
-      {/* Drag spacer */}
-      <div className="flex-1" />
+        {/* Drag spacer fills remaining space */}
+        <div className="flex-1" />
+      </div>
 
       {/* Utility buttons */}
       <div className="electron-no-drag flex items-center gap-0.5 px-1">
