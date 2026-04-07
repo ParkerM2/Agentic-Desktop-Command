@@ -52,8 +52,7 @@ import {
   Text,
 } from '@ui';
 
-// TODO: Task 6 — import ProgressTaskDetailRow once created
-// import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
+import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
 
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
@@ -717,19 +716,7 @@ export function ProgressTaskGrid() {
                           className="bg-muted/20 p-4"
                           colSpan={columns.length}
                         >
-                          {/* TODO: Task 6 — replace with <ProgressTaskDetailRow task={row.original} /> */}
-                          <div className="text-muted-foreground rounded border border-dashed p-4 text-sm">
-                            <Text className="font-medium">{row.original.title}</Text>
-                            <Text className="mt-1 text-xs">
-                              Slug: {row.original.slug} · Status: {row.original.status} ·{' '}
-                              Research: {row.original.hasResearch ? 'yes' : 'no'} · Plan:{' '}
-                              {row.original.hasPlan ? 'yes' : 'no'} · Team tasks:{' '}
-                              {row.original.teamTaskCount}
-                            </Text>
-                            {row.original.description ? (
-                              <Text className="mt-1 text-xs">{row.original.description}</Text>
-                            ) : null}
-                          </div>
+                          <ProgressTaskDetailRow task={row.original} />
                         </TableCell>
                       </TableRow>
                     ) : null}
