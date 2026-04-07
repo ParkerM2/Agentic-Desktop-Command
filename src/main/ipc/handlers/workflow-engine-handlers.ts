@@ -11,6 +11,11 @@ export function registerWorkflowEngineHandlers(
   router: IpcRouter,
   workflowEngineService: WorkflowEngineService,
 ): void {
+  router.handle('workflow-engine.apply', ({ templateId, featureName, projectPath, overrides }) => {
+    const runId = workflowEngineService.applyTemplate(templateId, featureName, projectPath, overrides);
+    return Promise.resolve({ runId });
+  });
+
   router.handle('workflow-engine.start', (config) => {
     const runId = workflowEngineService.start(config);
     return Promise.resolve({ runId });

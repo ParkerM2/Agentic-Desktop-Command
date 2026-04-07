@@ -113,10 +113,8 @@ import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VisualizationService } from '../services/visualization';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
-
-import type { WorkflowTemplateService } from '../services/workflow-templates';
-
 import type { WorkflowEngineService } from '../services/workflow-engine';
+import type { WorkflowTemplateService } from '../services/workflow-templates';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 

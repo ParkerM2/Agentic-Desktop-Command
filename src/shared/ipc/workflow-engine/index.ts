@@ -3,6 +3,7 @@
  */
 
 export {
+  WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
   WorkflowEngineRecordSchema,
   WorkflowErrorEventSchema,

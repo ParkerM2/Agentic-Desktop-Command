@@ -50,6 +50,26 @@ export const WorkflowEngineRecordSchema = z.object({
   stateFilePath: z.string(),
 });
 
+// ─── Apply Input Schema ───────────────────────────────────────
+
+/**
+ * Input for the workflow-engine.apply channel.
+ * Drives the three-layer merge: template defaults → overrides → runtime.
+ */
+export const WorkflowApplyInputSchema = z.object({
+  /** ID of the WorkflowTemplate to apply */
+  templateId: z.string().min(1),
+  /** Feature name / ticket slug (e.g. "my-feature") */
+  featureName: z.string().min(1),
+  /** Absolute path to the project root */
+  projectPath: z.string().min(1),
+  /**
+   * User overrides merged on top of template config.
+   * Keys correspond to WorkflowRunConfig fields (excluding featureName/projectPath/templateId).
+   */
+  overrides: z.record(z.string(), z.unknown()).default({}),
+});
+
 // ─── Event Schemas ─────────────────────────────────────────────
 
 export const WorkflowStateChangedEventSchema = z.object({

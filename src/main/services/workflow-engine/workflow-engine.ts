@@ -13,6 +13,8 @@ import { join } from 'node:path';
 
 import { v4 as uuid } from 'uuid';
 
+import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
+
 import { runPlan } from './states/plan';
 import { runPreflight } from './states/preflight';
 import { VALID_TRANSITIONS, WorkflowState } from './types';
@@ -59,6 +61,95 @@ function serializeRecord(record: WorkflowEngineRecord): void {
 
 function buildStateFilePath(progressBaseDir: string, runId: string): string {
   return join(progressBaseDir, 'workflow-engine', `${runId}.json`);
+}
+
+/**
+ * Write the resolved template snapshot to disk so the engine can reconstruct
+ * its configuration after a crash without re-reading the live template.
+ */
+function writeResolvedSnapshot(
+  progressBaseDir: string,
+  featureName: string,
+  snapshot: WorkflowRunConfig,
+): void {
+  const dir = join(progressBaseDir, featureName);
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+  }
+  const filePath = join(dir, 'resolved-template.json');
+  writeFileSync(filePath, JSON.stringify(snapshot, null, 2), 'utf-8');
+}
+
+/**
+ * Three-layer merge: template defaults → user overrides → runtime values.
+ *
+ * Layer 1 (lowest priority) — template fields mapped to WorkflowRunConfig defaults:
+ *   branching.useWorktrees, branching.workPrefix, qa.maxRounds,
+ *   team.enableGuardian, permissions.allowCreatePr
+ *
+ * Layer 2 — caller-supplied overrides (any WorkflowRunConfig fields except
+ *   featureName, projectPath, templateId — those are runtime-authoritative).
+ *
+ * Layer 3 (highest priority) — runtime values: featureName, projectPath,
+ *   templateId. These always win and cannot be overridden by the caller.
+ */
+function mergeRunConfig(
+  template: WorkflowTemplate,
+  featureName: string,
+  projectPath: string,
+  overrides: Record<string, unknown>,
+): WorkflowRunConfig {
+  // Layer 1: template defaults
+  const fromTemplate: Omit<WorkflowRunConfig, 'featureName' | 'projectPath' | 'templateId'> = {
+    useWorktrees: template.branching.useWorktrees,
+    branchPrefix: template.branching.workPrefix,
+    maxQaRounds: template.qa.maxRounds,
+    useGuardian: template.team.enableGuardian,
+    createPr: template.permissions.allowCreatePr,
+    overrides: {},
+  };
+
+  // Layer 2: user overrides (only well-typed fields; unknown keys land in overrides.*)
+  const useWorktrees =
+    typeof overrides.useWorktrees === 'boolean'
+      ? overrides.useWorktrees
+      : fromTemplate.useWorktrees;
+  const branchPrefix =
+    typeof overrides.branchPrefix === 'string'
+      ? overrides.branchPrefix
+      : fromTemplate.branchPrefix;
+  const maxQaRounds =
+    typeof overrides.maxQaRounds === 'number'
+      ? overrides.maxQaRounds
+      : fromTemplate.maxQaRounds;
+  const useGuardian =
+    typeof overrides.useGuardian === 'boolean'
+      ? overrides.useGuardian
+      : fromTemplate.useGuardian;
+  const createPr =
+    typeof overrides.createPr === 'boolean' ? overrides.createPr : fromTemplate.createPr;
+
+  // Remaining entries in overrides are passed through for future extensibility
+  const passthrough: Record<string, unknown> = {};
+  const knownKeys = new Set(['useWorktrees', 'branchPrefix', 'maxQaRounds', 'useGuardian', 'createPr']);
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!knownKeys.has(key)) {
+      passthrough[key] = value;
+    }
+  }
+
+  // Layer 3: runtime — always wins
+  return {
+    featureName,
+    projectPath,
+    templateId: template.id,
+    useWorktrees,
+    branchPrefix,
+    maxQaRounds,
+    useGuardian,
+    createPr,
+    overrides: passthrough,
+  };
 }
 
 function toPublicRecord(runtime: EngineRuntimeRecord): WorkflowEngineRecord {
@@ -225,6 +316,29 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
   }
 
   return {
+    applyTemplate(
+      templateId: string,
+      featureName: string,
+      projectPath: string,
+      overrides: Record<string, unknown>,
+    ): string {
+      // Validate template exists — throws if not found
+      const template = deps.templateService.get(templateId);
+
+      // Resolve three-layer merge
+      const resolvedConfig = mergeRunConfig(template, featureName, projectPath, overrides);
+
+      // Snapshot to .claude/progress/<featureName>/resolved-template.json
+      writeResolvedSnapshot(progressBaseDir, featureName, resolvedConfig);
+
+      console.warn(
+        `[WorkflowEngine] applyTemplate: template=${templateId}, feature=${featureName}, snapshot written`,
+      );
+
+      // Start engine from snapshot — engine never re-reads the live template
+      return this.start(resolvedConfig);
+    },
+
     start(config: WorkflowRunConfig): string {
       const runId = uuid();
       const now = new Date().toISOString();
