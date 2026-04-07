@@ -60,7 +60,7 @@ function PageHeaderBase({
       <div
         data-slot="page-header"
         className={cn(
-          'border-border flex min-h-0 w-full flex-1 flex-col border-b',
+          'border-border flex w-full shrink-0 flex-col border-b',
           className,
         )}
         {...props}

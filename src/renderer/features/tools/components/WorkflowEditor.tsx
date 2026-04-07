@@ -97,9 +97,8 @@ export function WorkflowEditor() {
     if (selectedTemplate) {
       setName(selectedTemplate.name);
       setDescription(selectedTemplate.description);
-      setPhases(
-        selectedTemplate.phases.length > 0 ? selectedTemplate.phases : DEFAULT_PHASES,
-      );
+      const templatePhases = Array.isArray(selectedTemplate.phases) ? selectedTemplate.phases : [];
+      setPhases(templatePhases.length > 0 ? templatePhases : DEFAULT_PHASES);
     }
   }, [selectedTemplate]);
 
