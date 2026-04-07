@@ -34,7 +34,6 @@ import {
   Flex,
   Heading,
   InlineAlert,
-  Separator,
   Spinner,
   Stack,
   Text,
@@ -178,6 +177,20 @@ interface ProgressTaskDetailRowProps {
 }
 
 // ─── Helpers ─────────────────────────────────────────────
+
+type StepStatus = 'done' | 'active' | 'pending';
+
+function deriveStepStatus(isDone: boolean, isActive: boolean): StepStatus {
+  if (isDone) return 'done';
+  if (isActive) return 'active';
+  return 'pending';
+}
+
+function stepStatusDotClass(status: StepStatus): string {
+  if (status === 'done') return 'bg-success';
+  if (status === 'active') return 'bg-info animate-pulse';
+  return 'bg-muted-foreground/30';
+}
 
 /** Returns the first N characters of content with an ellipsis if truncated. */
 function truncate(content: string, maxLen: number): string {
@@ -515,6 +528,12 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   const handOffPlan = useAgentContext((s) => s.handOffPlan);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
 
+  type PipelineTab = 'research' | 'plan' | 'execute';
+  const [activeTab, setActiveTab] = useState<PipelineTab>(() => {
+    if (task.hasTeamTasks) return 'execute';
+    if (task.hasPlan) return 'plan';
+    return 'research';
+  });
   const [researchExpanded, setResearchExpanded] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
   const [researchContent, setResearchContent] = useState<string | null>(null);
@@ -572,8 +591,16 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
     }
   }
 
+  // Tab status indicators
+  const researchStatus = deriveStepStatus(task.hasResearch, activeAction === 'research');
+  const planStatus = deriveStepStatus(task.hasPlan, activeAction === 'plan');
+  const executeStatus = deriveStepStatus(
+    task.status === 'done' || task.status === 'review',
+    activeAction === 'team' || task.hasTeamTasks,
+  );
+
   return (
-    <Stack className="px-4 py-4" gap="md">
+    <Stack className="px-4 py-4" gap="sm">
 
       {/* ── Error Banner ─────────────────────────────── */}
       {task.status === 'error' ? (
@@ -592,10 +619,8 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         </InlineAlert>
       ) : null}
 
-      {/* ── Top Bar ──────────────────────────────────── */}
+      {/* ── Top Bar: links + actions ─────────────────── */}
       <Flex align="center" gap="sm" wrap="wrap">
-
-        {/* Jira */}
         {hasJira ? (
           <Button asChild size="sm" variant="outline">
             <a href={task.jiraUrl} rel="noreferrer" target="_blank">
@@ -603,91 +628,93 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
             </a>
           </Button>
         ) : (
-          <Button disabled size="sm" variant="outline">
-            Link Ticket
-          </Button>
+          <Button disabled size="sm" variant="outline">Link Ticket</Button>
         )}
-
-        {/* PR */}
         {hasPr ? (
           <Button asChild size="sm" variant="outline">
             <a href={task.prUrl} rel="noreferrer" target="_blank">
               <Flex align="center" gap="sm">
                 <Text size="sm">#{task.prNumber}</Text>
                 {task.prStatus === undefined ? null : (
-                  <Badge size="sm" variant={prStatusVariant(task.prStatus)}>
-                    {task.prStatus}
-                  </Badge>
+                  <Badge size="sm" variant={prStatusVariant(task.prStatus)}>{task.prStatus}</Badge>
                 )}
               </Flex>
             </a>
           </Button>
         ) : (
-          <Button disabled size="sm" variant="outline">
-            Link PR
-          </Button>
+          <Button disabled size="sm" variant="outline">Link PR</Button>
         )}
-
         <Flex className="ml-auto" gap="sm" wrap="nowrap">
-          <Button
-            disabled={isActionActive}
-            size="sm"
-            variant="primary"
-            onClick={() => { void runWorkflow(task.slug); }}
-          >
+          <Button disabled={isActionActive} size="sm" variant="primary" onClick={() => { void runWorkflow(task.slug); }}>
             Run Workflow
           </Button>
-          <Button
-            disabled={isActionActive}
-            size="sm"
-            variant="destructive"
-            onClick={() => { void archiveTask(task.slug); }}
-          >
+          <Button disabled={isActionActive} size="sm" variant="destructive" onClick={() => { void archiveTask(task.slug); }}>
             Archive
           </Button>
         </Flex>
       </Flex>
 
-      <Separator />
+      {/* ── Pipeline Tabs ────────────────────────────── */}
+      <div className="flex gap-0 border-b border-border">
+        {([
+          { key: 'research' as PipelineTab, label: 'Research', status: researchStatus },
+          { key: 'plan' as PipelineTab, label: 'Plan', status: planStatus },
+          { key: 'execute' as PipelineTab, label: 'Execute', status: executeStatus },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            className={`flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === tab.key
+                ? 'border-b-2 border-primary text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => { setActiveTab(tab.key); }}
+          >
+            <span className={`inline-block h-2 w-2 rounded-full ${stepStatusDotClass(tab.status)}`} />
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-      {/* ── Research Section ─────────────────────────── */}
-      <ResearchSection
-        activeAction={activeAction}
-        activeSessionId={activeSessionId}
-        content={researchContent ?? ''}
-        expanded={researchExpanded}
-        isActionActive={isActionActive}
-        task={task}
-        onStart={(prompt) => { void startResearch(task.slug, prompt); }}
-        onToggle={() => { setResearchExpanded((prev) => !prev); }}
-      />
+      {/* ── Tab Content ──────────────────────────────── */}
+      {activeTab === 'research' ? (
+        <ResearchSection
+          activeAction={activeAction}
+          activeSessionId={activeSessionId}
+          content={researchContent ?? ''}
+          expanded={researchExpanded}
+          isActionActive={isActionActive}
+          task={task}
+          onStart={(prompt) => { void startResearch(task.slug, prompt); }}
+          onToggle={() => { setResearchExpanded((prev) => !prev); }}
+        />
+      ) : null}
 
-      <Separator />
+      {activeTab === 'plan' ? (
+        <PlanSection
+          activeAction={activeAction}
+          activeSessionId={activeSessionId}
+          content={planContent ?? ''}
+          expanded={planExpanded}
+          isActionActive={isActionActive}
+          task={task}
+          onCreatePlan={(prompt) => { void createPlan(task.slug, prompt); }}
+          onSpecialAction={handleSpecialAction}
+          onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
+          onToggle={() => { setPlanExpanded((prev) => !prev); }}
+        />
+      ) : null}
 
-      {/* ── Plan Section ─────────────────────────────── */}
-      <PlanSection
-        activeAction={activeAction}
-        activeSessionId={activeSessionId}
-        content={planContent ?? ''}
-        expanded={planExpanded}
-        isActionActive={isActionActive}
-        task={task}
-        onCreatePlan={(prompt) => { void createPlan(task.slug, prompt); }}
-        onSpecialAction={handleSpecialAction}
-        onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
-        onToggle={() => { setPlanExpanded((prev) => !prev); }}
-      />
-
-      <Separator />
-
-      {/* ── Team Section ─────────────────────────────── */}
-      <TeamSection
-        activeAction={activeAction}
-        isActionActive={isActionActive}
-        task={task}
-        onSpecialAction={handleSpecialAction}
-        onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
-      />
+      {activeTab === 'execute' ? (
+        <TeamSection
+          activeAction={activeAction}
+          isActionActive={isActionActive}
+          task={task}
+          onSpecialAction={handleSpecialAction}
+          onSpinUpTeam={(prompt) => { void spinUpTeam(task.slug, prompt); }}
+        />
+      ) : null}
 
     </Stack>
   );
