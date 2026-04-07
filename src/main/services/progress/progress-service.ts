@@ -606,6 +606,20 @@ export function createProgressService(
       const src = join(progressDir, slug);
       const dest = join(archivedDir, slug);
 
+      // Stamp archivedAt into frontmatter before moving
+      const rootFileName = await detectRootFile(src);
+      if (rootFileName) {
+        const rootFilePath = join(src, rootFileName);
+        try {
+          const { frontmatter, content } = await readFrontmatter(rootFilePath);
+          frontmatter.archivedAt = new Date().toISOString();
+          frontmatter.status = 'archived';
+          await writeFrontmatter(rootFilePath, frontmatter, content);
+        } catch {
+          // Best-effort — still archive even if frontmatter write fails
+        }
+      }
+
       await rename(src, dest);
       taskArchived.emit(slug);
     },
