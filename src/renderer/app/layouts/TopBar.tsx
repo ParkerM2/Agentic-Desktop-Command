@@ -109,11 +109,11 @@ export function TopBar() {
             <button
               key={project.id}
               className={cn(
-                'border-border group flex h-full items-center gap-1.5 border-r px-4 text-xs transition-colors',
-                'border-t-2',
+                'group flex h-full items-center gap-1.5 px-4 text-xs transition-colors',
+                'border-b-2',
                 isActive
-                  ? 'border-t-primary bg-background text-foreground'
-                  : 'border-t-transparent text-muted-foreground hover:bg-accent hover:text-foreground',
+                  ? 'border-b-primary text-foreground'
+                  : 'border-b-transparent text-muted-foreground hover:text-foreground',
               )}
               onClick={() => handleSelectProject(project.id)}
             >
