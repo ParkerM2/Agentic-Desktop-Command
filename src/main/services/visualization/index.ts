@@ -2,8 +2,7 @@
  * Visualization Service
  *
  * Factory for the VisualizationService interface.
- * Provides codebase graph building and stubs for agent teams and session log
- * (implemented by Task 3).
+ * Provides codebase graph building, agent teams data (from progress/), and session log.
  */
 
 import { buildAgentTeamsData } from './agent-teams';
@@ -15,6 +14,7 @@ import type {
   CodebaseGraph,
   SessionLogPage,
 } from './types';
+import type { AgentManagerService } from '../agent-manager/agent-manager-service';
 
 // ─── Service Interface ────────────────────────────────────────
 
@@ -27,16 +27,12 @@ export interface VisualizationService {
 
   /**
    * Returns agent teams data for the given project.
-   * Reads tracking/ from the project path.
-   *
-   * @throws Error('Not implemented') — implemented in Task 3
+   * Reads from progress/ and queries AgentManagerService for live session state.
    */
   getAgentTeams: (projectPath: string) => AgentTeamsData;
 
   /**
    * Returns a paginated page of a Claude session log.
-   *
-   * @throws Error('Not implemented') — implemented in Task 3
    */
   getSessionLog: (opts: {
     projectPath: string;
@@ -52,16 +48,19 @@ export interface VisualizationService {
 /**
  * Creates a VisualizationService instance.
  * The service is stateless — each call reads from disk and returns.
- * No constructor dependencies required.
+ *
+ * @param agentManagerService - Used to query live session status for agent teams.
  */
-export function createVisualizationService(): VisualizationService {
+export function createVisualizationService(
+  agentManagerService: AgentManagerService,
+): VisualizationService {
   return {
     getCodebaseGraph(projectPath: string): CodebaseGraph {
       return buildCodebaseGraph(projectPath);
     },
 
     getAgentTeams(projectPath: string): AgentTeamsData {
-      return buildAgentTeamsData(projectPath);
+      return buildAgentTeamsData(projectPath, agentManagerService);
     },
 
     getSessionLog(opts: {

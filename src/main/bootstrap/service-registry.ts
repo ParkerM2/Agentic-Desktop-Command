@@ -581,7 +581,7 @@ export function createServiceRegistry(
   const trackerService = createTrackerService(process.cwd());
 
   // ─── Visualization service (stateless — reads from disk on each call) ───
-  const visualizationService = createVisualizationService();
+  const visualizationService = createVisualizationService(agentManagerService);
 
   // ─── Progress service (task pipeline — reads/writes progress/ dir) ──────
   const progressService = createProgressService(process.cwd(), agentManagerService);
