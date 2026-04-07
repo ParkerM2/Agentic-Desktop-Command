@@ -24,6 +24,7 @@ import { useProgressContext } from '@renderer/shared/stores/progress-context-sto
 import {
   Badge,
   Button,
+  Checkbox,
   Code,
   Dialog,
   DialogContent,
@@ -129,13 +130,13 @@ function StepIndicator({ done, label }: StepIndicatorProps) {
   return (
     <div className="flex flex-col items-center gap-0.5">
       <div
+        aria-label={done ? `${label}: done` : `${label}: pending`}
         className={cn(
           'h-3 w-3 rounded-full border-2 transition-colors',
           done
             ? 'bg-primary border-primary'
             : 'bg-background border-muted-foreground/40',
         )}
-        aria-label={done ? `${label}: done` : `${label}: pending`}
       />
       <Text className="text-muted-foreground text-[9px] font-medium uppercase leading-none">
         {label[0]}
@@ -223,7 +224,7 @@ function NewTaskDialog({ open, onOpenChange, onCreate }: NewTaskDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <form id="new-task-form" className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-4" id="new-task-form" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="task-slug">Slug</Label>
             <Input
@@ -279,18 +280,18 @@ function NewTaskDialog({ open, onOpenChange, onCreate }: NewTaskDialogProps) {
 
         <DialogFooter>
           <Button
+            disabled={isSubmitting}
             variant="outline"
             onClick={() => handleOpenChange(false)}
-            disabled={isSubmitting}
           >
             Cancel
           </Button>
           <Button
-            type="submit"
-            form="new-task-form"
             disabled={isSubmitting || !slug.trim() || !title.trim()}
+            form="new-task-form"
+            type="submit"
           >
-            {isSubmitting ? <Spinner size="sm" className="mr-2" /> : null}
+            {isSubmitting ? <Spinner className="mr-2" size="sm" /> : null}
             Create Task
           </Button>
         </DialogFooter>
@@ -326,9 +327,9 @@ function createProgressColumns(
       header: () => null,
       cell: ({ row }) => (
         <Button
+          aria-label={expandedSlugs.has(row.original.slug) ? 'Collapse row' : 'Expand row'}
           size="icon-xs"
           variant="ghost"
-          aria-label={expandedSlugs.has(row.original.slug) ? 'Collapse row' : 'Expand row'}
           onClick={() => onToggleExpand(row.original.slug)}
         >
           {expandedSlugs.has(row.original.slug) ? <ChevronDown /> : <ChevronRight />}
@@ -345,12 +346,10 @@ function createProgressColumns(
         const { slug } = row.original;
         const isSelected = selectedSlugs.has(slug);
         return (
-          <input
-            type="checkbox"
+          <Checkbox
             aria-label={`Select task ${row.original.title}`}
             checked={isSelected}
-            className="accent-primary h-4 w-4 cursor-pointer rounded"
-            onChange={() => onToggleSelect(slug)}
+            onCheckedChange={() => onToggleSelect(slug)}
           />
         );
       },
@@ -359,8 +358,8 @@ function createProgressColumns(
       accessorKey: 'status',
       header: ({ column }) => (
         <Button
-          variant="ghost"
           size="sm"
+          variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Status
@@ -384,8 +383,8 @@ function createProgressColumns(
       accessorKey: 'title',
       header: ({ column }) => (
         <Button
-          variant="ghost"
           size="sm"
+          variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Title
@@ -403,8 +402,8 @@ function createProgressColumns(
       accessorKey: 'priority',
       header: ({ column }) => (
         <Button
-          variant="ghost"
           size="sm"
+          variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Priority
@@ -430,8 +429,8 @@ function createProgressColumns(
       ),
       cell: ({ row }) => (
         <StageCell
-          hasResearch={row.original.hasResearch}
           hasPlan={row.original.hasPlan}
+          hasResearch={row.original.hasResearch}
           hasTeamTasks={row.original.hasTeamTasks}
         />
       ),
@@ -450,13 +449,13 @@ function createProgressColumns(
         }
         return (
           <a
-            href={jiraUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center"
             aria-label={`Jira ticket ${jiraTicket}`}
+            className="inline-flex items-center"
+            href={jiraUrl}
+            rel="noopener noreferrer"
+            target="_blank"
           >
-            <Badge variant="outline" className="cursor-pointer text-xs hover:bg-muted">
+            <Badge className="cursor-pointer text-xs hover:bg-muted" variant="outline">
               {jiraTicket}
             </Badge>
           </a>
@@ -478,16 +477,16 @@ function createProgressColumns(
         const prVariant = getPrVariant(prStatus);
         return (
           <a
-            href={prUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center"
             aria-label={`Pull request #${String(prNumber)}`}
+            className="inline-flex items-center"
+            href={prUrl}
+            rel="noopener noreferrer"
+            target="_blank"
           >
-            <Badge variant={prVariant} className="cursor-pointer text-xs hover:opacity-80">
+            <Badge className="cursor-pointer text-xs hover:opacity-80" variant={prVariant}>
               #{String(prNumber)}
               {prStatus === undefined ? null : (
-                <span className="text-muted-foreground ml-1 text-[10px]">{prStatus}</span>
+                <Text className="text-muted-foreground ml-1 text-[10px]">{prStatus}</Text>
               )}
             </Badge>
           </a>
@@ -498,8 +497,8 @@ function createProgressColumns(
       accessorKey: 'updatedAt',
       header: ({ column }) => (
         <Button
-          variant="ghost"
           size="sm"
+          variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Updated
@@ -597,7 +596,7 @@ export function ProgressTaskGrid() {
   const columns = useMemo(
     () =>
       createProgressColumns(expandedSlugs, selectedSlugs, handleToggleExpand, handleToggleSelect),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Set refs are stable enough; handlers are inline
+     
     [expandedSlugs, selectedSlugs],
   );
 
@@ -628,8 +627,8 @@ export function ProgressTaskGrid() {
         <SearchInput
           className="w-48"
           placeholder="Search tasks…"
-          value={searchText}
           showClear={searchText.length > 0}
+          value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           onClear={() => setSearchText('')}
         />
@@ -638,7 +637,7 @@ export function ProgressTaskGrid() {
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as ProgressStatus | 'all')}
         >
-          <SelectTrigger className="w-40" aria-label="Filter by status">
+          <SelectTrigger aria-label="Filter by status" className="w-40">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -658,11 +657,11 @@ export function ProgressTaskGrid() {
         )}
 
         <Button
-          variant="outline"
-          size="sm"
-          disabled={!singleSelected}
-          onClick={() => void handleRunWorkflow()}
           aria-label="Run workflow for selected task"
+          disabled={!singleSelected}
+          size="sm"
+          variant="outline"
+          onClick={() => void handleRunWorkflow()}
         >
           <Play className="mr-1.5 h-3.5 w-3.5" />
           Run Workflow
@@ -670,7 +669,7 @@ export function ProgressTaskGrid() {
 
         <Dialog open={newTaskDialogOpen} onOpenChange={setNewTaskDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" aria-label="Create new task">
+            <Button aria-label="Create new task" size="sm">
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               New Task
             </Button>
@@ -754,8 +753,8 @@ export function ProgressTaskGrid() {
       {/* New Task Dialog (rendered outside toolbar so it gets proper portal) */}
       <NewTaskDialog
         open={newTaskDialogOpen}
-        onOpenChange={setNewTaskDialogOpen}
         onCreate={createTask}
+        onOpenChange={setNewTaskDialogOpen}
       />
     </div>
   );
