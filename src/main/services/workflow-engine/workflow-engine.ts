@@ -15,8 +15,11 @@ import { v4 as uuid } from 'uuid';
 
 import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
 
+import { runFinalizing } from './states/finalize';
+import { runGuardian } from './states/guardian';
 import { runPlan } from './states/plan';
 import { runPreflight } from './states/preflight';
+import { runQaGate } from './states/qa-gate';
 import { runSetup } from './states/setup';
 import { runSpawning } from './states/spawn';
 import { VALID_TRANSITIONS, WorkflowState } from './types';
@@ -167,26 +170,6 @@ function toPublicRecord(runtime: EngineRuntimeRecord): WorkflowEngineRecord {
   };
 }
 
-// ─── State stubs (task 6 owns QA_GATE / GUARDIAN / FINALIZING) ──────
-
-function runQaGate(record: WorkflowEngineRecord): Promise<WorkflowState> {
-  // Full implementation in Task #6 (verdicts-cleanup)
-  console.warn(`[WorkflowEngine/QA_GATE] Stub — round ${record.qaRound}, runId: ${record.runId}`);
-  return Promise.resolve(WorkflowState.GUARDIAN);
-}
-
-function runGuardian(record: WorkflowEngineRecord): Promise<WorkflowState> {
-  // Full implementation in Task #6 (verdicts-cleanup)
-  console.warn(`[WorkflowEngine/GUARDIAN] Stub — runId: ${record.runId}`);
-  return Promise.resolve(WorkflowState.FINALIZING);
-}
-
-function runFinalizing(record: WorkflowEngineRecord): Promise<WorkflowState> {
-  // Full implementation in Task #6 (verdicts-cleanup)
-  console.warn(`[WorkflowEngine/FINALIZING] Stub — runId: ${record.runId}`);
-  return Promise.resolve(WorkflowState.DONE);
-}
-
 // ─── Factory ──────────────────────────────────────────────────
 
 export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowEngineService {
@@ -243,13 +226,13 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
         return await runSpawning(runtime, agentOrchestrator);
       }
       case WorkflowState.QA_GATE: {
-        return await runQaGate(runtime);
+        return await runQaGate(runtime, agentOrchestrator);
       }
       case WorkflowState.GUARDIAN: {
-        return await runGuardian(runtime);
+        return await runGuardian(runtime, agentOrchestrator);
       }
       case WorkflowState.FINALIZING: {
-        return await runFinalizing(runtime);
+        return await runFinalizing(runtime, gitService);
       }
       case WorkflowState.IDLE:
       case WorkflowState.DONE:
@@ -346,6 +329,7 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
         wavePlan: null,
         aborted: false,
         claudeMdBySlug: new Map(),
+        verdictsByTaskSlug: new Map(),
       };
 
       engines.set(runId, runtime);
