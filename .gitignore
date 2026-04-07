@@ -29,6 +29,7 @@ logs/security/
 
 # Workflow plugin runtime data (ephemeral, not committed)
 progress/
+!src/**/progress/
 tracking/
 .claude/.workflow-active
 .claude/.workflow-state/
