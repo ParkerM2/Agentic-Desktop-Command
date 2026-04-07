@@ -64,7 +64,7 @@ import { visualizationInvoke } from './visualization';
 import { windowInvoke } from './window';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workflowEngineEvents, workflowEngineInvoke } from './workflow-engine';
-import { workflowTemplatesInvoke } from './workflow-templates';
+import { workflowTemplatesEvents, workflowTemplatesInvoke } from './workflow-templates';
 import { workspaceEvents, workspaceInvoke } from './workspace';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
@@ -159,6 +159,7 @@ export const ipcEventContract = {
   ...agentDashboardEvents,
   ...workspaceEvents,
   ...workflowEvents,
+  ...workflowTemplatesEvents,
   ...workflowEngineEvents,
   ...progressEvents,
 } as const;

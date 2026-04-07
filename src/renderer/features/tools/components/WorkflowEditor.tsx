@@ -6,17 +6,19 @@
  * duplication, and sending phase prompts to the assistant widget.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Copy, Save, Trash2 } from 'lucide-react';
 
 import type { WorkflowPhase } from '@shared/ipc/workflow-templates/schemas';
 
 import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
+import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
 import { Button, Input, Label, ScrollArea, Text, Textarea } from '@ui';
 
 import { useSendCommand } from '@features/assistant/api/useAssistant';
+import { useProjects } from '@features/projects/api/useProjects';
 
 import {
   useCreateTemplate,
@@ -59,9 +61,19 @@ const DEFAULT_PHASES: WorkflowPhase[] = [
 export function WorkflowEditor() {
   const { selectedTemplateId, setSelectedTemplateId } = useToolsUI();
 
+  // Active project path for plugin artifacts
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projectsData } = useProjects();
+
+  const activeProjectPath = useMemo(() => {
+    if (!activeProjectId || !projectsData) return null;
+    const project = projectsData.find((p) => p.id === activeProjectId);
+    return project?.path ?? null;
+  }, [activeProjectId, projectsData]);
+
   // Queries
   const { data: templates = [] } = useWorkflowTemplates();
-  const { data: artifacts = [] } = usePluginArtifacts(null);
+  const { data: artifacts = [] } = usePluginArtifacts(activeProjectPath);
 
   // Mutations
   const createTemplate = useCreateTemplate();

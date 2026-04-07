@@ -52,6 +52,22 @@ export const progressTaskSchema = z.object({
   planContent: z.string().optional(),
   workflow: z.string().optional(),
   workflowPhase: z.string().optional(),
+  lastSessionId: z.string().optional(),
+  lastAgentName: z.string().optional(),
+  completedAt: z.string().optional(),
+  archivedAt: z.string().optional(),
+  teamName: z.string().optional(),
+  sessionHistory: z
+    .array(
+      z.object({
+        sessionId: z.string(),
+        agentName: z.string(),
+        action: z.string(),
+        exitCode: z.number().nullable(),
+        timestamp: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 // ── Invoke Input Schemas ────────────────────────────────────────
@@ -81,6 +97,11 @@ export const progressUpdateTaskInputSchema = z.object({
     prStatus: z.string().optional(),
     workflow: z.string().optional(),
     workflowPhase: z.string().optional(),
+    lastSessionId: z.string().optional(),
+    lastAgentName: z.string().optional(),
+    completedAt: z.string().optional(),
+    archivedAt: z.string().optional(),
+    teamName: z.string().optional(),
   }),
 });
 

@@ -17,9 +17,9 @@
  */
 
 import { execFile } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 
 import { WorkflowState } from '../types';
@@ -65,6 +65,25 @@ function removeArtifact(artifactPath: string): void {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[WorkflowEngine/FINALIZING] Could not remove ${artifactPath}: ${message}`);
+  }
+}
+
+/**
+ * Moves a file to an archive directory instead of deleting it.
+ * Creates the archive directory if it does not exist.
+ * Silently skips if the source file is missing.
+ */
+export function archiveArtifact(artifactPath: string, archiveDir: string): void {
+  if (!existsSync(artifactPath)) return;
+
+  try {
+    mkdirSync(archiveDir, { recursive: true });
+    const dest = join(archiveDir, basename(artifactPath));
+    renameSync(artifactPath, dest);
+    console.warn(`[WorkflowEngine/FINALIZING] Archived: ${artifactPath} → ${dest}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`[WorkflowEngine/FINALIZING] Could not archive ${artifactPath}: ${message}`);
   }
 }
 
@@ -194,14 +213,13 @@ export async function runFinalizing(
 
   console.warn(`[WorkflowEngine/FINALIZING] Starting cleanup for feature "${featureName}"`);
 
-  // ── 1. Remove engine state file for this run ─────────────────
-  removeArtifact(record.stateFilePath);
-
-  // ── 2. Remove resolved-template snapshot ─────────────────────
+  // ── 1–2. Archive engine state file + resolved-template snapshot ──
+  const engineArchiveDir = join(record.stateFilePath, '..', 'archive');
   const snapshotPath = join(projectPath, '.claude', 'progress', featureName, 'resolved-template.json');
-  removeArtifact(snapshotPath);
+  archiveArtifact(record.stateFilePath, engineArchiveDir);
+  archiveArtifact(snapshotPath, engineArchiveDir);
 
-  // ── 3. Remove agent-context directories ──────────────────────
+  // ── 3. Remove agent-context directories (large, reconstructable) ──
   const agentContextDir = join(projectPath, '.claude', 'agent-contexts', featureName);
   removeArtifact(agentContextDir);
 

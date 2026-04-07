@@ -33,6 +33,10 @@ export function registerWorkflowEngineHandlers(
     Promise.resolve(workflowEngineService.list()),
   );
 
+  router.handle('workflow-engine.listArchived', () =>
+    Promise.resolve(workflowEngineService.listArchived()),
+  );
+
   router.handle('workflow-engine.listAgentDefs', () =>
     workflowEngineService.listAgentDefinitions(),
   );

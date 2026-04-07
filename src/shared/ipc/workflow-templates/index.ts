@@ -1,4 +1,4 @@
-export { workflowTemplatesInvoke } from './contract';
+export { workflowTemplatesEvents, workflowTemplatesInvoke } from './contract';
 export {
   ArtifactTypeSchema,
   PluginArtifactSchema,

@@ -72,3 +72,17 @@ export const workflowTemplatesInvoke = {
     output: z.object({ path: z.string() }),
   },
 } as const;
+
+// ─── Event Channels ──────────────────────────────────────────
+
+export const workflowTemplatesEvents = {
+  'event:workflowTemplates.created': {
+    payload: z.object({ id: z.string(), name: z.string() }),
+  },
+  'event:workflowTemplates.updated': {
+    payload: z.object({ id: z.string(), name: z.string() }),
+  },
+  'event:workflowTemplates.deleted': {
+    payload: z.object({ id: z.string() }),
+  },
+} as const;

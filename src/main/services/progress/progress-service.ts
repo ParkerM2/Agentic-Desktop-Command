@@ -50,6 +50,11 @@ export interface ProgressService {
         | 'prStatus'
         | 'workflow'
         | 'workflowPhase'
+        | 'lastSessionId'
+        | 'lastAgentName'
+        | 'completedAt'
+        | 'archivedAt'
+        | 'teamName'
       >
     >,
   ) => Promise<ProgressTask>;
@@ -98,6 +103,21 @@ function maxStatus(a: ProgressStatus, b: ProgressStatus): ProgressStatus {
   return statusRank(a) >= statusRank(b) ? a : b;
 }
 
+function reconcileStatus(
+  raw: unknown,
+  hasResearch: boolean,
+  hasPlan: boolean,
+  hasTeamTasks: boolean,
+): ProgressStatus {
+  let status: ProgressStatus = isProgressStatus(raw) ? raw : 'backlog';
+
+  if (hasResearch) status = maxStatus(status, 'research_done');
+  if (hasPlan) status = maxStatus(status, 'plan_ready');
+  if (hasTeamTasks) status = maxStatus(status, 'executing');
+
+  return status;
+}
+
 // ─── Frontmatter Helpers ──────────────────────────────────────
 
 function isProgressStatus(value: unknown): value is ProgressStatus {
@@ -122,6 +142,42 @@ function asOptionalNumber(value: unknown): number | undefined {
   if (typeof value === 'string') {
     const n = Number(value);
     if (!Number.isNaN(n)) return n;
+  }
+  return undefined;
+}
+
+function parseSessionHistory(
+  raw: unknown,
+): Array<{
+  sessionId: string;
+  agentName: string;
+  action: string;
+  exitCode: number | null;
+  timestamp: string;
+}> | undefined {
+  if (!Array.isArray(raw)) return undefined;
+
+  return (raw as Array<Record<string, unknown>>).map((s) => ({
+    sessionId: asString(s.sessionId),
+    agentName: asString(s.agentName),
+    action: asString(s.action),
+    exitCode: typeof s.exitCode === 'number' ? s.exitCode : null,
+    timestamp: asString(s.timestamp),
+  }));
+}
+
+async function extractTeamName(
+  tasksDir: string,
+): Promise<string | undefined> {
+  try {
+    const taskFiles = await readdir(tasksDir);
+    const firstTask = taskFiles.find((f) => f.endsWith('.md'));
+    if (firstTask) {
+      const { frontmatter: taskFm } = await readFrontmatter(join(tasksDir, firstTask));
+      return asOptionalString(taskFm.teamName);
+    }
+  } catch {
+    // teamName is optional
   }
   return undefined;
 }
@@ -189,20 +245,13 @@ async function buildTask(
 
   const hasTeamTasks = teamTaskCount > 0;
 
-  // Status reconciliation — bump if directory has more progress than frontmatter says
-  let status: ProgressStatus = isProgressStatus(frontmatter.status)
-    ? frontmatter.status
-    : 'backlog';
+  // Extract teamName from first team task file if present
+  const teamNameFromTasks = hasTeamTasks
+    ? await extractTeamName(tasksDir)
+    : undefined;
 
-  if (hasResearch) {
-    status = maxStatus(status, 'research_done');
-  }
-  if (hasPlan) {
-    status = maxStatus(status, 'plan_ready');
-  }
-  if (hasTeamTasks) {
-    status = maxStatus(status, 'executing');
-  }
+  // Status reconciliation — bump if directory has more progress than frontmatter says
+  const status = reconcileStatus(frontmatter.status, hasResearch, hasPlan, hasTeamTasks);
 
   const task: ProgressTask = {
     slug,
@@ -218,6 +267,12 @@ async function buildTask(
     prStatus: asOptionalString(frontmatter.prStatus),
     workflow: asOptionalString(frontmatter.workflow),
     workflowPhase: asOptionalString(frontmatter.workflowPhase),
+    lastSessionId: asOptionalString(frontmatter.lastSessionId),
+    lastAgentName: asOptionalString(frontmatter.lastAgentName),
+    completedAt: asOptionalString(frontmatter.completedAt),
+    archivedAt: asOptionalString(frontmatter.archivedAt),
+    teamName: asOptionalString(frontmatter.teamName) ?? teamNameFromTasks,
+    sessionHistory: parseSessionHistory(frontmatter.sessionHistory),
     createdAt: asString(frontmatter.createdAt) || new Date().toISOString(),
     updatedAt: asString(frontmatter.updatedAt) || new Date().toISOString(),
     hasResearch,
@@ -415,8 +470,53 @@ export function createProgressService(
     action: string,
     exitCode: number | null,
   ): void {
+    const session = activeSessions.get(slug);
+    const sessionId = session?.sessionId ?? 'unknown';
     activeSessions.delete(slug);
 
+    // Persist session metadata to task frontmatter (best-effort, async)
+    void (async () => {
+      try {
+        const agentName = `progress-${action}-${slug}`;
+        const historyEntry = {
+          sessionId,
+          agentName,
+          action,
+          exitCode,
+          timestamp: new Date().toISOString(),
+        };
+
+        const taskDir = join(progressDir, slug);
+        const rootFileName = await detectRootFile(taskDir);
+        if (rootFileName) {
+          const rootFilePath = join(taskDir, rootFileName);
+          const { frontmatter, content } = await readFrontmatter(rootFilePath);
+
+          frontmatter.lastSessionId = sessionId;
+          frontmatter.lastAgentName = agentName;
+          frontmatter.updatedAt = new Date().toISOString();
+
+          // Append to session history (keep last 20 entries)
+          const history = Array.isArray(frontmatter.sessionHistory)
+            ? [...(frontmatter.sessionHistory as unknown[])]
+            : [];
+          history.push(historyEntry);
+          while (history.length > 20) history.shift();
+          frontmatter.sessionHistory = history;
+
+          // Mark completedAt if session was successful
+          if (exitCode === null || exitCode === 0) {
+            frontmatter.completedAt = new Date().toISOString();
+          }
+
+          await writeFrontmatter(rootFilePath, frontmatter, content);
+        }
+      } catch {
+        // Best-effort — don't block event emission
+      }
+    })();
+
+    // Existing event emission logic
     if (exitCode === null || exitCode === 0) {
       actionCompleted.emit(slug, action);
 
@@ -563,6 +663,11 @@ export function createProgressService(
           | 'prStatus'
           | 'workflow'
           | 'workflowPhase'
+          | 'lastSessionId'
+          | 'lastAgentName'
+          | 'completedAt'
+          | 'archivedAt'
+          | 'teamName'
         >
       >,
     ): Promise<ProgressTask> {
@@ -605,6 +710,20 @@ export function createProgressService(
 
       const src = join(progressDir, slug);
       const dest = join(archivedDir, slug);
+
+      // Stamp archivedAt into frontmatter before moving
+      const rootFileName = await detectRootFile(src);
+      if (rootFileName) {
+        const rootFilePath = join(src, rootFileName);
+        try {
+          const { frontmatter, content } = await readFrontmatter(rootFilePath);
+          frontmatter.archivedAt = new Date().toISOString();
+          frontmatter.status = 'archived';
+          await writeFrontmatter(rootFilePath, frontmatter, content);
+        } catch {
+          // Best-effort — still archive even if frontmatter write fails
+        }
+      }
 
       await rename(src, dest);
       taskArchived.emit(slug);

@@ -186,6 +186,8 @@ export interface WorkflowEngineService {
   get: (runId: string) => WorkflowEngineRecord | undefined;
   /** List all engine records (active and completed) */
   list: () => WorkflowEngineRecord[];
+  /** List archived engine records from the archive directory */
+  listArchived: () => WorkflowEngineRecord[];
   /** List all agent definitions from .claude/agents/*.md */
   listAgentDefinitions: () => Promise<AgentDefinition[]>;
 }
