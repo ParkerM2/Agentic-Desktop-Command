@@ -7,14 +7,13 @@
  *
  * Each task lives at `progress/<slug>/` and has a root markdown file
  * (task.md | description.md | ticket.md) with YAML frontmatter.
- *
- * TODO: Replace local ProgressTask / ProgressStatus / ProgressPriority types
- * with `@shared/types/progress` once Task 1 is merged.
  */
 
 import { watch } from 'node:fs';
 import { access, mkdir, readFile, readdir, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
+
+import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import { serviceLogger } from '@main/lib/logger';
 
@@ -22,50 +21,6 @@ import { detectRootFile, readFrontmatter, writeFrontmatter } from './task-file-i
 
 import type { AgentManagerService } from '../agent-manager/agent-manager-service';
 import type { FSWatcher } from 'node:fs';
-
-// ─── Temporary Local Types ────────────────────────────────────
-// TODO: Replace with `import type { ProgressTask, ProgressStatus, ProgressPriority }
-//       from '@shared/types/progress'` once Task 1 is merged.
-
-export type ProgressStatus =
-  | 'backlog'
-  | 'researching'
-  | 'research_done'
-  | 'planning'
-  | 'plan_ready'
-  | 'executing'
-  | 'review'
-  | 'done'
-  | 'archived'
-  | 'error';
-
-export type ProgressPriority = 'low' | 'normal' | 'high' | 'urgent';
-
-export interface ProgressTask {
-  slug: string;
-  rootFile: string;
-  title: string;
-  description: string;
-  status: ProgressStatus;
-  priority: ProgressPriority;
-  jiraTicket?: string;
-  jiraUrl?: string;
-  prNumber?: number;
-  prUrl?: string;
-  prStatus?: string;
-  createdAt: string;
-  updatedAt: string;
-
-  // Derived from directory contents
-  hasResearch: boolean;
-  hasPlan: boolean;
-  hasTeamTasks: boolean;
-  teamTaskCount: number;
-
-  // Content (populated on getTask, not listTasks)
-  researchContent?: string;
-  planContent?: string;
-}
 
 // ─── Service Interface ────────────────────────────────────────
 
