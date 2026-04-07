@@ -1,8 +1,8 @@
 /**
- * HealthIndicator -- Compact health dot for the TopBar
+ * HealthIndicator -- Badge-style health status for the TopBar
  *
- * Shows a colored pulsing dot indicating overall application health.
- * Green = healthy, Amber = warnings only, Red = errors present.
+ * Shows a colored badge with status text and pulsing dot.
+ * Background has opacity matching the status color.
  * Click toggles the HealthPanel popover.
  */
 
@@ -20,13 +20,30 @@ type HealthLevel = 'healthy' | 'warning' | 'error';
 
 interface HealthConfig {
   dotClass: string;
+  bgClass: string;
+  textClass: string;
   label: string;
 }
 
 const HEALTH_MAP: Record<HealthLevel, HealthConfig> = {
-  healthy: { dotClass: 'bg-success', label: 'ADC is healthy' },
-  warning: { dotClass: 'bg-warning', label: 'warnings' },
-  error: { dotClass: 'bg-destructive', label: 'errors' },
+  healthy: {
+    dotClass: 'bg-success',
+    bgClass: 'bg-success/10',
+    textClass: 'text-success',
+    label: 'Healthy',
+  },
+  warning: {
+    dotClass: 'bg-warning',
+    bgClass: 'bg-warning/10',
+    textClass: 'text-warning',
+    label: 'Warning',
+  },
+  error: {
+    dotClass: 'bg-destructive',
+    bgClass: 'bg-destructive/10',
+    textClass: 'text-destructive',
+    label: 'Error',
+  },
 };
 
 function deriveHealthLevel(
@@ -38,29 +55,18 @@ function deriveHealthLevel(
   return 'healthy';
 }
 
-function buildLabel(level: HealthLevel, count: number): string {
-  if (level === 'healthy') return 'ADC is healthy';
-  return `${count} ${level === 'error' ? 'errors' : 'warnings'}`;
-}
-
 // -- Component --
 
 export function HealthIndicator() {
-  // 1. Hooks
   const [isOpen, setIsOpen] = useState(false);
   const { data: stats } = useErrorStats();
-  // Fetch health status to keep it cached for the HealthPanel
   useHealthStatus();
 
-  // 2. Derived state
   const errorCount = stats?.bySeverity.error ?? 0;
   const warningCount = stats?.bySeverity.warning ?? 0;
   const level = deriveHealthLevel(errorCount, warningCount);
   const config = HEALTH_MAP[level];
-  const displayCount = level === 'error' ? errorCount : warningCount;
-  const label = buildLabel(level, displayCount);
 
-  // 3. Handlers
   function handleToggle() {
     setIsOpen((prev) => !prev);
   }
@@ -69,30 +75,28 @@ export function HealthIndicator() {
     setIsOpen(false);
   }
 
-  // 4. Render
   return (
-    <div className="relative">
+    <div className="relative flex h-full items-center">
       <button
-        aria-label={label}
-        title={label}
+        aria-label={config.label}
+        title={config.label}
         type="button"
         className={cn(
-          'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
-          'text-muted-foreground hover:bg-accent hover:text-foreground',
+          'flex items-center gap-1.5 px-3 py-1 text-xs font-medium transition-colors',
+          config.bgClass,
+          config.textClass,
         )}
         onClick={handleToggle}
       >
         <span
           aria-hidden="true"
           className={cn(
-            'h-2 w-2 shrink-0 rounded-full',
+            'h-1.5 w-1.5 shrink-0 rounded-full',
             config.dotClass,
-            level === 'healthy' && 'animate-pulse-subtle',
+            level === 'healthy' && 'animate-pulse',
           )}
         />
-        {level === 'healthy' ? null : (
-          <span>{label}</span>
-        )}
+        {config.label}
       </button>
 
       {isOpen ? (

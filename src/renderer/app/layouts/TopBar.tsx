@@ -13,12 +13,11 @@ import { Folder, FolderOpen, Minus, PanelLeft, Plus, Settings, Square, X } from 
 
 import { PROJECT_VIEWS, ROUTES, projectViewPath } from '@shared/constants';
 
-import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import { Button, Separator } from '@ui';
+import { Button } from '@ui';
 
 import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
@@ -150,41 +149,39 @@ export function TopBar() {
         <div className="flex-1" />
       </div>
 
-      {/* Utility buttons */}
-      <div className="electron-no-drag flex items-center gap-0.5 px-1">
+      {/* Utility buttons — left border per item, matching tab style */}
+      <div className="electron-no-drag flex h-full items-center">
         <WorkflowStatusBar />
-        <Button
+        <div className="border-border flex h-full items-center border-l">
+          <HealthIndicator />
+        </div>
+        <button
           aria-label="Settings"
-          size="icon-sm"
-          variant="ghost"
+          className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex h-full items-center border-l px-3"
+          type="button"
           onClick={() => void navigate({ to: ROUTES.SETTINGS })}
         >
-          <Settings />
-        </Button>
-        <TitleBarScreenshot />
-        <HealthIndicator />
-        <HubStatus />
+          <Settings className="h-3.5 w-3.5" />
+        </button>
+        <div className="border-border flex h-full items-center border-l">
+          <TitleBarScreenshot />
+        </div>
       </div>
 
-      {/* Separator */}
-      <Separator className="mx-1 self-center" orientation="vertical" />
-
-      {/* Window controls */}
+      {/* Window controls — left border on group, left border per button */}
       <div className="electron-no-drag flex h-full items-center">
-        <Button
+        <button
           aria-label="Minimize window"
-          className="text-muted-foreground hover:bg-muted hover:text-foreground h-10 w-10 rounded-none"
-          size="icon"
-          variant="ghost"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
+          type="button"
           onClick={handleMinimize}
         >
           <Minus className="h-3.5 w-3.5" />
-        </Button>
-        <Button
+        </button>
+        <button
           aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground h-10 w-10 rounded-none"
-          size="icon"
-          variant="ghost"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
+          type="button"
           onClick={handleMaximize}
         >
           {isMaximized ? (
@@ -202,16 +199,15 @@ export function TopBar() {
           ) : (
             <Square className="h-3 w-3" />
           )}
-        </Button>
-        <Button
+        </button>
+        <button
           aria-label="Close window"
-          className="text-muted-foreground hover:bg-destructive hover:text-destructive-foreground h-10 w-10 rounded-none"
-          size="icon"
-          variant="ghost"
+          className="border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground flex h-full w-10 items-center justify-center border-l"
+          type="button"
           onClick={handleClose}
         >
           <X className="h-3.5 w-3.5" />
-        </Button>
+        </button>
       </div>
     </div>
   );
