@@ -11,8 +11,6 @@ import { Camera, Check } from 'lucide-react';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { Button } from '@ui';
-
 export function TitleBarScreenshot() {
   // 1. Hooks
   const [captured, setCaptured] = useState(false);
@@ -60,18 +58,18 @@ export function TitleBarScreenshot() {
 
   // 3. Render
   return (
-    <Button
+    <button
       aria-label={captured ? 'Screenshot copied' : 'Take screenshot'}
-      size="icon-sm"
+      className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
       title={captured ? 'Screenshot copied' : 'Take screenshot'}
-      variant="ghost"
+      type="button"
       onClick={handleClick}
     >
       {captured ? (
-        <Check className="text-success" />
+        <Check className="h-3.5 w-3.5 text-success" />
       ) : (
-        <Camera />
+        <Camera className="h-3.5 w-3.5" />
       )}
-    </Button>
+    </button>
   );
 }

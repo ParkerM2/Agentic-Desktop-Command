@@ -149,20 +149,18 @@ export function TopBar() {
         <div className="flex-1" />
       </div>
 
-      {/* Utility buttons — left border per item, matching tab style */}
+      {/* Utility buttons — same w-10 sizing as window controls */}
       <div className="electron-no-drag flex h-full items-center">
         <WorkflowStatusBar />
         <button
           aria-label="Settings"
-          className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex h-full items-center border-l px-3"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
           type="button"
           onClick={() => void navigate({ to: ROUTES.SETTINGS })}
         >
           <Settings className="h-3.5 w-3.5" />
         </button>
-        <div className="border-border flex h-full items-center border-l">
-          <TitleBarScreenshot />
-        </div>
+        <TitleBarScreenshot />
         <div className="border-border flex h-full items-center border-l px-2">
           <HealthIndicator />
         </div>
