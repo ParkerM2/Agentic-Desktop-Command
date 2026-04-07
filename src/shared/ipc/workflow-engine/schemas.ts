@@ -7,6 +7,23 @@
 
 import { z } from 'zod';
 
+// ─── Agent Definition Schema ──────────────────────────────────
+
+/**
+ * Describes a single agent definition file found in .claude/agents/.
+ * The slug is derived from the filename (without the .md extension).
+ */
+export const AgentDefinitionSchema = z.object({
+  /** Slug derived from the filename, e.g. "component-engineer" */
+  slug: z.string(),
+  /** Human-readable name parsed from the first H1 heading */
+  name: z.string(),
+  /** Short description parsed from the first blockquote after the H1 */
+  description: z.string(),
+  /** Absolute path to the .md file */
+  path: z.string(),
+});
+
 // ─── State Enum Schema ────────────────────────────────────────
 
 export const WorkflowStateSchema = z.enum([
@@ -94,3 +111,7 @@ export const WorkflowErrorEventSchema = z.object({
   errorMessage: z.string(),
   timestamp: z.string(),
 });
+
+// ─── Derived Types ────────────────────────────────────────────
+
+export type AgentDefinition = z.infer<typeof AgentDefinitionSchema>;

@@ -32,4 +32,8 @@ export function registerWorkflowEngineHandlers(
   router.handle('workflow-engine.list', () =>
     Promise.resolve(workflowEngineService.list()),
   );
+
+  router.handle('workflow-engine.listAgentDefs', () =>
+    workflowEngineService.listAgentDefinitions(),
+  );
 }
