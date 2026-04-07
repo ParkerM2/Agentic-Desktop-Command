@@ -677,7 +677,7 @@ export function ProgressTaskGrid() {
       </div>
 
       {/* Grid */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto px-4 pb-4 pt-4">
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
@@ -712,10 +712,12 @@ export function ProgressTaskGrid() {
                     {expandedSlugs.has(row.original.slug) ? (
                       <TableRow key={`${row.id}-detail`}>
                         <TableCell
-                          className="bg-muted/20 p-4"
+                          className="bg-muted/20 p-0"
                           colSpan={columns.length}
                         >
-                          <ProgressTaskDetailRow task={row.original} />
+                          <div className="max-h-[60vh] overflow-y-auto">
+                            <ProgressTaskDetailRow task={row.original} />
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : null}
