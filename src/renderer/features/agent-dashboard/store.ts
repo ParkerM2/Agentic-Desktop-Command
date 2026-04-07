@@ -36,6 +36,32 @@ interface AgentDashboardState {
   // Active tab per panel (sessionId -> tab name)
   activeTabs: Map<string, string>;
   setActiveTab: (sessionId: string, tab: string) => void;
+
+  // ── Workflow Templates UI state ─────────────────────────────
+
+  /** Currently selected template ID in the template list */
+  selectedTemplateId: string | null;
+  setSelectedTemplateId: (id: string | null) => void;
+
+  /** Whether the template editor panel is open */
+  isEditorOpen: boolean;
+  openEditor: (templateId: string | null) => void;
+  closeEditor: () => void;
+
+  /** Template ID being edited (null = creating new) */
+  editingTemplateId: string | null;
+
+  /** Whether the launch dialog is open */
+  isLaunchDialogOpen: boolean;
+  openLaunchDialog: (templateId: string) => void;
+  closeLaunchDialog: () => void;
+
+  /** Template ID targeted for launch */
+  launchTemplateId: string | null;
+
+  /** Active main tab (agents | workflows) */
+  activeMainTab: 'agents' | 'workflows';
+  setActiveMainTab: (tab: 'agents' | 'workflows') => void;
 }
 
 export const useAgentDashboardStore = create<AgentDashboardState>((set) => ({
@@ -95,4 +121,22 @@ export const useAgentDashboardStore = create<AgentDashboardState>((set) => ({
       next.set(sessionId, tab);
       return { activeTabs: next };
     }),
+
+  // ── Workflow Templates UI state ─────────────────────────────
+
+  selectedTemplateId: null,
+  setSelectedTemplateId: (id) => set({ selectedTemplateId: id }),
+
+  isEditorOpen: false,
+  editingTemplateId: null,
+  openEditor: (templateId) => set({ isEditorOpen: true, editingTemplateId: templateId }),
+  closeEditor: () => set({ isEditorOpen: false, editingTemplateId: null }),
+
+  isLaunchDialogOpen: false,
+  launchTemplateId: null,
+  openLaunchDialog: (templateId) => set({ isLaunchDialogOpen: true, launchTemplateId: templateId }),
+  closeLaunchDialog: () => set({ isLaunchDialogOpen: false, launchTemplateId: null }),
+
+  activeMainTab: 'agents',
+  setActiveMainTab: (tab) => set({ activeMainTab: tab }),
 }));
