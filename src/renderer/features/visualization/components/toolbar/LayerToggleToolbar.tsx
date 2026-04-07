@@ -33,6 +33,7 @@ interface LayerToggleToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onFitView: () => void;
+  isPending?: boolean;
 }
 
 export function LayerToggleToolbar({
@@ -53,13 +54,14 @@ export function LayerToggleToolbar({
   onZoomIn,
   onZoomOut,
   onFitView,
+  isPending: _isPending,
 }: LayerToggleToolbarProps) {
   const firstFeature = features.at(0);
   const currentFeature = selectedFeature ?? firstFeature ?? '';
   const showFeatureSelector = showAgentLayer && features.length > 0;
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-border bg-background/90 p-2 shadow-md backdrop-blur-sm">
+    <div className="flex items-center gap-2">
       {/* Layer toggles */}
       <Button
         aria-pressed={showCodebaseLayer}

@@ -36,6 +36,15 @@ tracking/
 .claude/tasks/
 .claude/settings.json
 .claude/settings.local.json
+.claude/agent-contexts/
+.claude/progress/**/wave-*-spawned.json
+.claude/progress/**/wave-*-complete.json
+.claude/progress/**/all-waves-complete.json
+.claude/progress/**/preflight-complete.json
+.claude/progress/**/plan-complete.json
+.claude/progress/**/setup-complete.json
+.claude/progress/**/guardian-passed.json
+.claude/progress/**/.workflow-active
 .playwright-mcp/
 
 # Logs

@@ -3,22 +3,18 @@
  * Must be rendered inside <ReactFlowProvider> (Task 11).
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
 import {
   Background,
   BackgroundVariant,
   MiniMap,
-  Panel,
   ReactFlow,
   useReactFlow,
 } from '@xyflow/react';
-import { Network } from 'lucide-react';
 
-import { EmptyState, Spinner } from '@ui';
+import { Spinner } from '@ui';
 
-import { visualizationKeys } from '../../api/queryKeys';
 import { useAgentTeams, useCodebaseGraph } from '../../api/visualization-api';
 import {
   buildAgentRFNodes,
@@ -29,7 +25,6 @@ import {
 import { useVisualizationStore } from '../../store';
 import { EDGE_TYPES } from '../edges';
 import { NODE_TYPES } from '../nodes';
-import { LayerToggleToolbar } from '../toolbar/LayerToggleToolbar';
 
 import type { Node, NodeMouseHandler } from '@xyflow/react';
 
@@ -89,18 +84,11 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     selectedFeature,
     layoutDirection,
     searchFilter,
-    showEdgeLabels,
-    toggleCodebaseLayer,
-    toggleAgentLayer,
     setSelectedFeature,
-    setLayoutDirection,
-    setSearchFilter,
-    toggleEdgeLabels,
     openDetailPanel,
   } = useVisualizationStore();
 
-  const { fitView, zoomIn, zoomOut } = useReactFlow();
-  const queryClient = useQueryClient();
+  const { fitView } = useReactFlow();
 
   const codebaseQuery = useCodebaseGraph(projectId);
   const agentQuery = useAgentTeams(projectId);
@@ -188,27 +176,6 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     openDetailPanel(node.id);
   };
 
-  const handleRefresh = () => {
-    void queryClient.invalidateQueries({
-      queryKey: visualizationKeys.codebaseGraph(projectId),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: visualizationKeys.agentTeams(projectId),
-    });
-  };
-
-  const handleZoomIn = useCallback(() => {
-    void zoomIn({ duration: 200 });
-  }, [zoomIn]);
-
-  const handleZoomOut = useCallback(() => {
-    void zoomOut({ duration: 200 });
-  }, [zoomOut]);
-
-  const handleFitView = useCallback(() => {
-    void fitView({ padding: 0.2, duration: 300 });
-  }, [fitView]);
-
   // ─── Loading state ─────────────────────────────────────────────
 
   const isPending = codebaseQuery.isPending || agentQuery.isPending;
@@ -221,21 +188,7 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     );
   }
 
-  // ─── Empty state ───────────────────────────────────────────────
-
-  if (rfNodes.length === 0) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <EmptyState
-          description="Enable at least one layer to visualise the project."
-          icon={Network}
-          title="Nothing to display"
-        />
-      </div>
-    );
-  }
-
-  // ─── Canvas ────────────────────────────────────────────────────
+  // ─── Canvas (renders empty ReactFlow with background when no nodes) ─
 
   return (
     <div className="h-full w-full">
@@ -256,28 +209,7 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
       onNodeClick={handleNodeClick}
     >
       <Background variant={BackgroundVariant.Dots} />
-      <MiniMap nodeColor={getNodeColor} />
-      <Panel position="top-right">
-        <LayerToggleToolbar
-          features={features}
-          layoutDirection={layoutDirection}
-          searchFilter={searchFilter}
-          selectedFeature={selectedFeature}
-          showAgentLayer={showAgentLayer}
-          showCodebaseLayer={showCodebaseLayer}
-          showEdgeLabels={showEdgeLabels}
-          onFitView={handleFitView}
-          onRefresh={handleRefresh}
-          onSelectFeature={setSelectedFeature}
-          onSetLayoutDirection={setLayoutDirection}
-          onSetSearchFilter={setSearchFilter}
-          onToggleAgent={toggleAgentLayer}
-          onToggleCodebase={toggleCodebaseLayer}
-          onToggleEdgeLabels={toggleEdgeLabels}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-        />
-      </Panel>
+      {rfNodes.length > 0 ? <MiniMap nodeColor={getNodeColor} /> : null}
     </ReactFlow>
     </div>
   );

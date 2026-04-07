@@ -22,3 +22,6 @@ export { TextMessage } from './components/TextMessage';
 export { ToolCallCard } from './components/ToolCallCard';
 export { UserMessage } from './components/UserMessage';
 export { buildChatItems } from './lib/buildChatItems';
+export { RunningWorkflowsPanel } from './components/RunningWorkflowsPanel';
+export { TemplateEditorPanel } from './components/TemplateEditorPanel';
+export { TemplateListPanel } from './components/TemplateListPanel';
