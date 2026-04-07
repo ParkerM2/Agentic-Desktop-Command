@@ -8,11 +8,13 @@
  * State is serialized after every transition for crash recovery.
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdir } from 'node:fs/promises';
+import { basename, join } from 'node:path';
 
 import { v4 as uuid } from 'uuid';
 
+import type { AgentDefinition } from '@shared/ipc/workflow-engine';
 import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
 
 import { runFinalizing } from './states/finalize';
@@ -376,6 +378,47 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
 
     list(): WorkflowEngineRecord[] {
       return [...engines.values()].map(toPublicRecord);
+    },
+
+    async listAgentDefinitions(): Promise<AgentDefinition[]> {
+      const agentsDir = join(progressBaseDir, '..', '.claude', 'agents');
+      let entries: string[];
+
+      try {
+        const dirents = await readdir(agentsDir, { withFileTypes: true });
+        entries = dirents
+          .filter((d) => d.isFile() && d.name.endsWith('.md'))
+          .map((d) => d.name);
+      } catch {
+        // agents directory may not exist in all environments
+        return [];
+      }
+
+      const definitions: AgentDefinition[] = [];
+
+      for (const filename of entries) {
+        const slug = basename(filename, '.md');
+        const filePath = join(agentsDir, filename);
+
+        let content: string;
+        try {
+          content = readFileSync(filePath, 'utf-8');
+        } catch {
+          continue;
+        }
+
+        // Parse name from first H1: "# Some Name"
+        const h1Match = /^#\s+(.+)$/m.exec(content);
+        const name = h1Match ? h1Match[1].trim() : slug;
+
+        // Parse description from first blockquote line: "> some text"
+        const quoteMatch = /^>\s+(.+)$/m.exec(content);
+        const description = quoteMatch ? quoteMatch[1].trim() : '';
+
+        definitions.push({ slug, name, description, path: filePath });
+      }
+
+      return definitions.sort((a, b) => a.slug.localeCompare(b.slug));
     },
   };
 }

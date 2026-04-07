@@ -32,6 +32,7 @@ import {
   Textarea,
 } from '@ui';
 
+import { useAgentDefinitions } from '../api/useWorkflowEngine';
 import { useCreateTemplate, useUpdateTemplate, useWorkflowTemplate } from '../api/useWorkflowTemplates';
 import { useAgentDashboardStore } from '../store';
 
@@ -52,6 +53,7 @@ const DEFAULTS: TemplateFormValues = {
     maxConcurrentAgents: 3,
     spawnQaPerTask: true,
     enableGuardian: true,
+    roles: [],
   },
   qa: {
     runLint: true,
@@ -95,7 +97,7 @@ export function TemplateEditorPanel() {
         description: existing.description,
         mode: existing.mode,
         branching: { ...existing.branching },
-        team: { ...existing.team },
+        team: { ...existing.team, roles: [...existing.team.roles] },
         qa: { ...existing.qa },
         permissions: { ...existing.permissions },
         guardian: {
@@ -316,10 +318,19 @@ function BranchingSection({ values, onChange }: SectionProps) {
 
 function TeamSection({ values, onChange }: SectionProps) {
   const { team } = values;
+  const { data: agentDefs, isLoading: isLoadingDefs } = useAgentDefinitions();
 
   function update(patch: Partial<typeof team>) {
     onChange({ ...values, team: { ...team, ...patch } });
   }
+
+  function toggleRole(slug: string, checked: boolean) {
+    const current = team.roles;
+    const next = checked ? [...current, slug] : current.filter((r) => r !== slug);
+    update({ roles: next });
+  }
+
+  const selectedRoles = team.roles;
 
   return (
     <div>
@@ -346,6 +357,41 @@ function TeamSection({ values, onChange }: SectionProps) {
             onCheckedChange={(v) => update({ enableGuardian: v })}
           />
         </div>
+        <FieldGroup label="Agent roles (leave empty to allow all)">
+          {isLoadingDefs ? (
+            <div className="flex items-center gap-2 py-1">
+              <Spinner size="sm" />
+              <Label className="text-muted-foreground font-normal">Loading roles…</Label>
+            </div>
+          ) : (
+            <div className="rounded-md border p-3">
+              <div className="grid grid-cols-2 gap-1.5">
+                {(agentDefs ?? []).map((def) => (
+                  <div key={def.slug} className="flex items-center gap-2" title={def.description}>
+                    <Checkbox
+                      id={`role-${def.slug}`}
+                      checked={selectedRoles.includes(def.slug)}
+                      onCheckedChange={(v) => toggleRole(def.slug, v === true)}
+                    />
+                    <Label
+                      htmlFor={`role-${def.slug}`}
+                      className="cursor-pointer font-normal text-xs"
+                    >
+                      {def.slug}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+              {selectedRoles.length > 0 ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {selectedRoles.length} role{selectedRoles.length === 1 ? '' : 's'} selected
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-muted-foreground">All roles eligible</p>
+              )}
+            </div>
+          )}
+        </FieldGroup>
       </div>
     </div>
   );

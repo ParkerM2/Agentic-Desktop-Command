@@ -483,6 +483,7 @@ export type {
 } from './workflow-templates';
 
 export {
+  AgentDefinitionSchema,
   WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
   WorkflowEngineRecordSchema,
@@ -491,3 +492,4 @@ export {
   WorkflowStateChangedEventSchema,
   WorkflowStateSchema,
 } from './workflow-engine';
+export type { AgentDefinition } from './workflow-engine';
