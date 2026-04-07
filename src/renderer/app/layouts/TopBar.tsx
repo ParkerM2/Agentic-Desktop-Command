@@ -152,9 +152,6 @@ export function TopBar() {
       {/* Utility buttons — left border per item, matching tab style */}
       <div className="electron-no-drag flex h-full items-center">
         <WorkflowStatusBar />
-        <div className="border-border flex h-full items-center border-l">
-          <HealthIndicator />
-        </div>
         <button
           aria-label="Settings"
           className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex h-full items-center border-l px-3"
@@ -166,9 +163,12 @@ export function TopBar() {
         <div className="border-border flex h-full items-center border-l">
           <TitleBarScreenshot />
         </div>
+        <div className="border-border flex h-full items-center border-l px-2">
+          <HealthIndicator />
+        </div>
       </div>
 
-      {/* Window controls — left border on group, left border per button */}
+      {/* Window controls — left border per button */}
       <div className="electron-no-drag flex h-full items-center">
         <button
           aria-label="Minimize window"

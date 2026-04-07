@@ -28,19 +28,19 @@ interface HealthConfig {
 const HEALTH_MAP: Record<HealthLevel, HealthConfig> = {
   healthy: {
     dotClass: 'bg-success',
-    bgClass: 'bg-success/10',
+    bgClass: 'bg-success/10 border-success/30',
     textClass: 'text-success',
     label: 'Healthy',
   },
   warning: {
     dotClass: 'bg-warning',
-    bgClass: 'bg-warning/10',
+    bgClass: 'bg-warning/10 border-warning/30',
     textClass: 'text-warning',
     label: 'Warning',
   },
   error: {
     dotClass: 'bg-destructive',
-    bgClass: 'bg-destructive/10',
+    bgClass: 'bg-destructive/10 border-destructive/30',
     textClass: 'text-destructive',
     label: 'Error',
   },
@@ -82,7 +82,7 @@ export function HealthIndicator() {
         title={config.label}
         type="button"
         className={cn(
-          'flex items-center gap-1.5 px-3 py-1 text-xs font-medium transition-colors',
+          'flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
           config.bgClass,
           config.textClass,
         )}
