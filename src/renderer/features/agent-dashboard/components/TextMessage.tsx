@@ -173,20 +173,21 @@ export function TextMessage({ message, className }: TextMessageProps) {
     </div>
   );
 
-  // ── Card layout: full-width for structured content ──────
+  // ── Card layout: left-aligned for structured content ────
   if (structured) {
     return (
-      <div
-        className={cn(
-          'group relative rounded-lg border border-border/50 px-4 py-3',
-          'bg-card text-foreground',
-          message.isStreaming === true && 'animate-pulse',
-          className,
-        )}
-      >
-        <div className="max-w-none break-words">{markdownContent}</div>
-        {timestamp}
-        <div ref={endRef} />
+      <div className={cn('flex justify-start', className)}>
+        <div
+          className={cn(
+            'max-w-[80%] rounded-lg border border-border/50 px-4 py-3',
+            'bg-card text-foreground',
+            message.isStreaming === true && 'animate-pulse',
+          )}
+        >
+          <div className="max-w-none break-words">{markdownContent}</div>
+          {timestamp}
+          <div ref={endRef} />
+        </div>
       </div>
     );
   }

@@ -319,7 +319,7 @@ function SidebarHeader({ className, ...props }: ComponentProps<'div'>) {
 function SidebarFooter({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
-      className={cn('flex flex-col gap-2 p-2', className)}
+      className={cn('flex flex-col gap-2 p-2 has-[.assistant-inline]:flex-1 has-[.assistant-inline]:min-h-0 has-[.assistant-inline]:p-0', className)}
       data-sidebar="footer"
       data-slot="sidebar-footer"
       {...props}

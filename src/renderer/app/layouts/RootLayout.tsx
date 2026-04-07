@@ -24,7 +24,6 @@ import { useIpcEvent } from '@renderer/shared/hooks';
 import {
   LayoutHydrator,
   ThemeHydrator,
-  useLayoutStore,
   useRouteHistoryStore,
 } from '@renderer/shared/stores';
 
@@ -45,7 +44,6 @@ export function RootLayout() {
   const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const pushRoute = useRouteHistoryStore((s) => s.pushRoute);
-  const sidebarLayout = useLayoutStore((s) => s.sidebarLayout);
 
   // Activate error/health event listeners
   useErrorEvents();
@@ -88,7 +86,7 @@ export function RootLayout() {
       <ThemeHydrator />
       <LayoutHydrator />
       <div className="min-h-0 flex-1 overflow-hidden">
-        <LayoutWrapper layoutId={sidebarLayout}>
+        <LayoutWrapper>
           <TopBar />
           {hubStatus?.status === 'disconnected' || hubStatus?.status === 'error' ? (
             <div className="bg-destructive/10 text-destructive px-4 py-1.5 text-center text-xs">

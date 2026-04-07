@@ -26,6 +26,7 @@ import { useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
 
 import { AssistantInputBar } from './AssistantInputBar';
+import { ProjectSelector } from './ProjectSelector';
 import { WidgetMessageArea } from './WidgetMessageArea';
 
 // ─── Main Component ───────────────────────────────────────
@@ -38,6 +39,7 @@ export function SidebarAssistantButton() {
   const sendCommand = useSendCommand();
   const isThinking = useAssistantStore((s) => s.isThinking);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const setActiveProject = useLayoutStore((s) => s.setActiveProject);
 
   const isActive = mode !== 'closed';
   const showInline = mode === 'inline' && sidebarExpanded;
@@ -93,16 +95,13 @@ export function SidebarAssistantButton() {
 
   // ── Expanded sidebar + inline mode → embedded chat ──────
   return (
-    <div className="flex flex-col">
+    <div className="assistant-inline border-border flex flex-1 flex-col border-t">
       {/* Header bar */}
       <div className="flex items-center justify-between px-2 py-1.5">
-        <button
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 text-xs font-medium"
-          onClick={handleToggle}
-        >
-          <MessageSquare className="h-3.5 w-3.5" />
-          Assistant
-        </button>
+        <ProjectSelector
+          selectedProjectId={activeProjectId}
+          onSelect={(id) => setActiveProject(id)}
+        />
         <div className="flex items-center gap-0.5">
           <Button
             aria-label="Pop out to window"
@@ -126,7 +125,7 @@ export function SidebarAssistantButton() {
       </div>
 
       {/* Message area — constrained height */}
-      <div className="border-border max-h-48 min-h-24 overflow-hidden border-t">
+      <div className="border-border min-h-0 flex-1 border-t">
         <WidgetMessageArea />
       </div>
 

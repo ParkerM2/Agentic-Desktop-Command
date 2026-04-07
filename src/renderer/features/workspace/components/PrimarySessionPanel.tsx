@@ -94,7 +94,7 @@ export function PrimarySessionPanel({
       </div>
 
       {/* Message stream */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1">
         {chatItems.length === 0 ? (
           <div className="flex h-full items-center justify-center">
             <Text variant="muted">{status === 'starting' ? 'Starting session…' : 'Session ready. Send a message.'}</Text>

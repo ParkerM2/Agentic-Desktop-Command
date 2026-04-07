@@ -46,7 +46,7 @@ export function AgentChatPanel({ messages, className, onViewAgent }: AgentChatPa
 
   return (
     <ScrollArea className={cn('h-full', className)}>
-      <div className="space-y-3 p-4">
+      <div className="space-y-5 px-4 pt-4 pb-8">
         {messages.map((msg) => {
           if (msg.kind === 'text') {
             if (msg.message.role === 'user') {

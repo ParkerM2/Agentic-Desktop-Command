@@ -73,13 +73,12 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   return (
     <div
       ref={panelRef}
-      style={{ left: 'calc(var(--sidebar-width) + 0.5rem)' }}
       className={cn(
-        'fixed bottom-2 z-50',
+        'fixed bottom-4 left-4 z-50',
         'bg-card border-border flex w-[380px] flex-col rounded-lg border',
         'shadow-xl',
         'animate-slide-up-panel',
-        'max-h-[70vh]',
+        'min-h-[40vh] max-h-[70vh]',
       )}
     >
       {/* Header */}
