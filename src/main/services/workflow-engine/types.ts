@@ -5,6 +5,8 @@
  * transition map, run configuration, engine records, and typed events.
  */
 
+import type { QaVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
+
 import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { GitService } from '../git/git-service';
 import type { WorkflowTemplateService } from '../workflow-templates/workflow-template-service';
@@ -37,7 +39,7 @@ export const VALID_TRANSITIONS = new Map<WorkflowState, WorkflowState[]>([
   [WorkflowState.PLAN, [WorkflowState.SETUP, WorkflowState.ERROR]],
   [WorkflowState.SETUP, [WorkflowState.SPAWNING, WorkflowState.ERROR]],
   [WorkflowState.SPAWNING, [WorkflowState.QA_GATE, WorkflowState.ERROR]],
-  [WorkflowState.QA_GATE, [WorkflowState.GUARDIAN, WorkflowState.SPAWNING, WorkflowState.ERROR]],
+  [WorkflowState.QA_GATE, [WorkflowState.GUARDIAN, WorkflowState.FINALIZING, WorkflowState.SETUP, WorkflowState.SPAWNING, WorkflowState.ERROR]],
   [WorkflowState.GUARDIAN, [WorkflowState.FINALIZING, WorkflowState.ERROR]],
   [WorkflowState.FINALIZING, [WorkflowState.DONE, WorkflowState.ERROR]],
   [WorkflowState.DONE, []],
@@ -157,6 +159,8 @@ export interface WorkflowRuntimeRecord extends WorkflowEngineRecord {
   wavePlan: WavePlan | null;
   /** CLAUDE.md content keyed by taskSlug — set by SETUP, read by SPAWNING */
   claudeMdBySlug: Map<string, string>;
+  /** QA verdicts keyed by taskSlug — accumulated across QA rounds */
+  verdictsByTaskSlug: Map<string, QaVerdict>;
 }
 
 // ─── Service Interface ─────────────────────────────────────────
