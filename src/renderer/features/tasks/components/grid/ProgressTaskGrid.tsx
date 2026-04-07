@@ -1,8 +1,8 @@
 /**
- * ProgressTaskGrid — TanStack Table grid reading from useProgressContext.
+ * ProgressTaskGrid — TanStack Table grid for local-first progress tasks.
  *
- * Replaces the Hub-backed TaskDataGrid with a local-first progress store grid.
- * Data source: useProgressContext (src/renderer/shared/stores/progress-context-store.ts)
+ * Data source: React Query hooks (useProgressTasks, useCreateProgressTask,
+ * useRunWorkflow, useArchiveProgressTask) backed by progress IPC channels.
  */
 
 import { Fragment, useMemo, useState } from 'react';
@@ -19,7 +19,6 @@ import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Play, Plus } from 'luc
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
-import { useProgressContext } from '@renderer/shared/stores/progress-context-store';
 
 import {
   Badge,
@@ -55,6 +54,12 @@ import {
   TooltipTrigger,
 } from '@ui';
 
+import { useProgressTasks } from '../../api/useProgress';
+import {
+  useArchiveProgressTask,
+  useCreateProgressTask,
+  useRunWorkflow,
+} from '../../api/useProgressMutations';
 import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
 
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -582,13 +587,26 @@ function createProgressColumns(
 // ── Main component ─────────────────────────────────────────
 
 export function ProgressTaskGrid() {
-  // Store
-  const tasks = useProgressContext((s) => s.tasks);
-  const isLoading = useProgressContext((s) => s.isLoading);
-  const activeSessions = useProgressContext((s) => s.activeSessions);
-  const createTask = useProgressContext((s) => s.createTask);
-  const runWorkflow = useProgressContext((s) => s.runWorkflow);
-  const archiveTask = useProgressContext((s) => s.archiveTask);
+  // Data hooks
+  const { data: tasks = [], isLoading } = useProgressTasks();
+  const createTaskMutation = useCreateProgressTask();
+  const runWorkflowMutation = useRunWorkflow();
+  const archiveTaskMutation = useArchiveProgressTask();
+
+  // Derive active sessions from task status (previously maintained by ProgressContextHydrator)
+  const activeSessions = useMemo(() => {
+    const sessions: Record<string, { sessionId: string; action: string }> = {};
+    for (const task of tasks) {
+      if (task.status === 'researching') {
+        sessions[task.slug] = { sessionId: task.lastSessionId ?? '', action: 'research' };
+      } else if (task.status === 'planning') {
+        sessions[task.slug] = { sessionId: task.lastSessionId ?? '', action: 'plan' };
+      } else if (task.status === 'executing') {
+        sessions[task.slug] = { sessionId: task.lastSessionId ?? '', action: 'team' };
+      }
+    }
+    return sessions;
+  }, [tasks]);
 
   // Local UI state
   const [expandedSlugs, setExpandedSlugs] = useState<Set<string>>(new Set());
@@ -632,18 +650,18 @@ export function ProgressTaskGrid() {
     if (!selectedSlug) return;
     setRunWorkflowError(null);
     try {
-      await runWorkflow(selectedSlug);
+      await runWorkflowMutation.mutateAsync({ slug: selectedSlug });
     } catch (err) {
       setRunWorkflowError(err instanceof Error ? err.message : 'Failed to start workflow.');
     }
   }
 
   function handleInlineRunWorkflow(slug: string) {
-    void runWorkflow(slug);
+    runWorkflowMutation.mutate({ slug });
   }
 
   function handleInlineArchive(slug: string) {
-    void archiveTask(slug);
+    archiveTaskMutation.mutate({ slug });
   }
 
   // Filtered data
@@ -824,8 +842,10 @@ export function ProgressTaskGrid() {
       {/* New Task Dialog (rendered outside toolbar so it gets proper portal) */}
       <NewTaskDialog
         open={newTaskDialogOpen}
-        onCreate={createTask}
         onOpenChange={setNewTaskDialogOpen}
+        onCreate={async (slug, title, description, priority) => {
+          await createTaskMutation.mutateAsync({ slug, title, description, priority });
+        }}
       />
     </div>
   );
