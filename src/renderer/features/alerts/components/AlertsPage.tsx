@@ -150,19 +150,19 @@ export function AlertsPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title description="Manage reminders, deadlines, and notifications">
-            Alerts
-          </PageHeader.Title>
-          <PageHeader.Actions>
-            <Button onClick={openCreateModal}>
-              <Plus className="h-4 w-4" />
-              New Alert
-            </Button>
-          </PageHeader.Actions>
-        </PageHeader.Row>
-        <PageHeader.Tabs defaultValue="active">
+      <PageHeader.Tabs defaultValue="active">
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Manage reminders, deadlines, and notifications">
+              Alerts
+            </PageHeader.Title>
+            <PageHeader.Actions>
+              <Button onClick={openCreateModal}>
+                <Plus className="h-4 w-4" />
+                New Alert
+              </Button>
+            </PageHeader.Actions>
+          </PageHeader.Row>
           <PageHeader.TabList>
             {tabs.map((tab) => (
               <PageHeader.Tab key={tab.id} value={tab.id}>
@@ -175,24 +175,23 @@ export function AlertsPage() {
               </PageHeader.Tab>
             ))}
           </PageHeader.TabList>
-
-          <PageContent>
-            {isLoading ? (
-              <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
-                Loading alerts...
-              </div>
-            ) : (
-              <>
-                <PageHeader.TabContent value="active">{renderAlertList(activeAlerts)}</PageHeader.TabContent>
-                <PageHeader.TabContent value="dismissed">{renderAlertList(dismissedAlerts)}</PageHeader.TabContent>
-                <PageHeader.TabContent value="recurring">
-                  <RecurringAlerts alerts={alerts} />
-                </PageHeader.TabContent>
-              </>
-            )}
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+        </PageHeader>
+        <PageContent>
+          {isLoading ? (
+            <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
+              Loading alerts...
+            </div>
+          ) : (
+            <>
+              <PageHeader.TabContent value="active">{renderAlertList(activeAlerts)}</PageHeader.TabContent>
+              <PageHeader.TabContent value="dismissed">{renderAlertList(dismissedAlerts)}</PageHeader.TabContent>
+              <PageHeader.TabContent value="recurring">
+                <RecurringAlerts alerts={alerts} />
+              </PageHeader.TabContent>
+            </>
+          )}
+        </PageContent>
+      </PageHeader.Tabs>
 
       <CreateAlertModal />
     </PageLayout>

@@ -27,16 +27,16 @@ export function CommunicationsPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title description="Manage your Slack and Discord integrations">
-            Communications
-          </PageHeader.Title>
-        </PageHeader.Row>
-        <PageHeader.Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as TabId)}
-        >
+      <PageHeader.Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as TabId)}
+      >
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Manage your Slack and Discord integrations">
+              Communications
+            </PageHeader.Title>
+          </PageHeader.Row>
           <PageHeader.TabList>
             {TABS.map((tab) => (
               <PageHeader.Tab key={tab.id} value={tab.id}>
@@ -44,26 +44,25 @@ export function CommunicationsPage() {
               </PageHeader.Tab>
             ))}
           </PageHeader.TabList>
-
-          <PageContent>
-            <PageHeader.TabContent value="overview">
-              <div className="space-y-4">
-                <SlackPanel />
-                <DiscordPanel />
-              </div>
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="slack">
+        </PageHeader>
+        <PageContent>
+          <PageHeader.TabContent value="overview">
+            <div className="space-y-4">
               <SlackPanel />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="discord">
               <DiscordPanel />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="rules">
-              <NotificationRules />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+            </div>
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="slack">
+            <SlackPanel />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="discord">
+            <DiscordPanel />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="rules">
+            <NotificationRules />
+          </PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }

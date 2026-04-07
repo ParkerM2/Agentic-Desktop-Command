@@ -85,11 +85,11 @@ export function SettingsPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title>Settings</PageHeader.Title>
-        </PageHeader.Row>
-        <PageHeader.Tabs defaultValue="display">
+      <PageHeader.Tabs defaultValue="display">
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title>Settings</PageHeader.Title>
+          </PageHeader.Row>
           <PageHeader.TabList>
             {SETTINGS_TABS.map((tab) => (
               <PageHeader.Tab key={tab.id} value={tab.id}>
@@ -98,83 +98,82 @@ export function SettingsPage() {
               </PageHeader.Tab>
             ))}
           </PageHeader.TabList>
+        </PageHeader>
+        <PageContent>
+          <PageHeader.TabContent value="display">
+            <LayoutSection />
+            <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
+            <BackgroundSettings />
+            <ColorThemeSection currentTheme={colorTheme} />
+            <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
+            <TypographySection
+              currentFontFamily={currentFontFamily}
+              currentFontSize={currentFontSize}
+              onFontFamilyChange={handleFontFamilyChange}
+              onFontSizeChange={handleFontSizeChange}
+            />
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Language
+              </h2>
+              <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
+                <span>English</span>
+                <span className="text-muted-foreground text-xs">Only language available</span>
+              </div>
+            </section>
+          </PageHeader.TabContent>
 
-          <PageContent>
-            <PageHeader.TabContent value="display">
-              <LayoutSection />
-              <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
-              <BackgroundSettings />
-              <ColorThemeSection currentTheme={colorTheme} />
-              <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
-              <TypographySection
-                currentFontFamily={currentFontFamily}
-                currentFontSize={currentFontSize}
-                onFontFamilyChange={handleFontFamilyChange}
-                onFontSizeChange={handleFontSizeChange}
-              />
-              <section className="mb-8">
-                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                  Language
-                </h2>
-                <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
-                  <span>English</span>
-                  <span className="text-muted-foreground text-xs">Only language available</span>
-                </div>
-              </section>
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="profile">
+            <ProfileSection />
+            <section className="mb-8">
+              <WorkspacesTab />
+            </section>
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="profile">
-              <ProfileSection />
-              <section className="mb-8">
-                <WorkspacesTab />
-              </section>
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="hub">
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Hub Connection
+              </h2>
+              <HubSettings />
+            </section>
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="hub">
-              <section className="mb-8">
-                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                  Hub Connection
-                </h2>
-                <HubSettings />
-              </section>
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="integrations">
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Claude Code
+              </h2>
+              <ClaudeAuthSettings />
+            </section>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                GitHub
+              </h2>
+              <GitHubAuthSettings />
+            </section>
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                OAuth Providers
+              </h2>
+              <OAuthProviderSettings />
+            </section>
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="integrations">
-              <section className="mb-8">
-                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                  Claude Code
-                </h2>
-                <ClaudeAuthSettings />
-              </section>
-              <section className="mb-8">
-                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                  GitHub
-                </h2>
-                <GitHubAuthSettings />
-              </section>
-              <section className="mb-8">
-                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                  OAuth Providers
-                </h2>
-                <OAuthProviderSettings />
-              </section>
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="storage">
+            <section className="mb-8">
+              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+                Storage Management
+              </h2>
+              <StorageManagementSection />
+            </section>
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="storage">
-              <section className="mb-8">
-                <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                  Storage Management
-                </h2>
-                <StorageManagementSection />
-              </section>
-            </PageHeader.TabContent>
-
-            <PageHeader.TabContent value="advanced">
-              <AdvancedTab settings={settings} updateSettings={updateSettings} />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+          <PageHeader.TabContent value="advanced">
+            <AdvancedTab settings={settings} updateSettings={updateSettings} />
+          </PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }

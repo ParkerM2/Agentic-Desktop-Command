@@ -28,16 +28,16 @@ export function PlanningPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title description="Roadmap, ideas, and project analytics">
-            Planning
-          </PageHeader.Title>
-        </PageHeader.Row>
-        <PageHeader.Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as PlanningTab)}
-        >
+      <PageHeader.Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as PlanningTab)}
+      >
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Roadmap, ideas, and project analytics">
+              Planning
+            </PageHeader.Title>
+          </PageHeader.Row>
           <PageHeader.TabList>
             {TABS.map((tab) => (
               <PageHeader.Tab key={tab.id} value={tab.id}>
@@ -46,20 +46,19 @@ export function PlanningPage() {
               </PageHeader.Tab>
             ))}
           </PageHeader.TabList>
-
-          <PageContent className="p-0">
-            <PageHeader.TabContent value="roadmap">
-              <RoadmapPage />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="ideation">
-              <IdeationPage />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="insights">
-              <InsightsPage />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+        </PageHeader>
+        <PageContent className="p-0">
+          <PageHeader.TabContent value="roadmap">
+            <RoadmapPage />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="ideation">
+            <IdeationPage />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="insights">
+            <InsightsPage />
+          </PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }

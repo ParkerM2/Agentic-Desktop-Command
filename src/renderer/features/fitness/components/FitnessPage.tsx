@@ -25,28 +25,28 @@ export function FitnessPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title description="Track workouts, body composition, and goals">
-            Fitness
-          </PageHeader.Title>
-          <PageHeader.Actions>
-            <Button
-              type="button"
-              onClick={() => {
-                setActiveTab('workouts');
-                setShowWorkoutForm(true);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Log Workout
-            </Button>
-          </PageHeader.Actions>
-        </PageHeader.Row>
-        <PageHeader.Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-        >
+      <PageHeader.Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+      >
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Track workouts, body composition, and goals">
+              Fitness
+            </PageHeader.Title>
+            <PageHeader.Actions>
+              <Button
+                type="button"
+                onClick={() => {
+                  setActiveTab('workouts');
+                  setShowWorkoutForm(true);
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Log Workout
+              </Button>
+            </PageHeader.Actions>
+          </PageHeader.Row>
           <PageHeader.TabList>
             <PageHeader.Tab value="overview">
               <TrendingUp className="h-4 w-4" />
@@ -65,23 +65,22 @@ export function FitnessPage() {
               Goals
             </PageHeader.Tab>
           </PageHeader.TabList>
-
-          <PageContent>
-            <PageHeader.TabContent value="overview">
-              <OverviewTab />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="workouts">
-              <WorkoutsTab showForm={showWorkoutForm} />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="body">
-              <BodyComposition />
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="goals">
-              <GoalsPanel />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+        </PageHeader>
+        <PageContent>
+          <PageHeader.TabContent value="overview">
+            <OverviewTab />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="workouts">
+            <WorkoutsTab showForm={showWorkoutForm} />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="body">
+            <BodyComposition />
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="goals">
+            <GoalsPanel />
+          </PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }

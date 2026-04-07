@@ -37,16 +37,16 @@ export function ProductivityPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title description="Calendar, music, and productivity tools in one place">
-            Productivity
-          </PageHeader.Title>
-        </PageHeader.Row>
-        <PageHeader.Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-        >
+      <PageHeader.Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+      >
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Calendar, music, and productivity tools in one place">
+              Productivity
+            </PageHeader.Title>
+          </PageHeader.Row>
           <PageHeader.TabList>
             {TABS.map((tab) => (
               <PageHeader.Tab key={tab.id} value={tab.id}>
@@ -55,45 +55,44 @@ export function ProductivityPage() {
               </PageHeader.Tab>
             ))}
           </PageHeader.TabList>
-
-          <PageContent>
-            <PageHeader.TabContent value="overview">
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <CalendarWidget />
-                <SpotifyWidget />
-              </div>
-            </PageHeader.TabContent>
-
-            <PageHeader.TabContent value="calendar">
+        </PageHeader>
+        <PageContent>
+          <PageHeader.TabContent value="overview">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <CalendarWidget />
-            </PageHeader.TabContent>
-
-            <PageHeader.TabContent value="spotify">
               <SpotifyWidget />
-            </PageHeader.TabContent>
+            </div>
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="briefing">
-              <BriefingPage />
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="calendar">
+            <CalendarWidget />
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="notes">
-              <NotesPage />
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="spotify">
+            <SpotifyWidget />
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="planner">
-              <PlannerPage />
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="briefing">
+            <BriefingPage />
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="alerts">
-              <AlertsPage />
-            </PageHeader.TabContent>
+          <PageHeader.TabContent value="notes">
+            <NotesPage />
+          </PageHeader.TabContent>
 
-            <PageHeader.TabContent value="comms">
-              <CommunicationsPage />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+          <PageHeader.TabContent value="planner">
+            <PlannerPage />
+          </PageHeader.TabContent>
+
+          <PageHeader.TabContent value="alerts">
+            <AlertsPage />
+          </PageHeader.TabContent>
+
+          <PageHeader.TabContent value="comms">
+            <CommunicationsPage />
+          </PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }

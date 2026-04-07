@@ -63,16 +63,16 @@ export function ToolsPage() {
 
   return (
     <PageLayout>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title description="Workflow configuration and Claude tooling">
-            Tools
-          </PageHeader.Title>
-        </PageHeader.Row>
-        <PageHeader.Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-        >
+      <PageHeader.Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+      >
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Workflow configuration and Claude tooling">
+              Tools
+            </PageHeader.Title>
+          </PageHeader.Row>
           <PageHeader.TabList>
             <PageHeader.Tab value="config">
               <Cog className="h-4 w-4" />
@@ -83,32 +83,31 @@ export function ToolsPage() {
               ADC Workflow
             </PageHeader.Tab>
           </PageHeader.TabList>
-
-          <PageContent>
-            <PageHeader.TabContent value="config">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {TOOL_CARDS.map((card) => (
-                  <Card key={card.name} className="opacity-70">
-                    <CardHeader>
-                      <div className="mb-2 flex items-center gap-2">
-                        <card.icon className="text-muted-foreground h-5 w-5" />
-                        <CardTitle>{card.name}</CardTitle>
-                        <Badge className="ml-auto text-xs" variant="outline">
-                          Coming soon
-                        </Badge>
-                      </div>
-                      <CardDescription>{card.description}</CardDescription>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            </PageHeader.TabContent>
-            <PageHeader.TabContent value="workflow">
-              <WorkflowEditor />
-            </PageHeader.TabContent>
-          </PageContent>
-        </PageHeader.Tabs>
-      </PageHeader>
+        </PageHeader>
+        <PageContent>
+          <PageHeader.TabContent value="config">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {TOOL_CARDS.map((card) => (
+                <Card key={card.name} className="opacity-70">
+                  <CardHeader>
+                    <div className="mb-2 flex items-center gap-2">
+                      <card.icon className="text-muted-foreground h-5 w-5" />
+                      <CardTitle>{card.name}</CardTitle>
+                      <Badge className="ml-auto text-xs" variant="outline">
+                        Coming soon
+                      </Badge>
+                    </div>
+                    <CardDescription>{card.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="workflow">
+            <WorkflowEditor />
+          </PageHeader.TabContent>
+        </PageContent>
+      </PageHeader.Tabs>
     </PageLayout>
   );
 }
