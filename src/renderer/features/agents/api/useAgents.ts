@@ -16,7 +16,6 @@ export function useAllAgents() {
     queryKey: agentKeys.all,
     queryFn: () => ipc('agent.listOrchestratorSessions', {}),
     staleTime: 5_000,
-    refetchInterval: 10_000,
   });
 }
 
