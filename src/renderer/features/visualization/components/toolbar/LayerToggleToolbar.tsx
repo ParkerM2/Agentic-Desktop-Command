@@ -1,9 +1,11 @@
 /**
  * LayerToggleToolbar — controls for codebase/agent layer visibility,
- * feature selection, layout direction, search, zoom, and edge labels.
+ * feature selection, layout direction, search, and edge labels.
+ *
+ * Zoom controls are handled by React Flow's built-in <Controls /> component.
  */
 
-import { Maximize, Minus, Plus, RefreshCw, Search, Tag } from 'lucide-react';
+import { RefreshCw, Search, Tag } from 'lucide-react';
 
 import {
   Button,
@@ -30,9 +32,6 @@ interface LayerToggleToolbarProps {
   onSetSearchFilter: (s: string) => void;
   showEdgeLabels: boolean;
   onToggleEdgeLabels: () => void;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-  onFitView: () => void;
   isPending?: boolean;
 }
 
@@ -51,9 +50,6 @@ export function LayerToggleToolbar({
   onSetSearchFilter,
   showEdgeLabels,
   onToggleEdgeLabels,
-  onZoomIn,
-  onZoomOut,
-  onFitView,
   isPending: _isPending,
 }: LayerToggleToolbarProps) {
   const firstFeature = features.at(0);
@@ -140,32 +136,6 @@ export function LayerToggleToolbar({
 
       {/* Separator */}
       <div className="mx-1 h-6 w-px bg-border" />
-
-      {/* Zoom controls */}
-      <Button
-        aria-label="Zoom in"
-        size="icon"
-        variant="ghost"
-        onClick={onZoomIn}
-      >
-        <Plus className="h-4 w-4" />
-      </Button>
-      <Button
-        aria-label="Zoom out"
-        size="icon"
-        variant="ghost"
-        onClick={onZoomOut}
-      >
-        <Minus className="h-4 w-4" />
-      </Button>
-      <Button
-        aria-label="Fit view"
-        size="icon"
-        variant="ghost"
-        onClick={onFitView}
-      >
-        <Maximize className="h-4 w-4" />
-      </Button>
 
       {/* Edge label toggle */}
       <Button
