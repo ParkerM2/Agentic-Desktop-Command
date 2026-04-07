@@ -18,7 +18,7 @@ interface ProgressContextState {
   tasks: ProgressTask[];
   archivedCount: number;
   /** slug → active action session */
-  activeSessions: Map<string, { sessionId: string; action: string }>;
+  activeSessions: Partial<Record<string, { sessionId: string; action: string }>>;
   isLoading: boolean;
 
   // ── Actions (call IPC) ──────────────────────────────────
@@ -48,7 +48,7 @@ const noop = async (): Promise<void> => {
 export const useProgressContext = create<ProgressContextState>()(() => ({
   tasks: [],
   archivedCount: 0,
-  activeSessions: new Map(),
+  activeSessions: {},
   isLoading: false,
 
   createTask: (_slug, _title, _description, _priority) => {

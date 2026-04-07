@@ -83,7 +83,7 @@ function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: Cont
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       {expanded ? null : (
-        <Text size="sm" className="whitespace-pre-wrap font-mono text-muted-foreground">
+        <Text className="whitespace-pre-wrap font-mono text-muted-foreground" size="sm">
           {truncate(content, previewLength)}
         </Text>
       )}
@@ -93,7 +93,7 @@ function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: Cont
         </div>
       </CollapsibleContent>
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs text-muted-foreground">
+        <Button className="mt-2 h-7 px-2 text-xs text-muted-foreground" size="sm" variant="ghost">
           {expanded ? 'Show less' : 'Show full'}
         </Button>
       </CollapsibleTrigger>
@@ -124,11 +124,11 @@ function ResearchSection({
 
   const researchBody = isResearching ? (
     <Flex align="center" gap="sm">
-      <Spinner size="sm" className="text-muted-foreground" />
+      <Spinner className="text-muted-foreground" size="sm" />
       <Text size="sm" variant="muted">Researching...</Text>
     </Flex>
   ) : (
-    <Button variant="outline" size="sm" onClick={onStart} disabled={isActionActive}>
+    <Button disabled={isActionActive} size="sm" variant="outline" onClick={onStart}>
       Deep Research
     </Button>
   );
@@ -174,15 +174,15 @@ function PlanSection({
 
   const planBody = isPlanning ? (
     <Flex align="center" gap="sm">
-      <Spinner size="sm" className="text-muted-foreground" />
+      <Spinner className="text-muted-foreground" size="sm" />
       <Text size="sm" variant="muted">Creating plan...</Text>
     </Flex>
   ) : (
     <Button
-      variant="outline"
-      size="sm"
-      onClick={onCreatePlan}
       disabled={isActionActive || !task.hasResearch}
+      size="sm"
+      variant="outline"
+      onClick={onCreatePlan}
     >
       Create Plan
     </Button>
@@ -199,11 +199,11 @@ function PlanSection({
             onToggle={onToggle}
           />
           <Button
-            variant="primary"
-            size="sm"
-            onClick={onSpinUpTeam}
-            disabled={isActionActive}
             className="self-start"
+            disabled={isActionActive}
+            size="sm"
+            variant="primary"
+            onClick={onSpinUpTeam}
           >
             Spin Up Team
           </Button>
@@ -232,15 +232,15 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamS
 
   const teamBody = isExecuting ? (
     <Flex align="center" gap="sm">
-      <Spinner size="sm" className="text-muted-foreground" />
+      <Spinner className="text-muted-foreground" size="sm" />
       <Text size="sm" variant="muted">Spinning up team...</Text>
     </Flex>
   ) : (
     <Button
-      variant="outline"
-      size="sm"
-      onClick={onSpinUpTeam}
       disabled={isActionActive || !task.hasPlan}
+      size="sm"
+      variant="outline"
+      onClick={onSpinUpTeam}
     >
       Spin Up Team
     </Button>
@@ -251,13 +251,13 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamS
       <Heading as="h4">Team Execution</Heading>
       {task.hasTeamTasks ? (
         <Flex align="center" gap="sm">
-          <Badge variant="secondary" size="sm">
+          <Badge size="sm" variant="secondary">
             {task.teamTaskCount} agent {task.teamTaskCount === 1 ? 'task' : 'tasks'}
           </Badge>
           {isComplete ? (
-            <Badge variant="success" size="sm">{teamStatusLabel}</Badge>
+            <Badge size="sm" variant="success">{teamStatusLabel}</Badge>
           ) : null}
-          <Button variant="ghost" size="sm" asChild>
+          <Button asChild size="sm" variant="ghost">
             <a href="/visualization">View in Visualization</a>
           </Button>
         </Flex>
@@ -265,7 +265,7 @@ function TeamSection({ task, activeAction, isActionActive, onSpinUpTeam }: TeamS
         teamBody
       )}
       {isComplete ? (
-        <Badge variant="success" size="md" className="self-start">
+        <Badge className="self-start" size="md" variant="success">
           {completionLabel}
         </Badge>
       ) : null}
@@ -288,7 +288,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   const [researchExpanded, setResearchExpanded] = useState(false);
   const [planExpanded, setPlanExpanded] = useState(false);
 
-  const activeSession = activeSessions.get(task.slug);
+  const activeSession = activeSessions[task.slug];
   const activeAction = activeSession?.action;
   const isActionActive = activeAction !== undefined;
 
@@ -308,18 +308,18 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   }
 
   return (
-    <Stack gap="md" className="px-4 py-4">
+    <Stack className="px-4 py-4" gap="md">
 
       {/* ── Error Banner ─────────────────────────────── */}
       {task.status === 'error' ? (
-        <InlineAlert variant="error" title="Pipeline failed">
-          <Flex align="center" gap="sm" className="mt-2">
+        <InlineAlert title="Pipeline failed" variant="error">
+          <Flex align="center" className="mt-2" gap="sm">
             <Text size="sm">An error occurred during pipeline execution.</Text>
             <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleRetry}
               disabled={isActionActive}
+              size="sm"
+              variant="destructive"
+              onClick={handleRetry}
             >
               Retry
             </Button>
@@ -332,25 +332,25 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
 
         {/* Jira */}
         {hasJira ? (
-          <Button variant="outline" size="sm" asChild>
-            <a href={task.jiraUrl} target="_blank" rel="noreferrer">
-              <Badge variant="info" size="sm">{task.jiraTicket}</Badge>
+          <Button asChild size="sm" variant="outline">
+            <a href={task.jiraUrl} rel="noreferrer" target="_blank">
+              <Badge size="sm" variant="info">{task.jiraTicket}</Badge>
             </a>
           </Button>
         ) : (
-          <Button variant="outline" size="sm" disabled>
+          <Button disabled size="sm" variant="outline">
             Link Ticket
           </Button>
         )}
 
         {/* PR */}
         {hasPr ? (
-          <Button variant="outline" size="sm" asChild>
-            <a href={task.prUrl} target="_blank" rel="noreferrer">
+          <Button asChild size="sm" variant="outline">
+            <a href={task.prUrl} rel="noreferrer" target="_blank">
               <Flex align="center" gap="sm">
                 <Text size="sm">#{task.prNumber}</Text>
                 {task.prStatus === undefined ? null : (
-                  <Badge variant={prStatusVariant(task.prStatus)} size="sm">
+                  <Badge size="sm" variant={prStatusVariant(task.prStatus)}>
                     {task.prStatus}
                   </Badge>
                 )}
@@ -358,25 +358,25 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
             </a>
           </Button>
         ) : (
-          <Button variant="outline" size="sm" disabled>
+          <Button disabled size="sm" variant="outline">
             Link PR
           </Button>
         )}
 
-        <Flex gap="sm" wrap="nowrap" className="ml-auto">
+        <Flex className="ml-auto" gap="sm" wrap="nowrap">
           <Button
-            variant="primary"
-            size="sm"
-            onClick={() => { void runWorkflow(task.slug); }}
             disabled={isActionActive}
+            size="sm"
+            variant="primary"
+            onClick={() => { void runWorkflow(task.slug); }}
           >
             Run Workflow
           </Button>
           <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => { void archiveTask(task.slug); }}
             disabled={isActionActive}
+            size="sm"
+            variant="destructive"
+            onClick={() => { void archiveTask(task.slug); }}
           >
             Archive
           </Button>
@@ -387,34 +387,34 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
 
       {/* ── Research Section ─────────────────────────── */}
       <ResearchSection
-        task={task}
         activeAction={activeAction}
-        isActionActive={isActionActive}
         expanded={researchExpanded}
-        onToggle={() => { setResearchExpanded((prev) => !prev); }}
+        isActionActive={isActionActive}
+        task={task}
         onStart={() => { void startResearch(task.slug); }}
+        onToggle={() => { setResearchExpanded((prev) => !prev); }}
       />
 
       <Separator />
 
       {/* ── Plan Section ─────────────────────────────── */}
       <PlanSection
-        task={task}
         activeAction={activeAction}
-        isActionActive={isActionActive}
         expanded={planExpanded}
-        onToggle={() => { setPlanExpanded((prev) => !prev); }}
+        isActionActive={isActionActive}
+        task={task}
         onCreatePlan={() => { void createPlan(task.slug); }}
         onSpinUpTeam={() => { void spinUpTeam(task.slug); }}
+        onToggle={() => { setPlanExpanded((prev) => !prev); }}
       />
 
       <Separator />
 
       {/* ── Team Section ─────────────────────────────── */}
       <TeamSection
-        task={task}
         activeAction={activeAction}
         isActionActive={isActionActive}
+        task={task}
         onSpinUpTeam={() => { void spinUpTeam(task.slug); }}
       />
 
