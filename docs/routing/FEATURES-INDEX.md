@@ -9,10 +9,10 @@
 
 | Category | Count |
 |----------|-------|
-| Renderer Features | 36 |
-| Main Process Services | 33 |
-| IPC Handler Files | 42 |
-| IPC Domain Folders | 28 |
+| Renderer Features | 37 |
+| Main Process Services | 34 |
+| IPC Handler Files | 43 |
+| IPC Domain Folders | 29 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -56,6 +56,7 @@ Location: `src/renderer/features/`
 | **visualization** | Codebase structure and agent activity graph (React Flow) | VisualizationPage, VisualizationCanvas (React Flow + dagre layout), LayerToggleToolbar, FileGroupNode, FileNode, AgentTaskNode, FeatureGroupNode, GuardianNode, DataFlowEdge, AgentScopeEdge, NodeDetailPanel | `visualization.getCodebaseGraph`, `visualization.getAgentTeams`, `visualization.getSessionLog` |
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
+| **tasks (progress)** | FS-backed task pipeline grid. Reads from `useProgressContext` (not Hub). Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
 
 ### Feature Module Structure
 
@@ -119,6 +120,7 @@ Location: `src/main/services/`
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
 | **assistant/cross-device-query** | Query other ADC instances via Hub API | query | - |
 | **data-management** | Storage lifecycle auditing, cleanup, inspection. Sub-modules: `store-registry.ts` (22+ data store entries), `store-cleaners.ts` (per-store cleanup functions), `cleanup-service.ts` (periodic orchestrator), `storage-inspector.ts` (disk usage calculator), `crash-recovery.ts` (orphan detection), `data-export.ts` (archive export/import), `index.ts` (barrel) | runCleanup, getUsage, getRegistry, getRetention, updateRetention, clearStore, exportData, importData | `event:dataManagement.cleanupComplete` |
+| **progress** | FS-backed task pipeline service. Scans `progress/` directory (slug-based subdirs with `research/`, `plans/`, `tasks/` sub-structure). Provides CRUD, status reconciliation (frontmatter vs. directory contents), and Research→Plan→Team agent session spawning. FS watcher emits real-time task update events. Factory: `createProgressService(projectPath, agentManagerService)`. Sub-modules: `task-file-io.ts` (frontmatter read/write), `log-cleanup.ts` (session JSONL cleanup). | listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction, runLogCleanup | `event:progress.taskUpdated`, `event:progress.taskCreated`, `event:progress.taskArchived`, `event:progress.actionStarted`, `event:progress.actionCompleted`, `event:progress.actionFailed`, `event:progress.workflowStep` |
 
 ### Main Process Libraries
 
@@ -179,6 +181,7 @@ Location: `src/main/ipc/handlers/`
 | `security-handlers.ts` | security.getSettings, security.updateSettings, security.exportAudit |
 | `agent-orchestrator-handlers.ts` | agent.startPlanning, agent.startExecution, agent.replanWithFeedback, agent.killSession, agent.restartFromCheckpoint, agent.getOrchestratorSession, agent.listOrchestratorSessions |
 | `window-handlers.ts` | window.minimize, window.maximize, window.close, window.isMaximized |
+| `progress-handlers.ts` | progress.* (listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction, runLogCleanup + 7 event channels) |
 
 ### IPC Utilities (`src/main/ipc/`)
 
@@ -226,6 +229,7 @@ Location: `src/main/ipc/handlers/`
 | `health.ts` | ErrorEntry, ErrorStats, ErrorSeverity, ErrorTier, ErrorCategory, ErrorContext, ServiceHealth, ServiceHealthStatus, HealthStatus |
 | `data-management.ts` | DataLifecycle, RetentionPolicy, DataStoreEntry, DataStoreUsage, DataRetentionSettings, DataExportArchive |
 | `security.ts` | SecuritySettings, SecurityMode, CspMode, SecurityAuditExport, DEFAULT_SECURITY_SETTINGS |
+| `progress.ts` | ProgressTask, ProgressStatus (`backlog \| researching \| research_done \| planning \| plan_ready \| executing \| review \| done \| archived \| error`), ProgressPriority (`low \| normal \| high \| urgent`) |
 
 ### Route Groups (`src/renderer/app/routes/`)
 
@@ -301,6 +305,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `window` | Window controls (minimize, maximize, close, isMaximized) |
 | `tracker` | Plan tracker (list, get, update docs/tracker.json via IPC) |
 | `workflow` | Workflow execution |
+| `progress` | Task pipeline CRUD + Research→Plan→Team actions + FS-watch events (13 invoke + 7 event channels) |
 
 Each domain folder contains:
 ```

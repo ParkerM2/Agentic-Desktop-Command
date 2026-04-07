@@ -30,6 +30,78 @@
 - File placement rules: `docs/patterns/CODEBASE-GUARDIAN.md`
 - Plan status: `docs/tracker.json`
 
+## Progress Task Pipeline
+
+Local-first task management backed by the `progress/` filesystem. **The task list grid reads from `progress.*` IPC channels — NOT `hub.tasks.*`.**
+
+**IPC domain:** `progress`
+**Contract:** `src/shared/ipc/progress/contract.ts`
+**Types:** `src/shared/types/progress.ts` — `ProgressTask`, `ProgressStatus`, `ProgressPriority`
+**Service:** `src/main/services/progress/progress-service.ts` — `createProgressService(projectPath, agentManagerService)`
+**Handler:** `src/main/ipc/handlers/progress-handlers.ts`
+**Renderer store:** `src/renderer/shared/stores/progress-context-store.ts` — `useProgressContext()`
+**Hydrator:** `src/renderer/shared/stores/ProgressContextHydrator.tsx` (mounted in RootLayout)
+
+### `progress/` Directory Structure
+
+```
+progress/
+├── <slug>/
+│   ├── task.md              ← root file (or description.md / ticket.md) — YAML frontmatter
+│   ├── research/
+│   │   └── research.md
+│   ├── plans/
+│   │   └── plan.md
+│   └── tasks/
+│       └── task-1.md        ← team subtask files
+└── archived/
+    └── <slug>/
+```
+
+### Invoke Channels (13 total)
+
+| Channel | Input | Output | Description |
+|---------|-------|--------|-------------|
+| `progress.listTasks` | `{}` | `ProgressTask[]` | List all non-archived tasks |
+| `progress.getTask` | `{ slug }` | `ProgressTask \| null` | Get single task with full content |
+| `progress.createTask` | `{ slug, title, description, priority? }` | `ProgressTask` | Create `progress/<slug>/task.md` |
+| `progress.updateTask` | `{ slug, updates }` | `ProgressTask` | Rewrite frontmatter fields |
+| `progress.archiveTask` | `{ slug }` | `{ success }` | Move to `progress/archived/<slug>/` |
+| `progress.deleteTask` | `{ slug }` | `{ success }` | Remove directory entirely |
+| `progress.listArchived` | `{}` | `ProgressTask[]` | List archived tasks |
+| `progress.startResearch` | `{ slug }` | `{ sessionId }` | Spawn research agent session |
+| `progress.createPlan` | `{ slug }` | `{ sessionId }` | Spawn planning agent session |
+| `progress.spinUpTeam` | `{ slug }` | `{ sessionId, action }` | Spawn team-lead to decompose plan |
+| `progress.runWorkflow` | `{ slug }` | `{ started: true }` | Run full Research→Plan→Team pipeline |
+| `progress.cancelAction` | `{ slug }` | `{ success }` | Stop active agent session for task |
+| `progress.runLogCleanup` | `{}` | `{ deletedFiles }` | Delete JSONL session logs older than 7 days |
+
+### Event Channels (7 total)
+
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:progress.taskUpdated` | `{ slug, task }` | Any frontmatter or directory change |
+| `event:progress.taskCreated` | `{ slug, task }` | Task directory created |
+| `event:progress.taskArchived` | `{ slug }` | Task moved to archived/ |
+| `event:progress.actionStarted` | `{ slug, action, sessionId }` | Research/plan/team session spawned |
+| `event:progress.actionCompleted` | `{ slug, action }` | Session exited with code 0 |
+| `event:progress.actionFailed` | `{ slug, action, error }` | Session exited non-zero |
+| `event:progress.workflowStep` | `{ slug, step, status }` | Step progress during runWorkflow |
+
+### Status Flow
+
+```
+backlog → researching → research_done → planning → plan_ready → executing → review → done → archived
+                                                                                    ↘ error
+```
+
+Status is stored in frontmatter AND reconciled from directory contents on every read:
+- `research/research.md` exists → bumped to at least `research_done`
+- `plans/plan.md` exists → bumped to at least `plan_ready`
+- `tasks/task-*.md` exist → bumped to at least `executing`
+
+Frontmatter wins only if it represents higher progress than the directory state.
+
 ## Skills Available
 
 Use installed skills proactively — invoke before doing work manually:
