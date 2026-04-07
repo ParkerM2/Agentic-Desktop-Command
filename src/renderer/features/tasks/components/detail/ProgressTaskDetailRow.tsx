@@ -4,11 +4,11 @@
  * Expanded row component for a ProgressTask. Renders the full
  * Research → Plan → Team execution pipeline with action buttons.
  *
- * Reads live data from useProgressContext (global store).
+ * Reads live data from React Query hooks (useProgressTasks).
  * Local useState is used only for expand/collapse of content sections.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ChevronDown } from 'lucide-react';
 import Markdown from 'react-markdown';
@@ -19,7 +19,15 @@ import type { ProgressTask } from '@shared/types/progress';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { useAgentContext } from '@renderer/shared/stores/agent-context-store';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
-import { useProgressContext } from '@renderer/shared/stores/progress-context-store';
+
+import { useProgressTasks } from '../../api/useProgress';
+import {
+  useArchiveProgressTask,
+  useCreatePlan,
+  useRunWorkflow,
+  useSpinUpTeam,
+  useStartResearch,
+} from '../../api/useProgressMutations';
 
 import {
   Badge,
@@ -473,16 +481,28 @@ function TeamSection({ task, activeAction }: TeamSectionProps) {
 // ─── ProgressTaskDetailRow ───────────────────────────────
 
 export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
-  const {
-    activeSessions,
-    archiveTask,
-    createPlan,
-    runWorkflow,
-    spinUpTeam,
-    startResearch,
-  } = useProgressContext();
-  const handOffPlan = useAgentContext((s) => s.handOffPlan);
+  const { data: allTasks = [] } = useProgressTasks();
+  const startResearchMutation = useStartResearch();
+  const createPlanMutation = useCreatePlan();
+  const spinUpTeamMutation = useSpinUpTeam();
+  const runWorkflowMutation = useRunWorkflow();
+  const archiveTaskMutation = useArchiveProgressTask();
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+
+  // Derive activeSessions from task statuses (was previously managed by ProgressContextHydrator)
+  const activeSessions = useMemo(() => {
+    const sessions: Record<string, { sessionId: string; action: string }> = {};
+    for (const t of allTasks) {
+      if (t.status === 'researching') {
+        sessions[t.slug] = { sessionId: t.lastSessionId ?? '', action: 'research' };
+      } else if (t.status === 'planning') {
+        sessions[t.slug] = { sessionId: t.lastSessionId ?? '', action: 'plan' };
+      } else if (t.status === 'executing') {
+        sessions[t.slug] = { sessionId: t.lastSessionId ?? '', action: 'team' };
+      }
+    }
+    return sessions;
+  }, [allTasks]);
 
   type PipelineTab = 'research' | 'plan' | 'execute';
   const [activeTab, setActiveTab] = useState<PipelineTab>(() => {
@@ -526,7 +546,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   function handleTeamLeadHandoff() {
     if (!activeProjectId) return;
     const planPath = `progress/${task.slug}/plans/plan.md`;
-    void handOffPlan(activeProjectId, planPath);
+    void ipc('workspace.handOffPlan', { projectId: activeProjectId, planPath });
   }
 
   // Dispatch handler for special actions from dropdowns
@@ -539,11 +559,11 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   // Retry logic: trigger whichever step is missing
   function handleRetry() {
     if (task.hasResearch && task.hasPlan) {
-      void spinUpTeam(task.slug);
+      spinUpTeamMutation.mutate({ slug: task.slug });
     } else if (task.hasResearch) {
-      void createPlan(task.slug);
+      createPlanMutation.mutate({ slug: task.slug });
     } else {
-      void startResearch(task.slug);
+      startResearchMutation.mutate({ slug: task.slug });
     }
   }
 
@@ -659,21 +679,21 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
               label="Research"
               options={RESEARCH_OPTIONS}
               slug={task.slug}
-              onAction={(prompt) => { void startResearch(task.slug, prompt); }}
+              onAction={(prompt) => { startResearchMutation.mutate({ slug: task.slug, prompt }); }}
             />
             <ActionDropdown
               disabled={isActionActive || !task.hasResearch}
               label="Plan"
               options={PLAN_OPTIONS}
               slug={task.slug}
-              onAction={(prompt) => { void createPlan(task.slug, prompt); }}
+              onAction={(prompt) => { createPlanMutation.mutate({ slug: task.slug, prompt }); }}
             />
             <ActionDropdown
               disabled={isActionActive || !task.hasPlan}
               label="Execute"
               options={TEAM_OPTIONS}
               slug={task.slug}
-              onAction={(prompt) => { void spinUpTeam(task.slug, prompt); }}
+              onAction={(prompt) => { spinUpTeamMutation.mutate({ slug: task.slug, prompt }); }}
               onSpecialAction={handleSpecialAction}
             />
 
@@ -700,10 +720,10 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
 
             <Separator className="h-4" orientation="vertical" />
 
-            <Button disabled={isActionActive} size="sm" variant="primary" onClick={() => { void runWorkflow(task.slug); }}>
+            <Button disabled={isActionActive} size="sm" variant="primary" onClick={() => { runWorkflowMutation.mutate({ slug: task.slug }); }}>
               Run Workflow
             </Button>
-            <Button className="text-destructive hover:text-destructive" disabled={isActionActive} size="sm" variant="outline" onClick={() => { void archiveTask(task.slug); }}>
+            <Button className="text-destructive hover:text-destructive" disabled={isActionActive} size="sm" variant="outline" onClick={() => { archiveTaskMutation.mutate({ slug: task.slug }); }}>
               Archive
             </Button>
           </Flex>
