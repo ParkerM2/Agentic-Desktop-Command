@@ -6,6 +6,7 @@
  */
 
 export { useAgentDashboardEvents } from './hooks/useAgentEvents';
+export { useAgentMessagePreviews } from './api/useAgentMessages';
 export { useSessionsForTask, useSessionLog, useGitDiff } from './api/useAgentSessions';
 export { agentDashboardKeys } from './api/queryKeys';
 export { ActivityLine } from './components/ActivityLine';
