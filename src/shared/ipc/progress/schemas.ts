@@ -50,6 +50,8 @@ export const progressTaskSchema = z.object({
   teamTaskCount: z.number(),
   researchContent: z.string().optional(),
   planContent: z.string().optional(),
+  workflow: z.string().optional(),
+  workflowPhase: z.string().optional(),
 });
 
 // ── Invoke Input Schemas ────────────────────────────────────────
@@ -77,6 +79,8 @@ export const progressUpdateTaskInputSchema = z.object({
     prNumber: z.number().optional(),
     prUrl: z.string().optional(),
     prStatus: z.string().optional(),
+    workflow: z.string().optional(),
+    workflowPhase: z.string().optional(),
   }),
 });
 
@@ -87,6 +91,11 @@ export const progressSlugInputSchema = z.object({
 export const progressActionInputSchema = z.object({
   slug: z.string(),
   prompt: z.string().optional(),
+});
+
+export const progressRunWorkflowInputSchema = z.object({
+  slug: z.string(),
+  templateId: z.string().optional(),
 });
 
 // ── Invoke Output Schemas ───────────────────────────────────────

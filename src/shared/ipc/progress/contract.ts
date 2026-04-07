@@ -16,6 +16,7 @@ import {
   progressCreateTaskInputSchema,
   progressGetTaskInputSchema,
   progressLogCleanupOutputSchema,
+  progressRunWorkflowInputSchema,
   progressRunWorkflowOutputSchema,
   progressSessionOutputSchema,
   progressSlugInputSchema,
@@ -73,7 +74,7 @@ export const progressInvoke = {
     output: progressSpinUpTeamOutputSchema,
   },
   'progress.runWorkflow': {
-    input: progressSlugInputSchema,
+    input: progressRunWorkflowInputSchema,
     output: progressRunWorkflowOutputSchema,
   },
   'progress.cancelAction': {

@@ -65,7 +65,9 @@ export function registerProgressHandlers(
     return { sessionId: result.sessionId, teamLeadIndex: 0, action: result.action };
   });
 
-  router.handle('progress.runWorkflow', ({ slug }) => progressService.runWorkflow(slug));
+  router.handle('progress.runWorkflow', ({ slug, templateId }) =>
+    progressService.runWorkflow(slug, templateId),
+  );
 
   router.handle('progress.cancelAction', ({ slug }) => progressService.cancelAction(slug));
 

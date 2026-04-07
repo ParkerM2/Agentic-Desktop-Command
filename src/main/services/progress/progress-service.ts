@@ -48,6 +48,8 @@ export interface ProgressService {
         | 'prNumber'
         | 'prUrl'
         | 'prStatus'
+        | 'workflow'
+        | 'workflowPhase'
       >
     >,
   ) => Promise<ProgressTask>;
@@ -57,7 +59,7 @@ export interface ProgressService {
   startResearch: (slug: string, prompt?: string) => Promise<{ sessionId: string }>;
   createPlan: (slug: string, prompt?: string) => Promise<{ sessionId: string }>;
   spinUpTeam: (slug: string, prompt?: string) => Promise<{ sessionId: string; action: string }>;
-  runWorkflow: (slug: string) => Promise<{ started: true }>;
+  runWorkflow: (slug: string, templateId?: string) => Promise<{ started: true }>;
   cancelAction: (slug: string) => Promise<{ success: boolean }>;
   runLogCleanup: () => Promise<{ deletedFiles: number }>;
   onTaskUpdated: (listener: (slug: string, task: ProgressTask) => void) => () => void;
@@ -214,6 +216,8 @@ async function buildTask(
     prNumber: asOptionalNumber(frontmatter.prNumber),
     prUrl: asOptionalString(frontmatter.prUrl),
     prStatus: asOptionalString(frontmatter.prStatus),
+    workflow: asOptionalString(frontmatter.workflow),
+    workflowPhase: asOptionalString(frontmatter.workflowPhase),
     createdAt: asString(frontmatter.createdAt) || new Date().toISOString(),
     updatedAt: asString(frontmatter.updatedAt) || new Date().toISOString(),
     hasResearch,
@@ -551,6 +555,8 @@ export function createProgressService(
           | 'prNumber'
           | 'prUrl'
           | 'prStatus'
+          | 'workflow'
+          | 'workflowPhase'
         >
       >,
     ): Promise<ProgressTask> {
@@ -665,12 +671,18 @@ export function createProgressService(
       return { sessionId, action: 'team' };
     },
 
-    async runWorkflow(slug: string): Promise<{ started: true }> {
+    async runWorkflow(slug: string, templateId?: string): Promise<{ started: true }> {
       await init();
 
       const runStep = async (): Promise<void> => {
         const task = await service.getTask(slug);
         if (!task) throw new Error(`Task not found: ${slug}`);
+
+        // Record workflow template and starting phase
+        await service.updateTask(slug, {
+          workflow: templateId ?? 'default',
+          workflowPhase: 'research',
+        });
 
         if (!task.hasResearch) {
           workflowStep.emit(slug, 'research', 'started');
@@ -687,6 +699,7 @@ export function createProgressService(
         }
 
         if (!task.hasPlan) {
+          await service.updateTask(slug, { workflowPhase: 'planning' });
           workflowStep.emit(slug, 'plan', 'started');
           try {
             await service.createPlan(slug);
@@ -701,6 +714,7 @@ export function createProgressService(
         }
 
         if (!task.hasTeamTasks) {
+          await service.updateTask(slug, { workflowPhase: 'implementation' });
           workflowStep.emit(slug, 'team', 'started');
           try {
             await service.spinUpTeam(slug);
