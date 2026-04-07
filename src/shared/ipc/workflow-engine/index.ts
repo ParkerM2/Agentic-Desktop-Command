@@ -3,6 +3,7 @@
  */
 
 export {
+  AgentDefinitionSchema,
   WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
   WorkflowEngineRecordSchema,
@@ -11,6 +12,8 @@ export {
   WorkflowStateChangedEventSchema,
   WorkflowStateSchema,
 } from './schemas';
+
+export type { AgentDefinition } from './schemas';
 
 export { workflowEngineEvents, workflowEngineInvoke } from './contract';
 

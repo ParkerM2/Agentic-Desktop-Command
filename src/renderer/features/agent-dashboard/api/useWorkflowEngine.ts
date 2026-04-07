@@ -16,6 +16,7 @@ export const workflowEngineKeys = {
   all: ['workflow-engine'] as const,
   runs: () => [...workflowEngineKeys.all, 'runs'] as const,
   run: (id: string) => [...workflowEngineKeys.all, 'run', id] as const,
+  agentDefs: () => [...workflowEngineKeys.all, 'agent-defs'] as const,
 };
 
 // ─── Queries ─────────────────────────────────────────────────
@@ -27,6 +28,15 @@ export function useWorkflowRuns() {
     queryFn: () => ipc('workflow-engine.list', {}),
     refetchInterval: 3_000,
     staleTime: 2_000,
+  });
+}
+
+/** Fetch all available agent definitions from .claude/agents/*.md */
+export function useAgentDefinitions() {
+  return useQuery({
+    queryKey: workflowEngineKeys.agentDefs(),
+    queryFn: () => ipc('workflow-engine.listAgentDefs', {}),
+    staleTime: 60_000,
   });
 }
 

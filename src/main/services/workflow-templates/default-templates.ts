@@ -26,6 +26,15 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       maxConcurrentAgents: 3,
       spawnQaPerTask: true,
       enableGuardian: true,
+      roles: [
+        'schema-designer',
+        'service-engineer',
+        'component-engineer',
+        'hook-engineer',
+        'store-engineer',
+        'ipc-handler-engineer',
+        'qa-reviewer',
+      ],
     },
     qa: {
       runLint: true,
@@ -64,6 +73,7 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       maxConcurrentAgents: 1,
       spawnQaPerTask: false,
       enableGuardian: false,
+      roles: ['qa-reviewer'],
     },
     qa: {
       runLint: true,
@@ -102,6 +112,7 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       maxConcurrentAgents: 2,
       spawnQaPerTask: false,
       enableGuardian: false,
+      roles: ['architect', 'api-engineer'],
     },
     qa: {
       runLint: false,
@@ -140,6 +151,12 @@ export const DEFAULT_TEMPLATES: WorkflowTemplate[] = [
       maxConcurrentAgents: 5,
       spawnQaPerTask: false,
       enableGuardian: false,
+      roles: [
+        'component-engineer',
+        'hook-engineer',
+        'store-engineer',
+        'styling-engineer',
+      ],
     },
     qa: {
       runLint: false,
