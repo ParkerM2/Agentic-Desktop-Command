@@ -74,6 +74,7 @@ progress/
 | `progress.spinUpTeam` | `{ slug }` | `{ sessionId, action }` | Spawn team-lead to decompose plan |
 | `progress.runWorkflow` | `{ slug }` | `{ started: true }` | Run full Research→Plan→Team pipeline |
 | `progress.cancelAction` | `{ slug }` | `{ success }` | Stop active agent session for task |
+| `progress.runLogCleanup` | `{ maxAgeDays? }` | `{ deleted }` | Clean old JSONL session logs |
 
 ### Event Channels (7 total)
 
@@ -100,6 +101,10 @@ Status is stored in frontmatter AND reconciled from directory contents on every 
 - `tasks/task-*.md` exist → bumped to at least `executing`
 
 Frontmatter wins only if it represents higher progress than the directory state.
+
+### Agent Naming Convention
+
+Agents MUST use descriptive names: `{role}-{slug}` (e.g., `research-auth-refactor`, `team-lead-auth-refactor`, `service-engineer-auth-service`).
 
 ## Workspace Agent Commands
 

@@ -522,6 +522,18 @@ Location: `src/renderer/shared/stores/`
 
 ---
 
+## Progress Service (Task Pipeline)
+
+- **Types**: `src/shared/types/progress.ts`, `src/shared/types/agent-session-detail.ts`
+- **IPC Contract**: `src/shared/ipc/progress/` (schemas, contract, barrel)
+- **Service**: `src/main/services/progress/` (progress-service, task-file-io, session-writer, log-cleanup)
+- **Handlers**: `src/main/ipc/handlers/progress-handlers.ts`
+- **Stores**: `src/renderer/shared/stores/progress-context-store.ts`, agent-context-store.ts (expanded)
+- **Hydrators**: `src/renderer/shared/stores/ProgressContextHydrator.tsx`, AgentContextHydrator.tsx
+- **UI**: `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx`, `detail/ProgressTaskDetailRow.tsx`, `detail/TeamActivityPanel.tsx`, `detail/AgentDetailExpander.tsx`
+
+---
+
 ## 7. File Tree Summary
 
 ```

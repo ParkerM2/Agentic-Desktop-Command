@@ -136,3 +136,12 @@ If you cannot resolve an issue after 2 attempts:
 2. List what was tried
 3. Ask the user for guidance
 4. NEVER silently skip a failing check
+
+## Agent Naming Convention
+
+When spawning agents, use descriptive names following this pattern:
+- Research: `research-{slug}`
+- Planning: `planning-{slug}`
+- Teammates: `{agentRole}-{taskSlug}`
+
+Example: `Agent(name: "service-engineer-auth-service", team_name: "auth-refactor", ...)`
