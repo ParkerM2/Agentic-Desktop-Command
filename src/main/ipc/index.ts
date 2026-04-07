@@ -37,6 +37,7 @@ import { registerNotesHandlers } from './handlers/notes-handlers';
 import { registerNotificationHandlers } from './handlers/notification-handlers';
 import { registerOAuthHandlers } from './handlers/oauth-handlers';
 import { registerPlannerHandlers } from './handlers/planner-handlers';
+import { registerProgressHandlers } from './handlers/progress-handlers';
 import { registerProjectHandlers } from './handlers/project-handlers';
 import { registerQaHandlers } from './handlers/qa-handlers';
 import { registerScreenHandlers } from './handlers/screen-handlers';
@@ -95,6 +96,7 @@ import type { MilestonesService } from '../services/milestones/milestones-servic
 import type { NotesService } from '../services/notes/notes-service';
 import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
+import type { ProgressService } from '../services/progress/progress-service';
 import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { CodebaseAnalyzerService } from '../services/project/codebase-analyzer';
 import type { ProjectService } from '../services/project/project-service';
@@ -174,6 +176,7 @@ export interface Services {
   visualizationService: VisualizationService;
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
+  progressService: ProgressService;
   progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
@@ -284,6 +287,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerWorkflowEngineHandlers(router, services.workflowEngineService);
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
+  registerProgressHandlers(router, services.progressService);
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
       router,
