@@ -451,3 +451,14 @@ src/renderer/   <-- can import shared, NEVER main/preload
 - Description with Summary + Test Plan
 - All checks pass (lint, typecheck, test, build)
 - No `console.log` in renderer code (warn level in ESLint)
+
+---
+
+## Caching Layer Guards
+
+- `store.ts` files MUST NOT import from `@tanstack/react-query` or `@renderer/shared/lib/ipc`
+- `api/*.ts` files MUST NOT import from any Zustand store
+- No `useIpcEvent` calls in `features/*/` directories for query invalidation purposes
+- No `refetchInterval` property in any `useQuery` call
+- Every `features/*/api/` directory MUST have a `queryKeys.ts` file
+- The only file allowed to call `window.api.on()` in bulk is `EventBridge.tsx`
