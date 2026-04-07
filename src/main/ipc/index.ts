@@ -52,6 +52,7 @@ import { registerVoiceHandlers } from './handlers/voice-handlers';
 import { registerWebhookSettingsHandlers } from './handlers/webhook-settings-handlers';
 import { registerWindowHandlers } from './handlers/window-handlers';
 import { registerWorkflowHandlers } from './handlers/workflow-handlers';
+import { registerWorkflowTemplateHandlers } from './handlers/workflow-template-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
 
 import type { TeamWatcherService } from './handlers/agent-dashboard-handlers';
@@ -111,6 +112,7 @@ import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VisualizationService } from '../services/visualization';
 import type { VoiceService } from '../services/voice/voice-service';
 import type { TaskLauncherService } from '../services/workflow/task-launcher';
+import type { WorkflowTemplateService } from '../services/workflow-templates';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
@@ -158,6 +160,7 @@ export interface Services {
   hubAuthService: HubAuthService;
   qaRunner: QaRunner;
   taskLauncher: TaskLauncherService;
+  workflowTemplateService: WorkflowTemplateService;
   dashboardService: DashboardService;
   dockerService: DockerService;
   oauthManager: OAuthManager;
@@ -254,6 +257,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
   registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
+  registerWorkflowTemplateHandlers(router, services.workflowTemplateService);
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);
   registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);

@@ -62,6 +62,7 @@ import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
 import { windowInvoke } from './window';
 import { workflowEvents, workflowInvoke } from './workflow';
+import { workflowTemplatesInvoke } from './workflow-templates';
 import { workspaceEvents, workspaceInvoke } from './workspace';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
@@ -115,6 +116,7 @@ export const ipcInvokeContract = {
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
+  ...workflowTemplatesInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -455,3 +457,22 @@ export {
   SessionLogPageSchema,
   TrackingEventSchema,
 } from './visualization';
+
+export {
+  WorkflowBranchingSchema,
+  WorkflowGuardianSchema,
+  WorkflowModeSchema,
+  WorkflowPermissionsSchema,
+  WorkflowQaSchema,
+  WorkflowTeamSchema,
+  WorkflowTemplateSchema,
+} from './workflow-templates';
+export type {
+  WorkflowBranching,
+  WorkflowGuardian,
+  WorkflowMode,
+  WorkflowPermissions,
+  WorkflowQa,
+  WorkflowTeam,
+  WorkflowTemplate,
+} from './workflow-templates';

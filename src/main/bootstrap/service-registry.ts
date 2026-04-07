@@ -103,6 +103,7 @@ import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
+import { createWorkflowTemplateService } from '../services/workflow-templates';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
@@ -449,6 +450,7 @@ export function createServiceRegistry(
 
   // ─── Workflow + orchestrator ──────────────────────────────────
   const taskLauncher = createTaskLauncher();
+  const workflowTemplateService = createWorkflowTemplateService({ dataDir });
   const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
 
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
@@ -603,6 +605,7 @@ export function createServiceRegistry(
     hubAuthService,
     qaRunner,
     taskLauncher,
+    workflowTemplateService,
     cleanupService,
     storageInspector,
     oauthManager,
