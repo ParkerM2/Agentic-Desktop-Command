@@ -3,7 +3,7 @@
  * Must be rendered inside <ReactFlowProvider> (Task 11).
  */
 
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -19,19 +19,19 @@ import { Network } from 'lucide-react';
 import { EmptyState, Spinner } from '@ui';
 
 import { visualizationKeys } from '../../api/queryKeys';
-import { useCodebaseGraph, useAgentTeams } from '../../api/visualization-api';
+import { useAgentTeams, useCodebaseGraph } from '../../api/visualization-api';
 import {
   buildAgentRFNodes,
   buildCodebaseGroupEdges,
-  buildCodebaseRFNodes,
   buildCrossLayerEdges,
+  buildHierarchicalCodebaseNodes,
 } from '../../lib/graph-builders';
 import { useVisualizationStore } from '../../store';
 import { EDGE_TYPES } from '../edges';
 import { NODE_TYPES } from '../nodes';
 import { LayerToggleToolbar } from '../toolbar/LayerToggleToolbar';
 
-import type { NodeMouseHandler } from '@xyflow/react';
+import type { Node, NodeMouseHandler } from '@xyflow/react';
 
 // ─── Per-type minimap colours ─────────────────────────────────────
 
@@ -59,6 +59,21 @@ function getNodeColor(node: { type?: string }): string {
   }
 }
 
+// ─── Search filter helper ─────────────────────────────────────────
+
+function applySearchFilter(nodes: Node[], searchFilter: string): Node[] {
+  if (searchFilter.trim() === '') return nodes;
+  const query = searchFilter.toLowerCase();
+  return nodes.map((node) => {
+    const label = (node.data as { label?: string }).label ?? '';
+    const matches = label.toLowerCase().includes(query);
+    return {
+      ...node,
+      style: matches ? undefined : { opacity: 0.3 },
+    };
+  });
+}
+
 // ─── Props ────────────────────────────────────────────────────────
 
 interface VisualizationCanvasProps {
@@ -72,13 +87,19 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     showCodebaseLayer,
     showAgentLayer,
     selectedFeature,
+    layoutDirection,
+    searchFilter,
+    showEdgeLabels,
     toggleCodebaseLayer,
     toggleAgentLayer,
     setSelectedFeature,
+    setLayoutDirection,
+    setSearchFilter,
+    toggleEdgeLabels,
     openDetailPanel,
   } = useVisualizationStore();
 
-  const { fitView } = useReactFlow();
+  const { fitView, zoomIn, zoomOut } = useReactFlow();
   const queryClient = useQueryClient();
 
   const codebaseQuery = useCodebaseGraph(projectId);
@@ -106,7 +127,7 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
   const { nodes: rfNodes, edges: rfEdges } = useMemo(() => {
     const codebaseNodes =
       showCodebaseLayer && codebaseGraph
-        ? buildCodebaseRFNodes(codebaseGraph)
+        ? buildHierarchicalCodebaseNodes(codebaseGraph, layoutDirection)
         : [];
 
     const agentXOffset = codebaseNodes.length > 0 ? 1200 : 0;
@@ -126,11 +147,24 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
         ? buildCodebaseGroupEdges(codebaseGraph)
         : [];
 
+    const allNodes = applySearchFilter(
+      [...codebaseNodes, ...agentNodes],
+      searchFilter,
+    );
+
     return {
-      nodes: [...codebaseNodes, ...agentNodes],
+      nodes: allNodes,
       edges: [...codebaseEdges, ...crossEdges],
     };
-  }, [codebaseGraph, agentTeams, showCodebaseLayer, showAgentLayer, selectedFeature]);
+  }, [
+    codebaseGraph,
+    agentTeams,
+    showCodebaseLayer,
+    showAgentLayer,
+    selectedFeature,
+    layoutDirection,
+    searchFilter,
+  ]);
 
   // ─── Fit view after nodes load ─────────────────────────────────
 
@@ -162,6 +196,18 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
       queryKey: visualizationKeys.agentTeams(projectId),
     });
   };
+
+  const handleZoomIn = useCallback(() => {
+    void zoomIn({ duration: 200 });
+  }, [zoomIn]);
+
+  const handleZoomOut = useCallback(() => {
+    void zoomOut({ duration: 200 });
+  }, [zoomOut]);
+
+  const handleFitView = useCallback(() => {
+    void fitView({ padding: 0.2, duration: 300 });
+  }, [fitView]);
 
   // ─── Loading state ─────────────────────────────────────────────
 
@@ -195,6 +241,7 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
     <div className="h-full w-full">
     <ReactFlow
       elementsSelectable
+      nodesDraggable
       edgeTypes={EDGE_TYPES}
       edges={rfEdges}
       edgesFocusable={false}
@@ -203,7 +250,6 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
       nodeTypes={NODE_TYPES}
       nodes={rfNodes}
       nodesConnectable={false}
-      nodesDraggable={false}
       nodesFocusable={false}
       zoomOnDoubleClick={false}
       onInit={handleInit}
@@ -214,13 +260,22 @@ export function VisualizationCanvas({ projectId }: VisualizationCanvasProps) {
       <Panel position="top-right">
         <LayerToggleToolbar
           features={features}
+          layoutDirection={layoutDirection}
+          searchFilter={searchFilter}
           selectedFeature={selectedFeature}
           showAgentLayer={showAgentLayer}
           showCodebaseLayer={showCodebaseLayer}
+          showEdgeLabels={showEdgeLabels}
+          onFitView={handleFitView}
           onRefresh={handleRefresh}
           onSelectFeature={setSelectedFeature}
+          onSetLayoutDirection={setLayoutDirection}
+          onSetSearchFilter={setSearchFilter}
           onToggleAgent={toggleAgentLayer}
           onToggleCodebase={toggleCodebaseLayer}
+          onToggleEdgeLabels={toggleEdgeLabels}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
         />
       </Panel>
     </ReactFlow>
