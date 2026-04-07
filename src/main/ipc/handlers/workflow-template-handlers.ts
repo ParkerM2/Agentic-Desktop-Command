@@ -20,17 +20,23 @@ export function registerWorkflowTemplateHandlers(
     Promise.resolve({ template: workflowTemplateService.get(id) }),
   );
 
-  router.handle('workflowTemplates.create', (data) =>
-    Promise.resolve({ template: workflowTemplateService.create(data) }),
-  );
+  router.handle('workflowTemplates.create', (data) => {
+    const template = workflowTemplateService.create(data);
+    router.emit('event:workflowTemplates.created', { id: template.id, name: template.name });
+    return Promise.resolve({ template });
+  });
 
-  router.handle('workflowTemplates.update', ({ id, updates }) =>
-    Promise.resolve({ template: workflowTemplateService.update(id, updates) }),
-  );
+  router.handle('workflowTemplates.update', ({ id, updates }) => {
+    const template = workflowTemplateService.update(id, updates);
+    router.emit('event:workflowTemplates.updated', { id: template.id, name: template.name });
+    return Promise.resolve({ template });
+  });
 
-  router.handle('workflowTemplates.delete', ({ id }) =>
-    Promise.resolve(workflowTemplateService.delete(id)),
-  );
+  router.handle('workflowTemplates.delete', ({ id }) => {
+    const result = workflowTemplateService.delete(id);
+    router.emit('event:workflowTemplates.deleted', { id });
+    return Promise.resolve(result);
+  });
 
   router.handle('workflowTemplates.duplicate', ({ id, name }) =>
     Promise.resolve({ template: workflowTemplateService.duplicate(id, name) }),
