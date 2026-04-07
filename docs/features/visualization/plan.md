@@ -64,17 +64,35 @@ VisualizationPage                 VisualizationService
 
 ## Edge Types
 
-| Type | Description | Component |
+| Type | Description | Rendering |
 |------|-------------|-----------|
-| `dataFlow` | Import dependency between groups | `DataFlowEdge` |
-| `agentScope` | Agent task → file group scope link | `AgentScopeEdge` |
+| `smoothstep` | Import dependency between groups | Built-in React Flow edge with `MarkerType.ArrowClosed` |
+| `default` (bezier) | Agent task to file group scope link | Built-in React Flow edge with `animated: true` for live agents |
+
+Edge labels (import weight counts) are toggled via `showEdgeLabels` in the store and rendered using the built-in `label` edge prop.
+
+---
+
+## React Flow Built-in Features Used
+
+| Feature | Purpose |
+|---------|---------|
+| `useNodesState` / `useEdgesState` | Interactive drag persistence — node positions survive re-renders |
+| `<Controls />` | Built-in zoom in/out, fit view, and lock toggle panel |
+| `<NodeToolbar>` | Contextual toolbar on node selection (Details, Expand/Collapse) |
+| `<NodeResizer>` | Drag-to-resize parent/group nodes |
+| `MarkerType.ArrowClosed` / `MarkerType.Arrow` | Arrow markers on edges for directionality |
+| `parentId` + `extent: 'parent'` | Native sub-flow grouping — children constrained inside parents |
+| `animated` edge prop | Built-in dash animation for live agent scope edges |
 
 ---
 
 ## Layout
 
-- **Algorithm**: Dagre (top-to-bottom directed graph layout)
-- **Group-level**: Only group nodes are shown initially for performance
+- **Algorithm**: Dagre (top-to-bottom or left-to-right directed graph layout)
+- **Sub-flow grouping**: Architecture layers (Main, Features, Shared, Renderer, Preload) are parent nodes; file groups are children with `parentId` and `extent: 'parent'`
+- **Agent grouping**: Feature group is parent; agent task nodes are children inside it
+- **Parent sizing**: Computed from bounding box of children plus padding
 - **File counts**: Displayed as badges on group nodes
 - **Agent offset**: Agent layer is positioned to the right of codebase layer
 
@@ -85,8 +103,11 @@ VisualizationPage                 VisualizationService
 Zustand store (`useVisualizationStore`) manages:
 - `showCodebaseLayer` / `showAgentLayer` — layer visibility toggles
 - `selectedFeature` — which feature's agents to display
-- `selectedNodeId` / `isDetailPanelOpen` — detail panel state
+- `selectedNodeId` / `detailPanelOpen` — detail panel state
 - `expandedGroups` — which file groups are expanded
+- `layoutDirection` — TB or LR dagre layout
+- `searchFilter` — node label filter (dims non-matching nodes)
+- `showEdgeLabels` — toggle edge weight labels
 
 ---
 
@@ -97,9 +118,9 @@ Zustand store (`useVisualizationStore`) manages:
 | `components/VisualizationPage.tsx` | Page wrapper with ReactFlowProvider |
 | `components/canvas/VisualizationCanvas.tsx` | ReactFlow canvas, graph assembly, layout |
 | `components/nodes/` | 5 custom node components |
-| `components/edges/` | 2 custom edge components |
+| `components/edges/` | Legacy custom edge components (unused — built-in types used instead) |
 | `components/panels/NodeDetailPanel.tsx` | Slide-in detail panel |
-| `components/toolbar/LayerToggleToolbar.tsx` | Layer toggle buttons |
+| `components/toolbar/LayerToggleToolbar.tsx` | Layer toggles, feature selector, layout, search, edge labels, refresh |
 | `lib/graph-builders.ts` | IPC data → React Flow nodes/edges + dagre layout |
 | `api/visualization-api.ts` | TanStack Query hooks for IPC |
 | `store.ts` | Zustand UI state |

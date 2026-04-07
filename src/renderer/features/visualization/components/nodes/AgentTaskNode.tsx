@@ -1,6 +1,6 @@
-import { Handle, Position } from '@xyflow/react';
+import { Handle, NodeToolbar, Position } from '@xyflow/react';
 
-import { StatusIndicator } from '@ui';
+import { Button, StatusIndicator } from '@ui';
 
 import { useVisualizationStore } from '../../store';
 
@@ -44,6 +44,20 @@ export function AgentTaskNode({ id, data, selected }: NodeProps<AgentTaskRFNode>
 
   return (
     <>
+      <NodeToolbar isVisible={selected} position={Position.Top}>
+        <div className="flex gap-1 rounded-md border border-border bg-background p-1 shadow-md">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              openDetailPanel(id);
+            }}
+          >
+            Details
+          </Button>
+        </div>
+      </NodeToolbar>
+
       <Handle position={Position.Top} type="target" />
       <div
         aria-label={`Agent task: ${data.agentName}`}
