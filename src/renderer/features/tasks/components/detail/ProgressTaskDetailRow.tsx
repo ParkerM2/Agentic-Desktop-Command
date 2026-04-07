@@ -11,7 +11,8 @@
 import { useEffect, useState } from 'react';
 
 import { ChevronDown } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 import type { ProgressTask } from '@shared/types/progress';
 
@@ -209,6 +210,71 @@ function prStatusVariant(status: string | undefined): PrBadgeVariant {
   }
 }
 
+// ─── Styled Markdown (matches agent chat rendering) ─────
+
+const remarkPlugins = [remarkGfm];
+
+const mdComponents: React.ComponentProps<typeof Markdown>['components'] = {
+  code: ({ className: codeClassName, children: codeChildren, ...rest }) => {
+    const isBlock = (codeClassName ?? '').includes('language-');
+    if (isBlock) {
+      return (
+        <pre className="bg-background/80 my-2 overflow-x-auto rounded-md border border-border p-3">
+          <code className={`font-mono text-xs ${codeClassName ?? ''}`}>{codeChildren}</code>
+        </pre>
+      );
+    }
+    return (
+      <code className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-xs text-foreground" {...rest}>
+        {codeChildren}
+      </code>
+    );
+  },
+  table: ({ children }) => (
+    <div className="my-2 overflow-x-auto rounded-md border border-border">
+      <table className="w-full text-sm">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="bg-muted/50 text-xs font-medium text-foreground">{children}</thead>
+  ),
+  th: ({ children }) => (
+    <th className="border-b border-border px-3 py-1.5 text-left font-medium">{children}</th>
+  ),
+  td: ({ children }) => (
+    <td className="border-b border-border px-3 py-1.5 text-foreground/90">{children}</td>
+  ),
+  h1: ({ children }) => (
+    <h1 className="mb-1.5 mt-3 text-base font-semibold text-foreground">{children}</h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="mb-1.5 mt-3 text-sm font-semibold text-foreground">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="mb-1 mt-2 text-sm font-medium text-foreground">{children}</h3>
+  ),
+  p: ({ children }) => (
+    <p className="my-1.5 text-sm leading-relaxed text-foreground/90">{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul className="my-1.5 ml-4 list-disc space-y-0.5 text-sm text-foreground/90">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="my-1.5 ml-4 list-decimal space-y-0.5 text-sm text-foreground/90">{children}</ol>
+  ),
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  a: ({ children, href }) => (
+    <a className="text-primary hover:underline" href={href}>{children}</a>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="my-2 border-l-2 border-primary/40 pl-3 text-sm italic text-muted-foreground">{children}</blockquote>
+  ),
+  hr: () => <hr className="my-3 border-border" />,
+  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+  em: ({ children }) => <em className="text-foreground/90">{children}</em>,
+  pre: ({ children }) => <div className="my-2">{children}</div>,
+};
+
 // ─── ContentBlock Sub-component ──────────────────────────
 
 interface ContentBlockProps {
@@ -222,14 +288,14 @@ function ContentBlock({ content, expanded, onToggle, previewLength = 200 }: Cont
   return (
     <Collapsible open={expanded} onOpenChange={onToggle}>
       {expanded ? null : (
-        <Text className="whitespace-pre-wrap font-mono text-muted-foreground" size="sm">
+        <Text className="line-clamp-3 text-muted-foreground" size="sm">
           {truncate(content, previewLength)}
         </Text>
       )}
       <CollapsibleContent>
-        <div className="prose prose-sm max-w-none dark:prose-invert">
-          <ReactMarkdown>{content}</ReactMarkdown>
-        </div>
+        <Markdown components={mdComponents} remarkPlugins={remarkPlugins}>
+          {content}
+        </Markdown>
       </CollapsibleContent>
       <CollapsibleTrigger asChild>
         <Button className="mt-2 h-7 px-2 text-xs text-muted-foreground" size="sm" variant="ghost">
