@@ -5,7 +5,7 @@
  * Data source: useProgressContext (src/renderer/shared/stores/progress-context-store.ts)
  */
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import {
   flexRender,
@@ -696,9 +696,8 @@ export function ProgressTaskGrid() {
             <TableBody>
               {table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map((row) => (
-                  <>
+                  <Fragment key={row.id}>
                     <TableRow
-                      key={row.id}
                       data-state={selectedSlugs.has(row.original.slug) ? 'selected' : undefined}
                       className={cn(
                         selectedSlugs.has(row.original.slug) && 'bg-muted/50',
@@ -720,7 +719,7 @@ export function ProgressTaskGrid() {
                         </TableCell>
                       </TableRow>
                     ) : null}
-                  </>
+                  </Fragment>
                 ))
               ) : (
                 <TableRow>
