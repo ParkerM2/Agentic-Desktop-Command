@@ -23,6 +23,7 @@ import { WebhookNotification } from '@renderer/shared/components/WebhookNotifica
 import { useIpcEvent } from '@renderer/shared/hooks';
 import {
   LayoutHydrator,
+  ProgressContextHydrator,
   ThemeHydrator,
   useRouteHistoryStore,
 } from '@renderer/shared/stores';
@@ -63,6 +64,7 @@ export function RootLayout() {
       <div className="bg-background flex h-screen items-center justify-center">
         <ThemeHydrator />
         <LayoutHydrator />
+        <ProgressContextHydrator />
         <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
     );
@@ -85,6 +87,7 @@ export function RootLayout() {
     <div className="flex h-screen flex-col overflow-hidden">
       <ThemeHydrator />
       <LayoutHydrator />
+      <ProgressContextHydrator />
       <div className="min-h-0 flex-1 overflow-hidden">
         <LayoutWrapper>
           <TopBar />
