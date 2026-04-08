@@ -581,6 +581,44 @@ For branded buttons that need a dark appearance on light backgrounds and vice ve
 <Button className="bg-[#24292f] text-white hover:bg-[#24292f]/90">
 ```
 
+## Worktree Isolation for Parallel Agents
+
+### How It Works
+Every agent (subagent, teammate, background agent, or new terminal session) works in an isolated git worktree with:
+- Full codebase on its own branch
+- `node_modules/` installed via `npm ci`
+- `.claude/settings.json` copied from main repo
+- All git-tracked `.claude/` content (agents, skills, refs)
+
+### Two Creation Paths, One Setup Script
+- **Claude Code native** (EnterWorktree / `isolation: "worktree"`) -- triggers WorktreeCreate hook in `.claude/settings.json`
+- **ADC WorktreeProvisioner** (workspace.provisionTeammate IPC) -- calls script directly after git worktree add
+
+Both paths call `scripts/worktree-setup.sh` which copies gitignored config and runs `npm ci`.
+
+### `.worktreeinclude`
+Lists gitignored files to copy into worktrees:
+```
+.claude/settings.json
+.claude/settings.local.json
+.env
+.env.local
+```
+
+### Parallel Safety
+- Each worktree has its own git index and branch
+- Changes in one worktree don't affect others
+- Merge only after QA passes
+- Multiple teams can run simultaneously
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `scripts/worktree-setup.sh` | Universal setup script (copies config, installs deps) |
+| `.worktreeinclude` | Declares gitignored files to copy |
+| `.claude/settings.json` | Contains WorktreeCreate hook (gitignored, local-only) |
+| `src/main/services/worktree-provisioner/worktree-provisioner.ts` | ADC IPC-based provisioner |
+
 ## TanStack Table Pattern
 
 Task data grids use TanStack Table with `@ui` Table primitives (`Table`, `TableHeader`, `TableRow`, `TableHead`, `TableBody`, `TableCell`). Theming is handled entirely through Tailwind utility classes reading CSS custom properties — no special theme configuration needed.
