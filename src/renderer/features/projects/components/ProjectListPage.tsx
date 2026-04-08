@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 
 import { useNavigate } from '@tanstack/react-router';
-import { FolderOpen, Layers, Pencil, Search, Sparkles, Trash2, Wand2 } from 'lucide-react';
+import { FolderOpen, Layers, Lock, MoreVertical, Pencil, Search, Server, Sparkles, Trash2, Wand2 } from 'lucide-react';
 
 import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
 import type { Project, RepoType } from '@shared/types';
@@ -13,11 +13,32 @@ import type { Project, RepoType } from '@shared/types';
 import { formatRelativeTime } from '@renderer/shared/lib/utils';
 import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
-import { Badge, Button, Card, CardContent, Input, PageHeader, PageLayout, Separator, Spinner } from '@ui';
+import { useDeviceStore } from '@features/devices';
+
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Input,
+  PageHeader,
+  PageLayout,
+  Separator,
+  Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@ui';
 
 import { useAllTasks } from '@features/tasks';
 
-import { useProjects, useRemoveProject, useSubProjects } from '../api/useProjects';
+import { useClaimProject, useProjects, useReleaseProject, useRemoveProject, useSubProjects } from '../api/useProjects';
 
 import { CreateProjectWizard } from './CreateProjectWizard';
 import { ProjectEditDialog } from './ProjectEditDialog';
@@ -38,27 +59,139 @@ function repoStructureLabel(structure: RepoType): string {
 interface ProjectCardProps {
   project: Project;
   taskCount: number;
+  currentDeviceId: string | null;
   onEdit: (e: React.MouseEvent | React.KeyboardEvent, project: Project) => void;
-  onOpen: (projectId: string) => void;
+  onOpen: (project: Project) => void;
   onRemove: (e: React.MouseEvent | React.KeyboardEvent, projectId: string) => void;
+  onRelease: (e: React.MouseEvent | React.KeyboardEvent, projectId: string) => void;
+  onForceReclaim: (e: React.MouseEvent | React.KeyboardEvent, project: Project) => void;
 }
 
-function ProjectCard({ project, taskCount, onEdit, onOpen, onRemove }: ProjectCardProps) {
+function ProjectCard({
+  project,
+  taskCount,
+  currentDeviceId,
+  onEdit,
+  onOpen,
+  onRemove,
+  onRelease,
+  onForceReclaim,
+}: ProjectCardProps) {
   const { data: subProjects } = useSubProjects(project.id);
   const subCount = subProjects?.length ?? 0;
 
+  const isRemote = project.remote === true;
+  const isClaimedByOther =
+    isRemote &&
+    project.claimedByDeviceId != null &&
+    project.claimedByDeviceId !== currentDeviceId;
+  const isClaimedByMe =
+    isRemote &&
+    project.claimedByDeviceId != null &&
+    project.claimedByDeviceId === currentDeviceId;
+  const isLocalHostedAndClaimedByOther =
+    !isRemote &&
+    project.hostDeviceId === currentDeviceId &&
+    project.claimedByDeviceId != null &&
+    project.claimedByDeviceId !== currentDeviceId;
+
+  const showContextMenu = isClaimedByMe || isLocalHostedAndClaimedByOther;
+
+  function handleCardClick() {
+    onOpen(project);
+  }
+
+  function handleCardKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen(project);
+    }
+  }
+
+  function renderHubBadge() {
+    if (!isRemote) return null;
+    const deviceName = project.hostDeviceName ?? 'Remote';
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Badge className="flex items-center gap-1" size="sm" variant="info">
+              <Server className="h-3 w-3 shrink-0" />
+              {deviceName}
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>Hosted on {deviceName}</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  function renderLockOverlay() {
+    if (!isClaimedByOther) return null;
+    return (
+      <div className="bg-background/70 absolute inset-0 flex items-center justify-center rounded-lg">
+        <div className="flex items-center gap-2">
+          <Lock className="text-muted-foreground h-4 w-4 shrink-0" />
+          <span className="text-muted-foreground text-sm">
+            In use by {project.hostDeviceName ?? 'another device'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  function renderContextMenu() {
+    if (!showContextMenu) return null;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            aria-label={`More actions for ${project.name}`}
+            className="h-7 w-7"
+            size="icon"
+            variant="ghost"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {isClaimedByMe ? (
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onRelease(e, project.id);
+              }}
+            >
+              Release
+            </DropdownMenuItem>
+          ) : null}
+          {isLocalHostedAndClaimedByOther ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onForceReclaim(e, project);
+                }}
+              >
+                Force Reclaim
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   return (
     <Card
-      className="hover:bg-accent/50 cursor-pointer transition-colors"
+      className="hover:bg-accent/50 relative cursor-pointer transition-colors"
       role="button"
-      tabIndex={0}
-      onClick={() => onOpen(project.id)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onOpen(project.id);
-        }
-      }}
+      tabIndex={isClaimedByOther ? -1 : 0}
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
     >
       <CardContent className="flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
@@ -71,6 +204,7 @@ function ProjectCard({ project, taskCount, onEdit, onOpen, onRemove }: ProjectCa
                   {repoStructureLabel(project.repoStructure)}
                 </Badge>
               ) : null}
+              {renderHubBadge()}
               {subCount > 0 ? (
                 <span className="text-muted-foreground flex items-center gap-1 text-xs">
                   <Layers className="h-3 w-3" />
@@ -90,6 +224,7 @@ function ProjectCard({ project, taskCount, onEdit, onOpen, onRemove }: ProjectCa
           <span className="text-muted-foreground text-xs whitespace-nowrap">
             {formatRelativeTime(project.updatedAt)}
           </span>
+          {renderContextMenu()}
           <span
             aria-label={`Edit ${project.name}`}
             className="text-muted-foreground hover:bg-accent hover:text-foreground rounded p-1"
@@ -128,6 +263,7 @@ function ProjectCard({ project, taskCount, onEdit, onOpen, onRemove }: ProjectCa
           </span>
         </div>
       </CardContent>
+      {renderLockOverlay()}
     </Card>
   );
 }
@@ -137,8 +273,11 @@ export function ProjectListPage() {
   const { data: projects, isLoading } = useProjects();
   const { data: allTasks } = useAllTasks();
   const removeProject = useRemoveProject();
+  const claimProject = useClaimProject();
+  const releaseProject = useReleaseProject();
   const { addProjectTab } = useLayoutStore();
   const { addToast } = useToastStore();
+  const { currentDeviceId } = useDeviceStore();
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [createWizardOpen, setCreateWizardOpen] = useState(false);
@@ -177,9 +316,53 @@ export function ProjectListPage() {
     return counts;
   }, [allTasks]);
 
-  function handleOpenProject(projectId: string) {
-    addProjectTab(projectId);
-    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
+  function handleOpenProject(project: Project) {
+    if (project.remote === true && project.hostDeviceId != null) {
+      // Trigger claim flow for remote projects
+      claimProject.mutate(
+        { projectId: project.id, hostDeviceId: project.hostDeviceId },
+        {
+          onSuccess: (result) => {
+            if (result.success) {
+              addProjectTab(project.id);
+              void navigate({ to: projectViewPath(project.id, PROJECT_VIEWS.TASKS) });
+            } else {
+              addToast(result.error ?? 'Could not claim project', 'error');
+            }
+          },
+        },
+      );
+    } else {
+      addProjectTab(project.id);
+      void navigate({ to: projectViewPath(project.id, PROJECT_VIEWS.TASKS) });
+    }
+  }
+
+  function handleReleaseProject(
+    e: React.MouseEvent | React.KeyboardEvent,
+    projectId: string,
+  ) {
+    e.stopPropagation();
+    releaseProject.mutate(projectId, {
+      onSuccess: () => {
+        addToast('Project released', 'success');
+      },
+    });
+  }
+
+  function handleForceReclaimProject(
+    e: React.MouseEvent | React.KeyboardEvent,
+    project: Project,
+  ) {
+    e.stopPropagation();
+    // Force reclaim: release then open
+    releaseProject.mutate(project.id, {
+      onSuccess: () => {
+        addToast('Project reclaimed', 'success');
+        addProjectTab(project.id);
+        void navigate({ to: projectViewPath(project.id, PROJECT_VIEWS.TASKS) });
+      },
+    });
   }
 
   function handleWizardSetupStarted(projectId: string) {
@@ -245,10 +428,13 @@ export function ProjectListPage() {
         {filteredProjects.map((project) => (
           <ProjectCard
             key={project.id}
+            currentDeviceId={currentDeviceId}
             project={project}
             taskCount={taskCountByProject.get(project.id) ?? 0}
             onEdit={handleEditProject}
+            onForceReclaim={handleForceReclaimProject}
             onOpen={handleOpenProject}
+            onRelease={handleReleaseProject}
             onRemove={handleRemoveProject}
           />
         ))}

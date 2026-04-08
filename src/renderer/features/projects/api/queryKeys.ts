@@ -9,4 +9,8 @@ export const projectKeys = {
   detail: (id: string) => [...projectKeys.details(), id] as const,
   subProjects: (projectId: string) =>
     [...projectKeys.all, projectId, 'sub-projects'] as const,
+  /** All projects including remote/hub projects */
+  allProjects: () => [...projectKeys.all, 'all'] as const,
+  /** Claim state for a specific project */
+  claim: (projectId: string) => [...projectKeys.all, projectId, 'claim'] as const,
 };

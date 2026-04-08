@@ -110,6 +110,10 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 
   // Task status events
   'event:task.statusChanged': { keys: [TASKS] },
+
+  // Relay project claim/release events
+  'event:relay.projectClaimed': { keys: [['projects', 'list']] },
+  'event:relay.projectUnclaimed': { keys: [['projects', 'list']] },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
