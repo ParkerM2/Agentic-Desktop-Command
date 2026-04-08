@@ -88,6 +88,7 @@ function createMockProjectService(projectStore: Map<string, Project>): ProjectSe
       defaultBranch: data.defaultBranch ?? 'main',
     })),
     deleteSubProject: vi.fn(async () => ({ success: true })),
+    listAllProjects: vi.fn(async () => [...projectStore.values()]),
   };
 }
 
