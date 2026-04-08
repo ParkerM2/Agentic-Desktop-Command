@@ -15,6 +15,7 @@ import { captureRoutes } from './routes/captures.js';
 import { deviceRoutes } from './routes/devices.js';
 import { plannerRoutes } from './routes/planner.js';
 import { projectRoutes } from './routes/projects.js';
+import { relayRoutes } from './routes/relay.js';
 import { workspaceRoutes } from './routes/workspaces.js';
 import { settingsRoutes } from './routes/settings.js';
 import { taskRoutes } from './routes/tasks.js';
@@ -244,6 +245,7 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   await app.register(agentRoutes);
   await app.register(webhookRoutes);
   await app.register(deviceRoutes);
+  await app.register(relayRoutes);
   await app.register(workspaceRoutes);
 
   // Auth routes with stricter rate limiting (10 requests/minute per IP)
