@@ -146,7 +146,7 @@ export function TemplateEditorPanel() {
     }
 
     return (
-      <form id="template-editor-form" className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6" id="template-editor-form" onSubmit={handleSubmit}>
         <IdentitySection values={values} onChange={setValues} />
         <Separator />
         <BranchingSection values={values} onChange={setValues} />
@@ -179,11 +179,11 @@ export function TemplateEditorPanel() {
         </ScrollArea>
         <Separator />
         <DialogFooter className="shrink-0 px-6 py-4">
-          <Button type="button" variant="outline" disabled={isPending} onClick={handleClose}>
+          <Button disabled={isPending} type="button" variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button type="submit" form="template-editor-form" disabled={isPending}>
-            {isPending ? <Spinner size="sm" className="mr-2" /> : null}
+          <Button disabled={isPending} form="template-editor-form" type="submit">
+            {isPending ? <Spinner className="mr-2" size="sm" /> : null}
             {isNew ? 'Create' : 'Save'}
           </Button>
         </DialogFooter>
@@ -242,8 +242,8 @@ function IdentitySection({ values, onChange }: SectionProps) {
       <div className="space-y-4">
         <FieldGroup label="Name">
           <Input
-            placeholder="My workflow template"
             required
+            placeholder="My workflow template"
             value={values.name}
             onChange={(e) => onChange({ ...values, name: e.target.value })}
           />
@@ -344,22 +344,22 @@ function TeamSection({ values, onChange }: SectionProps) {
       <div className="space-y-4">
         <FieldGroup label="Max concurrent agents">
           <Input
-            type="number"
-            min={1}
             max={20}
+            min={1}
+            type="number"
             value={team.maxConcurrentAgents}
             onChange={(e) => update({ maxConcurrentAgents: Number(e.target.value) })}
           />
         </FieldGroup>
         <div className="space-y-2">
           <CheckboxField
-            label="Spawn QA agent per task"
             checked={team.spawnQaPerTask}
+            label="Spawn QA agent per task"
             onCheckedChange={(v) => update({ spawnQaPerTask: v })}
           />
           <CheckboxField
-            label="Enable guardian agent"
             checked={team.enableGuardian}
+            label="Enable guardian agent"
             onCheckedChange={(v) => update({ enableGuardian: v })}
           />
         </div>
@@ -375,13 +375,13 @@ function TeamSection({ values, onChange }: SectionProps) {
                 {(agentDefs ?? []).map((def) => (
                   <div key={def.slug} className="flex items-center gap-2" title={def.description}>
                     <Checkbox
-                      id={`role-${def.slug}`}
                       checked={selectedRoles.includes(def.slug)}
+                      id={`role-${def.slug}`}
                       onCheckedChange={(v) => toggleRole(def.slug, v === true)}
                     />
                     <Label
-                      htmlFor={`role-${def.slug}`}
                       className="cursor-pointer font-normal text-xs"
+                      htmlFor={`role-${def.slug}`}
                     >
                       {def.slug}
                     </Label>
@@ -418,32 +418,32 @@ function QaSection({ values, onChange }: SectionProps) {
       <div className="space-y-4">
         <FieldGroup label="Max QA rounds per task">
           <Input
-            type="number"
-            min={1}
             max={10}
+            min={1}
+            type="number"
             value={qa.maxRounds}
             onChange={(e) => update({ maxRounds: Number(e.target.value) })}
           />
         </FieldGroup>
         <div className="space-y-2">
           <CheckboxField
-            label="Run lint"
             checked={qa.runLint}
+            label="Run lint"
             onCheckedChange={(v) => update({ runLint: v })}
           />
           <CheckboxField
-            label="Run typecheck"
             checked={qa.runTypecheck}
+            label="Run typecheck"
             onCheckedChange={(v) => update({ runTypecheck: v })}
           />
           <CheckboxField
-            label="Run build"
             checked={qa.runBuild}
+            label="Run build"
             onCheckedChange={(v) => update({ runBuild: v })}
           />
           <CheckboxField
-            label="Run tests"
             checked={qa.runTests}
+            label="Run tests"
             onCheckedChange={(v) => update({ runTests: v })}
           />
         </div>
@@ -466,23 +466,23 @@ function PermissionsSection({ values, onChange }: SectionProps) {
       <SectionHeading>Permissions</SectionHeading>
       <div className="space-y-2">
         <CheckboxField
-          label="Allow push to remote"
           checked={permissions.allowPush}
+          label="Allow push to remote"
           onCheckedChange={(v) => update({ allowPush: v })}
         />
         <CheckboxField
-          label="Allow create PR"
           checked={permissions.allowCreatePr}
+          label="Allow create PR"
           onCheckedChange={(v) => update({ allowCreatePr: v })}
         />
         <CheckboxField
-          label="Allow delete branch"
           checked={permissions.allowDeleteBranch}
+          label="Allow delete branch"
           onCheckedChange={(v) => update({ allowDeleteBranch: v })}
         />
         <CheckboxField
-          label="Allow shell exec"
           checked={permissions.allowShellExec}
+          label="Allow shell exec"
           onCheckedChange={(v) => update({ allowShellExec: v })}
         />
       </div>
@@ -505,8 +505,8 @@ function GuardianSection({ values, onChange }: SectionProps) {
       <div className="space-y-4">
         <FieldGroup label="Max file size (lines)">
           <Input
-            type="number"
             min={1}
+            type="number"
             value={guardian.maxFileSizeLines}
             onChange={(e) => update({ maxFileSizeLines: Number(e.target.value) })}
           />

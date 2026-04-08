@@ -76,7 +76,7 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
   if (isEditing) {
     return (
       <div className="flex h-80 flex-col space-y-4">
-        <SectionHeader icon={FileText} title="Edit Plan" size="sm" />
+        <SectionHeader icon={FileText} size="sm" title="Edit Plan" />
         <div className="min-h-0 flex-1">
           <MarkdownEditor
             saving={saving}
@@ -93,29 +93,29 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
   return (
     <div className="space-y-4">
       {/* Header with actions */}
-      <SectionHeader icon={FileText} title="Agent Plan" size="sm">
+      <SectionHeader icon={FileText} size="sm" title="Agent Plan">
         <div className="flex items-center gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={handleStartEditing}>
+          <Button size="sm" type="button" variant="secondary" onClick={handleStartEditing}>
             <Edit3 className="h-3.5 w-3.5" />
             Edit
           </Button>
           <Button
-            type="button"
-            variant="ghost"
-            size="sm"
             className="text-success hover:bg-success/10 hover:text-success"
             disabled={startExecution.isPending}
+            size="sm"
+            type="button"
+            variant="ghost"
             onClick={handleApprove}
           >
             <Play className="h-3.5 w-3.5" />
             Approve &amp; Execute
           </Button>
           <Button
-            type="button"
-            variant="ghost"
-            size="sm"
             className="text-warning hover:bg-warning/10 hover:text-warning"
             disabled={replanWithFeedback.isPending}
+            size="sm"
+            type="button"
+            variant="ghost"
             onClick={() => {
               setFeedbackDialogOpen(true);
             }}
@@ -124,11 +124,11 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
             {replanWithFeedback.isPending ? 'Requesting...' : 'Request Changes'}
           </Button>
           <Button
-            type="button"
-            variant="ghost"
-            size="sm"
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={updateStatus.isPending}
+            size="sm"
+            type="button"
+            variant="ghost"
             onClick={handleReject}
           >
             <X className="h-3.5 w-3.5" />

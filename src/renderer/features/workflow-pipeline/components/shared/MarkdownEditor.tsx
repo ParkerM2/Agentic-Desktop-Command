@@ -24,8 +24,8 @@ export function MarkdownEditor({ saving, value, onChange, onCancel, onSave }: Ma
         <Panel defaultSize={50} minSize={20}>
           <Textarea
             aria-label="Markdown editor"
-            value={value}
             className="h-full w-full resize-none rounded-md border p-4 font-mono text-sm focus:ring-2"
+            value={value}
             onChange={(e) => {
               onChange(e.target.value);
             }}
@@ -43,8 +43,8 @@ export function MarkdownEditor({ saving, value, onChange, onCancel, onSave }: Ma
           Cancel
         </Button>
         <Button
-          type="button"
           disabled={saving === true}
+          type="button"
           onClick={onSave}
         >
           {saving === true ? 'Saving...' : 'Save'}

@@ -93,9 +93,9 @@ export function ChangelogSummary() {
 
         <Button
           aria-label="Expand changelog"
+          className="h-6 w-6"
           size="icon"
           variant="ghost"
-          className="h-6 w-6"
           onClick={() => setDialogOpen(true)}
         >
           <Expand className="h-3 w-3" />
@@ -103,9 +103,9 @@ export function ChangelogSummary() {
 
         <Button
           aria-label={copied ? 'Copied' : 'Copy latest changelog'}
+          className="h-6 w-6"
           size="icon"
           variant="ghost"
-          className="h-6 w-6"
           onClick={handleCopy}
         >
           <ClipboardCopy className="h-3 w-3" />
@@ -113,9 +113,9 @@ export function ChangelogSummary() {
 
         <Button
           aria-label="Update changelog"
+          className="h-6 w-6"
           size="icon"
           variant="ghost"
-          className="h-6 w-6"
           onClick={() => setDialogOpen(true)}
         >
           <RefreshCw className="h-3 w-3" />

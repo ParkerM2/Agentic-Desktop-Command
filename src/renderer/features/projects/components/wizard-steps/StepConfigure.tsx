@@ -49,7 +49,7 @@ export function StepConfigure({
     <div className="space-y-4">
       <h3 className="text-sm font-medium">Project Settings</h3>
       <div>
-        <Label htmlFor="wizard-name" className="text-muted-foreground mb-1 block text-sm">
+        <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-name">
           Project Name
         </Label>
         <Input
@@ -61,21 +61,21 @@ export function StepConfigure({
         />
       </div>
       <div>
-        <Label htmlFor="wizard-description" className="text-muted-foreground mb-1 block text-sm">
+        <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-description">
           Description
         </Label>
         <Textarea
+          className="resize-none"
           id="wizard-description"
           placeholder="Optional project description"
           rows={2}
           value={description}
-          className="resize-none"
           onChange={(e) => onDescriptionChange(e.target.value)}
         />
       </div>
       {workspaces.length > 0 ? (
         <div>
-          <Label htmlFor="wizard-workspace" className="text-muted-foreground mb-1 block text-sm">
+          <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-workspace">
             Workspace
           </Label>
           <Select

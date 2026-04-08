@@ -50,7 +50,7 @@ export function BranchSelector({ repoPath }: BranchSelectorProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 text-sm">
-        <Spinner size="sm" className="text-muted-foreground" />
+        <Spinner className="text-muted-foreground" size="sm" />
         <span className="text-muted-foreground">Loading...</span>
       </div>
     );
@@ -59,7 +59,7 @@ export function BranchSelector({ repoPath }: BranchSelectorProps) {
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button className="gap-2" size="sm" variant="outline">
           <GitBranch className="h-3.5 w-3.5" />
           <span className="font-medium">{status?.branch ?? 'unknown'}</span>
           {status ? (
@@ -71,7 +71,7 @@ export function BranchSelector({ repoPath }: BranchSelectorProps) {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent align="start" className="w-[200px] p-0">
         <div className="max-h-60 overflow-y-auto p-1">
           {branches?.map((b) => (
             <div
@@ -101,9 +101,9 @@ export function BranchSelector({ repoPath }: BranchSelectorProps) {
                 onKeyDown={handleKeyDown}
               />
               <Button
-                size="sm"
                 className="h-6 px-2 py-0.5 text-xs"
                 disabled={!newBranchName || createBranch.isPending}
+                size="sm"
                 onClick={handleCreateBranch}
               >
                 Create
@@ -111,9 +111,9 @@ export function BranchSelector({ repoPath }: BranchSelectorProps) {
             </div>
           ) : (
             <Button
-              variant="ghost"
-              size="sm"
               className="w-full justify-start gap-2"
+              size="sm"
+              variant="ghost"
               onClick={() => setShowNewBranch(true)}
             >
               <Plus className="h-3 w-3" />

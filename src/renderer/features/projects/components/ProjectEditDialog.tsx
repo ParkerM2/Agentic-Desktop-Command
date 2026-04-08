@@ -146,11 +146,11 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
                 Name <span className="text-destructive">*</span>
               </Label>
               <Input
+                className="mt-1"
                 id="edit-name"
                 placeholder="Project name"
                 type="text"
                 value={name}
-                className="mt-1"
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
@@ -159,11 +159,11 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
             <div>
               <Label htmlFor="edit-description">Description</Label>
               <Textarea
+                className="mt-1 resize-none"
                 id="edit-description"
                 placeholder="Optional project description"
                 rows={3}
                 value={description}
-                className="mt-1 resize-none"
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
@@ -172,11 +172,11 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
             <div>
               <Label htmlFor="edit-default-branch">Default Branch</Label>
               <Input
+                className="mt-1"
                 id="edit-default-branch"
                 placeholder="main"
                 type="text"
                 value={defaultBranch}
-                className="mt-1"
                 onChange={(e) => setDefaultBranch(e.target.value)}
               />
             </div>
@@ -185,11 +185,11 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
             <div>
               <Label htmlFor="edit-git-url">Git URL</Label>
               <Input
+                className="mt-1"
                 id="edit-git-url"
                 placeholder="https://github.com/user/repo.git"
                 type="text"
                 value={gitUrl}
-                className="mt-1"
                 onChange={(e) => setGitUrl(e.target.value)}
               />
             </div>
@@ -199,7 +199,7 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
               <div>
                 <Label htmlFor="edit-workspace">Workspace</Label>
                 <Select value={workspaceId} onValueChange={setWorkspaceId}>
-                  <SelectTrigger id="edit-workspace" className="mt-1">
+                  <SelectTrigger className="mt-1" id="edit-workspace">
                     <SelectValue placeholder="No workspace" />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,8 +225,8 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
           <DialogFooter className="flex items-center justify-between sm:justify-between">
             {/* Delete button (left side) */}
             <Button
-              variant="ghost"
               className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              variant="ghost"
               onClick={() => setDeleteConfirmOpen(true)}
             >
               <Trash2 className="h-4 w-4" />

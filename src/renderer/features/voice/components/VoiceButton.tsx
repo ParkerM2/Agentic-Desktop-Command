@@ -188,8 +188,8 @@ export function VoiceButton({
         aria-label={getAriaLabel(isListening, isPushToTalk)}
         aria-pressed={isListening}
         disabled={isDisabled}
-        type="button"
         size="icon"
+        type="button"
         className={cn(
           'relative rounded-full transition-all duration-200',
           sizeClasses[size],

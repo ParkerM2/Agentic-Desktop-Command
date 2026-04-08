@@ -44,10 +44,10 @@ export function SubRepoSelector({ repos, selected, onSelectionChange }: SubRepoS
           Selected: {String(selected.size)} of {String(repos.length)}
         </p>
         <div className="flex gap-2">
-          <Button variant="link" size="sm" className="text-primary h-auto p-0 text-xs" type="button" onClick={handleSelectAll}>
+          <Button className="text-primary h-auto p-0 text-xs" size="sm" type="button" variant="link" onClick={handleSelectAll}>
             Select All
           </Button>
-          <Button variant="link" size="sm" className="text-muted-foreground h-auto p-0 text-xs" type="button" onClick={handleDeselectAll}>
+          <Button className="text-muted-foreground h-auto p-0 text-xs" size="sm" type="button" variant="link" onClick={handleDeselectAll}>
             Deselect All
           </Button>
         </div>

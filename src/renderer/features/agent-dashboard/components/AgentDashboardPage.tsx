@@ -216,11 +216,11 @@ export function AgentDashboardPage({
             </TabsList>
           </div>
 
-          <TabsContent value="agents" className="min-h-0 flex-1 p-4">
+          <TabsContent className="min-h-0 flex-1 p-4" value="agents">
             {renderAgentsContent()}
           </TabsContent>
 
-          <TabsContent value="workflows" className="min-h-0 flex-1 overflow-auto p-4">
+          <TabsContent className="min-h-0 flex-1 overflow-auto p-4" value="workflows">
             <WorkflowsTabContent />
           </TabsContent>
         </Tabs>
@@ -295,7 +295,7 @@ function LaunchWorkflowDialog() {
           <DialogTitle>Launch Workflow</DialogTitle>
         </DialogHeader>
         <Separator />
-        <form id="launch-workflow-form" className="space-y-4 py-2" onSubmit={handleSubmit}>
+        <form className="space-y-4 py-2" id="launch-workflow-form" onSubmit={handleSubmit}>
           {template === undefined ? null : (
             <Text size="sm" variant="muted">
               Template: <span className="font-medium text-foreground">{template.name}</span>
@@ -305,9 +305,9 @@ function LaunchWorkflowDialog() {
           <div className="space-y-1.5">
             <Label htmlFor="launch-feature-name">Feature name</Label>
             <Input
+              required
               id="launch-feature-name"
               placeholder="my-feature-slug"
-              required
               value={featureName}
               onChange={(e) => setFeatureName(e.target.value)}
             />
@@ -316,16 +316,16 @@ function LaunchWorkflowDialog() {
           <div className="space-y-1.5">
             <Label htmlFor="launch-project-path">Project path</Label>
             <Input
+              required
               id="launch-project-path"
               placeholder="/absolute/path/to/project"
-              required
               value={projectPath}
               onChange={(e) => setProjectPath(e.target.value)}
             />
           </div>
 
           {applyWorkflow.isError ? (
-            <Text size="sm" className="text-destructive">
+            <Text className="text-destructive" size="sm">
               Failed to launch workflow. Please try again.
             </Text>
           ) : null}
@@ -333,19 +333,19 @@ function LaunchWorkflowDialog() {
         <Separator />
         <DialogFooter>
           <Button
+            disabled={applyWorkflow.isPending}
             type="button"
             variant="outline"
-            disabled={applyWorkflow.isPending}
             onClick={handleClose}
           >
             Cancel
           </Button>
           <Button
-            type="submit"
-            form="launch-workflow-form"
             disabled={!canSubmit}
+            form="launch-workflow-form"
+            type="submit"
           >
-            {applyWorkflow.isPending ? <Spinner size="sm" className="mr-2" /> : null}
+            {applyWorkflow.isPending ? <Spinner className="mr-2" size="sm" /> : null}
             Launch
           </Button>
         </DialogFooter>

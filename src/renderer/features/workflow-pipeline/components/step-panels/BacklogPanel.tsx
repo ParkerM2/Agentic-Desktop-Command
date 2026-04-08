@@ -41,7 +41,7 @@ export function BacklogPanel({ saving, task, onSaveDescription }: BacklogPanelPr
   if (isEditing) {
     return (
       <div className="flex h-80 flex-col space-y-4">
-        <SectionHeader icon={FileText} title="Edit Description" size="sm" />
+        <SectionHeader icon={FileText} size="sm" title="Edit Description" />
         <div className="min-h-0 flex-1">
           <MarkdownEditor
             saving={saving}
@@ -57,11 +57,11 @@ export function BacklogPanel({ saving, task, onSaveDescription }: BacklogPanelPr
 
   return (
     <div className="space-y-4">
-      <SectionHeader icon={FileText} title="Task Description" size="sm">
+      <SectionHeader icon={FileText} size="sm" title="Task Description">
         <Button
+          size="sm"
           type="button"
           variant="secondary"
-          size="sm"
           onClick={handleStartEditing}
         >
           <Edit3 className="h-3.5 w-3.5" />

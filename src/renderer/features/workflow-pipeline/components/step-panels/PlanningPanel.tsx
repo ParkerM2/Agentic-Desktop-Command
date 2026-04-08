@@ -37,11 +37,11 @@ export function PlanningPanel({ task }: PlanningPanelProps) {
         </div>
         {sessionId ? (
           <Button
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={killAgent.isPending}
+            size="sm"
             type="button"
             variant="ghost"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={handleKill}
           >
             <StopCircle className="h-3.5 w-3.5" />
@@ -51,7 +51,7 @@ export function PlanningPanel({ task }: PlanningPanelProps) {
       </div>
 
       {/* Pulsing progress bar */}
-      <Progress value={33} size="sm" className="animate-pulse" />
+      <Progress className="animate-pulse" size="sm" value={33} />
 
       {/* Execution logs */}
       <ExecutionLog logs={task.logs ?? []} />

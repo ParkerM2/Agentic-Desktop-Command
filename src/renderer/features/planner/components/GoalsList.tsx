@@ -58,14 +58,14 @@ export function GoalsList({ goals, completedGoals, onUpdate, onToggle }: GoalsLi
               <li key={`goal-${String(index)}`} className="group flex items-center gap-2">
                 <Button
                   aria-label={isComplete ? 'Mark incomplete' : 'Mark complete'}
+                  size="icon"
+                  variant="ghost"
                   className={cn(
                     'h-5 w-5 shrink-0 rounded border p-0',
                     isComplete
                       ? 'border-success bg-success text-success-foreground hover:bg-success/90'
                       : 'border-border hover:border-primary',
                   )}
-                  size="icon"
-                  variant="ghost"
                   onClick={() => onToggle(goal)}
                 >
                   {isComplete ? <Check className="h-3 w-3" /> : null}

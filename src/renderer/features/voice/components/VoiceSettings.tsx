@@ -75,14 +75,14 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
       {/* Enable/Disable Voice */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label htmlFor="voice-enabled" className="text-foreground text-sm font-medium">
+          <Label className="text-foreground text-sm font-medium" htmlFor="voice-enabled">
             Voice Input
           </Label>
           <p className="text-muted-foreground text-xs">Enable voice commands and dictation</p>
         </div>
         <Switch
-          id="voice-enabled"
           checked={config.enabled}
+          id="voice-enabled"
           onCheckedChange={handleToggleEnabled}
         />
       </div>
@@ -102,7 +102,7 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
 
       {/* Language Selection */}
       <div className="space-y-2">
-        <Label htmlFor="voice-language" className="text-foreground text-sm font-medium">
+        <Label className="text-foreground text-sm font-medium" htmlFor="voice-language">
           Language
         </Label>
         <Select
@@ -128,20 +128,20 @@ export function VoiceSettings({ className }: VoiceSettingsProps) {
         <span className="text-foreground text-sm font-medium">Input Mode</span>
         <div className="flex gap-2">
           <Button
+            className="flex-1"
             disabled={!config.enabled}
             type="button"
             variant={config.inputMode === 'push_to_talk' ? 'primary' : 'outline'}
-            className="flex-1"
             onClick={() => handleInputModeChange('push_to_talk')}
           >
             <Mic className="h-4 w-4" />
             Push to Talk
           </Button>
           <Button
+            className="flex-1"
             disabled={!config.enabled}
             type="button"
             variant={config.inputMode === 'continuous' ? 'primary' : 'outline'}
-            className="flex-1"
             onClick={() => handleInputModeChange('continuous')}
           >
             <Mic className="h-4 w-4" />

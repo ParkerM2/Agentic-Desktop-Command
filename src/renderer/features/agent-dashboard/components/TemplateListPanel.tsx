@@ -125,7 +125,7 @@ export function TemplateListPanel() {
     }
 
     return (
-      <div className="space-y-2 p-1" aria-label="Workflow templates">
+      <div aria-label="Workflow templates" className="space-y-2 p-1">
         {list.map((template) => {
           const isDeleting =
             deleteTemplate.isPending && deleteTemplate.variables === template.id;
@@ -135,16 +135,16 @@ export function TemplateListPanel() {
           return (
             <TemplateRow
               key={template.id}
-              template={template}
-              isSelected={selectedTemplateId === template.id}
               isDeleting={isDeleting}
               isDuplicating={isDuplicating}
-              onSelect={handleSelect}
-              onEdit={handleEdit}
-              onDuplicate={handleDuplicate}
+              isSelected={selectedTemplateId === template.id}
+              template={template}
               onDelete={handleDelete}
-              onLaunch={handleLaunch}
+              onDuplicate={handleDuplicate}
+              onEdit={handleEdit}
               onKeyDown={handleKeyDown}
+              onLaunch={handleLaunch}
+              onSelect={handleSelect}
             />
           );
         })}
@@ -205,31 +205,31 @@ function TemplateRow({
 }: TemplateRowProps) {
   return (
     <div
+      role="button"
+      tabIndex={0}
       className={cn(
         'group flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors',
         isSelected
           ? 'border-primary bg-primary/5'
           : 'border-transparent hover:border-border hover:bg-accent/30',
       )}
-      role="button"
-      tabIndex={0}
       onClick={() => onSelect(template.id)}
       onKeyDown={(e) => onKeyDown(e, template.id)}
     >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="truncate text-sm font-medium text-foreground">{template.name}</span>
-          <Badge variant={MODE_BADGE_VARIANT[template.mode]} className="shrink-0 text-xs">
+          <Badge className="shrink-0 text-xs" variant={MODE_BADGE_VARIANT[template.mode]}>
             {MODE_LABEL[template.mode]}
           </Badge>
           {template.isBuiltin ? (
-            <Badge variant="outline" className="shrink-0 text-xs">
+            <Badge className="shrink-0 text-xs" variant="outline">
               Built-in
             </Badge>
           ) : null}
         </div>
         {template.description.length > 0 ? (
-          <Text size="sm" variant="muted" className="mt-0.5 line-clamp-2">
+          <Text className="mt-0.5 line-clamp-2" size="sm" variant="muted">
             {template.description}
           </Text>
         ) : null}
@@ -240,9 +240,9 @@ function TemplateRow({
           <TooltipTrigger asChild>
             <Button
               aria-label={`Launch ${template.name}`}
+              className="h-7 w-7"
               size="icon"
               variant="ghost"
-              className="h-7 w-7"
               onClick={(e) => {
                 e.stopPropagation();
                 onLaunch(template.id);
@@ -258,9 +258,9 @@ function TemplateRow({
           <TooltipTrigger asChild>
             <Button
               aria-label={`Edit ${template.name}`}
+              className="h-7 w-7"
               size="icon"
               variant="ghost"
-              className="h-7 w-7"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(template.id);
@@ -276,10 +276,10 @@ function TemplateRow({
           <TooltipTrigger asChild>
             <Button
               aria-label={`Duplicate ${template.name}`}
-              size="icon"
-              variant="ghost"
               className="h-7 w-7"
               disabled={isDuplicating}
+              size="icon"
+              variant="ghost"
               onClick={(e) => {
                 e.stopPropagation();
                 onDuplicate(template.id);
@@ -296,10 +296,10 @@ function TemplateRow({
             <TooltipTrigger asChild>
               <Button
                 aria-label={`Delete ${template.name}`}
-                size="icon"
-                variant="ghost"
                 className="h-7 w-7 text-destructive hover:text-destructive"
                 disabled={isDeleting}
+                size="icon"
+                variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(template.id);

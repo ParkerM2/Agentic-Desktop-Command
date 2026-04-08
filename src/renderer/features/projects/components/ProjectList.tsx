@@ -101,9 +101,9 @@ export function ProjectList() {
                 <p className="text-muted-foreground text-xs">{project.path}</p>
               </div>
               <Button
-                variant="ghost"
-                size="icon"
                 className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive h-8 w-8"
+                size="icon"
+                variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeProject.mutate(project.id);

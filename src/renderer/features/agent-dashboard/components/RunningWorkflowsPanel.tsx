@@ -102,8 +102,8 @@ export function RunningWorkflowsPanel() {
           return (
             <li key={run.runId}>
               <WorkflowRunRow
-                run={run}
                 isStopping={stoppingThisRun}
+                run={run}
                 onStop={handleStop}
               />
             </li>
@@ -150,7 +150,7 @@ function WorkflowRunRow({ run, isStopping, onStop }: WorkflowRunRowProps) {
           <span className="truncate text-sm font-medium text-foreground">
             {run.featureName}
           </span>
-          <Badge variant={STATE_VARIANT[run.state]} className="shrink-0 text-xs">
+          <Badge className="shrink-0 text-xs" variant={STATE_VARIANT[run.state]}>
             {run.state}
           </Badge>
           {hasQaRounds ? (
@@ -165,7 +165,7 @@ function WorkflowRunRow({ run, isStopping, onStop }: WorkflowRunRowProps) {
             Started {startedAt}
           </Text>
           {hasError ? (
-            <Text size="sm" className="line-clamp-1 text-destructive">
+            <Text className="line-clamp-1 text-destructive" size="sm">
               {run.errorMessage}
             </Text>
           ) : null}
@@ -177,13 +177,13 @@ function WorkflowRunRow({ run, isStopping, onStop }: WorkflowRunRowProps) {
           <TooltipTrigger asChild>
             <Button
               aria-label={`Stop ${run.featureName}`}
-              size="icon"
-              variant="ghost"
               className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
               disabled={isStopping}
+              size="icon"
+              variant="ghost"
               onClick={() => onStop(run.runId)}
             >
-              {isStopping ? <Spinner size="sm" className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+              {isStopping ? <Spinner className="h-3.5 w-3.5" size="sm" /> : <Square className="h-3.5 w-3.5" />}
             </Button>
           </TooltipTrigger>
           <TooltipContent>Stop workflow</TooltipContent>

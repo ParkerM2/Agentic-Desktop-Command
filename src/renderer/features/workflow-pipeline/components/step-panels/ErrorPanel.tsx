@@ -63,11 +63,11 @@ export function ErrorPanel({ task }: ErrorPanelProps) {
       {/* Recovery actions */}
       <div className="flex items-center gap-2">
         <Button
+          className="text-primary hover:bg-primary/10 hover:text-primary"
           disabled={restartFromCheckpoint.isPending}
+          size="sm"
           type="button"
           variant="ghost"
-          size="sm"
-          className="text-primary hover:bg-primary/10 hover:text-primary"
           onClick={handleRetry}
         >
           <RotateCcw className="h-3.5 w-3.5" />
@@ -75,9 +75,9 @@ export function ErrorPanel({ task }: ErrorPanelProps) {
         </Button>
         <Button
           disabled={updateStatus.isPending}
+          size="sm"
           type="button"
           variant="secondary"
-          size="sm"
           onClick={handleRequeue}
         >
           <RefreshCw className="h-3.5 w-3.5" />

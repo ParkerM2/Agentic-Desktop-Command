@@ -19,7 +19,7 @@ export function TaskSelector({ projectId, selectedTaskId, onSelectTask }: TaskSe
   if (isLoading) {
     return (
       <div className="flex items-center gap-2">
-        <Spinner size="sm" className="text-muted-foreground" />
+        <Spinner className="text-muted-foreground" size="sm" />
         <span className="text-muted-foreground text-sm">Loading tasks...</span>
       </div>
     );

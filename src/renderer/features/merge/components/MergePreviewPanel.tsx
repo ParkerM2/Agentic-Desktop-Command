@@ -231,24 +231,24 @@ export function MergePreviewPanel({
         <div className="border-border flex items-center gap-0.5 rounded-md border p-0.5">
           <Button
             aria-label="Split view"
+            size="icon"
+            variant="ghost"
             className={cn(
               'h-auto rounded px-2 py-1 text-xs',
               isSplit ? 'bg-muted text-foreground' : 'text-muted-foreground',
             )}
-            size="icon"
-            variant="ghost"
             onClick={() => setViewMode(DiffModeEnum.SplitGitHub)}
           >
             <Columns2 className="h-3.5 w-3.5" />
           </Button>
           <Button
             aria-label="Unified view"
+            size="icon"
+            variant="ghost"
             className={cn(
               'h-auto rounded px-2 py-1 text-xs',
               isSplit ? 'text-muted-foreground' : 'bg-muted text-foreground',
             )}
-            size="icon"
-            variant="ghost"
             onClick={() => setViewMode(DiffModeEnum.Unified)}
           >
             <Rows2 className="h-3.5 w-3.5" />
@@ -265,13 +265,13 @@ export function MergePreviewPanel({
               {diff.files.map((file) => (
                 <Button
                   key={file.file}
+                  variant="ghost"
                   className={cn(
                     'flex h-auto w-full items-center justify-between px-3 py-1.5 text-left text-xs',
                     selectedFile === file.file
                       ? 'bg-accent text-accent-foreground'
                       : 'text-foreground',
                   )}
-                  variant="ghost"
                   onClick={() => setSelectedFile(file.file)}
                 >
                   <div className="flex min-w-0 items-center gap-1.5">

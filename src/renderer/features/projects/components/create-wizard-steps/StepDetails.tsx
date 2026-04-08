@@ -30,7 +30,7 @@ export function StepDetails({
       <h3 className="text-sm font-medium">Project Details</h3>
 
       <div>
-        <Label htmlFor="create-wizard-name" className="text-muted-foreground mb-1 block text-sm">
+        <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="create-wizard-name">
           Project Name <span className="text-destructive">*</span>
         </Label>
         <Input
@@ -43,29 +43,29 @@ export function StepDetails({
       </div>
 
       <div>
-        <Label htmlFor="create-wizard-description" className="text-muted-foreground mb-1 block text-sm">
+        <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="create-wizard-description">
           Description
         </Label>
         <Textarea
+          className="resize-none"
           id="create-wizard-description"
           placeholder="Optional project description"
           rows={2}
           value={description}
-          className="resize-none"
           onChange={(e) => onDescriptionChange(e.target.value)}
         />
       </div>
 
       <div>
-        <Label htmlFor="create-wizard-folder" className="text-muted-foreground mb-1 block text-sm">
+        <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="create-wizard-folder">
           Target Folder
         </Label>
         <div className="flex items-center gap-2">
           <Button
-            id="create-wizard-folder"
-            variant="outline"
-            type="button"
             disabled={isSelectingFolder}
+            id="create-wizard-folder"
+            type="button"
+            variant="outline"
             onClick={onSelectFolder}
           >
             {isSelectingFolder ? (

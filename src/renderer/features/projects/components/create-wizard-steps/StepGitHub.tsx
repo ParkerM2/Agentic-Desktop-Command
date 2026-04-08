@@ -27,12 +27,12 @@ export function StepGitHub({
 
       {/* Toggle: Create GitHub repo */}
       <div className="flex items-center justify-between">
-        <Label htmlFor="create-github-toggle" className="text-sm">
+        <Label className="text-sm" htmlFor="create-github-toggle">
           Create GitHub repository
         </Label>
         <Switch
-          id="create-github-toggle"
           checked={createGitHubRepo}
+          id="create-github-toggle"
           onCheckedChange={onCreateRepoChange}
         />
       </div>

@@ -58,7 +58,7 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Spinner size="md" className="text-muted-foreground" />
+        <Spinner className="text-muted-foreground" size="md" />
       </div>
     );
   }
@@ -71,9 +71,9 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
           Worktrees
         </h3>
         <Button
-          variant="ghost"
-          size="sm"
           className="text-muted-foreground hover:text-foreground gap-1 text-xs"
+          size="sm"
+          variant="ghost"
           onClick={() => setShowForm(!showForm)}
         >
           <Plus className="h-3 w-3" />
@@ -97,15 +97,15 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
           />
           <div className="flex gap-2">
             <Button
-              size="sm"
               disabled={!branch || !worktreePath || createWorktree.isPending}
+              size="sm"
               onClick={handleCreate}
             >
               {createWorktree.isPending ? 'Creating...' : 'Create'}
             </Button>
             <Button
-              variant="ghost"
               size="sm"
+              variant="ghost"
               onClick={() => setShowForm(false)}
             >
               Cancel
@@ -128,18 +128,18 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
               </div>
               <div className="flex items-center gap-1">
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="text-muted-foreground hover:text-primary h-7 w-7"
+                  size="icon"
                   title={`Merge ${wt.branch} into ${mainBranch}`}
+                  variant="ghost"
                   onClick={() => handleOpenMerge(wt.branch)}
                 >
                   <GitMerge className="h-3.5 w-3.5" />
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="icon"
                   className="text-muted-foreground hover:text-destructive h-7 w-7"
+                  size="icon"
+                  variant="ghost"
                   onClick={() => handleRemove(wt.path)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

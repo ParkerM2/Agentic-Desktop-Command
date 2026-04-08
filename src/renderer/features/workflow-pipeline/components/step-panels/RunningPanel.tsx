@@ -51,11 +51,11 @@ export function RunningPanel({ task }: RunningPanelProps) {
         </div>
         {sessionId ? (
           <Button
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             disabled={killAgent.isPending}
+            size="sm"
             type="button"
             variant="ghost"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={handleKill}
           >
             <StopCircle className="h-3.5 w-3.5" />
@@ -70,7 +70,7 @@ export function RunningPanel({ task }: RunningPanelProps) {
           <span className="text-muted-foreground text-xs">Overall progress</span>
           <span className="text-foreground text-xs font-medium">{overallPercent}%</span>
         </div>
-        <Progress value={overallPercent} size="sm" />
+        <Progress size="sm" value={overallPercent} />
         {progress?.message ? (
           <p className="text-muted-foreground text-xs">{progress.message}</p>
         ) : null}

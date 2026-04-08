@@ -448,15 +448,15 @@ export function StorageManagementSection() {
       {/* Clear confirmation */}
       <ConfirmDialog
         confirmLabel="Clear"
+        loading={clearingStoreId !== null}
+        open={confirmClearEntry !== null}
+        title={confirmClearEntry ? `Clear ${confirmClearEntry.label}?` : ''}
+        variant="destructive"
         description={
           confirmClearEntry
             ? `This will remove all data from "${confirmClearEntry.label}". This action cannot be undone.`
             : ''
         }
-        loading={clearingStoreId !== null}
-        open={confirmClearEntry !== null}
-        title={confirmClearEntry ? `Clear ${confirmClearEntry.label}?` : ''}
-        variant="destructive"
         onConfirm={handleClearConfirm}
         onOpenChange={(open) => {
           if (!open) setConfirmClearEntry(null);

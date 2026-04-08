@@ -63,13 +63,13 @@ export function NotesList() {
           {allTags.map((tag) => (
             <Button
               key={tag}
+              variant="ghost"
               className={cn(
                 'h-auto rounded-full px-2 py-0.5 text-xs',
                 selectedTag === tag
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'bg-muted text-muted-foreground hover:bg-accent',
               )}
-              variant="ghost"
               onClick={() => handleTagClick(tag)}
             >
               {tag}
@@ -121,11 +121,11 @@ function NoteListItem({ note, isSelected, onSelect }: NoteListItemProps) {
 
   return (
     <Button
+      variant="ghost"
       className={cn(
         'h-auto w-full justify-start px-3 py-3 text-left',
         isSelected ? 'bg-accent border-primary border-l-2' : 'border-l-2 border-transparent',
       )}
-      variant="ghost"
       onClick={onSelect}
     >
       <div className="w-full">
