@@ -288,7 +288,12 @@ export async function deviceRoutes(app: FastifyInstance): Promise<void> {
   // ─────────────────────────────────────────────────────────────
   // POST /api/devices/:id/heartbeat — Update device online status
   // ─────────────────────────────────────────────────────────────
-  app.post<{ Params: { id: string } }>('/api/devices/:id/heartbeat', async (request, reply) => {
+  app.post<{
+    Params: { id: string };
+    Body: {
+      projects?: Array<{ id: string; name: string; path: string }>;
+    };
+  }>('/api/devices/:id/heartbeat', async (request, reply) => {
     if (!request.user) {
       return reply.status(401).send({
         error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
@@ -311,6 +316,94 @@ export async function deviceRoutes(app: FastifyInstance): Promise<void> {
       request.params.id,
     );
 
+    // Upsert device_projects if provided
+    const { projects } = request.body ?? {};
+    if (Array.isArray(projects) && projects.length > 0) {
+      const upsert = db.prepare(
+        `INSERT INTO device_projects (device_id, project_id, project_name, project_path, last_seen)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(device_id, project_id) DO UPDATE SET
+           project_name = excluded.project_name,
+           project_path = excluded.project_path,
+           last_seen = excluded.last_seen`,
+      );
+      const upsertAll = db.transaction(
+        (items: Array<{ id: string; name: string; path: string }>) => {
+          for (const project of items) {
+            upsert.run(request.params.id, project.id, project.name, project.path, now);
+          }
+        },
+      );
+      upsertAll(projects);
+    }
+
     return { success: true, lastSeen: now };
+  });
+
+  // ─────────────────────────────────────────────────────────────
+  // GET /api/projects/all-devices — Projects from all online devices
+  // ─────────────────────────────────────────────────────────────
+  app.get('/api/projects/all-devices', async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({
+        error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+      });
+    }
+
+    interface AllDevicesProjectRow {
+      project_id: string;
+      project_name: string;
+      project_path: string;
+      device_id: string;
+      device_name: string;
+      machine_id: string | null;
+      last_seen: string;
+      claimed_by_device_id: string | null;
+      host_device_id: string | null;
+      expires_at: string | null;
+    }
+
+    const rows = db
+      .prepare(
+        `SELECT
+           dp.project_id,
+           dp.project_name,
+           dp.project_path,
+           dp.device_id,
+           d.device_name,
+           d.machine_id,
+           dp.last_seen,
+           pc.claimed_by_device_id,
+           pc.host_device_id,
+           pc.expires_at
+         FROM device_projects dp
+         JOIN devices d ON d.id = dp.device_id
+         LEFT JOIN project_claims pc ON pc.project_id = dp.project_id
+         WHERE d.user_id = ? AND d.is_online = 1`,
+      )
+      .all(request.user.id) as AllDevicesProjectRow[];
+
+    // Determine "local" device: the device that made this request
+    // Use machine_id matching if available; otherwise fall back to device_id in request header
+    const localDeviceHeader = (request.headers['x-device-id'] as string | undefined) ?? '';
+
+    const data = rows.map((row) => ({
+      projectId: row.project_id,
+      projectName: row.project_name,
+      projectPath: row.project_path,
+      deviceId: row.device_id,
+      deviceName: row.device_name,
+      isLocal: localDeviceHeader !== '' && row.device_id === localDeviceHeader,
+      lastSeen: row.last_seen,
+      claim: row.claimed_by_device_id
+        ? {
+            claimedByDeviceId: row.claimed_by_device_id,
+            hostDeviceId: row.host_device_id,
+            expiresAt: row.expires_at,
+          }
+        : null,
+    }));
+
+    return reply.send({ success: true, data });
   });
 }
