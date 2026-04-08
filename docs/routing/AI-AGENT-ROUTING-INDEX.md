@@ -636,6 +636,29 @@ Project management — CRUD, multi-repo, sub-projects, directory detection.
 
 ---
 
+### relay
+
+Cross-device session relay — project claims, session lifecycle (spawn/input/output/kill/resume), and WebSocket message routing between claimer and host devices.
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/types/relay.ts` |
+| Schemas | `shared/ipc/relay/schemas.ts` |
+| Contract | `shared/ipc/relay/contract.ts` |
+| Handlers | `main/ipc/handlers/relay-handlers.ts` |
+| Service | `main/services/relay/relay-service.ts` |
+| Service Types | `main/services/relay/relay-types.ts` |
+| Heartbeat | `main/services/device/heartbeat.ts` |
+| Hub WS | `hub/src/ws/relay-router.ts` |
+| Hub Routes | `hub/src/routes/relay.ts` |
+| Hub Migration | `hub/src/db/migrations/006_relay_tables.sql` |
+| Renderer Hook | `src/renderer/features/workspace/hooks/useRelaySession.ts` |
+| Renderer Mutations | `src/renderer/features/projects/api/useProjects.ts` |
+| Renderer Mutations | `src/renderer/features/workspace/api/useWorkspace.ts` |
+| EventBridge | `src/renderer/shared/components/EventBridge.tsx` |
+
+---
+
 ### qa
 
 Automated QA system — quiet + full tiers.

@@ -300,6 +300,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `notifications` | Notification watchers (Slack, GitHub) |
 | `planner` | Time blocks, daily plans, weekly review |
 | `projects` | Project CRUD, sub-projects, repo detection |
+| `relay` | Cross-device session relay. Manages project claims, session lifecycle (spawn/input/output/kill/resume), and WebSocket message routing between claimer and host devices. |
 | `qa` | QA runner, reports, sessions |
 | `settings` | App settings, profiles, webhook config |
 | `spotify` | Spotify playback |
