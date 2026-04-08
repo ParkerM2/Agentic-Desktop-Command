@@ -40,6 +40,8 @@ export interface SpawnOptions {
   phase: AgentPhase;
   env?: Record<string, string>;
   securitySettings?: SecuritySettings;
+  /** Optional project ID — used by relay service to check if the project is remote */
+  projectId?: string;
 }
 
 // ─── Events ────────────────────────────────────────────────────
@@ -115,6 +117,8 @@ export type AgentSessionEventHandler = (event: AgentSessionEvent) => void;
 export interface AgentOrchestrator {
   spawn: (options: SpawnOptions) => Promise<AgentSession>;
   kill: (sessionId: string) => void;
+  /** Send stdin data to an active session (used by relay service for incoming input). */
+  sendInput: (sessionId: string, data: string) => void;
   getSession: (sessionId: string) => AgentSession | undefined;
   getSessionByTaskId: (taskId: string) => AgentSession | undefined;
   listActiveSessions: () => AgentSession[];

@@ -29,6 +29,8 @@ export interface HubWsClient {
   connect: () => void;
   disconnect: () => void;
   cancelReconnect: () => void;
+  /** Send a raw JSON message through the WebSocket */
+  send: (data: string) => void;
 }
 
 export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
@@ -101,7 +103,7 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
           // Emit entity-specific IPC events for query invalidation
           routeWebSocketEvent(router, data);
 
-          // Forward raw message to registered listeners (e.g. webhook relay)
+          // Forward raw message to registered listeners (e.g. webhook relay, relay service)
           for (const listener of messageListeners) {
             listener(data);
           }
@@ -128,5 +130,13 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
     }
   }
 
-  return { connect, disconnect, cancelReconnect };
+  function send(data: string): void {
+    if (!wsConnection || wsConnection.readyState !== WebSocket.OPEN) {
+      hubLogger.warn('[Hub] WS send attempted but connection is not open');
+      return;
+    }
+    wsConnection.send(data);
+  }
+
+  return { connect, disconnect, cancelReconnect, send };
 }

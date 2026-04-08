@@ -103,6 +103,7 @@ import { createTimeParserService } from '../services/time-parser/time-parser-ser
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
+import { createRelayService } from '../services/relay';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkflowTemplateService } from '../services/workflow-templates';
@@ -113,6 +114,7 @@ import { createQuickInputWindow } from '../tray/quick-input';
 
 import type { OAuthConfig } from '../auth/types';
 import type { Services } from '../ipc';
+import type { RelayService } from '../services/relay';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { UserSessionManager } from '../services/auth';
 import type { HubApiClient } from '../services/hub/hub-api-client';
@@ -153,6 +155,7 @@ export interface ServiceRegistryResult {
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
+  relayService: RelayService;
 }
 
 /**
@@ -451,10 +454,16 @@ export function createServiceRegistry(
     listActiveSessions: () => [],
   });
 
+  // ─── Relay service (cross-device session routing) ─────────────
+  // Created before agentOrchestrator so it can be injected for remote-project delegation.
+  // agentOrchestrator is late-bound via setAgentOrchestrator() after creation.
+  // sendFn is wired after hubConnectionManager WS is available.
+  const relayService = createRelayService();
+
   // ─── Workflow + orchestrator ──────────────────────────────────
   const taskLauncher = createTaskLauncher();
   const workflowTemplateService = createWorkflowTemplateService({ dataDir });
-  const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
+  const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined, relayService);
 
   // ─── WorkflowEngine service ──────────────────────────────────
   const workflowEngineService = createWorkflowEngineService({
@@ -563,6 +572,18 @@ export function createServiceRegistry(
   });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;
+
+  // ─── Relay service wiring ─────────────────────────────────────
+  // Late-bind agentOrchestrator (created after relayService to break circular dep)
+  relayService.setAgentOrchestrator(agentOrchestrator);
+  // Wire WS send function so relay can send envelopes to remote devices
+  relayService.setSendFn((envelope) => {
+    hubConnectionManager.sendWebSocketMessage({ type: 'relay', envelope });
+  });
+  // Register relay as a WS message listener to receive incoming relay envelopes
+  hubConnectionManager.onWebSocketMessage((msg) => {
+    relayService.handleHubMessage(msg);
+  });
 
   // ─── Webhook relay ───────────────────────────────────────────
   const webhookRelay = createWebhookRelay({ assistantService, router });
@@ -719,5 +740,6 @@ export function createServiceRegistry(
     heartbeatIntervalId,
     registeredDeviceId,
     userSessionManager,
+    relayService,
   };
 }

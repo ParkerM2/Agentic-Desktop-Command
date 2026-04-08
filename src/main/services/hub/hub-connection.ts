@@ -48,6 +48,8 @@ export interface HubConnectionManager {
   removeConfig: () => void;
   /** Register a callback for raw WebSocket messages. */
   onWebSocketMessage: (callback: (data: unknown) => void) => void;
+  /** Send a raw JSON-serializable payload through the Hub WebSocket. */
+  sendWebSocketMessage: (data: unknown) => void;
   /** Clean up resources. */
   dispose: () => void;
 }
@@ -197,6 +199,10 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
 
     onWebSocketMessage(callback) {
       messageListeners.push(callback);
+    },
+
+    sendWebSocketMessage(data) {
+      ws.send(JSON.stringify(data));
     },
 
     dispose() {

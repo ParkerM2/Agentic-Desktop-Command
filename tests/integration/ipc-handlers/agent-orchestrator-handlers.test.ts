@@ -60,6 +60,7 @@ function createMockOrchestrator(): AgentOrchestrator {
   return {
     spawn: vi.fn(),
     kill: vi.fn(),
+    sendInput: vi.fn(),
     getSession: vi.fn(),
     getSessionByTaskId: vi.fn(),
     listActiveSessions: vi.fn(),

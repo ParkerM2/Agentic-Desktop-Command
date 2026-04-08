@@ -25,6 +25,7 @@ import type {
   SpawnOptions,
 } from './types';
 import type { MilestonesService } from '../milestones/milestones-service';
+import type { RelayService } from '../relay/relay-service';
 import type { ChildProcess } from 'node:child_process';
 import type { WriteStream } from 'node:fs';
 
@@ -185,6 +186,7 @@ function validateWorkingDirectory(
 export function createAgentOrchestrator(
   progressBaseDir: string,
   milestonesService?: MilestonesService,
+  relayService?: RelayService,
 ): AgentOrchestrator {
   const sessions = new Map<string, AgentSession>();
   const processes = new Map<string, ChildProcess>();
@@ -278,6 +280,36 @@ export function createAgentOrchestrator(
     spawn(options: SpawnOptions): Promise<AgentSession> {
       const { taskId, projectPath, subProjectPath, prompt, phase, env, securitySettings } =
         options;
+
+      // ── Relay: delegate to remote host if project is remote ─────
+      if (relayService && options.projectId && relayService.isRemoteProject(options.projectId)) {
+        const hostDeviceId = relayService.getHostDeviceId(options.projectId) ?? '';
+        const sessionId = relayService.spawnRemoteSession(hostDeviceId, options.projectId, {
+          agentRole: phase,
+          prompt,
+          workDir: projectPath,
+          taskId,
+        });
+        // Return a minimal session record for the relay-managed remote session
+        const relaySession: AgentSession = {
+          id: sessionId,
+          taskId,
+          pid: 0,
+          status: 'active',
+          phase,
+          spawnedAt: new Date().toISOString(),
+          lastHeartbeat: new Date().toISOString(),
+          progressFile: '',
+          logFile: '',
+          hooksConfigPath: '',
+          originalSettingsContent: null,
+          exitCode: null,
+          projectPath,
+          command: prompt,
+        };
+        sessions.set(sessionId, relaySession);
+        return Promise.resolve(relaySession);
+      }
 
       // ── Security: validate taskId ───────────────────────────────
       validateTaskId(taskId);
@@ -410,6 +442,19 @@ export function createAgentOrchestrator(
       child.unref();
 
       return Promise.resolve({ ...session, pid, status: 'active' });
+    },
+
+    sendInput(sessionId: string, data: string): void {
+      const child = processes.get(sessionId);
+      if (!child) {
+        agentLogger.warn(`[AgentOrchestrator] sendInput: no active process for session ${sessionId}`);
+        return;
+      }
+      if (!child.stdin || child.stdin.destroyed) {
+        agentLogger.warn(`[AgentOrchestrator] sendInput: stdin unavailable for session ${sessionId}`);
+        return;
+      }
+      child.stdin.write(data);
     },
 
     kill(sessionId: string): void {
