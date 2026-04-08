@@ -11,13 +11,14 @@
  *   as session.output envelopes through Hub WS.
  */
 
-import { serviceLogger } from '@main/lib/logger';
-
 import type {
   RelayEnvelope,
   SessionEndedPayload,
   SessionSpawnPayload,
 } from '@shared/types/relay';
+
+import { serviceLogger } from '@main/lib/logger';
+
 import type { AgentOrchestrator, SpawnOptions } from '../agent-orchestrator/types';
 
 const relayLogger = serviceLogger;

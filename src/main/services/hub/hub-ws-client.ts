@@ -131,7 +131,7 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
   }
 
   function send(data: string): void {
-    if (!wsConnection || wsConnection.readyState !== WebSocket.OPEN) {
+    if (wsConnection?.readyState !== WebSocket.OPEN) {
       hubLogger.warn('[Hub] WS send attempted but connection is not open');
       return;
     }

@@ -88,6 +88,7 @@ import { createSkillsResolver } from '../services/project/skills-resolver';
 import { createTaskService } from '../services/project/task-service';
 import { createQaRunner } from '../services/qa/qa-runner';
 import { createQaTrigger } from '../services/qa/qa-trigger';
+import { createRelayService } from '../services/relay';
 import { createScreenCaptureService } from '../services/screen/screen-capture-service';
 import { createSessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import { createSettingsService } from '../services/settings/settings-service';
@@ -103,7 +104,6 @@ import { createTimeParserService } from '../services/time-parser/time-parser-ser
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
-import { createRelayService } from '../services/relay';
 import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkflowTemplateService } from '../services/workflow-templates';
@@ -114,10 +114,10 @@ import { createQuickInputWindow } from '../tray/quick-input';
 
 import type { OAuthConfig } from '../auth/types';
 import type { Services } from '../ipc';
-import type { RelayService } from '../services/relay';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { UserSessionManager } from '../services/auth';
 import type { HubApiClient } from '../services/hub/hub-api-client';
+import type { RelayService } from '../services/relay';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import type { TaskRepository } from '../services/tasks/types';
 import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
