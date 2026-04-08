@@ -6,8 +6,6 @@
  * for reconnect replay.
  */
 
-import { randomUUID } from 'node:crypto';
-
 import type { WebSocket } from 'ws';
 import type Database from 'better-sqlite3';
 
@@ -269,14 +267,13 @@ function handleSessionSpawn(
     return;
   }
 
-  // Create a session_relay record
-  const relayId = randomUUID();
+  // Create a session_relay record using sessionId as PK so all subsequent lookups match
   db.prepare(
     `INSERT INTO session_relay (id, claim_id, status, started_at)
      VALUES (?, ?, 'active', ?)`,
-  ).run(relayId, claim.id, new Date().toISOString());
+  ).run(sessionId, claim.id, new Date().toISOString());
 
-  console.log(`[Relay] session.spawn: relay=${relayId} session=${sessionId} project=${projectId}`);
+  console.log(`[Relay] session.spawn: session=${sessionId} project=${projectId}`);
 
   // Route to host device
   const targetSocket = getClientByDeviceId(claim.host_device_id);
@@ -288,7 +285,6 @@ function handleSessionSpawn(
   sendToSocket(targetSocket, {
     type: 'session.spawn',
     sessionId,
-    relayId,
     projectId,
     sourceDeviceId,
     data: data ?? {},
