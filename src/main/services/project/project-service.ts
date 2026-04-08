@@ -191,7 +191,7 @@ export function createProjectService(deps: {
       return items.map((item): Project => {
         const isLocal = item.deviceId === currentDeviceId;
         const claimedByDeviceId =
-          item.claim?.expiresAt !== undefined && item.claim.expiresAt > now
+          item.claim !== null && item.claim.expiresAt !== null && item.claim.expiresAt > now
             ? item.claim.claimedByDeviceId
             : undefined;
 
