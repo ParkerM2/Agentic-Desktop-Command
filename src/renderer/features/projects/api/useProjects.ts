@@ -119,6 +119,34 @@ export function useCreateNewProject() {
   });
 }
 
+/** Claim a remote project for relay sessions */
+export function useClaimProject() {
+  const queryClient = useQueryClient();
+  const { onError } = useMutationErrorToast();
+  return useMutation({
+    mutationFn: (data: { projectId: string; hostDeviceId: string }) =>
+      ipc('relay.claimProject', data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+    },
+    onError: onError('claim project'),
+  });
+}
+
+/** Release (unclaim) a remote project */
+export function useReleaseProject() {
+  const queryClient = useQueryClient();
+  const { onError } = useMutationErrorToast();
+  return useMutation({
+    mutationFn: (projectId: string) =>
+      ipc('relay.unclaimProject', { projectId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+    },
+    onError: onError('release project'),
+  });
+}
+
 /** Delete a sub-project */
 export function useDeleteSubProject() {
   const queryClient = useQueryClient();
