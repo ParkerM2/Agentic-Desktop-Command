@@ -23,6 +23,7 @@ export type * from './note';
 export type * from './planner';
 export type * from './project';
 export type * from './project-setup';
+export type * from './session-config';
 export type * from './settings';
 export type * from './task';
 export { LEGACY_STATUS_MAP } from './task';
