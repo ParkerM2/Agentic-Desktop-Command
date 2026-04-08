@@ -299,24 +299,36 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
 
       agentLogger.info(`[WorktreeProvisioner] Git worktree created on branch: ${branch}`);
 
-      // ── 2. Copy .claude/ context ────────────────────────────
+      // ── 2. Run shared worktree setup script ─────────────────
+      // Copies gitignored config (.claude/settings.json, .env) and installs deps
       const sourceClaudeDir = join(projectPath, '.claude');
       const targetClaudeDir = join(worktreePath, '.claude');
       mkdirSync(targetClaudeDir, { recursive: true });
 
-      for (const dir of CLAUDE_DIRS_TO_COPY) {
-        const source = join(sourceClaudeDir, dir);
-        const target = join(targetClaudeDir, dir);
-        if (existsSync(source)) {
-          cpSync(source, target, { recursive: true });
+      try {
+        execSync(
+          `bash scripts/worktree-setup.sh "${worktreePath}" "${projectPath}"`,
+          { cwd: projectPath, timeout: 120_000, stdio: 'pipe' },
+        );
+        agentLogger.info('[WorktreeProvisioner] Shared setup script completed');
+      } catch (setupError) {
+        agentLogger.warn('[WorktreeProvisioner] Setup script failed, falling back to manual copy', {
+          error: setupError,
+        });
+        // Fallback: manual copy of essential .claude/ files
+        for (const dir of CLAUDE_DIRS_TO_COPY) {
+          const source = join(sourceClaudeDir, dir);
+          const target = join(targetClaudeDir, dir);
+          if (existsSync(source)) {
+            cpSync(source, target, { recursive: true });
+          }
         }
-      }
-
-      for (const file of CLAUDE_FILES_TO_COPY) {
-        const source = join(sourceClaudeDir, file);
-        const target = join(targetClaudeDir, file);
-        if (existsSync(source)) {
-          cpSync(source, target);
+        for (const file of CLAUDE_FILES_TO_COPY) {
+          const source = join(sourceClaudeDir, file);
+          const target = join(targetClaudeDir, file);
+          if (existsSync(source)) {
+            cpSync(source, target);
+          }
         }
       }
 
