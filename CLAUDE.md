@@ -37,6 +37,7 @@
 - Full codebase map: `docs/INDEX.md`
 - Feature plans: `docs/features/<name>/plan.md`
 - Code patterns: `docs/patterns/PATTERNS.md`
+- Caching layer guide: `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`
 - File placement rules: `docs/patterns/CODEBASE-GUARDIAN.md`
 - Plan status: `docs/tracker.json`
 

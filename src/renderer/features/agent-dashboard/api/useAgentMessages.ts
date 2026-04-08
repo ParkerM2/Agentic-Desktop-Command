@@ -8,11 +8,17 @@
  * The queryFn returns an empty array because messages are populated
  * entirely through real-time events. The cache is the source of truth
  * for the current session's message history.
+ *
+ * Two hooks available:
+ * - useAgentMessages: full AgentChatMessage[] for chat panels
+ * - useAgentMessagePreviews: lightweight text previews for status displays
  */
 
 import { useQuery } from '@tanstack/react-query';
 
 import type { AgentChatMessage } from '@shared/types/agent-dashboard';
+
+import type { AgentMessagePreview } from '@renderer/shared/components/EventBridge';
 
 import { agentDashboardKeys } from './queryKeys';
 
@@ -30,4 +36,24 @@ export function useAgentMessages(sessionId: string | null) {
     staleTime: Infinity,
     gcTime: 10 * 60 * 1000,
   });
+}
+
+/**
+ * Access lightweight message previews for a session.
+ *
+ * Returns `AgentMessagePreview[]` — text-only previews of assistant messages,
+ * populated by EventBridge's append handler for `event:agent-dashboard.messageReceived`.
+ *
+ * Use this for status displays (live agent preview, recent messages list)
+ * where full content blocks are not needed.
+ */
+export function useAgentMessagePreviews(sessionId: string | undefined): AgentMessagePreview[] {
+  const { data } = useQuery<AgentMessagePreview[]>({
+    queryKey: ['agent-messages', sessionId ?? ''],
+    queryFn: (): AgentMessagePreview[] => [],
+    enabled: sessionId !== undefined,
+    staleTime: Infinity,
+    gcTime: 5 * 60 * 1000,
+  });
+  return data ?? [];
 }

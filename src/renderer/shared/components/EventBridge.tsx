@@ -13,9 +13,20 @@
 
 import { useEffect } from 'react';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 
 import type { EventChannel } from '@shared/ipc-contract';
+import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
+
+// ─── Exported Types ─────────────────────────────────────────
+
+/** Lightweight message preview stored in the React Query cache. */
+export interface AgentMessagePreview {
+  id: string;
+  role: string;
+  preview: string;
+  timestamp: string;
+}
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -23,10 +34,23 @@ interface RegistryEntry {
   /** React Query key prefixes to invalidate when the event fires. */
   readonly keys: ReadonlyArray<readonly string[]>;
   /**
-   * Handler strategy. Currently all entries use 'invalidate' (default).
-   * 'append' is reserved for future streaming use (e.g., agent messages).
+   * Handler strategy:
+   * - 'invalidate' (default): invalidates matching query keys
+   * - 'append': writes event payload into the cache directly
    */
   readonly handler?: 'invalidate' | 'append';
+}
+
+// ─── Helpers ────────────────────────────────────────────────
+
+/** Extract a text preview from content blocks (max 200 chars). */
+function extractTextPreview(content: ContentBlock[]): string {
+  for (const block of content) {
+    if (block.type === 'text' && block.text.length > 0) {
+      return block.text.length > 200 ? `${block.text.slice(0, 200)}\u2026` : block.text;
+    }
+  }
+  return '';
 }
 
 // ─── Shared Key Constants ───────────────────────────────────
@@ -88,6 +112,36 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   'event:task.statusChanged': { keys: [TASKS] },
 };
 
+// ─── Append Handlers ────────────────────────────────────────
+
+/**
+ * Route an 'append' event to the correct cache-write logic.
+ * Each event channel that uses `handler: 'append'` needs a case here.
+ */
+function handleAppend(queryClient: QueryClient, event: EventChannel, payload: unknown) {
+  if (event === 'event:agent-dashboard.messageReceived') {
+    const message = payload as AgentChatMessage;
+
+    // Only extract previews from assistant messages
+    if (message.role !== 'assistant') return;
+    const preview = extractTextPreview(message.content);
+    if (preview.length === 0) return;
+
+    queryClient.setQueryData<AgentMessagePreview[]>(
+      ['agent-messages', message.agentId],
+      (old) => {
+        const existing = old ?? [];
+        // Deduplicate by message ID
+        if (existing.some((m) => m.id === message.id)) return existing;
+        return [
+          ...existing,
+          { id: message.id, role: message.role, preview, timestamp: message.timestamp },
+        ].slice(-50);
+      },
+    );
+  }
+}
+
 // ─── Component ──────────────────────────────────────────────
 
 export function EventBridge() {
@@ -107,12 +161,26 @@ export function EventBridge() {
       if (!entry) continue;
 
       const typedEvent = event as EventChannel;
-      const cleanup = window.api.on(typedEvent, () => {
-        for (const key of entry.keys) {
-          void queryClient.invalidateQueries({ queryKey: [...key] });
-        }
-      });
-      cleanups.push(cleanup);
+
+      if (entry.handler === 'append') {
+        // Append handler: write event payload directly into cache.
+        // We use the same typed callback signature as invalidate entries
+        // but route the payload through handleAppend for cache writes.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payload routed to type-narrowing handleAppend
+        const cleanup = (window.api.on as (ch: EventChannel, fn: (p: any) => void) => () => void)(
+          typedEvent,
+          (payload: unknown) => { handleAppend(queryClient, typedEvent, payload); },
+        );
+        cleanups.push(cleanup);
+      } else {
+        // Default: invalidate matching query keys
+        const cleanup = window.api.on(typedEvent, () => {
+          for (const key of entry.keys) {
+            void queryClient.invalidateQueries({ queryKey: [...key] });
+          }
+        });
+        cleanups.push(cleanup);
+      }
     }
 
     return () => {
