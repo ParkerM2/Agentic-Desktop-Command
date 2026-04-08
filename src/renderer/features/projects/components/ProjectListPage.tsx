@@ -13,8 +13,6 @@ import type { Project, RepoType } from '@shared/types';
 import { formatRelativeTime } from '@renderer/shared/lib/utils';
 import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
-import { useDeviceStore } from '@features/devices';
-
 import {
   Badge,
   Button,
@@ -36,6 +34,7 @@ import {
   TooltipTrigger,
 } from '@ui';
 
+import { useDeviceStore } from '@features/devices';
 import { useAllTasks } from '@features/tasks';
 
 import { useClaimProject, useProjects, useReleaseProject, useRemoveProject, useSubProjects } from '../api/useProjects';
@@ -83,16 +82,16 @@ function ProjectCard({
   const isRemote = project.remote === true;
   const isClaimedByOther =
     isRemote &&
-    project.claimedByDeviceId != null &&
+    project.claimedByDeviceId !== undefined &&
     project.claimedByDeviceId !== currentDeviceId;
   const isClaimedByMe =
     isRemote &&
-    project.claimedByDeviceId != null &&
+    project.claimedByDeviceId !== undefined &&
     project.claimedByDeviceId === currentDeviceId;
   const isLocalHostedAndClaimedByOther =
     !isRemote &&
     project.hostDeviceId === currentDeviceId &&
-    project.claimedByDeviceId != null &&
+    project.claimedByDeviceId !== undefined &&
     project.claimedByDeviceId !== currentDeviceId;
 
   const showContextMenu = isClaimedByMe || isLocalHostedAndClaimedByOther;
@@ -317,7 +316,7 @@ export function ProjectListPage() {
   }, [allTasks]);
 
   function handleOpenProject(project: Project) {
-    if (project.remote === true && project.hostDeviceId != null) {
+    if (project.remote === true && project.hostDeviceId !== undefined) {
       // Trigger claim flow for remote projects
       claimProject.mutate(
         { projectId: project.id, hostDeviceId: project.hostDeviceId },
