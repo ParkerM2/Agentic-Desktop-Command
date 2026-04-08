@@ -19,6 +19,7 @@
 5. **v2**: Do NOT build on `terminal-service` or xterm.js — deprecated. Use stream-json / JSONL.
 6. **Docs**: EVERY code change MUST update relevant docs. Non-negotiable.
 7. **Verify**: `npm run lint` + `npm run typecheck` + `npm run build` before marking done.
+8. **Worktrees**: Every agent works in an isolated git worktree. `scripts/worktree-setup.sh` runs automatically (WorktreeCreate hook in `.claude/settings.json`) to copy `.claude/settings.json` and install `node_modules/`. `.worktreeinclude` lists gitignored files to copy. Multiple teams can run in parallel on separate worktrees/branches. The WorktreeCreate hook is local-only (settings.json is gitignored) -- recreate it if missing.
 
 ## Caching Layer Rules
 
@@ -40,6 +41,8 @@
 - Caching layer guide: `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`
 - File placement rules: `docs/patterns/CODEBASE-GUARDIAN.md`
 - Plan status: `docs/tracker.json`
+- Worktree setup script: `scripts/worktree-setup.sh`
+- Worktree include list: `.worktreeinclude`
 
 ## Progress Task Pipeline
 
