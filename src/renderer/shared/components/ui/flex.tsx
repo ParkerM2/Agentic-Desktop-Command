@@ -60,5 +60,6 @@ function Flex({ className, gap, align, justify, wrap, ...props }: FlexProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Flex, flexVariants };
 export type { FlexProps };

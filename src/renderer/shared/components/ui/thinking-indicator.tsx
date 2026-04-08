@@ -103,5 +103,6 @@ function ThinkingIndicator({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { ThinkingIndicator, thinkingVariants };
 export type { ThinkingIndicatorProps };

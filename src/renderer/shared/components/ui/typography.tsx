@@ -90,5 +90,6 @@ function Code({ className, ...props }: CodeProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Heading, headingVariants, Text, textVariants, Code };
 export type { HeadingProps, TextProps, CodeProps };

@@ -43,5 +43,6 @@ function Textarea({ className, variant, resize, ...props }: TextareaProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Textarea, textareaVariants };
 export type { TextareaProps };

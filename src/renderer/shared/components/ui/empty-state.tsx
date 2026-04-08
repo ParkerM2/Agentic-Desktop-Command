@@ -120,5 +120,6 @@ function EmptyState({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { EmptyState, emptyStateVariants };
 export type { EmptyStateProps };

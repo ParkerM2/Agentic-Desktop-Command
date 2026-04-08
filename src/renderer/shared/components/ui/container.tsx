@@ -37,5 +37,6 @@ function Container({ className, size, ...props }: ContainerProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Container, containerVariants };
 export type { ContainerProps };

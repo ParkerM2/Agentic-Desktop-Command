@@ -22,6 +22,7 @@ const queryClient = new QueryClient({
   },
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { queryClient };
 
 interface ProvidersProps {

@@ -61,5 +61,6 @@ function Slider({ className, size, ...props }: SliderProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Slider, sliderTrackVariants, sliderThumbVariants };
 export type { SliderProps };

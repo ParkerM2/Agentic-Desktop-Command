@@ -58,5 +58,6 @@ function Switch({ className, size, ...props }: SwitchProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Switch, switchVariants };
 export type { SwitchProps };

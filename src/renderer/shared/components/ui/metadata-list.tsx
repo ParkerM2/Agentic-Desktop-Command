@@ -99,5 +99,6 @@ function MetadataItem({ className, label, value, variant = 'stacked', ...props }
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { MetadataList, MetadataItem, metadataListVariants };
 export type { MetadataListProps, MetadataItemProps, MetadataVariant };

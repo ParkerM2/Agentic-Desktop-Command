@@ -46,5 +46,6 @@ function Grid({ className, cols, gap, ...props }: GridProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Grid, gridVariants };
 export type { GridProps };

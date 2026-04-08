@@ -40,5 +40,6 @@ function Label({ className, variant, ...props }: LabelProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Label, labelVariants };
 export type { LabelProps };

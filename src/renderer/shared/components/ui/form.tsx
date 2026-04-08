@@ -20,6 +20,7 @@ import type { AnyFieldApi } from '@tanstack/react-form';
 
 // ─── Re-export useForm for convenience ───────────────────
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { useForm } from '@tanstack/react-form';
 
 // ─── Form (wrapper around <form>) ───────────────────────

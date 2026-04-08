@@ -51,5 +51,6 @@ function Stack({ className, gap, align, justify, ...props }: StackProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Stack, stackVariants };
 export type { StackProps };

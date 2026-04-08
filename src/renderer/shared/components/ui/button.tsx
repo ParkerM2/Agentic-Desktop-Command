@@ -58,5 +58,6 @@ function Button({ className, variant, size, asChild = false, type = 'button', ..
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants };
 export type { ButtonProps };

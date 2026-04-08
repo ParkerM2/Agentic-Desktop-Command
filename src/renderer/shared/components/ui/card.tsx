@@ -75,4 +75,5 @@ function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, cardVariants };

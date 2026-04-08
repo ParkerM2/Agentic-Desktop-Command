@@ -121,5 +121,6 @@ function SectionHeader({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { SectionHeader, sectionHeaderVariants };
 export type { SectionHeaderProps };

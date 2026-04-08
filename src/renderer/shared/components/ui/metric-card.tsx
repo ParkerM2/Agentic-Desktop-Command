@@ -121,5 +121,6 @@ function MetricCard({
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { MetricCard, metricCardVariants };
 export type { MetricCardProps, MetricCardTrend, TrendDirection };

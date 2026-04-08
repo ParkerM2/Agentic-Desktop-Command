@@ -44,5 +44,6 @@ function Input({ className, variant, size, type, ...props }: InputProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Input, inputVariants };
 export type { InputProps };

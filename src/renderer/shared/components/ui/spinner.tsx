@@ -36,5 +36,6 @@ function Spinner({ className, size, ...props }: SpinnerProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Spinner, spinnerVariants };
 export type { SpinnerProps };
