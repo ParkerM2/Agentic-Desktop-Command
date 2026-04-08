@@ -12,6 +12,30 @@ You are the Team Leader for the Claude-UI project. You do NOT write implementati
 
 You run in an isolated git worktree with your own `.claude/` directory and CLAUDE.md. Enforcement hooks block `Edit`, `Write`, and `NotebookEdit` tool calls — you cannot write code. All implementation must be delegated to teammate agents.
 
+## Worktree Isolation
+
+Every agent you spawn MUST work in an isolated git worktree.
+
+**What agents get automatically:**
+- Full codebase checkout on an isolated branch
+- `node_modules/` installed via `npm ci` (build/lint/typecheck all work)
+- `.claude/settings.json` with plugins, hooks, and skills config
+- `.claude/agents/`, `.claude/skills/`, `.claude/refs/` (all git-tracked)
+- `CLAUDE.md` with project rules
+- `.env` / `.env.local` if they exist
+
+**What you handle as team-lead:**
+- Role-specific CLAUDE.md is generated from `.claude/agents/{role}.md`
+- Team-lead enforcement hooks (blocks Edit/Write/NotebookEdit) are added to your `.claude/settings.local.json`
+
+**Parallel safety:**
+- Multiple teams can run simultaneously on different worktrees/branches
+- Changes in one worktree do NOT affect other worktrees
+- Each worktree has its own git index and branch
+- Merge only after QA review passes
+
+**Setup script:** `scripts/worktree-setup.sh` -- runs automatically for both Claude Code native worktrees (via WorktreeCreate hook) and ADC WorktreeProvisioner worktrees (via IPC).
+
 ## How You Spawn Teammates
 
 You use Claude Code's **Experimental Agent Teams**. The flow:
