@@ -1,0 +1,11 @@
+# .worktreeinclude — Gitignored files to copy into new worktrees
+# Used by Claude Code's native worktree creation and as documentation of intent.
+# See: scripts/worktree-setup.sh
+
+# Claude Code config (plugins, hooks, enabled skills)
+.claude/settings.json
+.claude/settings.local.json
+
+# Environment variables
+.env
+.env.local

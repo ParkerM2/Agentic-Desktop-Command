@@ -250,6 +250,27 @@ function generateClaudeMd(config: ProvisionConfig, projectRules: string, agentBo
   return sections.join('\n');
 }
 
+/**
+ * Fallback: manually copy .claude/ directories and files when the shared
+ * setup script is unavailable or fails.
+ */
+function fallbackCopyClaudeContext(sourceClaudeDir: string, targetClaudeDir: string): void {
+  for (const dir of CLAUDE_DIRS_TO_COPY) {
+    const source = join(sourceClaudeDir, dir);
+    const target = join(targetClaudeDir, dir);
+    if (existsSync(source)) {
+      cpSync(source, target, { recursive: true });
+    }
+  }
+  for (const file of CLAUDE_FILES_TO_COPY) {
+    const source = join(sourceClaudeDir, file);
+    const target = join(targetClaudeDir, file);
+    if (existsSync(source)) {
+      cpSync(source, target);
+    }
+  }
+}
+
 // ─── Factory ────────────────────────────────────────────────
 
 export function createWorktreeProvisioner(): WorktreeProvisioner {
@@ -299,25 +320,23 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
 
       agentLogger.info(`[WorktreeProvisioner] Git worktree created on branch: ${branch}`);
 
-      // ── 2. Copy .claude/ context ────────────────────────────
+      // ── 2. Run shared worktree setup script ─────────────────
+      // Copies gitignored config (.claude/settings.json, .env) and installs deps
       const sourceClaudeDir = join(projectPath, '.claude');
       const targetClaudeDir = join(worktreePath, '.claude');
       mkdirSync(targetClaudeDir, { recursive: true });
 
-      for (const dir of CLAUDE_DIRS_TO_COPY) {
-        const source = join(sourceClaudeDir, dir);
-        const target = join(targetClaudeDir, dir);
-        if (existsSync(source)) {
-          cpSync(source, target, { recursive: true });
-        }
-      }
-
-      for (const file of CLAUDE_FILES_TO_COPY) {
-        const source = join(sourceClaudeDir, file);
-        const target = join(targetClaudeDir, file);
-        if (existsSync(source)) {
-          cpSync(source, target);
-        }
+      try {
+        execSync(
+          `bash scripts/worktree-setup.sh "${worktreePath}" "${projectPath}"`,
+          { cwd: projectPath, timeout: 120_000, stdio: 'pipe' },
+        );
+        agentLogger.info('[WorktreeProvisioner] Shared setup script completed');
+      } catch (setupError) {
+        agentLogger.warn('[WorktreeProvisioner] Setup script failed, falling back to manual copy', {
+          error: setupError,
+        });
+        fallbackCopyClaudeContext(sourceClaudeDir, targetClaudeDir);
       }
 
       agentLogger.info('[WorktreeProvisioner] .claude/ context copied');
