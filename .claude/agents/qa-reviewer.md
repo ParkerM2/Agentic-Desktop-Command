@@ -124,11 +124,12 @@ For EVERY changed file, check against these categories:
 - [ ] Handler registered in `src/main/ipc/handlers/` and wired in `src/main/bootstrap/ipc-wiring.ts`
 - [ ] Event channels follow `event:domain.eventName` pattern
 
-#### G. State Management
+#### G. State Management (see `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`)
 - [ ] Server data in React Query (not Zustand)
 - [ ] UI-only state in Zustand (not React Query)
 - [ ] Query keys follow hierarchical factory pattern
-- [ ] Event hooks invalidate correct query keys
+- [ ] No polling (`refetchInterval`) — EventBridge handles freshness via IPC events
+- [ ] New IPC events registered in EventBridge (`src/renderer/shared/components/EventBridge.tsx`)
 - [ ] Mutations invalidate related queries on success
 
 #### H. Code Quality

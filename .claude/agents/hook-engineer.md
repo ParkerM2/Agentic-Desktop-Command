@@ -64,6 +64,18 @@ NEVER modify:
 - `vercel-labs/agent-skills:vercel-react-best-practices` — React 19 patterns, hooks, and data fetching
 - `jezweb/claude-skills:tanstack-query` — TanStack Query (React Query) data fetching patterns
 
+## Caching Layer Architecture
+
+All data fetching follows the 3-layer pattern: **EventBridge → React Query → Components**.
+
+1. `EventBridge` (`src/renderer/shared/components/EventBridge.tsx`) subscribes to all IPC events and invalidates the correct React Query keys automatically.
+2. React Query hooks in `api/` directories call `ipc()` and define query/mutation logic.
+3. Components consume React Query hooks — never call `ipc()` directly and never store domain data in Zustand.
+
+Query key factories (`api/queryKeys.ts` or `api/progressKeys.ts`) are **required** for every feature — EventBridge depends on them for targeted invalidation.
+
+Read `docs/patterns/CACHING-LAYER-QUICKGUIDE.md` for the exact recipe to add a new IPC-backed feature, including the 5-step checklist and anti-patterns table.
+
 ## Query Key Factory (MANDATORY for every feature)
 
 ```typescript

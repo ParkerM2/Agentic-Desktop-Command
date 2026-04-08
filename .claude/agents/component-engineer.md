@@ -83,6 +83,10 @@ NEVER modify:
 - Use `<Card>` with `<CardContent>` instead of raw `<div>` wrappers
 - Use `<Label>` + `<Input>` instead of raw `<label>` + `<input>`
 
+## Data Consumption Rule
+
+Components consume domain data (tasks, projects, agents, etc.) exclusively through React Query hooks from the feature's `api/` directory. Zustand stores are for UI-only state (selections, toggles, layout). Never import domain data from Zustand stores. See `docs/patterns/CACHING-LAYER-QUICKGUIDE.md` for the boundary between React Query and Zustand.
+
 ## Component Template (MANDATORY)
 
 ```tsx

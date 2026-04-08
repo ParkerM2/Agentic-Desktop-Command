@@ -197,7 +197,15 @@ Key refactored services:
 - **tasks/** — 3 files: types (TaskRepository interface), task-repository (local-first impl), barrel
 - **qa/** — 7 files: poller, prompt, report-parser, session-store, trigger, types
 
-## React Query Integration
+## React Query Integration (3-Layer Caching Architecture)
+
+Data freshness follows a 3-layer architecture: **EventBridge → React Query → UI Stores**.
+
+1. **EventBridge** (`src/renderer/shared/components/EventBridge.tsx`) — mounted once in RootLayout. Subscribes to all IPC `event:*` channels and calls `queryClient.invalidateQueries()` with the correct query keys. This is the single place where IPC events drive cache invalidation.
+2. **React Query** — feature hooks in `api/` directories define queries and mutations against `ipc()`. Query key factories enable targeted invalidation by EventBridge.
+3. **Zustand stores** — hold UI-only state (selections, toggles, layout). Never domain data.
+
+For the full recipe (5-step checklist, anti-patterns, examples), see `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
 
 Each feature module provides query hooks that wrap `ipc()`:
 
@@ -213,10 +221,10 @@ export function useTasks(projectId: string | null) {
 ```
 
 Pattern:
-- `queryKeys.ts` defines a factory for cache keys (enables targeted invalidation)
+- `queryKeys.ts` defines a factory for cache keys (enables targeted invalidation by EventBridge)
 - `use<Feature>.ts` defines query hooks (read operations)
 - `useTaskMutations.ts` defines mutation hooks (write operations with optimistic updates)
-- `use<Feature>Events.ts` subscribes to IPC events and invalidates relevant queries
+- EventBridge handles IPC event → query invalidation centrally (no per-feature event wiring needed)
 
 ## Mutation Error Handling
 

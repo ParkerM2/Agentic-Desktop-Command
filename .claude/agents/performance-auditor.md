@@ -79,6 +79,9 @@ const taskCount = tasks?.length ?? 0;
 ```
 
 #### Polling vs Events
+
+**No polling (`refetchInterval`) is allowed.** EventBridge (`src/renderer/shared/components/EventBridge.tsx`) handles all IPC event → React Query invalidation centrally. If data appears stale, the fix is to add the event channel to EventBridge, not to add polling. See the anti-patterns table in `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
+
 ```typescript
 // PROBLEM — polling for changes
 useQuery({
@@ -86,10 +89,9 @@ useQuery({
   refetchInterval: 1000,  // Polling every second!
 });
 
-// CORRECT — use IPC events for real-time updates
-useIpcEvent('event:task.statusChanged', ({ projectId }) => {
-  void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-});
+// CORRECT — EventBridge handles invalidation automatically via IPC events.
+// Individual components should NOT wire up their own event listeners for query invalidation.
+// If a new event needs to trigger a refetch, add it to EventBridge.
 ```
 
 #### IPC Call Storms

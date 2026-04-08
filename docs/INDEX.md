@@ -12,9 +12,10 @@
 <renderer desc="React renderer">
 <features dirs="agent-dashboard agents alerts assistant auth briefing changelog communications dashboard devices diff-viewer file-explorer fitness github health hub-setup ideation insights merge my-work notes onboarding planner productivity projects roadmap screen settings tasks terminals visualization voice workflow workflow-pipeline workspace workspaces" />
 <ui-primitives path="shared/components/ui" files="alert-dialog badge breadcrumb button card checkbox collapsible container dialog dropdown-menu empty-state flex form grid input label page-layout popover progress scroll-area select separator sidebar skeleton slider spinner stack switch tabs textarea toast tooltip typography" suffix=".tsx" />
-<hooks path="shared/hooks" files="useClaudeAuth useHubEvents useIpcEvent useIpcQuery useLooseParams useMutationErrorToast useOAuthStatus" />
-<stores path="shared/stores" files="assistant-widget-store layout-store route-history-store theme-store toast-store ThemeHydrator" />
-<lib path="shared/lib" files="hub-query-sync.ts ipc.ts utils.ts" />
+<hooks path="shared/hooks" files="useClaudeAuth useHubEvents useIpcEvent useIpcQuery useLayoutSync useLooseParams useMutationErrorToast useOAuthStatus useThemeSync" />
+<stores path="shared/stores" files="assistant-widget-store layout-store route-history-store theme-store toast-store" />
+<components path="shared/components" files="EventBridge.tsx" note="Central IPC event → React Query invalidation" />
+<lib path="shared/lib" files="ipc.ts utils.ts" />
 <routes path="app/routes" files="auth.routes.tsx communication.routes.ts dashboard.routes.ts misc.routes.ts productivity.routes.ts project.routes.ts settings.routes.ts" />
 <layouts path="app/layouts" files="AppBreadcrumbs ContentHeader LayoutWrapper ProjectTabBar RootLayout Sidebar TitleBar TopBar UserMenu" />
 </renderer>
@@ -50,6 +51,7 @@
 <doc path="features/workspace-ui/plan.md" tags="workspace agents" />
 </features>
 <patterns>
+<doc path="patterns/CACHING-LAYER-QUICKGUIDE.md" tags="react-query eventbridge zustand caching invalidation" priority="always" />
 <doc path="patterns/CODEBASE-GUARDIAN.md" tags="file-placement naming imports boundaries" priority="always" />
 <doc path="patterns/DESIGN-SYSTEM.md" tags="css tokens tailwind themes" />
 <doc path="patterns/LINTING.md" tags="eslint plugins violations fixes" />

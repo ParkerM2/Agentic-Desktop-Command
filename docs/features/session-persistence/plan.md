@@ -1,5 +1,7 @@
 # Plan: Session Persistence & Always-On Claude Sessions
 
+> **NOTE:** This plan predates the caching layer consolidation. References to `LayoutHydrator` and `ThemeHydrator` components are outdated -- these have been replaced by `useLayoutSync` and `useThemeSync` hooks in `src/renderer/shared/hooks/`. See `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
+
 ## Summary
 
 Persist open project tabs across app restarts, spawn per-project Claude sessions (Primary + Team Lead) eagerly at startup, and create a single global Assistant instance with IPC tool access for in-app actions (task CRUD, project management, git status). Tray quick commands route through the global assistant. The assistant uses app IPC channels exclusively — never Claude Code CLI features.

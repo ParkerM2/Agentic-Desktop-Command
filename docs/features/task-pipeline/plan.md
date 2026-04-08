@@ -1,5 +1,7 @@
 # Progress-Driven Task Pipeline
 
+> **NOTE:** This plan predates the caching layer consolidation. References to `useProgressContext`, `useAgentContext`, `ProgressContextHydrator`, `AgentContextHydrator`, `progress-context-store`, and `agent-context-store` are outdated -- these have been replaced by React Query hooks (`useProgress`, `useProgressMutations`, `useAgentMessages`) and `EventBridge`. See `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
+
 > Local-first task management backed by `progress/` filesystem. Tasks flow through Research → Plan → Team execution with per-step agent sessions and a single "Run Workflow" button for end-to-end automation. Agent context store is the single source of truth for all live agent data — sessions, messages, tool calls, errors, token usage — accessible globally and archived to disk on app close.
 
 ---
