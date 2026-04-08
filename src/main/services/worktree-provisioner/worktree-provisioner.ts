@@ -250,6 +250,27 @@ function generateClaudeMd(config: ProvisionConfig, projectRules: string, agentBo
   return sections.join('\n');
 }
 
+/**
+ * Fallback: manually copy .claude/ directories and files when the shared
+ * setup script is unavailable or fails.
+ */
+function fallbackCopyClaudeContext(sourceClaudeDir: string, targetClaudeDir: string): void {
+  for (const dir of CLAUDE_DIRS_TO_COPY) {
+    const source = join(sourceClaudeDir, dir);
+    const target = join(targetClaudeDir, dir);
+    if (existsSync(source)) {
+      cpSync(source, target, { recursive: true });
+    }
+  }
+  for (const file of CLAUDE_FILES_TO_COPY) {
+    const source = join(sourceClaudeDir, file);
+    const target = join(targetClaudeDir, file);
+    if (existsSync(source)) {
+      cpSync(source, target);
+    }
+  }
+}
+
 // ─── Factory ────────────────────────────────────────────────
 
 export function createWorktreeProvisioner(): WorktreeProvisioner {
@@ -315,21 +336,7 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
         agentLogger.warn('[WorktreeProvisioner] Setup script failed, falling back to manual copy', {
           error: setupError,
         });
-        // Fallback: manual copy of essential .claude/ files
-        for (const dir of CLAUDE_DIRS_TO_COPY) {
-          const source = join(sourceClaudeDir, dir);
-          const target = join(targetClaudeDir, dir);
-          if (existsSync(source)) {
-            cpSync(source, target, { recursive: true });
-          }
-        }
-        for (const file of CLAUDE_FILES_TO_COPY) {
-          const source = join(sourceClaudeDir, file);
-          const target = join(targetClaudeDir, file);
-          if (existsSync(source)) {
-            cpSync(source, target);
-          }
-        }
+        fallbackCopyClaudeContext(sourceClaudeDir, targetClaudeDir);
       }
 
       agentLogger.info('[WorktreeProvisioner] .claude/ context copied');
