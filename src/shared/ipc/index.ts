@@ -52,6 +52,7 @@ import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
+import { relayEvents, relayInvoke } from './relay';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
 import { securityInvoke } from './security';
@@ -124,6 +125,8 @@ export const ipcInvokeContract = {
   ...workflowEngineInvoke,
 
   ...progressInvoke,
+
+  ...relayInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -162,6 +165,8 @@ export const ipcEventContract = {
   ...workflowTemplatesEvents,
   ...workflowEngineEvents,
   ...progressEvents,
+
+  ...relayEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -506,3 +511,16 @@ export {
   progressTaskSchema,
   workflowStepStatusSchema,
 } from './progress';
+
+export {
+  ProjectClaimEventSchema,
+  ProjectUnclaimEventSchema,
+  RelayEnvelopeSchema,
+  RelayMessageTypeSchema,
+  SessionEndedPayloadSchema,
+  SessionInputPayloadSchema,
+  SessionKillPayloadSchema,
+  SessionOutputPayloadSchema,
+  SessionResumePayloadSchema,
+  SessionSpawnPayloadSchema,
+} from './relay';

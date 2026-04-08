@@ -14,6 +14,14 @@ export interface Project {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  /** Whether this project is hosted on a remote device */
+  remote?: boolean;
+  /** Device ID of the machine that hosts this project */
+  hostDeviceId?: string;
+  /** Human-readable name of the host device */
+  hostDeviceName?: string;
+  /** Device ID that has currently claimed this project for relay sessions */
+  claimedByDeviceId?: string;
 }
 
 export interface SubProject {
