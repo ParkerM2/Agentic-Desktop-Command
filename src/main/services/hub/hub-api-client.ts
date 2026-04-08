@@ -65,7 +65,10 @@ export interface HubApiClient {
     capabilities: DeviceCapabilities;
     appVersion: string;
   }) => Promise<HubApiResponse<Device>>;
-  heartbeat: (deviceId: string) => Promise<HubApiResponse<{ success: boolean }>>;
+  heartbeat: (
+    deviceId: string,
+    projects?: Array<{ id: string; name: string; path: string }>,
+  ) => Promise<HubApiResponse<{ success: boolean }>>;
 }
 
 // ─── Internal HTTP helper ───────────────────────────────────
@@ -283,8 +286,16 @@ export function createHubApiClient(
       return hubPost('/api/devices', body);
     },
 
-    heartbeat(deviceId) {
-      return hubPost(`/api/devices/${encodeURIComponent(deviceId)}/heartbeat`, {});
+    heartbeat(deviceId, projects) {
+      const body: Record<string, unknown> = {};
+      if (projects !== undefined && projects.length > 0) {
+        body.projects = projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          path: p.path,
+        }));
+      }
+      return hubPost(`/api/devices/${encodeURIComponent(deviceId)}/heartbeat`, body);
     },
   };
 }

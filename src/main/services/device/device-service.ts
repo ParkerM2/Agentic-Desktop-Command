@@ -27,11 +27,20 @@ export interface DeviceUpdateInput {
   appVersion?: string;
 }
 
+export interface HeartbeatProject {
+  id: string;
+  name: string;
+  path: string;
+}
+
 export interface DeviceService {
   registerDevice: (input: DeviceRegisterInput) => Promise<Device>;
   getDevices: () => Promise<Device[]>;
   updateDevice: (id: string, updates: DeviceUpdateInput) => Promise<Device>;
-  sendHeartbeat: (deviceId: string) => Promise<{ success: boolean; lastSeen: string }>;
+  sendHeartbeat: (
+    deviceId: string,
+    projects?: HeartbeatProject[],
+  ) => Promise<{ success: boolean; lastSeen: string }>;
 }
 
 // ─── Factory ─────────────────────────────────────────────────
@@ -81,8 +90,8 @@ export function createDeviceService(deps: {
       return result.data;
     },
 
-    async sendHeartbeat(deviceId) {
-      const result = await hubApiClient.heartbeat(deviceId);
+    async sendHeartbeat(deviceId, projects) {
+      const result = await hubApiClient.heartbeat(deviceId, projects);
 
       if (!result.ok) {
         throw new Error(result.error ?? `Failed to send heartbeat for device ${deviceId}`);

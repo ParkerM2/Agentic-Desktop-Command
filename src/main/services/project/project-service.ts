@@ -44,6 +44,15 @@ export interface ProjectUpdateInput {
 
 export interface ProjectService {
   listProjects: (workspaceId?: string) => Promise<Project[]>;
+  /**
+   * Returns all projects across all online devices.
+   * Local projects (this device) are returned as-is.
+   * Remote projects have `remote: true`, `hostDeviceId`, and `hostDeviceName` set.
+   * Claimed projects include `claimedByDeviceId`.
+   *
+   * @param currentDeviceId - The device ID of this Electron instance (for remote/local distinction)
+   */
+  listAllProjects: (currentDeviceId: string) => Promise<Project[]>;
   addProject: (data: ProjectAddInput) => Promise<Project>;
   removeProject: (projectId: string) => Promise<{ success: boolean }>;
   updateProject: (data: ProjectUpdateInput) => Promise<Project>;
@@ -147,6 +156,57 @@ export function createProjectService(deps: {
       const projects = Array.isArray(result.data) ? result.data : result.data.projects;
       updateCache(projects);
       return projects;
+    },
+
+    async listAllProjects(currentDeviceId) {
+      // Hub API returns camelCase directly for this endpoint
+      interface AllDevicesProjectItem {
+        projectId: string;
+        projectName: string;
+        projectPath: string;
+        deviceId: string;
+        deviceName: string;
+        isLocal: boolean;
+        lastSeen: string;
+        claim: {
+          claimedByDeviceId: string;
+          hostDeviceId: string | null;
+          expiresAt: string | null;
+        } | null;
+      }
+
+      interface AllDevicesResponse {
+        data: AllDevicesProjectItem[];
+      }
+
+      const result = await hubApiClient.hubGet<AllDevicesResponse>('/api/projects/all-devices');
+
+      if (!result.ok || !result.data) {
+        throw new Error(result.error ?? 'Failed to fetch all-device projects');
+      }
+
+      const now = new Date().toISOString();
+      const items = result.data.data;
+
+      return items.map((item): Project => {
+        const isLocal = item.deviceId === currentDeviceId;
+        const claimedByDeviceId =
+          item.claim !== null && item.claim.expiresAt !== null && item.claim.expiresAt > now
+            ? item.claim.claimedByDeviceId
+            : undefined;
+
+        return {
+          id: item.projectId,
+          name: item.projectName,
+          path: isLocal ? item.projectPath : '',
+          createdAt: item.lastSeen,
+          updatedAt: item.lastSeen,
+          remote: !isLocal,
+          hostDeviceId: item.deviceId,
+          hostDeviceName: item.deviceName,
+          claimedByDeviceId,
+        };
+      });
     },
 
     async addProject(data) {
