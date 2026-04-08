@@ -20,7 +20,8 @@ import { workspaceRoutes } from './routes/workspaces.js';
 import { settingsRoutes } from './routes/settings.js';
 import { taskRoutes } from './routes/tasks.js';
 import { webhookRoutes } from './routes/webhooks/index.js';
-import { addAuthenticatedClient } from './ws/broadcaster.js';
+import { addAuthenticatedClient, setClientDeviceId } from './ws/broadcaster.js';
+import { handleRelayMessage, startBufferPruning, stopBufferPruning } from './ws/relay-router.js';
 
 import type Database from 'better-sqlite3';
 
@@ -67,11 +68,13 @@ const WS_AUTH_TIMEOUT_MS = 5000;
 interface WsApiKeyAuthMessage {
   type: 'auth';
   apiKey: string;
+  deviceId?: string;
 }
 
 interface WsBearerAuthMessage {
   type: 'auth';
   bearerToken: string;
+  deviceId?: string;
 }
 
 type WsAuthMessage = WsApiKeyAuthMessage | WsBearerAuthMessage;
@@ -82,6 +85,9 @@ function isValidAuthMessage(data: unknown): data is WsAuthMessage {
   }
   const obj = data as Record<string, unknown>;
   if (obj.type !== 'auth') {
+    return false;
+  }
+  if (obj.deviceId !== undefined && typeof obj.deviceId !== 'string') {
     return false;
   }
   return typeof obj.apiKey === 'string' || typeof obj.bearerToken === 'string';
@@ -111,11 +117,29 @@ function handleWebSocketAuth(
     }
   }, WS_AUTH_TIMEOUT_MS);
 
-  function authSuccess(): void {
+  function authSuccess(deviceId?: string): void {
     authenticated = true;
     clearTimeout(timeoutId);
     console.log('[WS] Client authenticated');
     addAuthenticatedClient(socket);
+
+    if (typeof deviceId === 'string' && deviceId.length > 0) {
+      setClientDeviceId(socket, deviceId);
+      console.log(`[WS] Device registered: ${deviceId}`);
+
+      // Wire relay message handler — only session.* messages are dispatched here
+      socket.on('message', (rawData: import('ws').RawData) => {
+        const raw = String(rawData);
+        try {
+          const parsed = JSON.parse(raw) as { type?: string };
+          if (typeof parsed.type === 'string' && parsed.type.startsWith('session.')) {
+            handleRelayMessage(db, socket, deviceId, raw);
+          }
+        } catch {
+          // Non-JSON or non-relay message — ignore
+        }
+      });
+    }
   }
 
   function authFailure(reason: string): void {
@@ -145,7 +169,7 @@ function handleWebSocketAuth(
           try {
             const payload = await verifyAccessToken(data.bearerToken);
             if (payload) {
-              authSuccess();
+              authSuccess(data.deviceId);
             } else {
               authFailure('Invalid bearer token');
             }
@@ -168,7 +192,7 @@ function handleWebSocketAuth(
           return;
         }
 
-        authSuccess();
+        authSuccess(data.deviceId);
         return;
       }
 
@@ -196,10 +220,14 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   // Decorate Fastify instance with db
   app.decorate('db', db);
 
-  // Graceful shutdown — close db on server close
+  // Graceful shutdown — close db on server close, stop relay buffer pruning
   app.addHook('onClose', () => {
+    stopBufferPruning();
     db.close();
   });
+
+  // Start session buffer pruning interval
+  startBufferPruning(db);
 
   // CORS — explicit origins only
   await app.register(cors, {
