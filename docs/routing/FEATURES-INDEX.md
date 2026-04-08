@@ -57,24 +57,24 @@ Location: `src/renderer/features/`
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 | **tools** | Workflow template editor, plugin artifact scanning | WorkflowEditor, WorkflowSidebar, PhaseSection, ToolsPage | `workflowTemplates.*`, `workflow-engine.*` |
-| **tasks (progress)** | FS-backed task pipeline grid. Reads from `useProgressContext` (not Hub). Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
+| **tasks (progress)** | FS-backed task pipeline grid. Reads from React Query hooks (`useProgress`, `useProgressMutations`) with EventBridge-driven invalidation. Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
 
 ### Feature Module Structure
 
-Every feature follows this pattern:
+Every feature follows this pattern. Data fetching uses the 3-layer caching architecture (EventBridge → React Query → Components). See `docs/patterns/CACHING-LAYER-QUICKGUIDE.md` for the full recipe.
 
 ```
 feature/
 ├── index.ts              # Barrel exports
 ├── api/
-│   ├── queryKeys.ts      # React Query key factory
+│   ├── queryKeys.ts      # React Query key factory (required for EventBridge invalidation)
 │   ├── use<Feature>.ts   # Query hooks
 │   └── use<Feature>Mutations.ts
 ├── components/
 │   └── <Feature>Page.tsx
 ├── hooks/
 │   └── use<Feature>Events.ts
-└── store.ts              # Zustand (UI state only)
+└── store.ts              # Zustand (UI state only — never domain data)
 ```
 
 ---

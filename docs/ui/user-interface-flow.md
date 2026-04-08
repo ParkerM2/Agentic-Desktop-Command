@@ -286,7 +286,7 @@ After auth + onboarding, the user sees the main app shell:
 | `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer (above HubConnectionIndicator) |
 | `AssistantWidget` | `src/renderer/features/assistant/components/AssistantWidget.tsx` | Floating chat widget (Ctrl+J toggle), renders WidgetFab + WidgetPanel |
 | `HubConnectionIndicator` | `src/renderer/shared/components/HubConnectionIndicator.tsx` | Shows connected/disconnected dot |
-| `ThemeHydrator` | `src/renderer/shared/stores/ThemeHydrator.tsx` | Applies theme class + data attributes to `<html>` |
+| `useThemeSync` | `src/renderer/shared/hooks/useThemeSync.ts` | Applies theme class + data attributes to `<html>` (replaces former ThemeHydrator component) |
 
 ### Hub Disconnected Banner
 

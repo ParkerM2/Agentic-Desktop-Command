@@ -122,7 +122,7 @@ Router Engineer:   route + nav
 1. **Follow existing patterns** — Don't invent new patterns when existing ones work
 2. **Feature module structure is mandatory** — Every feature has index.ts, api/, components/, hooks/
 3. **IPC contract uses domain folders** — New channels go in `src/shared/ipc/<domain>/contract.ts` with schemas in `schemas.ts`. The root barrel at `src/shared/ipc/index.ts` auto-merges all domains.
-4. **Zustand for UI state only** — Server data lives in React Query
+4. **Zustand for UI state only** — Server data lives in React Query. Any feature with IPC data MUST follow the 5-step process in `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`: query key factory → query hooks → mutation hooks → EventBridge registration → component consumption.
 5. **No cross-feature imports** — Features communicate through shared stores or query cache
 6. **Accessibility by default** — Every interactive element needs keyboard support
 7. **Theme-aware styling** — Use Tailwind theme classes, never hardcode colors

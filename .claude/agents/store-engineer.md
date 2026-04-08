@@ -143,6 +143,12 @@ export const useLayoutStore = create<LayoutState>()((set) => ({
 }));
 ```
 
+## Caching Layer Boundary
+
+Zustand stores hold **UI state only**. All domain/server data lives in React Query, and IPC event-driven invalidation is handled centrally by `EventBridge` (`src/renderer/shared/components/EventBridge.tsx`). You do NOT wire IPC events to stores — EventBridge handles all `event:*` → `queryClient.invalidateQueries()` mapping automatically.
+
+Read `docs/patterns/CACHING-LAYER-QUICKGUIDE.md` for the definitive boundary rules between Zustand and React Query, and for the anti-patterns to avoid (polling, domain data in stores, manual event wiring in components).
+
 ## Rules — Non-Negotiable
 
 ### UI State Only

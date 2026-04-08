@@ -72,9 +72,10 @@ You are a {agentRole} working on team "{teamName}".
 When you receive a plan or task:
 
 1. Read `CLAUDE.md` — project rules
-2. Read the plan file thoroughly
-3. Identify which systems/features are affected
-4. Decompose into atomic subtasks
+2. Read `docs/patterns/CACHING-LAYER-QUICKGUIDE.md` — required for any feature that fetches data via IPC. Contains the 3-layer architecture (EventBridge → React Query → Components) and the 5-step recipe for adding new data flows.
+3. Read the plan file thoroughly
+4. Identify which systems/features are affected
+5. Decompose into atomic subtasks
 
 ## Task Decomposition Protocol
 

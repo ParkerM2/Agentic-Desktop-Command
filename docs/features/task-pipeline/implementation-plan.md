@@ -1,10 +1,12 @@
 # Task Pipeline — Implementation Plan
 
+> **NOTE:** This plan predates the caching layer consolidation. References to `useProgressContext`, `useAgentContext`, `ProgressContextHydrator`, `AgentContextHydrator`, `progress-context-store`, and `agent-context-store` are outdated -- these have been replaced by React Query hooks (`useProgress`, `useProgressMutations`, `useAgentMessages`) and `EventBridge`. See `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace Hub-based task management with a local `progress/` filesystem-backed pipeline. Tasks flow through Research → Plan → Team with per-agent session monitoring, disk-first persistence, and global stores.
 
-**Architecture:** Two global Zustand stores (`useProgressContext` for task pipeline state, `useAgentContext` expanded for full agent data layer) hydrated from a new `ProgressService` that scans/watches `progress/`. Agent session data is append-only JSONL on disk with rolling window in memory. The task list grid reads from stores, expanded row joins both stores for pipeline UI + per-agent monitoring.
+**Architecture:** Data fetching uses the 3-layer caching architecture (EventBridge → React Query → Components). The task list grid reads from React Query hooks (`useProgress`), and IPC events drive cache invalidation via EventBridge. Agent session data is append-only JSONL on disk with rolling window in memory.
 
 **Tech Stack:** TypeScript strict, Zod IPC contracts, Zustand 5, TanStack Table v8, React 19, Node.js FS watchers, JSONL append-only logs.
 
