@@ -281,9 +281,9 @@ export function LayoutSection() {
 
       <div className="border-border grid grid-cols-2 grid-rows-2 overflow-hidden rounded-lg border">
         {/* ── Top-left: Sidebar ──────────────────── */}
-        <div className="border-border space-y-2 border-r border-b p-4">
+        <div className="border-border space-y-3 border-r border-b p-4">
           <Text className="text-foreground text-sm font-medium">Sidebar</Text>
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             <Label htmlFor="sidebar-layout">Style</Label>
             <Select value={sidebarLayout} onValueChange={handleSidebarChange}>
               <SelectTrigger id="sidebar-layout">
@@ -304,9 +304,9 @@ export function LayoutSection() {
         </div>
 
         {/* ── Top-right: Content Area ────────────── */}
-        <div className="border-border space-y-2 border-b p-4">
+        <div className="border-border space-y-3 border-b p-4">
           <Text className="text-foreground text-sm font-medium">Main Content Area</Text>
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             <Label htmlFor="content-layout">Style</Label>
             <Select value={contentLayout} onValueChange={handleContentChange}>
               <SelectTrigger id="content-layout">
@@ -327,9 +327,9 @@ export function LayoutSection() {
         </div>
 
         {/* ── Bottom-left: Top Toolbar ────────────── */}
-        <div className="border-border space-y-2 border-r p-4">
+        <div className="border-border space-y-3 border-r p-4">
           <Text className="text-foreground text-sm font-medium">Top Toolbar</Text>
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             <Label htmlFor="toolbar-style">Style</Label>
             <Select value={toolbarStyle} onValueChange={handleToolbarChange}>
               <SelectTrigger id="toolbar-style">
@@ -353,7 +353,7 @@ export function LayoutSection() {
         <div className="bg-card/50 flex flex-col gap-3 p-4">
           {/* Theme selector row */}
           <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1 space-y-1">
+            <div className="min-w-0 flex-1 space-y-2">
               <Label htmlFor="color-theme">Color Theme</Label>
               <Select value={colorTheme} onValueChange={handleThemeChange}>
                 <SelectTrigger id="color-theme">
