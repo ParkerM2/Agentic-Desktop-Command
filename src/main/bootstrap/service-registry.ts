@@ -45,8 +45,6 @@ import { createDashboardService } from '../services/dashboard/dashboard-service'
 import {
   createUserDataMigrator,
   createUserDataResolver,
-  isReinitializable,
-  type ReinitializableService,
 } from '../services/data-management';
 import { createCleanupService } from '../services/data-management/cleanup-service';
 import { createStorageInspector } from '../services/data-management/storage-inspector';
@@ -258,7 +256,7 @@ export function createServiceRegistry(
     () => projectService.listProjectsSync().map((p) => ({ id: p.id, path: p.path })),
     router,
   );
-  const settingsService = createSettingsService();
+  const settingsService = createSettingsService({ db, dataDir });
 
   // ─── Task repository (local-first + Hub mirror) ──────────────
   const taskRepository = createTaskRepository({
@@ -654,32 +652,13 @@ export function createServiceRegistry(
   };
 
   // ─── User session change handling ────────────────────────────
-  // Collect all user-scoped services that can be reinitialized
-  // Filter to only include services that implement ReinitializableService
-  const candidateServices: unknown[] = [
-    notesService,
-    dashboardService,
-    briefingService,
-    alertService,
-    ideasService,
-  ];
-  const userScopedServices: ReinitializableService[] = candidateServices.filter(isReinitializable);
-
-  // Subscribe to session changes to reinitialize services with user-scoped paths
+  // All domain services now use SQLite (shared db), so no per-user
+  // directory reinitialization is needed. Session changes only trigger
+  // data migration for any remaining file-based stores.
   userSessionManager.onSessionChange((session) => {
     if (session) {
-      // User logged in - migrate existing data then reinitialize with user-scoped paths
       const userDataDir = userDataResolver.getUserDataDir(session.userId);
       userDataMigrator.migrateIfNeeded(dataDir, userDataDir);
-      for (const service of userScopedServices) {
-        service.reinitialize(userDataDir);
-      }
-    } else {
-      // User logged out - clear state and reset to global dir
-      for (const service of userScopedServices) {
-        service.clearState();
-        service.reinitialize(dataDir); // Reset to global (pre-login state)
-      }
     }
   });
 

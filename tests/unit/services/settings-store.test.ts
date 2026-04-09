@@ -1,42 +1,19 @@
 /**
- * Unit Tests for Settings Store
+ * Unit Tests for Settings Store (SQLite-backed)
  *
- * Tests load, save, encryption integration, corruption recovery,
+ * Tests load, save, encryption integration, JSON migration,
  * and default values handling.
- * Mocks node:fs with memfs and encryption module for isolation.
+ * Uses an in-memory SQLite database for isolation.
  */
 
-import { posix } from 'node:path';
-
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Volume } from 'memfs';
+import * as schema from '@main/db/schema';
 
-// ── Path Mocking (use posix.join for memfs compatibility on Windows) ──
-
-vi.mock('node:path', async (importOriginal) => {
-  const original = await importOriginal<typeof import('node:path')>();
-  return {
-    ...original,
-    join: original.posix.join,
-  };
-});
-
-// ── File System Mocking ────────────────────────────────────────────
-
-vi.mock('node:fs', async () => {
-  const memfs = await import('memfs');
-  const vol = memfs.Volume.fromJSON({});
-  const fs = memfs.createFsFromVolume(vol);
-
-  (globalThis as Record<string, unknown>).__mockVol = vol;
-  (globalThis as Record<string, unknown>).__mockFs = fs;
-
-  return {
-    default: fs,
-    ...fs,
-  };
-});
+import type { AdcDatabase } from '@main/db';
+import type { AppSettings } from '@shared/types';
 
 // ── Encryption Mocking ─────────────────────────────────────────────
 
@@ -79,8 +56,31 @@ vi.mock('@main/services/settings/settings-encryption', () => ({
   isProfileSecretKey: mockIsProfileSecretKey,
 }));
 
-// Import after mocks are set up
-const { loadSettingsFile, saveSettingsFile } = await import(
+// ── File System Mocking (for migrateFromJson) ─────────────────────
+
+vi.mock('node:fs', async () => {
+  const memfs = await import('memfs');
+  const vol = memfs.Volume.fromJSON({});
+  const fs = memfs.createFsFromVolume(vol);
+
+  (globalThis as Record<string, unknown>).__mockVol = vol;
+
+  return {
+    default: fs,
+    ...fs,
+  };
+});
+
+vi.mock('node:path', async (importOriginal) => {
+  const original = await importOriginal<typeof import('node:path')>();
+  return {
+    ...original,
+    join: original.posix.join,
+  };
+});
+
+// Import after mocks
+const { loadSettingsFile, saveSettingsFile, migrateFromJson } = await import(
   '@main/services/settings/settings-store'
 );
 const { DEFAULT_SETTINGS, DEFAULT_PROFILES } = await import(
@@ -89,97 +89,121 @@ const { DEFAULT_SETTINGS, DEFAULT_PROFILES } = await import(
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
-function getMockVol(): InstanceType<typeof Volume> {
-  return (globalThis as Record<string, unknown>).__mockVol as InstanceType<typeof Volume>;
+function createTestDb(): AdcDatabase {
+  const sqlite = new Database(':memory:');
+  const db = drizzle(sqlite, { schema });
+
+  // Create tables
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS settings_kv (
+      key TEXT PRIMARY KEY,
+      settings TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS profiles (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      api_key TEXT,
+      model TEXT,
+      config_dir TEXT,
+      oauth_token TEXT,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+
+  return db;
 }
 
-function resetFs(files: Record<string, string> = {}): void {
-  const vol = getMockVol();
-  vol.reset();
-  for (const [filePath, content] of Object.entries(files)) {
-    const posixPath = filePath.replace(/\\/g, '/');
-    const dir = posixPath.substring(0, posixPath.lastIndexOf('/'));
-    if (dir.length > 0 && !vol.existsSync(dir)) {
-      vol.mkdirSync(dir, { recursive: true });
-    }
-    vol.writeFileSync(posixPath, content, { encoding: 'utf-8' });
-  }
+function seedSettings(db: AdcDatabase, settingsObj: Record<string, unknown>): void {
+  db.insert(schema.settingsKv)
+    .values({
+      key: 'default',
+      settings: settingsObj,
+      updatedAt: new Date().toISOString(),
+    })
+    .run();
 }
 
-// app.getPath('userData') returns '/mock/userData' via the electron mock
-const SETTINGS_FILE = posix.join('/mock/userData', 'settings.json');
-
-function makeSettingsFile(overrides: {
-  settings?: Record<string, unknown>;
-  profiles?: Array<Record<string, unknown>>;
-} = {}): string {
-  const settings = overrides.settings ?? { ...DEFAULT_SETTINGS };
-  const profiles = overrides.profiles ?? [...DEFAULT_PROFILES];
-  return JSON.stringify({ settings, profiles }, null, 2);
+function seedProfile(
+  db: AdcDatabase,
+  profile: {
+    id: string;
+    name: string;
+    apiKey?: string | null;
+    model?: string | null;
+    configDir?: string | null;
+    oauthToken?: string | null;
+    isDefault: boolean;
+  },
+): void {
+  db.insert(schema.profiles)
+    .values({
+      id: profile.id,
+      name: profile.name,
+      apiKey: profile.apiKey ?? null,
+      model: profile.model ?? null,
+      configDir: profile.configDir ?? null,
+      oauthToken: profile.oauthToken ?? null,
+      isDefault: profile.isDefault,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    })
+    .run();
 }
 
 // ── Tests ───────────────────────────────────────────────────────────
 
-describe('SettingsStore', () => {
+describe('SettingsStore (SQLite)', () => {
+  let db: AdcDatabase;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    resetFs();
+    db = createTestDb();
   });
 
   afterEach(() => {
-    resetFs();
+    // in-memory DB is garbage collected
   });
 
   // ── loadSettingsFile() ──────────────────────────────────────────
 
   describe('loadSettingsFile()', () => {
-    it('returns defaults when settings file does not exist', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
-      const result = loadSettingsFile();
+    it('returns defaults when tables are empty', () => {
+      const result = loadSettingsFile(db);
 
       expect(result.data.settings).toEqual(DEFAULT_SETTINGS);
       expect(result.data.profiles).toEqual(DEFAULT_PROFILES);
       expect(result.needsMigration).toBe(false);
     });
 
-    it('reads and parses existing settings file', () => {
-      const settings = {
+    it('reads settings from settingsKv table', () => {
+      seedSettings(db, {
         ...DEFAULT_SETTINGS,
-        theme: 'dark' as const,
+        theme: 'dark',
         language: 'fr',
-      };
+      } as unknown as Record<string, unknown>);
 
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: settings as unknown as Record<string, unknown>,
-        }),
-      });
-
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(result.data.settings.theme).toBe('dark');
       expect(result.data.settings.language).toBe('fr');
       expect(result.needsMigration).toBe(false);
     });
 
-    it('decrypts encrypted webhook secrets', () => {
+    it('decrypts encrypted webhook secrets from settings blob', () => {
       const encryptedToken = {
         encrypted: Buffer.from('enc:xoxb-slack-token').toString('base64'),
         useSafeStorage: true,
       };
 
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: {
-            ...DEFAULT_SETTINGS,
-            webhookSlackBotToken: encryptedToken,
-          } as unknown as Record<string, unknown>,
-        }),
-      });
+      seedSettings(db, {
+        ...DEFAULT_SETTINGS,
+        webhookSlackBotToken: encryptedToken,
+      } as unknown as Record<string, unknown>);
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(mockDecryptSecret).toHaveBeenCalledWith(encryptedToken);
       expect((result.data.settings as unknown as Record<string, unknown>).webhookSlackBotToken).toBe(
@@ -188,16 +212,12 @@ describe('SettingsStore', () => {
     });
 
     it('marks needsMigration for plaintext webhook secrets', () => {
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: {
-            ...DEFAULT_SETTINGS,
-            webhookSlackBotToken: 'plaintext-token',
-          } as unknown as Record<string, unknown>,
-        }),
-      });
+      seedSettings(db, {
+        ...DEFAULT_SETTINGS,
+        webhookSlackBotToken: 'plaintext-token',
+      } as unknown as Record<string, unknown>);
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(result.needsMigration).toBe(true);
       expect(
@@ -215,161 +235,64 @@ describe('SettingsStore', () => {
         useSafeStorage: true,
       };
 
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: {
-            ...DEFAULT_SETTINGS,
-            webhookSlackBotToken: encryptedToken,
-          } as unknown as Record<string, unknown>,
-        }),
-      });
+      seedSettings(db, {
+        ...DEFAULT_SETTINGS,
+        webhookSlackBotToken: encryptedToken,
+      } as unknown as Record<string, unknown>);
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(
         (result.data.settings as unknown as Record<string, unknown>).webhookSlackBotToken,
       ).toBe('');
     });
 
-    it('sets empty string for empty webhook secret values', () => {
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: {
-            ...DEFAULT_SETTINGS,
-            webhookSlackBotToken: '',
-          } as unknown as Record<string, unknown>,
-        }),
+    it('decrypts encrypted profile apiKey', () => {
+      const encEntry = mockEncryptSecret('sk-secret-key');
+      seedProfile(db, {
+        id: 'default',
+        name: 'Default',
+        apiKey: JSON.stringify(encEntry),
+        isDefault: true,
       });
 
-      const result = loadSettingsFile();
-
-      expect(
-        (result.data.settings as unknown as Record<string, unknown>).webhookSlackBotToken,
-      ).toBe('');
-    });
-
-    it('decrypts encrypted profile secrets', () => {
-      const encryptedApiKey = {
-        encrypted: Buffer.from('enc:sk-secret-key').toString('base64'),
-        useSafeStorage: true,
-      };
-
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          profiles: [
-            { id: 'default', name: 'Default', isDefault: true, apiKey: encryptedApiKey },
-          ],
-        }),
-      });
-
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(mockDecryptSecret).toHaveBeenCalled();
       expect(result.data.profiles[0]?.apiKey).toBe('sk-secret-key');
     });
 
     it('marks needsMigration for plaintext profile secrets', () => {
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          profiles: [
-            { id: 'default', name: 'Default', isDefault: true, apiKey: 'plaintext-key' },
-          ],
-        }),
+      seedProfile(db, {
+        id: 'default',
+        name: 'Default',
+        apiKey: 'plaintext-key',
+        isDefault: true,
       });
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(result.needsMigration).toBe(true);
     });
 
-    it('sets empty string for profile secret when decryption fails', () => {
-      mockDecryptSecret.mockImplementationOnce(() => {
-        throw new Error('Profile decryption failed');
-      });
+    it('uses default profiles when profiles table is empty', () => {
+      seedSettings(db, { ...DEFAULT_SETTINGS } as unknown as Record<string, unknown>);
 
-      const encryptedKey = {
-        encrypted: 'bad-data',
-        useSafeStorage: true,
-      };
-
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          profiles: [
-            { id: 'default', name: 'Default', isDefault: true, apiKey: encryptedKey },
-          ],
-        }),
-      });
-
-      const result = loadSettingsFile();
-
-      expect(result.data.profiles[0]?.apiKey).toBe('');
-    });
-
-    it('uses default profiles when profiles array is empty', () => {
-      resetFs({
-        [SETTINGS_FILE]: JSON.stringify({ settings: DEFAULT_SETTINGS, profiles: [] }),
-      });
-
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(result.data.profiles).toEqual(DEFAULT_PROFILES);
-    });
-
-    it('uses default profiles when profiles field is missing', () => {
-      resetFs({
-        [SETTINGS_FILE]: JSON.stringify({ settings: DEFAULT_SETTINGS }),
-      });
-
-      const result = loadSettingsFile();
-
-      expect(result.data.profiles).toEqual(DEFAULT_PROFILES);
-    });
-
-    it('returns defaults for corrupted JSON', () => {
-      resetFs({
-        [SETTINGS_FILE]: 'this is not valid json {{{',
-      });
-
-      const result = loadSettingsFile();
-
-      expect(result.data.settings).toEqual(DEFAULT_SETTINGS);
-      expect(result.data.profiles).toEqual(DEFAULT_PROFILES);
-      expect(result.needsMigration).toBe(false);
-    });
-
-    it('handles legacy flat settings format (no settings wrapper)', () => {
-      // Old format: settings fields at root level, no "settings" key
-      resetFs({
-        [SETTINGS_FILE]: JSON.stringify({
-          theme: 'dark',
-          language: 'es',
-          colorTheme: 'ocean',
-          uiScale: 110,
-          onboardingCompleted: true,
-        }),
-      });
-
-      const result = loadSettingsFile();
-
-      // When parsed.settings is undefined, it falls through to parsed itself
-      expect(result.data.settings.theme).toBe('dark');
-      expect(result.data.settings.language).toBe('es');
     });
 
     it('preserves non-secret settings fields unchanged', () => {
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: {
-            theme: 'light',
-            colorTheme: 'ocean',
-            language: 'de',
-            uiScale: 125,
-            onboardingCompleted: true,
-          },
-        }),
+      seedSettings(db, {
+        theme: 'light',
+        colorTheme: 'ocean',
+        language: 'de',
+        uiScale: 125,
+        onboardingCompleted: true,
       });
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(result.data.settings.theme).toBe('light');
       expect(result.data.settings.colorTheme).toBe('ocean');
@@ -382,84 +305,66 @@ describe('SettingsStore', () => {
   // ── saveSettingsFile() ──────────────────────────────────────────
 
   describe('saveSettingsFile()', () => {
-    it('writes settings file to disk', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
-      saveSettingsFile({
+    it('writes settings to settingsKv table', () => {
+      saveSettingsFile(db, {
         settings: { ...DEFAULT_SETTINGS },
         profiles: [...DEFAULT_PROFILES],
       });
 
-      expect(vol.existsSync(SETTINGS_FILE)).toBe(true);
-      const content = vol.readFileSync(SETTINGS_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(content) as Record<string, unknown>;
-      expect(parsed).toHaveProperty('settings');
-      expect(parsed).toHaveProperty('profiles');
+      const row = db.select().from(schema.settingsKv).all();
+      expect(row).toHaveLength(1);
+      expect(row[0]?.key).toBe('default');
     });
 
-    it('creates parent directory if it does not exist', () => {
-      const vol = getMockVol();
-      // Do NOT create /mock/userData — let saveSettingsFile do it
-      vol.mkdirSync('/mock', { recursive: true });
-
-      saveSettingsFile({
+    it('writes profiles to profiles table', () => {
+      saveSettingsFile(db, {
         settings: { ...DEFAULT_SETTINGS },
-        profiles: [...DEFAULT_PROFILES],
+        profiles: [
+          { id: 'p1', name: 'Primary', isDefault: true },
+          { id: 'p2', name: 'Secondary', isDefault: false, model: 'claude-3' },
+        ],
       });
 
-      expect(vol.existsSync('/mock/userData')).toBe(true);
-      expect(vol.existsSync(SETTINGS_FILE)).toBe(true);
+      const rows = db.select().from(schema.profiles).all();
+      expect(rows).toHaveLength(2);
     });
 
     it('encrypts webhook secret fields', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const settings = {
         ...DEFAULT_SETTINGS,
         webhookSlackBotToken: 'my-slack-token',
-      } as unknown as Record<string, unknown>;
+      } as unknown as AppSettings;
 
-      saveSettingsFile({
-        settings: settings as unknown as import('@shared/types').AppSettings,
+      saveSettingsFile(db, {
+        settings,
         profiles: [...DEFAULT_PROFILES],
       });
 
       expect(mockEncryptSecret).toHaveBeenCalledWith('my-slack-token');
 
-      const content = vol.readFileSync(SETTINGS_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(content) as { settings: Record<string, unknown> };
-
-      // The webhook field should be an encrypted entry, not plaintext
-      const savedToken = parsed.settings.webhookSlackBotToken as Record<string, unknown>;
+      const row = db.select().from(schema.settingsKv).all();
+      const savedSettings = row[0]?.settings as Record<string, unknown>;
+      const savedToken = savedSettings.webhookSlackBotToken as Record<string, unknown>;
       expect(savedToken).toHaveProperty('encrypted');
       expect(savedToken).toHaveProperty('useSafeStorage');
     });
 
     it('does not encrypt empty webhook secrets', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const settings = {
         ...DEFAULT_SETTINGS,
         webhookSlackBotToken: '',
-      } as unknown as Record<string, unknown>;
+      } as unknown as AppSettings;
 
-      saveSettingsFile({
-        settings: settings as unknown as import('@shared/types').AppSettings,
+      saveSettingsFile(db, {
+        settings,
         profiles: [...DEFAULT_PROFILES],
       });
 
-      // encryptSecret should not be called for empty strings
       expect(mockEncryptSecret).not.toHaveBeenCalledWith('');
     });
 
-    it('encrypts profile secret fields', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
-      saveSettingsFile({
+    it('encrypts profile apiKey fields', () => {
+      saveSettingsFile(db, {
         settings: { ...DEFAULT_SETTINGS },
         profiles: [
           { id: 'default', name: 'Default', isDefault: true, apiKey: 'sk-my-api-key' },
@@ -468,70 +373,52 @@ describe('SettingsStore', () => {
 
       expect(mockEncryptSecret).toHaveBeenCalledWith('sk-my-api-key');
 
-      const content = vol.readFileSync(SETTINGS_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(content) as {
-        profiles: Array<Record<string, unknown>>;
-      };
-
-      const savedApiKey = parsed.profiles[0]?.apiKey as Record<string, unknown>;
-      expect(savedApiKey).toHaveProperty('encrypted');
-      expect(savedApiKey).toHaveProperty('useSafeStorage');
+      const rows = db.select().from(schema.profiles).all();
+      expect(rows[0]?.apiKey).toBeTruthy();
+      const parsed = JSON.parse(rows[0]!.apiKey!) as Record<string, unknown>;
+      expect(parsed).toHaveProperty('encrypted');
+      expect(parsed).toHaveProperty('useSafeStorage');
     });
 
-    it('does not encrypt non-secret profile fields', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
-      saveSettingsFile({
+    it('removes deleted profiles from DB', () => {
+      // First save two profiles
+      saveSettingsFile(db, {
         settings: { ...DEFAULT_SETTINGS },
         profiles: [
-          { id: 'test-id', name: 'Test Profile', isDefault: false, model: 'claude-3' },
+          { id: 'p1', name: 'Profile 1', isDefault: true },
+          { id: 'p2', name: 'Profile 2', isDefault: false },
         ],
       });
 
-      const content = vol.readFileSync(SETTINGS_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(content) as {
-        profiles: Array<Record<string, unknown>>;
-      };
+      expect(db.select().from(schema.profiles).all()).toHaveLength(2);
 
-      expect(parsed.profiles[0]?.name).toBe('Test Profile');
-      expect(parsed.profiles[0]?.model).toBe('claude-3');
-      expect(parsed.profiles[0]?.id).toBe('test-id');
-    });
-
-    it('writes pretty-printed JSON with 2-space indentation', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
-      saveSettingsFile({
+      // Save with only one profile — p2 should be removed
+      saveSettingsFile(db, {
         settings: { ...DEFAULT_SETTINGS },
-        profiles: [...DEFAULT_PROFILES],
+        profiles: [
+          { id: 'p1', name: 'Profile 1', isDefault: true },
+        ],
       });
 
-      const content = vol.readFileSync(SETTINGS_FILE, 'utf-8') as string;
-      expect(content).toContain('\n');
-      // JSON.stringify with 2-space indent starts with '{\n  '
-      expect(content.startsWith('{\n')).toBe(true);
+      const rows = db.select().from(schema.profiles).all();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.id).toBe('p1');
     });
 
-    it('overwrites existing settings file', () => {
-      resetFs({
-        [SETTINGS_FILE]: makeSettingsFile({
-          settings: {
-            ...DEFAULT_SETTINGS,
-            theme: 'light',
-          } as unknown as Record<string, unknown>,
-        }),
+    it('upserts existing profiles on conflict', () => {
+      saveSettingsFile(db, {
+        settings: { ...DEFAULT_SETTINGS },
+        profiles: [{ id: 'p1', name: 'Original', isDefault: true }],
       });
 
-      saveSettingsFile({
-        settings: { ...DEFAULT_SETTINGS, theme: 'dark' },
-        profiles: [...DEFAULT_PROFILES],
+      saveSettingsFile(db, {
+        settings: { ...DEFAULT_SETTINGS },
+        profiles: [{ id: 'p1', name: 'Updated', isDefault: true }],
       });
 
-      const content = getMockVol().readFileSync(SETTINGS_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(content) as { settings: Record<string, unknown> };
-      expect(parsed.settings.theme).toBe('dark');
+      const rows = db.select().from(schema.profiles).all();
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.name).toBe('Updated');
     });
   });
 
@@ -539,9 +426,6 @@ describe('SettingsStore', () => {
 
   describe('round-trip (save then load)', () => {
     it('preserves all settings through save and load', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const settings = {
         ...DEFAULT_SETTINGS,
         theme: 'dark' as const,
@@ -550,13 +434,13 @@ describe('SettingsStore', () => {
         uiScale: 150,
         onboardingCompleted: true,
       };
-      const profiles = [
+      const profileList = [
         { id: 'p1', name: 'Primary', isDefault: true },
         { id: 'p2', name: 'Secondary', isDefault: false, model: 'claude-3' },
       ];
 
-      saveSettingsFile({ settings, profiles });
-      const result = loadSettingsFile();
+      saveSettingsFile(db, { settings, profiles: profileList });
+      const result = loadSettingsFile(db);
 
       expect(result.data.settings.theme).toBe('dark');
       expect(result.data.settings.colorTheme).toBe('ocean');
@@ -568,22 +452,17 @@ describe('SettingsStore', () => {
     });
 
     it('encrypts on save and decrypts on load for webhook secrets', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const settings = {
         ...DEFAULT_SETTINGS,
         webhookSlackBotToken: 'xoxb-round-trip-token',
-      } as unknown as import('@shared/types').AppSettings;
+      } as unknown as AppSettings;
 
-      saveSettingsFile({ settings, profiles: [...DEFAULT_PROFILES] });
+      saveSettingsFile(db, { settings, profiles: [...DEFAULT_PROFILES] });
 
-      // Verify encryption was called during save
       expect(mockEncryptSecret).toHaveBeenCalledWith('xoxb-round-trip-token');
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
-      // Verify decryption was called during load
       expect(mockDecryptSecret).toHaveBeenCalled();
       expect(
         (result.data.settings as unknown as Record<string, unknown>).webhookSlackBotToken,
@@ -591,10 +470,7 @@ describe('SettingsStore', () => {
     });
 
     it('encrypts on save and decrypts on load for profile secrets', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
-      saveSettingsFile({
+      saveSettingsFile(db, {
         settings: { ...DEFAULT_SETTINGS },
         profiles: [
           { id: 'default', name: 'Default', isDefault: true, apiKey: 'sk-round-trip' },
@@ -603,10 +479,32 @@ describe('SettingsStore', () => {
 
       expect(mockEncryptSecret).toHaveBeenCalledWith('sk-round-trip');
 
-      const result = loadSettingsFile();
+      const result = loadSettingsFile(db);
 
       expect(mockDecryptSecret).toHaveBeenCalled();
       expect(result.data.profiles[0]?.apiKey).toBe('sk-round-trip');
+    });
+  });
+
+  // ── migrateFromJson() ─────────────────────────────────────────
+
+  describe('migrateFromJson()', () => {
+    it('does nothing when settingsKv already has data', () => {
+      seedSettings(db, { ...DEFAULT_SETTINGS } as unknown as Record<string, unknown>);
+
+      // Even if a JSON file existed, migration should be skipped
+      migrateFromJson(db, '/nonexistent');
+
+      // Should still have exactly one row
+      const rows = db.select().from(schema.settingsKv).all();
+      expect(rows).toHaveLength(1);
+    });
+
+    it('does nothing when settings.json does not exist', () => {
+      migrateFromJson(db, '/nonexistent');
+
+      const rows = db.select().from(schema.settingsKv).all();
+      expect(rows).toHaveLength(0);
     });
   });
 });
