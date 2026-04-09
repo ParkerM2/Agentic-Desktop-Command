@@ -9,13 +9,13 @@ import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
 
 import { registerAgentDashboardHandlers } from './handlers/agent-dashboard-handlers';
 import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
-import { registerBusHandlers } from './handlers/bus-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
 import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
 import { registerAssistantHandlers } from './handlers/assistant-handlers';
 import { registerAuthHandlers } from './handlers/auth-handlers';
 import { registerBriefingHandlers } from './handlers/briefing-handlers';
+import { registerBusHandlers } from './handlers/bus-handlers';
 import { registerCalendarHandlers } from './handlers/calendar-handlers';
 import { registerChangelogHandlers } from './handlers/changelog-handlers';
 import { registerClaudeHandlers } from './handlers/claude-handlers';
@@ -66,10 +66,10 @@ import type { IpcRouter } from './router';
 import type { OAuthManager } from '../auth/oauth-manager';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
-import type { McpManager } from '../mcp/mcp-manager';
-import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
 import type { CommandBus } from '../bus';
+import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
 import type { BusSessionManager } from '../bus/session-manager';
+import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
@@ -278,7 +278,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerQaHandlers(
     router,
     services.qaRunner,
-    services.agentOrchestrator,
+    services.busSessionManager,
     services.taskRepository,
   );
   registerDashboardHandlers(router, services.dashboardService);

@@ -16,33 +16,33 @@ export function registerBusHandlers(
   commandBus: CommandBus,
   sessionManager: BusSessionManager,
 ): void {
-  router.handle(BUS.QUERY.COMMANDS, async (input) =>
-    commandBus.queryCommands(input),
+  router.handle(BUS.QUERY.COMMANDS, (input) =>
+    Promise.resolve(commandBus.queryCommands(input)),
   );
 
-  router.handle(BUS.QUERY.EVENTS, async (input) =>
-    commandBus.queryEvents(input),
+  router.handle(BUS.QUERY.EVENTS, (input) =>
+    Promise.resolve(commandBus.queryEvents(input)),
   );
 
-  router.handle(BUS.LIST.SESSIONS, async (input) =>
-    sessionManager.list(input),
+  router.handle(BUS.LIST.SESSIONS, (input) =>
+    Promise.resolve(sessionManager.list(input)),
   );
 
-  router.handle(BUS.GET.SESSION, async (input) =>
-    sessionManager.get(input.sessionId) ?? null,
+  router.handle(BUS.GET.SESSION, (input) =>
+    Promise.resolve(sessionManager.get(input.sessionId) ?? null),
   );
 
-  router.handle(BUS.GET.REGISTRY, async () =>
-    commandBus.getRegistry().map((r) => ({
+  router.handle(BUS.GET.REGISTRY, () =>
+    Promise.resolve(commandBus.getRegistry().map((r) => ({
       channel: r.channel,
       domain: r.domain,
       verb: r.verb,
       noun: r.noun,
       isMutation: r.isMutation,
-    })),
+    }))),
   );
 
-  router.handle(BUS.SPAWN.SESSION, async (input) =>
+  router.handle(BUS.SPAWN.SESSION, (input) =>
     sessionManager.spawn(input),
   );
 

@@ -4,12 +4,12 @@
 
 import type { AgentActivitySummary, Suggestion, TaskSummary } from '@shared/types';
 
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { ClaudeClient } from '../claude/claude-client';
 
 export interface BriefingSummaryDeps {
   claudeClient: ClaudeClient;
-  agentOrchestrator?: AgentOrchestrator;
+  busSessionManager?: BusSessionManager;
   getTodayDate: () => string;
 }
 
@@ -27,7 +27,7 @@ export interface BriefingSummarizer {
  * Create a briefing summarizer that produces natural language summaries.
  */
 export function createBriefingSummarizer(deps: BriefingSummaryDeps): BriefingSummarizer {
-  const { claudeClient, agentOrchestrator, getTodayDate } = deps;
+  const { claudeClient, busSessionManager, getTodayDate } = deps;
 
   function pluralize(count: number, singular: string, plural: string): string {
     return count > 1 ? plural : singular;
@@ -40,17 +40,17 @@ export function createBriefingSummarizer(deps: BriefingSummaryDeps): BriefingSum
     githubCount: number,
   ): string {
     let orchestratorSection = '';
-    if (agentOrchestrator) {
-      const orchSessions = agentOrchestrator.listActiveSessions();
+    if (busSessionManager) {
+      const orchSessions = busSessionManager.list();
       const orchActive = orchSessions.filter(
         (s) => s.status === 'active' || s.status === 'spawning',
       ).length;
       const orchCompletedToday = orchSessions.filter(
-        (s) => s.status === 'completed' && s.spawnedAt.startsWith(getTodayDate()),
+        (s) => s.status === 'completed' && s.startedAt.startsWith(getTodayDate()),
       ).length;
       const orchErrors = orchSessions.filter((s) => s.status === 'error').length;
       orchestratorSection = `
-Orchestrator:
+Sessions:
 - ${String(orchActive)} headless agent sessions active
 - ${String(orchCompletedToday)} completed today
 - ${String(orchErrors)} failed
@@ -118,11 +118,9 @@ Focus on the most important action items for today.`;
   ): string {
     const parts = buildFallbackParts(taskSummary, agentActivity, githubCount, suggestions);
 
-    // Orchestrator summary
-    if (agentOrchestrator) {
-      const orchActive = agentOrchestrator.listActiveSessions().filter(
-        (s) => s.status === 'active' || s.status === 'spawning',
-      ).length;
+    // Session manager summary
+    if (busSessionManager) {
+      const orchActive = busSessionManager.list({ status: 'active' }).length;
       if (orchActive > 0) {
         parts.push(
           `${String(orchActive)} headless agent ${pluralize(orchActive, 'session', 'sessions')}`,

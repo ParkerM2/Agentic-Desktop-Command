@@ -10,11 +10,11 @@
 
 import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
 import { orchestratorEvents, orchestratorInvoke } from './agents';
-import { busEvents, busInvoke } from './bus';
 import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
+import { busEvents, busInvoke } from './bus';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';

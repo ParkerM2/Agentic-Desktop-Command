@@ -7,9 +7,12 @@
 
 import { QA, QA_EVENTS } from '@shared/ipc/qa/channels';
 
+
+import type { BusSessionManager } from '@main/bus/session-manager';
+import type { SessionRecord } from '@main/bus/types';
+
 import { createThrottle } from '../throttle';
 
-import type { AgentOrchestrator } from '../../services/agent-orchestrator/types';
 import type { QaRunner } from '../../services/qa/qa-types';
 import type { TaskRepository } from '../../services/tasks/types';
 import type { IpcRouter } from '../router';
@@ -38,7 +41,7 @@ async function resolveTaskDescription(taskRepository: TaskRepository, taskId: st
 export function registerQaHandlers(
   router: IpcRouter,
   qaRunner: QaRunner,
-  orchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
   taskRepository: TaskRepository,
 ): void {
   const allowFullQa = createThrottle(10000);
@@ -71,8 +74,9 @@ export function registerQaHandlers(
   });
 
   router.handle(QA.START.QUIET, async ({ taskId }) => {
-    const agentSession = orchestrator.getSessionByTaskId(taskId);
-    const projectPath = agentSession?.projectPath ?? '';
+    const agentSession = busSessionManager.list({ taskSlug: taskId })[0] as SessionRecord | undefined;
+    const agentSpawnCfg = agentSession?.spawnConfig as Record<string, unknown> | undefined;
+    const projectPath = (agentSpawnCfg?.projectPath as string | undefined) ?? '';
 
     if (projectPath.length === 0) {
       throw new Error('No project path available for QA');
@@ -94,8 +98,9 @@ export function registerQaHandlers(
       throw new Error('Too many requests. Please wait.');
     }
 
-    const agentSession = orchestrator.getSessionByTaskId(taskId);
-    const projectPath = agentSession?.projectPath ?? '';
+    const agentSession = busSessionManager.list({ taskSlug: taskId })[0] as SessionRecord | undefined;
+    const agentSpawnCfg = agentSession?.spawnConfig as Record<string, unknown> | undefined;
+    const projectPath = (agentSpawnCfg?.projectPath as string | undefined) ?? '';
 
     if (projectPath.length === 0) {
       throw new Error('No project path available for QA');

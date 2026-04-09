@@ -8,7 +8,8 @@
 import type { AgentDefinition } from '@shared/ipc/workflow-engine';
 import type { QaVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
 
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
+import type { BusSessionManager } from '@main/bus/session-manager';
+
 import type { GitService } from '../git/git-service';
 import type { WorkflowTemplateService } from '../workflow-templates/workflow-template-service';
 
@@ -140,7 +141,7 @@ export interface WorkflowErrorEvent {
 // ─── Service Dependencies ──────────────────────────────────────
 
 export interface WorkflowEngineDeps {
-  agentOrchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
   gitService: GitService;
   templateService: WorkflowTemplateService;
   progressBaseDir: string;

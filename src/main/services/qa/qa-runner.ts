@@ -4,11 +4,13 @@
  * Quiet mode: build -> launch -> agent -> collect -> report (background)
  * Full mode: same flow but with foreground app and longer timeout
  *
- * Uses the AgentOrchestrator to spawn headless Claude QA agents.
+ * Uses the BusSessionManager to spawn headless Claude QA agents.
  */
 
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+
+import type { BusSessionManager } from '@main/bus/session-manager';
 
 import { waitForAgentCompletion } from './qa-agent-poller';
 import { buildQaPrompt } from './qa-prompt';
@@ -23,11 +25,10 @@ import type {
   QaSession,
   QaSessionStatus,
 } from './qa-types';
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { NotificationManager } from '../notifications';
 
 export function createQaRunner(
-  orchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
   qaBaseDir: string,
   notificationManager?: NotificationManager,
 ): QaRunner {
@@ -60,7 +61,7 @@ export function createQaRunner(
     mode: QaMode,
     context: QaContext,
   ): Promise<QaSession> {
-    const qaDir = getQaDir(taskId);
+    const _qaDir = getQaDir(taskId);
     const session = store.createSession(taskId, mode);
 
     try {
@@ -71,17 +72,20 @@ export function createQaRunner(
       store.emitProgress(session.id, session, 'Running QA agent', 2, 3);
 
       const prompt = buildQaPrompt(mode, context);
-      const agentSession = await orchestrator.spawn({
-        taskId: `qa-${taskId}`,
+      const agentSession = await busSessionManager.spawn({
+        name: `qa-${taskId}`,
+        type: 'qa',
+        taskSlug: `qa-${taskId}`,
         projectPath: context.projectPath,
         prompt,
         phase: 'qa',
-        env: { QA_MODE: mode, QA_OUTPUT_DIR: qaDir },
       });
 
       store.updateSession(session.id, { agentSessionId: agentSession.id });
 
-      const report = await waitForAgentCompletion(orchestrator, agentSession.id, agentSession.logFile);
+      const spawnCfg = agentSession.spawnConfig as Record<string, unknown>;
+      const logFile = (spawnCfg.logFile as string | undefined) ?? '';
+      const report = await waitForAgentCompletion(busSessionManager, agentSession.id, logFile);
 
       store.reports.set(taskId, report);
       const completed = store.completeSession(session.id, session, report);
@@ -142,7 +146,7 @@ export function createQaRunner(
       }
 
       if (session.agentSessionId) {
-        orchestrator.kill(session.agentSessionId);
+        void busSessionManager.kill(session.agentSessionId);
       }
 
       store.updateSession(sessionId, {
@@ -158,7 +162,7 @@ export function createQaRunner(
     dispose(): void {
       for (const session of store.sessions.values()) {
         if (store.isSessionActive(session) && session.agentSessionId) {
-          orchestrator.kill(session.agentSessionId);
+          void busSessionManager.kill(session.agentSessionId);
         }
       }
 

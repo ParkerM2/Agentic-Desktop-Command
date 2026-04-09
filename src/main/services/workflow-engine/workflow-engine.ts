@@ -175,7 +175,7 @@ function toPublicRecord(runtime: EngineRuntimeRecord): WorkflowEngineRecord {
 // ─── Factory ──────────────────────────────────────────────────
 
 export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowEngineService {
-  const { agentOrchestrator, gitService, progressBaseDir } = deps;
+  const { busSessionManager, gitService, progressBaseDir } = deps;
 
   /** All engine records, keyed by runId */
   const engines = new Map<string, EngineRuntimeRecord>();
@@ -225,13 +225,13 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
         return await runSetup(runtime, gitService);
       }
       case WorkflowState.SPAWNING: {
-        return await runSpawning(runtime, agentOrchestrator);
+        return await runSpawning(runtime, busSessionManager);
       }
       case WorkflowState.QA_GATE: {
-        return await runQaGate(runtime, agentOrchestrator);
+        return await runQaGate(runtime, busSessionManager);
       }
       case WorkflowState.GUARDIAN: {
-        return await runGuardian(runtime, agentOrchestrator);
+        return await runGuardian(runtime, busSessionManager);
       }
       case WorkflowState.FINALIZING: {
         return await runFinalizing(runtime, gitService);

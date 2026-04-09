@@ -8,25 +8,31 @@
 
 import { readFileSync } from 'node:fs';
 
+
+import type { BusSessionManager } from '@main/bus/session-manager';
+import type { SessionRecord } from '@main/bus/types';
 import { serviceLogger } from '@main/lib/logger';
 
 import type { QaContext, QaRunner } from './qa-types';
 import type { IpcRouter } from '../../ipc/router';
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { TaskRepository } from '../tasks/types';
 
 export interface QaTrigger {
   dispose: () => void;
 }
 
-function extractChangedFiles(orchestrator: AgentOrchestrator, taskId: string): string[] {
-  const session = orchestrator.getSessionByTaskId(taskId);
+function extractChangedFiles(busSessionManager: BusSessionManager, taskId: string): string[] {
+  const session = busSessionManager.list({ taskSlug: taskId })[0] as SessionRecord | undefined;
   if (!session) {
     return [];
   }
 
+  const spawnCfg = session.spawnConfig as Record<string, unknown>;
+  const progressFile = (spawnCfg.progressFile as string | undefined) ?? '';
+  if (!progressFile) return [];
+
   try {
-    const content = readFileSync(session.progressFile, 'utf-8');
+    const content = readFileSync(progressFile, 'utf-8');
     const files = new Set<string>();
 
     for (const line of content.split('\n')) {
@@ -61,11 +67,11 @@ function getTaskDescription(task: { title: string; description: string }): strin
 
 export function createQaTrigger(deps: {
   qaRunner: QaRunner;
-  orchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
   taskRepository: TaskRepository;
   router: IpcRouter;
 }): QaTrigger {
-  const { qaRunner, orchestrator, taskRepository } = deps;
+  const { qaRunner, busSessionManager, taskRepository } = deps;
   const triggeredTasks = new Set<string>();
 
   function isQaAlreadyRunning(taskId: string): boolean {
@@ -97,15 +103,16 @@ export function createQaTrigger(deps: {
       }
 
       // Determine project path from agent session
-      const agentSession = orchestrator.getSessionByTaskId(taskId);
-      const projectPath = agentSession?.projectPath ?? '';
+      const agentSession = busSessionManager.list({ taskSlug: taskId })[0] as SessionRecord | undefined;
+      const agentSpawnCfg = agentSession?.spawnConfig as Record<string, unknown> | undefined;
+      const projectPath = (agentSpawnCfg?.projectPath as string | undefined) ?? '';
 
       if (projectPath.length === 0) {
         serviceLogger.warn(`[QaTrigger] No project path for task ${taskId}, skipping QA`);
         return;
       }
 
-      const changedFiles = extractChangedFiles(orchestrator, taskId);
+      const changedFiles = extractChangedFiles(busSessionManager, taskId);
 
       const context: QaContext = {
         projectPath,
@@ -121,15 +128,16 @@ export function createQaTrigger(deps: {
     }
   }
 
-  // Listen for task completion events from the orchestrator
-  orchestrator.onSessionEvent((event) => {
+  // Listen for task completion events from the bus session manager
+  busSessionManager.onEvent((event) => {
     if (event.type !== 'completed' || event.session.phase !== 'executing') {
       return;
     }
 
     // When an execution agent completes, the task may move to review
     // Give it a moment for status to propagate, then check
-    const { taskId } = event.session;
+    const taskId = event.session.taskSlug;
+    if (!taskId) return;
     setTimeout(() => {
       void (async () => {
         try {

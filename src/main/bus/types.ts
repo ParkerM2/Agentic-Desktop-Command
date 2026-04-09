@@ -1,5 +1,3 @@
-import type { AdcDatabase } from '../db';
-
 export interface CommandSource {
   type: 'ui' | 'agent' | 'system';
   id?: string;

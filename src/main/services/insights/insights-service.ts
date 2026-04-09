@@ -12,7 +12,7 @@ import type {
   TaskDistribution,
 } from '@shared/types';
 
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
 import type { QaRunner } from '../qa/qa-types';
@@ -27,10 +27,10 @@ export interface InsightsService {
 export function createInsightsService(deps: {
   taskService: TaskService;
   projectService: ProjectService;
-  agentOrchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
   qaRunner?: QaRunner;
 }): InsightsService {
-  const { taskService, projectService, agentOrchestrator, qaRunner } = deps;
+  const { taskService, projectService, busSessionManager, qaRunner } = deps;
 
   function getOrchestratorTokenCost(): number {
     // AgentSession does not yet track per-session token costs.
@@ -46,10 +46,10 @@ export function createInsightsService(deps: {
     activeCount: number;
   } {
     const today = new Date().toISOString().split('T')[0] ?? '';
-    const allSessions = [...agentOrchestrator.listActiveSessions()];
+    const allSessions = [...busSessionManager.list()];
 
     const sessionsToday = allSessions.filter(
-      (s) => s.spawnedAt.startsWith(today),
+      (s) => s.startedAt.startsWith(today),
     ).length;
 
     const activeCount = allSessions.filter(
@@ -68,7 +68,7 @@ export function createInsightsService(deps: {
     if (completed.length > 0) {
       let totalDuration = 0;
       for (const s of completed) {
-        totalDuration += Date.now() - Date.parse(s.spawnedAt);
+        totalDuration += Date.now() - Date.parse(s.startedAt);
       }
       avgDuration = Math.round(totalDuration / completed.length);
     }
@@ -150,10 +150,10 @@ export function createInsightsService(deps: {
           ).length;
         }
 
-        // Count orchestrator sessions spawned on this date
-        const activeSessions = agentOrchestrator.listActiveSessions();
-        const agentRuns = activeSessions.filter(
-          (s) => s.spawnedAt.startsWith(dateStr),
+        // Count sessions spawned on this date
+        const allSessions = busSessionManager.list();
+        const agentRuns = allSessions.filter(
+          (s) => s.startedAt.startsWith(dateStr),
         ).length;
 
         result.push({

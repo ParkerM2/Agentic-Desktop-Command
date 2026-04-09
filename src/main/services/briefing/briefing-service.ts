@@ -23,8 +23,8 @@ import { createBriefingConfigManager } from './briefing-config';
 import { createBriefingGenerator } from './briefing-generator';
 
 import type { SuggestionEngine } from './suggestion-engine';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { IpcRouter } from '../../ipc/router';
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
 import type { ProjectService } from '../project/project-service';
@@ -60,7 +60,7 @@ export interface BriefingServiceDeps {
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
-  agentOrchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
 }
 
 /**
@@ -84,7 +84,7 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     claudeClient: deps.claudeClient,
     notificationManager: deps.notificationManager,
     suggestionEngine: deps.suggestionEngine,
-    agentOrchestrator: deps.agentOrchestrator,
+    busSessionManager: deps.busSessionManager,
   });
 
   let schedulerInterval: ReturnType<typeof setInterval> | null = null;

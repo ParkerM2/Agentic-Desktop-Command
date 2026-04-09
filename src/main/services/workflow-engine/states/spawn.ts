@@ -1,7 +1,7 @@
 /**
  * SPAWNING State Handler
  *
- * Validates agent spawn prompts and spawns agents via AgentOrchestrator
+ * Validates agent spawn prompts and spawns agents via BusSessionManager
  * for every task in the current wave.
  *
  * Validation (spawn-validator.ts) checks for three required references:
@@ -23,10 +23,12 @@
 
 import { join } from 'node:path';
 
+import type { BusSessionManager } from '@main/bus/session-manager';
+
 import { validateSpawnPrompt } from '../spawn-validator';
 import { WorkflowState } from '../types';
 
-import type { AgentOrchestrator } from '../../agent-orchestrator/types';
+
 import type { TaskEntry, WorkflowRuntimeRecord } from '../types';
 
 // ─── Helpers ──────────────────────────────────────────────────
@@ -108,12 +110,12 @@ function buildSpawnPrompt(
  * Runs SPAWNING — validates and spawns agents for every task in the current wave.
  *
  * Reads `claudeMdBySlug` from the record (set by SETUP state).
- * Validates each prompt. Spawns via AgentOrchestrator.
+ * Validates each prompt. Spawns via BusSessionManager.
  * Returns QA_GATE on success; throws (→ ERROR) on validation failure.
  */
 export async function runSpawning(
   record: WorkflowRuntimeRecord,
-  agentOrchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
 ): Promise<WorkflowState> {
   const { featureName, projectPath, useWorktrees } = record.config;
 
@@ -140,11 +142,13 @@ export async function runSpawning(
     // Resolve working directory for the agent
     const agentCwd = resolveAgentCwd(projectPath, featureName, task.taskSlug, useWorktrees);
 
-    // Spawn via AgentOrchestrator
-    const session = await agentOrchestrator.spawn({
-      taskId: task.taskSlug,
+    // Spawn via BusSessionManager
+    const session = await busSessionManager.spawn({
+      name: `agent-${task.taskSlug}`,
+      type: 'assistant',
+      taskSlug: task.taskSlug,
       projectPath,
-      subProjectPath: useWorktrees
+      worktreePath: useWorktrees
         ? join('.worktrees', featureName, task.taskSlug)
         : undefined,
       prompt,

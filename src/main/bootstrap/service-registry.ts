@@ -13,12 +13,6 @@ import { app } from 'electron';
 import { APP_EVENTS } from '@shared/ipc/app/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 
-import { createCommandBus } from '../bus';
-import type { CommandBus } from '../bus';
-import { createBusSessionManager } from '../bus/session-manager';
-import type { BusSessionManager } from '../bus/session-manager';
-import { initDatabase } from '../db';
-import type { AdcDatabase } from '../db';
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
 import { GOOGLE_OAUTH_CONFIG } from '../auth/providers/google';
@@ -26,6 +20,9 @@ import { loadOAuthCredentials } from '../auth/providers/provider-config';
 import { SLACK_OAUTH_CONFIG } from '../auth/providers/slack';
 import { SPOTIFY_OAUTH_CONFIG } from '../auth/providers/spotify';
 import { createTokenStore } from '../auth/token-store';
+import { createCommandBus } from '../bus';
+import { createBusSessionManager } from '../bus/session-manager';
+import { initDatabase } from '../db';
 import { IpcRouter } from '../ipc/router';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
@@ -121,6 +118,9 @@ import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
 
 import type { OAuthConfig } from '../auth/types';
+import type { CommandBus } from '../bus';
+import type { BusSessionManager } from '../bus/session-manager';
+import type { AdcDatabase } from '../db';
 import type { Services } from '../ipc';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { UserSessionManager } from '../services/auth';
@@ -468,9 +468,18 @@ export function createServiceRegistry(
   const workflowTemplateService = createWorkflowTemplateService({ dataDir });
   const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
 
+  // ─── Agent Manager (v2 — headless stream-json) ──────────────
+  const agentManagerService = createAgentManagerService({ router });
+
+  // ─── Command Bus + Session Manager ─────────────────────────
+  const db = initDatabase(dataDir);
+  const commandBus = createCommandBus(db);
+  const busSessionManager = createBusSessionManager(db, agentManagerService);
+  busSessionManager.recoverInterrupted();
+
   // ─── WorkflowEngine service ──────────────────────────────────
   const workflowEngineService = createWorkflowEngineService({
-    agentOrchestrator,
+    busSessionManager,
     gitService,
     templateService: workflowTemplateService,
     progressBaseDir: dataDir,
@@ -485,15 +494,6 @@ export function createServiceRegistry(
     },
   });
 
-  // ─── Agent Manager (v2 — headless stream-json) ──────────────
-  const agentManagerService = createAgentManagerService({ router });
-
-  // ─── Command Bus + Session Manager ─────────────────────────
-  const db = initDatabase(dataDir);
-  const commandBus = createCommandBus(db);
-  const busSessionManager = createBusSessionManager(db, agentManagerService);
-  busSessionManager.recoverInterrupted();
-
   // ─── Worktree provisioner (isolates team-lead sessions) ──────
   const worktreeProvisioner = createWorktreeProvisioner();
 
@@ -504,10 +504,10 @@ export function createServiceRegistry(
     getMainWindow,
   );
 
-  const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
+  const qaRunner = createQaRunner(busSessionManager, dataDir, notificationManager);
 
   // Agent watchdog — monitors active sessions for dead/stale processes
-  const agentWatchdog = createAgentWatchdog(agentOrchestrator, {}, notificationManager);
+  const agentWatchdog = createAgentWatchdog(busSessionManager, {}, notificationManager);
   agentWatchdog.onAlert((alert) => {
     router.emit('event:agent.orchestrator.watchdogAlert', alert);
   });
@@ -516,7 +516,7 @@ export function createServiceRegistry(
   // QA auto-trigger — starts QA when tasks enter review
   const qaTrigger = createQaTrigger({
     qaRunner,
-    orchestrator: agentOrchestrator,
+    busSessionManager,
     taskRepository,
     router,
   });
@@ -528,13 +528,13 @@ export function createServiceRegistry(
   const suggestionEngine = createSuggestionEngine({
     projectService,
     taskService,
-    agentOrchestrator,
+    busSessionManager,
   });
 
   const insightsService = createInsightsService({
     taskService,
     projectService,
-    agentOrchestrator,
+    busSessionManager,
     qaRunner,
   });
 
@@ -546,7 +546,7 @@ export function createServiceRegistry(
     claudeClient,
     notificationManager,
     suggestionEngine,
-    agentOrchestrator,
+    busSessionManager,
   });
   briefingService.startScheduler();
 

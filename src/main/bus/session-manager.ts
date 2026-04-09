@@ -1,10 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 
-import type { AdcDatabase } from '../db';
 import { sessions } from '../db/schema';
 import { createScopedLogger } from '../lib/logger';
-import type { AgentManagerService } from '../services/agent-manager';
 
+import type { AdcDatabase } from '../db';
 import type {
   SessionEventHandler,
   SessionEventType,
@@ -12,17 +11,18 @@ import type {
   SessionRecord,
   SessionSpawnRequest,
 } from './types';
+import type { AgentManagerService } from '../services/agent-manager';
 
 const logger = createScopedLogger('bus-sessions');
 
 export interface BusSessionManager {
-  spawn(config: SessionSpawnRequest): Promise<SessionRecord>;
-  kill(sessionId: string): Promise<void>;
-  get(sessionId: string): SessionRecord | undefined;
-  list(filter?: SessionFilter): SessionRecord[];
-  onEvent(handler: SessionEventHandler): () => void;
-  recoverInterrupted(): void;
-  dispose(): void;
+  spawn: (config: SessionSpawnRequest) => Promise<SessionRecord>;
+  kill: (sessionId: string) => Promise<void>;
+  get: (sessionId: string) => SessionRecord | undefined;
+  list: (filter?: SessionFilter) => SessionRecord[];
+  onEvent: (handler: SessionEventHandler) => () => void;
+  recoverInterrupted: () => void;
+  dispose: () => void;
 }
 
 export function createBusSessionManager(
@@ -50,14 +50,14 @@ export function createBusSessionManager(
       const existing = getSession(event.sessionId);
       if (existing) {
         const endedAt = new Date().toISOString();
-        const exitCode = (data?.exitCode as number) ?? null;
+        const exitCode = (data?.exitCode as number | undefined) ?? null;
         const status = exitCode === 0 ? 'completed' : 'error';
         db.update(sessions)
           .set({
             status,
             endedAt,
             exitCode,
-            tokenUsage: (data?.tokenUsage as Record<string, unknown>) ?? existing.tokenUsage,
+            tokenUsage: (data?.tokenUsage as Record<string, unknown> | undefined) ?? existing.tokenUsage,
           })
           .where(eq(sessions.id, event.sessionId))
           .run();
@@ -68,9 +68,9 @@ export function createBusSessionManager(
       }
     } else if (event.type === 'status.changed') {
       const existing = getSession(event.sessionId);
-      if (existing && data?.status) {
+      if (existing && typeof data?.status === 'string') {
         db.update(sessions)
-          .set({ status: data.status as string })
+          .set({ status: data.status })
           .where(eq(sessions.id, event.sessionId))
           .run();
       }
@@ -96,13 +96,10 @@ export function createBusSessionManager(
         });
 
     // SpawnTeamLeadResult is AgentSession | SpawnTeamLeadError
-    const session = 'error' in spawnResult && spawnResult.error === 'spawn_failed'
-      ? null
-      : spawnResult as { id: string; pid?: number };
-
-    if (!session) {
+    if ('error' in spawnResult) {
       return Promise.reject(new Error('Failed to spawn session'));
     }
+    const session = spawnResult as { id: string; pid?: number };
 
     const now = new Date().toISOString();
     db.insert(sessions).values({
@@ -129,7 +126,10 @@ export function createBusSessionManager(
       error: null,
     }).run();
 
-    const result = getSession(session.id)!;
+    const result = getSession(session.id);
+    if (!result) {
+      return Promise.reject(new Error(`Session ${session.id} not found after insert`));
+    }
     emitSessionEvent('spawned', result);
     return Promise.resolve(result);
   }
@@ -178,9 +178,9 @@ export function createBusSessionManager(
       .all();
 
     for (const session of active) {
-      const pid = session.pid;
+      const {pid} = session;
       let alive = false;
-      if (pid) {
+      if (pid !== null && pid > 0) {
         try {
           process.kill(pid, 0);
           alive = true;

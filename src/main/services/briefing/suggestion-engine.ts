@@ -9,7 +9,7 @@
 
 import type { Suggestion, SuggestionType } from '@shared/types';
 
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
 
@@ -31,14 +31,14 @@ export interface SuggestionEngine {
 export interface SuggestionEngineDeps {
   projectService: ProjectService;
   taskService: TaskService;
-  agentOrchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
 }
 
 /**
  * Create a suggestion engine instance.
  */
 export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEngine {
-  const { projectService, taskService, agentOrchestrator } = deps;
+  const { projectService, taskService, busSessionManager } = deps;
 
   function getStaleProjectSuggestions(): Suggestion[] {
     const suggestions: Suggestion[] = [];
@@ -72,14 +72,14 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
   function getParallelTaskSuggestions(): Suggestion[] {
     const suggestions: Suggestion[] = [];
     const projects = projectService.listProjectsSync();
-    const activeSessions = agentOrchestrator.listActiveSessions();
+    const activeSessions = busSessionManager.list({ status: 'active' });
     const maxConcurrent = 3; // Could be fetched from settings
 
     for (const project of projects) {
       const tasks = taskService.listTasks(project.id);
       const queuedTasks = tasks.filter((t) => t.status === 'queued');
       const runningTasks = tasks.filter((t) => t.status === 'running');
-      const runningSessionsForProject = activeSessions.filter((s) => s.projectPath.includes(project.id));
+      const runningSessionsForProject = activeSessions.filter((s) => s.projectId === project.id);
 
       // If there are queued tasks but room for more agents
       if (queuedTasks.length > 1 && runningSessionsForProject.length < maxConcurrent) {

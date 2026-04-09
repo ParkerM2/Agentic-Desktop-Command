@@ -1,9 +1,10 @@
 import { and, desc, eq, gte } from 'drizzle-orm';
 import { ulid } from 'ulid';
 
-import type { AdcDatabase } from '../db';
 import { busEvents, commands } from '../db/schema';
 import { createScopedLogger } from '../lib/logger';
+
+import { isMutationVerb, parseChannel } from './types';
 
 import type {
   BusResult,
@@ -15,23 +16,23 @@ import type {
   EventRecord,
   RegisteredCommand,
 } from './types';
-import { isMutationVerb, parseChannel } from './types';
+import type { AdcDatabase } from '../db';
 
 const logger = createScopedLogger('command-bus');
 
 type EventHandler = (channel: string, payload: unknown) => void;
 
 export interface CommandBus {
-  dispatch(channel: string, input: unknown, source: CommandSource): Promise<BusResult>;
-  emit(channel: string, payload: unknown, context?: { commandId?: string; sessionId?: string; projectId?: string }): void;
-  on(channel: string, handler: EventHandler): () => void;
-  onAny(handler: EventHandler): () => void;
-  registerHandler(channel: string, handler: CommandHandler): void;
-  registerDynamic(channel: string, handler: CommandHandler): void;
-  getRegistry(): RegisteredCommand[];
-  queryCommands(filter: CommandFilter): CommandRecord[];
-  queryEvents(filter: EventFilter): EventRecord[];
-  dispose(): void;
+  dispatch: (channel: string, input: unknown, source: CommandSource) => Promise<BusResult>;
+  emit: (channel: string, payload: unknown, context?: { commandId?: string; sessionId?: string; projectId?: string }) => void;
+  on: (channel: string, handler: EventHandler) => () => void;
+  onAny: (handler: EventHandler) => () => void;
+  registerHandler: (channel: string, handler: CommandHandler) => void;
+  registerDynamic: (channel: string, handler: CommandHandler) => void;
+  getRegistry: () => RegisteredCommand[];
+  queryCommands: (filter: CommandFilter) => CommandRecord[];
+  queryEvents: (filter: EventFilter) => EventRecord[];
+  dispose: () => void;
 }
 
 export function createCommandBus(db: AdcDatabase): CommandBus {
@@ -91,9 +92,9 @@ export function createCommandBus(db: AdcDatabase): CommandBus {
         activeCommandId = null;
         return { commandId: id, status: 'success' as const, output, durationMs };
       })
-      .catch((err: Error) => {
+      .catch((err: unknown) => {
         const durationMs = Date.now() - startTime;
-        const error = err.message;
+        const error = err instanceof Error ? err.message : String(err);
         db.update(commands)
           .set({ status: 'error', error, durationMs })
           .where(eq(commands.id, id))
@@ -146,7 +147,7 @@ export function createCommandBus(db: AdcDatabase): CommandBus {
       eventListeners.set(channel, listeners);
     }
     listeners.add(handler);
-    return () => { listeners!.delete(handler); };
+    return () => { listeners.delete(handler); };
   }
 
   function onAny(handler: EventHandler): () => void {

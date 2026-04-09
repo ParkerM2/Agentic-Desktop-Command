@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 
 import { app } from 'electron';
+
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
@@ -29,9 +30,9 @@ export function initDatabase(
 
   // Run migrations on startup
   const migrationsPath = options?.migrationsFolder
-    ?? (!app.isPackaged
-      ? join(__dirname, '../../drizzle')
-      : join(process.resourcesPath, 'drizzle'));
+    ?? (app.isPackaged
+      ? join(process.resourcesPath, 'drizzle')
+      : join(__dirname, '../../drizzle'));
   migrate(db, { migrationsFolder: migrationsPath });
 
   return db;
