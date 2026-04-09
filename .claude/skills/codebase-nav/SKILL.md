@@ -5,23 +5,39 @@ description: "Navigate the ADC codebase by domain name. Use when finding, locati
 
 # ADC Codebase Navigation
 
-Every domain in ADC follows a predictable file layout across 6 layers. Given a domain name, resolve all paths before searching or reading files.
+Every domain in ADC follows a predictable **Feature Slice Design** layout across 8 layers. Given a domain name, resolve all paths before searching or reading files.
 
-## Domain → File Resolution
+## Domain → File Resolution (FSD)
 
 For any domain `{d}`:
 
 ```
-Contract:  src/shared/ipc/{d}/contract.ts     (Zod schemas, channel defs)
-Schemas:   src/shared/ipc/{d}/schemas.ts       (shared Zod types)
-Service:   src/main/services/{d}/index.ts      (business logic)
-Handler:   src/main/ipc/handlers/{d}-handlers.ts (thin IPC bridge)
-Feature:   src/renderer/features/{d}/          (React UI)
-Types:     src/shared/types/{d}.ts             (TypeScript interfaces)
-Doc:       docs/features/{d}/plan.md           (feature plan)
+Channels:  src/shared/ipc/{d}/channels.ts          (typed channel constants)
+Contract:  src/shared/ipc/{d}/contract.ts           (Zod schemas, channel defs)
+Schemas:   src/shared/ipc/{d}/schemas.ts            (shared Zod types)
+Service:   src/main/features/{d}/*-service.ts       (business logic)
+Handler:   src/main/features/{d}/*-handlers.ts      (IPC handler, co-located)
+Schema:    src/main/features/{d}/schema.ts           (Drizzle SQLite table)
+Feature:   src/renderer/features/{d}/                (React UI)
+Types:     src/shared/types/{d}.ts                   (TypeScript interfaces)
+Doc:       docs/features/{d}/plan.md                 (feature plan)
 ```
 
-Not every domain has all 6 layers. Check existence before reading.
+Not every domain has all 8 layers. Check existence before reading.
+
+**Key change:** Services and handlers are co-located in `src/main/features/{d}/`, NOT in separate `services/` and `ipc/handlers/` directories.
+
+## Infrastructure (Not Feature Slices)
+
+These live in `src/main/` directly, not in `features/`:
+
+```
+Command Bus:       src/main/bus/command-bus.ts, session-manager.ts, schema.ts
+Database:          src/main/db/connection.ts, schema.ts (re-export barrel)
+Agent Manager:     src/main/services/agent-manager/
+IPC Router:        src/main/ipc/router.ts
+Bootstrap:         src/main/bootstrap/
+```
 
 ## CLI Lookup
 
@@ -45,7 +61,7 @@ node scripts/codebase-lookup.mjs doc:visualization  # feature doc
 - **Domain end-to-end trace**: `docs/routing/AI-AGENT-ROUTING-INDEX.md`
 - **Full codebase XML map**: `docs/INDEX.md`
 
-## Feature Module Structure
+## Feature Module Structure (Renderer)
 
 Every renderer feature follows:
 ```
@@ -60,9 +76,18 @@ src/renderer/features/{d}/
 └── store.ts           # Zustand (UI state only)
 ```
 
-## Structure Compliance
+## Feature Module Structure (Main Process)
 
-All 36 renderer features are enforced to follow the canonical structure above. Run the scaffold audit to verify:
+Every main-process feature follows:
+```
+src/main/features/{d}/
+├── schema.ts           # Drizzle SQLite table(s)
+├── {d}-service.ts      # Business logic factory
+├── {d}-handlers.ts     # IPC handler registration
+└── [sub-modules]       # Domain-specific helpers
+```
+
+## Structure Compliance
 
 ```bash
 node scripts/scaffold-features.mjs          # audit (report only)
@@ -71,7 +96,7 @@ node scripts/scaffold-features.mjs --fix    # create missing files
 
 ## Common Domains
 
-agent-dashboard, agents, alerts, assistant, auth, briefing, changelog, communications, dashboard, devices, diff-viewer, file-explorer, fitness, github, health, hub-setup, ideation, insights, merge, my-work, notes, onboarding, planner, productivity, projects, roadmap, screen, settings, tasks, terminals, visualization, voice, workflow, workflow-pipeline, workspace, workspaces
+agent-dashboard, alerts, assistant, auth, briefing, bus, calendar, changelog, claude, dashboard, data-management, device, docker, email, file-tree, fitness, git, github, health, hotkeys, hub, ideas, insights, mcp, merge, milestones, notes, notifications, oauth, planner, progress, project, qa, screen, security, settings, spotify, tasks, terminal, time-parser, tracker, visualization, voice, webhook-settings, window, workflow, workflow-engine, workflow-templates, workspace
 
 ## Path Aliases
 

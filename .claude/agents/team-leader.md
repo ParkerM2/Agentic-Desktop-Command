@@ -170,3 +170,29 @@ When spawning agents, use descriptive names following this pattern:
 - Teammates: `{agentRole}-{taskSlug}`
 
 Example: `Agent(name: "service-engineer-auth-service", team_name: "auth-refactor", ...)`
+
+## Command Bus + Feature Slice Design
+
+The codebase uses **Feature Slice Design** with a **SQLite-backed command bus**.
+
+### Architecture
+
+- Services + handlers are co-located in `src/main/features/<domain>/`
+- Each feature owns its own Drizzle schema in `schema.ts`
+- All IPC calls flow through `bus.dispatch()` for SQLite tracking
+- Sessions managed via `BusSessionManager` — never call `agentManager.spawn*()` directly
+
+### Channel Constants
+
+All IPC channels use typed constants. Never hardcoded strings:
+```
+import { PROGRESS } from '@shared/ipc/progress/channels';
+router.handle(PROGRESS.CREATE.TASK, ...);
+```
+
+### When Decomposing Tasks
+
+- Each agent should only touch files within ONE `src/main/features/<domain>/` directory
+- Schema changes go in `src/main/features/<domain>/schema.ts` (not the root barrel)
+- Spawn sessions through `busSessionManager.spawn()`, not `agentManager`
+- Query session state: `busSessionManager.list({ status: 'active' })`

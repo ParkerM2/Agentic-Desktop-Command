@@ -1,51 +1,100 @@
 # ADC Electron IPC Skill
 
-ADC uses a **domain-based typed IPC contract** as the single source of truth for all main↔renderer communication.
+ADC uses a **domain-based typed IPC contract** with **channel constants** and a **command bus** for SQLite tracking.
 
-## Directory Structure
+## Architecture Overview
 
 ```
-src/shared/ipc/
-├── <domain>/
-│   ├── schemas.ts    # Zod schemas for types
-│   ├── contract.ts   # invoke + event channel definitions
-│   └── index.ts      # barrel re-exports
-├── index.ts          # root barrel — merges all domains into ipcInvokeContract / ipcEventContract
-└── types.ts          # InvokeChannel, InvokeInput, InvokeOutput, EventChannel, EventPayload
-src/shared/ipc-contract.ts  # thin backward-compat re-export (do not modify)
+Renderer                    Preload              Main Process
+─────────                   ───────              ────────────
+ipc(CHANNEL, input)  →  contextBridge  →  IpcRouter.handle()
+                                              │
+                                              ├─ Zod validation
+                                              ├─ bus.dispatch() → SQLite log
+                                              └─ handler() → result
+```
+
+Every IPC call is tracked in SQLite via the command bus. Source attribution, duration, and status are recorded automatically.
+
+## Directory Structure (Feature Slice Design)
+
+```
+src/shared/ipc/<domain>/
+├── channels.ts   # Channel constants (DOMAIN.VERB.NOUN)
+├── schemas.ts    # Zod schemas for types
+├── contract.ts   # invoke + event channel definitions using constants
+└── index.ts      # barrel re-exports
+
+src/main/features/<domain>/
+├── schema.ts           # Drizzle SQLite table definition
+├── *-service.ts        # Business logic factory
+├── *-handlers.ts       # IPC handler registration
+└── [sub-modules]       # Domain-specific helpers
+
+src/renderer/features/<domain>/
+├── api/           # React Query hooks + queryKeys
+├── components/    # UI components
+├── hooks/         # Event hooks (useIpcEvent)
+└── index.ts       # barrel
 ```
 
 ## Adding a New IPC Channel (Step by Step)
 
-### 1. Schemas — `src/shared/ipc/<domain>/schemas.ts`
+### 1. Channel Constants — `src/shared/ipc/<domain>/channels.ts`
+
+```typescript
+import { domain, events } from '../channel-builder';
+
+export const WIDGETS = domain('widgets', {
+  LIST: ['all'],
+  CREATE: ['widget'],
+  DELETE: ['widget'],
+});
+
+export const WIDGETS_EVENTS = events('widgets', {
+  WIDGET: ['changed'],
+});
+// WIDGETS.CREATE.WIDGET = "widgets.create.widget" (literal type)
+// WIDGETS_EVENTS.WIDGET.CHANGED = "event:widgets.widget.changed"
+```
+
+**NEVER use hardcoded strings.** Always import constants from channels.ts.
+
+### 2. Schemas — `src/shared/ipc/<domain>/schemas.ts`
+
 ```typescript
 import { z } from 'zod';
 export const WidgetSchema = z.object({ id: z.string(), name: z.string() });
 ```
 
-### 2. Contract — `src/shared/ipc/<domain>/contract.ts`
+### 3. Contract — `src/shared/ipc/<domain>/contract.ts`
+
 ```typescript
 import { z } from 'zod';
+import { WIDGETS, WIDGETS_EVENTS } from './channels';
 import { WidgetSchema } from './schemas';
 
 export const widgetsInvoke = {
-  'widgets.list':   { input: z.object({}),                    output: z.array(WidgetSchema) },
-  'widgets.create': { input: z.object({ name: z.string() }), output: WidgetSchema },
+  [WIDGETS.LIST.ALL]:      { input: z.object({}), output: z.array(WidgetSchema) },
+  [WIDGETS.CREATE.WIDGET]: { input: z.object({ name: z.string() }), output: WidgetSchema },
+  [WIDGETS.DELETE.WIDGET]: { input: z.object({ id: z.string() }), output: z.object({ success: z.boolean() }) },
 } as const;
 
 export const widgetsEvents = {
-  'event:widget.updated': { payload: z.object({ widgetId: z.string() }) },
+  [WIDGETS_EVENTS.WIDGET.CHANGED]: { payload: z.object({ widgetId: z.string() }) },
 } as const;
 ```
 
-### 3. Barrel — `src/shared/ipc/<domain>/index.ts`
+### 4. Barrel — `src/shared/ipc/<domain>/index.ts`
+
 ```typescript
+export { WIDGETS, WIDGETS_EVENTS } from './channels';
 export { WidgetSchema } from './schemas';
 export { widgetsEvents, widgetsInvoke } from './contract';
 ```
 
-### 4. Root barrel — `src/shared/ipc/index.ts`
-Add import and spread into `ipcInvokeContract` / `ipcEventContract`:
+### 5. Root barrel — `src/shared/ipc/index.ts`
+
 ```typescript
 import { widgetsEvents, widgetsInvoke } from './widgets';
 // in ipcInvokeContract:
@@ -54,48 +103,66 @@ import { widgetsEvents, widgetsInvoke } from './widgets';
   ...widgetsEvents,
 ```
 
-### 5. Handler — `src/main/ipc/handlers/widget-handlers.ts`
+### 6. Schema — `src/main/features/<domain>/schema.ts`
+
 ```typescript
-import type { IpcRouter } from '../router';
-import type { WidgetService } from '../../services/widgets/widget-service';
+import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+
+export const widgets = sqliteTable('widgets', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+```
+
+Re-export from `src/main/db/schema.ts` barrel.
+
+### 7. Handler — `src/main/features/<domain>/<name>-handlers.ts`
+
+```typescript
+import { WIDGETS } from '@shared/ipc/widgets/channels';
+import type { WidgetService } from './widget-service';
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerWidgetHandlers(router: IpcRouter, service: WidgetService): void {
-  router.handle('widgets.list',   ()           => Promise.resolve(service.listWidgets()));
-  router.handle('widgets.create', ({ name })   => Promise.resolve(service.createWidget(name)));
+  router.handle(WIDGETS.LIST.ALL, () => Promise.resolve(service.listWidgets()));
+  router.handle(WIDGETS.CREATE.WIDGET, ({ name }) => Promise.resolve(service.createWidget(name)));
+  router.handle(WIDGETS.DELETE.WIDGET, ({ id }) => Promise.resolve(service.deleteWidget(id)));
 }
 ```
 
-Register in `src/main/ipc/ipc-wiring.ts` (or equivalent bootstrap file).
+### 8. Service — `src/main/features/<domain>/<name>-service.ts`
 
-### 6. Service — `src/main/services/widgets/widget-service.ts`
-Local services return **synchronous values**; handlers wrap in `Promise.resolve`:
 ```typescript
-export class WidgetService {
-  listWidgets(): Widget[] { return this.store.getAll(); }
-  createWidget(name: string): Widget { ... }
+import { desc, eq } from 'drizzle-orm';
+import { WIDGETS_EVENTS } from '@shared/ipc/widgets/channels';
+import { widgets } from './schema';
+import type { AdcDatabase } from '../../db';
+import type { IpcRouter } from '../../ipc/router';
+
+export function createWidgetService(deps: { db: AdcDatabase; router: IpcRouter }) {
+  const { db, router } = deps;
+  return {
+    listWidgets: () => db.select().from(widgets).orderBy(desc(widgets.createdAt)).all(),
+    createWidget: (name: string) => { /* insert + emit event */ },
+    deleteWidget: (id: string) => { /* delete + emit event */ },
+  };
 }
 ```
-Exception: Electron dialog calls (`selectDirectory`) and Hub API proxy services are async.
 
-### 7. Renderer hook — `src/renderer/features/widgets/api/useWidgets.ts`
+### 9. Renderer hook — `src/renderer/features/<domain>/api/useWidgets.ts`
+
 ```typescript
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { WIDGETS } from '@shared/ipc/widgets/channels';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { widgetKeys } from './queryKeys';
 
 export function useWidgets() {
   return useQuery({
     queryKey: widgetKeys.list(),
-    queryFn:  () => ipc('widgets.list', {}),
+    queryFn: () => ipc(WIDGETS.LIST.ALL, {}),
     staleTime: 60_000,
-  });
-}
-
-export function useCreateWidget() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ name }: { name: string }) => ipc('widgets.create', { name }),
-    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: widgetKeys.lists() }); },
   });
 }
 ```
@@ -111,24 +178,16 @@ export async function ipc<T extends InvokeChannel>(
   input: InvokeInput<T>,
 ): Promise<InvokeOutput<T>>
 ```
-Throws `IpcError` on failure. Always use this in query functions, not `window.api.invoke` directly.
+Throws `IpcError` on failure. Always use this — never `window.api.invoke` directly.
 
-## Emitting Events (main → renderer)
+## Command Bus
 
-```typescript
-// In a handler or service:
-router.emit('event:widget.updated', { widgetId: id });
-```
+Every IPC call flows through the command bus for SQLite tracking. The bus wraps the router — no extra code needed in handlers.
 
-## Consuming Events (renderer)
-
-```typescript
-import { useIpcEvent } from '@renderer/shared/hooks/useIpcEvent';
-
-useIpcEvent('event:widget.updated', ({ widgetId }) => {
-  void queryClient.invalidateQueries({ queryKey: widgetKeys.detail(widgetId) });
-});
-```
+- Source attribution recorded automatically (`ui`, `agent`, or `system`)
+- Duration and status logged per command
+- Query history: `BUS.QUERY.COMMANDS`, `BUS.QUERY.EVENTS`
+- Session lifecycle: `BUS.LIST.SESSIONS`, `BUS.SPAWN.SESSION`, `BUS.KILL.SESSION`
 
 ## Path Aliases
 
@@ -138,11 +197,13 @@ useIpcEvent('event:widget.updated', ({ widgetId }) => {
 | `@main/*` | `src/main/*` |
 | `@renderer/*` | `src/renderer/*` |
 | `@features/*` | `src/renderer/features/*` |
+| `@ui/*` | `src/renderer/shared/components/ui/*` |
 
 ## Key Rules
 
-- Channel names: `domain.action` for invoke, `event:domain.action` for events
+- Channel names use constants: `DOMAIN.VERB.NOUN` — never string literals
 - Input/output shapes defined once in contract — TypeScript propagates everywhere
-- Never call `window.api.invoke` directly in components — always use `ipc()`
-- Sync services → async handlers (wrap in `Promise.resolve`)
-- Import types with `import type` (ESLint enforces `consistent-type-imports`)
+- Never call `window.api.invoke` directly — always use `ipc()`
+- Services use Drizzle ORM for SQLite persistence
+- Import types with `import type` (ESLint enforces)
+- Services + handlers co-located in `src/main/features/<domain>/`

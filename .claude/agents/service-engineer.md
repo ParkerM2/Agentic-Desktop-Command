@@ -25,28 +25,61 @@ Then read existing services as reference:
 9. `src/main/services/project/project-service.ts` — Hub API proxy pattern (async methods calling `hubApiClient`)
 10. `src/main/services/project/task-service.ts` — File-based task storage pattern
 11. `src/main/services/settings/settings-service.ts` — Simple settings pattern
-12. `src/main/services/terminal/terminal-service.ts` — PTY/process management pattern
-13. `src/main/services/agent-orchestrator/agent-orchestrator.ts` — Agent lifecycle + session management pattern
+12. `src/main/features/terminal/terminal-service.ts` — PTY/process management pattern
+13. `src/main/bus/session-manager.ts` — Session lifecycle management (replaces agent-orchestrator)
+14. `src/main/features/dashboard/dashboard-service.ts` — SQLite-backed service pattern (Drizzle ORM)
 
-Key infrastructure services:
-14. `src/main/services/hub/hub-api-client.ts` — Hub REST API client (used by Hub proxy services)
-15. `src/main/services/project/setup-pipeline.ts` — Multi-step project setup pipeline
-16. `src/main/services/project/codebase-analyzer.ts` — Static analysis for project onboarding
-17. `src/main/bootstrap/service-registry.ts` — Service registration + dependency injection pattern
+Key infrastructure:
+15. `src/main/features/hub/hub-api-client.ts` — Hub REST API client
+16. `src/main/features/project/setup-pipeline.ts` — Multi-step project setup pipeline
+17. `src/main/bootstrap/service-registry.ts` — Service registration + dependency injection
+
+## Feature Slice Design
+
+Services + handlers are co-located in `src/main/features/<domain>/`:
+
+```
+src/main/features/<domain>/
+├── schema.ts           ← Drizzle SQLite table (domain owns its schema)
+├── <domain>-service.ts ← Business logic factory
+├── <domain>-handlers.ts ← IPC handler registration
+└── [sub-modules]        ← Domain-specific helpers
+```
 
 ## Scope — Files You Own
 
 ```
 ONLY modify these files:
-  src/main/services/<domain>/<domain>-service.ts   — Service implementation
-  src/main/services/<domain>/                       — Supporting service files
+  src/main/features/<domain>/        — Service, handler, schema, helpers
 
 NEVER modify:
   src/shared/**           — Schema Designer's domain
   src/renderer/**         — Renderer agents' domain
   src/preload/**          — Off limits
-  src/main/ipc/**         — IPC Handler Engineer's domain
+  src/main/bus/**         — Command Bus infrastructure
   src/main/index.ts       — App lifecycle (coordinate with Team Leader)
+```
+
+## Channel Constants (REQUIRED)
+
+Never use hardcoded IPC strings. Import from `@shared/ipc/<domain>/channels`:
+```typescript
+import { DASHBOARD } from '@shared/ipc/dashboard/channels';
+router.handle(DASHBOARD.CREATE.CAPTURE, async (input) => { ... });
+```
+
+## SQLite Persistence
+
+All domain data uses Drizzle ORM against SQLite:
+```typescript
+import { captures } from './schema';
+import type { AdcDatabase } from '../../db';
+
+export function createDashboardService(deps: { db: AdcDatabase, router: IpcRouter, dataDir: string }) {
+  return {
+    listCaptures: () => db.select().from(captures).orderBy(desc(captures.createdAt)).all(),
+  };
+}
 ```
 
 ## Skills
