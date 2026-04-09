@@ -22,6 +22,13 @@
       "when": 1775711430700,
       "tag": "0002_perfect_jubilee",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1775711827364,
+      "tag": "0003_burly_cammi",
+      "breakpoints": true
     }
   ]
 }
