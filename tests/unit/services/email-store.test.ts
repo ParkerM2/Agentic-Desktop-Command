@@ -1,18 +1,22 @@
 /**
- * Unit Tests for EmailStore
+ * Unit Tests for EmailStore (SQLite-backed)
  *
- * Tests load/save of email configuration and queue persistence,
- * including password migration detection and encryption.
- * Mocks node:fs, node:path, electron, and email-encryption.
+ * Tests load/save of email configuration persistence,
+ * including password migration detection, encryption, and JSON migration.
+ * Uses an in-memory SQLite database via better-sqlite3 + Drizzle.
  */
 
 import { posix } from 'node:path';
 
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Volume } from 'memfs';
 
-import type { QueuedEmail } from '@shared/types';
+import * as schema from '@main/db/schema';
+
+import type { AdcDatabase } from '@main/db';
 
 // ── Path Mocking (use posix.join for memfs compatibility on Windows) ──
 
@@ -24,7 +28,7 @@ vi.mock('node:path', async (importOriginal) => {
   };
 });
 
-// ── File System Mocking ────────────────────────────────────────────
+// ── File System Mocking (for JSON migration tests) ────────────────────
 
 vi.mock('node:fs', async () => {
   const memfs = await import('memfs');
@@ -52,7 +56,7 @@ vi.mock('@main/services/email/email-encryption', () => ({
 }));
 
 // Import after mocks are set up
-const { loadEmailStore, saveEmailStore } = await import(
+const { loadEmailConfig, saveEmailConfig, migrateEmailConfigFromJson } = await import(
   '@main/services/email/email-store'
 );
 
@@ -75,8 +79,22 @@ function resetFs(files: Record<string, string> = {}): void {
   }
 }
 
-// app.getPath('userData') returns '/mock/userData' from electron mock
-const EMAIL_FILE = posix.join('/mock/userData', 'email-config.json');
+function createTestDb(): AdcDatabase {
+  const sqlite = new Database(':memory:');
+  const db = drizzle(sqlite, { schema });
+  // Create the emailConfig table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS email_config (
+      key TEXT PRIMARY KEY,
+      config TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+  `);
+  return db;
+}
+
+const DATA_DIR = '/mock/userData';
+const EMAIL_FILE = posix.join(DATA_DIR, 'email-config.json');
 
 function makeConfig(overrides: Record<string, unknown> = {}) {
   return {
@@ -91,73 +109,58 @@ function makeConfig(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function makeQueuedEmail(overrides: Record<string, unknown> = {}): QueuedEmail {
-  return {
-    id: 'q-1',
-    email: {
-      to: ['user@example.com'],
-      subject: 'Test',
-      body: 'Hello',
-    },
-    status: 'queued',
-    attempts: 0,
-    createdAt: '2026-02-19T00:00:00.000Z',
-    ...overrides,
-  } as QueuedEmail;
-}
-
 // ── Tests ───────────────────────────────────────────────────────────
 
-describe('EmailStore', () => {
+describe('EmailStore (SQLite)', () => {
+  let db: AdcDatabase;
+
   beforeEach(() => {
     vi.clearAllMocks();
     resetFs();
+    db = createTestDb();
   });
 
   afterEach(() => {
     resetFs();
   });
 
-  // ── loadEmailStore() ──────────────────────────────────────────────
+  // ── loadEmailConfig() ───────────────────────────────────────────
 
-  describe('loadEmailStore()', () => {
-    it('returns default empty data when file does not exist', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
+  describe('loadEmailConfig()', () => {
+    it('returns null config when table is empty', () => {
+      const result = loadEmailConfig(db);
 
-      const result = loadEmailStore();
-
-      expect(result.data).toEqual({ config: null, queue: [] });
+      expect(result.config).toBeNull();
       expect(result.needsMigration).toBe(false);
     });
 
-    it('loads valid config and queue from disk', () => {
+    it('loads valid config from SQLite', () => {
       const config = makeConfig();
-      const queue = [makeQueuedEmail()];
+      saveEmailConfig(db, config as never);
 
-      resetFs({
-        [EMAIL_FILE]: JSON.stringify({ config, queue }),
-      });
+      const result = loadEmailConfig(db);
 
-      const result = loadEmailStore();
-
-      expect(result.data.config).toEqual(config);
-      expect(result.data.queue).toHaveLength(1);
-      expect(result.data.queue[0]?.id).toBe('q-1');
+      expect(result.config?.host).toBe('smtp.example.com');
+      expect(result.config?.user).toBe('test@example.com');
       expect(result.needsMigration).toBe(false);
     });
 
     it('detects plaintext password needing migration', () => {
+      // Directly insert a row with plaintext password
       const config = makeConfig({ pass: 'plaintextpassword' });
+      // Use raw insert to bypass encryption in saveEmailConfig
+      db.insert(schema.emailConfig)
+        .values({
+          key: 'default',
+          config: config as unknown,
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
 
-      resetFs({
-        [EMAIL_FILE]: JSON.stringify({ config, queue: [] }),
-      });
-
-      const result = loadEmailStore();
+      const result = loadEmailConfig(db);
 
       expect(result.needsMigration).toBe(true);
-      expect(result.data.config?.pass).toBe('plaintextpassword');
+      expect(result.config?.pass).toBe('plaintextpassword');
     });
 
     it('does not flag migration for encrypted password object', () => {
@@ -165,162 +168,119 @@ describe('EmailStore', () => {
         pass: { encrypted: 'abc123', useSafeStorage: true },
       });
 
-      resetFs({
-        [EMAIL_FILE]: JSON.stringify({ config, queue: [] }),
-      });
+      saveEmailConfig(db, config as never);
+      const result = loadEmailConfig(db);
 
-      const result = loadEmailStore();
-
-      expect(result.needsMigration).toBe(false);
-    });
-
-    it('does not flag migration for empty string password', () => {
-      const config = makeConfig({ pass: '' });
-
-      resetFs({
-        [EMAIL_FILE]: JSON.stringify({ config, queue: [] }),
-      });
-
-      const result = loadEmailStore();
-
-      expect(result.needsMigration).toBe(false);
-    });
-
-    it('returns default data when file contains invalid JSON', () => {
-      resetFs({
-        [EMAIL_FILE]: 'this is not valid json {{{',
-      });
-
-      const result = loadEmailStore();
-
-      expect(result.data).toEqual({ config: null, queue: [] });
-      expect(result.needsMigration).toBe(false);
-    });
-
-    it('returns default data when file contains non-object JSON', () => {
-      resetFs({
-        [EMAIL_FILE]: '"just a string"',
-      });
-
-      const result = loadEmailStore();
-
-      // Parsed as non-object — config would be undefined → needsMigration false
       expect(result.needsMigration).toBe(false);
     });
   });
 
-  // ── saveEmailStore() ──────────────────────────────────────────────
+  // ── saveEmailConfig() ───────────────────────────────────────────
 
-  describe('saveEmailStore()', () => {
-    it('writes config and queue to disk', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
+  describe('saveEmailConfig()', () => {
+    it('writes config to SQLite', () => {
       const config = makeConfig();
-      saveEmailStore({ config: config as never, queue: [] });
+      saveEmailConfig(db, config as never);
 
-      const raw = vol.readFileSync(EMAIL_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(raw);
-
-      expect(parsed.config).toBeTruthy();
-      expect(parsed.queue).toEqual([]);
+      const result = loadEmailConfig(db);
+      expect(result.config).toBeTruthy();
+      expect(result.config?.host).toBe('smtp.example.com');
     });
 
     it('encrypts plaintext password on save', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const config = makeConfig({ pass: 'mysecretpass' });
-      saveEmailStore({ config: config as never, queue: [] });
+      saveEmailConfig(db, config as never);
 
       expect(mockEncryptSecret).toHaveBeenCalledWith('mysecretpass');
-
-      const raw = vol.readFileSync(EMAIL_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(raw);
-
-      expect(parsed.config.pass).toEqual(
-        expect.objectContaining({
-          encrypted: expect.any(String),
-          useSafeStorage: expect.any(Boolean),
-        }),
-      );
     });
 
     it('preserves already-encrypted password on save', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const encryptedPass = { encrypted: 'abc123', useSafeStorage: true };
       const config = makeConfig({ pass: encryptedPass });
-      saveEmailStore({ config: config as never, queue: [] });
+      saveEmailConfig(db, config as never);
 
       // Should NOT call encryptSecret for already-encrypted pass
       expect(mockEncryptSecret).not.toHaveBeenCalled();
-
-      const raw = vol.readFileSync(EMAIL_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(raw);
-
-      expect(parsed.config.pass).toEqual(encryptedPass);
     });
 
     it('does not encrypt empty string password', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const config = makeConfig({ pass: '' });
-      saveEmailStore({ config: config as never, queue: [] });
+      saveEmailConfig(db, config as never);
 
       expect(mockEncryptSecret).not.toHaveBeenCalled();
     });
 
-    it('saves null config correctly', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
+    it('deletes config when saving null', () => {
+      const config = makeConfig();
+      saveEmailConfig(db, config as never);
 
-      saveEmailStore({ config: null, queue: [] });
+      // Verify config exists
+      expect(loadEmailConfig(db).config).toBeTruthy();
 
-      const raw = vol.readFileSync(EMAIL_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(raw);
+      // Save null
+      saveEmailConfig(db, null);
 
-      expect(parsed.config).toBeNull();
-      expect(parsed.queue).toEqual([]);
+      expect(loadEmailConfig(db).config).toBeNull();
     });
 
-    it('saves queue items to disk', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
+    it('upserts config on subsequent saves', () => {
+      const config1 = makeConfig({ host: 'smtp1.example.com' });
+      saveEmailConfig(db, config1 as never);
 
-      const queue = [makeQueuedEmail(), makeQueuedEmail({ id: 'q-2' })];
-      saveEmailStore({ config: null, queue });
+      const config2 = makeConfig({ host: 'smtp2.example.com' });
+      saveEmailConfig(db, config2 as never);
 
-      const raw = vol.readFileSync(EMAIL_FILE, 'utf-8') as string;
-      const parsed = JSON.parse(raw);
+      const result = loadEmailConfig(db);
+      expect(result.config?.host).toBe('smtp2.example.com');
+    });
+  });
 
-      expect(parsed.queue).toHaveLength(2);
-      expect(parsed.queue[0].id).toBe('q-1');
-      expect(parsed.queue[1].id).toBe('q-2');
+  // ── migrateEmailConfigFromJson() ────────────────────────────────
+
+  describe('migrateEmailConfigFromJson()', () => {
+    it('migrates config from JSON file to SQLite', () => {
+      const config = makeConfig();
+      resetFs({
+        [EMAIL_FILE]: JSON.stringify({ config, queue: [] }),
+      });
+
+      const migrated = migrateEmailConfigFromJson(db, DATA_DIR);
+
+      expect(migrated).toBe(true);
+
+      const result = loadEmailConfig(db);
+      expect(result.config?.host).toBe('smtp.example.com');
     });
 
-    it('creates directory if it does not exist', () => {
-      const vol = getMockVol();
-      // Do NOT create /mock/userData — saveEmailStore should create it
-      expect(vol.existsSync('/mock/userData')).toBe(false);
+    it('does not migrate if SQLite already has config', () => {
+      const config = makeConfig({ host: 'existing.example.com' });
+      saveEmailConfig(db, config as never);
 
-      saveEmailStore({ config: null, queue: [] });
+      resetFs({
+        [EMAIL_FILE]: JSON.stringify({ config: makeConfig({ host: 'old.example.com' }), queue: [] }),
+      });
 
-      expect(vol.existsSync('/mock/userData')).toBe(true);
+      const migrated = migrateEmailConfigFromJson(db, DATA_DIR);
+
+      expect(migrated).toBe(false);
+      expect(loadEmailConfig(db).config?.host).toBe('existing.example.com');
     });
 
-    it('writes pretty-printed JSON with 2-space indentation', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
+    it('does not migrate if JSON file does not exist', () => {
+      const migrated = migrateEmailConfigFromJson(db, DATA_DIR);
 
-      saveEmailStore({ config: null, queue: [] });
+      expect(migrated).toBe(false);
+    });
 
-      const raw = vol.readFileSync(EMAIL_FILE, 'utf-8') as string;
+    it('encrypts plaintext password during migration', () => {
+      const config = makeConfig({ pass: 'legacypass' });
+      resetFs({
+        [EMAIL_FILE]: JSON.stringify({ config, queue: [] }),
+      });
 
-      expect(raw).toContain('\n');
-      expect(raw).toBe(JSON.stringify({ config: null, queue: [] }, null, 2));
+      migrateEmailConfigFromJson(db, DATA_DIR);
+
+      expect(mockEncryptSecret).toHaveBeenCalledWith('legacypass');
     });
   });
 
@@ -328,20 +288,14 @@ describe('EmailStore', () => {
 
   describe('round-trip', () => {
     it('data survives save then load', () => {
-      const vol = getMockVol();
-      vol.mkdirSync('/mock/userData', { recursive: true });
-
       const encryptedPass = { encrypted: 'abc123', useSafeStorage: true };
       const config = makeConfig({ pass: encryptedPass });
-      const queue = [makeQueuedEmail()];
 
-      saveEmailStore({ config: config as never, queue });
-      const result = loadEmailStore();
+      saveEmailConfig(db, config as never);
+      const result = loadEmailConfig(db);
 
-      expect(result.data.config?.host).toBe('smtp.example.com');
-      expect(result.data.config?.pass).toEqual(encryptedPass);
-      expect(result.data.queue).toHaveLength(1);
-      expect(result.data.queue[0]?.id).toBe('q-1');
+      expect(result.config?.host).toBe('smtp.example.com');
+      expect(result.config?.pass).toEqual(encryptedPass);
     });
   });
 });

@@ -1,29 +1,21 @@
 /**
- * Unit Tests — HubTokenStore
+ * Unit Tests — TokenStore (SQLite-backed)
  *
- * Tests the TokenStore implementation used by the Hub authentication service.
- * Focuses on token encryption, storage, and expiry checking.
+ * Tests the TokenStore implementation that persists encrypted tokens
+ * in the `oauth_tokens` SQLite table.
+ * Focuses on token encryption, storage, retrieval, and JSON migration.
  */
 
-import { createFsFromVolume, Volume } from 'memfs';
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { OAuthTokens } from '@main/auth/types';
+import * as schema from '@main/db/schema';
 
-// ─── Shared Volume ────────────────────────────────────────────────────
-// Create a shared volume instance that will be used by both the mock and tests
-let sharedVol = Volume.fromJSON({});
+import type { OAuthTokens } from '@main/auth/types';
+import type { AdcDatabase } from '@main/db';
 
 // ─── Mocks ────────────────────────────────────────────────────────────
-
-// Mock node:fs with memfs using the shared volume
-vi.mock('node:fs', () => {
-  const fs = createFsFromVolume(sharedVol);
-  return {
-    ...fs,
-    default: fs,
-  };
-});
 
 // Mock electron safeStorage
 const mockSafeStorage = {
@@ -36,39 +28,57 @@ vi.mock('electron', () => ({
   safeStorage: mockSafeStorage,
 }));
 
+// Mock node:fs for JSON migration tests
+const mockFs = {
+  existsSync: vi.fn((_path: string) => false),
+  readFileSync: vi.fn((_path: string, _encoding?: string) => '{}'),
+};
+
+vi.mock('node:fs', () => ({
+  existsSync: (path: string) => mockFs.existsSync(path),
+  readFileSync: (path: string, encoding?: string) => mockFs.readFileSync(path, encoding),
+}));
+
 // ─── Constants ────────────────────────────────────────────────────────
 
 const HUB_PROVIDER = 'hub';
 const DATA_DIR = '/mock/userData';
-const TOKENS_FILE = `${DATA_DIR}/oauth-tokens.json`;
+
+// ─── Helpers ──────────────────────────────────────────────────────────
+
+function createTestDb(): AdcDatabase {
+  const sqlite = new Database(':memory:');
+  const db = drizzle(sqlite, { schema });
+
+  // Create the oauth_tokens table
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS oauth_tokens (
+      provider TEXT PRIMARY KEY,
+      encrypted TEXT NOT NULL,
+      use_safe_storage INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL
+    )
+  `);
+
+  return db;
+}
 
 // ─── Test Suite ───────────────────────────────────────────────────────
 
-describe('HubTokenStore', () => {
+describe('TokenStore (SQLite)', () => {
+  let db: AdcDatabase;
+
   beforeEach(() => {
-    // Reset the shared volume
-    sharedVol = Volume.fromJSON({});
-    sharedVol.mkdirSync(DATA_DIR, { recursive: true });
-
-    // Clear all mocks
+    db = createTestDb();
     vi.clearAllMocks();
-
-    // Reset modules so the service gets fresh fs mock
-    vi.resetModules();
-
-    // Re-apply the fs mock with fresh volume
-    vi.doMock('node:fs', () => {
-      const fs = createFsFromVolume(sharedVol);
-      return {
-        ...fs,
-        default: fs,
-      };
-    });
 
     // Reset safeStorage mocks to default behavior
     mockSafeStorage.isEncryptionAvailable.mockReturnValue(true);
     mockSafeStorage.encryptString.mockImplementation((s: string) => Buffer.from(`enc:${s}`));
     mockSafeStorage.decryptString.mockImplementation((b: Buffer) => b.toString().replace('enc:', ''));
+
+    // Default: no JSON file to migrate
+    mockFs.existsSync.mockReturnValue(false);
   });
 
   afterEach(() => {
@@ -76,11 +86,11 @@ describe('HubTokenStore', () => {
   });
 
   /**
-   * Helper to dynamically import token store with fresh module state
+   * Helper to import and create a fresh store (re-imports to clear module cache if needed)
    */
   async function createFreshStore() {
     const { createTokenStore } = await import('@main/auth/token-store');
-    return createTokenStore({ dataDir: DATA_DIR });
+    return createTokenStore({ db, dataDir: DATA_DIR });
   }
 
   describe('setTokens()', () => {
@@ -119,15 +129,12 @@ describe('HubTokenStore', () => {
       // Verify encryptString was called
       expect(mockSafeStorage.encryptString).toHaveBeenCalled();
 
-      // Verify the encrypted value is stored in the file
-      const fileContent = sharedVol.readFileSync(TOKENS_FILE, 'utf-8') as string;
-      expect(fileContent).toBeDefined();
-
-      const parsed = JSON.parse(fileContent) as Record<string, { encrypted: string; useSafeStorage: boolean }>;
-      expect(parsed[HUB_PROVIDER]).toBeDefined();
-      expect(parsed[HUB_PROVIDER].useSafeStorage).toBe(true);
-      // The encrypted value should be base64 encoded
-      expect(parsed[HUB_PROVIDER].encrypted).toBeDefined();
+      // Verify the row exists in the database
+      const row = db.select().from(schema.oauthTokens).all();
+      expect(row).toHaveLength(1);
+      expect(row[0].provider).toBe(HUB_PROVIDER);
+      expect(row[0].useSafeStorage).toBe(true);
+      expect(row[0].encrypted).toBeDefined();
     });
 
     it('falls back to base64 encoding when safeStorage is unavailable', async () => {
@@ -147,12 +154,32 @@ describe('HubTokenStore', () => {
       // Verify encryptString was NOT called
       expect(mockSafeStorage.encryptString).not.toHaveBeenCalled();
 
-      // Verify the value is stored with useSafeStorage: false
-      const fileContent = sharedVol.readFileSync(TOKENS_FILE, 'utf-8') as string;
-      expect(fileContent).toBeDefined();
+      // Verify the row is stored with useSafeStorage: false
+      const row = db.select().from(schema.oauthTokens).all();
+      expect(row).toHaveLength(1);
+      expect(row[0].useSafeStorage).toBe(false);
+    });
 
-      const parsed = JSON.parse(fileContent) as Record<string, { encrypted: string; useSafeStorage: boolean }>;
-      expect(parsed[HUB_PROVIDER].useSafeStorage).toBe(false);
+    it('upserts when setting tokens for the same provider twice', async () => {
+      const store = await createFreshStore();
+
+      store.setTokens(HUB_PROVIDER, {
+        accessToken: 'first-token',
+        tokenType: 'Bearer',
+      });
+
+      store.setTokens(HUB_PROVIDER, {
+        accessToken: 'second-token',
+        tokenType: 'Bearer',
+      });
+
+      // Should still have only one row
+      const rows = db.select().from(schema.oauthTokens).all();
+      expect(rows).toHaveLength(1);
+
+      // Should return the latest token
+      const retrieved = store.getTokens(HUB_PROVIDER);
+      expect(retrieved?.accessToken).toBe('second-token');
     });
   });
 
@@ -208,20 +235,18 @@ describe('HubTokenStore', () => {
     it('returns undefined for non-existent provider', async () => {
       const store = await createFreshStore();
 
-      // Set tokens for hub provider
       store.setTokens(HUB_PROVIDER, {
         accessToken: 'test-token',
         tokenType: 'Bearer',
       });
 
-      // Try to get tokens for a different provider
       const retrieved = store.getTokens('other-provider');
 
       expect(retrieved).toBeUndefined();
     });
   });
 
-  describe('deleteTokens() / clearTokens()', () => {
+  describe('deleteTokens()', () => {
     it('removes stored tokens', async () => {
       const store = await createFreshStore();
 
@@ -240,7 +265,7 @@ describe('HubTokenStore', () => {
       expect(store.getTokens(HUB_PROVIDER)).toBeUndefined();
     });
 
-    it('persists deletion to file', async () => {
+    it('persists deletion to database', async () => {
       const store = await createFreshStore();
 
       store.setTokens(HUB_PROVIDER, {
@@ -250,12 +275,9 @@ describe('HubTokenStore', () => {
 
       store.deleteTokens(HUB_PROVIDER);
 
-      // Verify the file no longer contains the hub provider
-      const fileContent = sharedVol.readFileSync(TOKENS_FILE, 'utf-8') as string;
-      expect(fileContent).toBeDefined();
-
-      const parsed = JSON.parse(fileContent) as Record<string, unknown>;
-      expect(parsed[HUB_PROVIDER]).toBeUndefined();
+      // Verify the row no longer exists
+      const rows = db.select().from(schema.oauthTokens).all();
+      expect(rows).toHaveLength(0);
     });
   });
 
@@ -292,29 +314,15 @@ describe('HubTokenStore', () => {
   });
 
   describe('Token Expiry Checking', () => {
-    /**
-     * Helper function to check if tokens are expired.
-     * This mirrors the logic that would be used in HubAuthService.
-     */
     function isTokenExpired(tokens: OAuthTokens | undefined): boolean {
-      if (!tokens?.expiresAt) {
-        return true;
-      }
+      if (!tokens?.expiresAt) return true;
       const expiresAtDate = new Date(tokens.expiresAt);
       return expiresAtDate.getTime() <= Date.now();
     }
 
-    /**
-     * Helper function to get access token if valid.
-     * This mirrors the logic that would be used in HubAuthService.
-     */
     function getAccessTokenIfValid(tokens: OAuthTokens | undefined): string | null {
-      if (!tokens?.accessToken) {
-        return null;
-      }
-      if (isTokenExpired(tokens)) {
-        return null;
-      }
+      if (!tokens?.accessToken) return null;
+      if (isTokenExpired(tokens)) return null;
       return tokens.accessToken;
     }
 
@@ -324,11 +332,10 @@ describe('HubTokenStore', () => {
 
       const store = await createFreshStore();
 
-      // Set tokens that expired in the past
       const tokens: OAuthTokens = {
         accessToken: 'expired-token',
         refreshToken: 'refresh-token',
-        expiresAt: '2026-01-01T00:00:00.000Z', // Past date
+        expiresAt: '2026-01-01T00:00:00.000Z',
         tokenType: 'Bearer',
       };
 
@@ -344,11 +351,10 @@ describe('HubTokenStore', () => {
 
       const store = await createFreshStore();
 
-      // Set tokens that expire in the future
       const tokens: OAuthTokens = {
         accessToken: 'valid-token',
         refreshToken: 'refresh-token',
-        expiresAt: '2026-12-31T23:59:59.000Z', // Future date
+        expiresAt: '2026-12-31T23:59:59.000Z',
         tokenType: 'Bearer',
       };
 
@@ -364,7 +370,6 @@ describe('HubTokenStore', () => {
       const tokens: OAuthTokens = {
         accessToken: 'no-expiry-token',
         tokenType: 'Bearer',
-        // No expiresAt field
       };
 
       store.setTokens(HUB_PROVIDER, tokens);
@@ -381,7 +386,7 @@ describe('HubTokenStore', () => {
 
       const tokens: OAuthTokens = {
         accessToken: 'my-valid-access-token',
-        expiresAt: '2026-12-31T23:59:59.000Z', // Future date
+        expiresAt: '2026-12-31T23:59:59.000Z',
         tokenType: 'Bearer',
       };
 
@@ -399,7 +404,7 @@ describe('HubTokenStore', () => {
 
       const tokens: OAuthTokens = {
         accessToken: 'my-expired-access-token',
-        expiresAt: '2026-01-01T00:00:00.000Z', // Past date
+        expiresAt: '2026-01-01T00:00:00.000Z',
         tokenType: 'Bearer',
       };
 
@@ -415,62 +420,6 @@ describe('HubTokenStore', () => {
       const retrieved = store.getTokens(HUB_PROVIDER);
 
       expect(getAccessTokenIfValid(retrieved)).toBeNull();
-    });
-  });
-
-  describe('Persistence', () => {
-    it('loads existing tokens from file on creation', async () => {
-      // Pre-populate the file with encrypted tokens
-      const preExistingTokens: OAuthTokens = {
-        accessToken: 'pre-existing-token',
-        refreshToken: 'pre-existing-refresh',
-        tokenType: 'Bearer',
-      };
-
-      // Manually create the encrypted file content
-      const serialized = JSON.stringify(preExistingTokens);
-      const encryptedBuffer = Buffer.from(`enc:${serialized}`);
-      const fileContent = JSON.stringify({
-        [HUB_PROVIDER]: {
-          encrypted: encryptedBuffer.toString('base64'),
-          useSafeStorage: true,
-        },
-      });
-
-      sharedVol.writeFileSync(TOKENS_FILE, fileContent);
-
-      // Create a new store - should load existing tokens
-      const store = await createFreshStore();
-
-      const retrieved = store.getTokens(HUB_PROVIDER);
-      expect(retrieved).toBeDefined();
-      expect(retrieved?.accessToken).toBe('pre-existing-token');
-    });
-
-    it('creates data directory if it does not exist', async () => {
-      // Reset volume without the data directory
-      sharedVol = Volume.fromJSON({});
-      vi.resetModules();
-      vi.doMock('node:fs', () => {
-        const fs = createFsFromVolume(sharedVol);
-        return {
-          ...fs,
-          default: fs,
-        };
-      });
-
-      const newDataDir = '/mock/new-data-dir';
-
-      const { createTokenStore } = await import('@main/auth/token-store');
-      const store = createTokenStore({ dataDir: newDataDir });
-
-      store.setTokens(HUB_PROVIDER, {
-        accessToken: 'new-dir-token',
-        tokenType: 'Bearer',
-      });
-
-      // Directory and file should now exist
-      expect(sharedVol.existsSync(`${newDataDir}/oauth-tokens.json`)).toBe(true);
     });
   });
 
@@ -534,32 +483,70 @@ describe('HubTokenStore', () => {
         throw new Error('Decryption failed');
       });
 
-      // Reset modules and create a new store to trigger re-read with failing decryption
-      vi.resetModules();
-      vi.doMock('node:fs', () => {
-        const fs = createFsFromVolume(sharedVol);
-        return {
-          ...fs,
-          default: fs,
-        };
-      });
-
-      const { createTokenStore } = await import('@main/auth/token-store');
-      const store2 = createTokenStore({ dataDir: DATA_DIR });
-      const retrieved = store2.getTokens(HUB_PROVIDER);
+      const retrieved = store.getTokens(HUB_PROVIDER);
 
       expect(retrieved).toBeUndefined();
     });
+  });
 
-    it('returns empty store when token file is corrupted', async () => {
-      // Write corrupted JSON
-      sharedVol.writeFileSync(TOKENS_FILE, 'not valid json {{{');
+  describe('JSON Migration', () => {
+    it('migrates tokens from legacy JSON file when table is empty', async () => {
+      // Simulate a legacy JSON file existing
+      const serialized = JSON.stringify({
+        accessToken: 'legacy-token',
+        tokenType: 'Bearer',
+      });
+      const encryptedBuffer = Buffer.from(`enc:${serialized}`);
+      const jsonContent = JSON.stringify({
+        [HUB_PROVIDER]: {
+          encrypted: encryptedBuffer.toString('base64'),
+          useSafeStorage: true,
+        },
+      });
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(jsonContent);
 
       const store = await createFreshStore();
 
-      // Should return undefined without throwing
-      expect(store.getTokens(HUB_PROVIDER)).toBeUndefined();
-      expect(store.hasTokens(HUB_PROVIDER)).toBe(false);
+      // Should have migrated the token
+      const retrieved = store.getTokens(HUB_PROVIDER);
+      expect(retrieved).toBeDefined();
+      expect(retrieved?.accessToken).toBe('legacy-token');
+    });
+
+    it('does not migrate when table already has data', async () => {
+      // Pre-populate the table
+      db.insert(schema.oauthTokens).values({
+        provider: 'existing',
+        encrypted: 'some-data',
+        useSafeStorage: false,
+        updatedAt: new Date().toISOString(),
+      }).run();
+
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockReturnValue(JSON.stringify({
+        [HUB_PROVIDER]: {
+          encrypted: 'should-not-be-migrated',
+          useSafeStorage: true,
+        },
+      }));
+
+      await createFreshStore();
+
+      // Should NOT have migrated the hub token
+      const rows = db.select().from(schema.oauthTokens).all();
+      expect(rows).toHaveLength(1);
+      expect(rows[0].provider).toBe('existing');
+    });
+
+    it('does not migrate when JSON file does not exist', async () => {
+      mockFs.existsSync.mockReturnValue(false);
+
+      await createFreshStore();
+
+      const rows = db.select().from(schema.oauthTokens).all();
+      expect(rows).toHaveLength(0);
     });
   });
 });

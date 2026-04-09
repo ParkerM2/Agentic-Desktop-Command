@@ -1,20 +1,25 @@
 /**
  * Progress Service
  *
- * Filesystem-backed service that manages tasks in the `progress/` directory.
- * Provides CRUD operations, status reconciliation, agent session spawning,
- * and real-time file watching with event emission.
+ * SQLite-backed service that manages task metadata in the `progress_tasks`
+ * table while keeping markdown files under `progress/` for content and
+ * agent consumption.
  *
  * Each task lives at `progress/<slug>/` and has a root markdown file
  * (task.md | description.md | ticket.md) with YAML frontmatter.
+ * SQLite is the primary metadata index; the filesystem stays in sync.
  */
 
 import { watch } from 'node:fs';
 import { access, mkdir, readFile, readdir, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { eq, ne } from 'drizzle-orm';
+
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
+import type { AdcDatabase } from '@main/db';
+import { progressTasks } from '@main/db/schema';
 import { serviceLogger } from '@main/lib/logger';
 
 import { runLogCleanup as runLogCleanupFn } from './log-cleanup';
@@ -182,16 +187,12 @@ async function extractTeamName(
   return undefined;
 }
 
-// ─── Directory Helpers ────────────────────────────────────────
+// ─── Path Constants ──────────────────────────────────────────
 
-async function directoryExists(dirPath: string): Promise<boolean> {
-  try {
-    const s = await stat(dirPath);
-    return s.isDirectory();
-  } catch {
-    return false;
-  }
-}
+const RESEARCH_MD = 'research.md';
+const PLAN_MD = 'plan.md';
+
+// ─── Directory Helpers ────────────────────────────────────────
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -208,6 +209,63 @@ async function countFiles(dirPath: string, pattern: RegExp): Promise<number> {
     return entries.filter((e) => pattern.test(e)).length;
   } catch {
     return 0;
+  }
+}
+
+// ─── SQLite ↔ Filesystem Migration ───────────────────────────
+
+async function migrateFromFilesystem(db: AdcDatabase, projectPath: string): Promise<void> {
+  const progressDir = join(projectPath, 'progress');
+
+  let entries: string[];
+  try {
+    entries = await readdir(progressDir);
+  } catch {
+    return; // progress/ doesn't exist yet — nothing to migrate
+  }
+
+  for (const entry of entries) {
+    if (entry === 'archived') continue;
+
+    const taskDir = join(progressDir, entry);
+    try {
+      const s = await stat(taskDir);
+      if (!s.isDirectory()) continue;
+    } catch {
+      continue;
+    }
+
+    // Skip if already in SQLite
+    const existing = db.select({ slug: progressTasks.slug })
+      .from(progressTasks)
+      .where(eq(progressTasks.slug, entry))
+      .all();
+    if (existing.length > 0) continue;
+
+    // Build task from filesystem to get reconciled metadata
+    const task = await buildTask(taskDir, entry, false);
+    if (!task) continue;
+
+    const now = new Date().toISOString();
+    db.insert(progressTasks).values({
+      slug: task.slug,
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+      tags: [],
+      jiraKey: task.jiraTicket ?? null,
+      prUrl: task.prUrl ?? null,
+      branch: null,
+      lastSessionId: task.lastSessionId ?? null,
+      lastAgentName: task.lastAgentName ?? null,
+      completedAt: task.completedAt ?? null,
+      archivedAt: task.archivedAt ?? null,
+      teamName: task.teamName ?? null,
+      sessionHistory: task.sessionHistory ?? null,
+      description: task.description || null,
+      createdAt: task.createdAt || now,
+      updatedAt: task.updatedAt || now,
+    }).run();
   }
 }
 
@@ -233,8 +291,8 @@ async function buildTask(
   }
 
   // Derived directory checks
-  const researchFile = join(taskDir, 'research', 'research.md');
-  const planFile = join(taskDir, 'plans', 'plan.md');
+  const researchFile = join(taskDir, 'research', RESEARCH_MD);
+  const planFile = join(taskDir, 'plans', PLAN_MD);
   const tasksDir = join(taskDir, 'tasks');
 
   const [hasResearch, hasPlan, teamTaskCount] = await Promise.all([
@@ -306,6 +364,48 @@ async function buildTask(
   return task;
 }
 
+// ─── SQLite Row → ProgressTask Converter ──────────────────────
+
+function rowToTask(
+  row: typeof progressTasks.$inferSelect,
+  derived: {
+    rootFile: string;
+    hasResearch: boolean;
+    hasPlan: boolean;
+    hasTeamTasks: boolean;
+    teamTaskCount: number;
+    researchContent?: string;
+    planContent?: string;
+  },
+): ProgressTask {
+  return {
+    slug: row.slug,
+    rootFile: derived.rootFile,
+    title: row.title,
+    description: row.description ?? '',
+    status: row.status as ProgressStatus,
+    priority: row.priority as ProgressPriority,
+    jiraTicket: row.jiraKey ?? undefined,
+    prUrl: row.prUrl ?? undefined,
+    lastSessionId: row.lastSessionId ?? undefined,
+    lastAgentName: row.lastAgentName ?? undefined,
+    completedAt: row.completedAt ?? undefined,
+    archivedAt: row.archivedAt ?? undefined,
+    teamName: row.teamName ?? undefined,
+    sessionHistory: Array.isArray(row.sessionHistory)
+      ? (row.sessionHistory as ProgressTask['sessionHistory'])
+      : undefined,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    hasResearch: derived.hasResearch,
+    hasPlan: derived.hasPlan,
+    hasTeamTasks: derived.hasTeamTasks,
+    teamTaskCount: derived.teamTaskCount,
+    researchContent: derived.researchContent,
+    planContent: derived.planContent,
+  };
+}
+
 // ─── Event Emitter ────────────────────────────────────────────
 
 function createEmitter<T extends unknown[]>(): {
@@ -352,6 +452,7 @@ function buildSummaryInstruction(summarySpec: { maxChars: number; tableFields: s
 export function createProgressService(
   projectPath: string,
   agentManagerService: AgentManagerService,
+  db: AdcDatabase,
 ): ProgressService {
   const progressDir = join(projectPath, 'progress');
   const archivedDir = join(progressDir, 'archived');
@@ -381,38 +482,6 @@ export function createProgressService(
 
   // ─── Task Scanning ────────────────────────────────────────────
 
-  async function scanDir(dir: string): Promise<ProgressTask[]> {
-    await mkdir(dir, { recursive: true });
-
-    let entries: string[];
-    try {
-      entries = await readdir(dir);
-    } catch {
-      return [];
-    }
-
-    const tasks: ProgressTask[] = [];
-
-    for (const entry of entries) {
-      if (entry === 'archived') continue;
-
-      const taskDir = join(dir, entry);
-      try {
-        const s = await stat(taskDir);
-        if (!s.isDirectory()) continue;
-      } catch {
-        continue;
-      }
-
-      const task = await buildTask(taskDir, entry, false);
-      if (task) {
-        tasks.push(task);
-      }
-    }
-
-    return tasks;
-  }
-
   // ─── File Watcher ─────────────────────────────────────────────
 
   function scheduleUpdate(slug: string): void {
@@ -428,6 +497,22 @@ export function createProgressService(
         try {
           const task = await buildTask(taskDir, slug, false);
           if (task) {
+            // Sync filesystem changes back to SQLite
+            db.update(progressTasks)
+              .set({
+                title: task.title,
+                status: task.status,
+                priority: task.priority,
+                description: task.description || null,
+                lastSessionId: task.lastSessionId ?? null,
+                lastAgentName: task.lastAgentName ?? null,
+                completedAt: task.completedAt ?? null,
+                teamName: task.teamName ?? null,
+                updatedAt: new Date().toISOString(),
+              })
+              .where(eq(progressTasks.slug, slug))
+              .run();
+
             taskUpdated.emit(slug, task);
           }
         } catch (err: unknown) {
@@ -474,18 +559,48 @@ export function createProgressService(
     const sessionId = session?.sessionId ?? 'unknown';
     activeSessions.delete(slug);
 
-    // Persist session metadata to task frontmatter (best-effort, async)
+    // Persist session metadata to SQLite + frontmatter (best-effort, async)
     void (async () => {
       try {
         const agentName = `progress-${action}-${slug}`;
+        const now = new Date().toISOString();
         const historyEntry = {
           sessionId,
           agentName,
           action,
           exitCode,
-          timestamp: new Date().toISOString(),
+          timestamp: now,
         };
 
+        // Update SQLite — append to session history, update metadata
+        const rows = db.select().from(progressTasks)
+          .where(eq(progressTasks.slug, slug))
+          .all();
+        if (rows.length > 0) {
+          const row = rows[0];
+          const history = Array.isArray(row.sessionHistory)
+            ? [...row.sessionHistory]
+            : [];
+          history.push(historyEntry);
+          while (history.length > 20) history.shift();
+
+          const dbUpdates: Record<string, unknown> = {
+            lastSessionId: sessionId,
+            lastAgentName: agentName,
+            sessionHistory: history,
+            updatedAt: now,
+          };
+          if (exitCode === null || exitCode === 0) {
+            dbUpdates.completedAt = now;
+          }
+
+          db.update(progressTasks)
+            .set(dbUpdates)
+            .where(eq(progressTasks.slug, slug))
+            .run();
+        }
+
+        // Also sync to frontmatter
         const taskDir = join(progressDir, slug);
         const rootFileName = await detectRootFile(taskDir);
         if (rootFileName) {
@@ -494,19 +609,17 @@ export function createProgressService(
 
           frontmatter.lastSessionId = sessionId;
           frontmatter.lastAgentName = agentName;
-          frontmatter.updatedAt = new Date().toISOString();
+          frontmatter.updatedAt = now;
 
-          // Append to session history (keep last 20 entries)
-          const history = Array.isArray(frontmatter.sessionHistory)
+          const fmHistory = Array.isArray(frontmatter.sessionHistory)
             ? [...(frontmatter.sessionHistory as unknown[])]
             : [];
-          history.push(historyEntry);
-          while (history.length > 20) history.shift();
-          frontmatter.sessionHistory = history;
+          fmHistory.push(historyEntry);
+          while (fmHistory.length > 20) fmHistory.shift();
+          frontmatter.sessionHistory = fmHistory;
 
-          // Mark completedAt if session was successful
           if (exitCode === null || exitCode === 0) {
-            frontmatter.completedAt = new Date().toISOString();
+            frontmatter.completedAt = now;
           }
 
           await writeFrontmatter(rootFilePath, frontmatter, content);
@@ -593,6 +706,7 @@ export function createProgressService(
   function init(): Promise<void> {
     initPromise ??= (async () => {
       await ensureProgressDir();
+      await migrateFromFilesystem(db, projectPath);
       startWatcher();
     })();
     return initPromise;
@@ -603,15 +717,90 @@ export function createProgressService(
   const service: ProgressService = {
     async listTasks(): Promise<ProgressTask[]> {
       await init();
-      return await scanDir(progressDir);
+
+      const rows = db.select().from(progressTasks)
+        .where(ne(progressTasks.status, 'archived'))
+        .all();
+
+      const tasks: ProgressTask[] = [];
+      for (const row of rows) {
+        const taskDir = join(progressDir, row.slug);
+        const rootFileName = await detectRootFile(taskDir).catch(() => null);
+        if (!rootFileName) continue; // filesystem dir gone — skip
+
+        const researchFile = join(taskDir, 'research', RESEARCH_MD);
+        const planFile = join(taskDir, 'plans', PLAN_MD);
+        const tasksDir = join(taskDir, 'tasks');
+        const [hasResearch, hasPlan, teamTaskCount] = await Promise.all([
+          fileExists(researchFile),
+          fileExists(planFile),
+          countFiles(tasksDir, /^task-\d+.*\.md$/),
+        ]);
+
+        tasks.push(rowToTask(row, {
+          rootFile: rootFileName,
+          hasResearch,
+          hasPlan,
+          hasTeamTasks: teamTaskCount > 0,
+          teamTaskCount,
+        }));
+      }
+
+      return tasks;
     },
 
     async getTask(slug: string): Promise<ProgressTask | null> {
       await init();
+
+      const rows = db.select().from(progressTasks)
+        .where(eq(progressTasks.slug, slug))
+        .all();
+      if (rows.length === 0) return null;
+      const row = rows[0];
+
       const taskDir = join(progressDir, slug);
-      const exists = await directoryExists(taskDir);
-      if (!exists) return null;
-      return await buildTask(taskDir, slug, true);
+      const rootFileName = await detectRootFile(taskDir).catch(() => null);
+      if (!rootFileName) return null;
+
+      const researchFile = join(taskDir, 'research', RESEARCH_MD);
+      const planFile = join(taskDir, 'plans', PLAN_MD);
+      const tasksDir = join(taskDir, 'tasks');
+      const [hasResearch, hasPlan, teamTaskCount] = await Promise.all([
+        fileExists(researchFile),
+        fileExists(planFile),
+        countFiles(tasksDir, /^task-\d+.*\.md$/),
+      ]);
+
+      let researchContent: string | undefined;
+      let planContent: string | undefined;
+      if (hasResearch) {
+        try { researchContent = await readFile(researchFile, 'utf-8'); } catch { /* optional */ }
+      }
+      if (hasPlan) {
+        try { planContent = await readFile(planFile, 'utf-8'); } catch { /* optional */ }
+      }
+
+      const task = rowToTask(row, {
+        rootFile: rootFileName,
+        hasResearch,
+        hasPlan,
+        hasTeamTasks: teamTaskCount > 0,
+        teamTaskCount,
+        researchContent,
+        planContent,
+      });
+
+      // Fill description from markdown body if SQLite description is empty
+      if (!task.description) {
+        try {
+          const { content } = await readFrontmatter(join(taskDir, rootFileName));
+          if (content.trim().length > 0) {
+            task.description = content.trim();
+          }
+        } catch { /* ignore */ }
+      }
+
+      return task;
     },
 
     async createTask(
@@ -622,10 +811,24 @@ export function createProgressService(
     ): Promise<ProgressTask> {
       await init();
 
+      const now = new Date().toISOString();
+
+      // 1. Insert into SQLite
+      db.insert(progressTasks).values({
+        slug,
+        title,
+        status: 'backlog',
+        priority,
+        tags: [],
+        description: description || null,
+        createdAt: now,
+        updatedAt: now,
+      }).run();
+
+      // 2. Create filesystem directory + markdown file
       const taskDir = join(progressDir, slug);
       await mkdir(taskDir, { recursive: true });
 
-      const now = new Date().toISOString();
       const frontmatter: Record<string, unknown> = {
         title,
         description,
@@ -638,10 +841,21 @@ export function createProgressService(
       const rootFilePath = join(taskDir, 'task.md');
       await writeFrontmatter(rootFilePath, frontmatter, '');
 
-      const task = await buildTask(taskDir, slug, false);
-      if (!task) {
-        throw new Error(`Failed to read task after creation: ${slug}`);
-      }
+      // 3. Build task from SQLite row
+      const task: ProgressTask = {
+        slug,
+        rootFile: 'task.md',
+        title,
+        description,
+        status: 'backlog',
+        priority,
+        createdAt: now,
+        updatedAt: now,
+        hasResearch: false,
+        hasPlan: false,
+        hasTeamTasks: false,
+        teamTaskCount: 0,
+      };
 
       taskCreated.emit(slug, task);
       return task;
@@ -673,29 +887,50 @@ export function createProgressService(
     ): Promise<ProgressTask> {
       await init();
 
+      const now = new Date().toISOString();
+
+      // 1. Build SQLite column updates (map ProgressTask fields → column names)
+      const dbUpdates: Record<string, unknown> = { updatedAt: now };
+      if (updates.title !== undefined) dbUpdates.title = updates.title;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
+      if (updates.jiraTicket !== undefined) dbUpdates.jiraKey = updates.jiraTicket;
+      if (updates.prUrl !== undefined) dbUpdates.prUrl = updates.prUrl;
+      if (updates.lastSessionId !== undefined) dbUpdates.lastSessionId = updates.lastSessionId;
+      if (updates.lastAgentName !== undefined) dbUpdates.lastAgentName = updates.lastAgentName;
+      if (updates.completedAt !== undefined) dbUpdates.completedAt = updates.completedAt;
+      if (updates.archivedAt !== undefined) dbUpdates.archivedAt = updates.archivedAt;
+      if (updates.teamName !== undefined) dbUpdates.teamName = updates.teamName;
+
+      db.update(progressTasks)
+        .set(dbUpdates)
+        .where(eq(progressTasks.slug, slug))
+        .run();
+
+      // 2. Also rewrite frontmatter so filesystem stays in sync
       const taskDir = join(progressDir, slug);
       const rootFileName = await detectRootFile(taskDir);
-      if (!rootFileName) {
-        throw new Error(`Task not found: ${slug}`);
+      if (rootFileName) {
+        const rootFilePath = join(taskDir, rootFileName);
+        try {
+          const { frontmatter, content } = await readFrontmatter(rootFilePath);
+          const updatesEntries = Object.entries(updates as Record<string, unknown>).filter(
+            ([, v]) => v !== undefined,
+          );
+          const updated: Record<string, unknown> = {
+            ...frontmatter,
+            ...Object.fromEntries(updatesEntries),
+            updatedAt: now,
+          };
+          await writeFrontmatter(rootFilePath, updated, content);
+        } catch {
+          // Best-effort — SQLite is authoritative
+        }
       }
 
-      const rootFilePath = join(taskDir, rootFileName);
-      const { frontmatter, content } = await readFrontmatter(rootFilePath);
-
-      const now = new Date().toISOString();
-      // Spread updates but exclude keys explicitly set to undefined
-      const updatesEntries = Object.entries(updates as Record<string, unknown>).filter(
-        ([, v]) => v !== undefined,
-      );
-      const updated: Record<string, unknown> = {
-        ...frontmatter,
-        ...Object.fromEntries(updatesEntries),
-        updatedAt: now,
-      };
-
-      await writeFrontmatter(rootFilePath, updated, content);
-
-      const task = await buildTask(taskDir, slug, false);
+      // 3. Re-read from SQLite + filesystem for response
+      const task = await service.getTask(slug);
       if (!task) {
         throw new Error(`Failed to read task after update: ${slug}`);
       }
@@ -706,18 +941,25 @@ export function createProgressService(
 
     async archiveTask(slug: string): Promise<void> {
       await init();
-      await mkdir(archivedDir, { recursive: true });
+      const now = new Date().toISOString();
 
+      // 1. Update SQLite
+      db.update(progressTasks)
+        .set({ status: 'archived', archivedAt: now, updatedAt: now })
+        .where(eq(progressTasks.slug, slug))
+        .run();
+
+      // 2. Stamp frontmatter and move directory
+      await mkdir(archivedDir, { recursive: true });
       const src = join(progressDir, slug);
       const dest = join(archivedDir, slug);
 
-      // Stamp archivedAt into frontmatter before moving
       const rootFileName = await detectRootFile(src);
       if (rootFileName) {
         const rootFilePath = join(src, rootFileName);
         try {
           const { frontmatter, content } = await readFrontmatter(rootFilePath);
-          frontmatter.archivedAt = new Date().toISOString();
+          frontmatter.archivedAt = now;
           frontmatter.status = 'archived';
           await writeFrontmatter(rootFilePath, frontmatter, content);
         } catch {
@@ -731,13 +973,50 @@ export function createProgressService(
 
     async deleteTask(slug: string): Promise<void> {
       await init();
+
+      // 1. Delete from SQLite
+      db.delete(progressTasks)
+        .where(eq(progressTasks.slug, slug))
+        .run();
+
+      // 2. Remove filesystem directory
       const taskDir = join(progressDir, slug);
       await rm(taskDir, { recursive: true, force: true });
     },
 
     async listArchived(): Promise<ProgressTask[]> {
       await init();
-      return await scanDir(archivedDir);
+
+      const rows = db.select().from(progressTasks)
+        .where(eq(progressTasks.status, 'archived'))
+        .all();
+
+      const tasks: ProgressTask[] = [];
+      for (const row of rows) {
+        // Archived tasks live under archived/ dir
+        const taskDir = join(archivedDir, row.slug);
+        const rootFileName = await detectRootFile(taskDir).catch(() => null);
+        if (!rootFileName) continue;
+
+        const researchFile = join(taskDir, 'research', RESEARCH_MD);
+        const planFile = join(taskDir, 'plans', PLAN_MD);
+        const tasksDir = join(taskDir, 'tasks');
+        const [hasResearch, hasPlan, teamTaskCount] = await Promise.all([
+          fileExists(researchFile),
+          fileExists(planFile),
+          countFiles(tasksDir, /^task-\d+.*\.md$/),
+        ]);
+
+        tasks.push(rowToTask(row, {
+          rootFile: rootFileName,
+          hasResearch,
+          hasPlan,
+          hasTeamTasks: teamTaskCount > 0,
+          teamTaskCount,
+        }));
+      }
+
+      return tasks;
     },
 
     async startResearch(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {

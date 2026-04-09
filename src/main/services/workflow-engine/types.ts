@@ -9,6 +9,7 @@ import type { AgentDefinition } from '@shared/ipc/workflow-engine';
 import type { QaVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
 
 import type { BusSessionManager } from '@main/bus/session-manager';
+import type { AdcDatabase } from '@main/db';
 
 import type { GitService } from '../git/git-service';
 import type { WorkflowTemplateService } from '../workflow-templates/workflow-template-service';
@@ -141,6 +142,7 @@ export interface WorkflowErrorEvent {
 // ─── Service Dependencies ──────────────────────────────────────
 
 export interface WorkflowEngineDeps {
+  db: AdcDatabase;
   busSessionManager: BusSessionManager;
   gitService: GitService;
   templateService: WorkflowTemplateService;

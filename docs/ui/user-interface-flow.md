@@ -60,7 +60,7 @@ Electron main process starts
 |------|------|--------------|
 | 1 | `src/main/index.ts` | Electron `app.whenReady()` → creates window, initializes services |
 | 2 | `src/main/ipc/index.ts` | `registerAllHandlers()` wires 200+ IPC channels to service methods |
-| 3 | `src/main/services/hub/hub-connection.ts` | Auto-loads saved hub config from `userData/hub-config.json` |
+| 3 | `src/main/services/hub/hub-connection.ts` | Auto-loads saved hub config from SQLite `hub_config` table (migrates from legacy `hub-config.json` on first access) |
 | 4 | `src/main/services/device/` | Starts 30s heartbeat if device previously registered |
 | 5 | `src/renderer/main.tsx` | React app mounts with QueryClientProvider + AppRouter |
 | 6 | `src/renderer/app/router.tsx` | TanStack Router resolves `/` → redirects to `/dashboard` |

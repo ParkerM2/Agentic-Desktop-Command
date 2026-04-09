@@ -1,17 +1,26 @@
 /**
- * Email Store — JSON file I/O for email configuration and queue persistence
+ * Email Store — SQLite-backed persistence for email configuration
+ *
+ * Migrates from legacy JSON file (email-config.json) on first access.
+ * Config is stored as a singleton row in `emailConfig` table (key='default').
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { app } from 'electron';
+import { eq } from 'drizzle-orm';
 
-import type { QueuedEmail } from '@shared/types';
+import { emailConfig } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
 import { encryptSecret } from './email-encryption';
 
 import type { EncryptedSecretEntry } from './email-encryption';
+import type { AdcDatabase } from '../../db';
+
+const logger = createScopedLogger('email-store');
+
+const SINGLETON_KEY = 'default';
 
 export interface StoredEmailConfig {
   host: string;
@@ -25,63 +34,94 @@ export interface StoredEmailConfig {
 
 export interface EmailStoreData {
   config: StoredEmailConfig | null;
-  queue: QueuedEmail[];
-}
-
-function getEmailFilePath(): string {
-  return join(app.getPath('userData'), 'email-config.json');
+  queue: never[]; // Queue is now in emailQueue table — kept for JSON migration shape
 }
 
 /**
- * Load email configuration and queue from disk.
- * Handles migration from plaintext passwords to encrypted format.
+ * Migrate legacy email-config.json into SQLite emailConfig table.
  */
-export function loadEmailStore(): { data: EmailStoreData; needsMigration: boolean } {
-  const filePath = getEmailFilePath();
-  if (!existsSync(filePath)) {
-    return { data: { config: null, queue: [] }, needsMigration: false };
-  }
+export function migrateEmailConfigFromJson(db: AdcDatabase, dataDir: string): boolean {
+  // Check if SQLite already has config
+  const existing = db.select().from(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).all();
+  if (existing.length > 0) return false;
+
+  const jsonPath = join(dataDir, 'email-config.json');
+  if (!existsSync(jsonPath)) return false;
 
   try {
-    const raw = readFileSync(filePath, 'utf-8');
-    const parsed = JSON.parse(raw) as EmailStoreData;
-    let needsMigration = false;
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { config?: StoredEmailConfig | null };
+    if (!parsed.config) return false;
 
-    // Check if password needs migration (legacy plaintext)
-    const configPass = parsed.config?.pass;
-    if (typeof configPass === 'string' && configPass.length > 0) {
-      needsMigration = true;
+    // Encrypt plaintext password during migration
+    let {config} = parsed;
+    if (typeof config.pass === 'string' && config.pass.length > 0) {
+      config = { ...config, pass: encryptSecret(config.pass) };
     }
 
-    return { data: parsed, needsMigration };
-  } catch {
-    return { data: { config: null, queue: [] }, needsMigration: false };
+    db.insert(emailConfig)
+      .values({
+        key: SINGLETON_KEY,
+        config: config as unknown,
+        updatedAt: new Date().toISOString(),
+      })
+      .run();
+
+    logger.info('Migrated email config from JSON to SQLite');
+    return true;
+  } catch (err) {
+    logger.error('Failed to migrate email config from JSON:', err);
+    return false;
   }
 }
 
 /**
- * Save email configuration and queue to disk.
+ * Load email configuration from SQLite.
+ * Returns the stored config and whether a plaintext password migration is needed.
  */
-export function saveEmailStore(store: EmailStoreData): void {
-  const filePath = getEmailFilePath();
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+export function loadEmailConfig(db: AdcDatabase): { config: StoredEmailConfig | null; needsMigration: boolean } {
+  const rows = db.select().from(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).all();
+  if (rows.length === 0) {
+    return { config: null, needsMigration: false };
   }
 
-  // Create a copy with encrypted password
-  const toSave: EmailStoreData = {
-    ...store,
-    config: store.config
-      ? {
-          ...store.config,
-          pass:
-            typeof store.config.pass === 'string' && store.config.pass.length > 0
-              ? encryptSecret(store.config.pass)
-              : store.config.pass,
-        }
-      : null,
+  const stored = rows[0].config as StoredEmailConfig;
+  const needsMigration = typeof stored.pass === 'string' && stored.pass.length > 0;
+
+  return { config: stored, needsMigration };
+}
+
+/**
+ * Save email configuration to SQLite (upsert singleton row).
+ */
+export function saveEmailConfig(db: AdcDatabase, config: StoredEmailConfig | null): void {
+  if (!config) {
+    db.delete(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).run();
+    return;
+  }
+
+  // Encrypt plaintext password before persisting
+  const toSave: StoredEmailConfig = {
+    ...config,
+    pass:
+      typeof config.pass === 'string' && config.pass.length > 0
+        ? encryptSecret(config.pass)
+        : config.pass,
   };
 
-  writeFileSync(filePath, JSON.stringify(toSave, null, 2), 'utf-8');
+  const existing = db.select().from(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).all();
+  if (existing.length > 0) {
+    db.update(emailConfig)
+      .set({ config: toSave as unknown, updatedAt: new Date().toISOString() })
+      .where(eq(emailConfig.key, SINGLETON_KEY))
+      .run();
+  } else {
+    db.insert(emailConfig)
+      .values({
+        key: SINGLETON_KEY,
+        config: toSave as unknown,
+        updatedAt: new Date().toISOString(),
+      })
+      .run();
+  }
 }

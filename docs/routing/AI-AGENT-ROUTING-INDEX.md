@@ -343,7 +343,7 @@ SMTP email sending, queue, encryption.
 | Types | `shared/types/email.ts` |
 | IPC Contract | `shared/ipc/email/` (contract.ts + schemas.ts) |
 | Service | `main/services/email/` |
-| Service Sub-modules | `email-config.ts`, `email-encryption.ts`, `email-queue.ts`, `email-store.ts`, `smtp-transport.ts` |
+| Service Sub-modules | `email-encryption.ts`, `email-queue.ts` (SQLite-backed), `email-store.ts` (SQLite-backed), `smtp-transport.ts` |
 | Handler | `main/ipc/handlers/email-handlers.ts` |
 | Feature Module | `renderer/features/communications/` (shared with notifications) |
 
@@ -429,7 +429,8 @@ Hub server connection, sync, config, WebSocket.
 | Hub Types | `shared/types/hub/` (9 modules — see FEATURE.md index below) |
 | IPC Contract | `shared/ipc/hub/` (contract.ts + schemas.ts) |
 | Service | `main/services/hub/` |
-| Service Sub-modules | `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts`, `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` |
+| Service Sub-modules | `hub-api-client.ts`, `hub-auth-service.ts`, `hub-client.ts`, `hub-config-store.ts` (SQLite-backed), `hub-connection.ts`, `hub-event-mapper.ts`, `hub-sync.ts`, `hub-ws-client.ts`, `webhook-relay.ts` |
+| DB Table | `hub_config` (singleton key='default') — schema in `main/db/schema.ts` |
 | Handler | `main/ipc/handlers/hub-handlers.ts` |
 | Event Wiring | `event:hub.*` |
 | Feature Module | `renderer/features/settings/` (HubSettings component) |
@@ -821,7 +822,7 @@ Workspace management via Hub.
 
 ### progress
 
-FS-backed task pipeline — Research → Plan → Team agent session orchestration, backed by the `progress/` directory.
+SQLite-backed task pipeline — Research → Plan → Team agent session orchestration. Metadata lives in the `progress_tasks` SQLite table; markdown content lives under `progress/` on disk. Both stay in sync.
 
 **Note:** The task list grid reads from `progress.*` channels, NOT `hub.tasks.*`. `hub.tasks.*` channels remain for backward compat but are not the primary task data source.
 
@@ -832,7 +833,8 @@ Renderer (useProgressContext store)
   → IPC invoke (progress.*)
   → progress-handlers.ts (thin handlers)
   → ProgressService (progress-service.ts)
-  → progress/ filesystem (read/write YAML frontmatter + markdown files)
+  → SQLite progress_tasks table (metadata reads/writes)
+  → progress/ filesystem (markdown content + frontmatter sync)
 ```
 
 #### Event Data Flow
@@ -840,6 +842,7 @@ Renderer (useProgressContext store)
 ```
 progress/ filesystem (FS watch via node:fs watch)
   → ProgressService (debounced FS watcher, 200ms debounce)
+  → re-reads filesystem → syncs metadata back to SQLite progress_tasks
   → IPC event (event:progress.taskUpdated / taskCreated / taskArchived / action*)
   → ProgressContextHydrator (renderer sync component in RootLayout)
   → useProgressContext (Zustand store)
@@ -870,7 +873,8 @@ useProgressContext.startResearch(slug)
 | Service Barrel | `main/services/progress/index.ts` |
 | Handler | `main/ipc/handlers/progress-handlers.ts` |
 | Event Wiring | `main/bootstrap/event-wiring.ts` → `event:progress.*` |
-| Bootstrap | `main/bootstrap/service-registry.ts` — `createProgressService(process.cwd(), agentManagerService)` |
+| SQLite Table | `main/db/schema.ts` — `progressTasks` |
+| Bootstrap | `main/bootstrap/service-registry.ts` — `createProgressService(process.cwd(), agentManagerService, db)` |
 | Renderer Store | `renderer/shared/stores/progress-context-store.ts` — `useProgressContext()` |
 | Hydrator | `renderer/shared/stores/ProgressContextHydrator.tsx` — mounted in `app/layouts/RootLayout.tsx` |
 | Feature Components | `renderer/features/tasks/components/grid/ProgressTaskGrid.tsx` |
@@ -901,7 +905,7 @@ Workflow template CRUD, plugin artifact scanning (`.claude/skills/`, `.claude/co
 
 ### workflow-engine
 
-Workflow execution engine — runs workflow templates, tracks run state, archives completed runs.
+Workflow execution engine — runs workflow templates, tracks run state, archives completed runs. State persistence backed by SQLite (`workflow_runs` table) via Drizzle ORM.
 
 | Layer | Path |
 |-------|------|

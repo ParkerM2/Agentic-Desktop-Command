@@ -211,7 +211,7 @@ export function createServiceRegistry(
   }
 
   // ─── OAuth + MCP infrastructure ──────────────────────────────
-  const tokenStore = createTokenStore({ dataDir });
+  const tokenStore = createTokenStore({ db, dataDir });
   const savedCreds = loadOAuthCredentials(dataDir);
   const providers = new Map<string, OAuthConfig>([
     ['github', { ...GITHUB_OAUTH_CONFIG, ...savedCreds.get('github') }],
@@ -224,7 +224,7 @@ export function createServiceRegistry(
   const mcpManager = createMcpManager({ registry: mcpRegistry });
 
   // ─── Hub services ────────────────────────────────────────────
-  const hubConnectionManager = createHubConnectionManager(router);
+  const hubConnectionManager = createHubConnectionManager({ router, db, dataDir });
 
   // Auto-connect if Hub was previously configured and enabled
   const savedHubConfig = hubConnectionManager.getConnection();
@@ -310,7 +310,7 @@ export function createServiceRegistry(
   const fitnessService = initNonCritical('fitness', () =>
     createFitnessService({ db, dataDir, router }),
   );
-  const emailService = createEmailService({ router });
+  const emailService = createEmailService({ db, dataDir, router });
 
   // ─── Device + heartbeat ──────────────────────────────────────
   const deviceService = createDeviceService({ hubApiClient });
@@ -464,6 +464,7 @@ export function createServiceRegistry(
 
   // ─── WorkflowEngine service ──────────────────────────────────
   const workflowEngineService = createWorkflowEngineService({
+    db,
     busSessionManager,
     gitService,
     templateService: workflowTemplateService,
@@ -584,7 +585,7 @@ export function createServiceRegistry(
   const visualizationService = createVisualizationService(agentManagerService);
 
   // ─── Progress service (task pipeline — reads/writes progress/ dir) ──────
-  const progressService = createProgressService(process.cwd(), agentManagerService);
+  const progressService = createProgressService(process.cwd(), agentManagerService, db);
 
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {

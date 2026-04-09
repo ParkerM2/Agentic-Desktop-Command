@@ -57,7 +57,7 @@ Location: `src/renderer/features/`
 | **workflow-pipeline** | Visual workflow pipeline showing task journey as connected diagram | WorkflowPipelinePage, PipelineDiagram, PipelineStepNode, PipelineConnector, TaskSelector, MarkdownRenderer, MarkdownEditor, 8 step panels | `hub.tasks.*` |
 | **workspaces** | Workspace management | WorkspaceCard, WorkspacesTab, WorkspaceEditor | `workspaces.*` |
 | **tools** | Workflow template editor, plugin artifact scanning | WorkflowEditor, WorkflowSidebar, PhaseSection, ToolsPage | `workflowTemplates.*`, `workflow-engine.*` |
-| **tasks (progress)** | FS-backed task pipeline grid. Reads from React Query hooks (`useProgress`, `useProgressMutations`) with EventBridge-driven invalidation. Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
+| **tasks (progress)** | SQLite-backed task pipeline grid (metadata in `progress_tasks` table, markdown on disk). Reads from React Query hooks (`useProgress`, `useProgressMutations`) with EventBridge-driven invalidation. Columns: status, title, priority, stage (research/plan/team indicators), Jira badge, PR badge, updated. Expanded row shows Research/Plan/Team pipeline with per-step action buttons and live agent activity. | ProgressTaskGrid, ProgressTaskDetailRow, TeamActivityPanel, AgentDetailExpander | `progress.*` |
 
 ### Feature Module Structure
 
@@ -107,7 +107,7 @@ Location: `src/main/services/`
 | **terminal** | PTY terminal management | create, sendInput, resize, kill | `event:terminal.*` |
 | **briefing** | Daily briefing & suggestions (SQLite-backed). Sub-modules: `briefing-cache.ts` (SQLite), `briefing-config.ts` (SQLite), `briefing-generator.ts`, `briefing-summary.ts`, `suggestion-engine.ts`. Deps: `db`, `dataDir`. | generateBriefing, getSuggestions | - |
 | **claude** | Persistent Claude sessions (Anthropic SDK) | sendMessage, getConversation, listConversations | `event:claude.*` |
-| **email** | Email sending (SMTP). Sub-modules: `email-config.ts`, `email-encryption.ts`, `email-queue.ts`, `email-store.ts`, `smtp-transport.ts` (barrel: `index.ts`) | sendEmail, getConfig, testConnection | - |
+| **email** | Email sending (SMTP, SQLite-backed). Sub-modules: `email-encryption.ts`, `email-queue.ts` (SQLite via `emailQueue` table), `email-store.ts` (SQLite via `emailConfig` table), `smtp-transport.ts` (barrel: `index.ts`). Deps: `db`, `dataDir`. One-time JSON migration from `email-config.json`. | sendEmail, getConfig, testConnection | - |
 | **notifications** | Background Slack/GitHub watchers, SQLite-backed. Sub-modules: `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (SQLite via `notifications` + `notificationConfig` tables; barrel: `index.ts`) | startWatching, stopWatching, getNotifications | `event:notification.*` |
 | **tasks** | Smart task creation + local-first repository. Sub-modules: `types.ts` (TaskRepository interface + deps), `task-repository.ts` (local-first impl with Hub mirror), `task-decomposer.ts`, `github-importer.ts` (barrel: `index.ts`) | listTasks, getTask, createTask, updateTask, updateTaskStatus, deleteTask, executeTask, cancelTask, decompose, importFromGithub | - |
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
@@ -313,9 +313,9 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `window` | Window controls (minimize, maximize, close, isMaximized) |
 | `tracker` | Plan tracker (list, get, update docs/tracker.json via IPC) |
 | `workflow` | Workflow execution |
-| `progress` | Task pipeline CRUD + Research→Plan→Team actions + FS-watch events (13 invoke + 7 event channels) |
+| `progress` | SQLite-backed task pipeline CRUD + Research→Plan→Team actions + FS-watch events (13 invoke + 7 event channels) |
 | `workflow-templates` | Workflow template CRUD, artifact scanning/writing (7 invoke + 3 event channels) |
-| `workflow-engine` | Workflow execution engine, archived run state (4 invoke channels) |
+| `workflow-engine` | Workflow execution engine, archived run state — SQLite-backed (4 invoke channels) |
 
 Each domain folder contains:
 ```
@@ -533,7 +533,8 @@ Location: `src/renderer/shared/stores/`
 
 - **Types**: `src/shared/types/progress.ts`, `src/shared/types/agent-session-detail.ts`
 - **IPC Contract**: `src/shared/ipc/progress/` (schemas, contract, barrel)
-- **Service**: `src/main/services/progress/` (progress-service, task-file-io, session-writer, log-cleanup)
+- **SQLite Table**: `src/main/db/schema.ts` — `progressTasks`
+- **Service**: `src/main/services/progress/` (progress-service with SQLite backing, task-file-io, session-writer, log-cleanup)
 - **Handlers**: `src/main/ipc/handlers/progress-handlers.ts`
 - **Stores**: `src/renderer/shared/stores/progress-context-store.ts`, agent-context-store.ts (expanded)
 - **Hydrators**: `src/renderer/shared/stores/ProgressContextHydrator.tsx`, AgentContextHydrator.tsx

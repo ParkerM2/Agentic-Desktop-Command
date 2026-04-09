@@ -12,10 +12,13 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { readdir } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
+import { desc, eq, inArray } from 'drizzle-orm';
 import { v4 as uuid } from 'uuid';
 
 import type { AgentDefinition } from '@shared/ipc/workflow-engine';
 import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
+
+import { workflowRuns } from '../../db/schema';
 
 import { runFinalizing } from './states/finalize';
 import { runGuardian } from './states/guardian';
@@ -33,6 +36,7 @@ import type {
   WorkflowRunConfig,
   WorkflowRuntimeRecord,
 } from './types';
+import type { AdcDatabase } from '../../db';
 
 // ─── In-memory augmented record ──────────────────────────────
 
@@ -52,21 +56,133 @@ function assertValidTransition(from: WorkflowState, to: WorkflowState): void {
   }
 }
 
-function serializeRecord(record: WorkflowEngineRecord): void {
+/** Upsert a workflow run record into SQLite via Drizzle. */
+function saveRecord(db: AdcDatabase, record: WorkflowEngineRecord): void {
   try {
-    const dir = join(record.stateFilePath, '..');
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-    writeFileSync(record.stateFilePath, JSON.stringify(record, null, 2), 'utf-8');
+    const now = new Date().toISOString();
+    db.insert(workflowRuns)
+      .values({
+        runId: record.runId,
+        featureName: record.featureName,
+        state: record.state,
+        config: record.config as unknown,
+        resolvedAgents: null,
+        error: record.errorMessage ?? null,
+        startedAt: record.startedAt,
+        updatedAt: now,
+        completedAt: record.state === WorkflowState.DONE ? now : null,
+      })
+      .onConflictDoUpdate({
+        target: workflowRuns.runId,
+        set: {
+          state: record.state,
+          config: record.config as unknown,
+          error: record.errorMessage ?? null,
+          updatedAt: now,
+          completedAt: record.state === WorkflowState.DONE ? now : null,
+        },
+      })
+      .run();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error(`[WorkflowEngine] Failed to serialize state for ${record.runId}: ${message}`);
+    console.error(`[WorkflowEngine] Failed to save state for ${record.runId}: ${message}`);
   }
 }
 
-function buildStateFilePath(progressBaseDir: string, runId: string): string {
-  return join(progressBaseDir, 'workflow-engine', `${runId}.json`);
+/** Load a single workflow run record from SQLite. */
+function loadRecord(db: AdcDatabase, runId: string): WorkflowEngineRecord | null {
+  const row = db.select().from(workflowRuns).where(eq(workflowRuns.runId, runId)).get();
+  if (!row) return null;
+  return rowToRecord(row);
+}
+
+/** Convert a Drizzle row to a WorkflowEngineRecord. */
+function rowToRecord(row: typeof workflowRuns.$inferSelect): WorkflowEngineRecord {
+  return {
+    runId: row.runId,
+    featureName: row.featureName,
+    state: row.state as WorkflowState,
+    config: (row.config ?? {}) as WorkflowRunConfig,
+    startedAt: row.startedAt,
+    updatedAt: row.updatedAt,
+    errorMessage: row.error ?? null,
+    qaRound: 0, // not persisted — runtime only
+    stateFilePath: '', // legacy field — no longer used
+  };
+}
+
+/**
+ * Migrate existing JSON state files into SQLite.
+ * Scans `<progressBaseDir>/workflow-engine/*.json` and inserts each into the table.
+ * Already-existing runIds are skipped (onConflictDoNothing).
+ */
+function migrateFromJson(db: AdcDatabase, progressBaseDir: string): void {
+  const engineDir = join(progressBaseDir, 'workflow-engine');
+  if (!existsSync(engineDir)) return;
+
+  const jsonFiles = readdirSync(engineDir).filter((f) => f.endsWith('.json'));
+  if (jsonFiles.length === 0) return;
+
+  console.warn(`[WorkflowEngine] Migrating ${jsonFiles.length} JSON state files to SQLite...`);
+
+  for (const file of jsonFiles) {
+    try {
+      const content = readFileSync(join(engineDir, file), 'utf-8');
+      const parsed = JSON.parse(content) as WorkflowEngineRecord;
+      db.insert(workflowRuns)
+        .values({
+          runId: parsed.runId,
+          featureName: parsed.featureName,
+          state: parsed.state,
+          config: parsed.config as unknown,
+          resolvedAgents: null,
+          error: parsed.errorMessage ?? null,
+          startedAt: parsed.startedAt,
+          updatedAt: parsed.updatedAt,
+          completedAt: parsed.state === WorkflowState.DONE ? parsed.updatedAt : null,
+        })
+        .onConflictDoUpdate({
+          target: workflowRuns.runId,
+          set: { updatedAt: parsed.updatedAt },
+        })
+        .run();
+    } catch {
+      // Skip corrupt files
+    }
+  }
+
+  // Also migrate archive directory
+  const archiveDir = join(engineDir, 'archive');
+  if (existsSync(archiveDir)) {
+    const archiveFiles = readdirSync(archiveDir).filter((f) => f.endsWith('.json'));
+    for (const file of archiveFiles) {
+      try {
+        const content = readFileSync(join(archiveDir, file), 'utf-8');
+        const parsed = JSON.parse(content) as WorkflowEngineRecord;
+        db.insert(workflowRuns)
+          .values({
+            runId: parsed.runId,
+            featureName: parsed.featureName,
+            state: parsed.state,
+            config: parsed.config as unknown,
+            resolvedAgents: null,
+            error: parsed.errorMessage ?? null,
+            startedAt: parsed.startedAt,
+            updatedAt: parsed.updatedAt,
+            completedAt: parsed.state === WorkflowState.DONE ? parsed.updatedAt : null,
+          })
+          .onConflictDoUpdate({
+            target: workflowRuns.runId,
+            set: { updatedAt: parsed.updatedAt },
+          })
+          .run();
+      } catch {
+        // Skip corrupt files
+      }
+    }
+  }
+
+  console.warn(`[WorkflowEngine] JSON migration complete.`);
 }
 
 /**
@@ -175,7 +291,10 @@ function toPublicRecord(runtime: EngineRuntimeRecord): WorkflowEngineRecord {
 // ─── Factory ──────────────────────────────────────────────────
 
 export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowEngineService {
-  const { busSessionManager, gitService, progressBaseDir } = deps;
+  const { db, busSessionManager, gitService, progressBaseDir } = deps;
+
+  // Run one-time migration from JSON files on startup
+  migrateFromJson(db, progressBaseDir);
 
   /** All engine records, keyed by runId */
   const engines = new Map<string, EngineRuntimeRecord>();
@@ -196,8 +315,8 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
       runtime.qaRound += 1;
     }
 
-    // Serialize after every transition for crash recovery
-    serializeRecord(runtime);
+    // Persist to SQLite after every transition for crash recovery
+    saveRecord(db, runtime);
 
     deps.onStateChanged({
       runId: runtime.runId,
@@ -316,7 +435,6 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
     start(config: WorkflowRunConfig): string {
       const runId = uuid();
       const now = new Date().toISOString();
-      const stateFilePath = buildStateFilePath(progressBaseDir, runId);
 
       const runtime: EngineRuntimeRecord = {
         runId,
@@ -327,7 +445,7 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
         updatedAt: now,
         errorMessage: null,
         qaRound: 0,
-        stateFilePath,
+        stateFilePath: '', // legacy — no longer used
         wavePlan: null,
         aborted: false,
         claudeMdBySlug: new Map(),
@@ -373,7 +491,9 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
 
     get(runId: string): WorkflowEngineRecord | undefined {
       const runtime = engines.get(runId);
-      return runtime ? toPublicRecord(runtime) : undefined;
+      if (runtime) return toPublicRecord(runtime);
+      // Fall back to SQLite for completed/crashed runs
+      return loadRecord(db, runId) ?? undefined;
     },
 
     list(): WorkflowEngineRecord[] {
@@ -381,25 +501,13 @@ export function createWorkflowEngineService(deps: WorkflowEngineDeps): WorkflowE
     },
 
     listArchived(): WorkflowEngineRecord[] {
-      const archiveDir = join(progressBaseDir, 'workflow-engine', 'archive');
-      if (!existsSync(archiveDir)) return [];
-
-      const files = readdirSync(archiveDir).filter((f) => f.endsWith('.json'));
-      const records: WorkflowEngineRecord[] = [];
-
-      for (const file of files) {
-        try {
-          const content = readFileSync(join(archiveDir, file), 'utf-8');
-          const parsed = JSON.parse(content) as WorkflowEngineRecord;
-          records.push(parsed);
-        } catch {
-          // Skip corrupt files
-        }
-      }
-
-      return records.sort(
-        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-      );
+      const rows = db
+        .select()
+        .from(workflowRuns)
+        .where(inArray(workflowRuns.state, [WorkflowState.DONE, WorkflowState.ERROR]))
+        .orderBy(desc(workflowRuns.updatedAt))
+        .all();
+      return rows.map(rowToRecord);
     },
 
     async listAgentDefinitions(): Promise<AgentDefinition[]> {
