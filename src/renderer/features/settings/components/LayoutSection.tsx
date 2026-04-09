@@ -159,7 +159,10 @@ function UnifiedLayoutPreview({
   const rightSidebarW = sidebarConfig.hasSecondSidebar ? 35 : 0;
 
   // Toolbar height varies by style
-  const TOOLBAR_H: Record<ToolbarStyleId, number> = { default: 16, compact: 12, spacious: 22, bordered: 16 };
+  const TOOLBAR_H: Record<ToolbarStyleId, number> = {
+    default: 16, compact: 12, spacious: 22, floating: 14,
+    bordered: 16, glass: 16, minimal: 10, inset: 16,
+  };
   const headerH = TOOLBAR_H[toolbarStyleId];
 
   // Content starts after sidebar + gap
