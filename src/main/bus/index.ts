@@ -18,3 +18,5 @@ export type {
   SessionSpawnRequest,
 } from './types';
 export { isMutationVerb, parseChannel } from './types';
+export { createBusMcpBridge } from './mcp-bridge';
+export type { BusMcpBridge, BusMcpTool } from './mcp-bridge';

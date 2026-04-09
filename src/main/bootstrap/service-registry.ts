@@ -484,6 +484,7 @@ export function createServiceRegistry(
     agentManagerService,
     worktreeProvisioner,
     getMainWindow,
+    busSessionManager,
   );
 
   const qaRunner = createQaRunner(busSessionManager, dataDir, notificationManager);

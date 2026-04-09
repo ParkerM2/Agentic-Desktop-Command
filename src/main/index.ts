@@ -143,8 +143,8 @@ function initializeApp(): void {
   errorCollectorRef = registry.errorCollector;
   registryRef = registry;
 
-  // Wire IPC handlers
-  wireIpcHandlers(registry.router, registry.services);
+  // Wire IPC handlers (pass commandBus so all calls are tracked in SQLite)
+  wireIpcHandlers(registry.router, registry.services, registry.commandBus);
 
   // Wire service events → renderer
   wireEventForwarding({
