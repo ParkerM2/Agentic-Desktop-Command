@@ -84,6 +84,67 @@ const MUTATION_VERBS = new Set([
   'skip', 'resize', 'capture',
 ]);
 
+// ── Session Types ───────────────────────────────────────────
+
+export interface SessionSpawnRequest {
+  name: string;
+  type: 'project-owner' | 'team-lead' | 'assistant' | 'qa' | 'research' | 'planner';
+  phase?: 'research' | 'planning' | 'executing' | 'qa';
+  projectId?: string;
+  projectPath?: string;
+  taskSlug?: string;
+  prompt: string;
+  model?: string;
+  parentId?: string;
+  teamName?: string;
+  wave?: number;
+  taskIndex?: number;
+  worktreePath?: string;
+  agentFlags?: {
+    agentId?: string;
+    agentName?: string;
+    agentType?: string;
+    dangerouslySkipPermissions?: boolean;
+  };
+}
+
+export interface SessionRecord {
+  id: string;
+  name: string;
+  type: string;
+  phase: string | null;
+  status: string;
+  projectId: string | null;
+  taskSlug: string | null;
+  model: string | null;
+  pid: number | null;
+  worktreePath: string | null;
+  spawnConfig: unknown;
+  tokenUsage: unknown;
+  toolUsage: unknown;
+  parentId: string | null;
+  teamName: string | null;
+  wave: number | null;
+  taskIndex: number | null;
+  startedAt: string;
+  endedAt: string | null;
+  exitCode: number | null;
+  error: string | null;
+}
+
+export interface SessionFilter {
+  status?: string;
+  type?: string;
+  projectId?: string;
+  taskSlug?: string;
+  parentId?: string;
+}
+
+export type SessionEventType = 'spawned' | 'active' | 'completed' | 'error' | 'killed';
+export type SessionEventHandler = (event: { type: SessionEventType; session: SessionRecord }) => void;
+
+// ── Mutation Detection ──────────────────────────────────────
+
 export function isMutationVerb(verb: string): boolean {
   return MUTATION_VERBS.has(verb);
 }
