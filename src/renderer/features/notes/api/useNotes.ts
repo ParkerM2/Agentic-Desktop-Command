@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { NOTES } from '@shared/ipc/misc/notes.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { noteKeys } from './queryKeys';
@@ -12,7 +14,7 @@ import { noteKeys } from './queryKeys';
 export function useNotes(projectId?: string, tag?: string) {
   return useQuery({
     queryKey: noteKeys.list(projectId, tag),
-    queryFn: () => ipc('notes.list', { projectId, tag }),
+    queryFn: () => ipc(NOTES.LIST.ALL, { projectId, tag }),
   });
 }
 
@@ -26,7 +28,7 @@ export function useCreateNote() {
       tags?: string[];
       projectId?: string;
       taskId?: string;
-    }) => ipc('notes.create', data),
+    }) => ipc(NOTES.CREATE.NOTE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
     },
@@ -43,7 +45,7 @@ export function useUpdateNote() {
       content?: string;
       tags?: string[];
       pinned?: boolean;
-    }) => ipc('notes.update', data),
+    }) => ipc(NOTES.UPDATE.NOTE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
     },
@@ -54,7 +56,7 @@ export function useUpdateNote() {
 export function useDeleteNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('notes.delete', { id }),
+    mutationFn: (id: string) => ipc(NOTES.DELETE.NOTE, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
     },
@@ -65,7 +67,7 @@ export function useDeleteNote() {
 export function useSearchNotes(query: string) {
   return useQuery({
     queryKey: noteKeys.search(query),
-    queryFn: () => ipc('notes.search', { query }),
+    queryFn: () => ipc(NOTES.SEARCH.NOTES, { query }),
     enabled: query.length > 0,
   });
 }

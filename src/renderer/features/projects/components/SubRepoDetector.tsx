@@ -4,9 +4,10 @@
 
 import { AlertCircle, FolderGit2, Loader2 } from 'lucide-react';
 
+import type { PROJECTS } from '@shared/ipc/projects/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 
-type RepoDetectionResult = InvokeOutput<'projects.detectRepo'>;
+type RepoDetectionResult = InvokeOutput<typeof PROJECTS.DETECT.REPO>;
 
 interface SubRepoDetectorProps {
   detection: RepoDetectionResult | undefined;

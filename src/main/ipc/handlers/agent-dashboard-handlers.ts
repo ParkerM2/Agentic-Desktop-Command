@@ -10,6 +10,7 @@
  * TeamWatcher service does not have a router reference.
  */
 
+import { AGENT_DASHBOARD, AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import type {
   QaDashboardIssue,
   QaDashboardSession,
@@ -114,12 +115,12 @@ export function registerAgentDashboardHandlers(
 ): void {
   // ── Invoke Handlers ──────────────────────────────────────
 
-  router.handle('agent-dashboard.spawnProjectOwner', (config) => {
+  router.handle(AGENT_DASHBOARD.SPAWN['PROJECT-OWNER'], (config) => {
     const session = agentManager.spawnProjectOwner(config);
     return Promise.resolve({ sessionId: session.id, status: 'spawned' as const });
   });
 
-  router.handle('agent-dashboard.spawnTeamLead', (config) => {
+  router.handle(AGENT_DASHBOARD.SPAWN['TEAM-LEAD'], (config) => {
     const result = agentManager.spawnTeamLead(config);
     if ('error' in result) {
       throw new Error(`spawnTeamLead failed: ${result.error}`);
@@ -130,23 +131,23 @@ export function registerAgentDashboardHandlers(
     });
   });
 
-  router.handle('agent-dashboard.listSessions', (filter) =>
+  router.handle(AGENT_DASHBOARD.LIST.SESSIONS, (filter) =>
     Promise.resolve(agentManager.listSessions(filter)),
   );
 
-  router.handle('agent-dashboard.getSession', ({ sessionId }) =>
+  router.handle(AGENT_DASHBOARD.GET.SESSION, ({ sessionId }) =>
     Promise.resolve(agentManager.getSession(sessionId) ?? null),
   );
 
-  router.handle('agent-dashboard.sendMessage', ({ sessionId, message }) =>
+  router.handle(AGENT_DASHBOARD.SEND.MESSAGE, ({ sessionId, message }) =>
     Promise.resolve({ success: agentManager.sendMessage(sessionId, message) }),
   );
 
-  router.handle('agent-dashboard.stopSession', ({ sessionId }) =>
+  router.handle(AGENT_DASHBOARD.STOP.SESSION, ({ sessionId }) =>
     Promise.resolve({ success: agentManager.stopSession(sessionId) }),
   );
 
-  router.handle('agent-dashboard.getFilesChanged', (input) => {
+  router.handle(AGENT_DASHBOARD.GET['FILES-CHANGED'], (input) => {
     const projectPath = agentManager.getSessionProjectPath(input.sessionId);
     if (!projectPath) {
       return Promise.resolve([]);
@@ -156,7 +157,7 @@ export function registerAgentDashboardHandlers(
 
   // ── Workflow Task Handlers ──────────────────────────────────
 
-  router.handle('agent-dashboard.getTasksForFeature', (input) => {
+  router.handle(AGENT_DASHBOARD.GET['TASKS-FOR-FEATURE'], (input) => {
     // Lazily start watching the feature on first request
     if (!watchedSlugs.has(input.featureSlug)) {
       progressWatcher.watchFeature(input.featureSlug);
@@ -165,32 +166,32 @@ export function registerAgentDashboardHandlers(
     return Promise.resolve(progressWatcher.getTasksForFeature(input.featureSlug));
   });
 
-  router.handle('agent-dashboard.getTask', (input) =>
+  router.handle(AGENT_DASHBOARD.GET.TASK, (input) =>
     Promise.resolve(progressWatcher.getTask(input.featureSlug, input.taskNumber)),
   );
 
   // ── QA Handlers ─────────────────────────────────────────────
 
-  router.handle('agent-dashboard.getQaSession', (input) => {
+  router.handle(AGENT_DASHBOARD.GET['QA-SESSION'], (input) => {
     const session = qaRunner.getSessionByTaskId(input.taskId);
     return Promise.resolve(session ? mapQaSessionToDashboard(session) : null);
   });
 
-  router.handle('agent-dashboard.listQaSessions', () =>
+  router.handle(AGENT_DASHBOARD.LIST['QA-SESSIONS'], () =>
     Promise.resolve(qaRunner.listSessions().map(mapQaSessionToDashboard)),
   );
 
   // ── Per-Session Data Handlers ───────────────────────────────
 
-  router.handle('agent-dashboard.getSessionsForTask', (_input) =>
+  router.handle(AGENT_DASHBOARD.LIST['SESSIONS-FOR-TASK'], (_input) =>
     Promise.resolve([]),
   );
 
-  router.handle('agent-dashboard.getSessionLog', (_input) =>
+  router.handle(AGENT_DASHBOARD.GET['SESSION-LOG'], (_input) =>
     Promise.resolve([]),
   );
 
-  router.handle('agent-dashboard.getGitDiff', (_input) =>
+  router.handle(AGENT_DASHBOARD.GET['GIT-DIFF'], (_input) =>
     Promise.resolve({ diff: '' }),
   );
 
@@ -199,11 +200,11 @@ export function registerAgentDashboardHandlers(
   // Only teammate join/leave events need forwarding from TeamWatcher.
 
   teamWatcher.onTeammateJoined((member) => {
-    router.emit('event:agent-dashboard.teammateJoined', member);
+    router.emit(AGENT_DASHBOARD_EVENTS.TEAMMATE.JOINED, member);
   });
 
   teamWatcher.onTeammateLeft((memberId) => {
-    router.emit('event:agent-dashboard.teammateLeft', { agentId: memberId, teamName: '' });
+    router.emit(AGENT_DASHBOARD_EVENTS.TEAMMATE.LEFT, { agentId: memberId, teamName: '' });
   });
 
   // Forward task updates from ProgressWatcherV2 (debounced per-slug to avoid thundering herd)
@@ -214,7 +215,7 @@ export function registerAgentDashboardHandlers(
     debounceTimers.set(
       slug,
       setTimeout(() => {
-        router.emit('event:agent-dashboard.taskUpdated', { featureSlug: slug, task });
+        router.emit(AGENT_DASHBOARD_EVENTS.TASK.UPDATED, { featureSlug: slug, task });
       }, 50),
     );
   });
@@ -223,7 +224,7 @@ export function registerAgentDashboardHandlers(
   qaRunner.onSessionEvent((event) => {
     if (event.type === 'completed' || event.type === 'progress') {
       router.emit(
-        'event:agent-dashboard.qaSessionUpdated',
+        AGENT_DASHBOARD_EVENTS.QA['SESSION-UPDATED'],
         mapQaSessionToDashboard(event.session),
       );
     }

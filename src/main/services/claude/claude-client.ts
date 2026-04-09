@@ -7,6 +7,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 
+import { CLAUDE_EVENTS } from '@shared/ipc/claude/channels';
 import type {
   ClaudeClientConfig,
   ClaudeConversation,
@@ -17,6 +18,7 @@ import type {
   ClaudeTokenUsage,
 } from '@shared/types';
 
+
 import { createConversationStore } from './conversation-store';
 
 import type { ConversationStore } from './conversation-store';
@@ -24,7 +26,7 @@ import type { IpcRouter } from '../../ipc/router';
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 const DEFAULT_MAX_TOKENS = 4096;
-const STREAM_CHUNK_EVENT = 'event:claude.streamChunk' as const;
+const STREAM_CHUNK_EVENT = CLAUDE_EVENTS.STREAM.CHUNK;
 
 /** Claude client interface. */
 export interface ClaudeClient {

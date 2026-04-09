@@ -9,6 +9,8 @@ import { useCallback, useRef, useState } from 'react';
 
 import { Camera, Check } from 'lucide-react';
 
+import { SCREEN } from '@shared/ipc/misc/screen.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 export function TitleBarScreenshot() {
@@ -20,12 +22,12 @@ export function TitleBarScreenshot() {
   const handleCapture = useCallback(async () => {
     try {
       // Step 1: List screen sources
-      const sources = await ipc('screen.listSources', { types: ['screen'] });
+      const sources = await ipc(SCREEN.LIST.SOURCES, { types: ['screen'] });
 
       if (sources.length === 0) return;
 
       // Step 2: Capture the primary screen (index 0 is safe after length check)
-      const screenshot = await ipc('screen.capture', {
+      const screenshot = await ipc(SCREEN.CAPTURE.SCREEN, {
         sourceId: sources[0].id,
       });
 

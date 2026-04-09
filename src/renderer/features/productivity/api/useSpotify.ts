@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { SPOTIFY } from '@shared/ipc/spotify/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { spotifyKeys } from './queryKeys';
@@ -12,7 +14,7 @@ import { spotifyKeys } from './queryKeys';
 export function useSpotifyPlayback() {
   return useQuery({
     queryKey: spotifyKeys.playback(),
-    queryFn: () => ipc('spotify.getPlayback', {}),
+    queryFn: () => ipc(SPOTIFY.GET.PLAYBACK, {}),
     refetchInterval: 5000,
   });
 }
@@ -21,7 +23,7 @@ export function useSpotifyPlayback() {
 export function useSpotifySearch(query: string) {
   return useQuery({
     queryKey: spotifyKeys.search(query),
-    queryFn: () => ipc('spotify.search', { query }),
+    queryFn: () => ipc(SPOTIFY.SEARCH.TRACKS, { query }),
     enabled: query.length > 0,
   });
 }
@@ -30,7 +32,7 @@ export function useSpotifySearch(query: string) {
 export function useSpotifyPlay() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (params?: { uri?: string }) => ipc('spotify.play', { uri: params?.uri }),
+    mutationFn: (params?: { uri?: string }) => ipc(SPOTIFY.PLAY.TRACK, { uri: params?.uri }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: spotifyKeys.playback() });
     },
@@ -41,7 +43,7 @@ export function useSpotifyPlay() {
 export function useSpotifyPause() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('spotify.pause', {}),
+    mutationFn: () => ipc(SPOTIFY.PAUSE.TRACK, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: spotifyKeys.playback() });
     },
@@ -52,7 +54,7 @@ export function useSpotifyPause() {
 export function useSpotifyNext() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('spotify.next', {}),
+    mutationFn: () => ipc(SPOTIFY.SKIP.NEXT, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: spotifyKeys.playback() });
     },
@@ -63,7 +65,7 @@ export function useSpotifyNext() {
 export function useSpotifyPrevious() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('spotify.previous', {}),
+    mutationFn: () => ipc(SPOTIFY.SKIP.PREVIOUS, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: spotifyKeys.playback() });
     },
@@ -74,7 +76,7 @@ export function useSpotifyPrevious() {
 export function useSpotifyVolume() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (volumePercent: number) => ipc('spotify.setVolume', { volumePercent }),
+    mutationFn: (volumePercent: number) => ipc(SPOTIFY.SET.VOLUME, { volumePercent }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: spotifyKeys.playback() });
     },
@@ -84,6 +86,6 @@ export function useSpotifyVolume() {
 /** Add a track to the queue. */
 export function useSpotifyAddToQueue() {
   return useMutation({
-    mutationFn: (uri: string) => ipc('spotify.addToQueue', { uri }),
+    mutationFn: (uri: string) => ipc(SPOTIFY.ADD['TO-QUEUE'], { uri }),
   });
 }

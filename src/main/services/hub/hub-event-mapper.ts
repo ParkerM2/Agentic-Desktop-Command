@@ -5,6 +5,10 @@
  * Converts persisted config to HubConnection view objects.
  */
 
+
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
+import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
+import { HUB_TASKS_EVENTS } from '@shared/ipc/tasks/channels';
 import type { HubConnection, HubConnectionStatus } from '@shared/types';
 
 import { decryptApiKey } from './hub-config-store';
@@ -44,24 +48,24 @@ function emitTaskEvent(
   const taskPayload = { taskId: eventData.id, projectId };
 
   if (eventData.action === 'created') {
-    emitter.emit('event:hub.tasks.created', taskPayload);
+    emitter.emit(HUB_TASKS_EVENTS.TASK.CREATED, taskPayload);
   } else if (eventData.action === 'deleted') {
-    emitter.emit('event:hub.tasks.deleted', taskPayload);
+    emitter.emit(HUB_TASKS_EVENTS.TASK.DELETED, taskPayload);
   } else if (eventData.action === 'completed') {
     const rawResult = eventData.data?.result;
-    emitter.emit('event:hub.tasks.completed', {
+    emitter.emit(HUB_TASKS_EVENTS.TASK_RUN.COMPLETED, {
       ...taskPayload,
       result: rawResult === 'failure' ? 'failure' : 'success',
     });
   } else if (eventData.action === 'progress') {
-    emitter.emit('event:hub.tasks.progress', {
+    emitter.emit(HUB_TASKS_EVENTS.PROGRESS.UPDATED, {
       taskId: eventData.id,
       progress: typeof eventData.data?.progress === 'number' ? eventData.data.progress : 0,
       phase: typeof eventData.data?.phase === 'string' ? eventData.data.phase : '',
     });
   } else {
     // Default: updated (covers status changes, field edits, etc.)
-    emitter.emit('event:hub.tasks.updated', taskPayload);
+    emitter.emit(HUB_TASKS_EVENTS.TASK.UPDATED, taskPayload);
   }
 }
 
@@ -75,27 +79,27 @@ export function routeWebSocketEvent(
       break;
 
     case 'projects':
-      emitter.emit('event:hub.projects.updated', { projectId: eventData.id });
+      emitter.emit(HUB_EVENTS.PROJECT.UPDATED, { projectId: eventData.id });
       break;
 
     case 'workspaces':
-      emitter.emit('event:hub.workspaces.updated', { workspaceId: eventData.id });
+      emitter.emit(HUB_EVENTS.WORKSPACE.UPDATED, { workspaceId: eventData.id });
       break;
 
     case 'devices':
       if (eventData.action === 'online') {
-        emitter.emit('event:hub.devices.online', {
+        emitter.emit(HUB_EVENTS.DEVICE.ONLINE, {
           deviceId: eventData.id,
           name: typeof eventData.data?.name === 'string' ? eventData.data.name : '',
         });
       } else if (eventData.action === 'offline') {
-        emitter.emit('event:hub.devices.offline', { deviceId: eventData.id });
+        emitter.emit(HUB_EVENTS.DEVICE.OFFLINE, { deviceId: eventData.id });
       }
       break;
 
     default:
       // Fallback for unknown entities
-      emitter.emit('event:project.updated', { projectId: eventData.id });
+      emitter.emit(PROJECTS_EVENTS.PROJECT.UPDATED, { projectId: eventData.id });
       break;
   }
 }

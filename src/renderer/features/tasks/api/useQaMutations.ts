@@ -6,6 +6,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { QA } from '@shared/ipc/qa/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -21,7 +23,7 @@ const qaKeys = {
 export function useQaReport(taskId: string | null) {
   return useQuery({
     queryKey: qaKeys.report(taskId ?? ''),
-    queryFn: () => ipc('qa.getReport', { taskId: taskId ?? '' }),
+    queryFn: () => ipc(QA.GET.REPORT, { taskId: taskId ?? '' }),
     enabled: taskId !== null && taskId.length > 0,
     staleTime: 30_000,
   });
@@ -31,7 +33,7 @@ export function useQaReport(taskId: string | null) {
 export function useQaSession(taskId: string | null) {
   return useQuery({
     queryKey: qaKeys.session(taskId ?? ''),
-    queryFn: () => ipc('qa.getSession', { taskId: taskId ?? '' }),
+    queryFn: () => ipc(QA.GET.SESSION, { taskId: taskId ?? '' }),
     enabled: taskId !== null && taskId.length > 0,
     staleTime: 10_000,
   });
@@ -43,7 +45,7 @@ export function useStartQuietQa() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId }: { taskId: string }) =>
-      ipc('qa.startQuiet', { taskId }),
+      ipc(QA.START.QUIET, { taskId }),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: qaKeys.session(variables.taskId) });
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
@@ -58,7 +60,7 @@ export function useStartFullQa() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId }: { taskId: string }) =>
-      ipc('qa.startFull', { taskId }),
+      ipc(QA.START.FULL, { taskId }),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: qaKeys.session(variables.taskId) });
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
@@ -73,7 +75,7 @@ export function useCancelQa() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ sessionId }: { sessionId: string }) =>
-      ipc('qa.cancel', { sessionId }),
+      ipc(QA.CANCEL.SESSION, { sessionId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: qaKeys.all });
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });

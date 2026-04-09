@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { SETTINGS } from '@shared/ipc/settings/channels';
 import type { SidebarLayoutId } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -25,7 +26,7 @@ export function useSettings() {
   return useQuery({
     queryKey: settingsKeys.app(),
     queryFn: async () => {
-      const settings = await ipc('settings.get', {});
+      const settings = await ipc(SETTINGS.GET.ALL, {});
       // Sync theme store on load
       setCustomThemes(settings.customThemes ?? []);
       setMode(settings.theme);
@@ -53,7 +54,7 @@ export function useSettings() {
 export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (updates: Record<string, unknown>) => ipc('settings.update', updates),
+    mutationFn: (updates: Record<string, unknown>) => ipc(SETTINGS.UPDATE.ALL, updates),
     onSuccess: (data) => {
       queryClient.setQueryData(settingsKeys.app(), data);
     },
@@ -64,7 +65,7 @@ export function useUpdateSettings() {
 export function useProfiles() {
   return useQuery({
     queryKey: settingsKeys.profiles(),
-    queryFn: () => ipc('settings.getProfiles', {}),
+    queryFn: () => ipc(SETTINGS.GET.PROFILES, {}),
     staleTime: 60_000,
   });
 }
@@ -74,7 +75,7 @@ export function useCreateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { name: string; apiKey?: string; model?: string }) =>
-      ipc('settings.createProfile', data),
+      ipc(SETTINGS.CREATE.PROFILE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
     },
@@ -88,7 +89,7 @@ export function useUpdateProfile() {
     mutationFn: (data: {
       id: string;
       updates: { name?: string; apiKey?: string; model?: string };
-    }) => ipc('settings.updateProfile', data),
+    }) => ipc(SETTINGS.UPDATE.PROFILE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
     },
@@ -99,7 +100,7 @@ export function useUpdateProfile() {
 export function useDeleteProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('settings.deleteProfile', { id }),
+    mutationFn: (id: string) => ipc(SETTINGS.DELETE.PROFILE, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
     },
@@ -110,7 +111,7 @@ export function useDeleteProfile() {
 export function useSetDefaultProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('settings.setDefaultProfile', { id }),
+    mutationFn: (id: string) => ipc(SETTINGS.SET['DEFAULT-PROFILE'], { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
     },

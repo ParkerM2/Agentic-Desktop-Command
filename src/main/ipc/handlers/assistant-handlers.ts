@@ -5,33 +5,34 @@
  * the simplified IPC schema in Task 11. Until then, results are cast.
  */
 
+import { ASSISTANT } from '@shared/ipc/assistant/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 
 import type { AssistantService } from '../../services/assistant/assistant-service';
 import type { IpcRouter } from '../router';
 
 export function registerAssistantHandlers(router: IpcRouter, service: AssistantService): void {
-  router.handle('assistant.start', ({ projects }) => {
+  router.handle(ASSISTANT.START.SESSION, ({ projects }) => {
     service.start(projects);
     return Promise.resolve(
-      { success: true } as unknown as InvokeOutput<'assistant.start'>,
+      { success: true } as unknown as InvokeOutput<typeof ASSISTANT.START.SESSION>,
     );
   });
 
-  router.handle('assistant.sendCommand', ({ input, context }) => {
+  router.handle(ASSISTANT.SEND.COMMAND, ({ input, context }) => {
     service.sendCommand(input, context);
     return Promise.resolve(
-      { success: true } as unknown as InvokeOutput<'assistant.sendCommand'>,
+      { success: true } as unknown as InvokeOutput<typeof ASSISTANT.SEND.COMMAND>,
     );
   });
 
-  router.handle('assistant.getHistory', () =>
+  router.handle(ASSISTANT.GET.HISTORY, () =>
     Promise.resolve(
-      service.getHistory() as unknown as InvokeOutput<'assistant.getHistory'>,
+      service.getHistory() as unknown as InvokeOutput<typeof ASSISTANT.GET.HISTORY>,
     ),
   );
 
-  router.handle('assistant.clearHistory', () => {
+  router.handle(ASSISTANT.CLEAR.HISTORY, () => {
     service.clearHistory();
     return Promise.resolve({ success: true });
   });

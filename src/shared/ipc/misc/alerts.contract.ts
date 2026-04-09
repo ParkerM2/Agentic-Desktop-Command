@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+
 import { ALERTS, ALERTS_EVENTS } from './alerts.channels';
 
 export const AlertTypeSchema = z.enum(['reminder', 'deadline', 'notification', 'recurring']);

@@ -6,6 +6,8 @@ import { execFileSync, spawn } from 'node:child_process';
 
 import { app } from 'electron';
 
+import { APP } from '@shared/ipc/app/channels';
+
 import type { TokenStore } from '../../auth/token-store';
 import type { OAuthConfig } from '../../auth/types';
 import type { IpcRouter } from '../router';
@@ -216,21 +218,21 @@ function getOAuthStatus(
 }
 
 export function registerAppHandlers(router: IpcRouter, deps: AppHandlerDeps): void {
-  router.handle('app.checkClaudeAuth', () => Promise.resolve(checkClaudeAuth()));
-  router.handle('app.launchClaudeAuth', () => launchClaudeAuth());
-  router.handle('app.checkGitHubAuth', () => Promise.resolve(checkGitHubAuth()));
-  router.handle('app.launchGitHubAuth', () => launchGitHubAuth());
+  router.handle(APP.CHECK['CLAUDE-AUTH'], () => Promise.resolve(checkClaudeAuth()));
+  router.handle(APP.LAUNCH['CLAUDE-AUTH'], () => launchClaudeAuth());
+  router.handle(APP.CHECK['GITHUB-AUTH'], () => Promise.resolve(checkGitHubAuth()));
+  router.handle(APP.LAUNCH['GITHUB-AUTH'], () => launchGitHubAuth());
 
-  router.handle('app.getOAuthStatus', ({ provider }) =>
+  router.handle(APP.CHECK['OAUTH-STATUS'], ({ provider }) =>
     Promise.resolve(getOAuthStatus(provider, deps)),
   );
 
-  router.handle('app.setOpenAtLogin', ({ enabled }) => {
+  router.handle(APP.SET['LOGIN-SETTING'], ({ enabled }) => {
     app.setLoginItemSettings({ openAtLogin: enabled });
     return Promise.resolve({ success: true });
   });
 
-  router.handle('app.getOpenAtLogin', () => {
+  router.handle(APP.GET['LOGIN-SETTING'], () => {
     const result = app.getLoginItemSettings();
     return Promise.resolve({ enabled: result.openAtLogin });
   });

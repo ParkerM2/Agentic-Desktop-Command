@@ -6,6 +6,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks/useIpcEvent';
 import { useAssistantWidgetStore } from '@renderer/shared/stores';
 
@@ -22,11 +24,11 @@ export function useAssistantEvents() {
   const queryClient = useQueryClient();
   const { addResponseEntry, incrementUnread, setCurrentResponse, setIsThinking } = useAssistantStore();
   const { isOpen, open } = useAssistantWidgetStore();
-  useIpcEvent('event:assistant.autostart', () => {
+  useIpcEvent(ASSISTANT_EVENTS.SESSION.AUTOSTART, () => {
     open();
   });
 
-  useIpcEvent('event:assistant.response', (payload) => {
+  useIpcEvent(ASSISTANT_EVENTS.MESSAGE.RESPONSE, (payload) => {
     setCurrentResponse(payload.content);
     addResponseEntry({
       input: _lastCommand,
@@ -39,11 +41,11 @@ export function useAssistantEvents() {
     void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
   });
 
-  useIpcEvent('event:assistant.thinking', (payload) => {
+  useIpcEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, (payload) => {
     setIsThinking(payload.isThinking);
   });
 
-  useIpcEvent('event:assistant.toolExecuted', (payload) => {
+  useIpcEvent(ASSISTANT_EVENTS.TOOL.EXECUTED, (payload) => {
     // Invalidate React Query caches for all affected query key roots
     for (const root of payload.queryKeyRoots) {
       void queryClient.invalidateQueries({ queryKey: [root] });

@@ -4,6 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { DEVICES } from '@shared/ipc/misc/devices.channels';
 import type { InvokeInput } from '@shared/ipc-contract';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { deviceKeys } from './queryKeys';
 export function useDevices() {
   return useQuery({
     queryKey: deviceKeys.list(),
-    queryFn: () => ipc('devices.list', {}),
+    queryFn: () => ipc(DEVICES.LIST.ALL, {}),
     staleTime: 30_000,
   });
 }
@@ -23,8 +24,8 @@ export function useDevices() {
 export function useRegisterDevice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: InvokeInput<'devices.register'>) =>
-      ipc('devices.register', data),
+    mutationFn: (data: InvokeInput<typeof DEVICES.REGISTER.DEVICE>) =>
+      ipc(DEVICES.REGISTER.DEVICE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: deviceKeys.list() });
     },
@@ -35,8 +36,8 @@ export function useRegisterDevice() {
 export function useUpdateDevice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: InvokeInput<'devices.update'>) =>
-      ipc('devices.update', data),
+    mutationFn: (data: InvokeInput<typeof DEVICES.UPDATE.DEVICE>) =>
+      ipc(DEVICES.UPDATE.DEVICE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: deviceKeys.list() });
     },

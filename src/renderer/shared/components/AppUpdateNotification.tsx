@@ -10,6 +10,8 @@ import { useState } from 'react';
 
 import { Download, RefreshCw, X } from 'lucide-react';
 
+import { APP, APP_EVENTS } from '@shared/ipc/app/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -28,12 +30,12 @@ export function AppUpdateNotification() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  useIpcEvent('event:app.updateAvailable', ({ version }) => {
+  useIpcEvent(APP_EVENTS.UPDATE.AVAILABLE, ({ version }) => {
     setUpdateInfo({ version, phase: 'available' });
     setDismissed(false);
   });
 
-  useIpcEvent('event:app.updateDownloaded', ({ version }) => {
+  useIpcEvent(APP_EVENTS.UPDATE.DOWNLOADED, ({ version }) => {
     setUpdateInfo({ version, phase: 'downloaded' });
     setDismissed(false);
   });
@@ -43,11 +45,11 @@ export function AppUpdateNotification() {
   }
 
   function handleDownload() {
-    void ipc('app.downloadUpdate', {});
+    void ipc(APP.DOWNLOAD.UPDATE, {});
   }
 
   function handleRestart() {
-    void ipc('app.quitAndInstall', {});
+    void ipc(APP.INSTALL.UPDATE, {});
   }
 
   function handleDismiss() {

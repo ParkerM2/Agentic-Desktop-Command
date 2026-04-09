@@ -9,6 +9,8 @@ import { join } from 'node:path';
 
 import { app, BrowserWindow, dialog, shell } from 'electron';
 
+import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
+
 import {
   createServiceRegistry,
   setupLifecycle,
@@ -73,7 +75,7 @@ function createWindow(): void {
   mainWindow.webContents.once('did-finish-load', () => {
     if (settingsServiceRef?.getSettings().assistantAutoStart !== false) {
       setTimeout(() => {
-        registryRef?.router.emit('event:assistant.autostart', { autoStarted: true });
+        registryRef?.router.emit(ASSISTANT_EVENTS.SESSION.AUTOSTART, { autoStarted: true });
       }, 800);
     }
   });

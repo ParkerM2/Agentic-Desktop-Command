@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { Button, Card, CardContent, CardHeader } from '@ui';
@@ -38,7 +40,7 @@ interface IntegrationsStepProps {
 function useGitHubAuth() {
   return useQuery({
     queryKey: ['app', 'githubAuth'],
-    queryFn: () => ipc('app.checkGitHubAuth', {}),
+    queryFn: () => ipc(APP.CHECK['GITHUB-AUTH'], {}),
     staleTime: 30_000,
   });
 }
@@ -74,7 +76,7 @@ export function IntegrationsStep({ onBack, onNext, onSkip }: IntegrationsStepPro
   async function handleConnect() {
     setError(null);
     setAuthorizing(true);
-    const result = await ipc('app.launchGitHubAuth', {});
+    const result = await ipc(APP.LAUNCH['GITHUB-AUTH'], {});
     if (!result.success && !isAuthenticated) {
       setError(
         'GitHub authorization failed. Make sure the GitHub CLI is installed (https://cli.github.com).',

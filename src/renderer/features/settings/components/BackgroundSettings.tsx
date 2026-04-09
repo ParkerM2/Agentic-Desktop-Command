@@ -7,6 +7,8 @@
 
 import { useEffect, useState } from 'react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { Switch } from '@ui';
@@ -64,7 +66,7 @@ export function BackgroundSettings() {
 
   function handleOpenAtLogin(checked: boolean) {
     setOpenAtLogin(checked);
-    void ipc('app.setOpenAtLogin', { enabled: checked });
+    void ipc(APP.SET['LOGIN-SETTING'], { enabled: checked });
     updateSettings.mutate({ openAtLogin: checked });
   }
 

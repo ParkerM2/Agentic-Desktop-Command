@@ -7,6 +7,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { QA_EVENTS } from '@shared/ipc/qa/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { useToastStore } from '@renderer/shared/stores';
 
@@ -23,17 +25,17 @@ export function useQaEvents() {
   const addToast = useToastStore((s) => s.addToast);
 
   // QA session started → invalidate session cache for live status
-  useIpcEvent('event:qa.started', (data) => {
+  useIpcEvent(QA_EVENTS.SESSION.STARTED, (data) => {
     void queryClient.invalidateQueries({ queryKey: qaKeys.session(data.taskId) });
   });
 
   // QA progress → invalidate session cache for live step tracking
-  useIpcEvent('event:qa.progress', (data) => {
+  useIpcEvent(QA_EVENTS.SESSION.PROGRESS, (data) => {
     void queryClient.invalidateQueries({ queryKey: qaKeys.session(data.taskId) });
   });
 
   // QA completed → invalidate report + session + task caches, show toast
-  useIpcEvent('event:qa.completed', (data) => {
+  useIpcEvent(QA_EVENTS.SESSION.COMPLETED, (data) => {
     void queryClient.invalidateQueries({ queryKey: qaKeys.report(data.taskId) });
     void queryClient.invalidateQueries({ queryKey: qaKeys.session(data.taskId) });
     void queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.taskId) });

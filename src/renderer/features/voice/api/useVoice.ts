@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { VOICE } from '@shared/ipc/misc/voice.channels';
 import type { VoiceConfig, VoiceInputMode } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { voiceKeys } from './queryKeys';
 export function useVoiceConfig() {
   return useQuery({
     queryKey: voiceKeys.config(),
-    queryFn: () => ipc('voice.getConfig', {}),
+    queryFn: () => ipc(VOICE.GET.CONFIG, {}),
     staleTime: 60_000,
   });
 }
@@ -24,7 +25,7 @@ export function useUpdateVoiceConfig() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (updates: { enabled?: boolean; language?: string; inputMode?: VoiceInputMode }) =>
-      ipc('voice.updateConfig', updates),
+      ipc(VOICE.UPDATE.CONFIG, updates),
     onSuccess: (data) => {
       queryClient.setQueryData<VoiceConfig>(voiceKeys.config(), data);
     },
@@ -35,7 +36,7 @@ export function useUpdateVoiceConfig() {
 export function useVoicePermission() {
   return useQuery({
     queryKey: voiceKeys.permission(),
-    queryFn: () => ipc('voice.checkPermission', {}),
+    queryFn: () => ipc(VOICE.CHECK.PERMISSION, {}),
     staleTime: 30_000,
   });
 }

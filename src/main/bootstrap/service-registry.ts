@@ -10,6 +10,9 @@ import { join } from 'node:path';
 
 import { app } from 'electron';
 
+import { APP_EVENTS } from '@shared/ipc/app/channels';
+import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
+
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
 import { GOOGLE_OAUTH_CONFIG } from '../auth/providers/google';
@@ -173,18 +176,18 @@ export function createServiceRegistry(
   // ─── Error collector + health registry (created early) ──────
   const errorCollector = createErrorCollector(dataDir, {
     onError: (entry) => {
-      router.emit('event:app.error', entry);
+      router.emit(APP_EVENTS.ERROR.OCCURRED, entry);
     },
     onCapacityAlert: (count, message) => {
-      router.emit('event:app.capacityAlert', { count, message });
+      router.emit(APP_EVENTS.CAPACITY.ALERT, { count, message });
     },
     onDataRecovery: (store, message) => {
-      router.emit('event:app.dataRecovery', { store, message });
+      router.emit(APP_EVENTS.DATA.RECOVERY, { store, message });
     },
   });
   const healthRegistry = createHealthRegistry({
     onUnhealthy: (serviceName, missedCount) => {
-      router.emit('event:app.serviceUnhealthy', { serviceName, missedCount });
+      router.emit(APP_EVENTS.SERVICE.UNHEALTHY, { serviceName, missedCount });
     },
   });
 
@@ -463,13 +466,13 @@ export function createServiceRegistry(
     templateService: workflowTemplateService,
     progressBaseDir: dataDir,
     onStateChanged: (event) => {
-      router.emit('event:workflow-engine.stateChanged', event);
+      router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event);
     },
     onCompleted: (event) => {
-      router.emit('event:workflow-engine.completed', event);
+      router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event);
     },
     onError: (event) => {
-      router.emit('event:workflow-engine.error', event);
+      router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event);
     },
   });
 

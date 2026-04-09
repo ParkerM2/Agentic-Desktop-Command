@@ -4,13 +4,14 @@
 
 import { FolderGit2 } from 'lucide-react';
 
+import type { PROJECTS } from '@shared/ipc/projects/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, Checkbox } from '@ui';
 
-type ChildRepo = InvokeOutput<'projects.detectRepo'>['childRepos'][number];
+type ChildRepo = InvokeOutput<typeof PROJECTS.DETECT.REPO>['childRepos'][number];
 
 interface SubRepoSelectorProps {
   repos: ChildRepo[];

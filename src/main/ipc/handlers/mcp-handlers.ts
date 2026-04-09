@@ -4,19 +4,21 @@
  * Exposes MCP tool calls to the renderer process.
  */
 
+import { MCP } from '@shared/ipc/misc/mcp.channels';
+
 import type { McpManager } from '../../mcp/mcp-manager';
 import type { IpcRouter } from '../router';
 
 export function registerMcpHandlers(router: IpcRouter, mcpManager: McpManager): void {
-  router.handle('mcp.callTool', async ({ server, tool, args }) => {
+  router.handle(MCP.CALL.TOOL, async ({ server, tool, args }) => {
     return await mcpManager.callTool(server, tool, args);
   });
 
-  router.handle('mcp.listConnected', () => {
+  router.handle(MCP.LIST.CONNECTED, () => {
     return Promise.resolve(mcpManager.listConnected());
   });
 
-  router.handle('mcp.getConnectionState', ({ server }) => {
+  router.handle(MCP.GET['CONNECTION-STATE'], ({ server }) => {
     return Promise.resolve(mcpManager.getConnectionState(server));
   });
 }

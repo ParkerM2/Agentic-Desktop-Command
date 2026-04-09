@@ -4,6 +4,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { ALERTS_EVENTS } from '@shared/ipc/misc/alerts.channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { alertKeys } from '../api/queryKeys';
@@ -13,12 +15,12 @@ export function useAlertEvents() {
   const queryClient = useQueryClient();
   const addNotification = useAlertStore((s) => s.addNotification);
 
-  useIpcEvent('event:alert.triggered', ({ alertId, message }) => {
+  useIpcEvent(ALERTS_EVENTS.ALERT.TRIGGERED, ({ alertId, message }) => {
     addNotification({ alertId, message });
     void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
   });
 
-  useIpcEvent('event:alert.changed', () => {
+  useIpcEvent(ALERTS_EVENTS.ALERT.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
   });
 }

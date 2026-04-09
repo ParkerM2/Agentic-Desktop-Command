@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { SETTINGS } from '@shared/ipc/settings/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { settingsKeys } from './useSettings';
@@ -12,7 +14,7 @@ import { settingsKeys } from './useSettings';
 export function useWebhookConfig() {
   return useQuery({
     queryKey: settingsKeys.webhookConfig(),
-    queryFn: () => ipc('settings.getWebhookConfig', {}),
+    queryFn: () => ipc(SETTINGS.GET['WEBHOOK-CONFIG'], {}),
     staleTime: 60_000,
   });
 }
@@ -25,7 +27,7 @@ export function useUpdateWebhookConfig() {
     mutationFn: (data: {
       slack?: { botToken?: string; signingSecret?: string };
       github?: { webhookSecret?: string };
-    }) => ipc('settings.updateWebhookConfig', data),
+    }) => ipc(SETTINGS.UPDATE['WEBHOOK-CONFIG'], data),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: settingsKeys.webhookConfig(),

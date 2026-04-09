@@ -5,6 +5,8 @@
  * Service methods are synchronous — handlers wrap returns with Promise.resolve().
  */
 
+import { VISUALIZATION } from '@shared/ipc/visualization/channels';
+
 import type { ProjectService } from '../../services/project/project-service';
 import type { VisualizationService } from '../../services/visualization';
 import type { IpcRouter } from '../router';
@@ -14,7 +16,7 @@ export function registerVisualizationHandlers(
   visualizationService: VisualizationService,
   projectService: ProjectService,
 ): void {
-  router.handle('visualization.getCodebaseGraph', ({ projectId }) => {
+  router.handle(VISUALIZATION.GET['CODEBASE-GRAPH'], ({ projectId }) => {
     const projectPath = projectService.getProjectPath(projectId);
     if (projectPath === undefined) {
       throw new Error(`Project not found: ${projectId}`);
@@ -22,7 +24,7 @@ export function registerVisualizationHandlers(
     return Promise.resolve(visualizationService.getCodebaseGraph(projectPath));
   });
 
-  router.handle('visualization.getAgentTeams', ({ projectId }) => {
+  router.handle(VISUALIZATION.GET['AGENT-TEAMS'], ({ projectId }) => {
     const projectPath = projectService.getProjectPath(projectId);
     if (projectPath === undefined) {
       throw new Error(`Project not found: ${projectId}`);
@@ -30,7 +32,7 @@ export function registerVisualizationHandlers(
     return Promise.resolve(visualizationService.getAgentTeams(projectPath));
   });
 
-  router.handle('visualization.getSessionLog', ({ projectId, feature, agentName, cursor }) => {
+  router.handle(VISUALIZATION.GET['SESSION-LOG'], ({ projectId, feature, agentName, cursor }) => {
     const projectPath = projectService.getProjectPath(projectId);
     if (projectPath === undefined) {
       throw new Error(`Project not found: ${projectId}`);

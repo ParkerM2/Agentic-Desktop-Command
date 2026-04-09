@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ALERTS } from '@shared/ipc/misc/alerts.channels';
 import type { RecurringConfig, AlertLinkedTo } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { alertKeys } from './queryKeys';
 export function useAlerts(includeExpired = false) {
   return useQuery({
     queryKey: alertKeys.list(includeExpired),
-    queryFn: () => ipc('alerts.list', { includeExpired }),
+    queryFn: () => ipc(ALERTS.LIST.ALL, { includeExpired }),
     staleTime: 30_000,
   });
 }
@@ -29,7 +30,7 @@ export function useCreateAlert() {
       triggerAt: string;
       recurring?: RecurringConfig;
       linkedTo?: AlertLinkedTo;
-    }) => ipc('alerts.create', data),
+    }) => ipc(ALERTS.CREATE.ALERT, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
     },
@@ -40,7 +41,7 @@ export function useCreateAlert() {
 export function useDismissAlert() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('alerts.dismiss', { id }),
+    mutationFn: (id: string) => ipc(ALERTS.DISMISS.ALERT, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
     },
@@ -51,7 +52,7 @@ export function useDismissAlert() {
 export function useDeleteAlert() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('alerts.delete', { id }),
+    mutationFn: (id: string) => ipc(ALERTS.DELETE.ALERT, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
     },

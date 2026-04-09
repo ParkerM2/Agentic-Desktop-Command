@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+
 import { WORKSPACES } from './workspaces.channels';
 
 export const WorkspaceSettingsSchema = z.object({

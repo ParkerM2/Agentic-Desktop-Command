@@ -14,6 +14,8 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Check, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 
+import { PROJECTS } from '@shared/ipc/projects/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -64,12 +66,12 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
   const { data: workspaces } = useWorkspaces();
 
   const selectDirectory = useMutation({
-    mutationFn: () => ipc('projects.selectDirectory', {}),
+    mutationFn: () => ipc(PROJECTS.SELECT.DIRECTORY, {}),
   });
 
   const detection = useQuery({
     queryKey: ['projects', 'detectRepo', selectedPath],
-    queryFn: () => ipc('projects.detectRepo', { path: selectedPath ?? '' }),
+    queryFn: () => ipc(PROJECTS.DETECT.REPO, { path: selectedPath ?? '' }),
     enabled: selectedPath !== null && step >= 1,
     staleTime: 300_000,
   });

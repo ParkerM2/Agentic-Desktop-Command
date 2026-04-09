@@ -9,6 +9,8 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { DASHBOARD_EVENTS } from '@shared/ipc/dashboard/channels';
+
 import type { ReinitializableService } from '@main/services/data-management';
 
 import type { IpcRouter } from '../../ipc/router';
@@ -62,7 +64,7 @@ export function createDashboardService(deps: {
   }
 
   function emitChanged(captureId: string): void {
-    deps.router.emit('event:dashboard.captureChanged', { captureId });
+    deps.router.emit(DASHBOARD_EVENTS.CAPTURE.CHANGED, { captureId });
   }
 
   return {

@@ -6,6 +6,8 @@
 
 import { useEffect } from 'react';
 
+import { AUTH } from '@shared/ipc/auth/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { useForceLogout } from '../api/useAuth';
@@ -42,7 +44,7 @@ export function useTokenRefresh(): void {
 
     const refresh = async (): Promise<void> => {
       try {
-        const result = await ipc('auth.refresh', { refreshToken });
+        const result = await ipc(AUTH.REFRESH.TOKEN, { refreshToken });
         updateTokens(result.tokens);
         setExpiresAt(Date.now() + result.tokens.expiresIn * 1000);
       } catch {

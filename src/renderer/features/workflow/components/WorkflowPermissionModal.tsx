@@ -14,6 +14,8 @@ import { useCallback, useState } from 'react';
 
 import { Bell } from 'lucide-react';
 
+import { WORKFLOW_EVENTS } from '@shared/ipc/workflow/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { Button } from '@ui/button';
@@ -36,7 +38,7 @@ interface PermissionRequest {
 export function WorkflowPermissionModal() {
   const [queue, setQueue] = useState<PermissionRequest[]>([]);
 
-  useIpcEvent('event:workflow.permission', (payload) => {
+  useIpcEvent(WORKFLOW_EVENTS.WORKFLOW.PERMISSION, (payload) => {
     const request: PermissionRequest = {
       id: `perm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       ticket: payload.ticket,

@@ -12,6 +12,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { Terminal as XTerm } from '@xterm/xterm';
 
+import { TERMINALS, TERMINALS_EVENTS } from '@shared/ipc/terminals/channels';
 import type { TerminalSession } from '@shared/types';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
@@ -99,7 +100,7 @@ export function TerminalInstance({ session, isActive }: TerminalInstanceProps) {
 
     // Send user input to main process
     term.onData((data) => {
-      void ipc('terminals.sendInput', { sessionId: session.id, data });
+      void ipc(TERMINALS.SEND.INPUT, { sessionId: session.id, data });
     });
 
     xtermRef.current = term;
@@ -121,7 +122,7 @@ export function TerminalInstance({ session, isActive }: TerminalInstanceProps) {
         fitAddonRef.current?.fit();
         const term = xtermRef.current;
         if (term) {
-          void ipc('terminals.resize', {
+          void ipc(TERMINALS.RESIZE.SESSION, {
             sessionId: session.id,
             cols: term.cols,
             rows: term.rows,
@@ -151,14 +152,14 @@ export function TerminalInstance({ session, isActive }: TerminalInstanceProps) {
   }, [colorTheme, mode]);
 
   // Receive output from main process
-  useIpcEvent('event:terminal.output', ({ sessionId, data }) => {
+  useIpcEvent(TERMINALS_EVENTS.TERMINAL.OUTPUT, ({ sessionId, data }) => {
     if (sessionId === session.id && xtermRef.current) {
       xtermRef.current.write(data);
     }
   });
 
   // Handle terminal title changes
-  useIpcEvent('event:terminal.titleChanged', ({ sessionId: _sessionId, title: _title }) => {
+  useIpcEvent(TERMINALS_EVENTS.TERMINAL['TITLE-CHANGED'], ({ sessionId: _sessionId, title: _title }) => {
     // Could update tab title through store if needed
   });
 

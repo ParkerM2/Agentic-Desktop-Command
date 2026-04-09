@@ -9,6 +9,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
@@ -21,7 +22,7 @@ export function useAgentDashboardEvents() {
   // ── Session lifecycle ──
 
   /** New session spawned or detected -> refresh session list */
-  useIpcEvent('event:agent-dashboard.sessionStarted', (session) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION.STARTED, (session) => {
     void queryClient.invalidateQueries({
       queryKey: agentDashboardKeys.sessions(),
     });
@@ -31,7 +32,7 @@ export function useAgentDashboardEvents() {
   });
 
   /** Session ended -> refresh session list and detail */
-  useIpcEvent('event:agent-dashboard.sessionEnded', (payload) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION.ENDED, (payload) => {
     void queryClient.invalidateQueries({
       queryKey: agentDashboardKeys.sessions(),
     });
@@ -41,7 +42,7 @@ export function useAgentDashboardEvents() {
   });
 
   /** Session status changed -> refresh that session's detail */
-  useIpcEvent('event:agent-dashboard.statusChanged', (payload) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED'], (payload) => {
     void queryClient.invalidateQueries({
       queryKey: agentDashboardKeys.sessions(),
     });
@@ -53,14 +54,14 @@ export function useAgentDashboardEvents() {
   // ── Team membership ──
 
   /** Teammate joined -> refresh session list */
-  useIpcEvent('event:agent-dashboard.teammateJoined', (_member) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.TEAMMATE.JOINED, (_member) => {
     void queryClient.invalidateQueries({
       queryKey: agentDashboardKeys.sessions(),
     });
   });
 
   /** Teammate left -> refresh session list */
-  useIpcEvent('event:agent-dashboard.teammateLeft', (_payload) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.TEAMMATE.LEFT, (_payload) => {
     void queryClient.invalidateQueries({
       queryKey: agentDashboardKeys.sessions(),
     });
@@ -69,7 +70,7 @@ export function useAgentDashboardEvents() {
   // ── Messages ──
 
   /** New message received -> append to that session's message cache */
-  useIpcEvent('event:agent-dashboard.messageReceived', (message) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED, (message) => {
     queryClient.setQueryData<AgentChatMessage[]>(
       agentDashboardKeys.messages(message.agentId),
       (old) => {

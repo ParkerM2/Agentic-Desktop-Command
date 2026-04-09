@@ -12,6 +12,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
+
 import { appLogger } from '../lib/logger';
 
 import type { IpcRouter } from '../ipc/router';
@@ -241,7 +243,7 @@ export function wireEventForwarding(deps: EventWiringDeps): void {
   // ─── Watch evaluator → assistant response notifications ─────
   watchEvaluator.onTrigger((watch) => {
     const description = watch.followUp ?? `${watch.type} watch on ${watch.targetId}`;
-    router.emit('event:assistant.response', {
+    router.emit(ASSISTANT_EVENTS.MESSAGE.RESPONSE, {
       content: `Watch triggered: ${description}`,
       type: 'text',
     });

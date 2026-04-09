@@ -11,6 +11,8 @@ import type { ErrorInfo, ReactNode } from 'react';
 
 import { AlertOctagon, ArrowLeft, ClipboardCopy, RotateCcw } from 'lucide-react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 // ─── Types ─────────────────────────────────────────────────────
 
 interface RouteErrorBoundaryProps {
@@ -48,7 +50,7 @@ export class RouteErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    void window.api.invoke('app.reportRendererError', {
+    void window.api.invoke(APP.REPORT['RENDERER-ERROR'], {
       severity: 'error',
       tier: 'app',
       category: 'renderer',

@@ -7,13 +7,15 @@
 
 import { useCallback, useState } from 'react';
 
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 export function useSessionThinking(sessionId: string | null): boolean {
   const [isThinking, setIsThinking] = useState(false);
 
   useIpcEvent(
-    'event:agent-dashboard.statusChanged',
+    AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED'],
     useCallback(
       (payload: { sessionId: string; newStatus: string }) => {
         if (payload.sessionId !== sessionId) return;

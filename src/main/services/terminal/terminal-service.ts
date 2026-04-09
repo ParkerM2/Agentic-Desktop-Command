@@ -11,7 +11,9 @@ import { platform } from 'node:os';
 
 import * as pty from '@lydell/node-pty';
 
+import { TERMINALS_EVENTS } from '@shared/ipc/terminals/channels';
 import type { TerminalSession } from '@shared/types';
+
 
 import type { IpcRouter } from '../../ipc/router';
 
@@ -122,7 +124,7 @@ export function createTerminalService(router: IpcRouter): TerminalService {
 
       // Pipe PTY output → renderer via IPC event
       ptyProcess.onData((data: string) => {
-        router.emit('event:terminal.output', {
+        router.emit(TERMINALS_EVENTS.TERMINAL.OUTPUT, {
           sessionId: id,
           data,
         });
@@ -133,7 +135,7 @@ export function createTerminalService(router: IpcRouter): TerminalService {
         (
           ptyProcess as unknown as { onTitleChange: (cb: (title: string) => void) => void }
         ).onTitleChange((title: string) => {
-          router.emit('event:terminal.titleChanged', {
+          router.emit(TERMINALS_EVENTS.TERMINAL['TITLE-CHANGED'], {
             sessionId: id,
             title,
           });
@@ -143,7 +145,7 @@ export function createTerminalService(router: IpcRouter): TerminalService {
       // Handle PTY exit
       ptyProcess.onExit(({ exitCode: _exitCode }) => {
         processes.delete(id);
-        router.emit('event:terminal.closed', { sessionId: id });
+        router.emit(TERMINALS_EVENTS.TERMINAL.CLOSED, { sessionId: id });
       });
 
       processes.set(id, { session, pty: ptyProcess });
@@ -159,7 +161,7 @@ export function createTerminalService(router: IpcRouter): TerminalService {
         // Already dead
       }
       processes.delete(sessionId);
-      router.emit('event:terminal.closed', { sessionId });
+      router.emit(TERMINALS_EVENTS.TERMINAL.CLOSED, { sessionId });
       return { success: true };
     },
 

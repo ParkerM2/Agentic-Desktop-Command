@@ -12,7 +12,9 @@ import { join } from 'node:path';
 
 import { app } from 'electron';
 
+import { BRIEFING_EVENTS } from '@shared/ipc/briefing/channels';
 import type { BriefingConfig, DailyBriefing, Suggestion } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -30,7 +32,7 @@ import type { TaskService } from '../project/task-service';
 
 const BRIEFING_FILE = 'briefings.json';
 const CONFIG_FILE = 'briefing-config.json';
-const BRIEFING_READY_EVENT = 'event:briefing.ready' as const;
+const BRIEFING_READY_EVENT = BRIEFING_EVENTS.BRIEFING.READY;
 
 /** Briefing service interface */
 export interface BriefingService extends ReinitializableService {

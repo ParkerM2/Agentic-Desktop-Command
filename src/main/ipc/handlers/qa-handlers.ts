@@ -5,6 +5,8 @@
  * Bridges QA session events to IPC events for real-time UI updates.
  */
 
+import { QA, QA_EVENTS } from '@shared/ipc/qa/channels';
+
 import { createThrottle } from '../throttle';
 
 import type { AgentOrchestrator } from '../../services/agent-orchestrator/types';
@@ -44,14 +46,14 @@ export function registerQaHandlers(
   // Wire QA session events to IPC events for the renderer
   qaRunner.onSessionEvent((event) => {
     if (event.type === 'started') {
-      router.emit('event:qa.started', {
+      router.emit(QA_EVENTS.SESSION.STARTED, {
         taskId: event.session.taskId,
         mode: event.session.mode,
       });
     }
 
     if (event.type === 'progress' && event.step && event.total !== undefined && event.current !== undefined) {
-      router.emit('event:qa.progress', {
+      router.emit(QA_EVENTS.SESSION.PROGRESS, {
         taskId: event.session.taskId,
         step: event.step,
         total: event.total,
@@ -60,7 +62,7 @@ export function registerQaHandlers(
     }
 
     if (event.type === 'completed') {
-      router.emit('event:qa.completed', {
+      router.emit(QA_EVENTS.SESSION.COMPLETED, {
         taskId: event.session.taskId,
         result: event.session.report?.result ?? 'fail',
         issueCount: event.session.report?.issues.length ?? 0,
@@ -68,7 +70,7 @@ export function registerQaHandlers(
     }
   });
 
-  router.handle('qa.startQuiet', async ({ taskId }) => {
+  router.handle(QA.START.QUIET, async ({ taskId }) => {
     const agentSession = orchestrator.getSessionByTaskId(taskId);
     const projectPath = agentSession?.projectPath ?? '';
 
@@ -87,7 +89,7 @@ export function registerQaHandlers(
     return { sessionId: session.id };
   });
 
-  router.handle('qa.startFull', async ({ taskId }) => {
+  router.handle(QA.START.FULL, async ({ taskId }) => {
     if (!allowFullQa()) {
       throw new Error('Too many requests. Please wait.');
     }
@@ -110,17 +112,17 @@ export function registerQaHandlers(
     return { sessionId: session.id };
   });
 
-  router.handle('qa.getReport', ({ taskId }) => {
+  router.handle(QA.GET.REPORT, ({ taskId }) => {
     const report = qaRunner.getReportForTask(taskId);
     return Promise.resolve(report ?? null);
   });
 
-  router.handle('qa.getSession', ({ taskId }) => {
+  router.handle(QA.GET.SESSION, ({ taskId }) => {
     const session = qaRunner.getSessionByTaskId(taskId);
     return Promise.resolve(session ?? null);
   });
 
-  router.handle('qa.cancel', ({ sessionId }) => {
+  router.handle(QA.CANCEL.SESSION, ({ sessionId }) => {
     qaRunner.cancel(sessionId);
     return Promise.resolve({ success: true });
   });

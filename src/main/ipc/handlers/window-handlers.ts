@@ -8,10 +8,12 @@
 
 import { BrowserWindow } from 'electron';
 
+import { WINDOW } from '@shared/ipc/window/channels';
+
 import type { IpcRouter } from '../router';
 
 export function registerWindowHandlers(router: IpcRouter): void {
-  router.handle('window.minimize', () => {
+  router.handle(WINDOW.MINIMIZE.APP, () => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       win.minimize();
@@ -19,7 +21,7 @@ export function registerWindowHandlers(router: IpcRouter): void {
     return Promise.resolve({ success: true });
   });
 
-  router.handle('window.maximize', () => {
+  router.handle(WINDOW.MAXIMIZE.APP, () => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       if (win.isMaximized()) {
@@ -31,7 +33,7 @@ export function registerWindowHandlers(router: IpcRouter): void {
     return Promise.resolve({ success: true });
   });
 
-  router.handle('window.close', () => {
+  router.handle(WINDOW.CLOSE.APP, () => {
     const win = BrowserWindow.getFocusedWindow();
     if (win) {
       win.close();
@@ -39,7 +41,7 @@ export function registerWindowHandlers(router: IpcRouter): void {
     return Promise.resolve({ success: true });
   });
 
-  router.handle('window.isMaximized', () => {
+  router.handle(WINDOW.CHECK.MAXIMIZED, () => {
     const win = BrowserWindow.getFocusedWindow();
     return Promise.resolve({ isMaximized: win?.isMaximized() ?? false });
   });

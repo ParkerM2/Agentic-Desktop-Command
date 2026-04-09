@@ -7,6 +7,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { HUB_TASKS } from '@shared/ipc/tasks/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -18,7 +20,7 @@ export function useUpdateTaskDescription() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId, description }: { taskId: string; description: string }) =>
-      ipc('hub.tasks.update', { taskId, description }),
+      ipc(HUB_TASKS.UPDATE.TASK, { taskId, description }),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.taskId) });
@@ -33,7 +35,7 @@ export function useUpdateTaskPlan() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId, planContent }: { taskId: string; planContent: string }) =>
-      ipc('hub.tasks.update', { taskId, metadata: { planContent } }),
+      ipc(HUB_TASKS.UPDATE.TASK, { taskId, metadata: { planContent } }),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.taskId) });

@@ -8,8 +8,8 @@ import type { EventChannel, EventPayload } from '@shared/ipc-contract';
 
 import { useIpcEvent } from './useIpcEvent';
 
-/** Extract only hub-prefixed event channels */
-type HubEventChannel = Extract<EventChannel, `event:hub.${string}`>;
+/** Extract only hub-prefixed event channels (includes hub-tasks) */
+type HubEventChannel = Extract<EventChannel, `event:hub.${string}` | `event:hub-tasks.${string}`>;
 
 /** Subscribe to a Hub event with typed payload */
 export function useHubEvent<T extends HubEventChannel>(

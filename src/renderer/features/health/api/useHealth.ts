@@ -7,6 +7,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { APP } from '@shared/ipc/app/channels';
 import type { ErrorCategory, ErrorSeverity, ErrorTier } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -17,7 +18,7 @@ import { healthKeys } from './queryKeys';
 export function useErrorLog(since?: string) {
   return useQuery({
     queryKey: healthKeys.errorLog(since),
-    queryFn: () => ipc('app.getErrorLog', { since }),
+    queryFn: () => ipc(APP.GET['ERROR-LOG'], { since }),
     staleTime: 10_000,
   });
 }
@@ -26,7 +27,7 @@ export function useErrorLog(since?: string) {
 export function useErrorStats() {
   return useQuery({
     queryKey: healthKeys.errorStats(),
-    queryFn: () => ipc('app.getErrorStats', {}),
+    queryFn: () => ipc(APP.GET['ERROR-STATS'], {}),
     staleTime: 10_000,
   });
 }
@@ -35,7 +36,7 @@ export function useErrorStats() {
 export function useHealthStatus() {
   return useQuery({
     queryKey: healthKeys.status(),
-    queryFn: () => ipc('app.getHealthStatus', {}),
+    queryFn: () => ipc(APP.GET['HEALTH-STATUS'], {}),
     staleTime: 15_000,
   });
 }
@@ -44,7 +45,7 @@ export function useHealthStatus() {
 export function useClearErrorLog() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('app.clearErrorLog', {}),
+    mutationFn: () => ipc(APP.CLEAR['ERROR-LOG'], {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: healthKeys.errorLog() });
       void queryClient.invalidateQueries({ queryKey: healthKeys.errorStats() });
@@ -64,6 +65,6 @@ export function useReportError() {
       route?: string;
       routeHistory?: string[];
       projectId?: string;
-    }) => ipc('app.reportRendererError', input),
+    }) => ipc(APP.REPORT['RENDERER-ERROR'], input),
   });
 }

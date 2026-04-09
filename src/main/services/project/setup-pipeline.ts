@@ -9,7 +9,9 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
+import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
 import type { CodebaseAnalysis, CreateProjectInput, SetupStepStatus } from '@shared/types';
+
 
 import { serviceLogger } from '@main/lib/logger';
 
@@ -183,7 +185,7 @@ export function createSetupPipeline(deps: SetupPipelineDeps): SetupPipelineServi
         steps.find((s) => s.status === 'running') ??
         [...steps].reverse().find((s) => s.status !== 'pending');
 
-      router.emit('event:project.setupProgress', {
+      router.emit(PROJECTS_EVENTS.SETUP.PROGRESS, {
         projectId,
         currentStep: currentStep?.id ?? steps[0].id,
         steps: steps.map((s) => ({

@@ -5,6 +5,8 @@
  * Services subscribe to these events to reinitialize with user-scoped paths.
  */
 
+import { AUTH_EVENTS } from '@shared/ipc/auth/channels';
+
 import type { IpcRouter } from '@main/ipc/router';
 
 export interface UserSession {
@@ -40,13 +42,13 @@ export function createUserSessionManager(router: IpcRouter): UserSessionManager 
 
     setSession(session) {
       currentSession = session;
-      router.emit('event:user.sessionChanged', { userId: session.userId, email: session.email });
+      router.emit(AUTH_EVENTS.SESSION.CHANGED, { userId: session.userId, email: session.email });
       notifyListeners();
     },
 
     clearSession() {
       currentSession = null;
-      router.emit('event:user.sessionChanged', { userId: null, email: null });
+      router.emit(AUTH_EVENTS.SESSION.CHANGED, { userId: null, email: null });
       notifyListeners();
     },
 

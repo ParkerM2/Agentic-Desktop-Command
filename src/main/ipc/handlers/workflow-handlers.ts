@@ -7,6 +7,9 @@
  * Launches Claude CLI sessions for task execution.
  */
 
+import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import { WORKFLOW, WORKFLOW_EVENTS } from '@shared/ipc/workflow/channels';
+
 import { createJsonlWatcher } from '../../services/workflow/jsonl-watcher';
 import { createProgressSyncer } from '../../services/workflow/progress-syncer';
 import { createProgressWatcher } from '../../services/workflow/progress-watcher';
@@ -30,7 +33,7 @@ export function registerWorkflowHandlers(
   hubApiClient: HubApiClient,
   taskLauncher: TaskLauncherService,
 ): void {
-  router.handle('workflow.watchProgress', ({ projectPath }) => {
+  router.handle(WORKFLOW.WATCH.PROGRESS, ({ projectPath }) => {
     // Stop existing watchers for this path if any
     const existing = activeWatchers.get(projectPath);
     if (existing) {
@@ -46,7 +49,7 @@ export function registerWorkflowHandlers(
       void syncer.syncProgress(data.taskId, data);
     });
     legacyWatcher.onProgress((data) => {
-      router.emit('event:task.progressUpdated', {
+      router.emit(TASKS_EVENTS.PROGRESS.UPDATED, {
         taskId: data.taskId,
         progress: {
           phase: data.phase as 'idle' | 'planning' | 'coding' | 'testing' | 'reviewing' | 'complete' | 'error',
@@ -62,7 +65,7 @@ export function registerWorkflowHandlers(
     const jsonlWatcher = createJsonlWatcher(projectPath);
 
     jsonlWatcher.onMilestone((event) => {
-      router.emit('event:workflow.milestone', {
+      router.emit(WORKFLOW_EVENTS.WORKFLOW.MILESTONE, {
         ticket: event.ticket,
         run: event.run,
         event: event.event,
@@ -73,7 +76,7 @@ export function registerWorkflowHandlers(
     });
 
     jsonlWatcher.onContext((ctx) => {
-      router.emit('event:workflow.context', {
+      router.emit(WORKFLOW_EVENTS.WORKFLOW.CONTEXT, {
         ticket: ctx?.ticket ?? null,
         phase: ctx?.phase ?? null,
         runSlug: ctx?.runSlug ?? null,
@@ -81,7 +84,7 @@ export function registerWorkflowHandlers(
     });
 
     jsonlWatcher.onPermission((ticket, agent, message) => {
-      router.emit('event:workflow.permission', { ticket, agent, message });
+      router.emit(WORKFLOW_EVENTS.WORKFLOW.PERMISSION, { ticket, agent, message });
     });
 
     jsonlWatcher.start();
@@ -90,7 +93,7 @@ export function registerWorkflowHandlers(
     return Promise.resolve({ success: true });
   });
 
-  router.handle('workflow.stopWatching', ({ projectPath }) => {
+  router.handle(WORKFLOW.STOP.WATCHING, ({ projectPath }) => {
     const watcher = activeWatchers.get(projectPath);
     if (watcher) {
       watcher.jsonl.stop();
@@ -102,15 +105,15 @@ export function registerWorkflowHandlers(
 
   // ── Task Launcher ──
 
-  router.handle('workflow.launch', ({ taskDescription, projectPath, subProjectPath }) =>
+  router.handle(WORKFLOW.LAUNCH.WORKFLOW, ({ taskDescription, projectPath, subProjectPath }) =>
     Promise.resolve(taskLauncher.launch(taskDescription, projectPath, subProjectPath)),
   );
 
-  router.handle('workflow.isRunning', ({ sessionId }) =>
+  router.handle(WORKFLOW.CHECK.RUNNING, ({ sessionId }) =>
     Promise.resolve({ running: taskLauncher.isRunning(sessionId) }),
   );
 
-  router.handle('workflow.stop', ({ sessionId }) =>
+  router.handle(WORKFLOW.STOP.RUNNING, ({ sessionId }) =>
     Promise.resolve({ stopped: taskLauncher.stop(sessionId) }),
   );
 }

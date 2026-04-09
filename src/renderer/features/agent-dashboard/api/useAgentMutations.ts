@@ -8,6 +8,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -23,7 +25,7 @@ export function useSpawnProjectOwner() {
       prompt: string;
       model?: string;
       name?: string;
-    }) => ipc('agent-dashboard.spawnProjectOwner', input),
+    }) => ipc(AGENT_DASHBOARD.SPAWN['PROJECT-OWNER'], input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: agentDashboardKeys.sessions() });
     },
@@ -42,7 +44,7 @@ export function useSpawnTeamLead() {
       prompt: string;
       model?: string;
       name?: string;
-    }) => ipc('agent-dashboard.spawnTeamLead', input),
+    }) => ipc(AGENT_DASHBOARD.SPAWN['TEAM-LEAD'], input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: agentDashboardKeys.sessions() });
     },
@@ -55,7 +57,7 @@ export function useSendMessage() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (input: { sessionId: string; message: string }) =>
-      ipc('agent-dashboard.sendMessage', input),
+      ipc(AGENT_DASHBOARD.SEND.MESSAGE, input),
     onError: onError('send message'),
   });
 }
@@ -65,7 +67,7 @@ export function useStopSession() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (input: { sessionId: string }) => ipc('agent-dashboard.stopSession', input),
+    mutationFn: (input: { sessionId: string }) => ipc(AGENT_DASHBOARD.STOP.SESSION, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: agentDashboardKeys.sessions() });
     },

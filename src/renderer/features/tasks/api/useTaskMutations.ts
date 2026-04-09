@@ -6,6 +6,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { HUB_TASKS } from '@shared/ipc/tasks/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -17,7 +19,7 @@ export function useUpdateTaskStatus() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId, status }: { taskId: string; status: string }) =>
-      ipc('hub.tasks.updateStatus', {
+      ipc(HUB_TASKS.UPDATE.STATUS, {
         taskId,
         status: status as 'backlog' | 'queued' | 'running' | 'paused' | 'review' | 'done' | 'error',
       }),
@@ -34,7 +36,7 @@ export function useDeleteTask() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId, projectId: _projectId }: { taskId: string; projectId?: string }) =>
-      ipc('hub.tasks.delete', { taskId }),
+      ipc(HUB_TASKS.DELETE.TASK, { taskId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
@@ -48,7 +50,7 @@ export function useExecuteTask() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId, projectId: _projectId }: { taskId: string; projectId?: string }) =>
-      ipc('hub.tasks.execute', { taskId }),
+      ipc(HUB_TASKS.EXECUTE.TASK, { taskId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
@@ -62,7 +64,7 @@ export function useCancelTask() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ taskId, reason }: { taskId: string; reason?: string }) =>
-      ipc('hub.tasks.cancel', { taskId, reason }),
+      ipc(HUB_TASKS.CANCEL.TASK, { taskId, reason }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },

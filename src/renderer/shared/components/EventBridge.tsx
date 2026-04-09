@@ -15,6 +15,13 @@ import { useEffect } from 'react';
 
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
+import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
+import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
+import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
+import { WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
 
@@ -66,50 +73,50 @@ const WORKFLOW_ENGINE = ['workflow-engine'] as const;
 
 const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   // Progress pipeline events
-  'event:progress.taskCreated': { keys: [PROGRESS_LIST] },
-  'event:progress.taskUpdated': { keys: [PROGRESS_LIST, ['progress', 'detail']] },
-  'event:progress.taskArchived': { keys: [PROGRESS_LIST, ['progress', 'archived']] },
-  'event:progress.actionStarted': { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
-  'event:progress.actionCompleted': { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
-  'event:progress.actionFailed': { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
-  'event:progress.workflowStep': { keys: [PROGRESS_LIST] },
+  [PROGRESS_EVENTS.TASK.CREATED]: { keys: [PROGRESS_LIST] },
+  [PROGRESS_EVENTS.TASK.UPDATED]: { keys: [PROGRESS_LIST, ['progress', 'detail']] },
+  [PROGRESS_EVENTS.TASK.ARCHIVED]: { keys: [PROGRESS_LIST, ['progress', 'archived']] },
+  [PROGRESS_EVENTS.ACTION.STARTED]: { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
+  [PROGRESS_EVENTS.ACTION.COMPLETED]: { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
+  [PROGRESS_EVENTS.ACTION.FAILED]: { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
+  [PROGRESS_EVENTS.WORKFLOW.STEP]: { keys: [PROGRESS_LIST] },
 
   // Hub entity events
-  'event:hub.tasks.created': { keys: [TASKS] },
-  'event:hub.tasks.updated': { keys: [TASKS] },
-  'event:hub.tasks.deleted': { keys: [TASKS] },
-  'event:hub.tasks.completed': { keys: [TASKS] },
-  'event:hub.tasks.progress': { keys: [TASKS] },
-  'event:hub.devices.online': { keys: [['devices']] },
-  'event:hub.devices.offline': { keys: [['devices']] },
-  'event:hub.workspaces.updated': { keys: [['workspaces']] },
-  'event:hub.projects.updated': { keys: [['projects']] },
-  'event:hub.connectionChanged': { keys: [['hub', 'status']] },
+  [HUB_TASKS_EVENTS.TASK.CREATED]: { keys: [TASKS] },
+  [HUB_TASKS_EVENTS.TASK.UPDATED]: { keys: [TASKS] },
+  [HUB_TASKS_EVENTS.TASK.DELETED]: { keys: [TASKS] },
+  [HUB_TASKS_EVENTS.TASK_RUN.COMPLETED]: { keys: [TASKS] },
+  [HUB_TASKS_EVENTS.PROGRESS.UPDATED]: { keys: [TASKS] },
+  [HUB_EVENTS.DEVICE.ONLINE]: { keys: [['devices']] },
+  [HUB_EVENTS.DEVICE.OFFLINE]: { keys: [['devices']] },
+  [HUB_EVENTS.WORKSPACE.UPDATED]: { keys: [['workspaces']] },
+  [HUB_EVENTS.PROJECT.UPDATED]: { keys: [['projects']] },
+  [HUB_EVENTS.CONNECTION.CHANGED]: { keys: [['hub', 'status']] },
 
   // Agent dashboard events
-  'event:agent-dashboard.sessionStarted': { keys: [AGENT_SESSIONS] },
-  'event:agent-dashboard.sessionEnded': { keys: [AGENT_SESSIONS] },
-  'event:agent-dashboard.statusChanged': { keys: [AGENT_SESSIONS] },
-  'event:agent-dashboard.messageReceived': { keys: [['agent-messages']], handler: 'append' },
+  [AGENT_DASHBOARD_EVENTS.SESSION.STARTED]: { keys: [AGENT_SESSIONS] },
+  [AGENT_DASHBOARD_EVENTS.SESSION.ENDED]: { keys: [AGENT_SESSIONS] },
+  [AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED']]: { keys: [AGENT_SESSIONS] },
+  [AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED]: { keys: [['agent-messages']], handler: 'append' },
 
   // Workspace events
-  'event:workspace.sessionReady': { keys: [WORKSPACE_SESSIONS] },
-  'event:workspace.sessionCrashed': { keys: [WORKSPACE_SESSIONS] },
-  'event:workspace.sessionRestarted': { keys: [WORKSPACE_SESSIONS] },
-  'event:workspace.planHandedOff': { keys: [WORKSPACE_SESSIONS] },
+  [WORKSPACE_EVENTS.SESSION.READY]: { keys: [WORKSPACE_SESSIONS] },
+  [WORKSPACE_EVENTS.SESSION.CRASHED]: { keys: [WORKSPACE_SESSIONS] },
+  [WORKSPACE_EVENTS.SESSION.RESTARTED]: { keys: [WORKSPACE_SESSIONS] },
+  [WORKSPACE_EVENTS.PLAN['HANDED-OFF']]: { keys: [WORKSPACE_SESSIONS] },
 
   // Workflow template events
-  'event:workflowTemplates.created': { keys: [WORKFLOW_TEMPLATES] },
-  'event:workflowTemplates.updated': { keys: [WORKFLOW_TEMPLATES] },
-  'event:workflowTemplates.deleted': { keys: [WORKFLOW_TEMPLATES] },
+  [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.CREATED]: { keys: [WORKFLOW_TEMPLATES] },
+  [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.UPDATED]: { keys: [WORKFLOW_TEMPLATES] },
+  [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.DELETED]: { keys: [WORKFLOW_TEMPLATES] },
 
   // Workflow engine events
-  'event:workflow-engine.stateChanged': { keys: [WORKFLOW_ENGINE] },
-  'event:workflow-engine.completed': { keys: [WORKFLOW_ENGINE] },
-  'event:workflow-engine.error': { keys: [WORKFLOW_ENGINE] },
+  [WORKFLOW_ENGINE_EVENTS.STATE.CHANGED]: { keys: [WORKFLOW_ENGINE] },
+  [WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED]: { keys: [WORKFLOW_ENGINE] },
+  [WORKFLOW_ENGINE_EVENTS.RUN.ERROR]: { keys: [WORKFLOW_ENGINE] },
 
   // Task status events
-  'event:task.statusChanged': { keys: [TASKS] },
+  [TASKS_EVENTS.STATUS.CHANGED]: { keys: [TASKS] },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -119,7 +126,7 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
  * Each event channel that uses `handler: 'append'` needs a case here.
  */
 function handleAppend(queryClient: QueryClient, event: EventChannel, payload: unknown) {
-  if (event === 'event:agent-dashboard.messageReceived') {
+  if (event === AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED) {
     const message = payload as AgentChatMessage;
 
     // Only extract previews from assistant messages

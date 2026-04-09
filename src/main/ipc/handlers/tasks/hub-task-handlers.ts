@@ -4,6 +4,8 @@
  * These proxy to the TaskRepository (local-first with Hub mirror).
  */
 
+import { HUB_TASKS } from '@shared/ipc/tasks/channels';
+
 import type { TaskRepository } from '../../../services/tasks/types';
 import type { IpcRouter } from '../../router';
 
@@ -11,15 +13,15 @@ export function registerHubTaskHandlers(
   router: IpcRouter,
   taskRepository: TaskRepository,
 ): void {
-  router.handle('hub.tasks.list', async ({ projectId, workspaceId }) => {
+  router.handle(HUB_TASKS.LIST.ALL, async ({ projectId, workspaceId }) => {
     return await taskRepository.listTasks({ projectId, workspaceId });
   });
 
-  router.handle('hub.tasks.get', async ({ taskId }) => {
+  router.handle(HUB_TASKS.GET.TASK, async ({ taskId }) => {
     return await taskRepository.getTask(taskId);
   });
 
-  router.handle('hub.tasks.create', async ({ projectId, workspaceId, title, description, priority, metadata }) => {
+  router.handle(HUB_TASKS.CREATE.TASK, async ({ projectId, workspaceId, title, description, priority, metadata }) => {
     return await taskRepository.createTask({
       projectId,
       workspaceId,
@@ -33,7 +35,7 @@ export function registerHubTaskHandlers(
     });
   });
 
-  router.handle('hub.tasks.update', async ({ taskId, title, description, status, priority, metadata }) => {
+  router.handle(HUB_TASKS.UPDATE.TASK, async ({ taskId, title, description, status, priority, metadata }) => {
     return await taskRepository.updateTask(taskId, {
       title,
       description,
@@ -43,19 +45,19 @@ export function registerHubTaskHandlers(
     });
   });
 
-  router.handle('hub.tasks.updateStatus', async ({ taskId, status }) => {
+  router.handle(HUB_TASKS.UPDATE.STATUS, async ({ taskId, status }) => {
     return await taskRepository.updateTaskStatus(taskId, status);
   });
 
-  router.handle('hub.tasks.delete', async ({ taskId }) => {
+  router.handle(HUB_TASKS.DELETE.TASK, async ({ taskId }) => {
     return await taskRepository.deleteTask(taskId);
   });
 
-  router.handle('hub.tasks.execute', async ({ taskId }) => {
+  router.handle(HUB_TASKS.EXECUTE.TASK, async ({ taskId }) => {
     return await taskRepository.executeTask(taskId);
   });
 
-  router.handle('hub.tasks.cancel', async ({ taskId, reason }) => {
+  router.handle(HUB_TASKS.CANCEL.TASK, async ({ taskId, reason }) => {
     return await taskRepository.cancelTask(taskId, reason);
   });
 }

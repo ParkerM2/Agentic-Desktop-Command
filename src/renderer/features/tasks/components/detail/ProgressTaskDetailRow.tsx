@@ -14,6 +14,8 @@ import { ChevronDown } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+import { PROGRESS } from '@shared/ipc/progress/channels';
+import { WORKSPACE } from '@shared/ipc/workspace/channels';
 import type { ProgressTask } from '@shared/types/progress';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -519,7 +521,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
     if (!task.hasResearch && !task.hasPlan) return;
     void (async () => {
       try {
-        const full = await ipc('progress.getTask', { slug: task.slug });
+        const full = await ipc(PROGRESS.GET.TASK, { slug: task.slug });
         if (full) {
           setResearchContent(full.researchContent ?? null);
           setPlanContent(full.planContent ?? null);
@@ -545,7 +547,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   function handleTeamLeadHandoff() {
     if (!activeProjectId) return;
     const planPath = `progress/${task.slug}/plans/plan.md`;
-    void ipc('workspace.handOffPlan', { projectId: activeProjectId, planPath });
+    void ipc(WORKSPACE.HANDOFF.PLAN, { projectId: activeProjectId, planPath });
   }
 
   // Dispatch handler for special actions from dropdowns

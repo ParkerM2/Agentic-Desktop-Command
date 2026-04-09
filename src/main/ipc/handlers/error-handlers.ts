@@ -8,6 +8,7 @@
  * need to converge with the shared contract types.
  */
 
+import { APP } from '@shared/ipc/app/channels';
 import type {
   ErrorContext,
   ErrorEntry,
@@ -42,18 +43,18 @@ export function registerErrorHandlers(
   errorCollector: ErrorCollectorHandler,
   healthRegistry: HealthRegistryHandler,
 ): void {
-  router.handle('app.getErrorLog', ({ since }) =>
+  router.handle(APP.GET['ERROR-LOG'], ({ since }) =>
     Promise.resolve({ entries: errorCollector.getLog(since) }),
   );
 
-  router.handle('app.getErrorStats', () => Promise.resolve(errorCollector.getStats()));
+  router.handle(APP.GET['ERROR-STATS'], () => Promise.resolve(errorCollector.getStats()));
 
-  router.handle('app.clearErrorLog', () => {
+  router.handle(APP.CLEAR['ERROR-LOG'], () => {
     errorCollector.clear();
     return Promise.resolve({ success: true as const });
   });
 
-  router.handle('app.reportRendererError', (input) => {
+  router.handle(APP.REPORT['RENDERER-ERROR'], (input) => {
     const context: ErrorContext = {
       route: input.route,
       routeHistory: input.routeHistory,
@@ -72,5 +73,5 @@ export function registerErrorHandlers(
     return Promise.resolve({ success: true as const });
   });
 
-  router.handle('app.getHealthStatus', () => Promise.resolve(healthRegistry.getStatus()));
+  router.handle(APP.GET['HEALTH-STATUS'], () => Promise.resolve(healthRegistry.getStatus()));
 }

@@ -10,6 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { CheckCircle, Cloud, CloudOff, RefreshCw, X } from 'lucide-react';
 
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -60,7 +62,7 @@ export function HubNotification() {
   }, []);
 
   // Subscribe to hub connection events
-  useIpcEvent('event:hub.connectionChanged', (payload) => {
+  useIpcEvent(HUB_EVENTS.CONNECTION.CHANGED, (payload) => {
     const item: HubNotificationItem = {
       id: `hub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type: 'connection',
@@ -72,7 +74,7 @@ export function HubNotification() {
   });
 
   // Subscribe to hub sync events
-  useIpcEvent('event:hub.syncCompleted', (payload) => {
+  useIpcEvent(HUB_EVENTS.SYNC.COMPLETED, (payload) => {
     const item: HubNotificationItem = {
       id: `hub-sync-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       type: 'sync',

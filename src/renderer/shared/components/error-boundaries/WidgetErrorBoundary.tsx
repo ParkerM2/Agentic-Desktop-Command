@@ -9,6 +9,8 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 // ─── Types ─────────────────────────────────────────────────────
 
 interface WidgetErrorBoundaryProps {
@@ -37,7 +39,7 @@ export class WidgetErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    void window.api.invoke('app.reportRendererError', {
+    void window.api.invoke(APP.REPORT['RENDERER-ERROR'], {
       severity: 'warning',
       tier: 'app',
       category: 'renderer',

@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { HUB } from '@shared/ipc/hub/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 export const hubKeys = {
@@ -16,7 +18,7 @@ export const hubKeys = {
 export function useHubStatus() {
   return useQuery({
     queryKey: hubKeys.status(),
-    queryFn: () => ipc('hub.getStatus', {}),
+    queryFn: () => ipc(HUB.GET.STATUS, {}),
     refetchInterval: 15_000,
   });
 }
@@ -25,7 +27,7 @@ export function useHubStatus() {
 export function useHubConfig() {
   return useQuery({
     queryKey: hubKeys.config(),
-    queryFn: () => ipc('hub.getConfig', {}),
+    queryFn: () => ipc(HUB.GET.CONFIG, {}),
     staleTime: 60_000,
   });
 }
@@ -34,7 +36,7 @@ export function useHubConfig() {
 export function useHubConnect() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { url: string; apiKey: string }) => ipc('hub.connect', data),
+    mutationFn: (data: { url: string; apiKey: string }) => ipc(HUB.CONNECT.SERVER, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
       void queryClient.invalidateQueries({ queryKey: hubKeys.config() });
@@ -46,7 +48,7 @@ export function useHubConnect() {
 export function useHubDisconnect() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('hub.disconnect', {}),
+    mutationFn: () => ipc(HUB.DISCONNECT.SERVER, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
     },
@@ -57,7 +59,7 @@ export function useHubDisconnect() {
 export function useHubSync() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('hub.sync', {}),
+    mutationFn: () => ipc(HUB.SYNC.DATA, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
     },
@@ -68,7 +70,7 @@ export function useHubSync() {
 export function useHubRemoveConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => ipc('hub.removeConfig', {}),
+    mutationFn: () => ipc(HUB.REMOVE.CONFIG, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
       void queryClient.invalidateQueries({ queryKey: hubKeys.config() });

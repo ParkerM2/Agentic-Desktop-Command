@@ -6,6 +6,8 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 
+import { MCP } from '@shared/ipc/misc/mcp.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { communicationsKeys } from './queryKeys';
@@ -27,7 +29,7 @@ export interface McpToolResult {
 export function useMcpToolCall() {
   return useMutation({
     mutationFn: async (params: McpToolCallParams): Promise<McpToolResult> => {
-      return await ipc('mcp.callTool', params);
+      return await ipc(MCP.CALL.TOOL, params);
     },
   });
 }
@@ -38,7 +40,7 @@ export function useMcpToolCall() {
 export function useMcpConnectionState(server: string) {
   return useQuery({
     queryKey: communicationsKeys.mcpConnection(server),
-    queryFn: () => ipc('mcp.getConnectionState', { server }),
+    queryFn: () => ipc(MCP.GET['CONNECTION-STATE'], { server }),
     staleTime: 10_000,
     refetchInterval: 30_000,
   });
@@ -50,7 +52,7 @@ export function useMcpConnectionState(server: string) {
 export function useMcpConnectedServers() {
   return useQuery({
     queryKey: communicationsKeys.mcpConnected(),
-    queryFn: () => ipc('mcp.listConnected', {}),
+    queryFn: () => ipc(MCP.LIST.CONNECTED, {}),
     staleTime: 10_000,
     refetchInterval: 30_000,
   });

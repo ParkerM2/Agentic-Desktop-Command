@@ -5,6 +5,8 @@
  * the communications store with current service statuses.
  */
 
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { useCommunicationsStore } from '../store';
@@ -13,7 +15,7 @@ export function useCommunicationsEvents() {
   const setSlackStatus = useCommunicationsStore((s) => s.setSlackStatus);
   const setDiscordStatus = useCommunicationsStore((s) => s.setDiscordStatus);
 
-  useIpcEvent('event:hub.connectionChanged', ({ status }) => {
+  useIpcEvent(HUB_EVENTS.CONNECTION.CHANGED, ({ status }) => {
     // Hub connection state reflects overall service connectivity
     if (status === 'connected') {
       setSlackStatus('connected');

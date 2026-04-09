@@ -6,6 +6,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { DASHBOARD_EVENTS } from '@shared/ipc/dashboard/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks/useIpcEvent';
 
 import { useAgentEvents } from '@features/agents';
@@ -19,7 +21,7 @@ export function useDashboardEvents() {
   useProjectEvents();
   useAgentEvents();
 
-  useIpcEvent('event:dashboard.captureChanged', () => {
+  useIpcEvent(DASHBOARD_EVENTS.CAPTURE.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
   });
 }

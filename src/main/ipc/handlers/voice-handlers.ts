@@ -2,13 +2,15 @@
  * Voice IPC handlers
  */
 
+import { VOICE } from '@shared/ipc/misc/voice.channels';
+
 import type { VoiceService } from '../../services/voice/voice-service';
 import type { IpcRouter } from '../router';
 
 export function registerVoiceHandlers(router: IpcRouter, service: VoiceService): void {
-  router.handle('voice.getConfig', () => Promise.resolve(service.getConfig()));
+  router.handle(VOICE.GET.CONFIG, () => Promise.resolve(service.getConfig()));
 
-  router.handle('voice.updateConfig', (updates) => Promise.resolve(service.updateConfig(updates)));
+  router.handle(VOICE.UPDATE.CONFIG, (updates) => Promise.resolve(service.updateConfig(updates)));
 
-  router.handle('voice.checkPermission', () => Promise.resolve(service.checkPermission()));
+  router.handle(VOICE.CHECK.PERMISSION, () => Promise.resolve(service.checkPermission()));
 }

@@ -5,6 +5,8 @@
  * return no-op/stub values so the app continues to function.
  */
 
+import { APP_EVENTS } from '@shared/ipc/app/channels';
+
 import { appLogger } from '@main/lib/logger';
 
 import type { IpcRouter } from '../../ipc/router';
@@ -80,7 +82,7 @@ export function createAppUpdateService(router: IpcRouter): AppUpdateService {
       const info = args[0] as { version?: string } | undefined;
       status.version = info?.version;
       appLogger.info('[AppUpdateService] Update available:', status.version ?? 'unknown');
-      router.emit('event:app.updateAvailable', { version: status.version ?? 'unknown' });
+      router.emit(APP_EVENTS.UPDATE.AVAILABLE, { version: status.version ?? 'unknown' });
     });
 
     updater.on('update-not-available', () => {
@@ -99,7 +101,7 @@ export function createAppUpdateService(router: IpcRouter): AppUpdateService {
       const info = args[0] as { version?: string } | undefined;
       status.version = info?.version;
       appLogger.info('[AppUpdateService] Update downloaded:', status.version ?? 'unknown');
-      router.emit('event:app.updateDownloaded', { version: status.version ?? 'unknown' });
+      router.emit(APP_EVENTS.UPDATE.DOWNLOADED, { version: status.version ?? 'unknown' });
     });
 
     updater.on('error', (...args: unknown[]) => {

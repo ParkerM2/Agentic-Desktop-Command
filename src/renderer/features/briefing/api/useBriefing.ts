@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { BRIEFING } from '@shared/ipc/briefing/channels';
 import type { BriefingConfig } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { briefingKeys } from './queryKeys';
 export function useDailyBriefing() {
   return useQuery({
     queryKey: briefingKeys.daily(),
-    queryFn: () => ipc('briefing.getDaily', {}),
+    queryFn: () => ipc(BRIEFING.GET.DAILY, {}),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
@@ -24,7 +25,7 @@ export function useGenerateBriefing() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => ipc('briefing.generate', {}),
+    mutationFn: () => ipc(BRIEFING.GENERATE.DAILY, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: briefingKeys.daily() });
     },
@@ -35,7 +36,7 @@ export function useGenerateBriefing() {
 export function useBriefingConfig() {
   return useQuery({
     queryKey: briefingKeys.config(),
-    queryFn: () => ipc('briefing.getConfig', {}),
+    queryFn: () => ipc(BRIEFING.GET.CONFIG, {}),
   });
 }
 
@@ -44,7 +45,7 @@ export function useUpdateBriefingConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (updates: Partial<BriefingConfig>) => ipc('briefing.updateConfig', updates),
+    mutationFn: (updates: Partial<BriefingConfig>) => ipc(BRIEFING.UPDATE.CONFIG, updates),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: briefingKeys.config() });
     },
@@ -55,7 +56,7 @@ export function useUpdateBriefingConfig() {
 export function useSuggestions() {
   return useQuery({
     queryKey: briefingKeys.suggestions(),
-    queryFn: () => ipc('briefing.getSuggestions', {}),
+    queryFn: () => ipc(BRIEFING.GET.SUGGESTIONS, {}),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 }

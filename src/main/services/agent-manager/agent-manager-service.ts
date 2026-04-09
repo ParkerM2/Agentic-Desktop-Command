@@ -11,6 +11,7 @@
 
 import { randomUUID } from 'node:crypto';
 
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import type {
   AgentChatMessage,
   AgentSession,
@@ -19,6 +20,7 @@ import type {
   AgentTokenUsage,
   StreamJsonEvent,
 } from '@shared/types/agent-dashboard';
+
 
 import { agentLogger } from '@main/lib/logger';
 
@@ -158,7 +160,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       data: { previousStatus, newStatus },
     });
 
-    router.emit('event:agent-dashboard.statusChanged', {
+    router.emit(AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED'], {
       sessionId: internal.session.id,
       previousStatus,
       newStatus,
@@ -198,7 +200,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
     }
 
     // Emit stream event to renderer
-    router.emit('event:agent-dashboard.streamEvent', {
+    router.emit(AGENT_DASHBOARD_EVENTS.STREAM.EVENT, {
       sessionId: internal.session.id,
       event,
     });
@@ -213,7 +215,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
   function handleChatMessage(internal: InternalSession, message: AgentChatMessage): void {
     internal.messages.push(message);
 
-    router.emit('event:agent-dashboard.messageReceived', message);
+    router.emit(AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED, message);
 
     emitEvent({
       type: 'message.received',
@@ -269,7 +271,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       const exitStatus: AgentStatus = code === 0 ? 'completed' : 'failed';
       updateSessionStatus(internal, exitStatus);
 
-      router.emit('event:agent-dashboard.sessionEnded', {
+      router.emit(AGENT_DASHBOARD_EVENTS.SESSION.ENDED, {
         sessionId: internal.session.id,
         status: exitStatus,
         exitCode: code ?? undefined,
@@ -341,7 +343,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       sessions.set(session.id, internal);
       wireProcessToParser(internal);
 
-      router.emit('event:agent-dashboard.sessionStarted', session);
+      router.emit(AGENT_DASHBOARD_EVENTS.SESSION.STARTED, session);
       emitEvent({
         type: 'session.started',
         sessionId: session.id,
@@ -398,7 +400,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
         `[AgentManager] Team Lead session started: ${session.id} (PID ${String(managedProcess.pid)})`,
       );
 
-      router.emit('event:agent-dashboard.sessionStarted', session);
+      router.emit(AGENT_DASHBOARD_EVENTS.SESSION.STARTED, session);
       emitEvent({
         type: 'session.started',
         sessionId: session.id,
@@ -493,7 +495,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
 
       // Emit session.ended so subscribers (AssistantService, WorkspaceSessionManager) can clean up.
       // The normal onExit handler was removed above, so we must emit manually.
-      router.emit('event:agent-dashboard.sessionEnded', {
+      router.emit(AGENT_DASHBOARD_EVENTS.SESSION.ENDED, {
         sessionId: internal.session.id,
         status: 'completed',
         exitCode: undefined,

@@ -6,7 +6,9 @@
  * Periodic cleanup runs on a configurable interval.
  */
 
+import { DATA_MANAGEMENT_EVENTS } from '@shared/ipc/data-management/channels';
 import type { DataRetentionSettings, RetentionPolicy } from '@shared/types';
+
 
 import { createScopedLogger } from '@main/lib/logger';
 
@@ -109,7 +111,7 @@ export function createCleanupService(deps: CleanupServiceDeps): CleanupService {
 
     logger.info(`Cleanup complete: ${String(totalCleaned)} items cleaned`);
 
-    router.emit('event:dataManagement.cleanupComplete', result);
+    router.emit(DATA_MANAGEMENT_EVENTS.CLEANUP.COMPLETE, result);
 
     return result;
   }

@@ -5,6 +5,8 @@
  * Each handler file is thin — it maps channels to service calls.
  */
 
+import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
+
 import { registerAgentDashboardHandlers } from './handlers/agent-dashboard-handlers';
 import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
@@ -56,6 +58,7 @@ import { registerWorkflowEngineHandlers } from './handlers/workflow-engine-handl
 import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkflowTemplateHandlers } from './handlers/workflow-template-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
+
 
 import type { TeamWatcherService } from './handlers/agent-dashboard-handlers';
 import type { IpcRouter } from './router';
@@ -290,10 +293,10 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerProgressHandlers(router, services.progressService);
 
   // Stub: workspaces CRUD (Hub-backed, no local service yet)
-  router.handle('workspaces.list', () => Promise.resolve([]));
-  router.handle('workspaces.create', () => { throw new Error('Hub not configured'); });
-  router.handle('workspaces.update', () => { throw new Error('Hub not configured'); });
-  router.handle('workspaces.delete', () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.LIST.ALL, () => Promise.resolve([]));
+  router.handle(WORKSPACES.CREATE.WORKSPACE, () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.UPDATE.WORKSPACE, () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.DELETE.WORKSPACE, () => { throw new Error('Hub not configured'); });
 
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(

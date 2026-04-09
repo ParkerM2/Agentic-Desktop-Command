@@ -18,6 +18,8 @@ import { useEffect } from 'react';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { WORKSPACE, WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -30,26 +32,26 @@ export const workspaceKeys = {
 export function useWorkspaceSessions(projectId: string | null) {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:workspace.sessionReady', () => {
+  useIpcEvent(WORKSPACE_EVENTS.SESSION.READY, () => {
     if (!projectId) return;
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
   });
-  useIpcEvent('event:workspace.sessionCrashed', () => {
+  useIpcEvent(WORKSPACE_EVENTS.SESSION.CRASHED, () => {
     if (!projectId) return;
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
   });
-  useIpcEvent('event:workspace.sessionRestarted', () => {
+  useIpcEvent(WORKSPACE_EVENTS.SESSION.RESTARTED, () => {
     if (!projectId) return;
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
   });
-  useIpcEvent('event:workspace.planHandedOff', () => {
+  useIpcEvent(WORKSPACE_EVENTS.PLAN['HANDED-OFF'], () => {
     if (!projectId) return;
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
   });
 
   return useQuery({
     queryKey: workspaceKeys.sessions(projectId ?? ''),
-    queryFn: () => ipc('workspace.getSessions', { projectId: projectId ?? '' }),
+    queryFn: () => ipc(WORKSPACE.GET.SESSIONS, { projectId: projectId ?? '' }),
     enabled: projectId !== null,
   });
 }
@@ -62,7 +64,7 @@ export function useWorkspaceInit(projectId: string | null, projectPath: string |
     if (!projectId || !projectPath) return;
 
     void (async () => {
-      await ipc('workspace.initProject', { projectId, projectPath });
+      await ipc(WORKSPACE.INIT.PROJECT, { projectId, projectPath });
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
     })();
   }, [projectId, projectPath, queryClient]);
@@ -72,7 +74,7 @@ export function useWorkspaceInit(projectId: string | null, projectPath: string |
 export function useWorkspaceSend() {
   return useMutation({
     mutationFn: ({ sessionId, message }: { sessionId: string; message: string }) =>
-      ipc('workspace.sendMessage', { sessionId, message }),
+      ipc(WORKSPACE.SEND.MESSAGE, { sessionId, message }),
   });
 }
 
@@ -81,7 +83,7 @@ export function useSpawnTeamLead(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ planPath }: { planPath?: string }) =>
-      ipc('workspace.spawnTeamLead', { projectId, planPath }),
+      ipc(WORKSPACE.SPAWN['TEAM-LEAD'], { projectId, planPath }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
     },
@@ -93,7 +95,7 @@ export function useStopTeamLead(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ index }: { index: number }) =>
-      ipc('workspace.stopTeamLead', { projectId, index }),
+      ipc(WORKSPACE.STOP['TEAM-LEAD'], { projectId, index }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
     },
@@ -108,7 +110,7 @@ export function useHandOffPlan(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ planPath, instructions }: { planPath: string; instructions?: string }) =>
-      ipc('workspace.handOffPlan', { projectId, planPath, instructions }),
+      ipc(WORKSPACE.HANDOFF.PLAN, { projectId, planPath, instructions }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
     },
@@ -128,7 +130,7 @@ export function useExecuteTask(projectId: string) {
     }: {
       taskDescription: string;
       planPath?: string;
-    }) => ipc('workspace.executeTask', { projectId, taskDescription, planPath }),
+    }) => ipc(WORKSPACE.EXECUTE.TASK, { projectId, taskDescription, planPath }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: workspaceKeys.sessions(projectId) });
     },
@@ -152,7 +154,7 @@ export function useProvisionTeammate(projectId: string) {
       teamName: string;
       taskInstructions?: string;
     }) =>
-      ipc('workspace.provisionTeammate', {
+      ipc(WORKSPACE.PROVISION.TEAMMATE, {
         projectId,
         agentRole,
         slug,
@@ -168,6 +170,6 @@ export function useProvisionTeammate(projectId: string) {
 export function useTeardownTeammate(projectId: string) {
   return useMutation({
     mutationFn: ({ slug }: { slug: string }) =>
-      ipc('workspace.teardownTeammate', { projectId, slug }),
+      ipc(WORKSPACE.TEARDOWN.TEAMMATE, { projectId, slug }),
   });
 }

@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
@@ -52,7 +53,7 @@ export function HubConnectionIndicator({ collapsed }: HubConnectionIndicatorProp
   const [tooltipVisible, setTooltipVisible] = useState(false);
 
   // Invalidate hub status on connection change events
-  useIpcEvent('event:hub.connectionChanged', () => {
+  useIpcEvent(HUB_EVENTS.CONNECTION.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
   });
 

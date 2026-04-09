@@ -6,6 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { HUB_TASKS } from '@shared/ipc/tasks/channels';
 import type { Task } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -17,7 +18,7 @@ export function useTasks(projectId: string | null) {
   return useQuery({
     queryKey: taskKeys.list(projectId ?? ''),
     queryFn: async () => {
-      const result = await ipc('hub.tasks.list', { projectId: projectId ?? '' });
+      const result = await ipc(HUB_TASKS.LIST.ALL, { projectId: projectId ?? '' });
       return result.tasks as Task[];
     },
     enabled: projectId !== null,
@@ -30,7 +31,7 @@ export function useTask(taskId: string | null) {
   return useQuery({
     queryKey: taskKeys.detail(taskId ?? ''),
     queryFn: async () => {
-      const result = await ipc('hub.tasks.get', { taskId: taskId ?? '' });
+      const result = await ipc(HUB_TASKS.GET.TASK, { taskId: taskId ?? '' });
       return result as Task;
     },
     enabled: taskId !== null,
@@ -43,7 +44,7 @@ export function useAllTasks() {
   return useQuery({
     queryKey: taskKeys.lists(),
     queryFn: async () => {
-      const result = await ipc('hub.tasks.list', {});
+      const result = await ipc(HUB_TASKS.LIST.ALL, {});
       return result.tasks as Task[];
     },
     staleTime: 30_000,
@@ -59,7 +60,7 @@ export function useCreateTask() {
       title: string;
       description?: string;
       priority?: 'low' | 'normal' | 'high' | 'urgent';
-    }) => ipc('hub.tasks.create', data),
+    }) => ipc(HUB_TASKS.CREATE.TASK, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },

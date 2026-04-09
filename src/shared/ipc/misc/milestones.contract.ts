@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+
 import { MILESTONES, MILESTONES_EVENTS } from './milestones.channels';
 
 export const MilestoneStatusSchema = z.enum(['planned', 'in-progress', 'completed']);

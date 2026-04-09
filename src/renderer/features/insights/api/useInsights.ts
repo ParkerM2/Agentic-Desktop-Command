@@ -4,6 +4,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { INSIGHTS } from '@shared/ipc/misc/insights.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { insightKeys } from './queryKeys';
@@ -12,7 +14,7 @@ import { insightKeys } from './queryKeys';
 export function useInsightMetrics(projectId?: string) {
   return useQuery({
     queryKey: insightKeys.metrics(projectId),
-    queryFn: () => ipc('insights.getMetrics', { projectId }),
+    queryFn: () => ipc(INSIGHTS.GET.METRICS, { projectId }),
   });
 }
 
@@ -20,7 +22,7 @@ export function useInsightMetrics(projectId?: string) {
 export function useInsightTimeSeries(projectId?: string, days?: number) {
   return useQuery({
     queryKey: insightKeys.timeSeries(projectId, days),
-    queryFn: () => ipc('insights.getTimeSeries', { projectId, days }),
+    queryFn: () => ipc(INSIGHTS.GET['TIME-SERIES'], { projectId, days }),
   });
 }
 
@@ -28,7 +30,7 @@ export function useInsightTimeSeries(projectId?: string, days?: number) {
 export function useTaskDistribution(projectId?: string) {
   return useQuery({
     queryKey: insightKeys.distribution(projectId),
-    queryFn: () => ipc('insights.getTaskDistribution', { projectId }),
+    queryFn: () => ipc(INSIGHTS.GET['TASK-DISTRIBUTION'], { projectId }),
   });
 }
 
@@ -36,6 +38,6 @@ export function useTaskDistribution(projectId?: string) {
 export function useProjectBreakdown() {
   return useQuery({
     queryKey: insightKeys.projectBreakdown(),
-    queryFn: () => ipc('insights.getProjectBreakdown', {}),
+    queryFn: () => ipc(INSIGHTS.GET['PROJECT-BREAKDOWN'], {}),
   });
 }

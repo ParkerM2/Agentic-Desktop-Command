@@ -7,6 +7,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { DATA_MANAGEMENT_EVENTS } from '@shared/ipc/data-management/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { dataManagementKeys } from '../api/useDataManagement';
@@ -15,7 +17,7 @@ import { dataManagementKeys } from '../api/useDataManagement';
 export function useDataManagementEvents(): void {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:dataManagement.cleanupComplete', () => {
+  useIpcEvent(DATA_MANAGEMENT_EVENTS.CLEANUP.COMPLETE, () => {
     void queryClient.invalidateQueries({ queryKey: dataManagementKeys.usage() });
     void queryClient.invalidateQueries({ queryKey: dataManagementKeys.retention() });
   });

@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { FITNESS_EVENTS } from '@shared/ipc/fitness/channels';
 import type {
   BodyMeasurement,
   Exercise,
@@ -19,6 +20,7 @@ import type {
   Workout,
   WorkoutType,
 } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -137,7 +139,7 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       };
       workouts.items.push(workout);
       persistWorkouts();
-      deps.router.emit('event:fitness.workoutChanged', { workoutId: workout.id });
+      deps.router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: workout.id });
       return workout;
     },
 
@@ -165,7 +167,7 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       }
       workouts.items.splice(index, 1);
       persistWorkouts();
-      deps.router.emit('event:fitness.workoutChanged', { workoutId: id });
+      deps.router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: id });
       return { success: true };
     },
 
@@ -193,7 +195,7 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       }
 
       persistMeasurements();
-      deps.router.emit('event:fitness.measurementChanged', { measurementId: measurement.id });
+      deps.router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: measurement.id });
       return measurement;
     },
 
@@ -218,7 +220,7 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       };
       goals.items.push(goal);
       persistGoals();
-      deps.router.emit('event:fitness.goalChanged', { goalId: goal.id });
+      deps.router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: goal.id });
       return goal;
     },
 
@@ -233,7 +235,7 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       }
       goals.items[index] = { ...goals.items[index], current };
       persistGoals();
-      deps.router.emit('event:fitness.goalChanged', { goalId });
+      deps.router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId });
       return goals.items[index];
     },
 
@@ -244,7 +246,7 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
       }
       goals.items.splice(index, 1);
       persistGoals();
-      deps.router.emit('event:fitness.goalChanged', { goalId: id });
+      deps.router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: id });
       return { success: true };
     },
 

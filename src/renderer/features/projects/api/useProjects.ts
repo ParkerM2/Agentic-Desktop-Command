@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { PROJECTS } from '@shared/ipc/projects/channels';
 import type { InvokeInput } from '@shared/ipc-contract';
 import type { CreateProjectInput } from '@shared/types/project-setup';
 
@@ -16,7 +17,7 @@ import { projectKeys } from './queryKeys';
 export function useProjects() {
   return useQuery({
     queryKey: projectKeys.list(),
-    queryFn: () => ipc('projects.list', {}),
+    queryFn: () => ipc(PROJECTS.LIST.ALL, {}),
     staleTime: 60_000,
   });
 }
@@ -26,7 +27,7 @@ export function useAddProject() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: InvokeInput<'projects.add'>) => ipc('projects.add', data),
+    mutationFn: (data: InvokeInput<typeof PROJECTS.ADD.PROJECT>) => ipc(PROJECTS.ADD.PROJECT, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
@@ -39,7 +40,7 @@ export function useRemoveProject() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (projectId: string) => ipc('projects.remove', { projectId }),
+    mutationFn: (projectId: string) => ipc(PROJECTS.REMOVE.PROJECT, { projectId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
@@ -51,7 +52,7 @@ export function useRemoveProject() {
 export function useSelectDirectory() {
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: () => ipc('projects.selectDirectory', {}),
+    mutationFn: () => ipc(PROJECTS.SELECT.DIRECTORY, {}),
     onError: onError('select directory'),
   });
 }
@@ -61,8 +62,8 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: InvokeInput<'projects.update'>) =>
-      ipc('projects.update', data),
+    mutationFn: (data: InvokeInput<typeof PROJECTS.UPDATE.PROJECT>) =>
+      ipc(PROJECTS.UPDATE.PROJECT, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
@@ -74,7 +75,7 @@ export function useUpdateProject() {
 export function useSubProjects(projectId: string) {
   return useQuery({
     queryKey: projectKeys.subProjects(projectId),
-    queryFn: () => ipc('projects.getSubProjects', { projectId }),
+    queryFn: () => ipc(PROJECTS.GET['SUB-PROJECTS'], { projectId }),
     enabled: projectId.length > 0,
   });
 }
@@ -84,8 +85,8 @@ export function useCreateSubProject() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: InvokeInput<'projects.createSubProject'>) =>
-      ipc('projects.createSubProject', data),
+    mutationFn: (data: InvokeInput<typeof PROJECTS.CREATE['SUB-PROJECT']>) =>
+      ipc(PROJECTS.CREATE['SUB-PROJECT'], data),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: projectKeys.subProjects(variables.projectId),
@@ -100,7 +101,7 @@ export function useSetupExisting() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (input: { projectId: string }) =>
-      ipc('projects.setupExisting', input),
+      ipc(PROJECTS.SETUP.EXISTING, input),
     onError: onError('setup project'),
   });
 }
@@ -111,7 +112,7 @@ export function useCreateNewProject() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (input: CreateProjectInput) =>
-      ipc('projects.createNew', input),
+      ipc(PROJECTS.CREATE.NEW, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
@@ -124,8 +125,8 @@ export function useDeleteSubProject() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: InvokeInput<'projects.deleteSubProject'>) =>
-      ipc('projects.deleteSubProject', data),
+    mutationFn: (data: InvokeInput<typeof PROJECTS.DELETE['SUB-PROJECT']>) =>
+      ipc(PROJECTS.DELETE['SUB-PROJECT'], data),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: projectKeys.subProjects(variables.projectId),

@@ -14,6 +14,7 @@ import {
 } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
+import { HUB } from '@shared/ipc/hub/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -31,7 +32,7 @@ function redirectIfAuthenticated() {
 
 async function redirectIfHubNotConfigured(): Promise<void> {
   try {
-    const config = await ipc('hub.getConfig', {});
+    const config = await ipc(HUB.GET.CONFIG, {});
     if (!config.hubUrl) {
       // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
       throw redirect({ to: ROUTES.HUB_SETUP });
@@ -51,7 +52,7 @@ async function redirectIfHubNotConfigured(): Promise<void> {
 
 async function redirectIfHubAlreadyConfigured(): Promise<void> {
   try {
-    const config = await ipc('hub.getConfig', {});
+    const config = await ipc(HUB.GET.CONFIG, {});
     if (config.hubUrl) {
       // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
       throw redirect({ to: ROUTES.LOGIN });

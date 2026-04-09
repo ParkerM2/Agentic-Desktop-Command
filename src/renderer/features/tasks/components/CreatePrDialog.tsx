@@ -8,6 +8,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle, CheckCircle2, ExternalLink, GitPullRequestDraft } from 'lucide-react';
 
+import { GIT } from '@shared/ipc/git/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
@@ -63,7 +65,7 @@ export function CreatePrDialog({
       headBranch: string;
       projectPath: string;
       title: string;
-    }) => ipc('git.createPr', input),
+    }) => ipc(GIT.CREATE.PR, input),
     onSuccess: (data) => {
       setCreatedPr({ url: data.url, number: data.number, title: data.title });
     },
@@ -86,7 +88,7 @@ export function CreatePrDialog({
     if (projectPath.length === 0) return;
 
     // Fire-and-forget: fetch current branch to pre-fill headBranch
-    void ipc('git.status', { repoPath: projectPath }).then((status) => {
+    void ipc(GIT.GET.STATUS, { repoPath: projectPath }).then((status) => {
       setHeadBranch(status.branch);
       return status;
     });

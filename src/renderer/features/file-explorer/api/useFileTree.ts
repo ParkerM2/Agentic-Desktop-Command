@@ -6,6 +6,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { FILES } from '@shared/ipc/files/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { fileExplorerKeys } from './queryKeys';
@@ -36,7 +38,7 @@ export interface FileTreeNode {
 export function useFileTree(projectPath: string | null) {
   return useQuery({
     queryKey: fileExplorerKeys.tree(projectPath ?? ''),
-    queryFn: () => ipc('files.listTree', { path: projectPath ?? '' }),
+    queryFn: () => ipc(FILES.LIST.TREE, { path: projectPath ?? '' }),
     enabled: projectPath !== null,
     staleTime: 30_000,
   });

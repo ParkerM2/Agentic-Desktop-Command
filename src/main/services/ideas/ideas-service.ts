@@ -9,7 +9,9 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+import { IDEAS_EVENTS } from '@shared/ipc/misc/ideas.channels';
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -78,7 +80,7 @@ export function createIdeasService(deps: { dataDir: string; router: IpcRouter })
   }
 
   function emitChanged(ideaId: string): void {
-    deps.router.emit('event:idea.changed', { ideaId });
+    deps.router.emit(IDEAS_EVENTS.IDEA.CHANGED, { ideaId });
   }
 
   function findIdea(id: string): { idea: Idea; index: number } {

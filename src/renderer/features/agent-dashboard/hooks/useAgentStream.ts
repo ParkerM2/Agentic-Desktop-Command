@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
@@ -82,7 +83,7 @@ export function useAgentStream(sessionId: string | null): StreamState {
   }, [queryClient]);
 
   // Listen to stream events for all sessions, filter to target
-  useIpcEvent('event:agent-dashboard.streamEvent', (payload) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.STREAM.EVENT, (payload) => {
     if (payload.sessionId !== activeSessionRef.current) return;
 
     const eventType = payload.event.type;

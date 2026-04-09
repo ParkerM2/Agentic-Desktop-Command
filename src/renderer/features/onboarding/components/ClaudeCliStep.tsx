@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Terminal } from 'lucide-react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 import { useClaudeAuth } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -52,7 +54,7 @@ export function ClaudeCliStep({ onNext, onBack }: ClaudeCliStepProps) {
   async function handleAuthorize() {
     setError(null);
     setAuthorizing(true);
-    const result = await ipc('app.launchClaudeAuth', {});
+    const result = await ipc(APP.LAUNCH['CLAUDE-AUTH'], {});
     if (!result.success && !isAuthenticated) {
       setError('Authorization failed. Make sure Claude Code is installed (npm install -g @anthropic-ai/claude-code).');
       setAuthorizing(false);

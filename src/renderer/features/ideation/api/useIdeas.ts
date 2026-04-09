@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { IDEAS } from '@shared/ipc/misc/ideas.channels';
 import type { IdeaCategory, IdeaStatus } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { ideaKeys } from './queryKeys';
 export function useIdeas(projectId?: string, status?: IdeaStatus, category?: IdeaCategory) {
   return useQuery({
     queryKey: ideaKeys.list(projectId, status, category),
-    queryFn: () => ipc('ideas.list', { projectId, status, category }),
+    queryFn: () => ipc(IDEAS.LIST.ALL, { projectId, status, category }),
   });
 }
 
@@ -28,7 +29,7 @@ export function useCreateIdea() {
       category: IdeaCategory;
       tags?: string[];
       projectId?: string;
-    }) => ipc('ideas.create', data),
+    }) => ipc(IDEAS.CREATE.IDEA, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },
@@ -46,7 +47,7 @@ export function useUpdateIdea() {
       status?: IdeaStatus;
       category?: IdeaCategory;
       tags?: string[];
-    }) => ipc('ideas.update', data),
+    }) => ipc(IDEAS.UPDATE.IDEA, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },
@@ -57,7 +58,7 @@ export function useUpdateIdea() {
 export function useDeleteIdea() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('ideas.delete', { id }),
+    mutationFn: (id: string) => ipc(IDEAS.DELETE.IDEA, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },
@@ -68,7 +69,7 @@ export function useDeleteIdea() {
 export function useVoteIdea() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { id: string; delta: number }) => ipc('ideas.vote', data),
+    mutationFn: (data: { id: string; delta: number }) => ipc(IDEAS.VOTE.IDEA, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },

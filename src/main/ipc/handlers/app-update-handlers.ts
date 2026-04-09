@@ -2,6 +2,8 @@
  * App Update IPC handlers — check, download, install updates
  */
 
+import { APP } from '@shared/ipc/app/channels';
+
 import type { AppUpdateService } from '../../services/app/app-update-service';
 import type { IpcRouter } from '../router';
 
@@ -9,11 +11,11 @@ export function registerAppUpdateHandlers(
   router: IpcRouter,
   appUpdateService: AppUpdateService,
 ): void {
-  router.handle('app.checkForUpdates', () => Promise.resolve(appUpdateService.checkForUpdates()));
+  router.handle(APP.CHECK.UPDATES, () => Promise.resolve(appUpdateService.checkForUpdates()));
 
-  router.handle('app.downloadUpdate', () => Promise.resolve(appUpdateService.downloadUpdate()));
+  router.handle(APP.DOWNLOAD.UPDATE, () => Promise.resolve(appUpdateService.downloadUpdate()));
 
-  router.handle('app.quitAndInstall', () => Promise.resolve(appUpdateService.quitAndInstall()));
+  router.handle(APP.INSTALL.UPDATE, () => Promise.resolve(appUpdateService.quitAndInstall()));
 
-  router.handle('app.getUpdateStatus', () => Promise.resolve(appUpdateService.getStatus()));
+  router.handle(APP.GET['UPDATE-STATUS'], () => Promise.resolve(appUpdateService.getStatus()));
 }

@@ -11,12 +11,14 @@
  * Default poll interval is 60 seconds (3600 requests/hour max).
  */
 
+import { NOTIFICATIONS_EVENTS } from '@shared/ipc/notifications/channels';
 import type {
   GitHubNotificationType,
   GitHubWatcherConfig,
   Notification,
   NotificationMetadata,
 } from '@shared/types';
+
 
 import { watcherLogger } from '@main/lib/logger';
 
@@ -238,7 +240,7 @@ export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatche
 
     try {
       // Emit polling status
-      router.emit('event:notifications.watcherStatusChanged', {
+      router.emit(NOTIFICATIONS_EVENTS.WATCHER['STATUS-CHANGED'], {
         source: 'github',
         status: 'polling',
       });
@@ -277,7 +279,7 @@ export function createGitHubWatcher(deps: GitHubWatcherDeps): NotificationWatche
       lastError = message;
       watcherLogger.error('[GitHubWatcher] Poll error:', message);
 
-      router.emit('event:notifications.watcherError', {
+      router.emit(NOTIFICATIONS_EVENTS.WATCHER.ERROR, {
         source: 'github',
         error: message,
       });

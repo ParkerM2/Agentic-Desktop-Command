@@ -7,6 +7,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { APP_EVENTS } from '@shared/ipc/app/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { useToastStore } from '@renderer/shared/stores';
 
@@ -18,23 +20,23 @@ export function useErrorEvents(): void {
   const addToast = useToastStore((s) => s.addToast);
 
   // New error arrived -> invalidate error log and stats
-  useIpcEvent('event:app.error', () => {
+  useIpcEvent(APP_EVENTS.ERROR.OCCURRED, () => {
     void queryClient.invalidateQueries({ queryKey: healthKeys.errorLog() });
     void queryClient.invalidateQueries({ queryKey: healthKeys.errorStats() });
   });
 
   // Data store recovered from backup or defaults -> toast warning
-  useIpcEvent('event:app.dataRecovery', (payload) => {
+  useIpcEvent(APP_EVENTS.DATA.RECOVERY, (payload) => {
     addToast(`${payload.store}: ${payload.message}`, 'warning');
   });
 
   // Error log capacity alert -> toast warning
-  useIpcEvent('event:app.capacityAlert', (payload) => {
+  useIpcEvent(APP_EVENTS.CAPACITY.ALERT, (payload) => {
     addToast(payload.message, 'warning');
   });
 
   // Service health degraded -> invalidate health status + toast
-  useIpcEvent('event:app.serviceUnhealthy', (payload) => {
+  useIpcEvent(APP_EVENTS.SERVICE.UNHEALTHY, (payload) => {
     void queryClient.invalidateQueries({ queryKey: healthKeys.status() });
     addToast(`Service unhealthy: ${payload.serviceName}`, 'warning');
   });

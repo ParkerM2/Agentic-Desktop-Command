@@ -6,6 +6,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { WORKFLOW_ENGINE } from '@shared/ipc/workflow-engine/channels';
 import type { InvokeInput } from '@shared/ipc-contract';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -25,7 +26,7 @@ export const workflowEngineKeys = {
 export function useWorkflowRuns() {
   return useQuery({
     queryKey: workflowEngineKeys.runs(),
-    queryFn: () => ipc('workflow-engine.list', {}),
+    queryFn: () => ipc(WORKFLOW_ENGINE.LIST.RUNS, {}),
     staleTime: 2_000,
   });
 }
@@ -34,7 +35,7 @@ export function useWorkflowRuns() {
 export function useAgentDefinitions() {
   return useQuery({
     queryKey: workflowEngineKeys.agentDefs(),
-    queryFn: () => ipc('workflow-engine.listAgentDefs', {}),
+    queryFn: () => ipc(WORKFLOW_ENGINE.LIST['AGENT-DEFS'], {}),
     staleTime: 60_000,
   });
 }
@@ -43,7 +44,7 @@ export function useAgentDefinitions() {
 export function useWorkflowRun(runId: string | null) {
   return useQuery({
     queryKey: workflowEngineKeys.run(runId ?? ''),
-    queryFn: () => ipc('workflow-engine.get', { runId: runId ?? '' }),
+    queryFn: () => ipc(WORKFLOW_ENGINE.GET.RUN, { runId: runId ?? '' }),
     enabled: runId !== null,
     staleTime: 1_000,
   });
@@ -51,13 +52,13 @@ export function useWorkflowRun(runId: string | null) {
 
 // ─── Mutations ───────────────────────────────────────────────
 
-type ApplyWorkflowInput = InvokeInput<'workflow-engine.apply'>;
+type ApplyWorkflowInput = InvokeInput<typeof WORKFLOW_ENGINE.APPLY.TEMPLATE>;
 
 /** Apply a template to start a workflow run */
 export function useApplyWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: ApplyWorkflowInput) => ipc('workflow-engine.apply', input),
+    mutationFn: (input: ApplyWorkflowInput) => ipc(WORKFLOW_ENGINE.APPLY.TEMPLATE, input),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: workflowEngineKeys.runs() });
     },
@@ -68,7 +69,7 @@ export function useApplyWorkflow() {
 export function useStopWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (runId: string) => ipc('workflow-engine.stop', { runId }),
+    mutationFn: (runId: string) => ipc(WORKFLOW_ENGINE.STOP.RUN, { runId }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: workflowEngineKeys.runs() });
     },

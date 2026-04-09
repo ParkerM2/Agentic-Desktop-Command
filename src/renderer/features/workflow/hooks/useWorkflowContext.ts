@@ -7,6 +7,8 @@
 
 import { useState } from 'react';
 
+import { WORKFLOW_EVENTS } from '@shared/ipc/workflow/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 interface WorkflowContext {
@@ -24,7 +26,7 @@ const INITIAL_CONTEXT: WorkflowContext = {
 export function useWorkflowContext(): WorkflowContext {
   const [context, setContext] = useState<WorkflowContext>(INITIAL_CONTEXT);
 
-  useIpcEvent('event:workflow.context', (payload) => {
+  useIpcEvent(WORKFLOW_EVENTS.WORKFLOW.CONTEXT, (payload) => {
     setContext({
       ticket: payload.ticket,
       phase: payload.phase,

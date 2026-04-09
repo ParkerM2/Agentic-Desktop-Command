@@ -9,7 +9,9 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { MILESTONES_EVENTS } from '@shared/ipc/misc/milestones.channels';
 import type { Milestone, MilestoneStatus } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -84,7 +86,7 @@ export function createMilestonesService(deps: {
   }
 
   function emitChanged(milestoneId: string): void {
-    deps.router.emit('event:milestone.changed', { milestoneId });
+    deps.router.emit(MILESTONES_EVENTS.MILESTONE.CHANGED, { milestoneId });
   }
 
   return {

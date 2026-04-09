@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+
 import { IDEAS, IDEAS_EVENTS } from './ideas.channels';
 
 export const IdeaStatusSchema = z.enum([

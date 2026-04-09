@@ -10,14 +10,14 @@ type EventChannels<D extends string, M extends Record<string, readonly string[]>
   };
 };
 
-export function domain<D extends string, M extends Record<string, readonly string[]>>(
+export function domain<const D extends string, const M extends Record<string, readonly string[]>>(
   d: D,
   map: M,
 ): DomainChannels<D, M> {
   const result: Record<string, Record<string, string>> = {};
   for (const [verb, nouns] of Object.entries(map)) {
     const group: Record<string, string> = {};
-    for (const noun of nouns as readonly string[]) {
+    for (const noun of nouns) {
       group[noun.toUpperCase()] = `${d}.${verb.toLowerCase()}.${noun}`;
     }
     result[verb] = group;
@@ -25,14 +25,14 @@ export function domain<D extends string, M extends Record<string, readonly strin
   return result as DomainChannels<D, M>;
 }
 
-export function events<D extends string, M extends Record<string, readonly string[]>>(
+export function events<const D extends string, const M extends Record<string, readonly string[]>>(
   d: D,
   map: M,
 ): EventChannels<D, M> {
   const result: Record<string, Record<string, string>> = {};
   for (const [verb, nouns] of Object.entries(map)) {
     const group: Record<string, string> = {};
-    for (const noun of nouns as readonly string[]) {
+    for (const noun of nouns) {
       group[noun.toUpperCase()] = `event:${d}.${verb.toLowerCase()}.${noun}`;
     }
     result[verb] = group;

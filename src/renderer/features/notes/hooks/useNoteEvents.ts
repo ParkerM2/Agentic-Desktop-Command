@@ -6,6 +6,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { NOTES_EVENTS } from '@shared/ipc/misc/notes.channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { noteKeys } from '../api/queryKeys';
@@ -13,7 +15,7 @@ import { noteKeys } from '../api/queryKeys';
 export function useNoteEvents() {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:note.changed', () => {
+  useIpcEvent(NOTES_EVENTS.NOTE.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: noteKeys.all });
   });
 }

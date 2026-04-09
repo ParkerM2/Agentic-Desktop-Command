@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { DASHBOARD } from '@shared/ipc/dashboard/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -13,7 +15,7 @@ import { dashboardKeys } from './queryKeys';
 export function useCaptures() {
   return useQuery({
     queryKey: dashboardKeys.captures(),
-    queryFn: () => ipc('dashboard.captures.list', {}),
+    queryFn: () => ipc(DASHBOARD.LIST.CAPTURES, {}),
     staleTime: 30_000,
   });
 }
@@ -24,7 +26,7 @@ export function useCaptureMutations() {
   const { onError } = useMutationErrorToast();
 
   const createCapture = useMutation({
-    mutationFn: (text: string) => ipc('dashboard.captures.create', { text }),
+    mutationFn: (text: string) => ipc(DASHBOARD.CREATE.CAPTURE, { text }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
     },
@@ -32,7 +34,7 @@ export function useCaptureMutations() {
   });
 
   const deleteCapture = useMutation({
-    mutationFn: (id: string) => ipc('dashboard.captures.delete', { id }),
+    mutationFn: (id: string) => ipc(DASHBOARD.DELETE.CAPTURE, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
     },

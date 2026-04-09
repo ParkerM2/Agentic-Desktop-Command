@@ -2,18 +2,20 @@
  * Screen capture IPC handlers
  */
 
+import { SCREEN } from '@shared/ipc/misc/screen.channels';
+
 import type { ScreenCaptureService } from '../../services/screen/screen-capture-service';
 import type { IpcRouter } from '../router';
 
 export function registerScreenHandlers(router: IpcRouter, service: ScreenCaptureService): void {
-  router.handle('screen.listSources', (input) =>
+  router.handle(SCREEN.LIST.SOURCES, (input) =>
     service.listSources({
       types: input.types,
       thumbnailSize: input.thumbnailSize,
     }),
   );
 
-  router.handle('screen.capture', (input) => service.capture(input.sourceId, input.options));
+  router.handle(SCREEN.CAPTURE.SCREEN, (input) => service.capture(input.sourceId, input.options));
 
-  router.handle('screen.checkPermission', () => Promise.resolve(service.checkPermission()));
+  router.handle(SCREEN.CHECK.PERMISSION, () => Promise.resolve(service.checkPermission()));
 }

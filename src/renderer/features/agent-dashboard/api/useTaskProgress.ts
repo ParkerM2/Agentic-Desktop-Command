@@ -7,6 +7,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { agentDashboardKeys } from './queryKeys';
@@ -16,7 +18,7 @@ export function useTasksForFeature(featureSlug: string | undefined) {
   return useQuery({
     queryKey: agentDashboardKeys.tasks(featureSlug ?? ''),
     queryFn: () =>
-      ipc('agent-dashboard.getTasksForFeature', {
+      ipc(AGENT_DASHBOARD.GET['TASKS-FOR-FEATURE'], {
         featureSlug: featureSlug ?? '',
       }),
     enabled: featureSlug !== undefined,
@@ -29,7 +31,7 @@ export function useTask(featureSlug: string | undefined, taskNumber: number | un
   return useQuery({
     queryKey: agentDashboardKeys.task(featureSlug ?? '', taskNumber ?? 0),
     queryFn: () =>
-      ipc('agent-dashboard.getTask', {
+      ipc(AGENT_DASHBOARD.GET.TASK, {
         featureSlug: featureSlug ?? '',
         taskNumber: taskNumber ?? 0,
       }),
