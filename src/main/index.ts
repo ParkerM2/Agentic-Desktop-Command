@@ -176,6 +176,8 @@ function initializeApp(): void {
     crashRecovery: registry.crashRecovery,
     hotkeyManager: registry.hotkeyManager,
     appUpdateService: registry.services.appUpdateService,
+    commandBus: registry.commandBus,
+    busSessionManager: registry.busSessionManager,
     getHeartbeatIntervalId: () => registry.heartbeatIntervalId,
   });
 }

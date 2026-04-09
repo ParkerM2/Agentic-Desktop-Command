@@ -13,6 +13,12 @@ import { app } from 'electron';
 import { APP_EVENTS } from '@shared/ipc/app/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 
+import { createCommandBus } from '../bus';
+import type { CommandBus } from '../bus';
+import { createBusSessionManager } from '../bus/session-manager';
+import type { BusSessionManager } from '../bus/session-manager';
+import { initDatabase } from '../db';
+import type { AdcDatabase } from '../db';
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
 import { GOOGLE_OAUTH_CONFIG } from '../auth/providers/google';
@@ -128,6 +134,9 @@ import type { WorkspaceSessionManager } from '../services/workspace/workspace-se
 export interface ServiceRegistryResult {
   router: IpcRouter;
   services: Services;
+  db: AdcDatabase;
+  commandBus: CommandBus;
+  busSessionManager: BusSessionManager;
   agentManagerService: AgentManagerService;
   workspaceSessionManager: WorkspaceSessionManager;
   assistantService: ReturnType<typeof createAssistantService>;
@@ -479,6 +488,12 @@ export function createServiceRegistry(
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
 
+  // ─── Command Bus + Session Manager ─────────────────────────
+  const db = initDatabase(dataDir);
+  const commandBus = createCommandBus(db);
+  const busSessionManager = createBusSessionManager(db, agentManagerService);
+  busSessionManager.recoverInterrupted();
+
   // ─── Worktree provisioner (isolates team-lead sessions) ──────
   const worktreeProvisioner = createWorktreeProvisioner();
 
@@ -694,6 +709,9 @@ export function createServiceRegistry(
   return {
     router,
     services,
+    db,
+    commandBus,
+    busSessionManager,
     agentManagerService,
     workspaceSessionManager,
     assistantService,

@@ -9,8 +9,11 @@
 
 import { app, BrowserWindow } from 'electron';
 
+import { closeDatabase } from '../db';
 import { appLogger } from '../lib/logger';
 
+import type { CommandBus } from '../bus';
+import type { BusSessionManager } from '../bus/session-manager';
 import type { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import type { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import type { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
@@ -46,6 +49,8 @@ export interface LifecycleDeps {
   crashRecovery: CrashRecovery;
   hotkeyManager: HotkeyManager;
   appUpdateService: AppUpdateService;
+  commandBus: CommandBus;
+  busSessionManager: BusSessionManager;
   getHeartbeatIntervalId: () => ReturnType<typeof setInterval> | null;
 }
 
@@ -99,8 +104,15 @@ export function setupLifecycle(deps: LifecycleDeps): void {
       clearInterval(heartbeatId);
     }
 
+    // Dispose bus + sessions
+    deps.busSessionManager.dispose();
+    deps.commandBus.dispose();
+
     // Dispose health + error last (may log during shutdown)
     deps.healthRegistry.dispose();
     deps.errorCollector.dispose();
+
+    // Close database last
+    closeDatabase();
   });
 }
