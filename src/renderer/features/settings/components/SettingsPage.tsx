@@ -102,7 +102,6 @@ export function SettingsPage() {
           <PageHeader.TabContent value="display">
             <LayoutSection />
             <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
-            <BackgroundSettings />
             <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
             <TypographySection
               currentFontFamily={currentFontFamily}
@@ -190,6 +189,7 @@ function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
 
   return (
     <>
+      <BackgroundSettings />
       <section className="mb-8">
         <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           AI Assistant

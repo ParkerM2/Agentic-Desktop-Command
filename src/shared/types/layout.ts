@@ -56,7 +56,15 @@ export const SIDEBAR_LAYOUT_IDS: [SidebarLayoutId, ...SidebarLayoutId[]] = [
 
 // ── Top Toolbar Style ───────────────────────────────────────
 
-export type ToolbarStyleId = 'default' | 'compact' | 'spacious' | 'bordered';
+export type ToolbarStyleId =
+  | 'default'
+  | 'compact'
+  | 'spacious'
+  | 'floating'
+  | 'bordered'
+  | 'glass'
+  | 'minimal'
+  | 'inset';
 
 export interface ToolbarStyleMeta {
   id: ToolbarStyleId;
@@ -65,10 +73,19 @@ export interface ToolbarStyleMeta {
 }
 
 export const TOOLBAR_STYLES: ToolbarStyleMeta[] = [
-  { id: 'default', label: 'Default', description: 'Standard toolbar height and spacing' },
-  { id: 'compact', label: 'Compact', description: 'Reduced height, tighter spacing' },
-  { id: 'spacious', label: 'Spacious', description: 'Taller toolbar with more breathing room' },
-  { id: 'bordered', label: 'Bordered', description: 'Bottom border with subtle separation' },
+  { id: 'default', label: 'Standard', description: 'Default toolbar with solid background and bottom border' },
+  { id: 'compact', label: 'Compact', description: 'Reduced height with tighter spacing' },
+  { id: 'spacious', label: 'Spacious', description: 'Taller toolbar with extra breathing room' },
+  { id: 'floating', label: 'Floating', description: 'Detached bar with rounded corners and shadow' },
+  { id: 'bordered', label: 'Bordered', description: 'Prominent bottom border separation' },
+  { id: 'glass', label: 'Glass', description: 'Semi-transparent background with backdrop blur' },
+  { id: 'minimal', label: 'Minimal', description: 'Transparent background, no visible border' },
+  { id: 'inset', label: 'Inset', description: 'Recessed bar with muted background tint' },
+];
+
+export const TOOLBAR_STYLE_IDS: [ToolbarStyleId, ...ToolbarStyleId[]] = [
+  'default', 'compact', 'spacious', 'floating',
+  'bordered', 'glass', 'minimal', 'inset',
 ];
 
 // ── Content Area Style ──────────────────────────────────────

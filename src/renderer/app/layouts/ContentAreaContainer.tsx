@@ -18,13 +18,15 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 // ── Style maps ──────────────────────────────────────────────
 
-const CONTENT_STYLE: Record<ContentLayoutId, string> = {
+/** Applied to the root container — insets both toolbar and content equally */
+const CONTAINER_STYLE: Record<ContentLayoutId, string> = {
   flush: '',
-  padded: 'p-2',
-  bordered: 'p-2',
-  inset: 'p-3',
+  padded: 'p-2 gap-2',
+  bordered: 'p-2 gap-2',
+  inset: 'p-3 gap-3',
 };
 
+/** Applied to the inner content wrapper — decoration only */
 const INNER_STYLE: Record<ContentLayoutId, string> = {
   flush: '',
   padded: '',
@@ -50,12 +52,9 @@ function ToolBarSlot({ children, className }: SlotProps) {
 
 function ContentSlot({ children, className }: SlotProps) {
   const contentLayout = useLayoutStore((s) => s.contentLayout);
-  const wrapperClass = CONTENT_STYLE[contentLayout];
   const innerClass = INNER_STYLE[contentLayout];
 
-  const needsWrapper = wrapperClass || innerClass;
-
-  if (!needsWrapper) {
+  if (!innerClass) {
     return (
       <div className={cn('min-h-0 flex-1 overflow-hidden', className)}>
         {children}
@@ -64,7 +63,7 @@ function ContentSlot({ children, className }: SlotProps) {
   }
 
   return (
-    <div className={cn('min-h-0 flex-1 overflow-hidden', wrapperClass, className)}>
+    <div className={cn('min-h-0 flex-1 overflow-hidden', className)}>
       <div className={cn('h-full overflow-hidden', innerClass)}>
         {children}
       </div>
@@ -79,7 +78,7 @@ function ContentAreaContainerRoot({ children, className }: ContentAreaContainerP
 
   return (
     <div
-      className={cn('flex h-full flex-col', className)}
+      className={cn('flex h-full flex-col', CONTAINER_STYLE[contentLayout], className)}
       data-content-layout={contentLayout}
     >
       {children}

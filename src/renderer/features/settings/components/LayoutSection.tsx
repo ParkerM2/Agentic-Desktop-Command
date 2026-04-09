@@ -159,7 +159,10 @@ function UnifiedLayoutPreview({
   const rightSidebarW = sidebarConfig.hasSecondSidebar ? 35 : 0;
 
   // Toolbar height varies by style
-  const TOOLBAR_H: Record<ToolbarStyleId, number> = { default: 16, compact: 12, spacious: 22, bordered: 16 };
+  const TOOLBAR_H: Record<ToolbarStyleId, number> = {
+    default: 16, compact: 12, spacious: 22, floating: 14,
+    bordered: 16, glass: 16, minimal: 10, inset: 16,
+  };
   const headerH = TOOLBAR_H[toolbarStyleId];
 
   // Content starts after sidebar + gap
@@ -283,7 +286,7 @@ export function LayoutSection() {
         {/* ── Top-left: Sidebar ──────────────────── */}
         <div className="border-border space-y-3 border-r border-b p-4">
           <Text className="text-foreground text-sm font-medium">Sidebar</Text>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <Label htmlFor="sidebar-layout">Style</Label>
             <Select value={sidebarLayout} onValueChange={handleSidebarChange}>
               <SelectTrigger id="sidebar-layout">
@@ -306,7 +309,7 @@ export function LayoutSection() {
         {/* ── Top-right: Content Area ────────────── */}
         <div className="border-border space-y-3 border-b p-4">
           <Text className="text-foreground text-sm font-medium">Main Content Area</Text>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <Label htmlFor="content-layout">Style</Label>
             <Select value={contentLayout} onValueChange={handleContentChange}>
               <SelectTrigger id="content-layout">
@@ -329,7 +332,7 @@ export function LayoutSection() {
         {/* ── Bottom-left: Top Toolbar ────────────── */}
         <div className="border-border space-y-3 border-r p-4">
           <Text className="text-foreground text-sm font-medium">Top Toolbar</Text>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             <Label htmlFor="toolbar-style">Style</Label>
             <Select value={toolbarStyle} onValueChange={handleToolbarChange}>
               <SelectTrigger id="toolbar-style">
@@ -353,7 +356,7 @@ export function LayoutSection() {
         <div className="bg-card/50 flex flex-col gap-3 p-4">
           {/* Theme selector row */}
           <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1 space-y-2">
+            <div className="min-w-0 flex-1 flex flex-col gap-3">
               <Label htmlFor="color-theme">Color Theme</Label>
               <Select value={colorTheme} onValueChange={handleThemeChange}>
                 <SelectTrigger id="color-theme">
