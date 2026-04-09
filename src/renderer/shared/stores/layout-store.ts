@@ -10,7 +10,7 @@
 import { create } from 'zustand';
 
 import { SETTINGS } from '@shared/ipc/settings/channels';
-import type { SidebarLayoutId } from '@shared/types/layout';
+import type { ContentLayoutId, SidebarLayoutId } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -19,6 +19,7 @@ import type { Layout } from 'react-resizable-panels';
 interface LayoutState {
   sidebarCollapsed: boolean;
   sidebarLayout: SidebarLayoutId;
+  contentLayout: ContentLayoutId;
   activeProjectId: string | null;
   projectTabOrder: string[];
   panelLayout: Layout | null;
@@ -26,6 +27,7 @@ interface LayoutState {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
   setSidebarLayout: (id: SidebarLayoutId) => void;
+  setContentLayout: (id: ContentLayoutId) => void;
   setActiveProject: (projectId: string | null) => void;
   setProjectTabOrder: (order: string[]) => void;
   addProjectTab: (projectId: string) => void;
@@ -37,6 +39,7 @@ interface LayoutState {
     lastRoutePerProject: Record<string, string>;
     sidebarCollapsed: boolean;
     sidebarLayout: string;
+    contentLayout?: string;
   }) => void;
   clearLayout: () => void;
 }
@@ -51,11 +54,12 @@ function persistLayout() {
 
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    const { sidebarCollapsed, sidebarLayout, activeProjectId, projectTabOrder } =
+    const { sidebarCollapsed, sidebarLayout, contentLayout, activeProjectId, projectTabOrder } =
       useLayoutStore.getState();
     void ipc(SETTINGS.SAVE.LAYOUT, {
       sidebarCollapsed,
       sidebarLayout,
+      contentLayout,
       activeProjectId,
       openProjectTabs: projectTabOrder,
     });
@@ -65,6 +69,7 @@ function persistLayout() {
 export const useLayoutStore = create<LayoutState>((set) => ({
   sidebarCollapsed: false,
   sidebarLayout: 'sidebar-07',
+  contentLayout: 'flush',
   activeProjectId: null,
   projectTabOrder: [],
   panelLayout: null,
@@ -79,6 +84,10 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   },
   setSidebarLayout: (id) => {
     set({ sidebarLayout: id });
+    persistLayout();
+  },
+  setContentLayout: (id) => {
+    set({ contentLayout: id });
     persistLayout();
   },
 
@@ -123,6 +132,7 @@ export const useLayoutStore = create<LayoutState>((set) => ({
       activeProjectId: state.activeProjectId,
       sidebarCollapsed: state.sidebarCollapsed,
       sidebarLayout: state.sidebarLayout as SidebarLayoutId,
+      contentLayout: (state.contentLayout as ContentLayoutId | undefined) ?? 'flush',
     });
     hydrated = true;
   },
@@ -133,6 +143,7 @@ export const useLayoutStore = create<LayoutState>((set) => ({
     set({
       sidebarCollapsed: false,
       sidebarLayout: 'sidebar-07',
+      contentLayout: 'flush',
       activeProjectId: null,
       projectTabOrder: [],
       panelLayout: null,

@@ -264,6 +264,9 @@ export type {
 } from './form';
 
 // Tier 4: App-Specific Primitives
+export { StatusBadge, statusBadgeVariants } from './status-badge';
+export type { StatusBadgeProps } from './status-badge';
+
 export { StatusIndicator, statusIndicatorVariants } from './status-indicator';
 export type { StatusIndicatorProps } from './status-indicator';
 

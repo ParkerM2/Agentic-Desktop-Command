@@ -23,6 +23,7 @@ import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 import {
   Badge,
   Button,
+  StatusBadge,
   Checkbox,
   Code,
   Dialog,
@@ -79,19 +80,19 @@ const PROGRESS_STATUS_LABELS: Record<ProgressStatus, string> = {
   error: 'Error',
 };
 
-const PROGRESS_STATUS_VARIANTS: Record<
+const PROGRESS_STATUS_TONES: Record<
   ProgressStatus,
-  'default' | 'secondary' | 'destructive' | 'outline'
+  'muted' | 'primary' | 'success' | 'warning' | 'info' | 'destructive' | 'purple' | 'amber'
 > = {
-  backlog: 'outline',
-  researching: 'secondary',
-  research_done: 'secondary',
-  planning: 'secondary',
-  plan_ready: 'secondary',
-  executing: 'default',
-  review: 'secondary',
-  done: 'default',
-  archived: 'outline',
+  backlog: 'muted',
+  researching: 'info',
+  research_done: 'info',
+  planning: 'info',
+  plan_ready: 'purple',
+  executing: 'primary',
+  review: 'amber',
+  done: 'success',
+  archived: 'muted',
   error: 'destructive',
 };
 
@@ -380,12 +381,12 @@ function createProgressColumns(
       cell: ({ row }) => {
         const status = row.getValue<ProgressStatus>('status');
         return (
-          <Badge variant={PROGRESS_STATUS_VARIANTS[status]}>
-            {ACTIVE_PROGRESS_STATUSES.has(status) ? (
-              <span className="bg-primary mr-1.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full" />
-            ) : null}
+          <StatusBadge
+            pulsing={ACTIVE_PROGRESS_STATUSES.has(status)}
+            tone={PROGRESS_STATUS_TONES[status]}
+          >
             {PROGRESS_STATUS_LABELS[status]}
-          </Badge>
+          </StatusBadge>
         );
       },
     },

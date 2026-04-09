@@ -53,3 +53,24 @@ export const SIDEBAR_LAYOUT_IDS: [SidebarLayoutId, ...SidebarLayoutId[]] = [
   'sidebar-09', 'sidebar-10', 'sidebar-11', 'sidebar-12',
   'sidebar-13', 'sidebar-14', 'sidebar-15', 'sidebar-16',
 ];
+
+// ── Content Area Style ──────────────────────────────────────
+
+export type ContentLayoutId = 'flush' | 'padded' | 'bordered' | 'inset';
+
+export interface ContentLayoutMeta {
+  id: ContentLayoutId;
+  label: string;
+  description: string;
+}
+
+export const CONTENT_LAYOUTS: ContentLayoutMeta[] = [
+  { id: 'flush', label: 'Flush', description: 'No padding — content extends edge to edge' },
+  { id: 'padded', label: 'Padded', description: 'Subtle inner padding around content' },
+  { id: 'bordered', label: 'Bordered', description: 'Rounded border with inner spacing' },
+  { id: 'inset', label: 'Inset', description: 'Recessed content area with rounded corners' },
+];
+
+export const CONTENT_LAYOUT_IDS: [ContentLayoutId, ...ContentLayoutId[]] = [
+  'flush', 'padded', 'bordered', 'inset',
+];

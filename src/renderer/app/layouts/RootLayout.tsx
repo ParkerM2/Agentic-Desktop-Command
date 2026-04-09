@@ -30,6 +30,7 @@ import { useSettings } from '@features/settings';
 import { useHubStatus } from '@features/settings/api/useHub';
 import { WorkflowPermissionModal } from '@features/workflow';
 
+import { ContentAreaContainer } from './ContentAreaContainer';
 import { LayoutWrapper } from './LayoutWrapper';
 import { TopBar } from './TopBar';
 
@@ -80,17 +81,23 @@ export function RootLayout() {
       <EventBridge />
       <div className="min-h-0 flex-1 overflow-hidden">
         <LayoutWrapper>
-          <TopBar />
-          {hubStatus?.status === 'disconnected' || hubStatus?.status === 'error' ? (
-            <div className="bg-destructive/10 text-destructive px-4 py-1.5 text-center text-xs">
-              Hub disconnected. Some features may be unavailable.
-            </div>
-          ) : null}
-          <main className="min-h-0 flex-1 overflow-hidden">
-            <RouteErrorBoundary resetKey={pathname}>
-              <Outlet />
-            </RouteErrorBoundary>
-          </main>
+          <ContentAreaContainer>
+            <ContentAreaContainer.ToolBar>
+              <TopBar />
+              {hubStatus?.status === 'disconnected' || hubStatus?.status === 'error' ? (
+                <div className="bg-destructive/10 text-destructive px-4 py-1.5 text-center text-xs">
+                  Hub disconnected. Some features may be unavailable.
+                </div>
+              ) : null}
+            </ContentAreaContainer.ToolBar>
+            <ContentAreaContainer.Content>
+              <main className="h-full overflow-hidden">
+                <RouteErrorBoundary resetKey={pathname}>
+                  <Outlet />
+                </RouteErrorBoundary>
+              </main>
+            </ContentAreaContainer.Content>
+          </ContentAreaContainer>
         </LayoutWrapper>
       </div>
       <AppUpdateNotification />
