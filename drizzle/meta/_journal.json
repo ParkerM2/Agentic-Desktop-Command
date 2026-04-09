@@ -43,6 +43,13 @@
       "when": 1775714734860,
       "tag": "0005_steep_justice",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1775720146966,
+      "tag": "0006_perpetual_mesmero",
+      "breakpoints": true
     }
   ]
 }

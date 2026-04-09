@@ -39,11 +39,11 @@ export function registerWorkspaceHandlers(
   });
 
   router.handle(WORKSPACE.HANDOFF.PLAN, ({ projectId, planPath, instructions }) => {
-    return Promise.resolve(workspace.handOffPlan(projectId, planPath, instructions));
+    return workspace.handOffPlan(projectId, planPath, instructions);
   });
 
   router.handle(WORKSPACE.EXECUTE.TASK, ({ projectId, taskDescription, planPath }) => {
-    return Promise.resolve(workspace.executeTask(projectId, taskDescription, planPath));
+    return workspace.executeTask(projectId, taskDescription, planPath);
   });
 
   router.handle(WORKSPACE.PROVISION.TEAMMATE, ({ projectId, agentRole, slug, teamName, taskInstructions }) => {

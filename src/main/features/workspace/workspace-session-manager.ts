@@ -26,6 +26,7 @@ import type { SessionKey, WorkspaceSession } from '@shared/ipc/workspace';
 
 import { agentLogger } from '@main/lib/logger';
 
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { AgentManagerService } from '../../services/agent-manager';
 import type { WorktreeProvisioner } from '../../services/worktree-provisioner';
 
@@ -80,13 +81,13 @@ export interface WorkspaceSessionManager {
     projectId: string,
     planPath: string,
     instructions?: string,
-  ) => HandoffResult;
+  ) => Promise<HandoffResult>;
   /** Send an ad-hoc task to a team-lead */
   executeTask: (
     projectId: string,
     taskDescription: string,
     planPath?: string,
-  ) => HandoffResult;
+  ) => Promise<HandoffResult>;
   /** Provision an isolated worktree for a teammate agent */
   provisionTeammate: (
     projectId: string,
@@ -106,6 +107,7 @@ export function createWorkspaceSessionManager(
   agentManager: AgentManagerService,
   provisioner: WorktreeProvisioner,
   getWindow: () => BrowserWindow | null,
+  busSessionManager: BusSessionManager,
 ): WorkspaceSessionManager {
   const sessions = new Map<SessionKeyString, WorkspaceSession>();
 
@@ -160,13 +162,13 @@ export function createWorkspaceSessionManager(
    * Provision a worktree for a team-lead and spawn the agent into it.
    * Returns the agent session ID.
    */
-  function provisionAndSpawnTeamLead(
+  async function provisionAndSpawnTeamLead(
     projectId: string,
     projectPath: string,
     index: number,
     prompt: string,
     planPath?: string,
-  ): string {
+  ): Promise<string> {
     const slug = teamLeadSlug(projectId, index);
     const key: SessionKey = { projectId, type: SESSION_TYPE_TEAM_LEAD, index };
     const keyStr = keyToString(key);
@@ -188,23 +190,25 @@ export function createWorkspaceSessionManager(
       `[WorkspaceSessionManager] Team-lead ${String(index)} provisioned at ${worktreePath}`,
     );
 
-    // Spawn the team-lead in the provisioned worktree
-    const result = agentManager.spawnTeamLead({
-      projectPath: worktreePath,
-      teamName: `workspace-tl-${projectId}-${String(index)}`,
-      prompt,
-      model: TEAM_LEAD_MODEL,
-      name: `workspace-tl-${projectId}-${String(index)}`,
-    });
-
-    if ('error' in result) {
+    // Spawn the team-lead via the bus session manager
+    try {
+      const record = await busSessionManager.spawn({
+        name: `workspace-tl-${projectId}-${String(index)}`,
+        type: 'team-lead',
+        projectPath: worktreePath,
+        prompt,
+        model: TEAM_LEAD_MODEL,
+        teamName: `workspace-tl-${projectId}-${String(index)}`,
+        projectId,
+      });
+      return record.id;
+    } catch (err) {
       // Clean up the worktree on spawn failure
       provisioner.teardown(projectPath, slug);
       worktreeSlugs.delete(keyStr);
-      throw new Error(`Failed to spawn team lead: ${result.error}`);
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Failed to spawn team lead: ${message}`);
     }
-
-    return result.id;
   }
 
   /**
@@ -219,7 +223,7 @@ export function createWorkspaceSessionManager(
     }
   }
 
-  function spawnPrimary(projectId: string, projectPath: string): string {
+  async function spawnPrimary(projectId: string, projectPath: string): Promise<string> {
     const key: SessionKey = { projectId, type: 'primary', index: 0 };
     const keyStr = keyToString(key);
 
@@ -239,23 +243,25 @@ export function createWorkspaceSessionManager(
     };
     sessions.set(keyStr, session);
 
-    const result = agentManager.spawnProjectOwner({
+    const record = await busSessionManager.spawn({
+      name: `workspace-primary-${projectId}`,
+      type: 'project-owner',
       projectPath,
       prompt: 'You are the primary Claude session for this project. You can hand off plans to team-lead agents using the workspace.handOffPlan IPC channel, or send ad-hoc tasks via workspace.executeTask. When the user asks you to delegate work, send a plan, or have a team-lead execute something, use these channels. Await instructions.',
       model: PRIMARY_MODEL,
-      name: `workspace-primary-${projectId}`,
+      projectId,
     });
 
-    updateSession(key, { agentSessionId: result.id, status: 'live' });
+    updateSession(key, { agentSessionId: record.id, status: 'live' });
     sendEvent(EVENT_SESSION_READY, {
       projectId,
       sessionKey: key,
-      sessionId: result.id,
+      sessionId: record.id,
     });
-    return result.id;
+    return record.id;
   }
 
-  function spawnImmortalTeamLead(projectId: string, projectPath: string): string {
+  async function spawnImmortalTeamLead(projectId: string, projectPath: string): Promise<string> {
     const key: SessionKey = { projectId, type: SESSION_TYPE_TEAM_LEAD, index: 0 };
     const keyStr = keyToString(key);
 
@@ -275,7 +281,7 @@ export function createWorkspaceSessionManager(
     };
     sessions.set(keyStr, session);
 
-    const sessionId = provisionAndSpawnTeamLead(
+    const sessionId = await provisionAndSpawnTeamLead(
       projectId,
       projectPath,
       0,
@@ -331,14 +337,17 @@ export function createWorkspaceSessionManager(
         // Clear agentSessionId so spawn functions will re-spawn
         sessions.set(keyStr, { ...current, agentSessionId: '', status: 'starting' });
 
-        const newSessionId =
+        const spawnPromise =
           key.type === 'primary'
             ? spawnPrimary(key.projectId, session.projectPath)
             : spawnImmortalTeamLead(key.projectId, session.projectPath);
-        sendEvent('event:workspace.sessionRestarted', {
-          projectId: key.projectId,
-          sessionKey: key,
-          sessionId: newSessionId,
+        void spawnPromise.then((newSessionId) => {
+          sendEvent('event:workspace.sessionRestarted', {
+            projectId: key.projectId,
+            sessionKey: key,
+            sessionId: newSessionId,
+          });
+          return null;
         });
       }, RESTART_DELAY_MS);
 
@@ -349,10 +358,10 @@ export function createWorkspaceSessionManager(
   // ── Public API ────────────────────────────────────────────
 
   return {
-    initProject(projectId, projectPath) {
-      const primarySessionId = spawnPrimary(projectId, projectPath);
-      const teamLeadSessionId = spawnImmortalTeamLead(projectId, projectPath);
-      return Promise.resolve({ primarySessionId, teamLeadSessionId });
+    async initProject(projectId, projectPath) {
+      const primarySessionId = await spawnPrimary(projectId, projectPath);
+      const teamLeadSessionId = await spawnImmortalTeamLead(projectId, projectPath);
+      return { primarySessionId, teamLeadSessionId };
     },
 
     async initAllProjects(projects) {
@@ -371,7 +380,7 @@ export function createWorkspaceSessionManager(
       return [...sessions.values()].filter((s) => s.key.projectId === projectId);
     },
 
-    spawnTeamLead(projectId, planPath) {
+    async spawnTeamLead(projectId, planPath) {
       // Find next available mortal index (immortal is index 0, mortals start at 1)
       const existing = [...sessions.values()].filter(
         (s) => s.key.projectId === projectId && s.key.type === SESSION_TYPE_TEAM_LEAD,
@@ -397,7 +406,7 @@ export function createWorkspaceSessionManager(
       };
       sessions.set(keyStr, session);
 
-      const sessionId = provisionAndSpawnTeamLead(
+      const sessionId = await provisionAndSpawnTeamLead(
         projectId,
         projectPath,
         nextIndex,
@@ -412,7 +421,7 @@ export function createWorkspaceSessionManager(
         sessionKey: key,
         sessionId,
       });
-      return Promise.resolve(ready);
+      return ready;
     },
 
     stopTeamLead(projectId, index) {
@@ -435,7 +444,7 @@ export function createWorkspaceSessionManager(
       return Promise.resolve({ success });
     },
 
-    handOffPlan(projectId, planPath, instructions) {
+    async handOffPlan(projectId, planPath, instructions) {
       const idle = findIdleTeamLead(projectId);
 
       if (idle) {
@@ -489,7 +498,7 @@ export function createWorkspaceSessionManager(
       };
       sessions.set(keyStr, session);
 
-      const sessionId = provisionAndSpawnTeamLead(
+      const sessionId = await provisionAndSpawnTeamLead(
         projectId,
         projectPath,
         nextIndex,
@@ -522,7 +531,7 @@ export function createWorkspaceSessionManager(
       };
     },
 
-    executeTask(projectId, taskDescription, planPath) {
+    async executeTask(projectId, taskDescription, planPath) {
       const idle = findIdleTeamLead(projectId);
 
       if (idle) {
@@ -568,7 +577,7 @@ export function createWorkspaceSessionManager(
       };
       sessions.set(keyStr, session);
 
-      const sessionId = provisionAndSpawnTeamLead(
+      const sessionId = await provisionAndSpawnTeamLead(
         projectId,
         projectPath,
         nextIndex,

@@ -18,4 +18,7 @@ export * from '../features/auth/schema';
 export * from '../features/email/schema';
 export * from '../features/hub/schema';
 export * from '../features/changelog/schema';
+export * from '../features/progress/session-logs-schema';
+export * from '../features/project/task-specs-schema';
+export * from '../features/workflow-engine/workflow-agents-schema';
 export * from '../bus/schema';

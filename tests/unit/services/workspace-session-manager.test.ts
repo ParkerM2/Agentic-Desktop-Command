@@ -81,12 +81,36 @@ describe('WorkspaceSessionManager', () => {
   let agentManager: ReturnType<typeof makeMockAgentManager>;
   let mockProvisioner: ReturnType<typeof makeMockProvisioner>;
   let mockWindow: ReturnType<typeof makeMockWindow>;
+  let mockBusSessionManager: {
+    spawn: ReturnType<typeof vi.fn>;
+    kill: ReturnType<typeof vi.fn>;
+    list: ReturnType<typeof vi.fn>;
+    get: ReturnType<typeof vi.fn>;
+    onEvent: ReturnType<typeof vi.fn>;
+    recoverInterrupted: ReturnType<typeof vi.fn>;
+    dispose: ReturnType<typeof vi.fn>;
+  };
+
+  let spawnCallCount: number;
 
   beforeEach(() => {
     vi.clearAllMocks();
     agentManager = makeMockAgentManager();
     mockProvisioner = makeMockProvisioner();
     mockWindow = makeMockWindow();
+    spawnCallCount = 0;
+    mockBusSessionManager = {
+      spawn: vi.fn().mockImplementation(() => {
+        spawnCallCount++;
+        return Promise.resolve({ id: `bus-session-${String(spawnCallCount)}`, name: 'test', type: 'project-owner', status: 'active', startedAt: new Date().toISOString(), phase: null, projectId: null, taskSlug: null, model: null, pid: null, worktreePath: null, spawnConfig: null, tokenUsage: null, toolUsage: null, parentId: null, teamName: null, wave: null, taskIndex: null, endedAt: null, exitCode: null, error: null });
+      }),
+      kill: vi.fn().mockResolvedValue(undefined),
+      list: vi.fn().mockReturnValue([]),
+      get: vi.fn(),
+      onEvent: vi.fn().mockReturnValue(() => {}),
+      recoverInterrupted: vi.fn(),
+      dispose: vi.fn(),
+    };
   });
 
   function createManager() {
@@ -94,6 +118,7 @@ describe('WorkspaceSessionManager', () => {
       agentManager as never,
       mockProvisioner as never,
       () => mockWindow as never,
+      mockBusSessionManager as never,
     );
   }
 
@@ -102,8 +127,8 @@ describe('WorkspaceSessionManager', () => {
       const manager = createManager();
       const result = await manager.initProject('proj-1', '/projects/my-app');
 
-      expect(agentManager.spawnProjectOwner).toHaveBeenCalledTimes(1);
-      expect(agentManager.spawnTeamLead).toHaveBeenCalledTimes(1);
+      // Primary + team-lead both go through busSessionManager.spawn
+      expect(mockBusSessionManager.spawn).toHaveBeenCalledTimes(2);
       expect(mockProvisioner.provision).toHaveBeenCalledTimes(1);
       expect(mockProvisioner.provision).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -121,8 +146,8 @@ describe('WorkspaceSessionManager', () => {
       const second = await manager.initProject('proj-1', '/projects/my-app');
 
       expect(first.primarySessionId).toBe(second.primarySessionId);
-      // spawnProjectOwner called only once since session is already live
-      expect(agentManager.spawnProjectOwner).toHaveBeenCalledTimes(1);
+      // busSessionManager.spawn called only twice (primary + team-lead) since sessions are already live
+      expect(mockBusSessionManager.spawn).toHaveBeenCalledTimes(2);
     });
 
     it('sends sessionReady events via BrowserWindow', async () => {
@@ -172,20 +197,20 @@ describe('WorkspaceSessionManager', () => {
 
       await manager.spawnTeamLead('proj-1', '/plans/feature.md');
 
-      // The second spawnTeamLead call (mortal) should have the plan path in prompt
-      const lastCall = agentManager.spawnTeamLead.mock.calls.at(-1)?.[0] as
+      // The last busSessionManager.spawn call (mortal team-lead) should have the plan path in prompt
+      const lastCall = mockBusSessionManager.spawn.mock.calls.at(-1)?.[0] as
         | { prompt: string }
         | undefined;
       expect(lastCall?.prompt).toContain('/plans/feature.md');
     });
 
-    it('throws when agentManager returns error result', async () => {
+    it('throws when busSessionManager.spawn rejects', async () => {
       const manager = createManager();
       await manager.initProject('proj-1', '/projects/my-app');
 
-      agentManager.spawnTeamLead.mockReturnValueOnce({ error: 'spawn_failed' } as unknown as ReturnType<typeof agentManager.spawnTeamLead>);
+      mockBusSessionManager.spawn.mockRejectedValueOnce(new Error('spawn_failed'));
 
-      expect(() => manager.spawnTeamLead('proj-1')).toThrow('Failed to spawn');
+      await expect(manager.spawnTeamLead('proj-1')).rejects.toThrow('Failed to spawn');
     });
   });
 

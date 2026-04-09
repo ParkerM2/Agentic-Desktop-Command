@@ -244,7 +244,7 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     return fail(`Unknown task tool: ${name}`);
   }
 
-  function executeHandOffPlan(input: ToolInput): ToolResult {
+  async function executeHandOffPlan(input: ToolInput): Promise<ToolResult> {
     if (!workspaceSessionManager) return fail('Workspace service unavailable');
     const projectId = getString(input, 'projectId');
     const planPath = getString(input, 'planPath');
@@ -252,7 +252,7 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     if (projectId.length === 0 || planPath.length === 0) {
       return fail('projectId and planPath are required');
     }
-    const result = workspaceSessionManager.handOffPlan(projectId, planPath, instructions);
+    const result = await workspaceSessionManager.handOffPlan(projectId, planPath, instructions);
     return ok(
       {
         message: result.action === 'reused'
@@ -264,7 +264,7 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     );
   }
 
-  function executeExecuteTask(input: ToolInput): ToolResult {
+  async function executeExecuteTask(input: ToolInput): Promise<ToolResult> {
     if (!workspaceSessionManager) return fail('Workspace service unavailable');
     const projectId = getString(input, 'projectId');
     const taskDescription = getString(input, 'taskDescription');
@@ -272,7 +272,7 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
     if (projectId.length === 0 || taskDescription.length === 0) {
       return fail('projectId and taskDescription are required');
     }
-    const result = workspaceSessionManager.executeTask(projectId, taskDescription, planPath);
+    const result = await workspaceSessionManager.executeTask(projectId, taskDescription, planPath);
     return ok(
       {
         message: result.action === 'reused'

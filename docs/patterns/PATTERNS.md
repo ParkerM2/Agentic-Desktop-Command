@@ -66,34 +66,75 @@ const dashboardRoute = createRoute({
 
 ## Adding a New IPC Channel
 
-1. **Define contract** in `src/shared/ipc/<domain>/contract.ts` (or create a new domain folder):
+1. **Define channel constants** in `src/shared/ipc/<domain>/channels.ts`:
    ```typescript
-   'myFeature.doThing': {
-     input: z.object({ id: z.string() }),
-     output: z.object({ result: z.string() }),
-   },
+   import { domain } from '../channel-builder';
+   export const MY_FEATURE = domain('my-feature', {
+     DO: ['thing'],
+   });
+   // MY_FEATURE.DO.THING = "my-feature.do.thing"
    ```
 
-2. **Create/update service** in `src/main/services/<domain>/`:
+2. **Define contract** in `src/shared/ipc/<domain>/contract.ts`:
    ```typescript
-   export interface MyService {
-     doThing: (id: string) => { result: string };
-   }
+   import { MY_FEATURE } from './channels';
+   export const myFeatureInvoke = {
+     [MY_FEATURE.DO.THING]: { input: z.object({ id: z.string() }), output: z.object({ result: z.string() }) },
+   } as const;
    ```
 
-3. **Register handler** in `src/main/ipc/handlers/`:
+3. **Create/update service** in `src/main/features/<domain>/`:
    ```typescript
-   router.handle('myFeature.doThing', ({ id }) =>
-     Promise.resolve(service.doThing(id)),
-   );
+   export function createMyService(deps: { db: AdcDatabase; router: IpcRouter }) { ... }
    ```
 
-4. **Call from renderer**:
+4. **Register handler** in `src/main/features/<domain>/my-feature-handlers.ts`:
    ```typescript
-   const result = await ipc('myFeature.doThing', { id: '123' });
+   import { MY_FEATURE } from '@shared/ipc/my-feature/channels';
+   router.handle(MY_FEATURE.DO.THING, ({ id }) => Promise.resolve(service.doThing(id)));
    ```
 
-Types flow automatically — no manual type wiring needed.
+5. **Call from renderer**:
+   ```typescript
+   import { MY_FEATURE } from '@shared/ipc/my-feature/channels';
+   const result = await ipc(MY_FEATURE.DO.THING, { id: '123' });
+   ```
+
+Types flow automatically. Every call is tracked in SQLite via the command bus.
+
+## Channel Constants
+
+All IPC channels use typed constants from `src/shared/ipc/<domain>/channels.ts`. Never use hardcoded strings.
+
+```typescript
+import { domain, events } from '../channel-builder';
+
+export const PROGRESS = domain('progress', {
+  LIST: ['tasks', 'archived'],
+  CREATE: ['task'],
+});
+// PROGRESS.LIST.TASKS = "progress.list.tasks" (literal type preserved)
+
+export const PROGRESS_EVENTS = events('progress', {
+  TASK: ['updated', 'created'],
+});
+// PROGRESS_EVENTS.TASK.CREATED = "event:progress.task.created"
+```
+
+## Command Bus Dispatch
+
+Every IPC call flows through the command bus for SQLite tracking:
+
+1. Renderer calls `ipc(CHANNEL, input)` via preload bridge
+2. IPC router validates input with Zod
+3. Router dispatches through `bus.dispatch(channel, input, source)`
+4. Bus writes pending command to SQLite, executes handler, writes result
+5. Every command is queryable: `bus.queryCommands({ domain: 'progress' })`
+
+Source attribution is automatic:
+- UI calls: `{ type: 'ui' }`
+- Agent calls: `{ type: 'agent', id: sessionId, name: agentName }`
+- System calls: `{ type: 'system', name: 'scheduler' }`
 
 ## Design System Component Usage
 
@@ -1048,44 +1089,41 @@ Routes declare `staticData: { breadcrumbLabel: 'Name' }` and `AppBreadcrumbs` re
 - `collapsible="offcanvas" | "icon" | "none"` — collapse behavior
 - `SidebarMenuButton tooltip="Label"` — shows tooltip when icon-collapsed
 
-## Agent Orchestrator Pattern
+## Session Management Pattern (Bus)
 
-For headless Claude agent lifecycle management with event-driven status updates:
+All Claude sessions are managed through `BusSessionManager` backed by SQLite:
 
 ```typescript
-// Interface defines session lifecycle
-export interface AgentOrchestrator {
-  spawnSession: (taskId: string, projectPath: string, options?: SpawnOptions) => OrchestratorSession;
-  stopSession: (taskId: string) => void;
-  listSessions: () => OrchestratorSession[];
-  onSessionEvent: (handler: (event: SessionEvent) => void) => void;
-  dispose: () => void;
-}
+import type { BusSessionManager } from '../bus/session-manager';
 
-// Factory creates orchestrator with dependencies
-export function createAgentOrchestrator(dataDir: string, milestonesService: MilestonesService): AgentOrchestrator {
-  const sessions = new Map<string, OrchestratorSession>();
-  const eventHandlers: Array<(event: SessionEvent) => void> = [];
+// Spawn a session (tracked in SQLite)
+const session = await busSessionManager.spawn({
+  name: 'research-auth-refactor',
+  type: 'project-owner',
+  projectPath: '/path/to/project',
+  prompt: 'Research the auth system...',
+  model: 'claude-sonnet-4-6',
+});
 
-  return {
-    spawnSession(taskId, projectPath, options) {
-      // Spawn child process, register event listeners
-      // Emit 'spawned' event, then 'active' on first output
-    },
-    onSessionEvent(handler) {
-      eventHandlers.push(handler);
-    },
-    dispose() {
-      // Kill all active sessions
-    },
-  };
-}
+// Query sessions
+const active = busSessionManager.list({ status: 'active' });
+const session = busSessionManager.get(sessionId);
+
+// Kill a session
+await busSessionManager.kill(sessionId);
+
+// Listen for lifecycle events
+busSessionManager.onEvent((event) => {
+  // event.type: 'spawned' | 'active' | 'completed' | 'error' | 'killed'
+  // event.session: full SessionRecord
+});
 ```
 
 Key rules:
-- **Event-driven**: Use `onSessionEvent()` callback pattern for status updates
-- **Wiring in index.ts**: Map session events to IPC events for renderer consumption
-- **Cleanup**: Always implement `dispose()` and call it in `app.on('before-quit')`
+- **Never call `agentManager.spawn*()` directly** — always go through `busSessionManager.spawn()`
+- **SQLite is the source of truth** — sessions persist across app restarts
+- **`recoverInterrupted()`** runs on boot — marks dead sessions as errored via PID check
+- **Event-driven**: Use `onEvent()` for status updates, forwarded to renderer via IPC
 
 ## QA Runner Pattern
 
