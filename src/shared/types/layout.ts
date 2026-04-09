@@ -53,3 +53,58 @@ export const SIDEBAR_LAYOUT_IDS: [SidebarLayoutId, ...SidebarLayoutId[]] = [
   'sidebar-09', 'sidebar-10', 'sidebar-11', 'sidebar-12',
   'sidebar-13', 'sidebar-14', 'sidebar-15', 'sidebar-16',
 ];
+
+// ── Top Toolbar Style ───────────────────────────────────────
+
+export type ToolbarStyleId =
+  | 'default'
+  | 'compact'
+  | 'spacious'
+  | 'floating'
+  | 'bordered'
+  | 'glass'
+  | 'minimal'
+  | 'inset';
+
+export interface ToolbarStyleMeta {
+  id: ToolbarStyleId;
+  label: string;
+  description: string;
+}
+
+export const TOOLBAR_STYLES: ToolbarStyleMeta[] = [
+  { id: 'default', label: 'Standard', description: 'Default toolbar with solid background and bottom border' },
+  { id: 'compact', label: 'Compact', description: 'Reduced height with tighter spacing' },
+  { id: 'spacious', label: 'Spacious', description: 'Taller toolbar with extra breathing room' },
+  { id: 'floating', label: 'Floating', description: 'Detached bar with rounded corners and shadow' },
+  { id: 'bordered', label: 'Bordered', description: 'Prominent bottom border separation' },
+  { id: 'glass', label: 'Glass', description: 'Semi-transparent background with backdrop blur' },
+  { id: 'minimal', label: 'Minimal', description: 'Transparent background, no visible border' },
+  { id: 'inset', label: 'Inset', description: 'Recessed bar with muted background tint' },
+];
+
+export const TOOLBAR_STYLE_IDS: [ToolbarStyleId, ...ToolbarStyleId[]] = [
+  'default', 'compact', 'spacious', 'floating',
+  'bordered', 'glass', 'minimal', 'inset',
+];
+
+// ── Content Area Style ──────────────────────────────────────
+
+export type ContentLayoutId = 'flush' | 'padded' | 'bordered' | 'inset';
+
+export interface ContentLayoutMeta {
+  id: ContentLayoutId;
+  label: string;
+  description: string;
+}
+
+export const CONTENT_LAYOUTS: ContentLayoutMeta[] = [
+  { id: 'flush', label: 'Flush', description: 'No padding — content extends edge to edge' },
+  { id: 'padded', label: 'Padded', description: 'Subtle inner padding around content' },
+  { id: 'bordered', label: 'Bordered', description: 'Rounded border with inner spacing' },
+  { id: 'inset', label: 'Inset', description: 'Recessed content area with rounded corners' },
+];
+
+export const CONTENT_LAYOUT_IDS: [ContentLayoutId, ...ContentLayoutId[]] = [
+  'flush', 'padded', 'bordered', 'inset',
+];

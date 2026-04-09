@@ -13,11 +13,11 @@ import { Folder, FolderOpen, Minus, PanelLeft, Plus, Settings, Square, X } from 
 
 import { PROJECT_VIEWS, ROUTES, projectViewPath } from '@shared/constants';
 import { WINDOW } from '@shared/ipc/window/channels';
+import type { ToolbarStyleId } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
-
 
 import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
@@ -27,9 +27,22 @@ import { useSidebar } from '@ui/sidebar';
 
 import { TitleBarScreenshot } from './TitleBarScreenshot';
 
+// ── Toolbar style classes ─────────────────────────────────────
+
+const TOOLBAR_CLASSES: Record<ToolbarStyleId, string> = {
+  default: 'h-10 bg-card border border-border',
+  compact: 'h-8 bg-card border border-border',
+  spacious: 'h-12 bg-card border border-border',
+  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm',
+  bordered: 'h-10 bg-card border-2 border-border',
+  glass: 'h-10 bg-card/60 backdrop-blur-md border border-border/50',
+  minimal: 'h-8 bg-transparent',
+  inset: 'h-10 bg-muted/40 border border-border',
+};
+
 export function TopBar() {
   const navigate = useNavigate();
-  const { activeProjectId, projectTabOrder, removeProjectTab, setActiveProject } = useLayoutStore();
+  const { toolbarStyle, activeProjectId, projectTabOrder, removeProjectTab, setActiveProject } = useLayoutStore();
   const { data: projects } = useProjects();
   const { toggleSidebar } = useSidebar();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -84,7 +97,7 @@ export function TopBar() {
   }
 
   return (
-    <div className="electron-drag border-border bg-card flex h-10 shrink-0 items-stretch border-b">
+    <div className={cn('electron-drag flex shrink-0 items-stretch', TOOLBAR_CLASSES[toolbarStyle])}>
       {/* Sidebar toggle */}
       <div className="electron-no-drag flex shrink-0 items-stretch">
         <button
