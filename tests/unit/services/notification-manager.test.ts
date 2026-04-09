@@ -139,7 +139,7 @@ describe('NotificationManager', () => {
       manager.startWatching();
 
       expect(router.emit).toHaveBeenCalledWith(
-        'event:notifications.watcherStatusChanged',
+        'event:notifications.watcher.status-changed',
         expect.objectContaining({ source: 'github', status: 'started' }),
       );
     });
@@ -167,7 +167,7 @@ describe('NotificationManager', () => {
       manager.stopWatching();
 
       expect(router.emit).toHaveBeenCalledWith(
-        'event:notifications.watcherStatusChanged',
+        'event:notifications.watcher.status-changed',
         expect.objectContaining({ source: 'github', status: 'stopped' }),
       );
     });
@@ -235,7 +235,7 @@ describe('NotificationManager', () => {
       manager.onNotification(notification);
 
       expect(router.emit).toHaveBeenCalledWith(
-        'event:notifications.new',
+        'event:notifications.notification.new',
         expect.objectContaining({
           notification: expect.objectContaining({ id: 'event-1' }),
         }),

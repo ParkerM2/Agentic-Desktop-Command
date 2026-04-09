@@ -36,7 +36,7 @@ function makeAgentSession(overrides: Record<string, unknown> = {}) {
     id: 'session-1',
     taskId: 'task-1',
     status: 'active',
-    spawnedAt: new Date().toISOString(),
+    startedAt: new Date().toISOString(),
     ...overrides,
   };
 }
@@ -74,13 +74,13 @@ function makeMockDeps(options: {
       removeSubProject: vi.fn(),
       getProjectPath: vi.fn(),
     },
-    agentOrchestrator: {
+    busSessionManager: {
       spawn: vi.fn(),
       kill: vi.fn(),
-      getSession: vi.fn(),
-      getSessionByTaskId: vi.fn(),
-      listActiveSessions: vi.fn(() => sessions),
-      onSessionEvent: vi.fn(),
+      get: vi.fn(),
+      list: vi.fn(() => sessions),
+      onEvent: vi.fn(),
+      recoverInterrupted: vi.fn(),
       dispose: vi.fn(),
     },
     qaRunner: {
@@ -153,9 +153,9 @@ describe('InsightsService', () => {
       const today = new Date().toISOString().split('T')[0] ?? '';
       const deps = makeMockDeps({
         sessions: [
-          makeAgentSession({ status: 'active', spawnedAt: `${today}T10:00:00Z` }),
-          makeAgentSession({ status: 'completed', spawnedAt: `${today}T09:00:00Z` }),
-          makeAgentSession({ status: 'error', spawnedAt: `${today}T08:00:00Z` }),
+          makeAgentSession({ status: 'active', startedAt: `${today}T10:00:00Z` }),
+          makeAgentSession({ status: 'completed', startedAt: `${today}T09:00:00Z` }),
+          makeAgentSession({ status: 'error', startedAt: `${today}T08:00:00Z` }),
         ],
       });
       const service = createInsightsService(deps as never);

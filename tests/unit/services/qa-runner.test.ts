@@ -51,10 +51,34 @@ const { createQaRunner } = await import('@main/services/qa/qa-runner');
 
 function makeOrchestrator() {
   return {
-    spawn: vi.fn(() => Promise.resolve({ id: 'agent-session-1', logFile: '/logs/qa.log' })),
+    spawn: vi.fn(() => Promise.resolve({
+      id: 'agent-session-1',
+      name: 'qa-task-1',
+      type: 'qa',
+      phase: 'qa',
+      status: 'active',
+      projectId: null,
+      taskSlug: null,
+      model: null,
+      pid: null,
+      worktreePath: null,
+      spawnConfig: { logFile: '/logs/qa.log' },
+      tokenUsage: null,
+      toolUsage: null,
+      parentId: null,
+      teamName: null,
+      wave: null,
+      taskIndex: null,
+      startedAt: new Date().toISOString(),
+      endedAt: null,
+      exitCode: null,
+    })),
     kill: vi.fn(),
-    getSession: vi.fn(() => undefined),
-    listSessions: vi.fn(() => []),
+    get: vi.fn(() => undefined),
+    list: vi.fn(() => []),
+    onEvent: vi.fn(),
+    recoverInterrupted: vi.fn(),
+    dispose: vi.fn(),
   };
 }
 
