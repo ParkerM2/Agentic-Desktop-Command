@@ -1,18 +1,28 @@
 /**
  * Alert Service — Manages alerts/reminders with recurring support
  *
- * Persists to userData/alerts.json. Checks for due alerts every 60 seconds.
+ * Persists to SQLite `alerts` table via Drizzle ORM.
+ * One-time migration from alerts.json on first access.
+ * Checks for due alerts every 60 seconds.
  * Emits 'event:alert.triggered' when an alert is due.
  */
 
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { eq } from 'drizzle-orm';
 
 import { ALERTS_EVENTS } from '@shared/ipc/misc/alerts.channels';
 import type { Alert, AlertLinkedTo, RecurringConfig } from '@shared/types';
 
+import { alerts } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
-import type { AlertStore } from './alert-store';
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
+
+const logger = createScopedLogger('alert-service');
 
 export interface AlertService {
   createAlert: (data: CreateAlertInput) => Alert;
@@ -32,24 +42,66 @@ interface CreateAlertInput {
   linkedTo?: AlertLinkedTo;
 }
 
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(alerts).limit(1).all();
+  if (existing.length > 0) return;
+
+  const jsonPath = join(dataDir, 'alerts.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { alerts?: Alert[] };
+    const items = Array.isArray(parsed.alerts) ? parsed.alerts : [];
+
+    for (const item of items) {
+      db.insert(alerts).values({
+        id: item.id,
+        type: item.type,
+        message: item.message,
+        triggerAt: item.triggerAt,
+        recurring: item.recurring ?? null,
+        linkedTo: item.linkedTo ?? null,
+        dismissed: item.dismissed,
+        createdAt: item.createdAt,
+      }).run();
+    }
+    logger.info(`Migrated ${String(items.length)} alerts from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate alerts from JSON:', err);
+  }
+}
+
+/** Convert a DB row to the Alert domain type. */
+function rowToAlert(row: typeof alerts.$inferSelect): Alert {
+  return {
+    id: row.id,
+    type: row.type as Alert['type'],
+    message: row.message,
+    triggerAt: row.triggerAt,
+    recurring: (row.recurring as RecurringConfig | null) ?? undefined,
+    linkedTo: (row.linkedTo as AlertLinkedTo | null) ?? undefined,
+    dismissed: row.dismissed,
+    createdAt: row.createdAt,
+  };
+}
+
 export function createAlertService(deps: {
+  db: AdcDatabase;
   router: IpcRouter;
-  alertStore: AlertStore;
+  dataDir: string;
 }): AlertService {
-  const { router, alertStore } = deps;
-  const alerts: Alert[] = alertStore.loadAlerts();
+  const { db, router, dataDir } = deps;
   let checkInterval: ReturnType<typeof setInterval> | null = null;
 
-  function persist(): void {
-    alertStore.saveAlerts(alerts);
-  }
+  migrateFromJson(db, dataDir);
 
-  function findAlertIndex(id: string): number {
-    const index = alerts.findIndex((a) => a.id === id);
-    if (index === -1) {
+  function findAlert(id: string): Alert {
+    const row = db.select().from(alerts).where(eq(alerts.id, id)).get();
+    if (!row) {
       throw new Error(`Alert not found: ${id}`);
     }
-    return index;
+    return rowToAlert(row);
   }
 
   function createNextOccurrence(alert: Alert): void {
@@ -58,18 +110,18 @@ export function createAlertService(deps: {
     const nextDate = calculateNextOccurrence(new Date(alert.triggerAt), alert.recurring);
     if (!nextDate) return;
 
-    const nextAlert: Alert = {
+    const nextAlert = {
       id: randomUUID(),
       type: alert.type,
       message: alert.message,
       triggerAt: nextDate.toISOString(),
       recurring: alert.recurring,
-      linkedTo: alert.linkedTo,
+      linkedTo: alert.linkedTo ?? null,
       dismissed: false,
       createdAt: new Date().toISOString(),
     };
 
-    alerts.push(nextAlert);
+    db.insert(alerts).values(nextAlert).run();
   }
 
   function calculateNextOccurrence(current: Date, config: RecurringConfig): Date | null {
@@ -109,35 +161,57 @@ export function createAlertService(deps: {
     }
   }
 
+  function checkDueAlerts(): void {
+    const now = new Date();
+    const undismissed = db.select().from(alerts)
+      .where(eq(alerts.dismissed, false))
+      .all();
+
+    for (const row of undismissed) {
+      const triggerDate = new Date(row.triggerAt);
+      if (triggerDate <= now) {
+        router.emit(ALERTS_EVENTS.ALERT.TRIGGERED, {
+          alertId: row.id,
+          message: row.message,
+        });
+      }
+    }
+  }
+
   return {
     createAlert(data) {
-      const alert: Alert = {
+      const now = new Date().toISOString();
+      const alert = {
         id: randomUUID(),
         type: data.type,
         message: data.message,
         triggerAt: data.triggerAt,
-        recurring: data.recurring,
-        linkedTo: data.linkedTo,
+        recurring: data.recurring ?? null,
+        linkedTo: data.linkedTo ?? null,
         dismissed: false,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
       };
-      alerts.push(alert);
-      persist();
+      db.insert(alerts).values(alert).run();
+
+      const result = rowToAlert(alert as typeof alerts.$inferSelect);
       router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: alert.id });
-      return alert;
+      return result;
     },
 
     listAlerts(includeExpired = false) {
+      const allRows = db.select().from(alerts).all();
+      const allAlerts = allRows.map(rowToAlert);
+
       if (includeExpired) {
-        return [...alerts];
+        return allAlerts;
       }
       const now = new Date();
-      return alerts.filter((a) => !a.dismissed || new Date(a.triggerAt) > now);
+      return allAlerts.filter((a) => !a.dismissed || new Date(a.triggerAt) > now);
     },
 
     dismissAlert(id) {
-      const index = findAlertIndex(id);
-      const alert = alerts[index];
+      const alert = findAlert(id);
+      db.update(alerts).set({ dismissed: true }).where(eq(alerts.id, id)).run();
       alert.dismissed = true;
 
       // For recurring alerts, create the next occurrence
@@ -145,47 +219,27 @@ export function createAlertService(deps: {
         createNextOccurrence(alert);
       }
 
-      persist();
       router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: alert.id });
       return alert;
     },
 
     deleteAlert(id) {
-      const index = findAlertIndex(id);
-      alerts.splice(index, 1);
-      persist();
+      const result = db.delete(alerts).where(eq(alerts.id, id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Alert not found: ${id}`);
+      }
       router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: id });
       return { success: true };
     },
 
     checkAlerts() {
-      const now = new Date();
-      for (const alert of alerts) {
-        if (alert.dismissed) continue;
-        const triggerDate = new Date(alert.triggerAt);
-        if (triggerDate <= now) {
-          router.emit(ALERTS_EVENTS.ALERT.TRIGGERED, {
-            alertId: alert.id,
-            message: alert.message,
-          });
-        }
-      }
+      checkDueAlerts();
     },
 
     startChecking() {
       if (checkInterval) return;
       checkInterval = setInterval(() => {
-        const now = new Date();
-        for (const alert of alerts) {
-          if (alert.dismissed) continue;
-          const triggerDate = new Date(alert.triggerAt);
-          if (triggerDate <= now) {
-            router.emit(ALERTS_EVENTS.ALERT.TRIGGERED, {
-              alertId: alert.id,
-              message: alert.message,
-            });
-          }
-        }
+        checkDueAlerts();
       }, 60_000);
     },
 

@@ -30,7 +30,6 @@ import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createAlertService } from '../services/alerts/alert-service';
-import { createAlertStore } from '../services/alerts/alert-store';
 import { createAppUpdateService } from '../services/app/app-update-service';
 import { createAssistantService } from '../services/assistant/assistant-service';
 import { createToolExecutor } from '../services/assistant/tool-executor';
@@ -274,8 +273,7 @@ export function createServiceRegistry(
   const dashboardService = createDashboardService({ db, dataDir, router });
   const dockerService = createDockerService();
   const plannerService = createPlannerService({ dataDir, router });
-  const alertStore = createAlertStore({ dataDir });
-  const alertService = createAlertService({ router, alertStore });
+  const alertService = createAlertService({ db, router, dataDir });
   alertService.startChecking();
 
   // ─── Git services ────────────────────────────────────────────
@@ -303,10 +301,12 @@ export function createServiceRegistry(
 
   // ─── Data services (non-critical wrapped) ────────────────────
   const milestonesService = initNonCritical('milestones', () =>
-    createMilestonesService({ dataDir, router }),
+    createMilestonesService({ db, dataDir, router }),
   );
-  const ideasService = initNonCritical('ideas', () => createIdeasService({ dataDir, router }));
-  const changelogService = initNonCritical('changelog', () => createChangelogService({ dataDir }));
+  const ideasService = initNonCritical('ideas', () => createIdeasService({ db, dataDir, router }));
+  const changelogService = initNonCritical('changelog', () =>
+    createChangelogService({ db, router, dataDir }),
+  );
   const fitnessService = initNonCritical('fitness', () =>
     createFitnessService({ dataDir, router }),
   );
@@ -657,13 +657,10 @@ export function createServiceRegistry(
     notesService,
     dashboardService,
     briefingService,
-    alertStore, // AlertStore implements ReinitializableService
     alertService,
     ideasService,
     plannerService,
     fitnessService,
-    milestonesService,
-    changelogService,
   ];
   const userScopedServices: ReinitializableService[] = candidateServices.filter(isReinitializable);
 

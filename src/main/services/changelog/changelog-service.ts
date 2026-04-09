@@ -1,20 +1,28 @@
 /**
- * Changelog Service — Disk-persisted version history
+ * Changelog Service — SQLite-backed version history
  *
- * Changelog entries stored as JSON in the app's user data directory.
- * All methods are synchronous except generateFromGit which uses async git operations.
+ * Changelog entries stored in the `changelog_entries` SQLite table.
+ * One-time migration from changelog.json on first access.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { desc } from 'drizzle-orm';
 
 import type { ChangeCategory, ChangelogEntry } from '@shared/types';
 
-import type { ReinitializableService } from '@main/services/data-management';
+import { changelogEntries } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
 import { generateChangelogEntry } from './changelog-generator';
 
-export interface ChangelogService extends ReinitializableService {
+import type { AdcDatabase } from '../../db';
+import type { IpcRouter } from '../../ipc/router';
+
+const logger = createScopedLogger('changelog-service');
+
+export interface ChangelogService {
   listEntries: () => ChangelogEntry[];
   addEntry: (data: {
     version: string;
@@ -24,7 +32,7 @@ export interface ChangelogService extends ReinitializableService {
   generateFromGit: (repoPath: string, version: string, fromTag?: string) => Promise<ChangelogEntry>;
 }
 
-interface ChangelogFile {
+interface ChangelogJsonFile {
   entries: ChangelogEntry[];
 }
 
@@ -93,40 +101,64 @@ const DEFAULT_ENTRIES: ChangelogEntry[] = [
   },
 ];
 
-function loadFile(filePath: string): ChangelogFile {
-  if (existsSync(filePath)) {
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(changelogEntries).limit(1).all();
+  if (existing.length > 0) return;
+
+  const jsonPath = join(dataDir, 'changelog.json');
+  if (existsSync(jsonPath)) {
     try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw) as unknown as Partial<ChangelogFile>;
-      return {
-        entries: Array.isArray(parsed.entries) ? parsed.entries : [...DEFAULT_ENTRIES],
-      };
-    } catch {
-      return { entries: [...DEFAULT_ENTRIES] };
+      const raw = readFileSync(jsonPath, 'utf-8');
+      const parsed = JSON.parse(raw) as unknown as Partial<ChangelogJsonFile>;
+      const items = Array.isArray(parsed.entries) ? parsed.entries : [];
+
+      for (const item of items) {
+        db.insert(changelogEntries).values({
+          version: item.version,
+          date: item.date,
+          categories: item.categories,
+          createdAt: new Date().toISOString(),
+        }).run();
+      }
+      logger.info(`Migrated ${String(items.length)} changelog entries from JSON to SQLite`);
+      return;
+    } catch (err) {
+      logger.error('Failed to migrate changelog from JSON:', err);
     }
   }
-  return { entries: [...DEFAULT_ENTRIES] };
-}
 
-function saveFile(filePath: string, data: ChangelogFile): void {
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-export function createChangelogService(deps: { dataDir: string }): ChangelogService {
-  // Mutable file path for user-scoping
-  let currentFilePath = join(deps.dataDir, 'changelog.json');
-  // In-memory cache
-  let store = loadFile(currentFilePath);
-
-  function persist(): void {
-    saveFile(currentFilePath, store);
+  // Neither JSON file nor table data — seed with defaults
+  for (const entry of DEFAULT_ENTRIES) {
+    db.insert(changelogEntries).values({
+      version: entry.version,
+      date: entry.date,
+      categories: entry.categories,
+      createdAt: new Date().toISOString(),
+    }).run();
   }
+  logger.info(`Seeded ${String(DEFAULT_ENTRIES.length)} default changelog entries`);
+}
+
+export function createChangelogService(deps: {
+  db: AdcDatabase;
+  router: IpcRouter;
+  dataDir: string;
+}): ChangelogService {
+  const { db, dataDir } = deps;
+
+  migrateFromJson(db, dataDir);
 
   return {
     listEntries() {
-      return [...store.entries];
+      const rows = db.select().from(changelogEntries)
+        .orderBy(desc(changelogEntries.createdAt))
+        .all();
+
+      return rows.map((row) => ({
+        version: row.version,
+        date: row.date,
+        categories: row.categories as ChangeCategory[],
+      }));
     },
 
     addEntry(data) {
@@ -135,24 +167,28 @@ export function createChangelogService(deps: { dataDir: string }): ChangelogServ
         date: data.date,
         categories: data.categories,
       };
-      // Insert at the beginning (newest first)
-      store.entries.unshift(entry);
-      persist();
+
+      db.insert(changelogEntries).values({
+        version: entry.version,
+        date: entry.date,
+        categories: entry.categories,
+        createdAt: new Date().toISOString(),
+      }).run();
+
       return entry;
     },
 
     async generateFromGit(repoPath, version, fromTag) {
-      return await generateChangelogEntry(repoPath, version, fromTag);
-    },
+      const entry = await generateChangelogEntry(repoPath, version, fromTag);
 
-    reinitialize(dataDir: string) {
-      currentFilePath = join(dataDir, 'changelog.json');
-      // Reload data from new path
-      store = loadFile(currentFilePath);
-    },
+      db.insert(changelogEntries).values({
+        version: entry.version,
+        date: entry.date,
+        categories: entry.categories,
+        createdAt: new Date().toISOString(),
+      }).run();
 
-    clearState() {
-      store = { entries: [...DEFAULT_ENTRIES] };
+      return entry;
     },
   };
 }
