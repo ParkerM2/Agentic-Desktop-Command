@@ -3,19 +3,31 @@
  *
  * Delegates to focused modules:
  * - smtp-transport.ts — SMTP connection + sendMail
- * - email-queue.ts — Queue management with retry
+ * - email-queue.ts — Queue management with retry (SQLite-backed)
  * - email-encryption.ts — Secret encryption/decryption
- * - email-store.ts — JSON file I/O for email config
+ * - email-store.ts — SQLite persistence for email config
  */
 
 import type { Email, EmailSendResult, QueuedEmail, SmtpConfig } from '@shared/types';
 
+import type { AdcDatabase } from '@main/db';
 import type { IpcRouter } from '@main/ipc/router';
 import { serviceLogger } from '@main/lib/logger';
 
 import { getDecryptedPassword } from './email-encryption';
-import { addToQueue, processRetryQueue, retryQueuedEmail } from './email-queue';
-import { loadEmailStore, saveEmailStore } from './email-store';
+import {
+  addToQueue,
+  loadQueueFromDb,
+  migrateEmailQueueFromJson,
+  persistQueueToDb,
+  processRetryQueue,
+  retryQueuedEmail,
+} from './email-queue';
+import {
+  loadEmailConfig,
+  migrateEmailConfigFromJson,
+  saveEmailConfig,
+} from './email-store';
 import { sendEmailViaSmtp, validateFromAddress, verifySmtpConnection } from './smtp-transport';
 
 import type { EmailQueueState } from './email-queue';
@@ -33,6 +45,8 @@ export interface EmailService {
 }
 
 export interface EmailServiceDeps {
+  db: AdcDatabase;
+  dataDir: string;
   router: IpcRouter;
 }
 
@@ -40,18 +54,22 @@ export interface EmailServiceDeps {
  * Create the email service.
  */
 export function createEmailService(deps: EmailServiceDeps): EmailService {
-  const { router } = deps;
-  const { data: store, needsMigration } = loadEmailStore();
+  const { db, dataDir, router } = deps;
 
-  // Persistent state
-  let currentConfig: StoredEmailConfig | null = store.config;
-  let emailQueue: QueuedEmail[] = store.queue;
+  // ── JSON → SQLite migration (one-time) ───────────────────────
+  migrateEmailConfigFromJson(db, dataDir);
+  migrateEmailQueueFromJson(db, dataDir);
+
+  // ── Load initial state from SQLite ───────────────────────────
+  const { config: loadedConfig, needsMigration } = loadEmailConfig(db);
+
+  // Persistent state (in-memory mirror of SQLite)
+  let currentConfig: StoredEmailConfig | null = loadedConfig;
+  let emailQueue: QueuedEmail[] = loadQueueFromDb(db);
 
   function persist(): void {
-    saveEmailStore({
-      config: currentConfig,
-      queue: emailQueue,
-    });
+    saveEmailConfig(db, currentConfig);
+    persistQueueToDb(db, emailQueue);
   }
 
   // Migrate plaintext password to encrypted format on first load

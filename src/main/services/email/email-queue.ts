@@ -1,16 +1,28 @@
 /**
- * Email Queue — Queue management with retry and exponential backoff
+ * Email Queue — SQLite-backed queue management with retry and exponential backoff
+ *
+ * Queue entries are stored in the `emailQueue` table.
+ * Migrates from legacy email-config.json queue on first access.
  */
 
 import { randomUUID } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { eq } from 'drizzle-orm';
 
 import type { Email, EmailSendResult, QueuedEmail } from '@shared/types';
 
-import type { IpcRouter } from '@main/ipc/router';
+import { emailQueue as emailQueueTable } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
 import { sendEmailViaSmtp } from './smtp-transport';
 
 import type { StoredEmailConfig } from './email-store';
+import type { AdcDatabase } from '../../db';
+import type { IpcRouter } from '../../ipc/router';
+
+const logger = createScopedLogger('email-queue');
 
 // Maximum retry attempts for failed emails
 const MAX_RETRY_ATTEMPTS = 3;
@@ -26,8 +38,75 @@ export interface EmailQueueState {
   router: IpcRouter;
 }
 
+// ── SQLite-backed queue helpers ──────────────────────────────
+
+interface QueueRow {
+  id: string;
+  email: unknown;
+  error: string | null;
+  retries: number;
+  createdAt: string;
+  lastAttempt: string | null;
+}
+
+function rowToQueuedEmail(row: QueueRow): QueuedEmail {
+  return {
+    id: row.id,
+    email: row.email as Email,
+    status: row.retries >= MAX_RETRY_ATTEMPTS ? 'failed' : 'queued',
+    attempts: row.retries,
+    lastAttempt: row.lastAttempt ?? undefined,
+    error: row.error ?? undefined,
+    createdAt: row.createdAt,
+  };
+}
+
 /**
- * Add an email to the retry queue.
+ * Migrate legacy queue entries from email-config.json into SQLite.
+ */
+export function migrateEmailQueueFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(emailQueueTable).limit(1).all();
+  if (existing.length > 0) return;
+
+  const jsonPath = join(dataDir, 'email-config.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { queue?: QueuedEmail[] };
+    const items = Array.isArray(parsed.queue) ? parsed.queue : [];
+
+    for (const item of items) {
+      db.insert(emailQueueTable)
+        .values({
+          id: item.id,
+          email: item.email as unknown,
+          error: item.error ?? null,
+          retries: item.attempts,
+          createdAt: item.createdAt,
+          lastAttempt: item.lastAttempt ?? null,
+        })
+        .run();
+    }
+
+    if (items.length > 0) {
+      logger.info(`Migrated ${String(items.length)} email queue entries from JSON to SQLite`);
+    }
+  } catch (err) {
+    logger.error('Failed to migrate email queue from JSON:', err);
+  }
+}
+
+/**
+ * Load all queued emails from SQLite.
+ */
+export function loadQueueFromDb(db: AdcDatabase): QueuedEmail[] {
+  const rows = db.select().from(emailQueueTable).all();
+  return rows.map(rowToQueuedEmail);
+}
+
+/**
+ * Add an email to the retry queue (SQLite).
  */
 export function addToQueue(email: Email, error: string, state: EmailQueueState): QueuedEmail {
   const queuedEmail: QueuedEmail = {
@@ -46,6 +125,33 @@ export function addToQueue(email: Email, error: string, state: EmailQueueState):
   state.persist();
 
   return queuedEmail;
+}
+
+/**
+ * Persist the full queue state to SQLite — delete + re-insert.
+ */
+export function persistQueueToDb(db: AdcDatabase, queue: QueuedEmail[]): void {
+  // Simple strategy: delete all and re-insert. Queue is small (< 100 items).
+  db.delete(emailQueueTable).run();
+  for (const item of queue) {
+    db.insert(emailQueueTable)
+      .values({
+        id: item.id,
+        email: item.email as unknown,
+        error: item.error ?? null,
+        retries: item.attempts,
+        createdAt: item.createdAt,
+        lastAttempt: item.lastAttempt ?? null,
+      })
+      .run();
+  }
+}
+
+/**
+ * Remove a single queue entry from SQLite.
+ */
+export function removeQueueEntryFromDb(db: AdcDatabase, emailId: string): void {
+  db.delete(emailQueueTable).where(eq(emailQueueTable.id, emailId)).run();
 }
 
 /**

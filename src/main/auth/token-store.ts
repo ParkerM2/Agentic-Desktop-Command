@@ -2,17 +2,24 @@
  * Token Store — Secure encrypted token persistence using Electron safeStorage.
  *
  * Tokens are encrypted with OS-level credentials (Keychain on macOS,
- * DPAPI on Windows, libsecret on Linux) before writing to disk.
+ * DPAPI on Windows, libsecret on Linux) before writing to SQLite.
  * Falls back to base64 encoding when safeStorage is unavailable (CI/testing).
+ *
+ * Migrates from legacy `oauth-tokens.json` on first access when the table is empty.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { safeStorage } from 'electron';
 
+import { eq } from 'drizzle-orm';
+
 import { authLogger } from '@main/lib/logger';
 
+import { oauthTokens } from '../db/schema';
+
+import type { AdcDatabase } from '../db';
 import type { OAuthTokens } from './types';
 
 export interface TokenStore {
@@ -30,8 +37,6 @@ interface EncryptedTokenEntry {
   encrypted: string;
   useSafeStorage: boolean;
 }
-
-type TokenFileData = Partial<Record<string, EncryptedTokenEntry>>;
 
 function encryptValue(value: string): EncryptedTokenEntry {
   if (safeStorage.isEncryptionAvailable()) {
@@ -58,52 +63,84 @@ function decryptValue(entry: EncryptedTokenEntry): string {
   return Buffer.from(entry.encrypted, 'base64').toString('utf-8');
 }
 
-function getFilePath(dataDir: string): string {
-  return join(dataDir, 'oauth-tokens.json');
-}
+/**
+ * Migrate tokens from the legacy `oauth-tokens.json` file into the SQLite table.
+ * Only runs when the table is empty and the JSON file exists.
+ */
+export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(oauthTokens).limit(1).all();
+  if (existing.length > 0) return;
 
-function loadTokenFile(dataDir: string): TokenFileData {
-  const filePath = getFilePath(dataDir);
-  if (!existsSync(filePath)) {
-    return {};
-  }
+  const jsonPath = join(dataDir, 'oauth-tokens.json');
+  if (!existsSync(jsonPath)) return;
 
   try {
-    const raw = readFileSync(filePath, 'utf-8');
-    return JSON.parse(raw) as TokenFileData;
-  } catch {
-    authLogger.error('Failed to read token file — returning empty store');
-    return {};
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<Record<string, EncryptedTokenEntry>>;
+    let count = 0;
+
+    for (const [provider, entry] of Object.entries(parsed)) {
+      if (!provider || !entry) continue;
+      db.insert(oauthTokens)
+        .values({
+          provider,
+          encrypted: entry.encrypted,
+          useSafeStorage: entry.useSafeStorage,
+          updatedAt: new Date().toISOString(),
+        })
+        .run();
+      count++;
+    }
+    authLogger.info(`Migrated ${String(count)} OAuth token(s) from JSON to SQLite`);
+  } catch (err) {
+    authLogger.error('Failed to migrate OAuth tokens from JSON:', err);
   }
 }
 
-function saveTokenFile(dataDir: string, data: TokenFileData): void {
-  if (!existsSync(dataDir)) {
-    mkdirSync(dataDir, { recursive: true });
-  }
-  const filePath = getFilePath(dataDir);
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
+export function createTokenStore(deps: { db: AdcDatabase; dataDir: string }): TokenStore {
+  const { db, dataDir } = deps;
 
-export function createTokenStore(deps: { dataDir: string }): TokenStore {
-  const { dataDir } = deps;
-  const store = loadTokenFile(dataDir);
+  // One-time migration from legacy JSON file
+  migrateFromJson(db, dataDir);
 
   return {
     setTokens(provider, tokens) {
       const serialized = JSON.stringify(tokens);
-      store[provider] = encryptValue(serialized);
-      saveTokenFile(dataDir, store);
+      const entry = encryptValue(serialized);
+      const now = new Date().toISOString();
+
+      db.insert(oauthTokens)
+        .values({
+          provider,
+          encrypted: entry.encrypted,
+          useSafeStorage: entry.useSafeStorage,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: oauthTokens.provider,
+          set: {
+            encrypted: entry.encrypted,
+            useSafeStorage: entry.useSafeStorage,
+            updatedAt: now,
+          },
+        })
+        .run();
     },
 
     getTokens(provider) {
-      const entry = store[provider];
-      if (!entry) {
-        return;
-      }
+      const row = db
+        .select()
+        .from(oauthTokens)
+        .where(eq(oauthTokens.provider, provider))
+        .get();
+
+      if (!row) return;
 
       try {
-        const decrypted = decryptValue(entry);
+        const decrypted = decryptValue({
+          encrypted: row.encrypted,
+          useSafeStorage: row.useSafeStorage,
+        });
         return JSON.parse(decrypted) as OAuthTokens;
       } catch {
         authLogger.error(`Failed to decrypt tokens for provider: ${provider}`);
@@ -112,13 +149,16 @@ export function createTokenStore(deps: { dataDir: string }): TokenStore {
     },
 
     deleteTokens(provider) {
-      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- token store keyed by provider name
-      delete store[provider];
-      saveTokenFile(dataDir, store);
+      db.delete(oauthTokens).where(eq(oauthTokens.provider, provider)).run();
     },
 
     hasTokens(provider) {
-      return provider in store;
+      const row = db
+        .select({ provider: oauthTokens.provider })
+        .from(oauthTokens)
+        .where(eq(oauthTokens.provider, provider))
+        .get();
+      return row !== undefined;
     },
   };
 }

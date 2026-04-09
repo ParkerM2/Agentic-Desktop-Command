@@ -151,6 +151,79 @@ export const notificationConfig = sqliteTable('notification_config', {
   updatedAt: text('updated_at').notNull(),
 });
 
+// ── Wave 3: Complex Domains ─────────────────────────────────
+
+export const progressTasks = sqliteTable('progress_tasks', {
+  slug: text('slug').primaryKey(),
+  title: text('title').notNull(),
+  status: text('status').notNull(),
+  priority: text('priority').notNull().default('medium'),
+  tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default([]),
+  jiraKey: text('jira_key'),
+  prUrl: text('pr_url'),
+  branch: text('branch'),
+  lastSessionId: text('last_session_id'),
+  lastAgentName: text('last_agent_name'),
+  completedAt: text('completed_at'),
+  archivedAt: text('archived_at'),
+  teamName: text('team_name'),
+  sessionHistory: text('session_history', { mode: 'json' }).$type<unknown[]>(),
+  description: text('description'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  index('idx_progress_tasks_status').on(table.status),
+]);
+
+export const workflowRuns = sqliteTable('workflow_runs', {
+  runId: text('run_id').primaryKey(),
+  featureName: text('feature_name').notNull(),
+  state: text('state').notNull(),
+  config: text('config', { mode: 'json' }).$type<unknown>(),
+  resolvedAgents: text('resolved_agents', { mode: 'json' }).$type<unknown>(),
+  error: text('error'),
+  startedAt: text('started_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+  completedAt: text('completed_at'),
+}, (table) => [
+  index('idx_workflow_runs_state').on(table.state),
+]);
+
+// ── Wave 4: Auth-Adjacent Stores ────────────────────────────
+
+export const oauthTokens = sqliteTable('oauth_tokens', {
+  provider: text('provider').primaryKey(),
+  encrypted: text('encrypted').notNull(),
+  useSafeStorage: integer('use_safe_storage', { mode: 'boolean' }).notNull().default(true),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const emailConfig = sqliteTable('email_config', {
+  key: text('key').primaryKey(), // singleton 'default'
+  config: text('config', { mode: 'json' }).$type<unknown>().notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const emailQueue = sqliteTable('email_queue', {
+  id: text('id').primaryKey(),
+  email: text('email', { mode: 'json' }).$type<unknown>().notNull(),
+  error: text('error'),
+  retries: integer('retries').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  lastAttempt: text('last_attempt'),
+});
+
+export const hubConfig = sqliteTable('hub_config', {
+  key: text('key').primaryKey(), // singleton 'default'
+  hubUrl: text('hub_url').notNull(),
+  encryptedApiKey: text('encrypted_api_key').notNull(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  lastConnected: text('last_connected'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// ── Wave 1 continued ────────────────────────────────────────
+
 export const changelogEntries = sqliteTable('changelog_entries', {
   version: text('version').primaryKey(),
   date: text('date').notNull(),

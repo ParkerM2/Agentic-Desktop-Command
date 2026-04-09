@@ -29,6 +29,13 @@
       "when": 1775711827364,
       "tag": "0003_burly_cammi",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1775713051311,
+      "tag": "0004_chubby_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

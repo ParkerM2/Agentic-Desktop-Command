@@ -15,16 +15,15 @@ import { hubLogger } from '@main/lib/logger';
 
 import { createHubClient } from './hub-client';
 import {
-  deleteConfig,
+  createHubConfigStore,
   encryptApiKey,
-  loadConfig,
-  saveConfig,
 } from './hub-config-store';
 import { configToConnection } from './hub-event-mapper';
 import { createHubWsClient } from './hub-ws-client';
 
 import type { HubClient } from './hub-client';
 import type { PersistedHubConfig } from './hub-config-store';
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 
 export type { HubConnectionStatus } from '@shared/types';
@@ -54,8 +53,16 @@ export interface HubConnectionManager {
   dispose: () => void;
 }
 
-export function createHubConnectionManager(router: IpcRouter): HubConnectionManager {
-  let persistedConfig: PersistedHubConfig | null = loadConfig();
+export interface HubConnectionManagerDeps {
+  router: IpcRouter;
+  db: AdcDatabase;
+  dataDir: string;
+}
+
+export function createHubConnectionManager(deps: HubConnectionManagerDeps): HubConnectionManager {
+  const { router, db, dataDir } = deps;
+  const configStore = createHubConfigStore(db, dataDir);
+  let persistedConfig: PersistedHubConfig | null = configStore.loadConfig();
   let status: HubConnectionStatus = 'disconnected';
   const messageListeners: Array<(data: unknown) => void> = [];
 
@@ -97,7 +104,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
       lastConnected: new Date().toISOString(),
     };
     persistedConfig = updatedConfig;
-    saveConfig(persistedConfig);
+    configStore.saveConfig(persistedConfig);
     setStatus('connected');
 
     // Establish WebSocket for real-time updates
@@ -143,7 +150,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
         enabled: true,
       };
 
-      saveConfig(persistedConfig);
+      configStore.saveConfig(persistedConfig);
       hubLogger.info(`[Hub] Configured hub: ${trimmedUrl}`);
 
       return configToConnection(persistedConfig, status);
@@ -155,7 +162,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
       }
 
       persistedConfig.enabled = enabled;
-      saveConfig(persistedConfig);
+      configStore.saveConfig(persistedConfig);
 
       if (!enabled) {
         ws.disconnect();
@@ -191,7 +198,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
     removeConfig() {
       ws.disconnect();
       ws.cancelReconnect();
-      deleteConfig();
+      configStore.deleteConfig();
       persistedConfig = null;
       setStatus('disconnected');
       hubLogger.info('[Hub] Configuration removed');

@@ -1,16 +1,24 @@
 /**
  * Hub Config Store
  *
- * Encrypted persistence for hub connection configuration.
+ * Encrypted persistence for hub connection configuration backed by SQLite.
+ * Uses the `hubConfig` table with a singleton row (key='default').
  * API keys are encrypted via Electron safeStorage (OS credential store).
+ *
+ * One-time migration from hub-config.json on first access.
  */
 
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { app, safeStorage } from 'electron';
+import { safeStorage } from 'electron';
 
-import { hubLogger } from '@main/lib/logger';
+import { eq } from 'drizzle-orm';
+
+import { hubConfig } from '../../db/schema';
+import { hubLogger } from '../../lib/logger';
+
+import type { AdcDatabase } from '../../db';
 
 export interface PersistedHubConfig {
   hubUrl: string;
@@ -20,11 +28,9 @@ export interface PersistedHubConfig {
   lastConnected?: string;
 }
 
-const CONFIG_FILENAME = 'hub-config.json';
+const SINGLETON_KEY = 'default';
 
-function getConfigPath(): string {
-  return join(app.getPath('userData'), CONFIG_FILENAME);
-}
+// ── Encryption helpers (unchanged — still use safeStorage) ─────────
 
 export function encryptApiKey(apiKey: string): string {
   if (safeStorage.isEncryptionAvailable()) {
@@ -43,33 +49,102 @@ export function decryptApiKey(encoded: string): string {
   return Buffer.from(encoded, 'base64').toString('utf-8');
 }
 
-export function loadConfig(): PersistedHubConfig | null {
-  const configPath = getConfigPath();
-  if (!existsSync(configPath)) {
-    return null;
-  }
+// ── JSON migration (one-time) ──────────────────────────────────────
+
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db
+    .select()
+    .from(hubConfig)
+    .where(eq(hubConfig.key, SINGLETON_KEY))
+    .get();
+  if (existing) return;
+
+  const jsonPath = join(dataDir, 'hub-config.json');
+  if (!existsSync(jsonPath)) return;
 
   try {
-    const raw = readFileSync(configPath, 'utf-8');
-    return JSON.parse(raw) as PersistedHubConfig;
-  } catch {
-    hubLogger.error('[Hub] Failed to load hub config');
-    return null;
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<PersistedHubConfig>;
+
+    if (!parsed.hubUrl || !parsed.encryptedApiKey) {
+      hubLogger.warn('[Hub] Legacy hub-config.json missing required fields, skipping migration');
+      return;
+    }
+
+    db.insert(hubConfig)
+      .values({
+        key: SINGLETON_KEY,
+        hubUrl: parsed.hubUrl,
+        encryptedApiKey: parsed.encryptedApiKey,
+        enabled: parsed.enabled ?? true,
+        lastConnected: parsed.lastConnected ?? null,
+        updatedAt: new Date().toISOString(),
+      })
+      .run();
+
+    hubLogger.info('[Hub] Migrated hub config from JSON to SQLite');
+  } catch (err) {
+    hubLogger.error('[Hub] Failed to migrate hub config from JSON:', err);
   }
 }
 
-export function saveConfig(config: PersistedHubConfig): void {
-  const configPath = getConfigPath();
-  const dir = join(configPath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+// ── SQLite-backed CRUD ─────────────────────────────────────────────
+
+export interface HubConfigStore {
+  loadConfig: () => PersistedHubConfig | null;
+  saveConfig: (config: PersistedHubConfig) => void;
+  deleteConfig: () => void;
 }
 
-export function deleteConfig(): void {
-  const configPath = getConfigPath();
-  if (existsSync(configPath)) {
-    unlinkSync(configPath);
+export function createHubConfigStore(db: AdcDatabase, dataDir: string): HubConfigStore {
+  // One-time migration from legacy JSON
+  migrateFromJson(db, dataDir);
+
+  function loadConfig(): PersistedHubConfig | null {
+    const row = db
+      .select()
+      .from(hubConfig)
+      .where(eq(hubConfig.key, SINGLETON_KEY))
+      .get();
+
+    if (!row) return null;
+
+    return {
+      hubUrl: row.hubUrl,
+      encryptedApiKey: row.encryptedApiKey,
+      enabled: row.enabled,
+      lastConnected: row.lastConnected ?? undefined,
+    };
   }
+
+  function saveConfig(config: PersistedHubConfig): void {
+    db.insert(hubConfig)
+      .values({
+        key: SINGLETON_KEY,
+        hubUrl: config.hubUrl,
+        encryptedApiKey: config.encryptedApiKey,
+        enabled: config.enabled,
+        lastConnected: config.lastConnected ?? null,
+        updatedAt: new Date().toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: hubConfig.key,
+        set: {
+          hubUrl: config.hubUrl,
+          encryptedApiKey: config.encryptedApiKey,
+          enabled: config.enabled,
+          lastConnected: config.lastConnected ?? null,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+      .run();
+  }
+
+  function deleteConfig(): void {
+    db.delete(hubConfig)
+      .where(eq(hubConfig.key, SINGLETON_KEY))
+      .run();
+  }
+
+  return { loadConfig, saveConfig, deleteConfig };
 }
