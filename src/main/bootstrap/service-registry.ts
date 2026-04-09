@@ -6,7 +6,6 @@
  */
 
 import { hostname } from 'node:os';
-import { join } from 'node:path';
 
 import { app } from 'electron';
 
@@ -29,9 +28,7 @@ import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
-import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
-import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
 import { createAlertService } from '../services/alerts/alert-service';
 import { createAlertStore } from '../services/alerts/alert-store';
 import { createAppUpdateService } from '../services/app/app-update-service';
@@ -53,7 +50,6 @@ import {
   type ReinitializableService,
 } from '../services/data-management';
 import { createCleanupService } from '../services/data-management/cleanup-service';
-import { createCrashRecovery } from '../services/data-management/crash-recovery';
 import { createStorageInspector } from '../services/data-management/storage-inspector';
 import { createDeviceService } from '../services/device/device-service';
 import { createDockerService } from '../services/docker/docker-service';
@@ -83,7 +79,6 @@ import {
 } from '../services/notifications';
 import { createPlannerService } from '../services/planner/planner-service';
 import { createProgressService } from '../services/progress';
-import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
 import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
 import { createDocGenerator } from '../services/project/doc-generator';
@@ -109,7 +104,6 @@ import { createTimeParserService } from '../services/time-parser/time-parser-ser
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
-import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkflowTemplateService } from '../services/workflow-templates';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
@@ -140,11 +134,9 @@ export interface ServiceRegistryResult {
   agentManagerService: AgentManagerService;
   workspaceSessionManager: WorkspaceSessionManager;
   assistantService: ReturnType<typeof createAssistantService>;
-  agentOrchestrator: ReturnType<typeof createAgentOrchestrator>;
   agentWatchdog: ReturnType<typeof createAgentWatchdog>;
   errorCollector: ReturnType<typeof createErrorCollector>;
   healthRegistry: ReturnType<typeof createHealthRegistry>;
-  jsonlProgressWatcher: ReturnType<typeof createJsonlProgressWatcher>;
   qaTrigger: ReturnType<typeof createQaTrigger>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
   webhookRelay: ReturnType<typeof createWebhookRelay>;
@@ -157,7 +149,6 @@ export interface ServiceRegistryResult {
   quickInput: ReturnType<typeof createQuickInputWindow>;
   settingsService: ReturnType<typeof createSettingsService>;
   cleanupService: ReturnType<typeof createCleanupService>;
-  crashRecovery: ReturnType<typeof createCrashRecovery>;
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
@@ -457,16 +448,8 @@ export function createServiceRegistry(
     getRetentionSettings: () => settingsService.getSettings().dataRetention,
     router,
   });
-  const crashRecovery = createCrashRecovery({
-    dataDir,
-    listProjectPaths: () => projectService.listProjectsSync().map((p) => p.path),
-    listActiveSessions: () => [],
-  });
-
-  // ─── Workflow + orchestrator ──────────────────────────────────
-  const taskLauncher = createTaskLauncher();
+  // ─── Workflow + templates ─────────────────────────────────────
   const workflowTemplateService = createWorkflowTemplateService({ dataDir });
-  const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
 
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
@@ -585,14 +568,9 @@ export function createServiceRegistry(
   // ─── Webhook relay ───────────────────────────────────────────
   const webhookRelay = createWebhookRelay({ assistantService, router });
 
-  // ─── JSONL progress watcher ──────────────────────────────────
-  const progressDir = join(dataDir, 'progress');
-  const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
-
   // ─── Agent dashboard services (Layer 1: Agent Visibility) ────
   const teamWatcherService = createTeamWatcherService();
   const sessionJsonlReaderService = createSessionJSONLReaderService();
-  const progressWatcherV2 = createProgressWatcherV2();
   const fileTreeService = createFileTreeService();
 
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
@@ -609,9 +587,7 @@ export function createServiceRegistry(
     commandBus,
     busSessionManager,
     agentManagerService,
-    agentOrchestrator,
     progressService,
-    progressWatcherV2,
     teamWatcherService: null,
     projectService,
     taskService,
@@ -656,7 +632,6 @@ export function createServiceRegistry(
     hubApiClient,
     hubAuthService,
     qaRunner,
-    taskLauncher,
     workflowTemplateService,
     cleanupService,
     storageInspector,
@@ -717,11 +692,9 @@ export function createServiceRegistry(
     agentManagerService,
     workspaceSessionManager,
     assistantService,
-    agentOrchestrator,
     agentWatchdog,
     errorCollector,
     healthRegistry,
-    jsonlProgressWatcher,
     qaTrigger,
     watchEvaluator,
     webhookRelay,
@@ -736,7 +709,6 @@ export function createServiceRegistry(
     hubApiClient,
     taskRepository,
     cleanupService,
-    crashRecovery,
     teamWatcherService,
     sessionJsonlReaderService,
     heartbeatIntervalId,

@@ -8,7 +8,6 @@
 import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
 
 import { registerAgentDashboardHandlers } from './handlers/agent-dashboard-handlers';
-import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
 import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
@@ -71,7 +70,6 @@ import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/er
 import type { BusSessionManager } from '../bus/session-manager';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentManagerService } from '../services/agent-manager';
-import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AppUpdateService } from '../services/app/app-update-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
@@ -103,7 +101,6 @@ import type { NotesService } from '../services/notes/notes-service';
 import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
 import type { ProgressService } from '../services/progress/progress-service';
-import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { CodebaseAnalyzerService } from '../services/project/codebase-analyzer';
 import type { ProjectService } from '../services/project/project-service';
 import type { SetupPipelineService } from '../services/project/setup-pipeline';
@@ -120,7 +117,6 @@ import type { TimeParserService } from '../services/time-parser/time-parser-serv
 import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VisualizationService } from '../services/visualization';
 import type { VoiceService } from '../services/voice/voice-service';
-import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { WorkflowEngineService } from '../services/workflow-engine';
 import type { WorkflowTemplateService } from '../services/workflow-templates';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
@@ -130,7 +126,6 @@ export interface Services {
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
   agentManagerService: AgentManagerService;
-  agentOrchestrator: AgentOrchestrator;
   projectService: ProjectService;
   taskService: TaskService;
   terminalService: TerminalService;
@@ -171,7 +166,6 @@ export interface Services {
   hubApiClient: HubApiClient;
   hubAuthService: HubAuthService;
   qaRunner: QaRunner;
-  taskLauncher: TaskLauncherService;
   workflowTemplateService: WorkflowTemplateService;
   dashboardService: DashboardService;
   dockerService: DockerService;
@@ -185,7 +179,6 @@ export interface Services {
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
   progressService: ProgressService;
-  progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
   workflowEngineService: WorkflowEngineService;
@@ -270,11 +263,10 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerBriefingHandlers(router, services.briefingService);
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
-  registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
+  registerWorkflowHandlers(router, services.hubApiClient);
   registerWorkflowTemplateHandlers(router, services.workflowTemplateService);
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);
-  registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);
   registerQaHandlers(
     router,
     services.qaRunner,
@@ -309,7 +301,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
       router,
       services.agentManagerService,
       services.teamWatcherService,
-      services.progressWatcherV2,
       services.qaRunner,
       services.gitService,
     );

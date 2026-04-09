@@ -303,6 +303,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `relay` | Cross-device session relay. Manages project claims, session lifecycle (spawn/input/output/kill/resume), and WebSocket message routing between claimer and host devices. |
 | `qa` | QA runner, reports, sessions |
 | `settings` | App settings, profiles, webhook config |
+| `sessions` | Universal session lifecycle management. List, kill, restart any Claude session. Crash recovery on app boot. Session history per task with token/tool usage tracking. |
 | `spotify` | Spotify playback |
 | `tasks` | Local tasks + Hub tasks (invoke + events) |
 | `terminals` | Terminal session management |

@@ -17,7 +17,6 @@ import { createProgressWatcher } from '../../services/workflow/progress-watcher'
 import type { HubApiClient } from '../../services/hub/hub-api-client';
 import type { JsonlWatcher } from '../../services/workflow/jsonl-watcher';
 import type { ProgressWatcher } from '../../services/workflow/progress-watcher';
-import type { TaskLauncherService } from '../../services/workflow/task-launcher';
 import type { IpcRouter } from '../router';
 
 interface ActiveWatcher {
@@ -31,7 +30,6 @@ const activeWatchers = new Map<string, ActiveWatcher>();
 export function registerWorkflowHandlers(
   router: IpcRouter,
   hubApiClient: HubApiClient,
-  taskLauncher: TaskLauncherService,
 ): void {
   router.handle(WORKFLOW.WATCH.PROGRESS, ({ projectPath }) => {
     // Stop existing watchers for this path if any
@@ -103,17 +101,17 @@ export function registerWorkflowHandlers(
     return Promise.resolve({ success: true });
   });
 
-  // ── Task Launcher ──
+  // ── Task Launcher (deprecated — use command bus sessions) ──
 
-  router.handle(WORKFLOW.LAUNCH.WORKFLOW, ({ taskDescription, projectPath, subProjectPath }) =>
-    Promise.resolve(taskLauncher.launch(taskDescription, projectPath, subProjectPath)),
+  router.handle(WORKFLOW.LAUNCH.WORKFLOW, () => {
+    throw new Error('Task launcher has been removed. Use command bus sessions instead.');
+  });
+
+  router.handle(WORKFLOW.CHECK.RUNNING, () =>
+    Promise.resolve({ running: false }),
   );
 
-  router.handle(WORKFLOW.CHECK.RUNNING, ({ sessionId }) =>
-    Promise.resolve({ running: taskLauncher.isRunning(sessionId) }),
-  );
-
-  router.handle(WORKFLOW.STOP.RUNNING, ({ sessionId }) =>
-    Promise.resolve({ stopped: taskLauncher.stop(sessionId) }),
+  router.handle(WORKFLOW.STOP.RUNNING, () =>
+    Promise.resolve({ stopped: false }),
   );
 }

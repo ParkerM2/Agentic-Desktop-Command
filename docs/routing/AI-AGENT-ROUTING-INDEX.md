@@ -659,6 +659,23 @@ Cross-device session relay — project claims, session lifecycle (spawn/input/ou
 
 ---
 
+### sessions
+
+Universal session lifecycle — list, kill, restart, crash recovery.
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/types/session-config.ts` |
+| Schemas | `shared/ipc/sessions/schemas.ts` |
+| IPC Contract | `shared/ipc/sessions/contract.ts` (5 invoke + 4 event channels) |
+| Handlers | `main/ipc/handlers/session-handlers.ts` |
+| Config I/O | `main/services/progress/session-config-io.ts` |
+| Assistant Tools | `main/services/assistant/tool-definitions.ts` (`list_sessions`, `kill_session`, `restart_session`) |
+| Integration | `main/bootstrap/service-registry.ts` (crash recovery boot scan) |
+| Storage | `progress/<slug>/session.config.json` (append-only array of SessionRecord) |
+
+---
+
 ### qa
 
 Automated QA system — quiet + full tiers.

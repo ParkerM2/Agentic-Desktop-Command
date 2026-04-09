@@ -22,7 +22,6 @@ import type {
 
 import type { AgentManagerService } from '../../services/agent-manager';
 import type { GitService } from '../../services/git/git-service';
-import type { ProgressWatcherV2 } from '../../services/progress-watcher-v2';
 import type { QaRunner, QaSession } from '../../services/qa/qa-types';
 import type { IpcRouter } from '../router';
 
@@ -102,14 +101,10 @@ function mapQaSessionToDashboard(session: QaSession): QaDashboardSession {
 
 // ── Handler Registration ─────────────────────────────────────
 
-/** Set of feature slugs that have been lazily watched */
-const watchedSlugs = new Set<string>();
-
 export function registerAgentDashboardHandlers(
   router: IpcRouter,
   agentManager: AgentManagerService,
   teamWatcher: TeamWatcherService,
-  progressWatcher: ProgressWatcherV2,
   qaRunner: QaRunner,
   gitService: GitService,
 ): void {
@@ -157,17 +152,13 @@ export function registerAgentDashboardHandlers(
 
   // ── Workflow Task Handlers ──────────────────────────────────
 
-  router.handle(AGENT_DASHBOARD.GET['TASKS-FOR-FEATURE'], (input) => {
-    // Lazily start watching the feature on first request
-    if (!watchedSlugs.has(input.featureSlug)) {
-      progressWatcher.watchFeature(input.featureSlug);
-      watchedSlugs.add(input.featureSlug);
-    }
-    return Promise.resolve(progressWatcher.getTasksForFeature(input.featureSlug));
+  router.handle(AGENT_DASHBOARD.GET['TASKS-FOR-FEATURE'], (_input) => {
+    // TODO: Re-implement with command bus backed progress tracking
+    return Promise.resolve([]);
   });
 
-  router.handle(AGENT_DASHBOARD.GET.TASK, (input) =>
-    Promise.resolve(progressWatcher.getTask(input.featureSlug, input.taskNumber)),
+  router.handle(AGENT_DASHBOARD.GET.TASK, (_input) =>
+    Promise.resolve(null),
   );
 
   // ── QA Handlers ─────────────────────────────────────────────
@@ -205,19 +196,6 @@ export function registerAgentDashboardHandlers(
 
   teamWatcher.onTeammateLeft((memberId) => {
     router.emit(AGENT_DASHBOARD_EVENTS.TEAMMATE.LEFT, { agentId: memberId, teamName: '' });
-  });
-
-  // Forward task updates from ProgressWatcherV2 (debounced per-slug to avoid thundering herd)
-  const debounceTimers = new Map<string, NodeJS.Timeout>();
-
-  progressWatcher.onTaskUpdated((slug, task) => {
-    clearTimeout(debounceTimers.get(slug));
-    debounceTimers.set(
-      slug,
-      setTimeout(() => {
-        router.emit(AGENT_DASHBOARD_EVENTS.TASK.UPDATED, { featureSlug: slug, task });
-      }, 50),
-    );
   });
 
   // Forward QA session events (progress + completed only)
