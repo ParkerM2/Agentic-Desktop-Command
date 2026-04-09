@@ -21,10 +21,6 @@ export {
   type InvokeInput,
   type InvokeOutput,
   // ── Schema re-exports (alphabetical by domain) ──
-  // agents
-  AgentPhaseSchema,
-  AgentSessionStatusSchema,
-  OrchestratorSessionSchema,
   // assistant
   AssistantContextSchema,
   AssistantResponseSchema,

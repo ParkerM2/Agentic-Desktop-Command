@@ -1,14 +1,13 @@
 /**
- * Agent orchestrator IPC event listeners → query invalidation
+ * Agent dashboard IPC event listeners -> query invalidation
  *
  * Bridges real-time agent events from the main process to React Query cache.
- * Progress and heartbeat use optimistic cache updates (no refetch).
- * Status transitions (planReady, stopped, error) trigger full invalidation.
+ * Session status changes trigger full invalidation so task rows refresh.
  */
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import type { Task } from '@shared/types';
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
@@ -17,52 +16,18 @@ import { taskKeys } from '../api/queryKeys';
 export function useAgentEvents() {
   const queryClient = useQueryClient();
 
-  // Agent progress → optimistic update on task detail cache
-  useIpcEvent('event:agent.orchestrator.progress', (data) => {
-    queryClient.setQueryData<Task>(taskKeys.detail(data.taskId), (old) =>
-      old
-        ? {
-            ...old,
-            metadata: {
-              ...old.metadata,
-              agentProgress: { type: data.type, data: data.data, timestamp: data.timestamp },
-            },
-          }
-        : old,
-    );
-  });
-
-  // Agent heartbeat → update last activity timestamp in cache
-  useIpcEvent('event:agent.orchestrator.heartbeat', (data) => {
-    queryClient.setQueryData<Task>(taskKeys.detail(data.taskId), (old) =>
-      old
-        ? {
-            ...old,
-            metadata: { ...old.metadata, lastAgentActivity: data.timestamp },
-          }
-        : old,
-    );
-  });
-
-  // Plan ready → full invalidation to get new status from server
-  useIpcEvent('event:agent.orchestrator.planReady', (data) => {
-    void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-    void queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.taskId) });
-  });
-
-  // Agent stopped → full invalidation
-  useIpcEvent('event:agent.orchestrator.stopped', (_data) => {
+  // Session started -> invalidate task lists to reflect new agent activity
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION.STARTED, () => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });
 
-  // Agent error → full invalidation
-  useIpcEvent('event:agent.orchestrator.error', (_data) => {
+  // Session status changed -> invalidate tasks
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED'], () => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });
 
-  // Watchdog alert → invalidate to show alert state on task row
-  useIpcEvent('event:agent.orchestrator.watchdogAlert', (data) => {
-    void queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.taskId) });
+  // Session ended -> full invalidation
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION.ENDED, () => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });
 }

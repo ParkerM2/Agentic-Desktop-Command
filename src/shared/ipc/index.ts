@@ -9,7 +9,6 @@
  */
 
 import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
-import { orchestratorEvents, orchestratorInvoke } from './agents';
 import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
@@ -95,7 +94,6 @@ export const ipcInvokeContract = {
   ...calendarInvoke,
   ...appInvoke,
   ...healthInvoke,
-  ...orchestratorInvoke,
   ...qaInvoke,
   ...timeInvoke,
   ...mcpInvoke,
@@ -154,7 +152,6 @@ export const ipcEventContract = {
   ...notificationsEvents,
   ...voiceEvents,
   ...briefingEvents,
-  ...orchestratorEvents,
   ...qaEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
@@ -176,8 +173,6 @@ export type { EventChannel, EventPayload, InvokeChannel, InvokeInput, InvokeOutp
 // ─── Schema Re-exports ───────────────────────────────────────
 // Explicit named re-exports to avoid ambiguity from mega-domains
 // that aggregate schemas from multiple sub-domains.
-
-export { AgentPhaseSchema, AgentSessionStatusSchema, OrchestratorSessionSchema } from './agents';
 
 export {
   AssistantContextSchema,

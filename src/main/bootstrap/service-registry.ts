@@ -101,7 +101,6 @@ import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
-import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import { createSessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import { createTeamWatcherService } from '../services/team-watcher/team-watcher-service';
 import { createWorktreeProvisioner } from '../services/worktree-provisioner';
@@ -131,7 +130,6 @@ export interface ServiceRegistryResult {
   agentManagerService: AgentManagerService;
   workspaceSessionManager: WorkspaceSessionManager;
   assistantService: ReturnType<typeof createAssistantService>;
-  agentWatchdog: ReturnType<typeof createAgentWatchdog>;
   errorCollector: ReturnType<typeof createErrorCollector>;
   healthRegistry: ReturnType<typeof createHealthRegistry>;
   qaTrigger: ReturnType<typeof createQaTrigger>;
@@ -490,13 +488,6 @@ export function createServiceRegistry(
 
   const qaRunner = createQaRunner(busSessionManager, dataDir, notificationManager);
 
-  // Agent watchdog — monitors active sessions for dead/stale processes
-  const agentWatchdog = createAgentWatchdog(busSessionManager, {}, notificationManager);
-  agentWatchdog.onAlert((alert) => {
-    router.emit('event:agent.orchestrator.watchdogAlert', alert);
-  });
-  agentWatchdog.start();
-
   // QA auto-trigger — starts QA when tasks enter review
   const qaTrigger = createQaTrigger({
     qaRunner,
@@ -671,7 +662,6 @@ export function createServiceRegistry(
     agentManagerService,
     workspaceSessionManager,
     assistantService,
-    agentWatchdog,
     errorCollector,
     healthRegistry,
     qaTrigger,

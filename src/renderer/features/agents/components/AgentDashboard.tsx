@@ -1,5 +1,5 @@
 /**
- * AgentDashboard — Shows running orchestrator agent sessions
+ * AgentDashboard — Shows running agent sessions from the agent dashboard service
  */
 
 import { Bot, Clock, Loader2, Square } from 'lucide-react';
@@ -12,19 +12,19 @@ import { useAllAgents, useStopAgent } from '../api/useAgents';
 import { useAgentEvents } from '../hooks/useAgentEvents';
 
 const statusColors: Record<string, string> = {
-  spawning: 'text-blue-400',
-  active: 'text-amber-400',
+  running: 'text-amber-400',
+  idle: 'text-blue-400',
+  'needs-attention': 'text-orange-400',
   completed: 'text-emerald-400',
-  error: 'text-red-400',
-  killed: 'text-zinc-400',
+  failed: 'text-red-400',
 };
 
 const statusLabels: Record<string, string> = {
-  spawning: 'Spawning',
-  active: 'Running',
+  running: 'Running',
+  idle: 'Idle',
+  'needs-attention': 'Needs Attention',
   completed: 'Completed',
-  error: 'Error',
-  killed: 'Killed',
+  failed: 'Failed',
 };
 
 export function AgentDashboard() {
@@ -41,6 +41,8 @@ export function AgentDashboard() {
     );
   }
 
+  const sessionList = Array.isArray(sessions) ? sessions : [];
+
   return (
     <PageLayout>
       <PageHeader>
@@ -50,9 +52,9 @@ export function AgentDashboard() {
       </PageHeader>
 
       <PageContent>
-        {sessions && sessions.length > 0 ? (
+        {sessionList.length > 0 ? (
           <div className="space-y-3">
-            {sessions.map((session) => (
+            {sessionList.map((session) => (
               <div
                 key={session.id}
                 className="border-border flex items-center justify-between rounded-lg border p-4"
@@ -61,11 +63,11 @@ export function AgentDashboard() {
                   <Bot className={cn('h-5 w-5', statusColors[session.status] ?? 'text-zinc-400')} />
                   <div>
                     <p className="text-sm font-medium">
-                      {session.phase === 'planning' ? 'Planning' : 'Executing'} — {session.taskId.slice(0, 12)}
+                      {session.name} — {session.type}
                     </p>
                     <p className="text-muted-foreground text-xs">
                       {statusLabels[session.status] ?? session.status}
-                      {session.pid > 0 ? ` · PID ${String(session.pid)}` : ''}
+                      {session.model ? ` · ${session.model}` : ''}
                     </p>
                   </div>
                 </div>
@@ -73,10 +75,10 @@ export function AgentDashboard() {
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground flex items-center gap-1 text-xs">
                     <Clock className="h-3 w-3" />
-                    {formatRelativeTime(session.spawnedAt)}
+                    {formatRelativeTime(session.startedAt)}
                   </span>
 
-                  {(session.status === 'active' || session.status === 'spawning') ? (
+                  {(session.status === 'running' || session.status === 'idle') ? (
                     <Button
                       className="h-8 w-8 p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       size="icon"

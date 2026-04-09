@@ -1,27 +1,29 @@
 /**
- * Agent orchestrator mutation hooks
+ * Agent mutation hooks (stubs)
  *
- * React Query mutations for agent planning, execution, kill, and restart IPC calls.
+ * The old agent orchestrator has been removed. These hooks are preserved
+ * as no-op stubs so that existing UI call-sites continue to compile.
+ * They will be replaced with progress-pipeline equivalents when those
+ * IPC channels are wired up.
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
-import { ipc } from '@renderer/shared/lib/ipc';
 
 import { taskKeys } from './queryKeys';
 
-/** Start planning for a task — spawns a headless Claude agent */
+/** Start planning for a task — stub (orchestrator removed) */
 export function useStartPlanning() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (input: {
+    mutationFn: (_input: {
       taskId: string;
       projectPath: string;
       taskDescription: string;
       subProjectPath?: string;
-    }) => ipc('agent.startPlanning', input),
+    }) => Promise.resolve({ sessionId: '', status: 'stub' as const }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
@@ -29,18 +31,18 @@ export function useStartPlanning() {
   });
 }
 
-/** Start execution for a task — spawns a headless Claude agent */
+/** Start execution for a task — stub (orchestrator removed) */
 export function useStartExecution() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (input: {
+    mutationFn: (_input: {
       taskId: string;
       projectPath: string;
       taskDescription: string;
       planRef?: string;
       subProjectPath?: string;
-    }) => ipc('agent.startExecution', input),
+    }) => Promise.resolve({ sessionId: '', status: 'stub' as const }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
@@ -48,19 +50,19 @@ export function useStartExecution() {
   });
 }
 
-/** Re-plan a task with user feedback on what to change */
+/** Re-plan a task with user feedback — stub (orchestrator removed) */
 export function useReplanWithFeedback() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (input: {
+    mutationFn: (_input: {
       taskId: string;
       projectPath: string;
       taskDescription: string;
       feedback: string;
       previousPlanPath?: string;
       subProjectPath?: string;
-    }) => ipc('agent.replanWithFeedback', input),
+    }) => Promise.resolve({ sessionId: '', status: 'stub' as const }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
@@ -68,12 +70,12 @@ export function useReplanWithFeedback() {
   });
 }
 
-/** Kill an active agent session */
+/** Kill an active agent session — stub (orchestrator removed) */
 export function useKillAgent() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (input: { sessionId: string }) => ipc('agent.killSession', input),
+    mutationFn: (_input: { sessionId: string }) => Promise.resolve({ success: true }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },
@@ -81,13 +83,15 @@ export function useKillAgent() {
   });
 }
 
-/** Restart an agent from its last checkpoint */
+/** Restart an agent from its last checkpoint — stub (orchestrator removed) */
 export function useRestartFromCheckpoint() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (input: { taskId: string; projectPath: string }) =>
-      ipc('agent.restartFromCheckpoint', input),
+    mutationFn: (_input: { taskId: string; projectPath: string }) => Promise.resolve({
+      sessionId: '',
+      status: 'stub' as const,
+    }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
     },

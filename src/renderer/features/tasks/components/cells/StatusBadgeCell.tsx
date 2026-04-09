@@ -1,20 +1,15 @@
 /**
  * StatusBadgeCell — cell renderer for task status with colored badge.
  * Shows a pulsing dot for active statuses (planning, running).
- * Shows watchdog alert overlay when an active alert exists for the task.
+ *
+ * Note: Watchdog alert overlay was removed with the agent orchestrator.
+ * The WatchdogDropdown is retained but only shown when alert data is
+ * provided externally (currently never).
  */
 
-import type { EventPayload } from '@shared/ipc-contract';
-
-import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { useUpdateTaskStatus } from '../../api/useTaskMutations';
 import { useTaskUI } from '../../store';
-
-import { WatchdogDropdown } from './WatchdogDropdown';
-
-type WatchdogAlertPayload = EventPayload<'event:agent.orchestrator.watchdogAlert'>;
 
 interface StatusConfig {
   label: string;
@@ -23,7 +18,6 @@ interface StatusConfig {
 }
 
 interface StatusBadgeRowData {
-  watchdogAlert?: WatchdogAlertPayload | null;
   id?: string;
 }
 
@@ -58,53 +52,10 @@ export function StatusBadgeCell({
 }) {
   const status = value;
   const config = STATUS_CONFIG[status] ?? FALLBACK_CONFIG;
-  const alert = data?.watchdogAlert ?? null;
-  const taskId = data?.id ?? '';
+  const _taskId = data?.id ?? '';
 
-  const updateStatus = useUpdateTaskStatus();
-  const toggleRowExpansion = useTaskUI((s) => s.toggleRowExpansion);
-
-  /** Kill existing session + restart from last checkpoint via orchestrator */
-  function handleRestartCheckpoint() {
-    if (!alert) return;
-    void (async () => {
-      const session = await ipc('agent.getOrchestratorSession', { taskId: alert.taskId });
-      if (session) {
-        await ipc('agent.restartFromCheckpoint', {
-          taskId: alert.taskId,
-          projectPath: session.projectPath,
-        });
-      }
-    })();
-  }
-
-  /** Kill current session + spawn a fresh execution agent */
-  function handleRestartFresh() {
-    if (!alert) return;
-    void (async () => {
-      const session = await ipc('agent.getOrchestratorSession', { taskId: alert.taskId });
-      await ipc('agent.killSession', { sessionId: alert.sessionId });
-      if (session) {
-        await ipc('agent.startExecution', {
-          taskId: alert.taskId,
-          projectPath: session.projectPath,
-          taskDescription: session.command,
-        });
-      }
-    })();
-  }
-
-  /** Toggle the detail row expansion to reveal the execution log panel */
-  function handleViewLogs() {
-    if (taskId.length === 0) return;
-    toggleRowExpansion(taskId);
-  }
-
-  /** Mark task status as error via Hub API */
-  function handleMarkError() {
-    if (!alert) return;
-    updateStatus.mutate({ taskId: alert.taskId, status: 'error' });
-  }
+  const _toggleRowExpansion = useTaskUI((s) => s.toggleRowExpansion);
+  const _updateStatus = undefined; // useUpdateTaskStatus removed — no orchestrator
 
   return (
     <div className="flex items-center py-1">
@@ -119,16 +70,6 @@ export function StatusBadgeCell({
         ) : null}
         {config.label}
       </span>
-
-      {alert ? (
-        <WatchdogDropdown
-          alert={alert}
-          onMarkError={handleMarkError}
-          onRestartCheckpoint={handleRestartCheckpoint}
-          onRestartFresh={handleRestartFresh}
-          onViewLogs={handleViewLogs}
-        />
-      ) : null}
     </div>
   );
 }
