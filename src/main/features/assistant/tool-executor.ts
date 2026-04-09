@@ -9,6 +9,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
+
 import { handleGitTool } from './tool-handlers/git-tools';
 import {
   executeTasksCreate,
@@ -155,7 +157,7 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
   const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, briefingService, changelogService, gitToolDeps, workspaceSessionManager, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
-    sendEvent('event:assistant.toolExecuted', {
+    sendEvent(ASSISTANT_EVENTS.TOOL.EXECUTED, {
       toolName,
       queryKeyRoots: result.queryKeyRoots,
       result: result.data,

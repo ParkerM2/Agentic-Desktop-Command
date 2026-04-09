@@ -11,6 +11,7 @@
 
 import type { BrowserWindow } from 'electron';
 
+import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 import type { AgentChatMessage, ToolUseBlock } from '@shared/types/agent-dashboard';
 
 import { serviceLogger } from '@main/lib/logger';
@@ -22,8 +23,6 @@ import type { ToolExecutor } from './tool-executor';
 import type { AgentManagerService } from '../../services/agent-manager';
 
 const ASSISTANT_MODEL = 'claude-sonnet-4-6';
-const EVT_THINKING = 'event:assistant.thinking';
-const EVT_RESPONSE = 'event:assistant.response';
 
 export interface AssistantProject {
   id: string;
@@ -148,8 +147,8 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
         // Forward text content to renderer
         const text = extractText(message);
         if (text.length > 0) {
-          sendEvent(EVT_RESPONSE, { content: text, type: 'text' });
-          sendEvent(EVT_THINKING, { isThinking: false });
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.RESPONSE, { content: text, type: 'text' });
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: false });
 
           historyStore.addEntry({
             id: `${Date.now().toString()}-${Math.random().toString(36).slice(2)}`,
@@ -163,14 +162,14 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
       if (event.type === 'status.changed') {
         const { newStatus } = event.data as { newStatus: string };
         if (newStatus === 'running') {
-          sendEvent(EVT_THINKING, { isThinking: true });
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: true });
         } else if (newStatus === 'idle' || newStatus === 'completed') {
-          sendEvent(EVT_THINKING, { isThinking: false });
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: false });
         }
       }
 
       if (event.type === 'session.ended') {
-        sendEvent(EVT_THINKING, { isThinking: false });
+        sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: false });
         if (eventCleanup) eventCleanup();
         eventCleanup = null;
         sessionId = null;
@@ -216,7 +215,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
         sessionId = session.id;
         subscribeToSession(session.id);
         serviceLogger.info('[Assistant] Global session started:', session.id);
-        sendEvent('event:assistant.autostart', { autoStarted: true });
+        sendEvent(ASSISTANT_EVENTS.SESSION.AUTOSTART, { autoStarted: true });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         serviceLogger.error('[Assistant] Failed to start global session:', message);
@@ -224,15 +223,15 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
     },
 
     sendCommand(input, _context) {
-      sendEvent(EVT_THINKING, { isThinking: true });
+      sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: true });
 
       try {
         if (!ensureSession()) {
-          sendEvent(EVT_RESPONSE, {
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.RESPONSE, {
             content: 'Assistant session is not running. It will auto-start after login.',
             type: 'error',
           });
-          sendEvent(EVT_THINKING, { isThinking: false });
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: false });
           return;
         }
 
@@ -240,22 +239,22 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
         const sid = sessionId ?? '';
         const success = agentManager.sendMessage(sid, input);
         if (!success) {
-          sendEvent(EVT_RESPONSE, {
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.RESPONSE, {
             content: 'Failed to send message to assistant session. The session may have crashed — try again.',
             type: 'error',
           });
-          sendEvent(EVT_THINKING, { isThinking: false });
+          sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: false });
           if (eventCleanup) eventCleanup();
           eventCleanup = null;
           sessionId = null;
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        sendEvent(EVT_RESPONSE, {
+        sendEvent(ASSISTANT_EVENTS.MESSAGE.RESPONSE, {
           content: `Error sending to assistant session: ${message}`,
           type: 'error',
         });
-        sendEvent(EVT_THINKING, { isThinking: false });
+        sendEvent(ASSISTANT_EVENTS.MESSAGE.THINKING, { isThinking: false });
       }
     },
 
