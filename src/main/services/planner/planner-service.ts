@@ -1,13 +1,16 @@
 /**
- * Planner Service — Disk-persisted daily plans
+ * Planner Service — SQLite-backed daily plans via Drizzle ORM
  *
- * Each day is stored as a separate JSON file in dataDir/planner/<date>.json.
- * All methods are synchronous (following the service pattern).
+ * Each day is stored as a row in the `daily_plans` table.
+ * Weekly reviews are stored in the `weekly_reviews` table.
+ * One-time migration from per-day JSON files on first access.
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { eq } from 'drizzle-orm';
 
 import { PLANNER_EVENTS } from '@shared/ipc/planner/channels';
 import type {
@@ -18,14 +21,17 @@ import type {
   WeeklyReviewSummary,
 } from '@shared/types';
 
+import { dailyPlans, weeklyReviews } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
-import type { ReinitializableService } from '@main/services/data-management';
-
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
+
+const logger = createScopedLogger('planner-service');
 
 const PLANNER_DIR_NAME = 'planner';
 
-export interface PlannerService extends ReinitializableService {
+export interface PlannerService {
   getDay: (date: string) => DailyPlan;
   updateDay: (
     date: string,
@@ -62,7 +68,6 @@ function makeEmptyPlan(date: string): DailyPlan {
 function getWeekMonday(dateStr: string): string {
   const date = new Date(`${dateStr}T00:00:00`);
   const day = date.getDay();
-  // Adjust so Monday = 0 (Sunday becomes 6)
   const diff = day === 0 ? -6 : 1 - day;
   date.setDate(date.getDate() + diff);
   return date.toISOString().slice(0, 10);
@@ -120,7 +125,6 @@ function generateSummary(days: DailyPlan[]): WeeklyReviewSummary {
 
   for (const day of days) {
     totalGoalsSet += day.goals.length;
-    // Count completed scheduled tasks as "completed goals" proxy
     totalGoalsCompleted += day.scheduledTasks.filter((t) => t.completed).length;
     totalTimeBlocks += day.timeBlocks.length;
 
@@ -131,7 +135,6 @@ function generateSummary(days: DailyPlan[]): WeeklyReviewSummary {
     }
   }
 
-  // Round hours to 1 decimal place
   totalHoursPlanned = Math.round(totalHoursPlanned * 10) / 10;
   for (const key of Object.keys(categoryBreakdown)) {
     categoryBreakdown[key] = Math.round(categoryBreakdown[key] * 10) / 10;
@@ -146,80 +149,181 @@ function generateSummary(days: DailyPlan[]): WeeklyReviewSummary {
   };
 }
 
-export function createPlannerService(deps: { dataDir: string; router: IpcRouter }): PlannerService {
-  let plannerDir = join(deps.dataDir, PLANNER_DIR_NAME);
+/** Convert a DB row to a DailyPlan. */
+function rowToPlan(row: typeof dailyPlans.$inferSelect): DailyPlan {
+  return {
+    date: row.date,
+    goals: row.goals,
+    scheduledTasks: row.scheduledTasks as unknown as ScheduledTask[],
+    timeBlocks: row.timeBlocks as unknown as TimeBlock[],
+    reflection: row.reflection ?? undefined,
+  };
+}
 
-  // In-memory cache for loaded plans (keyed by date)
-  let plansCache = new Map<string, DailyPlan>();
+/**
+ * Migrate existing JSON files from `{dataDir}/planner/` into SQLite tables.
+ * Runs once — skips if rows already exist.
+ */
+export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const plannerDir = join(dataDir, PLANNER_DIR_NAME);
+  if (!existsSync(plannerDir)) return;
 
-  function getPlanFilePath(date: string): string {
-    return join(plannerDir, `${date}.json`);
-  }
+  // Check if we already have data
+  const existing = db.select().from(dailyPlans).limit(1).all();
+  if (existing.length > 0) return;
 
-  function ensurePlannerDir(): void {
-    if (!existsSync(plannerDir)) {
-      mkdirSync(plannerDir, { recursive: true });
-    }
-  }
+  try {
+    const files = readdirSync(plannerDir);
+    let dailyCount = 0;
+    let weeklyCount = 0;
 
-  function loadPlan(date: string): DailyPlan {
-    // Check cache first
-    const cached = plansCache.get(date);
-    if (cached) {
-      return cached;
-    }
+    for (const file of files) {
+      const filePath = join(plannerDir, file);
 
-    const filePath = getPlanFilePath(date);
-    if (existsSync(filePath)) {
-      try {
-        const raw = readFileSync(filePath, 'utf-8');
-        const plan = JSON.parse(raw) as DailyPlan;
-        plansCache.set(date, plan);
-        return plan;
-      } catch {
-        const plan = makeEmptyPlan(date);
-        plansCache.set(date, plan);
-        return plan;
+      // Daily plan files: YYYY-MM-DD.json
+      if (/^\d{4}-\d{2}-\d{2}\.json$/.test(file)) {
+        try {
+          const raw = readFileSync(filePath, 'utf-8');
+          const plan = JSON.parse(raw) as DailyPlan;
+          db.insert(dailyPlans)
+            .values({
+              date: plan.date,
+              goals: plan.goals,
+              scheduledTasks: plan.scheduledTasks as unknown as string[],
+              timeBlocks: plan.timeBlocks as unknown as Array<{
+                id: string;
+                startTime: string;
+                endTime: string;
+                type: string;
+                label?: string;
+              }>,
+              reflection: plan.reflection ?? null,
+              updatedAt: new Date().toISOString(),
+            })
+            .run();
+          dailyCount++;
+        } catch (err) {
+          logger.error(`Failed to migrate daily plan ${file}:`, err);
+        }
+      }
+
+      // Weekly review files: week-YYYY-MM-DD.json
+      if (/^week-\d{4}-\d{2}-\d{2}\.json$/.test(file)) {
+        try {
+          const raw = readFileSync(filePath, 'utf-8');
+          const data = JSON.parse(raw) as { reflection?: string };
+          const mondayStr = file.replace('week-', '').replace('.json', '');
+          const sunday = getWeekSunday(mondayStr);
+          db.insert(weeklyReviews)
+            .values({
+              weekStartDate: mondayStr,
+              weekEndDate: sunday,
+              days: [],
+              reflection: data.reflection ?? null,
+              updatedAt: new Date().toISOString(),
+            })
+            .run();
+          weeklyCount++;
+        } catch (err) {
+          logger.error(`Failed to migrate weekly review ${file}:`, err);
+        }
       }
     }
-    const plan = makeEmptyPlan(date);
-    plansCache.set(date, plan);
-    return plan;
+
+    if (dailyCount > 0 || weeklyCount > 0) {
+      logger.info(
+        `Migrated ${String(dailyCount)} daily plans and ${String(weeklyCount)} weekly reviews from JSON to SQLite`,
+      );
+    }
+  } catch (err) {
+    logger.error('Failed to migrate planner data from JSON:', err);
+  }
+}
+
+export function createPlannerService(deps: {
+  db: AdcDatabase;
+  router: IpcRouter;
+  dataDir: string;
+}): PlannerService {
+  const { db, router, dataDir } = deps;
+
+  // Run one-time migration
+  migrateFromJson(db, dataDir);
+
+  function loadPlan(date: string): DailyPlan {
+    const row = db.select().from(dailyPlans).where(eq(dailyPlans.date, date)).get();
+    if (row) {
+      return rowToPlan(row);
+    }
+    return makeEmptyPlan(date);
   }
 
   function savePlan(plan: DailyPlan): void {
-    ensurePlannerDir();
-    const filePath = getPlanFilePath(plan.date);
-    writeFileSync(filePath, JSON.stringify(plan, null, 2), 'utf-8');
-    plansCache.set(plan.date, plan);
-  }
-
-  function getWeeklyReviewFilePath(mondayStr: string): string {
-    return join(plannerDir, `week-${mondayStr}.json`);
+    db.insert(dailyPlans)
+      .values({
+        date: plan.date,
+        goals: plan.goals,
+        scheduledTasks: plan.scheduledTasks as unknown as string[],
+        timeBlocks: plan.timeBlocks as unknown as Array<{
+          id: string;
+          startTime: string;
+          endTime: string;
+          type: string;
+          label?: string;
+        }>,
+        reflection: plan.reflection ?? null,
+        updatedAt: new Date().toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: dailyPlans.date,
+        set: {
+          goals: plan.goals,
+          scheduledTasks: plan.scheduledTasks as unknown as string[],
+          timeBlocks: plan.timeBlocks as unknown as Array<{
+            id: string;
+            startTime: string;
+            endTime: string;
+            type: string;
+            label?: string;
+          }>,
+          reflection: plan.reflection ?? null,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+      .run();
   }
 
   function loadWeeklyReflection(mondayStr: string): string | undefined {
-    const filePath = getWeeklyReviewFilePath(mondayStr);
-    if (existsSync(filePath)) {
-      try {
-        const raw = readFileSync(filePath, 'utf-8');
-        const data = JSON.parse(raw) as { reflection?: string };
-        return data.reflection;
-      } catch {
-        return undefined;
-      }
-    }
-    return undefined;
+    const row = db
+      .select()
+      .from(weeklyReviews)
+      .where(eq(weeklyReviews.weekStartDate, mondayStr))
+      .get();
+    return row?.reflection ?? undefined;
   }
 
   function saveWeeklyReflection(mondayStr: string, reflection: string): void {
-    ensurePlannerDir();
-    const filePath = getWeeklyReviewFilePath(mondayStr);
-    writeFileSync(filePath, JSON.stringify({ reflection }, null, 2), 'utf-8');
+    const sunday = getWeekSunday(mondayStr);
+    db.insert(weeklyReviews)
+      .values({
+        weekStartDate: mondayStr,
+        weekEndDate: sunday,
+        days: [],
+        reflection,
+        updatedAt: new Date().toISOString(),
+      })
+      .onConflictDoUpdate({
+        target: weeklyReviews.weekStartDate,
+        set: {
+          reflection,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+      .run();
   }
 
   function emitDayChanged(date: string): void {
-    deps.router.emit(PLANNER_EVENTS.DAY.CHANGED, { date });
+    router.emit(PLANNER_EVENTS.DAY.CHANGED, { date });
   }
 
   return {
@@ -301,24 +405,14 @@ export function createPlannerService(deps: { dataDir: string; router: IpcRouter 
     },
 
     generateWeeklyReview(startDate) {
-      // Same as getWeek — regenerates summary from current data
       return this.getWeek(startDate);
     },
 
     updateWeeklyReflection(startDate, reflection) {
       const monday = getWeekMonday(startDate);
       saveWeeklyReflection(monday, reflection);
-      deps.router.emit(PLANNER_EVENTS.DAY.CHANGED, { date: monday });
+      router.emit(PLANNER_EVENTS.DAY.CHANGED, { date: monday });
       return this.getWeek(startDate);
-    },
-
-    reinitialize(dataDir: string): void {
-      plannerDir = join(dataDir, PLANNER_DIR_NAME);
-      plansCache = new Map(); // Clear cache to force reload from new path
-    },
-
-    clearState(): void {
-      plansCache = new Map();
     },
   };
 }

@@ -2,15 +2,10 @@
  * Briefing Service — Orchestrator for daily briefing generation
  *
  * Delegates to focused modules:
- * - briefing-config.ts — Config loading/saving
- * - briefing-cache.ts — Daily cache (check/store/invalidate)
+ * - briefing-config.ts — Config loading/saving (SQLite-backed)
+ * - briefing-cache.ts — Daily cache (SQLite-backed)
  * - briefing-generator.ts — Data gathering + summary generation
  */
-
-import { existsSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { app } from 'electron';
 
 import { BRIEFING_EVENTS } from '@shared/ipc/briefing/channels';
 import type { BriefingConfig, DailyBriefing, Suggestion } from '@shared/types';
@@ -24,14 +19,13 @@ import { createBriefingGenerator } from './briefing-generator';
 
 import type { SuggestionEngine } from './suggestion-engine';
 import type { BusSessionManager } from '../../bus/session-manager';
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
 
-const BRIEFING_FILE = 'briefings.json';
-const CONFIG_FILE = 'briefing-config.json';
 const BRIEFING_READY_EVENT = BRIEFING_EVENTS.BRIEFING.READY;
 
 /** Briefing service interface */
@@ -54,6 +48,8 @@ export interface BriefingService extends ReinitializableService {
 
 /** Dependencies for the briefing service */
 export interface BriefingServiceDeps {
+  db: AdcDatabase;
+  dataDir: string;
   router: IpcRouter;
   projectService: ProjectService;
   taskService: TaskService;
@@ -67,17 +63,10 @@ export interface BriefingServiceDeps {
  * Create a briefing service instance.
  */
 export function createBriefingService(deps: BriefingServiceDeps): BriefingService {
-  const { router, suggestionEngine } = deps;
+  const { db, dataDir, router, suggestionEngine } = deps;
 
-  let currentDataDir = app.getPath('userData');
-
-  // Ensure data directory exists
-  if (!existsSync(currentDataDir)) {
-    mkdirSync(currentDataDir, { recursive: true });
-  }
-
-  let configManager = createBriefingConfigManager(join(currentDataDir, CONFIG_FILE));
-  let cache = createBriefingCache(join(currentDataDir, BRIEFING_FILE));
+  let configManager = createBriefingConfigManager(db, dataDir);
+  let cache = createBriefingCache(db, dataDir);
   const generator = createBriefingGenerator({
     projectService: deps.projectService,
     taskService: deps.taskService,
@@ -152,14 +141,10 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
       }
     },
 
-    reinitialize(dataDir: string) {
-      // Ensure new data directory exists
-      if (!existsSync(dataDir)) {
-        mkdirSync(dataDir, { recursive: true });
-      }
-      currentDataDir = dataDir;
-      configManager = createBriefingConfigManager(join(dataDir, CONFIG_FILE));
-      cache = createBriefingCache(join(dataDir, BRIEFING_FILE));
+    reinitialize(_dataDir: string) {
+      // SQLite is shared — sub-modules re-created to re-run migration for new dataDir
+      configManager = createBriefingConfigManager(db, _dataDir);
+      cache = createBriefingCache(db, _dataDir);
       _cachedBriefing = null;
       lastScheduledDate = '';
     },

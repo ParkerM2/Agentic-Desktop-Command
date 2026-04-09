@@ -272,7 +272,7 @@ export function createServiceRegistry(
   const notesService = createNotesService({ db, dataDir, router });
   const dashboardService = createDashboardService({ db, dataDir, router });
   const dockerService = createDockerService();
-  const plannerService = createPlannerService({ dataDir, router });
+  const plannerService = createPlannerService({ db, dataDir, router });
   const alertService = createAlertService({ db, router, dataDir });
   alertService.startChecking();
 
@@ -308,7 +308,7 @@ export function createServiceRegistry(
     createChangelogService({ db, router, dataDir }),
   );
   const fitnessService = initNonCritical('fitness', () =>
-    createFitnessService({ dataDir, router }),
+    createFitnessService({ db, dataDir, router }),
   );
   const emailService = createEmailService({ router });
 
@@ -382,7 +382,7 @@ export function createServiceRegistry(
   });
 
   // ─── Notifications ───────────────────────────────────────────
-  const notificationManager = createNotificationManager(router);
+  const notificationManager = createNotificationManager(router, db, dataDir);
 
   const slackWatcher = createSlackWatcher({
     oauthManager,
@@ -525,6 +525,8 @@ export function createServiceRegistry(
 
   // ─── Briefing service ────────────────────────────────────────
   const briefingService = createBriefingService({
+    db,
+    dataDir,
     router,
     projectService,
     taskService,
@@ -659,8 +661,6 @@ export function createServiceRegistry(
     briefingService,
     alertService,
     ideasService,
-    plannerService,
-    fitnessService,
   ];
   const userScopedServices: ReinitializableService[] = candidateServices.filter(isReinitializable);
 
