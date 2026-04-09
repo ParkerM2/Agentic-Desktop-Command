@@ -4,15 +4,15 @@
 
 ## Architecture
 
-- **Main**: `src/main/` — services, IPC handlers, bootstrap
-- **Renderer**: `src/renderer/` — React + TanStack Router + Zustand
-- **Shared**: `src/shared/` — Zod IPC contracts, types
+- **Main**: `src/main/features/<domain>/` — co-located service + handler + schema per domain. Infrastructure in `src/main/bus/`, `src/main/db/`, `src/main/services/` (agent-manager only)
+- **Renderer**: `src/renderer/features/<domain>/` — React + TanStack Router + Zustand
+- **Shared**: `src/shared/ipc/<domain>/` — Zod IPC contracts, channel constants, types
 - **Aliases**: `@ui` `@features` `@shared` `@main` `@renderer`
 
 ## Rules That Prevent Mistakes
 
-1. **IPC**: Zod schema in `src/shared/ipc/<domain>/contract.ts` → thin handler in `src/main/ipc/handlers/` → barrel in `src/shared/ipc/index.ts`. No business logic in handlers.
-2. **Services**: Factory `createXService()` returning interface. `import type` for all interfaces.
+1. **IPC**: Zod schema in `src/shared/ipc/<domain>/contract.ts` → thin handler co-located in `src/main/features/<domain>/` → barrel in `src/shared/ipc/index.ts`. No business logic in handlers.
+2. **Features (main)**: Each domain lives in `src/main/features/<domain>/` with service, handler, and schema co-located. Factory `createXService()` returning interface. `import type` for all interfaces.
 3. **UI**: Use `@ui` primitives — never raw `<button>` `<input>` `<label>`. Use `Heading`/`Text` from `@ui` instead of raw `<h1>`/`<p>`/`<span>` for content text. Import from `@ui`.
 4. **Features**: `index.ts` barrel + `api/` + `components/` + `hooks/` + `store.ts`. Zustand = UI state only. Run `node scripts/scaffold-features.mjs` to audit compliance.
 4a. **Page Layout**: ALL pages use `PageHeader` compound component (`.Row`, `.Title`, `.Actions`, `.Tabs`, `.TabList`, `.Tab`, `.TabContent`). No legacy `title` prop. See `docs/patterns/PATTERNS.md`.
@@ -81,8 +81,8 @@ Local-first task management backed by the `progress/` filesystem. **The task lis
 - `archivedAt?: string` — When task was archived
 - `teamName?: string` — Team that worked on this task
 - `sessionHistory?: Array<{sessionId, agentName, action, exitCode, timestamp}>` — Rolling history (last 20)
-**Service:** `src/main/services/progress/progress-service.ts` — `createProgressService(projectPath, agentManagerService)`
-**Handler:** `src/main/ipc/handlers/progress-handlers.ts`
+**Service:** `src/main/features/progress/progress-service.ts` — `createProgressService(projectPath, agentManagerService, db)`
+**Handler:** `src/main/features/progress/progress-handlers.ts`
 **Renderer store:** `src/renderer/shared/stores/progress-context-store.ts` — `useProgressContext()`
 **Hydrator:** `src/renderer/shared/stores/ProgressContextHydrator.tsx` (mounted in RootLayout)
 
