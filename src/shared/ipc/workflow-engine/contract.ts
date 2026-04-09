@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 
+import { WORKFLOW_ENGINE, WORKFLOW_ENGINE_EVENTS } from './channels';
 import {
   AgentDefinitionSchema,
   WorkflowApplyInputSchema,
@@ -20,31 +21,31 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const workflowEngineInvoke = {
-  'workflow-engine.apply': {
+  [WORKFLOW_ENGINE.APPLY.TEMPLATE]: {
     input: WorkflowApplyInputSchema,
     output: z.object({ runId: z.string() }),
   },
-  'workflow-engine.start': {
+  [WORKFLOW_ENGINE.START.RUN]: {
     input: WorkflowRunConfigSchema,
     output: z.object({ runId: z.string() }),
   },
-  'workflow-engine.stop': {
+  [WORKFLOW_ENGINE.STOP.RUN]: {
     input: z.object({ runId: z.string() }),
     output: z.object({ success: z.boolean(), message: z.string() }),
   },
-  'workflow-engine.get': {
+  [WORKFLOW_ENGINE.GET.RUN]: {
     input: z.object({ runId: z.string() }),
     output: WorkflowEngineRecordSchema.nullable(),
   },
-  'workflow-engine.list': {
+  [WORKFLOW_ENGINE.LIST.RUNS]: {
     input: z.object({}),
     output: z.array(WorkflowEngineRecordSchema),
   },
-  'workflow-engine.listArchived': {
+  [WORKFLOW_ENGINE.LIST.ARCHIVED]: {
     input: z.object({}),
     output: z.array(WorkflowEngineRecordSchema),
   },
-  'workflow-engine.listAgentDefs': {
+  [WORKFLOW_ENGINE.LIST['AGENT-DEFS']]: {
     input: z.object({}),
     output: z.array(AgentDefinitionSchema),
   },
@@ -53,13 +54,13 @@ export const workflowEngineInvoke = {
 // ─── Event Channels ────────────────────────────────────────────
 
 export const workflowEngineEvents = {
-  'event:workflow-engine.stateChanged': {
+  [WORKFLOW_ENGINE_EVENTS.STATE.CHANGED]: {
     payload: WorkflowStateChangedEventSchema,
   },
-  'event:workflow-engine.completed': {
+  [WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED]: {
     payload: WorkflowCompletedEventSchema,
   },
-  'event:workflow-engine.error': {
+  [WORKFLOW_ENGINE_EVENTS.RUN.ERROR]: {
     payload: WorkflowErrorEventSchema,
   },
 } as const;

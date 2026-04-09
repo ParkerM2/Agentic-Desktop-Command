@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { NOTES, NOTES_EVENTS } from './notes.channels';
 
 export const NoteSchema = z.object({
   id: z.string(),
@@ -21,11 +22,11 @@ export const NoteSchema = z.object({
 });
 
 export const notesInvoke = {
-  'notes.list': {
+  [NOTES.LIST.ALL]: {
     input: z.object({ projectId: z.string().optional(), tag: z.string().optional() }),
     output: z.array(NoteSchema),
   },
-  'notes.create': {
+  [NOTES.CREATE.NOTE]: {
     input: z.object({
       title: z.string(),
       content: z.string(),
@@ -35,7 +36,7 @@ export const notesInvoke = {
     }),
     output: NoteSchema,
   },
-  'notes.update': {
+  [NOTES.UPDATE.NOTE]: {
     input: z.object({
       id: z.string(),
       title: z.string().optional(),
@@ -45,18 +46,18 @@ export const notesInvoke = {
     }),
     output: NoteSchema,
   },
-  'notes.delete': {
+  [NOTES.DELETE.NOTE]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
-  'notes.search': {
+  [NOTES.SEARCH.NOTES]: {
     input: z.object({ query: z.string() }),
     output: z.array(NoteSchema),
   },
 } as const;
 
 export const notesEvents = {
-  'event:note.changed': {
+  [NOTES_EVENTS.NOTE.CHANGED]: {
     payload: z.object({ noteId: z.string() }),
   },
 } as const;

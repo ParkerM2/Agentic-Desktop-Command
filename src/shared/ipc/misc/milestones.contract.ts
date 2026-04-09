@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { MILESTONES, MILESTONES_EVENTS } from './milestones.channels';
 
 export const MilestoneStatusSchema = z.enum(['planned', 'in-progress', 'completed']);
 
@@ -29,11 +30,11 @@ export const MilestoneSchema = z.object({
 });
 
 export const milestonesInvoke = {
-  'milestones.list': {
+  [MILESTONES.LIST.ALL]: {
     input: z.object({ projectId: z.string().optional() }),
     output: z.array(MilestoneSchema),
   },
-  'milestones.create': {
+  [MILESTONES.CREATE.MILESTONE]: {
     input: z.object({
       title: z.string(),
       description: z.string(),
@@ -42,7 +43,7 @@ export const milestonesInvoke = {
     }),
     output: MilestoneSchema,
   },
-  'milestones.update': {
+  [MILESTONES.UPDATE.MILESTONE]: {
     input: z.object({
       id: z.string(),
       title: z.string().optional(),
@@ -52,22 +53,22 @@ export const milestonesInvoke = {
     }),
     output: MilestoneSchema,
   },
-  'milestones.delete': {
+  [MILESTONES.DELETE.MILESTONE]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
-  'milestones.addTask': {
+  [MILESTONES.ADD.TASK]: {
     input: z.object({ milestoneId: z.string(), title: z.string() }),
     output: MilestoneSchema,
   },
-  'milestones.toggleTask': {
+  [MILESTONES.TOGGLE.TASK]: {
     input: z.object({ milestoneId: z.string(), taskId: z.string() }),
     output: MilestoneSchema,
   },
 } as const;
 
 export const milestonesEvents = {
-  'event:milestone.changed': {
+  [MILESTONES_EVENTS.MILESTONE.CHANGED]: {
     payload: z.object({ milestoneId: z.string() }),
   },
 } as const;

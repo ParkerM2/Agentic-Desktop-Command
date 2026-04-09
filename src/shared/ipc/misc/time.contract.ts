@@ -9,8 +9,10 @@
 
 import { z } from 'zod';
 
+import { TIME } from './time.channels';
+
 export const timeInvoke = {
-  'time.parse': {
+  [TIME.PARSE.EXPRESSION]: {
     input: z.object({
       text: z.string(),
       referenceDate: z.string().optional(),

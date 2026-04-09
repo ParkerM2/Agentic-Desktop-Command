@@ -2,30 +2,31 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { WORKSPACE, WORKSPACE_EVENTS } from './channels';
 import { SessionKeySchema, WorkspaceSessionSchema } from './schemas';
 
 export const workspaceInvoke = {
-  'workspace.initProject': {
+  [WORKSPACE.INIT.PROJECT]: {
     input: z.object({ projectId: z.string(), projectPath: z.string() }),
     output: z.object({ primarySessionId: z.string(), teamLeadSessionId: z.string() }),
   },
-  'workspace.getSessions': {
+  [WORKSPACE.GET.SESSIONS]: {
     input: z.object({ projectId: z.string() }),
     output: z.array(WorkspaceSessionSchema),
   },
-  'workspace.spawnTeamLead': {
+  [WORKSPACE.SPAWN['TEAM-LEAD']]: {
     input: z.object({ projectId: z.string(), planPath: z.string().optional() }),
     output: WorkspaceSessionSchema,
   },
-  'workspace.stopTeamLead': {
+  [WORKSPACE.STOP['TEAM-LEAD']]: {
     input: z.object({ projectId: z.string(), index: z.number().int().min(1) }),
     output: SuccessResponseSchema,
   },
-  'workspace.sendMessage': {
+  [WORKSPACE.SEND.MESSAGE]: {
     input: z.object({ sessionId: z.string(), message: z.string() }),
     output: SuccessResponseSchema,
   },
-  'workspace.initAllProjects': {
+  [WORKSPACE.INIT['ALL-PROJECTS']]: {
     input: z.object({
       projects: z.array(z.object({ id: z.string(), path: z.string() })),
     }),
@@ -39,7 +40,7 @@ export const workspaceInvoke = {
    * Otherwise spawns a new mortal team-lead with the plan pre-loaded.
    * Returns the session that received the plan.
    */
-  'workspace.handOffPlan': {
+  [WORKSPACE.HANDOFF.PLAN]: {
     input: z.object({
       projectId: z.string(),
       planPath: z.string(),
@@ -60,7 +61,7 @@ export const workspaceInvoke = {
    * Similar to handOffPlan but for ad-hoc tasks without a plan file.
    * The team-lead receives the task description directly.
    */
-  'workspace.executeTask': {
+  [WORKSPACE.EXECUTE.TASK]: {
     input: z.object({
       projectId: z.string(),
       taskDescription: z.string(),
@@ -80,7 +81,7 @@ export const workspaceInvoke = {
    * Called by the team-lead (via IPC) before spawning a teammate.
    * Returns the worktree path that should be used as the teammate's cwd.
    */
-  'workspace.provisionTeammate': {
+  [WORKSPACE.PROVISION.TEAMMATE]: {
     input: z.object({
       projectId: z.string(),
       /** Agent role (e.g. 'component-engineer', 'service-engineer') */
@@ -101,7 +102,7 @@ export const workspaceInvoke = {
   /**
    * Tear down a teammate's worktree after task completion.
    */
-  'workspace.teardownTeammate': {
+  [WORKSPACE.TEARDOWN.TEAMMATE]: {
     input: z.object({
       projectId: z.string(),
       slug: z.string(),
@@ -111,17 +112,17 @@ export const workspaceInvoke = {
 } as const;
 
 export const workspaceEvents = {
-  'event:workspace.sessionReady': {
+  [WORKSPACE_EVENTS.SESSION.READY]: {
     payload: z.object({ projectId: z.string(), sessionKey: SessionKeySchema, sessionId: z.string() }),
   },
-  'event:workspace.sessionCrashed': {
+  [WORKSPACE_EVENTS.SESSION.CRASHED]: {
     payload: z.object({ projectId: z.string(), sessionKey: SessionKeySchema, crashCount: z.number() }),
   },
-  'event:workspace.sessionRestarted': {
+  [WORKSPACE_EVENTS.SESSION.RESTARTED]: {
     payload: z.object({ projectId: z.string(), sessionKey: SessionKeySchema, sessionId: z.string() }),
   },
   /** Emitted when a plan is handed off to a team-lead */
-  'event:workspace.planHandedOff': {
+  [WORKSPACE_EVENTS.PLAN['HANDED-OFF']]: {
     payload: z.object({
       projectId: z.string(),
       planPath: z.string(),

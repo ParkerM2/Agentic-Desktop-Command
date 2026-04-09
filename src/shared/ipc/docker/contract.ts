@@ -6,18 +6,19 @@
 
 import { z } from 'zod';
 
+import { DOCKER } from './channels';
 import { DockerHubSetupResultSchema, DockerStatusSchema } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const dockerInvoke = {
   /** Check if Docker Desktop is installed and running. */
-  'docker.getStatus': {
+  [DOCKER.GET.STATUS]: {
     input: z.object({}),
     output: DockerStatusSchema,
   },
   /** Auto-setup: pull image, start container, generate API key, connect. */
-  'docker.setupHub': {
+  [DOCKER.SETUP.HUB]: {
     input: z.object({}),
     output: DockerHubSetupResultSchema,
   },

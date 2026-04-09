@@ -11,6 +11,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { AGENT_DASHBOARD, AGENT_DASHBOARD_EVENTS } from './channels';
 import {
   AgentChatMessageSchema,
   AgentDashboardStatusSchema,
@@ -28,7 +29,7 @@ import {
 
 export const agentDashboardInvoke = {
   /** Spawn a headless stream-json Project Owner session */
-  'agent-dashboard.spawnProjectOwner': {
+  [AGENT_DASHBOARD.SPAWN['PROJECT-OWNER']]: {
     input: z.object({
       projectPath: z.string(),
       prompt: z.string(),
@@ -42,7 +43,7 @@ export const agentDashboardInvoke = {
   },
 
   /** Spawn a tmux-based Team Lead session with Agent Teams enabled */
-  'agent-dashboard.spawnTeamLead': {
+  [AGENT_DASHBOARD.SPAWN['TEAM-LEAD']]: {
     input: z.object({
       projectPath: z.string(),
       teamName: z.string(),
@@ -58,7 +59,7 @@ export const agentDashboardInvoke = {
   },
 
   /** List all active agent sessions across all types */
-  'agent-dashboard.listSessions': {
+  [AGENT_DASHBOARD.LIST.SESSIONS]: {
     input: z.object({
       type: AgentSessionTypeSchema.optional(),
       teamName: z.string().optional(),
@@ -67,13 +68,13 @@ export const agentDashboardInvoke = {
   },
 
   /** Get details for a single agent session */
-  'agent-dashboard.getSession': {
+  [AGENT_DASHBOARD.GET.SESSION]: {
     input: z.object({ sessionId: z.string() }),
     output: AgentSessionSchema.nullable(),
   },
 
   /** Send a message to an agent (stdin for PO, tmux send-keys for TL/teammates) */
-  'agent-dashboard.sendMessage': {
+  [AGENT_DASHBOARD.SEND.MESSAGE]: {
     input: z.object({
       sessionId: z.string(),
       message: z.string(),
@@ -82,13 +83,13 @@ export const agentDashboardInvoke = {
   },
 
   /** Stop an agent session gracefully */
-  'agent-dashboard.stopSession': {
+  [AGENT_DASHBOARD.STOP.SESSION]: {
     input: z.object({ sessionId: z.string() }),
     output: SuccessResponseSchema,
   },
 
   /** Get files changed on an agent's working branch */
-  'agent-dashboard.getFilesChanged': {
+  [AGENT_DASHBOARD.GET['FILES-CHANGED']]: {
     input: z.object({
       sessionId: z.string(),
       branch: z.string().optional(),
@@ -97,31 +98,31 @@ export const agentDashboardInvoke = {
   },
 
   /** Get all workflow tasks for a feature slug */
-  'agent-dashboard.getTasksForFeature': {
+  [AGENT_DASHBOARD.GET['TASKS-FOR-FEATURE']]: {
     input: z.object({ featureSlug: z.string() }),
     output: z.array(WorkflowTaskSchema),
   },
 
   /** Get a single workflow task by feature slug and task number */
-  'agent-dashboard.getTask': {
+  [AGENT_DASHBOARD.GET.TASK]: {
     input: z.object({ featureSlug: z.string(), taskNumber: z.number() }),
     output: WorkflowTaskSchema.nullable(),
   },
 
   /** Get the QA session for a specific task */
-  'agent-dashboard.getQaSession': {
+  [AGENT_DASHBOARD.GET['QA-SESSION']]: {
     input: z.object({ taskId: z.string() }),
     output: QaDashboardSessionSchema.nullable(),
   },
 
   /** List all QA sessions */
-  'agent-dashboard.listQaSessions': {
+  [AGENT_DASHBOARD.LIST['QA-SESSIONS']]: {
     input: z.object({}),
     output: z.array(QaDashboardSessionSchema),
   },
 
   /** Get all agent sessions associated with a task slug */
-  'agent-dashboard.getSessionsForTask': {
+  [AGENT_DASHBOARD.LIST['SESSIONS-FOR-TASK']]: {
     input: z.object({ slug: z.string() }),
     output: z.array(
       z.object({
@@ -143,7 +144,7 @@ export const agentDashboardInvoke = {
   },
 
   /** Get paginated session log (JSONL entries) for a session */
-  'agent-dashboard.getSessionLog': {
+  [AGENT_DASHBOARD.GET['SESSION-LOG']]: {
     input: z.object({
       sessionId: z.string(),
       offset: z.number().optional(),
@@ -153,7 +154,7 @@ export const agentDashboardInvoke = {
   },
 
   /** Get the git diff for a session's working branch */
-  'agent-dashboard.getGitDiff': {
+  [AGENT_DASHBOARD.GET['GIT-DIFF']]: {
     input: z.object({ sessionId: z.string() }),
     output: z.object({ diff: z.string() }),
   },
@@ -163,12 +164,12 @@ export const agentDashboardInvoke = {
 
 export const agentDashboardEvents = {
   /** A new agent session was detected or spawned */
-  'event:agent-dashboard.sessionStarted': {
+  [AGENT_DASHBOARD_EVENTS.SESSION.STARTED]: {
     payload: AgentSessionSchema,
   },
 
   /** An agent session has ended (completed, failed, or killed) */
-  'event:agent-dashboard.sessionEnded': {
+  [AGENT_DASHBOARD_EVENTS.SESSION.ENDED]: {
     payload: z.object({
       sessionId: z.string(),
       status: AgentDashboardStatusSchema,
@@ -177,12 +178,12 @@ export const agentDashboardEvents = {
   },
 
   /** A new chat message was received from an agent */
-  'event:agent-dashboard.messageReceived': {
+  [AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED]: {
     payload: AgentChatMessageSchema,
   },
 
   /** An agent's status changed */
-  'event:agent-dashboard.statusChanged': {
+  [AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED']]: {
     payload: z.object({
       sessionId: z.string(),
       previousStatus: AgentDashboardStatusSchema,
@@ -191,12 +192,12 @@ export const agentDashboardEvents = {
   },
 
   /** A new teammate was detected via team config watcher */
-  'event:agent-dashboard.teammateJoined': {
+  [AGENT_DASHBOARD_EVENTS.TEAMMATE.JOINED]: {
     payload: TeamMemberSchema,
   },
 
   /** A teammate left or was removed */
-  'event:agent-dashboard.teammateLeft': {
+  [AGENT_DASHBOARD_EVENTS.TEAMMATE.LEFT]: {
     payload: z.object({
       agentId: z.string(),
       teamName: z.string(),
@@ -204,7 +205,7 @@ export const agentDashboardEvents = {
   },
 
   /** Token-level streaming delta for real-time UI updates */
-  'event:agent-dashboard.streamEvent': {
+  [AGENT_DASHBOARD_EVENTS.STREAM.EVENT]: {
     payload: z.object({
       sessionId: z.string(),
       event: StreamJsonEventSchema,
@@ -212,7 +213,7 @@ export const agentDashboardEvents = {
   },
 
   /** A workflow task was updated (phase change, criterion met, etc.) */
-  'event:agent-dashboard.taskUpdated': {
+  [AGENT_DASHBOARD_EVENTS.TASK.UPDATED]: {
     payload: z.object({
       featureSlug: z.string(),
       task: WorkflowTaskSchema,
@@ -220,7 +221,7 @@ export const agentDashboardEvents = {
   },
 
   /** A QA session was updated (new verdict, check completed, etc.) */
-  'event:agent-dashboard.qaSessionUpdated': {
+  [AGENT_DASHBOARD_EVENTS.QA['SESSION-UPDATED']]: {
     payload: QaDashboardSessionSchema,
   },
 } as const;

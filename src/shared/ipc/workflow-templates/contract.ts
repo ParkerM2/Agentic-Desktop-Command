@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { WORKFLOW_TEMPLATES, WORKFLOW_TEMPLATES_EVENTS } from './channels';
 import { ArtifactTypeSchema, PluginArtifactSchema, WorkflowTemplateSchema } from './schemas';
 
 // ─── Input helpers ────────────────────────────────────────────
@@ -31,38 +32,38 @@ const UpdateTemplateInputSchema = WorkflowTemplateSchema.omit({
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const workflowTemplatesInvoke = {
-  'workflowTemplates.list': {
+  [WORKFLOW_TEMPLATES.LIST.ALL]: {
     input: z.object({}),
     output: z.object({ templates: z.array(WorkflowTemplateSchema) }),
   },
-  'workflowTemplates.get': {
+  [WORKFLOW_TEMPLATES.GET.TEMPLATE]: {
     input: z.object({ id: z.string() }),
     output: z.object({ template: WorkflowTemplateSchema }),
   },
-  'workflowTemplates.create': {
+  [WORKFLOW_TEMPLATES.CREATE.TEMPLATE]: {
     input: CreateTemplateInputSchema,
     output: z.object({ template: WorkflowTemplateSchema }),
   },
-  'workflowTemplates.update': {
+  [WORKFLOW_TEMPLATES.UPDATE.TEMPLATE]: {
     input: z.object({
       id: z.string(),
       updates: UpdateTemplateInputSchema,
     }),
     output: z.object({ template: WorkflowTemplateSchema }),
   },
-  'workflowTemplates.delete': {
+  [WORKFLOW_TEMPLATES.DELETE.TEMPLATE]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
-  'workflowTemplates.duplicate': {
+  [WORKFLOW_TEMPLATES.DUPLICATE.TEMPLATE]: {
     input: z.object({ id: z.string(), name: z.string().optional() }),
     output: z.object({ template: WorkflowTemplateSchema }),
   },
-  'workflowTemplates.scanArtifacts': {
+  [WORKFLOW_TEMPLATES.SCAN.ARTIFACTS]: {
     input: z.object({ projectPath: z.string() }),
     output: z.object({ artifacts: z.array(PluginArtifactSchema) }),
   },
-  'workflowTemplates.writeArtifact': {
+  [WORKFLOW_TEMPLATES.WRITE.ARTIFACT]: {
     input: z.object({
       projectPath: z.string(),
       type: ArtifactTypeSchema,
@@ -76,13 +77,13 @@ export const workflowTemplatesInvoke = {
 // ─── Event Channels ──────────────────────────────────────────
 
 export const workflowTemplatesEvents = {
-  'event:workflowTemplates.created': {
+  [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.CREATED]: {
     payload: z.object({ id: z.string(), name: z.string() }),
   },
-  'event:workflowTemplates.updated': {
+  [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.UPDATED]: {
     payload: z.object({ id: z.string(), name: z.string() }),
   },
-  'event:workflowTemplates.deleted': {
+  [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.DELETED]: {
     payload: z.object({ id: z.string() }),
   },
 } as const;

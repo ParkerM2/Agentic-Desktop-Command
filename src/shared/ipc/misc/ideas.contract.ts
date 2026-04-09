@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { IDEAS, IDEAS_EVENTS } from './ideas.channels';
 
 export const IdeaStatusSchema = z.enum([
   'new',
@@ -31,7 +32,7 @@ export const IdeaSchema = z.object({
 });
 
 export const ideasInvoke = {
-  'ideas.list': {
+  [IDEAS.LIST.ALL]: {
     input: z.object({
       projectId: z.string().optional(),
       status: IdeaStatusSchema.optional(),
@@ -39,7 +40,7 @@ export const ideasInvoke = {
     }),
     output: z.array(IdeaSchema),
   },
-  'ideas.create': {
+  [IDEAS.CREATE.IDEA]: {
     input: z.object({
       title: z.string(),
       description: z.string(),
@@ -49,7 +50,7 @@ export const ideasInvoke = {
     }),
     output: IdeaSchema,
   },
-  'ideas.update': {
+  [IDEAS.UPDATE.IDEA]: {
     input: z.object({
       id: z.string(),
       title: z.string().optional(),
@@ -60,18 +61,18 @@ export const ideasInvoke = {
     }),
     output: IdeaSchema,
   },
-  'ideas.delete': {
+  [IDEAS.DELETE.IDEA]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
-  'ideas.vote': {
+  [IDEAS.VOTE.IDEA]: {
     input: z.object({ id: z.string(), delta: z.number() }),
     output: IdeaSchema,
   },
 } as const;
 
 export const ideasEvents = {
-  'event:idea.changed': {
+  [IDEAS_EVENTS.IDEA.CHANGED]: {
     payload: z.object({ ideaId: z.string() }),
   },
 } as const;

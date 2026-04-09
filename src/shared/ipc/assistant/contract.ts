@@ -6,11 +6,12 @@
 
 import { z } from 'zod';
 
+import { ASSISTANT, ASSISTANT_EVENTS } from './channels';
 import { CommandHistoryEntrySchema } from './schemas';
 
 /** Invoke channels for assistant operations */
 export const assistantInvoke = {
-  'assistant.start': {
+  [ASSISTANT.START.SESSION]: {
     input: z.object({
       projects: z.array(
         z.object({
@@ -22,7 +23,7 @@ export const assistantInvoke = {
     }),
     output: z.object({ success: z.boolean() }),
   },
-  'assistant.sendCommand': {
+  [ASSISTANT.SEND.COMMAND]: {
     input: z.object({
       input: z.string(),
       context: z
@@ -34,11 +35,11 @@ export const assistantInvoke = {
     }),
     output: z.object({ success: z.boolean() }),
   },
-  'assistant.getHistory': {
+  [ASSISTANT.GET.HISTORY]: {
     input: z.object({ limit: z.number().optional() }),
     output: z.array(CommandHistoryEntrySchema),
   },
-  'assistant.clearHistory': {
+  [ASSISTANT.CLEAR.HISTORY]: {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },
@@ -46,20 +47,20 @@ export const assistantInvoke = {
 
 /** Event channels for assistant-related events */
 export const assistantEvents = {
-  'event:assistant.response': {
+  [ASSISTANT_EVENTS.MESSAGE.RESPONSE]: {
     payload: z.object({ content: z.string(), type: z.enum(['text', 'error']) }),
   },
-  'event:assistant.thinking': {
+  [ASSISTANT_EVENTS.MESSAGE.THINKING]: {
     payload: z.object({ isThinking: z.boolean() }),
   },
-  'event:assistant.toolExecuted': {
+  [ASSISTANT_EVENTS.TOOL.EXECUTED]: {
     payload: z.object({
       toolName: z.string(),
       queryKeyRoots: z.array(z.string()),
       result: z.unknown(),
     }),
   },
-  'event:assistant.autostart': {
+  [ASSISTANT_EVENTS.SESSION.AUTOSTART]: {
     payload: z.object({ autoStarted: z.boolean() }),
   },
 } as const;

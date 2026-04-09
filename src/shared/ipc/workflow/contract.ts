@@ -10,10 +10,12 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { WORKFLOW, WORKFLOW_EVENTS } from './channels';
+
 // ─── Event Channels ───────────────────────────────────────────
 
 export const workflowEvents = {
-  'event:workflow.milestone': {
+  [WORKFLOW_EVENTS.WORKFLOW.MILESTONE]: {
     payload: z.object({
       ticket: z.string(),
       run: z.string().nullable(),
@@ -23,14 +25,14 @@ export const workflowEvents = {
       data: z.record(z.string(), z.unknown()),
     }),
   },
-  'event:workflow.context': {
+  [WORKFLOW_EVENTS.WORKFLOW.CONTEXT]: {
     payload: z.object({
       ticket: z.string().nullable(),
       phase: z.enum(['research', 'plan', 'agent-team']).nullable(),
       runSlug: z.string().nullable(),
     }),
   },
-  'event:workflow.permission': {
+  [WORKFLOW_EVENTS.WORKFLOW.PERMISSION]: {
     payload: z.object({
       ticket: z.string(),
       agent: z.string(),
@@ -42,15 +44,15 @@ export const workflowEvents = {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const workflowInvoke = {
-  'workflow.watchProgress': {
+  [WORKFLOW.WATCH.PROGRESS]: {
     input: z.object({ projectPath: z.string() }),
     output: SuccessResponseSchema,
   },
-  'workflow.stopWatching': {
+  [WORKFLOW.STOP.WATCHING]: {
     input: z.object({ projectPath: z.string() }),
     output: SuccessResponseSchema,
   },
-  'workflow.launch': {
+  [WORKFLOW.LAUNCH.WORKFLOW]: {
     input: z.object({
       taskDescription: z.string(),
       projectPath: z.string(),
@@ -58,11 +60,11 @@ export const workflowInvoke = {
     }),
     output: z.object({ sessionId: z.string(), pid: z.number() }),
   },
-  'workflow.isRunning': {
+  [WORKFLOW.CHECK.RUNNING]: {
     input: z.object({ sessionId: z.string() }),
     output: z.object({ running: z.boolean() }),
   },
-  'workflow.stop': {
+  [WORKFLOW.STOP.RUNNING]: {
     input: z.object({ sessionId: z.string() }),
     output: z.object({ stopped: z.boolean() }),
   },

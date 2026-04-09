@@ -7,19 +7,20 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { HOTKEYS } from './hotkeys.channels';
 
 export const hotkeysInvoke = {
-  'hotkeys.get': {
+  [HOTKEYS.GET.CONFIG]: {
     input: z.object({}),
     output: z.record(z.string(), z.string()),
   },
-  'hotkeys.update': {
+  [HOTKEYS.UPDATE.CONFIG]: {
     input: z.object({
       hotkeys: z.record(z.string(), z.string()),
     }),
     output: SuccessResponseSchema,
   },
-  'hotkeys.reset': {
+  [HOTKEYS.RESET.CONFIG]: {
     input: z.object({}),
     output: z.record(z.string(), z.string()),
   },

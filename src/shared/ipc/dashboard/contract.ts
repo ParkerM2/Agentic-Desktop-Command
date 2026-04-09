@@ -8,25 +8,26 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { DASHBOARD, DASHBOARD_EVENTS } from './channels';
 import { CaptureSchema } from './schemas';
 
 export const dashboardInvoke = {
-  'dashboard.captures.list': {
+  [DASHBOARD.LIST.CAPTURES]: {
     input: z.object({}),
     output: z.array(CaptureSchema),
   },
-  'dashboard.captures.create': {
+  [DASHBOARD.CREATE.CAPTURE]: {
     input: z.object({ text: z.string() }),
     output: CaptureSchema,
   },
-  'dashboard.captures.delete': {
+  [DASHBOARD.DELETE.CAPTURE]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
 } as const;
 
 export const dashboardEvents = {
-  'event:dashboard.captureChanged': {
+  [DASHBOARD_EVENTS.CAPTURE.CHANGED]: {
     payload: z.object({ captureId: z.string() }),
   },
 } as const;

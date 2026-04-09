@@ -6,6 +6,8 @@
 
 import { z } from 'zod';
 
+import { VOICE, VOICE_EVENTS } from './voice.channels';
+
 export const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
 
 export const VoiceConfigSchema = z.object({
@@ -15,11 +17,11 @@ export const VoiceConfigSchema = z.object({
 });
 
 export const voiceInvoke = {
-  'voice.getConfig': {
+  [VOICE.GET.CONFIG]: {
     input: z.object({}),
     output: VoiceConfigSchema,
   },
-  'voice.updateConfig': {
+  [VOICE.UPDATE.CONFIG]: {
     input: z.object({
       enabled: z.boolean().optional(),
       language: z.string().optional(),
@@ -27,7 +29,7 @@ export const voiceInvoke = {
     }),
     output: VoiceConfigSchema,
   },
-  'voice.checkPermission': {
+  [VOICE.CHECK.PERMISSION]: {
     input: z.object({}),
     output: z.object({
       granted: z.boolean(),
@@ -37,7 +39,7 @@ export const voiceInvoke = {
 } as const;
 
 export const voiceEvents = {
-  'event:voice.transcript': {
+  [VOICE_EVENTS.SPEECH.TRANSCRIPT]: {
     payload: z.object({
       transcript: z.string(),
       isFinal: z.boolean(),

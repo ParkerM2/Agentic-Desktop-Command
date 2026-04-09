@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 
+import { AUTH, AUTH_EVENTS } from './channels';
 import {
   LoginInputSchema,
   LoginOutputSchema,
@@ -20,27 +21,27 @@ import {
 
 /** Invoke channels for auth operations */
 export const authInvoke = {
-  'auth.register': {
+  [AUTH.REGISTER.USER]: {
     input: RegisterInputSchema,
     output: RegisterOutputSchema,
   },
-  'auth.login': {
+  [AUTH.LOGIN.USER]: {
     input: LoginInputSchema,
     output: LoginOutputSchema,
   },
-  'auth.logout': {
+  [AUTH.LOGOUT.USER]: {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },
-  'auth.refresh': {
+  [AUTH.REFRESH.TOKEN]: {
     input: RefreshInputSchema,
     output: RefreshOutputSchema,
   },
-  'auth.me': {
+  [AUTH.GET.USER]: {
     input: z.object({}),
     output: UserSchema,
   },
-  'auth.restore': {
+  [AUTH.RESTORE.SESSION]: {
     input: z.object({}),
     output: RestoreOutputSchema,
   },
@@ -48,7 +49,7 @@ export const authInvoke = {
 
 /** Event channels for auth operations */
 export const authEvents = {
-  'event:user.sessionChanged': {
+  [AUTH_EVENTS.SESSION.CHANGED]: {
     payload: z.object({
       userId: z.string().nullable(),
       email: z.string().nullable(),

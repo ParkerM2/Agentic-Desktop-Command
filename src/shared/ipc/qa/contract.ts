@@ -9,28 +9,29 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { QA, QA_EVENTS } from './channels';
 import { QaModeSchema, QaReportSchema, QaResultSchema, QaSessionSchema } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const qaInvoke = {
-  'qa.startQuiet': {
+  [QA.START.QUIET]: {
     input: z.object({ taskId: z.string() }),
     output: z.object({ sessionId: z.string() }),
   },
-  'qa.startFull': {
+  [QA.START.FULL]: {
     input: z.object({ taskId: z.string() }),
     output: z.object({ sessionId: z.string() }),
   },
-  'qa.getReport': {
+  [QA.GET.REPORT]: {
     input: z.object({ taskId: z.string() }),
     output: QaReportSchema.nullable(),
   },
-  'qa.getSession': {
+  [QA.GET.SESSION]: {
     input: z.object({ taskId: z.string() }),
     output: QaSessionSchema.nullable(),
   },
-  'qa.cancel': {
+  [QA.CANCEL.SESSION]: {
     input: z.object({ sessionId: z.string() }),
     output: SuccessResponseSchema,
   },
@@ -39,13 +40,13 @@ export const qaInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const qaEvents = {
-  'event:qa.started': {
+  [QA_EVENTS.SESSION.STARTED]: {
     payload: z.object({
       taskId: z.string(),
       mode: QaModeSchema,
     }),
   },
-  'event:qa.progress': {
+  [QA_EVENTS.SESSION.PROGRESS]: {
     payload: z.object({
       taskId: z.string(),
       step: z.string(),
@@ -53,7 +54,7 @@ export const qaEvents = {
       current: z.number(),
     }),
   },
-  'event:qa.completed': {
+  [QA_EVENTS.SESSION.COMPLETED]: {
     payload: z.object({
       taskId: z.string(),
       result: QaResultSchema,

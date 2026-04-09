@@ -7,9 +7,10 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { CALENDAR } from './calendar.channels';
 
 export const calendarInvoke = {
-  'calendar.listEvents': {
+  [CALENDAR.LIST.EVENTS]: {
     input: z.object({
       calendarId: z.string().optional(),
       timeMin: z.string(),
@@ -28,7 +29,7 @@ export const calendarInvoke = {
       }),
     ),
   },
-  'calendar.createEvent': {
+  [CALENDAR.CREATE.EVENT]: {
     input: z.object({
       summary: z.string(),
       startDateTime: z.string(),
@@ -46,7 +47,7 @@ export const calendarInvoke = {
       htmlLink: z.string(),
     }),
   },
-  'calendar.deleteEvent': {
+  [CALENDAR.DELETE.EVENT]: {
     input: z.object({ eventId: z.string(), calendarId: z.string().optional() }),
     output: SuccessResponseSchema,
   },

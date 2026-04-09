@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { DATA_MANAGEMENT, DATA_MANAGEMENT_EVENTS } from './channels';
 import {
   CleanupResultSchema,
   DataRetentionSettingsSchema,
@@ -21,35 +22,35 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const dataManagementInvoke = {
-  'dataManagement.getRegistry': {
+  [DATA_MANAGEMENT.GET.REGISTRY]: {
     input: z.object({}),
     output: z.array(DataStoreEntrySchema),
   },
-  'dataManagement.getUsage': {
+  [DATA_MANAGEMENT.GET.USAGE]: {
     input: z.object({}),
     output: z.array(DataStoreUsageSchema),
   },
-  'dataManagement.getRetention': {
+  [DATA_MANAGEMENT.GET.RETENTION]: {
     input: z.object({}),
     output: DataRetentionSettingsSchema,
   },
-  'dataManagement.updateRetention': {
+  [DATA_MANAGEMENT.UPDATE.RETENTION]: {
     input: DataRetentionSettingsSchema.partial(),
     output: DataRetentionSettingsSchema,
   },
-  'dataManagement.clearStore': {
+  [DATA_MANAGEMENT.CLEAR.STORE]: {
     input: z.object({ storeId: z.string() }),
     output: SuccessResponseSchema,
   },
-  'dataManagement.runCleanup': {
+  [DATA_MANAGEMENT.RUN.CLEANUP]: {
     input: z.object({}),
     output: CleanupResultSchema,
   },
-  'dataManagement.exportData': {
+  [DATA_MANAGEMENT.EXPORT.DATA]: {
     input: z.object({}),
     output: z.object({ filePath: z.string() }),
   },
-  'dataManagement.importData': {
+  [DATA_MANAGEMENT.IMPORT.DATA]: {
     input: z.object({ filePath: z.string() }),
     output: ImportResultSchema,
   },
@@ -58,7 +59,7 @@ export const dataManagementInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const dataManagementEvents = {
-  'event:dataManagement.cleanupComplete': {
+  [DATA_MANAGEMENT_EVENTS.CLEANUP.COMPLETE]: {
     payload: CleanupResultSchema,
   },
 } as const;

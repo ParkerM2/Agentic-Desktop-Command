@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 
+import { FITNESS, FITNESS_EVENTS } from './channels';
 import {
   BodyMeasurementSchema,
   ExerciseSchema,
@@ -20,7 +21,7 @@ import {
 
 /** Invoke channels for fitness operations */
 export const fitnessInvoke = {
-  'fitness.logWorkout': {
+  [FITNESS.LOG.WORKOUT]: {
     input: z.object({
       date: z.string(),
       type: WorkoutTypeSchema,
@@ -30,7 +31,7 @@ export const fitnessInvoke = {
     }),
     output: WorkoutSchema,
   },
-  'fitness.listWorkouts': {
+  [FITNESS.LIST.WORKOUTS]: {
     input: z.object({
       startDate: z.string().optional(),
       endDate: z.string().optional(),
@@ -38,7 +39,7 @@ export const fitnessInvoke = {
     }),
     output: z.array(WorkoutSchema),
   },
-  'fitness.logMeasurement': {
+  [FITNESS.LOG.MEASUREMENT]: {
     input: z.object({
       date: z.string(),
       weight: z.number().optional(),
@@ -51,15 +52,15 @@ export const fitnessInvoke = {
     }),
     output: BodyMeasurementSchema,
   },
-  'fitness.getMeasurements': {
+  [FITNESS.GET.MEASUREMENTS]: {
     input: z.object({ limit: z.number().optional() }),
     output: z.array(BodyMeasurementSchema),
   },
-  'fitness.getStats': {
+  [FITNESS.GET.STATS]: {
     input: z.object({}),
     output: FitnessStatsSchema,
   },
-  'fitness.setGoal': {
+  [FITNESS.SET.GOAL]: {
     input: z.object({
       type: FitnessGoalTypeSchema,
       target: z.number(),
@@ -68,19 +69,19 @@ export const fitnessInvoke = {
     }),
     output: FitnessGoalSchema,
   },
-  'fitness.listGoals': {
+  [FITNESS.LIST.GOALS]: {
     input: z.object({}),
     output: z.array(FitnessGoalSchema),
   },
-  'fitness.updateGoalProgress': {
+  [FITNESS.UPDATE['GOAL-PROGRESS']]: {
     input: z.object({ goalId: z.string(), current: z.number() }),
     output: FitnessGoalSchema,
   },
-  'fitness.deleteWorkout': {
+  [FITNESS.DELETE.WORKOUT]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'fitness.deleteGoal': {
+  [FITNESS.DELETE.GOAL]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
@@ -88,13 +89,13 @@ export const fitnessInvoke = {
 
 /** Event channels for fitness-related events */
 export const fitnessEvents = {
-  'event:fitness.workoutChanged': {
+  [FITNESS_EVENTS.WORKOUT.CHANGED]: {
     payload: z.object({ workoutId: z.string() }),
   },
-  'event:fitness.measurementChanged': {
+  [FITNESS_EVENTS.MEASUREMENT.CHANGED]: {
     payload: z.object({ measurementId: z.string() }),
   },
-  'event:fitness.goalChanged': {
+  [FITNESS_EVENTS.GOAL.CHANGED]: {
     payload: z.object({ goalId: z.string() }),
   },
 } as const;

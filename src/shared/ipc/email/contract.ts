@@ -9,36 +9,37 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema, SuccessWithErrorSchema } from '../common/schemas';
 
+import { EMAIL, EMAIL_EVENTS } from './channels';
 import { EmailSchema, EmailSendResultSchema, QueuedEmailSchema, SmtpConfigSchema } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const emailInvoke = {
-  'email.send': {
+  [EMAIL.SEND.MESSAGE]: {
     input: EmailSchema,
     output: EmailSendResultSchema,
   },
-  'email.getConfig': {
+  [EMAIL.GET.CONFIG]: {
     input: z.object({}),
     output: SmtpConfigSchema.nullable(),
   },
-  'email.updateConfig': {
+  [EMAIL.UPDATE.CONFIG]: {
     input: SmtpConfigSchema,
     output: SuccessResponseSchema,
   },
-  'email.testConnection': {
+  [EMAIL.TEST.CONNECTION]: {
     input: z.object({}),
     output: SuccessWithErrorSchema,
   },
-  'email.getQueue': {
+  [EMAIL.GET.QUEUE]: {
     input: z.object({}),
     output: z.array(QueuedEmailSchema),
   },
-  'email.retryQueued': {
+  [EMAIL.RETRY.QUEUED]: {
     input: z.object({ emailId: z.string() }),
     output: EmailSendResultSchema,
   },
-  'email.removeFromQueue': {
+  [EMAIL.REMOVE.QUEUED]: {
     input: z.object({ emailId: z.string() }),
     output: SuccessResponseSchema,
   },
@@ -47,14 +48,14 @@ export const emailInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const emailEvents = {
-  'event:email.sent': {
+  [EMAIL_EVENTS.MESSAGE.SENT]: {
     payload: z.object({
       messageId: z.string(),
       to: z.array(z.string()),
       subject: z.string(),
     }),
   },
-  'event:email.failed': {
+  [EMAIL_EVENTS.MESSAGE.FAILED]: {
     payload: z.object({
       to: z.array(z.string()),
       subject: z.string(),

@@ -10,10 +10,12 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { SPOTIFY } from './channels';
+
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const spotifyInvoke = {
-  'spotify.getPlayback': {
+  [SPOTIFY.GET.PLAYBACK]: {
     input: z.object({}),
     output: z
       .object({
@@ -29,23 +31,23 @@ export const spotifyInvoke = {
       })
       .nullable(),
   },
-  'spotify.play': {
+  [SPOTIFY.PLAY.TRACK]: {
     input: z.object({ uri: z.string().optional() }),
     output: SuccessResponseSchema,
   },
-  'spotify.pause': {
+  [SPOTIFY.PAUSE.TRACK]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'spotify.next': {
+  [SPOTIFY.SKIP.NEXT]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'spotify.previous': {
+  [SPOTIFY.SKIP.PREVIOUS]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'spotify.search': {
+  [SPOTIFY.SEARCH.TRACKS]: {
     input: z.object({ query: z.string(), limit: z.number().optional() }),
     output: z.array(
       z.object({
@@ -57,11 +59,11 @@ export const spotifyInvoke = {
       }),
     ),
   },
-  'spotify.setVolume': {
+  [SPOTIFY.SET.VOLUME]: {
     input: z.object({ volumePercent: z.number() }),
     output: SuccessResponseSchema,
   },
-  'spotify.addToQueue': {
+  [SPOTIFY.ADD['TO-QUEUE']]: {
     input: z.object({ uri: z.string() }),
     output: SuccessResponseSchema,
   },

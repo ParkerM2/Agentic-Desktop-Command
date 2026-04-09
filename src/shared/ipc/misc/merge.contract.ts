@@ -8,6 +8,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { MERGE } from './merge.channels';
 
 export const MergeDiffFileSchema = z.object({
   file: z.string(),
@@ -42,7 +43,7 @@ export const MergeFileDiffOutputSchema = z.object({
 });
 
 export const mergeInvoke = {
-  'merge.previewDiff': {
+  [MERGE.PREVIEW.DIFF]: {
     input: z.object({
       repoPath: z.string(),
       sourceBranch: z.string(),
@@ -50,11 +51,11 @@ export const mergeInvoke = {
     }),
     output: MergeDiffSummarySchema,
   },
-  'merge.getFileDiff': {
+  [MERGE.GET['FILE-DIFF']]: {
     input: MergeFileDiffInputSchema,
     output: MergeFileDiffOutputSchema,
   },
-  'merge.checkConflicts': {
+  [MERGE.CHECK.CONFLICTS]: {
     input: z.object({
       repoPath: z.string(),
       sourceBranch: z.string(),
@@ -62,7 +63,7 @@ export const mergeInvoke = {
     }),
     output: z.array(z.string()),
   },
-  'merge.mergeBranch': {
+  [MERGE.EXECUTE.MERGE]: {
     input: z.object({
       repoPath: z.string(),
       sourceBranch: z.string(),
@@ -70,7 +71,7 @@ export const mergeInvoke = {
     }),
     output: MergeResultSchema,
   },
-  'merge.abort': {
+  [MERGE.ABORT.MERGE]: {
     input: z.object({ repoPath: z.string() }),
     output: SuccessResponseSchema,
   },

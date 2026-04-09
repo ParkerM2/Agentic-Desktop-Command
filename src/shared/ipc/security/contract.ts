@@ -6,19 +6,20 @@
 
 import { z } from 'zod';
 
+import { SECURITY } from './channels';
 import { SecurityAuditExportSchema, SecuritySettingsSchema } from './schemas';
 
 /** Invoke channels for security operations */
 export const securityInvoke = {
-  'security.getSettings': {
+  [SECURITY.GET.SETTINGS]: {
     input: z.object({}),
     output: SecuritySettingsSchema,
   },
-  'security.updateSettings': {
+  [SECURITY.UPDATE.SETTINGS]: {
     input: SecuritySettingsSchema.partial(),
     output: SecuritySettingsSchema,
   },
-  'security.exportAudit': {
+  [SECURITY.EXPORT.AUDIT]: {
     input: z.object({}),
     output: SecurityAuditExportSchema,
   },

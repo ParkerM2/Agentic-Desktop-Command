@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { NOTIFICATIONS, NOTIFICATIONS_EVENTS } from './channels';
 import {
   GitHubWatcherConfigSchema,
   NotificationFilterSchema,
@@ -21,26 +22,26 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const notificationsInvoke = {
-  'notifications.list': {
+  [NOTIFICATIONS.LIST.ALL]: {
     input: z.object({
       filter: NotificationFilterSchema.optional(),
       limit: z.number().optional(),
     }),
     output: z.array(NotificationSchema),
   },
-  'notifications.markRead': {
+  [NOTIFICATIONS.MARK.READ]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
-  'notifications.markAllRead': {
+  [NOTIFICATIONS.MARK['ALL-READ']]: {
     input: z.object({ source: NotificationSourceSchema.optional() }),
     output: z.object({ success: z.boolean(), count: z.number() }),
   },
-  'notifications.getConfig': {
+  [NOTIFICATIONS.GET.CONFIG]: {
     input: z.object({}),
     output: NotificationWatcherConfigSchema,
   },
-  'notifications.updateConfig': {
+  [NOTIFICATIONS.UPDATE.CONFIG]: {
     input: z.object({
       enabled: z.boolean().optional(),
       slack: SlackWatcherConfigSchema.partial().optional(),
@@ -48,15 +49,15 @@ export const notificationsInvoke = {
     }),
     output: NotificationWatcherConfigSchema,
   },
-  'notifications.startWatching': {
+  [NOTIFICATIONS.START.WATCHING]: {
     input: z.object({}),
     output: z.object({ success: z.boolean(), watchersStarted: z.array(z.string()) }),
   },
-  'notifications.stopWatching': {
+  [NOTIFICATIONS.STOP.WATCHING]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'notifications.getWatcherStatus': {
+  [NOTIFICATIONS.GET['WATCHER-STATUS']]: {
     input: z.object({}),
     output: z.object({
       isWatching: z.boolean(),
@@ -70,18 +71,18 @@ export const notificationsInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const notificationsEvents = {
-  'event:notifications.new': {
+  [NOTIFICATIONS_EVENTS.NOTIFICATION.NEW]: {
     payload: z.object({
       notification: NotificationSchema,
     }),
   },
-  'event:notifications.watcherError': {
+  [NOTIFICATIONS_EVENTS.WATCHER.ERROR]: {
     payload: z.object({
       source: NotificationSourceSchema,
       error: z.string(),
     }),
   },
-  'event:notifications.watcherStatusChanged': {
+  [NOTIFICATIONS_EVENTS.WATCHER['STATUS-CHANGED']]: {
     payload: z.object({
       source: NotificationSourceSchema,
       status: z.enum(['started', 'stopped', 'polling', 'error']),

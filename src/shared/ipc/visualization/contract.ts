@@ -7,20 +7,21 @@
 
 import { z } from 'zod';
 
+import { VISUALIZATION } from './channels';
 import { AgentTeamsDataSchema, CodebaseGraphSchema, SessionLogPageSchema } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────────
 
 export const visualizationInvoke = {
-  'visualization.getCodebaseGraph': {
+  [VISUALIZATION.GET['CODEBASE-GRAPH']]: {
     input: z.object({ projectId: z.string() }),
     output: CodebaseGraphSchema,
   },
-  'visualization.getAgentTeams': {
+  [VISUALIZATION.GET['AGENT-TEAMS']]: {
     input: z.object({ projectId: z.string() }),
     output: AgentTeamsDataSchema,
   },
-  'visualization.getSessionLog': {
+  [VISUALIZATION.GET['SESSION-LOG']]: {
     input: z.object({
       projectId: z.string(),
       feature: z.string(),

@@ -6,6 +6,8 @@
 
 import { z } from 'zod';
 
+import { SCREEN } from './screen.channels';
+
 export const ScreenSourceSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -30,14 +32,14 @@ export const ScreenPermissionStatusSchema = z.enum([
 ]);
 
 export const screenInvoke = {
-  'screen.listSources': {
+  [SCREEN.LIST.SOURCES]: {
     input: z.object({
       types: z.array(z.enum(['screen', 'window'])).optional(),
       thumbnailSize: z.object({ width: z.number(), height: z.number() }).optional(),
     }),
     output: z.array(ScreenSourceSchema),
   },
-  'screen.capture': {
+  [SCREEN.CAPTURE.SCREEN]: {
     input: z.object({
       sourceId: z.string(),
       options: z
@@ -49,7 +51,7 @@ export const screenInvoke = {
     }),
     output: ScreenshotSchema,
   },
-  'screen.checkPermission': {
+  [SCREEN.CHECK.PERMISSION]: {
     input: z.object({}),
     output: z.object({
       status: ScreenPermissionStatusSchema,

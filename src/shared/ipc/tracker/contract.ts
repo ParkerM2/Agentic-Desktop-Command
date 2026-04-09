@@ -7,20 +7,21 @@
 
 import { z } from 'zod';
 
+import { TRACKER } from './channels';
 import { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const trackerInvoke = {
-  'tracker.list': {
+  [TRACKER.LIST.ALL]: {
     input: z.object({}),
     output: TrackerFileSchema,
   },
-  'tracker.get': {
+  [TRACKER.GET.PLAN]: {
     input: z.object({ key: z.string() }),
     output: TrackerPlanSchema.nullable(),
   },
-  'tracker.update': {
+  [TRACKER.UPDATE.PLAN]: {
     input: z.object({
       key: z.string(),
       status: TrackerPlanStatusSchema.optional(),

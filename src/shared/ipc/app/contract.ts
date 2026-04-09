@@ -10,14 +10,16 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { APP, APP_EVENTS } from './channels';
+
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const appInvoke = {
-  'app.getVersion': {
+  [APP.GET.VERSION]: {
     input: z.object({}),
     output: z.object({ version: z.string() }),
   },
-  'app.checkClaudeAuth': {
+  [APP.CHECK['CLAUDE-AUTH']]: {
     input: z.object({}),
     output: z.object({
       installed: z.boolean(),
@@ -25,26 +27,26 @@ export const appInvoke = {
       version: z.string().optional(),
     }),
   },
-  'app.getOAuthStatus': {
+  [APP.CHECK['OAUTH-STATUS']]: {
     input: z.object({ provider: z.string() }),
     output: z.object({
       configured: z.boolean(),
       authenticated: z.boolean(),
     }),
   },
-  'app.setOpenAtLogin': {
+  [APP.SET['LOGIN-SETTING']]: {
     input: z.object({ enabled: z.boolean() }),
     output: SuccessResponseSchema,
   },
-  'app.getOpenAtLogin': {
+  [APP.GET['LOGIN-SETTING']]: {
     input: z.object({}),
     output: z.object({ enabled: z.boolean() }),
   },
-  'app.launchClaudeAuth': {
+  [APP.LAUNCH['CLAUDE-AUTH']]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'app.checkGitHubAuth': {
+  [APP.CHECK['GITHUB-AUTH']]: {
     input: z.object({}),
     output: z.object({
       installed: z.boolean(),
@@ -52,26 +54,26 @@ export const appInvoke = {
       username: z.string().optional(),
     }),
   },
-  'app.launchGitHubAuth': {
+  [APP.LAUNCH['GITHUB-AUTH']]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'app.checkForUpdates': {
+  [APP.CHECK.UPDATES]: {
     input: z.object({}),
     output: z.object({
       updateAvailable: z.boolean(),
       version: z.string().optional(),
     }),
   },
-  'app.downloadUpdate': {
+  [APP.DOWNLOAD.UPDATE]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'app.quitAndInstall': {
+  [APP.INSTALL.UPDATE]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'app.getUpdateStatus': {
+  [APP.GET['UPDATE-STATUS']]: {
     input: z.object({}),
     output: z.object({
       checking: z.boolean(),
@@ -87,10 +89,10 @@ export const appInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const appEvents = {
-  'event:app.updateAvailable': {
+  [APP_EVENTS.UPDATE.AVAILABLE]: {
     payload: z.object({ version: z.string() }),
   },
-  'event:app.updateDownloaded': {
+  [APP_EVENTS.UPDATE.DOWNLOADED]: {
     payload: z.object({ version: z.string() }),
   },
 } as const;

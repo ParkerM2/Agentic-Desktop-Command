@@ -7,10 +7,12 @@
 
 import { z } from 'zod';
 
+import { WEBHOOK_EVENTS } from './webhook.channels';
+
 export const webhookInvoke = {} as const;
 
 export const webhookEvents = {
-  'event:webhook.received': {
+  [WEBHOOK_EVENTS.COMMAND.RECEIVED]: {
     payload: z.object({
       source: z.enum(['slack', 'github']),
       commandText: z.string(),

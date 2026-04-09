@@ -7,6 +7,7 @@
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
+import { WORKSPACES } from './workspaces.channels';
 
 export const WorkspaceSettingsSchema = z.object({
   autoStart: z.boolean(),
@@ -25,15 +26,15 @@ export const WorkspaceSchema = z.object({
 });
 
 export const workspacesInvoke = {
-  'workspaces.list': {
+  [WORKSPACES.LIST.ALL]: {
     input: z.object({}),
     output: z.array(WorkspaceSchema),
   },
-  'workspaces.create': {
+  [WORKSPACES.CREATE.WORKSPACE]: {
     input: z.object({ name: z.string(), description: z.string().optional() }),
     output: WorkspaceSchema,
   },
-  'workspaces.update': {
+  [WORKSPACES.UPDATE.WORKSPACE]: {
     input: z.object({
       id: z.string(),
       name: z.string().optional(),
@@ -43,7 +44,7 @@ export const workspacesInvoke = {
     }),
     output: WorkspaceSchema,
   },
-  'workspaces.delete': {
+  [WORKSPACES.DELETE.WORKSPACE]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
