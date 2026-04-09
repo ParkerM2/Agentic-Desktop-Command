@@ -168,6 +168,9 @@ export function createServiceRegistry(
   const router = new IpcRouter(getMainWindow);
   const dataDir = app.getPath('userData');
 
+  // ─── Database (created early — many services depend on it) ──
+  const db = initDatabase(dataDir);
+
   // ─── User session management ─────────────────────────────────
   const userDataResolver = createUserDataResolver(dataDir);
   const userDataMigrator = createUserDataMigrator();
@@ -267,8 +270,8 @@ export function createServiceRegistry(
   });
 
   // ─── Persistence services ────────────────────────────────────
-  const notesService = createNotesService({ dataDir, router });
-  const dashboardService = createDashboardService({ dataDir, router });
+  const notesService = createNotesService({ db, dataDir, router });
+  const dashboardService = createDashboardService({ db, dataDir, router });
   const dockerService = createDockerService();
   const plannerService = createPlannerService({ dataDir, router });
   const alertStore = createAlertStore({ dataDir });
@@ -455,7 +458,6 @@ export function createServiceRegistry(
   const agentManagerService = createAgentManagerService({ router });
 
   // ─── Command Bus + Session Manager ─────────────────────────
-  const db = initDatabase(dataDir);
   const commandBus = createCommandBus(db);
   const busSessionManager = createBusSessionManager(db, agentManagerService);
   busSessionManager.recoverInterrupted();

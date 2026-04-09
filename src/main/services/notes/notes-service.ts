@@ -1,23 +1,28 @@
 /**
- * Notes Service — Disk-persisted notes
+ * Notes Service — SQLite-backed notes
  *
- * Notes are stored as JSON in the app's user data directory.
- * All methods are synchronous; IPC handlers wrap with Promise.resolve().
+ * Notes are stored in the `notes` SQLite table.
+ * One-time migration from notes.json on first access.
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { desc, eq, like, or } from 'drizzle-orm';
 
 import { NOTES_EVENTS } from '@shared/ipc/misc/notes.channels';
 import type { Note } from '@shared/types';
 
+import { notes } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
-import type { ReinitializableService } from '@main/services/data-management';
-
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 
-export interface NotesService extends ReinitializableService {
+const logger = createScopedLogger('notes-service');
+
+export interface NotesService {
   listNotes: (filters: { projectId?: string; tag?: string }) => Note[];
   createNote: (data: {
     title: string;
@@ -34,126 +39,132 @@ export interface NotesService extends ReinitializableService {
   searchNotes: (query: string) => Note[];
 }
 
-interface NotesFile {
-  notes: Note[];
-}
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(notes).limit(1).all();
+  if (existing.length > 0) return;
 
-function loadNotesFile(filePath: string): NotesFile {
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw) as unknown as Partial<NotesFile>;
-      return {
-        notes: Array.isArray(parsed.notes) ? parsed.notes : [],
-      };
-    } catch {
-      return { notes: [] };
+  const jsonPath = join(dataDir, 'notes.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { notes?: Note[] };
+    const items = Array.isArray(parsed.notes) ? parsed.notes : [];
+
+    for (const item of items) {
+      db.insert(notes).values({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        tags: item.tags,
+        projectId: item.projectId,
+        taskId: item.taskId,
+        pinned: item.pinned,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }).run();
     }
+    logger.info(`Migrated ${String(items.length)} notes from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate notes from JSON:', err);
   }
-  return { notes: [] };
 }
 
-function saveNotesFile(filePath: string, data: NotesFile): void {
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+function toNote(row: typeof notes.$inferSelect): Note {
+  return {
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    tags: row.tags,
+    projectId: row.projectId ?? undefined,
+    taskId: row.taskId ?? undefined,
+    pinned: row.pinned,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
-export function createNotesService(deps: { dataDir: string; router: IpcRouter }): NotesService {
-  let currentFilePath = join(deps.dataDir, 'notes.json');
-  let store = loadNotesFile(currentFilePath);
+export function createNotesService(deps: {
+  db: AdcDatabase;
+  router: IpcRouter;
+  dataDir: string;
+}): NotesService {
+  const { db, router, dataDir } = deps;
 
-  function persist(): void {
-    saveNotesFile(currentFilePath, store);
-  }
-
-  function emitChanged(noteId: string): void {
-    deps.router.emit(NOTES_EVENTS.NOTE.CHANGED, { noteId });
-  }
+  migrateFromJson(db, dataDir);
 
   return {
     listNotes(filters) {
-      let result = [...store.notes];
+      let rows = db.select().from(notes)
+        .orderBy(desc(notes.pinned), desc(notes.updatedAt))
+        .all();
 
       if (filters.projectId) {
-        result = result.filter((n) => n.projectId === filters.projectId);
+        rows = rows.filter((r) => r.projectId === filters.projectId);
       }
-
       if (filters.tag) {
-        result = result.filter((n) => n.tags.includes(filters.tag ?? ''));
+        const {tag} = filters;
+        rows = rows.filter((r) => r.tags.includes(tag));
       }
 
-      // Pinned first, then by updatedAt descending
-      result.sort((a, b) => {
-        if (a.pinned && !b.pinned) return -1;
-        if (!a.pinned && b.pinned) return 1;
-        return b.updatedAt.localeCompare(a.updatedAt);
-      });
-
-      return result;
+      return rows.map(toNote);
     },
 
     createNote(data) {
       const now = new Date().toISOString();
-      const note: Note = {
+      const record = {
         id: randomUUID(),
         title: data.title,
         content: data.content,
         tags: data.tags ?? [],
-        projectId: data.projectId,
-        taskId: data.taskId,
+        projectId: data.projectId ?? null,
+        taskId: data.taskId ?? null,
+        pinned: false,
         createdAt: now,
         updatedAt: now,
-        pinned: false,
       };
-      store.notes.push(note);
-      persist();
-      emitChanged(note.id);
-      return note;
+      db.insert(notes).values(record).run();
+      router.emit(NOTES_EVENTS.NOTE.CHANGED, { noteId: record.id });
+      return toNote(record);
     },
 
     updateNote(id, updates) {
-      const index = store.notes.findIndex((n) => n.id === id);
-      if (index === -1) {
+      const rows = db.select().from(notes).where(eq(notes.id, id)).all();
+      const existing = rows.at(0);
+      if (existing === undefined) {
         throw new Error(`Note not found: ${id}`);
       }
-      const existing = store.notes[index];
-      const updated: Note = {
+      const updated = {
         ...existing,
-        ...updates,
+        ...(updates.title === undefined ? {} : { title: updates.title }),
+        ...(updates.content === undefined ? {} : { content: updates.content }),
+        ...(updates.tags === undefined ? {} : { tags: updates.tags }),
+        ...(updates.pinned === undefined ? {} : { pinned: updates.pinned }),
         updatedAt: new Date().toISOString(),
       };
-      store.notes[index] = updated;
-      persist();
-      emitChanged(updated.id);
-      return updated;
+      db.update(notes).set(updated).where(eq(notes.id, id)).run();
+      router.emit(NOTES_EVENTS.NOTE.CHANGED, { noteId: id });
+      return toNote(updated);
     },
 
     deleteNote(id) {
-      const index = store.notes.findIndex((n) => n.id === id);
-      if (index === -1) {
+      const result = db.delete(notes).where(eq(notes.id, id)).run();
+      if (result.changes === 0) {
         throw new Error(`Note not found: ${id}`);
       }
-      store.notes.splice(index, 1);
-      persist();
-      emitChanged(id);
+      router.emit(NOTES_EVENTS.NOTE.CHANGED, { noteId: id });
       return { success: true };
     },
 
     searchNotes(query) {
-      const lower = query.toLowerCase();
-      return store.notes.filter(
-        (n) => n.title.toLowerCase().includes(lower) || n.content.toLowerCase().includes(lower),
-      );
-    },
-
-    reinitialize(dataDir: string) {
-      currentFilePath = join(dataDir, 'notes.json');
-      store = loadNotesFile(currentFilePath);
-    },
-
-    clearState() {
-      store = { notes: [] };
+      const pattern = `%${query}%`;
+      const rows = db.select().from(notes)
+        .where(or(
+          like(notes.title, pattern),
+          like(notes.content, pattern),
+        ))
+        .all();
+      return rows.map(toNote);
     },
   };
 }

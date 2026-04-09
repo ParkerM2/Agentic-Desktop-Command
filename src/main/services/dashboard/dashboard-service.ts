@@ -1,19 +1,25 @@
 /**
- * Dashboard Service — Disk-persisted quick captures
+ * Dashboard Service — SQLite-backed quick captures
  *
- * Captures are stored as JSON in the app's user data directory.
- * All methods are synchronous; IPC handlers wrap with Promise.resolve().
+ * Captures are stored in the `captures` SQLite table.
+ * One-time migration from captures.json on first access.
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { desc, eq } from 'drizzle-orm';
 
 import { DASHBOARD_EVENTS } from '@shared/ipc/dashboard/channels';
 
-import type { ReinitializableService } from '@main/services/data-management';
+import { captures } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
+
+const logger = createScopedLogger('dashboard-service');
 
 export interface Capture {
   id: string;
@@ -21,56 +27,51 @@ export interface Capture {
   createdAt: string;
 }
 
-export interface DashboardService extends ReinitializableService {
+export interface DashboardService {
   listCaptures: () => Capture[];
   createCapture: (text: string) => Capture;
   deleteCapture: (id: string) => { success: boolean };
 }
 
-interface CapturesFile {
-  captures: Capture[];
-}
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(captures).limit(1).all();
+  if (existing.length > 0) return;
 
-function loadCapturesFile(filePath: string): CapturesFile {
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw) as unknown as Partial<CapturesFile>;
-      return {
-        captures: Array.isArray(parsed.captures) ? parsed.captures : [],
-      };
-    } catch {
-      return { captures: [] };
+  const jsonPath = join(dataDir, 'captures.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { captures?: Capture[] };
+    const items = Array.isArray(parsed.captures) ? parsed.captures : [];
+
+    for (const item of items) {
+      db.insert(captures).values({
+        id: item.id,
+        text: item.text,
+        createdAt: item.createdAt,
+      }).run();
     }
+    logger.info(`Migrated ${String(items.length)} captures from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate captures from JSON:', err);
   }
-  return { captures: [] };
-}
-
-function saveCapturesFile(filePath: string, data: CapturesFile): void {
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 export function createDashboardService(deps: {
-  dataDir: string;
+  db: AdcDatabase;
   router: IpcRouter;
+  dataDir: string;
 }): DashboardService {
-  let currentFilePath = join(deps.dataDir, 'captures.json');
-  let store = loadCapturesFile(currentFilePath);
+  const { db, router, dataDir } = deps;
 
-  function persist(): void {
-    saveCapturesFile(currentFilePath, store);
-  }
-
-  function emitChanged(captureId: string): void {
-    deps.router.emit(DASHBOARD_EVENTS.CAPTURE.CHANGED, { captureId });
-  }
+  migrateFromJson(db, dataDir);
 
   return {
     listCaptures() {
-      // Most recent first
-      return [...store.captures].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      return db.select().from(captures)
+        .orderBy(desc(captures.createdAt))
+        .all();
     },
 
     createCapture(text) {
@@ -79,30 +80,18 @@ export function createDashboardService(deps: {
         text,
         createdAt: new Date().toISOString(),
       };
-      store.captures.push(capture);
-      persist();
-      emitChanged(capture.id);
+      db.insert(captures).values(capture).run();
+      router.emit(DASHBOARD_EVENTS.CAPTURE.CHANGED, { captureId: capture.id });
       return capture;
     },
 
     deleteCapture(id) {
-      const index = store.captures.findIndex((c) => c.id === id);
-      if (index === -1) {
+      const result = db.delete(captures).where(eq(captures.id, id)).run();
+      if (result.changes === 0) {
         throw new Error(`Capture not found: ${id}`);
       }
-      store.captures.splice(index, 1);
-      persist();
-      emitChanged(id);
+      router.emit(DASHBOARD_EVENTS.CAPTURE.CHANGED, { captureId: id });
       return { success: true };
-    },
-
-    reinitialize(dataDir: string) {
-      currentFilePath = join(dataDir, 'captures.json');
-      store = loadCapturesFile(currentFilePath);
-    },
-
-    clearState() {
-      store = { captures: [] };
     },
   };
 }
