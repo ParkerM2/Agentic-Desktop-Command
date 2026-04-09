@@ -1,14 +1,20 @@
 /**
  * LayoutSection — Layout settings for Settings > Display
  *
- * Split into two bordered config panels (Sidebar + Main Content Area)
- * with a single unified SVG preview below that shows both sections
- * together. Each section in the preview is tinted to match the config
- * panel it belongs to.
+ * 2x2 bordered grid:
+ *   ┌─────────────────┬─────────────────────┐
+ *   │  Sidebar config  │  Content Area config │
+ *   ├─────────────────┼─────────────────────┤
+ *   │  Toolbar config  │  Unified SVG preview │
+ *   └─────────────────┴─────────────────────┘
+ *
+ * The SVG shows all three regions (sidebar, toolbar, content) with
+ * color-coded tints and a gap between sidebar and content/toolbar
+ * to match the actual app shell.
  */
 
-import type { ContentLayoutId, SidebarLayoutId } from '@shared/types/layout';
-import { CONTENT_LAYOUTS, SIDEBAR_LAYOUTS } from '@shared/types/layout';
+import type { ContentLayoutId, SidebarLayoutId, ToolbarStyleId } from '@shared/types/layout';
+import { CONTENT_LAYOUTS, SIDEBAR_LAYOUTS, TOOLBAR_STYLES } from '@shared/types/layout';
 
 import { useLayoutStore } from '@renderer/shared/stores';
 
@@ -54,10 +60,10 @@ const LAYOUT_PREVIEWS: Record<SidebarLayoutId, LayoutPreviewConfig> = {
   'sidebar-16': { sidebarSide: 'left', sidebarWidth: 60, hasSecondSidebar: false, variant: 'default', collapsible: 'default', sections: 2 },
 };
 
-// ── Unified SVG Preview ───────────────────────────────────
+// ── SVG tint colors ────────────────────────────────────────
 
-/** Tint colors — sidebar region uses info tint, content region uses primary tint */
 const SIDEBAR_TINT = 'oklch(0.65 0.15 230 / 0.12)';
+const TOOLBAR_TINT = 'oklch(0.70 0.10 50 / 0.12)';
 const CONTENT_TINT = 'oklch(0.75 0.12 170 / 0.10)';
 
 // ── SVG Sub-components ────────────────────────────────────
@@ -66,6 +72,7 @@ interface PreviewDimensions {
   w: number;
   h: number;
   pad: number;
+  gap: number;
   sidebarW: number;
   headerH: number;
   rightSidebarW: number;
@@ -95,8 +102,6 @@ function SidebarSections({ config, dims }: { config: LayoutPreviewConfig; dims: 
 
 function ContentDetail({ layoutId, dims }: { layoutId: ContentLayoutId; dims: PreviewDimensions }) {
   const { contentX, contentW, headerH, h } = dims;
-
-  // Inset padding amount per content style
   const INSET_MAP: Record<ContentLayoutId, number> = { flush: 0, padded: 4, bordered: 5, inset: 8 };
   const inset = INSET_MAP[layoutId];
   const innerX = contentX + inset;
@@ -106,15 +111,12 @@ function ContentDetail({ layoutId, dims }: { layoutId: ContentLayoutId; dims: Pr
 
   return (
     <g>
-      {/* Border / inset frame for non-flush styles */}
       {layoutId === 'bordered' ? (
         <rect className="stroke-border" fill="none" height={innerH} rx={4} strokeWidth={0.5} width={innerW} x={innerX} y={innerY} />
       ) : null}
       {layoutId === 'inset' ? (
         <rect className="fill-muted/30 stroke-border" height={innerH} rx={6} strokeWidth={0.5} width={innerW} x={innerX} y={innerY} />
       ) : null}
-
-      {/* Content placeholder lines */}
       {Array.from({ length: 5 }).map((_, i) => (
         <rect
           key={`line-${String(i)}`}
@@ -134,20 +136,28 @@ function ContentDetail({ layoutId, dims }: { layoutId: ContentLayoutId; dims: Pr
 
 function UnifiedLayoutPreview({
   sidebarConfig,
+  toolbarStyleId,
   contentLayoutId,
 }: {
   sidebarConfig: LayoutPreviewConfig;
+  toolbarStyleId: ToolbarStyleId;
   contentLayoutId: ContentLayoutId;
 }) {
   const w = 320;
   const h = 160;
   const pad = sidebarConfig.variant === 'floating' ? 4 : 0;
+  const gap = sidebarConfig.variant === 'inset' ? 6 : 3;
   const sidebarW = sidebarConfig.sidebarWidth;
-  const headerH = 16;
   const rightSidebarW = sidebarConfig.hasSecondSidebar ? 35 : 0;
-  const contentX = sidebarConfig.sidebarSide === 'right' ? 0 : sidebarW;
-  const contentW = w - sidebarW - rightSidebarW;
-  const dims: PreviewDimensions = { w, h, pad, sidebarW, headerH, rightSidebarW, contentX, contentW };
+
+  // Toolbar height varies by style
+  const TOOLBAR_H: Record<ToolbarStyleId, number> = { default: 16, compact: 12, spacious: 22, bordered: 16 };
+  const headerH = TOOLBAR_H[toolbarStyleId];
+
+  // Content starts after sidebar + gap
+  const contentX = sidebarConfig.sidebarSide === 'right' ? 0 : sidebarW + gap;
+  const contentW = w - sidebarW - rightSidebarW - gap;
+  const dims: PreviewDimensions = { w, h, pad, gap, sidebarW, headerH, rightSidebarW, contentX, contentW };
 
   const showLeftSidebar = sidebarConfig.sidebarSide === 'left' || sidebarConfig.sidebarSide === 'both';
   const floatingRx = sidebarConfig.variant === 'floating' ? 4 : 0;
@@ -156,7 +166,7 @@ function UnifiedLayoutPreview({
     <svg className="h-full w-full" viewBox={`0 0 ${String(w)} ${String(h)}`}>
       <rect className="fill-muted/20" height={h} rx={6} width={w} x={0} y={0} />
 
-      {/* Sidebar region tint */}
+      {/* Sidebar tint */}
       {showLeftSidebar && sidebarW > 0 ? (
         <rect fill={SIDEBAR_TINT} height={h - pad * 2} rx={floatingRx} width={sidebarW - pad} x={pad} y={pad} />
       ) : null}
@@ -167,9 +177,15 @@ function UnifiedLayoutPreview({
         <rect fill={SIDEBAR_TINT} height={h} opacity={0.6} width={rightSidebarW} x={w - rightSidebarW} y={0} />
       ) : null}
 
-      {/* Content region tint + top bar */}
+      {/* Toolbar tint */}
+      <rect fill={TOOLBAR_TINT} height={headerH} width={contentW} x={contentX} y={0} />
+      {/* Toolbar bottom border for 'bordered' style */}
+      {toolbarStyleId === 'bordered' ? (
+        <line className="stroke-border" strokeWidth={1} x1={contentX} x2={contentX + contentW} y1={headerH} y2={headerH} />
+      ) : null}
+
+      {/* Content tint */}
       <rect fill={CONTENT_TINT} height={h - headerH} width={contentW} x={contentX} y={headerH} />
-      <rect className="fill-muted/50" height={headerH} width={contentW} x={contentX} y={0} />
 
       {/* Sidebar detail */}
       {showLeftSidebar && sidebarW > 0 ? (
@@ -195,6 +211,12 @@ function UnifiedLayoutPreview({
         <rect className="stroke-border" fill="none" height={h} strokeWidth={0.5} width={sidebarW} x={w - sidebarW} y={0} />
       ) : null}
 
+      {/* Toolbar detail — small indicator blocks */}
+      <g>
+        <rect className="fill-muted-foreground/15" height={Math.max(headerH - 8, 4)} rx={2} width={30} x={contentX + 6} y={4} />
+        <rect className="fill-muted-foreground/10" height={Math.max(headerH - 8, 4)} rx={2} width={20} x={contentX + contentW - 30} y={4} />
+      </g>
+
       {/* Content area detail */}
       <ContentDetail dims={dims} layoutId={contentLayoutId} />
 
@@ -206,10 +228,15 @@ function UnifiedLayoutPreview({
 // ── Main Section ───────────────────────────────────────────
 
 export function LayoutSection() {
-  const { sidebarLayout, setSidebarLayout, contentLayout, setContentLayout } = useLayoutStore();
+  const {
+    sidebarLayout, setSidebarLayout,
+    toolbarStyle, setToolbarStyle,
+    contentLayout, setContentLayout,
+  } = useLayoutStore();
   const updateSettings = useUpdateSettings();
 
   const selectedSidebar = SIDEBAR_LAYOUTS.find((l) => l.id === sidebarLayout);
+  const selectedToolbar = TOOLBAR_STYLES.find((l) => l.id === toolbarStyle);
   const selectedContent = CONTENT_LAYOUTS.find((l) => l.id === contentLayout);
   const previewConfig = LAYOUT_PREVIEWS[sidebarLayout];
 
@@ -219,9 +246,12 @@ export function LayoutSection() {
     updateSettings.mutate({ sidebarLayout: layoutId });
   }
 
+  function handleToolbarChange(value: string) {
+    setToolbarStyle(value as ToolbarStyleId);
+  }
+
   function handleContentChange(value: string) {
-    const layoutId = value as ContentLayoutId;
-    setContentLayout(layoutId);
+    setContentLayout(value as ContentLayoutId);
   }
 
   return (
@@ -230,75 +260,97 @@ export function LayoutSection() {
         Layout
       </h2>
 
-      <div className="border-border overflow-hidden rounded-lg border">
-        {/* ── Config row ──────────────────────────── */}
-        <div className="grid grid-cols-2">
-          {/* Sidebar config */}
-          <div className="border-border space-y-2 border-r p-4">
-            <Text className="text-foreground text-sm font-medium">Sidebar</Text>
-            <div className="space-y-1.5">
-              <Label htmlFor="sidebar-layout">Style</Label>
-              <Select value={sidebarLayout} onValueChange={handleSidebarChange}>
-                <SelectTrigger id="sidebar-layout">
-                  <SelectValue placeholder="Select a layout" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SIDEBAR_LAYOUTS.map((layout) => (
-                    <SelectItem key={layout.id} value={layout.id}>
-                      {layout.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedSidebar ? (
-                <Text className="text-xs" variant="muted">{selectedSidebar.description}</Text>
-              ) : null}
-            </div>
-          </div>
-
-          {/* Content area config */}
-          <div className="space-y-2 p-4">
-            <Text className="text-foreground text-sm font-medium">Main Content Area</Text>
-            <div className="space-y-1.5">
-              <Label htmlFor="content-layout">Style</Label>
-              <Select value={contentLayout} onValueChange={handleContentChange}>
-                <SelectTrigger id="content-layout">
-                  <SelectValue placeholder="Select a layout" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CONTENT_LAYOUTS.map((layout) => (
-                    <SelectItem key={layout.id} value={layout.id}>
-                      {layout.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedContent ? (
-                <Text className="text-xs" variant="muted">{selectedContent.description}</Text>
-              ) : null}
-            </div>
+      <div className="border-border grid grid-cols-2 grid-rows-2 overflow-hidden rounded-lg border">
+        {/* ── Top-left: Sidebar ──────────────────── */}
+        <div className="border-border space-y-2 border-r border-b p-4">
+          <Text className="text-foreground text-sm font-medium">Sidebar</Text>
+          <div className="space-y-1.5">
+            <Label htmlFor="sidebar-layout">Style</Label>
+            <Select value={sidebarLayout} onValueChange={handleSidebarChange}>
+              <SelectTrigger id="sidebar-layout">
+                <SelectValue placeholder="Select a layout" />
+              </SelectTrigger>
+              <SelectContent>
+                {SIDEBAR_LAYOUTS.map((layout) => (
+                  <SelectItem key={layout.id} value={layout.id}>
+                    {layout.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedSidebar ? (
+              <Text className="text-xs" variant="muted">{selectedSidebar.description}</Text>
+            ) : null}
           </div>
         </div>
 
-        {/* ── Unified preview ─────────────────────── */}
-        <div className="border-border bg-card/50 border-t px-6 py-4">
-          <div className="mx-auto h-[140px] max-w-[400px]">
-            <UnifiedLayoutPreview contentLayoutId={contentLayout} sidebarConfig={previewConfig} />
+        {/* ── Top-right: Content Area ────────────── */}
+        <div className="border-border space-y-2 border-b p-4">
+          <Text className="text-foreground text-sm font-medium">Main Content Area</Text>
+          <div className="space-y-1.5">
+            <Label htmlFor="content-layout">Style</Label>
+            <Select value={contentLayout} onValueChange={handleContentChange}>
+              <SelectTrigger id="content-layout">
+                <SelectValue placeholder="Select a style" />
+              </SelectTrigger>
+              <SelectContent>
+                {CONTENT_LAYOUTS.map((layout) => (
+                  <SelectItem key={layout.id} value={layout.id}>
+                    {layout.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedContent ? (
+              <Text className="text-xs" variant="muted">{selectedContent.description}</Text>
+            ) : null}
           </div>
-          <div className="mt-2 flex justify-center gap-6">
-            <div className="flex items-center gap-1.5">
-              <span
-                className="h-2.5 w-2.5 rounded-sm"
-                style={{ backgroundColor: SIDEBAR_TINT }}
-              />
-              <Text className="text-[10px]" variant="muted">Sidebar</Text>
+        </div>
+
+        {/* ── Bottom-left: Top Toolbar ────────────── */}
+        <div className="border-border space-y-2 border-r p-4">
+          <Text className="text-foreground text-sm font-medium">Top Toolbar</Text>
+          <div className="space-y-1.5">
+            <Label htmlFor="toolbar-style">Style</Label>
+            <Select value={toolbarStyle} onValueChange={handleToolbarChange}>
+              <SelectTrigger id="toolbar-style">
+                <SelectValue placeholder="Select a style" />
+              </SelectTrigger>
+              <SelectContent>
+                {TOOLBAR_STYLES.map((style) => (
+                  <SelectItem key={style.id} value={style.id}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedToolbar ? (
+              <Text className="text-xs" variant="muted">{selectedToolbar.description}</Text>
+            ) : null}
+          </div>
+        </div>
+
+        {/* ── Bottom-right: Unified preview ──────── */}
+        <div className="bg-card/50 flex flex-col items-center justify-center p-4">
+          <div className="h-[120px] w-full max-w-[300px]">
+            <UnifiedLayoutPreview
+              contentLayoutId={contentLayout}
+              sidebarConfig={previewConfig}
+              toolbarStyleId={toolbarStyle}
+            />
+          </div>
+          <div className="mt-2 flex gap-4">
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: SIDEBAR_TINT }} />
+              <Text className="text-[9px]" variant="muted">Sidebar</Text>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span
-                className="h-2.5 w-2.5 rounded-sm"
-                style={{ backgroundColor: CONTENT_TINT }}
-              />
-              <Text className="text-[10px]" variant="muted">Content Area</Text>
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: TOOLBAR_TINT }} />
+              <Text className="text-[9px]" variant="muted">Toolbar</Text>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: CONTENT_TINT }} />
+              <Text className="text-[9px]" variant="muted">Content</Text>
             </div>
           </div>
         </div>

@@ -146,6 +146,7 @@ export const LayoutStateSchema = z.object({
   lastRoutePerProject: z.record(z.string(), z.string()),
   sidebarCollapsed: z.boolean(),
   sidebarLayout: z.string(),
+  toolbarStyle: z.string().optional(),
   contentLayout: z.string().optional(),
 });
 
@@ -155,6 +156,7 @@ export const LayoutUpdateSchema = z.object({
   lastRoutePerProject: z.record(z.string(), z.string()).optional(),
   sidebarCollapsed: z.boolean().optional(),
   sidebarLayout: z.string().optional(),
+  toolbarStyle: z.string().optional(),
   contentLayout: z.string().optional(),
 });
 

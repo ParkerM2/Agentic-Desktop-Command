@@ -54,6 +54,23 @@ export const SIDEBAR_LAYOUT_IDS: [SidebarLayoutId, ...SidebarLayoutId[]] = [
   'sidebar-13', 'sidebar-14', 'sidebar-15', 'sidebar-16',
 ];
 
+// ── Top Toolbar Style ───────────────────────────────────────
+
+export type ToolbarStyleId = 'default' | 'compact' | 'spacious' | 'bordered';
+
+export interface ToolbarStyleMeta {
+  id: ToolbarStyleId;
+  label: string;
+  description: string;
+}
+
+export const TOOLBAR_STYLES: ToolbarStyleMeta[] = [
+  { id: 'default', label: 'Default', description: 'Standard toolbar height and spacing' },
+  { id: 'compact', label: 'Compact', description: 'Reduced height, tighter spacing' },
+  { id: 'spacious', label: 'Spacious', description: 'Taller toolbar with more breathing room' },
+  { id: 'bordered', label: 'Bordered', description: 'Bottom border with subtle separation' },
+];
+
 // ── Content Area Style ──────────────────────────────────────
 
 export type ContentLayoutId = 'flush' | 'padded' | 'bordered' | 'inset';
