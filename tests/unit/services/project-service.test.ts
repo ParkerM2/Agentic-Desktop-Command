@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Project, SubProject } from '@shared/types';
-import type { HubApiClient, HubApiResponse } from '@main/services/hub/hub-api-client';
+import type { HubApiClient, HubApiResponse } from '@main/features/hub/hub-api-client';
 
 // ─── Mock Hub API Client ─────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ describe('ProjectService', () => {
   async function createFreshService() {
     vi.resetModules();
     const { createProjectService } = await import(
-      '@main/services/project/project-service'
+      '@main/features/project/project-service'
     );
     return createProjectService({ hubApiClient });
   }

@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { createTimeParserService } from '@main/services/time-parser/time-parser-service';
+import { createTimeParserService } from '@main/features/time-parser/time-parser-service';
 
 describe('TimeParserService', () => {
   const service = createTimeParserService();

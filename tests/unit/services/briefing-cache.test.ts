@@ -14,7 +14,7 @@ import type { DailyBriefing } from '@shared/types';
 
 import * as schema from '@main/db/schema';
 
-import { createBriefingCache } from '@main/services/briefing/briefing-cache';
+import { createBriefingCache } from '@main/features/briefing/briefing-cache';
 
 import type { AdcDatabase } from '@main/db';
 

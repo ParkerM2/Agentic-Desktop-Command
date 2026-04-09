@@ -9,7 +9,7 @@ vi.mock('electron', () => ({
 }));
 
 import { closeDatabase, initDatabase } from '@main/db';
-import { createNotesService } from '@main/services/notes/notes-service';
+import { createNotesService } from '@main/features/notes/notes-service';
 
 const migrationsFolder = join(__dirname, '../../../drizzle');
 

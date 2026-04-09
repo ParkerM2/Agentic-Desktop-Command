@@ -68,7 +68,7 @@ vi.mock('node:fs', async () => {
 
 // Import after mocks are set up
 const { encodeProjectPath, findSessionFile, buildSessionLog } =
-  await import('@main/services/visualization/session-log');
+  await import('@main/features/visualization/session-log');
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

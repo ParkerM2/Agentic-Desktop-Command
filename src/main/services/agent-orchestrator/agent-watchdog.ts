@@ -14,7 +14,7 @@ import type { BusSessionManager } from '@main/bus/session-manager';
 import type { SessionRecord } from '@main/bus/types';
 import { agentLogger } from '@main/lib/logger';
 
-import type { NotificationManager } from '../notifications';
+import type { NotificationManager } from '../../features/notifications';
 
 // ─── Types ────────────────────────────────────────────────────
 

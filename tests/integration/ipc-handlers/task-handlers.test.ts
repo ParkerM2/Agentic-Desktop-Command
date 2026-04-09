@@ -11,7 +11,7 @@ import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
 
 import type { IpcRouter } from '@main/ipc/router';
 import type { Task as HubTask, TaskCancelResponse, TaskExecuteResponse } from '@shared/types/hub-protocol';
-import type { TaskRepository } from '@main/services/tasks/types';
+import type { TaskRepository } from '@main/features/tasks/types';
 
 // ─── Mock Factory ──────────────────────────────────────────────
 
@@ -99,7 +99,7 @@ describe('Task IPC Handlers', () => {
     ({ router, invoke } = testRouter);
 
     // Dynamically import and register handlers
-    const { registerTaskHandlers } = await import('@main/ipc/handlers/task-handlers');
+    const { registerTaskHandlers } = await import('@main/features/tasks/task-handlers');
     registerTaskHandlers(router, taskRepository);
   });
 

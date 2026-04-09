@@ -30,7 +30,7 @@ vi.mock('node:fs', async () => {
 });
 
 // Import service after mocks are set up
-const { createTaskService } = await import('@main/services/project/task-service');
+const { createTaskService } = await import('@main/features/project/task-service');
 
 // ── Test Utilities ─────────────────────────────────────────────────
 

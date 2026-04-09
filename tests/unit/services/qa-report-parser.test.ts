@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 
 const { parseQaReport, createFallbackReport } = await import(
-  '@main/services/qa/qa-report-parser'
+  '@main/features/qa/qa-report-parser'
 );
 
 // ── Helpers ─────────────────────────────────────────────────────

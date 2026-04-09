@@ -47,7 +47,7 @@ vi.mock('electron', () => ({
 }));
 
 const { createVoiceService } = await import(
-  '@main/services/voice/voice-service'
+  '@main/features/voice/voice-service'
 );
 
 // ── Helpers ───────────────────────────────────────────────────

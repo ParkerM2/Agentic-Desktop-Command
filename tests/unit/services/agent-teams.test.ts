@@ -48,7 +48,7 @@ const {
   extractFileScope,
   parseTaskFile,
   buildAgentTeamsData,
-} = await import('@main/services/visualization/agent-teams');
+} = await import('@main/features/visualization/agent-teams');
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

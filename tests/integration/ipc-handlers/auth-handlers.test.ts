@@ -9,13 +9,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
 
-import type { UserSessionManager } from '@main/services/auth';
+import type { UserSessionManager } from '@main/features/auth';
 import type { IpcRouter } from '@main/ipc/router';
 import type {
   HubAuthResult,
   HubAuthService,
   RestoreResult,
-} from '@main/services/hub/hub-auth-service';
+} from '@main/features/hub/hub-auth-service';
 import type { AuthRefreshResponse, AuthResponse, User } from '@shared/types/hub-protocol';
 
 // ─── Mock Factory ──────────────────────────────────────────────

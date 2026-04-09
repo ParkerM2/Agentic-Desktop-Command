@@ -14,18 +14,18 @@ import { appLogger } from '../lib/logger';
 
 import type { CommandBus } from '../bus';
 import type { BusSessionManager } from '../bus/session-manager';
+import type { createAlertService } from '../features/alerts/alert-service';
+import type { AppUpdateService } from '../features/app/app-update-service';
+import type { createWatchEvaluator } from '../features/assistant/watch-evaluator';
+import type { createBriefingService } from '../features/briefing/briefing-service';
+import type { CleanupService } from '../features/data-management/cleanup-service';
+import type { ErrorCollector } from '../features/health/error-collector';
+import type { HealthRegistry } from '../features/health/health-registry';
+import type { createHubConnectionManager } from '../features/hub/hub-connection';
+import type { createNotificationManager } from '../features/notifications';
+import type { QaTrigger } from '../features/qa/qa-trigger';
+import type { createTerminalService } from '../features/terminal/terminal-service';
 import type { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
-import type { createAlertService } from '../services/alerts/alert-service';
-import type { AppUpdateService } from '../services/app/app-update-service';
-import type { createWatchEvaluator } from '../services/assistant/watch-evaluator';
-import type { createBriefingService } from '../services/briefing/briefing-service';
-import type { CleanupService } from '../services/data-management/cleanup-service';
-import type { ErrorCollector } from '../services/health/error-collector';
-import type { HealthRegistry } from '../services/health/health-registry';
-import type { createHubConnectionManager } from '../services/hub/hub-connection';
-import type { createNotificationManager } from '../services/notifications';
-import type { QaTrigger } from '../services/qa/qa-trigger';
-import type { createTerminalService } from '../services/terminal/terminal-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface LifecycleDeps {

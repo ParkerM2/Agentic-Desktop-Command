@@ -8,10 +8,10 @@
 
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 
+import type { createWatchEvaluator } from '../features/assistant/watch-evaluator';
+import type { createHubConnectionManager } from '../features/hub/hub-connection';
+import type { createWebhookRelay } from '../features/hub/webhook-relay';
 import type { IpcRouter } from '../ipc/router';
-import type { createWatchEvaluator } from '../services/assistant/watch-evaluator';
-import type { createHubConnectionManager } from '../services/hub/hub-connection';
-import type { createWebhookRelay } from '../services/hub/webhook-relay';
 
 interface EventWiringDeps {
   router: IpcRouter;

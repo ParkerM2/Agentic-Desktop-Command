@@ -47,7 +47,7 @@ vi.mock('node:fs', async () => {
 
 // Import after mocks are set up
 const { extractImportSpecifiers, loadTsconfigPaths, resolveSpecifier, collectSourceFiles } =
-  await import('@main/services/visualization/import-parser');
+  await import('@main/features/visualization/import-parser');
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

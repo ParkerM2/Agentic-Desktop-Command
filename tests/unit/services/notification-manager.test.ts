@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Notification, NotificationWatcherConfig } from '@shared/types';
 import { DEFAULT_NOTIFICATION_WATCHER_CONFIG } from '@shared/types';
 
-import type { NotificationStore } from '@main/services/notifications/notification-store';
+import type { NotificationStore } from '@main/features/notifications/notification-store';
 
 // Build an in-memory mock store that behaves like the real SQLite store
 function makeMockStore(initialConfig?: NotificationWatcherConfig): NotificationStore {
@@ -53,22 +53,22 @@ function makeMockStore(initialConfig?: NotificationWatcherConfig): NotificationS
 
 let mockStoreInstance: NotificationStore;
 
-vi.mock('@main/services/notifications/notification-store', () => ({
+vi.mock('@main/features/notifications/notification-store', () => ({
   createNotificationStore: () => mockStoreInstance,
   MAX_CACHED_NOTIFICATIONS: 1000,
 }));
 
 // Mock notification filter — use the real implementation
-vi.mock('@main/services/notifications/notification-filter', async () => {
-  const actual = await import('@main/services/notifications/notification-filter');
+vi.mock('@main/features/notifications/notification-filter', async () => {
+  const actual = await import('@main/features/notifications/notification-filter');
   return actual;
 });
 
 const { createNotificationManager } = await import(
-  '@main/services/notifications/notification-manager'
+  '@main/features/notifications/notification-manager'
 );
 
-import type { NotificationManager, NotificationWatcher } from '@main/services/notifications/notification-manager';
+import type { NotificationManager, NotificationWatcher } from '@main/features/notifications/notification-manager';
 import type { AdcDatabase } from '@main/db';
 
 // ── Helpers ─────────────────────────────────────────────────────
