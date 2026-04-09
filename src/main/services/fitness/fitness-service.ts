@@ -1,13 +1,15 @@
 /**
  * Fitness Service — Workout logging, body measurements, goals, and stats
  *
- * Data persisted to JSON files in the app's user data directory.
- * All methods are synchronous; IPC handlers wrap with Promise.resolve().
+ * Data persisted to SQLite via Drizzle ORM (workouts, bodyMeasurements, fitnessGoals tables).
+ * One-time migration from legacy JSON files on first access.
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { and, desc, eq, gte, lte } from 'drizzle-orm';
 
 import { FITNESS_EVENTS } from '@shared/ipc/fitness/channels';
 import type {
@@ -21,16 +23,19 @@ import type {
   WorkoutType,
 } from '@shared/types';
 
-
-import type { ReinitializableService } from '@main/services/data-management';
+import { bodyMeasurements, fitnessGoals, workouts } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
 import { calculateStats } from './stats-calculator';
 
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
+
+const logger = createScopedLogger('fitness-service');
 
 // ── Interface ────────────────────────────────────────────────
 
-export interface FitnessService extends ReinitializableService {
+export interface FitnessService {
   logWorkout: (data: {
     date: string;
     type: WorkoutType;
@@ -67,116 +72,248 @@ export interface FitnessService extends ReinitializableService {
   deleteGoal: (id: string) => { success: boolean };
 }
 
-// ── Persistence helpers ──────────────────────────────────────
+// ── JSON migration helpers ──────────────────────────────────
 
 interface StoreData<T> {
   items: T[];
 }
 
-function loadJson<T>(filePath: string): StoreData<T> {
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw) as unknown as Partial<StoreData<T>>;
-      return { items: Array.isArray(parsed.items) ? parsed.items : [] };
-    } catch {
-      return { items: [] };
-    }
-  }
-  return { items: [] };
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const fitnessDir = join(dataDir, 'fitness');
+
+  // ── Workouts ──
+  migrateWorkouts(db, fitnessDir);
+
+  // ── Measurements ──
+  migrateMeasurements(db, fitnessDir);
+
+  // ── Goals ──
+  migrateGoals(db, fitnessDir);
 }
 
-function saveJson<T>(filePath: string, data: StoreData<T>): void {
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+function migrateWorkouts(db: AdcDatabase, fitnessDir: string): void {
+  const existing = db.select().from(workouts).limit(1).all();
+  if (existing.length > 0) return;
+
+  const jsonPath = join(fitnessDir, 'workouts.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<StoreData<Workout>>;
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+
+    for (const item of items) {
+      db.insert(workouts).values({
+        id: item.id,
+        date: item.date,
+        type: item.type,
+        duration: item.duration,
+        exercises: item.exercises as unknown[],
+        notes: item.notes ?? null,
+        createdAt: item.createdAt,
+      }).run();
+    }
+    logger.info(`Migrated ${String(items.length)} workouts from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate workouts from JSON:', err);
+  }
+}
+
+function migrateMeasurements(db: AdcDatabase, fitnessDir: string): void {
+  const existing = db.select().from(bodyMeasurements).limit(1).all();
+  if (existing.length > 0) return;
+
+  const jsonPath = join(fitnessDir, 'measurements.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<StoreData<BodyMeasurement>>;
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+
+    for (const item of items) {
+      db.insert(bodyMeasurements).values({
+        id: item.id,
+        date: item.date,
+        weight: item.weight === undefined ? null : Math.round(item.weight),
+        bodyFat: item.bodyFat === undefined ? null : Math.round(item.bodyFat),
+        muscleMass: item.muscleMass === undefined ? null : Math.round(item.muscleMass),
+        boneMass: item.boneMass === undefined ? null : Math.round(item.boneMass),
+        waterPercentage: item.waterPercentage === undefined ? null : Math.round(item.waterPercentage),
+        visceralFat: item.visceralFat === undefined ? null : Math.round(item.visceralFat),
+        source: item.source,
+        createdAt: item.createdAt,
+      }).run();
+    }
+    logger.info(`Migrated ${String(items.length)} measurements from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate measurements from JSON:', err);
+  }
+}
+
+function migrateGoals(db: AdcDatabase, fitnessDir: string): void {
+  const existing = db.select().from(fitnessGoals).limit(1).all();
+  if (existing.length > 0) return;
+
+  const jsonPath = join(fitnessDir, 'goals.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as Partial<StoreData<FitnessGoal>>;
+    const items = Array.isArray(parsed.items) ? parsed.items : [];
+
+    for (const item of items) {
+      db.insert(fitnessGoals).values({
+        id: item.id,
+        type: item.type,
+        target: Math.round(item.target),
+        current: Math.round(item.current),
+        unit: item.unit,
+        deadline: item.deadline ?? null,
+        createdAt: item.createdAt,
+      }).run();
+    }
+    logger.info(`Migrated ${String(items.length)} fitness goals from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate fitness goals from JSON:', err);
+  }
+}
+
+// ── Row → Domain mappers ────────────────────────────────────
+
+function toWorkout(row: typeof workouts.$inferSelect): Workout {
+  return {
+    id: row.id,
+    date: row.date,
+    type: row.type as WorkoutType,
+    duration: row.duration ?? 0,
+    exercises: row.exercises as Exercise[],
+    notes: row.notes ?? undefined,
+    createdAt: row.createdAt,
+  };
+}
+
+function toMeasurement(row: typeof bodyMeasurements.$inferSelect): BodyMeasurement {
+  return {
+    id: row.id,
+    date: row.date,
+    weight: row.weight ?? undefined,
+    bodyFat: row.bodyFat ?? undefined,
+    muscleMass: row.muscleMass ?? undefined,
+    boneMass: row.boneMass ?? undefined,
+    waterPercentage: row.waterPercentage ?? undefined,
+    visceralFat: row.visceralFat ?? undefined,
+    source: (row.source ?? 'manual') as MeasurementSource,
+    createdAt: row.createdAt,
+  };
+}
+
+function toGoal(row: typeof fitnessGoals.$inferSelect): FitnessGoal {
+  return {
+    id: row.id,
+    type: row.type as FitnessGoalType,
+    target: row.target,
+    current: row.current,
+    unit: row.unit,
+    deadline: row.deadline ?? undefined,
+    createdAt: row.createdAt,
+  };
 }
 
 // ── Factory ──────────────────────────────────────────────────
 
-export function createFitnessService(deps: { dataDir: string; router: IpcRouter }): FitnessService {
-  // Mutable directory path for user-scoping
-  let fitnessDir = join(deps.dataDir, 'fitness');
+export function createFitnessService(deps: {
+  db: AdcDatabase;
+  router: IpcRouter;
+  dataDir: string;
+}): FitnessService {
+  const { db, router, dataDir } = deps;
 
-  // Helper to get current file paths
-  function getWorkoutsPath(): string {
-    return join(fitnessDir, 'workouts.json');
-  }
-  function getMeasurementsPath(): string {
-    return join(fitnessDir, 'measurements.json');
-  }
-  function getGoalsPath(): string {
-    return join(fitnessDir, 'goals.json');
-  }
-
-  // In-memory caches
-  let workouts = loadJson<Workout>(getWorkoutsPath());
-  let measurements = loadJson<BodyMeasurement>(getMeasurementsPath());
-  let goals = loadJson<FitnessGoal>(getGoalsPath());
-
-  function persistWorkouts(): void {
-    saveJson(getWorkoutsPath(), workouts);
-  }
-
-  function persistMeasurements(): void {
-    saveJson(getMeasurementsPath(), measurements);
-  }
-
-  function persistGoals(): void {
-    saveJson(getGoalsPath(), goals);
-  }
+  migrateFromJson(db, dataDir);
 
   return {
     logWorkout(data) {
+      const id = randomUUID();
+      const createdAt = new Date().toISOString();
+
+      db.insert(workouts).values({
+        id,
+        date: data.date,
+        type: data.type,
+        duration: data.duration,
+        exercises: data.exercises as unknown[],
+        notes: data.notes ?? null,
+        createdAt,
+      }).run();
+
       const workout: Workout = {
-        id: randomUUID(),
+        id,
         date: data.date,
         type: data.type,
         duration: data.duration,
         exercises: data.exercises,
         notes: data.notes,
-        createdAt: new Date().toISOString(),
+        createdAt,
       };
-      workouts.items.push(workout);
-      persistWorkouts();
-      deps.router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: workout.id });
+
+      router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: id });
       return workout;
     },
 
     listWorkouts(filters) {
-      let result = [...workouts.items];
+      const conditions = [];
 
       if (filters?.startDate) {
-        result = result.filter((w) => w.date >= (filters.startDate ?? ''));
+        conditions.push(gte(workouts.date, filters.startDate));
       }
       if (filters?.endDate) {
-        result = result.filter((w) => w.date <= (filters.endDate ?? ''));
+        conditions.push(lte(workouts.date, filters.endDate));
       }
       if (filters?.type) {
-        result = result.filter((w) => w.type === filters.type);
+        conditions.push(eq(workouts.type, filters.type));
       }
 
-      result.sort((a, b) => b.date.localeCompare(a.date));
-      return result;
+      const query = db.select().from(workouts);
+      const rows = conditions.length > 0
+        ? query.where(and(...conditions)).orderBy(desc(workouts.date)).all()
+        : query.orderBy(desc(workouts.date)).all();
+
+      return rows.map(toWorkout);
     },
 
     deleteWorkout(id) {
-      const index = workouts.items.findIndex((w) => w.id === id);
-      if (index === -1) {
+      const result = db.delete(workouts).where(eq(workouts.id, id)).run();
+      if (result.changes === 0) {
         throw new Error(`Workout not found: ${id}`);
       }
-      workouts.items.splice(index, 1);
-      persistWorkouts();
-      deps.router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: id });
+      router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: id });
       return { success: true };
     },
 
     logMeasurement(data) {
-      // Deduplicate by date — keep latest entry
-      const existingIndex = measurements.items.findIndex((m) => m.date === data.date);
+      // Deduplicate by date — delete existing entry for same date
+      db.delete(bodyMeasurements).where(eq(bodyMeasurements.date, data.date)).run();
+
+      const id = randomUUID();
+      const createdAt = new Date().toISOString();
+
+      db.insert(bodyMeasurements).values({
+        id,
+        date: data.date,
+        weight: data.weight === undefined ? null : Math.round(data.weight),
+        bodyFat: data.bodyFat === undefined ? null : Math.round(data.bodyFat),
+        muscleMass: data.muscleMass === undefined ? null : Math.round(data.muscleMass),
+        boneMass: data.boneMass === undefined ? null : Math.round(data.boneMass),
+        waterPercentage: data.waterPercentage === undefined ? null : Math.round(data.waterPercentage),
+        visceralFat: data.visceralFat === undefined ? null : Math.round(data.visceralFat),
+        source: data.source,
+        createdAt,
+      }).run();
 
       const measurement: BodyMeasurement = {
-        id: randomUUID(),
+        id,
         date: data.date,
         weight: data.weight,
         bodyFat: data.bodyFat,
@@ -185,83 +322,83 @@ export function createFitnessService(deps: { dataDir: string; router: IpcRouter 
         waterPercentage: data.waterPercentage,
         visceralFat: data.visceralFat,
         source: data.source,
-        createdAt: new Date().toISOString(),
+        createdAt,
       };
 
-      if (existingIndex === -1) {
-        measurements.items.push(measurement);
-      } else {
-        measurements.items[existingIndex] = measurement;
-      }
-
-      persistMeasurements();
-      deps.router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: measurement.id });
+      router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: id });
       return measurement;
     },
 
     getMeasurements(limit) {
-      const sorted = [...measurements.items].sort((a, b) => b.date.localeCompare(a.date));
-      return limit === undefined ? sorted : sorted.slice(0, limit);
+      const query = db.select().from(bodyMeasurements)
+        .orderBy(desc(bodyMeasurements.date));
+
+      const rows = limit === undefined
+        ? query.all()
+        : query.limit(limit).all();
+
+      return rows.map(toMeasurement);
     },
 
     getStats() {
-      return calculateStats(workouts.items);
+      const allWorkouts = db.select().from(workouts).all().map(toWorkout);
+      return calculateStats(allWorkouts);
     },
 
     setGoal(data) {
+      const id = randomUUID();
+      const createdAt = new Date().toISOString();
+
+      db.insert(fitnessGoals).values({
+        id,
+        type: data.type,
+        target: Math.round(data.target),
+        current: 0,
+        unit: data.unit,
+        deadline: data.deadline ?? null,
+        createdAt,
+      }).run();
+
       const goal: FitnessGoal = {
-        id: randomUUID(),
+        id,
         type: data.type,
         target: data.target,
         current: 0,
         unit: data.unit,
         deadline: data.deadline,
-        createdAt: new Date().toISOString(),
+        createdAt,
       };
-      goals.items.push(goal);
-      persistGoals();
-      deps.router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: goal.id });
+
+      router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: id });
       return goal;
     },
 
     listGoals() {
-      return [...goals.items];
+      return db.select().from(fitnessGoals).all().map(toGoal);
     },
 
     updateGoalProgress(goalId, current) {
-      const index = goals.items.findIndex((g) => g.id === goalId);
-      if (index === -1) {
+      const result = db.update(fitnessGoals)
+        .set({ current: Math.round(current) })
+        .where(eq(fitnessGoals.id, goalId))
+        .run();
+
+      if (result.changes === 0) {
         throw new Error(`Goal not found: ${goalId}`);
       }
-      goals.items[index] = { ...goals.items[index], current };
-      persistGoals();
-      deps.router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId });
-      return goals.items[index];
+
+      const [row] = db.select().from(fitnessGoals).where(eq(fitnessGoals.id, goalId)).all();
+      router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId });
+      return toGoal(row);
     },
 
     deleteGoal(id) {
-      const index = goals.items.findIndex((g) => g.id === id);
-      if (index === -1) {
+      const result = db.delete(fitnessGoals).where(eq(fitnessGoals.id, id)).run();
+      if (result.changes === 0) {
         throw new Error(`Goal not found: ${id}`);
       }
-      goals.items.splice(index, 1);
-      persistGoals();
-      deps.router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: id });
+      router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: id });
       return { success: true };
-    },
-
-    reinitialize(dataDir: string) {
-      fitnessDir = join(dataDir, 'fitness');
-      // Reload data from new directory
-      workouts = loadJson<Workout>(getWorkoutsPath());
-      measurements = loadJson<BodyMeasurement>(getMeasurementsPath());
-      goals = loadJson<FitnessGoal>(getGoalsPath());
-    },
-
-    clearState() {
-      workouts = { items: [] };
-      measurements = { items: [] };
-      goals = { items: [] };
     },
   };
 }

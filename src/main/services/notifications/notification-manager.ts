@@ -5,6 +5,7 @@
  * - Configurable polling intervals (respecting rate limits)
  * - Duplicate detection via ID caching
  * - Graceful start/stop lifecycle
+ * - SQLite-backed persistence via NotificationStore
  */
 
 import { randomUUID } from 'node:crypto';
@@ -17,17 +18,11 @@ import type {
   NotificationWatcherConfig,
 } from '@shared/types';
 
-
 import { matchesFilter } from './notification-filter';
-import {
-  loadConfig,
-  loadNotifications,
-  MAX_CACHED_NOTIFICATIONS,
-  saveConfig,
-  saveNotifications,
-} from './notification-store';
+import { createNotificationStore } from './notification-store';
 
 import type { NotificationConfigUpdate } from './notification-filter';
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 
 // ── Types ────────────────────────────────────────────────────
@@ -102,13 +97,16 @@ const EVENT_WATCHER_STATUS = NOTIFICATIONS_EVENTS.WATCHER['STATUS-CHANGED'];
 
 // ── Factory ──────────────────────────────────────────────────
 
-export function createNotificationManager(router: IpcRouter): NotificationManager {
+export function createNotificationManager(
+  router: IpcRouter,
+  db: AdcDatabase,
+  dataDir: string,
+): NotificationManager {
+  const store = createNotificationStore(db, dataDir);
   const watchers = new Map<NotificationSource, NotificationWatcher>();
   const seenIds = new Map<string, number>(); // id -> timestamp of when seen
-  // Config is mutated via updateConfig
-  // eslint-disable-next-line prefer-const
-  let config = loadConfig();
-  let notifications = loadNotifications();
+
+  const config = store.loadConfig();
   let isWatching = false;
 
   // Clean up old seen IDs periodically
@@ -123,14 +121,6 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
 
   // Run cleanup every hour
   const cleanupInterval = setInterval(cleanupSeenIds, 60 * 60 * 1000);
-
-  function persist(): void {
-    saveNotifications(notifications);
-  }
-
-  function persistConfig(): void {
-    saveConfig(config);
-  }
 
   return {
     startWatching() {
@@ -204,10 +194,8 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
     },
 
     listNotifications(filter, limit = 100) {
-      let result = [...notifications];
-
-      // Sort by timestamp descending (newest first)
-      result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      // Load from SQLite (already sorted by timestamp desc)
+      let result = store.loadNotifications();
 
       // Apply filter if provided
       if (filter) {
@@ -219,26 +207,12 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
     },
 
     markRead(id) {
-      const notification = notifications.find((n) => n.id === id);
-      if (notification) {
-        notification.read = true;
-        persist();
-        return { success: true };
-      }
-      return { success: false };
+      const success = store.markRead(id);
+      return { success };
     },
 
     markAllRead(source) {
-      let count = 0;
-      for (const notification of notifications) {
-        if (!notification.read && (source === undefined || notification.source === source)) {
-          notification.read = true;
-          count++;
-        }
-      }
-      if (count > 0) {
-        persist();
-      }
+      const count = store.markAllRead(source);
       return { success: true, count };
     },
 
@@ -260,7 +234,7 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
         config.github = { ...config.github, ...updates.github };
       }
 
-      persistConfig();
+      store.saveConfig(config);
 
       // Restart watchers if configuration changed while watching
       if (isWatching) {
@@ -311,15 +285,8 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
         id: notification.id || randomUUID(),
       };
 
-      // Add to cache
-      notifications.push(notificationWithId);
-
-      // Trim cache if needed
-      if (notifications.length > MAX_CACHED_NOTIFICATIONS) {
-        notifications = notifications.slice(-MAX_CACHED_NOTIFICATIONS);
-      }
-
-      persist();
+      // Persist to SQLite (trimming handled inside store)
+      store.saveNotification(notificationWithId);
 
       // Emit event to renderer
       router.emit(NOTIFICATIONS_EVENTS.NOTIFICATION.NEW, { notification: notificationWithId });

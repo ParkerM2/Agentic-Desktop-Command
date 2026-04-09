@@ -105,10 +105,10 @@ Location: `src/main/services/`
 | **settings** | App settings persistence. Sub-modules: `settings-defaults.ts`, `settings-encryption.ts`, `settings-store.ts` | get, update | `event:settings.changed` |
 | **spotify** | Spotify integration | getCurrentTrack, play, pause, skip | - |
 | **terminal** | PTY terminal management | create, sendInput, resize, kill | `event:terminal.*` |
-| **briefing** | Daily briefing & suggestions. Sub-modules: `briefing-cache.ts`, `briefing-config.ts`, `briefing-generator.ts`, `briefing-summary.ts`, `suggestion-engine.ts` | generateBriefing, getSuggestions | - |
+| **briefing** | Daily briefing & suggestions (SQLite-backed). Sub-modules: `briefing-cache.ts` (SQLite), `briefing-config.ts` (SQLite), `briefing-generator.ts`, `briefing-summary.ts`, `suggestion-engine.ts`. Deps: `db`, `dataDir`. | generateBriefing, getSuggestions | - |
 | **claude** | Persistent Claude sessions (Anthropic SDK) | sendMessage, getConversation, listConversations | `event:claude.*` |
 | **email** | Email sending (SMTP). Sub-modules: `email-config.ts`, `email-encryption.ts`, `email-queue.ts`, `email-store.ts`, `smtp-transport.ts` (barrel: `index.ts`) | sendEmail, getConfig, testConnection | - |
-| **notifications** | Background Slack/GitHub watchers. Sub-modules: `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (barrel: `index.ts`) | startWatching, stopWatching, getNotifications | `event:notification.*` |
+| **notifications** | Background Slack/GitHub watchers, SQLite-backed. Sub-modules: `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (SQLite via `notifications` + `notificationConfig` tables; barrel: `index.ts`) | startWatching, stopWatching, getNotifications | `event:notification.*` |
 | **tasks** | Smart task creation + local-first repository. Sub-modules: `types.ts` (TaskRepository interface + deps), `task-repository.ts` (local-first impl with Hub mirror), `task-decomposer.ts`, `github-importer.ts` (barrel: `index.ts`) | listTasks, getTask, createTask, updateTask, updateTaskStatus, deleteTask, executeTask, cancelTask, decompose, importFromGithub | - |
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |

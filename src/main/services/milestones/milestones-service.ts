@@ -1,23 +1,28 @@
 /**
- * Milestones Service — Disk-persisted roadmap milestones
+ * Milestones Service — SQLite-backed roadmap milestones
  *
- * Milestones are stored as JSON in the app's user data directory.
- * All methods are synchronous; IPC handlers wrap with Promise.resolve().
+ * Milestones are stored in the `milestones` SQLite table.
+ * One-time migration from milestones.json on first access.
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { asc, eq } from 'drizzle-orm';
 
 import { MILESTONES_EVENTS } from '@shared/ipc/misc/milestones.channels';
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
+import { milestones } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
-import type { ReinitializableService } from '@main/services/data-management';
-
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 
-export interface MilestonesService extends ReinitializableService {
+const logger = createScopedLogger('milestones-service');
+
+export interface MilestonesService {
   listMilestones: (filters: { projectId?: string }) => Milestone[];
   createMilestone: (data: {
     title: string;
@@ -39,146 +44,153 @@ export interface MilestonesService extends ReinitializableService {
   toggleTask: (milestoneId: string, taskId: string) => Milestone;
 }
 
-interface MilestonesFile {
-  milestones: Milestone[];
-}
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(milestones).limit(1).all();
+  if (existing.length > 0) return;
 
-function loadFile(filePath: string): MilestonesFile {
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw) as unknown as Partial<MilestonesFile>;
-      return {
-        milestones: Array.isArray(parsed.milestones) ? parsed.milestones : [],
-      };
-    } catch {
-      return { milestones: [] };
+  const jsonPath = join(dataDir, 'milestones.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { milestones?: Milestone[] };
+    const items = Array.isArray(parsed.milestones) ? parsed.milestones : [];
+
+    for (const item of items) {
+      db.insert(milestones).values({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        targetDate: item.targetDate,
+        status: item.status,
+        tasks: item.tasks,
+        projectId: item.projectId ?? null,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }).run();
     }
+    logger.info(`Migrated ${String(items.length)} milestones from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate milestones from JSON:', err);
   }
-  return { milestones: [] };
 }
 
-function saveFile(filePath: string, data: MilestonesFile): void {
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-function findMilestone(store: MilestonesFile, id: string): { milestone: Milestone; index: number } {
-  const index = store.milestones.findIndex((m) => m.id === id);
-  if (index === -1) {
-    throw new Error(`Milestone not found: ${id}`);
-  }
-  return { milestone: store.milestones[index], index };
+function toMilestone(row: typeof milestones.$inferSelect): Milestone {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    targetDate: row.targetDate,
+    status: row.status as MilestoneStatus,
+    tasks: row.tasks,
+    projectId: row.projectId ?? undefined,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
 export function createMilestonesService(deps: {
-  dataDir: string;
+  db: AdcDatabase;
   router: IpcRouter;
+  dataDir: string;
 }): MilestonesService {
-  // Mutable file path for user-scoping
-  let currentFilePath = join(deps.dataDir, 'milestones.json');
-  // In-memory cache
-  let store = loadFile(currentFilePath);
+  const { db, router, dataDir } = deps;
 
-  function persist(): void {
-    saveFile(currentFilePath, store);
-  }
+  migrateFromJson(db, dataDir);
 
   function emitChanged(milestoneId: string): void {
-    deps.router.emit(MILESTONES_EVENTS.MILESTONE.CHANGED, { milestoneId });
+    router.emit(MILESTONES_EVENTS.MILESTONE.CHANGED, { milestoneId });
+  }
+
+  function findMilestone(id: string): typeof milestones.$inferSelect {
+    const rows = db.select().from(milestones).where(eq(milestones.id, id)).all();
+    const row = rows.at(0);
+    if (row === undefined) {
+      throw new Error(`Milestone not found: ${id}`);
+    }
+    return row;
   }
 
   return {
     listMilestones(filters) {
-      let result = [...store.milestones];
+      let rows = db.select().from(milestones)
+        .orderBy(asc(milestones.targetDate))
+        .all();
 
       if (filters.projectId) {
-        result = result.filter((m) => m.projectId === filters.projectId);
+        rows = rows.filter((r) => r.projectId === filters.projectId);
       }
 
-      result.sort((a, b) => a.targetDate.localeCompare(b.targetDate));
-      return result;
+      return rows.map(toMilestone);
     },
 
     createMilestone(data) {
       const now = new Date().toISOString();
-      const milestone: Milestone = {
+      const record = {
         id: randomUUID(),
         title: data.title,
         description: data.description,
         targetDate: data.targetDate,
-        status: 'planned',
-        tasks: [],
-        projectId: data.projectId,
+        status: 'planned' as const,
+        tasks: [] as Array<{ id: string; title: string; completed: boolean }>,
+        projectId: data.projectId ?? null,
         createdAt: now,
         updatedAt: now,
       };
-      store.milestones.push(milestone);
-      persist();
-      emitChanged(milestone.id);
-      return milestone;
+      db.insert(milestones).values(record).run();
+      emitChanged(record.id);
+      return toMilestone(record);
     },
 
     updateMilestone(id, updates) {
-      const { milestone, index } = findMilestone(store, id);
-      const updated: Milestone = {
-        ...milestone,
-        ...updates,
+      const existing = findMilestone(id);
+      const updated = {
+        ...existing,
+        ...(updates.title === undefined ? {} : { title: updates.title }),
+        ...(updates.description === undefined ? {} : { description: updates.description }),
+        ...(updates.targetDate === undefined ? {} : { targetDate: updates.targetDate }),
+        ...(updates.status === undefined ? {} : { status: updates.status }),
         updatedAt: new Date().toISOString(),
       };
-      store.milestones[index] = updated;
-      persist();
-      emitChanged(updated.id);
-      return updated;
+      db.update(milestones).set(updated).where(eq(milestones.id, id)).run();
+      emitChanged(id);
+      return toMilestone(updated);
     },
 
     deleteMilestone(id) {
-      const { index } = findMilestone(store, id);
-      store.milestones.splice(index, 1);
-      persist();
+      const result = db.delete(milestones).where(eq(milestones.id, id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Milestone not found: ${id}`);
+      }
       emitChanged(id);
       return { success: true };
     },
 
     addTask(milestoneId, title) {
-      const { milestone, index } = findMilestone(store, milestoneId);
+      const existing = findMilestone(milestoneId);
       const task = { id: randomUUID(), title, completed: false };
-      const updated: Milestone = {
-        ...milestone,
-        tasks: [...milestone.tasks, task],
-        updatedAt: new Date().toISOString(),
-      };
-      store.milestones[index] = updated;
-      persist();
+      const updatedTasks = [...existing.tasks, task];
+      const now = new Date().toISOString();
+      db.update(milestones)
+        .set({ tasks: updatedTasks, updatedAt: now })
+        .where(eq(milestones.id, milestoneId))
+        .run();
       emitChanged(milestoneId);
-      return updated;
+      return toMilestone({ ...existing, tasks: updatedTasks, updatedAt: now });
     },
 
     toggleTask(milestoneId, taskId) {
-      const { milestone, index } = findMilestone(store, milestoneId);
-      const tasks = milestone.tasks.map((t) =>
+      const existing = findMilestone(milestoneId);
+      const updatedTasks = existing.tasks.map((t) =>
         t.id === taskId ? { ...t, completed: !t.completed } : t,
       );
-      const updated: Milestone = {
-        ...milestone,
-        tasks,
-        updatedAt: new Date().toISOString(),
-      };
-      store.milestones[index] = updated;
-      persist();
+      const now = new Date().toISOString();
+      db.update(milestones)
+        .set({ tasks: updatedTasks, updatedAt: now })
+        .where(eq(milestones.id, milestoneId))
+        .run();
       emitChanged(milestoneId);
-      return updated;
-    },
-
-    reinitialize(dataDir: string) {
-      currentFilePath = join(dataDir, 'milestones.json');
-      // Reload data from new path
-      store = loadFile(currentFilePath);
-    },
-
-    clearState() {
-      store = { milestones: [] };
+      return toMilestone({ ...existing, tasks: updatedTasks, updatedAt: now });
     },
   };
 }

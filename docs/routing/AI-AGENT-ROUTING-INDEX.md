@@ -200,14 +200,15 @@ User authentication — JWT access/refresh tokens, login, register.
 
 ### briefing
 
-Daily briefing generation & suggestion engine.
+Daily briefing generation & suggestion engine. Cache and config are SQLite-backed (`briefings` and `briefingConfig` tables); legacy JSON files are auto-migrated on first access.
 
 | Layer | Path |
 |-------|------|
 | Types | `shared/types/briefing.ts` |
 | IPC Contract | `shared/ipc/briefing/` (contract.ts + schemas.ts) |
-| Service | `main/services/briefing/briefing-service.ts` |
-| Service Sub-modules | `briefing-cache.ts`, `briefing-config.ts`, `briefing-generator.ts`, `briefing-summary.ts`, `suggestion-engine.ts` |
+| DB Schema | `main/db/schema.ts` — `briefings`, `briefingConfig` tables |
+| Service | `main/services/briefing/briefing-service.ts` (deps: `db`, `dataDir`) |
+| Service Sub-modules | `briefing-cache.ts` (SQLite), `briefing-config.ts` (SQLite), `briefing-generator.ts`, `briefing-summary.ts`, `suggestion-engine.ts` |
 | Handler | `main/ipc/handlers/briefing-handlers.ts` |
 | Feature Module | `renderer/features/briefing/` |
 | API Hooks | `renderer/features/briefing/api/useBriefing.ts` |
@@ -553,14 +554,15 @@ Note-taking — CRUD, folders.
 
 ### notifications
 
-Background watchers (Slack, GitHub) — backend for communications feature.
+Background watchers (Slack, GitHub) — backend for communications feature. SQLite-backed persistence via `notifications` + `notificationConfig` tables.
 
 | Layer | Path |
 |-------|------|
 | Types | `shared/types/notifications.ts` |
 | IPC Contract | `shared/ipc/notifications/` (contract.ts + schemas.ts) |
+| DB Schema | `main/db/schema.ts` (`notifications`, `notificationConfig` tables) |
 | Service | `main/services/notifications/` |
-| Service Sub-modules | `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` |
+| Service Sub-modules | `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (SQLite-backed, accepts `AdcDatabase`) |
 | Handler | `main/ipc/handlers/notification-handlers.ts` |
 | Event Wiring | `event:notification.*` |
 | Feature Module | `renderer/features/communications/` (shared — watcher config UI) |

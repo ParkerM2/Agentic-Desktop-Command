@@ -10,26 +10,55 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Notification, NotificationWatcherConfig } from '@shared/types';
 import { DEFAULT_NOTIFICATION_WATCHER_CONFIG } from '@shared/types';
 
-// Mock notification store
-const mockLoadConfig = vi.fn<() => NotificationWatcherConfig>(() => ({
-  ...DEFAULT_NOTIFICATION_WATCHER_CONFIG,
-  enabled: true,
-  slack: { ...DEFAULT_NOTIFICATION_WATCHER_CONFIG.slack, enabled: true },
-  github: { ...DEFAULT_NOTIFICATION_WATCHER_CONFIG.github, enabled: true },
-}));
-const mockSaveConfig = vi.fn();
-const mockLoadNotifications = vi.fn<() => Notification[]>(() => []);
-const mockSaveNotifications = vi.fn();
+import type { NotificationStore } from '@main/services/notifications/notification-store';
+
+// Build an in-memory mock store that behaves like the real SQLite store
+function makeMockStore(initialConfig?: NotificationWatcherConfig): NotificationStore {
+  const items = new Map<string, Notification>();
+  let config: NotificationWatcherConfig = initialConfig ?? {
+    ...DEFAULT_NOTIFICATION_WATCHER_CONFIG,
+    enabled: true,
+    slack: { ...DEFAULT_NOTIFICATION_WATCHER_CONFIG.slack, enabled: true },
+    github: { ...DEFAULT_NOTIFICATION_WATCHER_CONFIG.github, enabled: true },
+  };
+
+  return {
+    loadConfig: vi.fn(() => ({ ...config })),
+    saveConfig: vi.fn((c: NotificationWatcherConfig) => { config = c; }),
+    loadNotifications: vi.fn(() => {
+      const arr = [...items.values()];
+      arr.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      return arr;
+    }),
+    saveNotification: vi.fn((n: Notification) => { items.set(n.id, { ...n }); }),
+    markRead: vi.fn((id: string) => {
+      const item = items.get(id);
+      if (item) { item.read = true; return true; }
+      return false;
+    }),
+    markAllRead: vi.fn((source?: string) => {
+      let count = 0;
+      for (const item of items.values()) {
+        if (!item.read && (source === undefined || item.source === source)) {
+          item.read = true;
+          count++;
+        }
+      }
+      return count;
+    }),
+    trimToMax: vi.fn(),
+    getCount: vi.fn(() => items.size),
+  };
+}
+
+let mockStoreInstance: NotificationStore;
 
 vi.mock('@main/services/notifications/notification-store', () => ({
-  loadConfig: (...args: unknown[]) => mockLoadConfig(...(args as [])),
-  saveConfig: (...args: unknown[]) => mockSaveConfig(...(args as [])),
-  loadNotifications: (...args: unknown[]) => mockLoadNotifications(...(args as [])),
-  saveNotifications: (...args: unknown[]) => mockSaveNotifications(...(args as [])),
-  MAX_CACHED_NOTIFICATIONS: 500,
+  createNotificationStore: () => mockStoreInstance,
+  MAX_CACHED_NOTIFICATIONS: 1000,
 }));
 
-// Mock notification filter
+// Mock notification filter — use the real implementation
 vi.mock('@main/services/notifications/notification-filter', async () => {
   const actual = await import('@main/services/notifications/notification-filter');
   return actual;
@@ -40,6 +69,7 @@ const { createNotificationManager } = await import(
 );
 
 import type { NotificationManager, NotificationWatcher } from '@main/services/notifications/notification-manager';
+import type { AdcDatabase } from '@main/db';
 
 // ── Helpers ─────────────────────────────────────────────────────
 
@@ -49,6 +79,9 @@ function makeRouter() {
     register: vi.fn(),
   } as unknown as import('@main/ipc/router').IpcRouter;
 }
+
+const fakeDb = {} as AdcDatabase;
+const fakeDataDir = '/tmp/test-data';
 
 function makeWatcher(source: 'slack' | 'github', overrides: Partial<NotificationWatcher> = {}): NotificationWatcher {
   let active = false;
@@ -87,7 +120,8 @@ describe('NotificationManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     router = makeRouter();
-    manager = createNotificationManager(router);
+    mockStoreInstance = makeMockStore();
+    manager = createNotificationManager(router, fakeDb, fakeDataDir);
   });
 
   describe('startWatching()', () => {
@@ -119,11 +153,11 @@ describe('NotificationManager', () => {
     });
 
     it('returns failure when config is disabled', () => {
-      mockLoadConfig.mockReturnValueOnce({
+      mockStoreInstance = makeMockStore({
         ...DEFAULT_NOTIFICATION_WATCHER_CONFIG,
         enabled: false,
       });
-      const disabledManager = createNotificationManager(router);
+      const disabledManager = createNotificationManager(router, fakeDb, fakeDataDir);
       const watcher = makeWatcher('slack');
       disabledManager.registerWatcher(watcher);
 
@@ -244,7 +278,7 @@ describe('NotificationManager', () => {
 
     it('persists after adding notification', () => {
       manager.onNotification(makeNotification());
-      expect(mockSaveNotifications).toHaveBeenCalled();
+      expect(mockStoreInstance.saveNotification).toHaveBeenCalled();
     });
   });
 
@@ -355,7 +389,7 @@ describe('NotificationManager', () => {
 
     it('persists config after update', () => {
       manager.updateConfig({ enabled: false });
-      expect(mockSaveConfig).toHaveBeenCalled();
+      expect(mockStoreInstance.saveConfig).toHaveBeenCalled();
     });
   });
 

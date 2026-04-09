@@ -1,25 +1,28 @@
 /**
- * Ideas Service — Disk-persisted idea board
+ * Ideas Service — SQLite-backed idea board
  *
- * Ideas are stored as JSON in the app's user data directory.
- * All methods are synchronous; IPC handlers wrap with Promise.resolve().
+ * Ideas are stored in the `ideas` SQLite table.
+ * One-time migration from ideas.json on first access.
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { and, desc, eq } from 'drizzle-orm';
 
 import { IDEAS_EVENTS } from '@shared/ipc/misc/ideas.channels';
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
 
+import { ideas } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
-import type { ReinitializableService } from '@main/services/data-management';
-
+import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 
-const IDEAS_FILE = 'ideas.json';
+const logger = createScopedLogger('ideas-service');
 
-export interface IdeasService extends ReinitializableService {
+export interface IdeasService {
   listIdeas: (filters: {
     projectId?: string;
     status?: IdeaStatus;
@@ -46,74 +49,87 @@ export interface IdeasService extends ReinitializableService {
   voteIdea: (id: string, delta: number) => Idea;
 }
 
-interface IdeasFile {
-  ideas: Idea[];
-}
+function migrateFromJson(db: AdcDatabase, dataDir: string): void {
+  const existing = db.select().from(ideas).limit(1).all();
+  if (existing.length > 0) return;
 
-function loadFile(filePath: string): IdeasFile {
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const parsed = JSON.parse(raw) as unknown as Partial<IdeasFile>;
-      return {
-        ideas: Array.isArray(parsed.ideas) ? parsed.ideas : [],
-      };
-    } catch {
-      return { ideas: [] };
+  const jsonPath = join(dataDir, 'ideas.json');
+  if (!existsSync(jsonPath)) return;
+
+  try {
+    const raw = readFileSync(jsonPath, 'utf-8');
+    const parsed = JSON.parse(raw) as { ideas?: Idea[] };
+    const items = Array.isArray(parsed.ideas) ? parsed.ideas : [];
+
+    for (const item of items) {
+      db.insert(ideas).values({
+        id: item.id,
+        title: item.title,
+        description: item.description,
+        status: item.status,
+        category: item.category,
+        tags: item.tags,
+        projectId: item.projectId,
+        votes: item.votes,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      }).run();
     }
+    logger.info(`Migrated ${String(items.length)} ideas from JSON to SQLite`);
+  } catch (err) {
+    logger.error('Failed to migrate ideas from JSON:', err);
   }
-  return { ideas: [] };
 }
 
-function saveFile(filePath: string, data: IdeasFile): void {
-  const dir = dirname(filePath);
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+/** Map a raw DB row to the Idea interface (coerce projectId null → undefined). */
+function toIdea(row: typeof ideas.$inferSelect): Idea {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    status: row.status as IdeaStatus,
+    category: row.category as IdeaCategory,
+    tags: row.tags,
+    projectId: row.projectId ?? undefined,
+    votes: row.votes,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
 }
 
-export function createIdeasService(deps: { dataDir: string; router: IpcRouter }): IdeasService {
-  let currentFilePath = join(deps.dataDir, IDEAS_FILE);
-  let store = loadFile(currentFilePath);
+export function createIdeasService(deps: {
+  db: AdcDatabase;
+  router: IpcRouter;
+  dataDir: string;
+}): IdeasService {
+  const { db, router, dataDir } = deps;
 
-  function persist(): void {
-    saveFile(currentFilePath, store);
-  }
+  migrateFromJson(db, dataDir);
 
   function emitChanged(ideaId: string): void {
-    deps.router.emit(IDEAS_EVENTS.IDEA.CHANGED, { ideaId });
-  }
-
-  function findIdea(id: string): { idea: Idea; index: number } {
-    const index = store.ideas.findIndex((i) => i.id === id);
-    if (index === -1) {
-      throw new Error(`Idea not found: ${id}`);
-    }
-    return { idea: store.ideas[index], index };
+    router.emit(IDEAS_EVENTS.IDEA.CHANGED, { ideaId });
   }
 
   return {
     listIdeas(filters) {
-      let result = [...store.ideas];
+      const conditions = [];
 
       if (filters.projectId) {
-        result = result.filter((i) => i.projectId === filters.projectId);
+        conditions.push(eq(ideas.projectId, filters.projectId));
       }
-
       if (filters.status) {
-        result = result.filter((i) => i.status === filters.status);
+        conditions.push(eq(ideas.status, filters.status));
       }
-
       if (filters.category) {
-        result = result.filter((i) => i.category === filters.category);
+        conditions.push(eq(ideas.category, filters.category));
       }
 
-      // Sort by votes descending, then by creation date
-      result.sort((a, b) => {
-        if (a.votes !== b.votes) return b.votes - a.votes;
-        return b.createdAt.localeCompare(a.createdAt);
-      });
+      const query = db.select().from(ideas);
+      const rows = conditions.length > 0
+        ? query.where(and(...conditions)).orderBy(desc(ideas.votes), desc(ideas.createdAt)).all()
+        : query.orderBy(desc(ideas.votes), desc(ideas.createdAt)).all();
 
-      return result;
+      return rows.map(toIdea);
     },
 
     createIdea(data) {
@@ -130,53 +146,71 @@ export function createIdeasService(deps: { dataDir: string; router: IpcRouter })
         createdAt: now,
         updatedAt: now,
       };
-      store.ideas.push(idea);
-      persist();
+      db.insert(ideas).values({
+        ...idea,
+        projectId: idea.projectId ?? null,
+      }).run();
       emitChanged(idea.id);
       return idea;
     },
 
     updateIdea(id, updates) {
-      const { idea, index } = findIdea(id);
+      const rows = db.select().from(ideas).where(eq(ideas.id, id)).all();
+      if (rows.length === 0) {
+        throw new Error(`Idea not found: ${id}`);
+      }
+      const existing = toIdea(rows[0]);
+      const now = new Date().toISOString();
+
       const updated: Idea = {
-        ...idea,
+        ...existing,
         ...updates,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       };
-      store.ideas[index] = updated;
-      persist();
-      emitChanged(updated.id);
+
+      db.update(ideas).set({
+        title: updated.title,
+        description: updated.description,
+        status: updated.status,
+        category: updated.category,
+        tags: updated.tags,
+        updatedAt: now,
+      }).where(eq(ideas.id, id)).run();
+
+      emitChanged(id);
       return updated;
     },
 
     deleteIdea(id) {
-      const { index } = findIdea(id);
-      store.ideas.splice(index, 1);
-      persist();
+      const result = db.delete(ideas).where(eq(ideas.id, id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Idea not found: ${id}`);
+      }
       emitChanged(id);
       return { success: true };
     },
 
     voteIdea(id, delta) {
-      const { idea, index } = findIdea(id);
+      const rows = db.select().from(ideas).where(eq(ideas.id, id)).all();
+      if (rows.length === 0) {
+        throw new Error(`Idea not found: ${id}`);
+      }
+      const existing = toIdea(rows[0]);
+      const newVotes = Math.max(0, existing.votes + delta);
+      const now = new Date().toISOString();
+
+      db.update(ideas).set({
+        votes: newVotes,
+        updatedAt: now,
+      }).where(eq(ideas.id, id)).run();
+
       const updated: Idea = {
-        ...idea,
-        votes: Math.max(0, idea.votes + delta),
-        updatedAt: new Date().toISOString(),
+        ...existing,
+        votes: newVotes,
+        updatedAt: now,
       };
-      store.ideas[index] = updated;
-      persist();
-      emitChanged(updated.id);
+      emitChanged(id);
       return updated;
-    },
-
-    reinitialize(dataDir: string): void {
-      currentFilePath = join(dataDir, IDEAS_FILE);
-      store = loadFile(currentFilePath);
-    },
-
-    clearState(): void {
-      store = { ideas: [] };
     },
   };
 }

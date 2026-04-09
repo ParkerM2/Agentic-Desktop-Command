@@ -23,6 +23,141 @@ export const notes = sqliteTable('notes', {
   index('idx_notes_updated_at').on(table.updatedAt),
 ]);
 
+export const alerts = sqliteTable('alerts', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(), // 'reminder' | 'deadline' | 'notification' | 'recurring'
+  message: text('message').notNull(),
+  triggerAt: text('trigger_at').notNull(),
+  recurring: text('recurring', { mode: 'json' }).$type<{ frequency: string; time: string; daysOfWeek?: number[] } | null>(),
+  linkedTo: text('linked_to', { mode: 'json' }).$type<{ type: string; id: string } | null>(),
+  dismissed: integer('dismissed', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+export const ideas = sqliteTable('ideas', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  status: text('status').notNull(), // 'new' | 'exploring' | 'accepted' | 'rejected' | 'implemented'
+  category: text('category').notNull(), // 'feature' | 'improvement' | 'bug' | 'performance'
+  tags: text('tags', { mode: 'json' }).$type<string[]>().notNull(),
+  projectId: text('project_id'),
+  votes: integer('votes').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  index('idx_ideas_project_id').on(table.projectId),
+  index('idx_ideas_status').on(table.status),
+]);
+
+export const milestones = sqliteTable('milestones', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  targetDate: text('target_date').notNull(),
+  status: text('status').notNull(), // 'planned' | 'in-progress' | 'completed'
+  tasks: text('tasks', { mode: 'json' }).$type<Array<{ id: string; title: string; completed: boolean }>>().notNull(),
+  projectId: text('project_id'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  index('idx_milestones_project_id').on(table.projectId),
+]);
+
+export const dailyPlans = sqliteTable('daily_plans', {
+  date: text('date').primaryKey(), // YYYY-MM-DD
+  goals: text('goals', { mode: 'json' }).$type<string[]>().notNull(),
+  scheduledTasks: text('scheduled_tasks', { mode: 'json' }).$type<string[]>().notNull(),
+  timeBlocks: text('time_blocks', { mode: 'json' }).$type<Array<{ id: string; startTime: string; endTime: string; type: string; label?: string }>>().notNull(),
+  reflection: text('reflection'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const weeklyReviews = sqliteTable('weekly_reviews', {
+  weekStartDate: text('week_start_date').primaryKey(), // Monday YYYY-MM-DD
+  weekEndDate: text('week_end_date').notNull(),
+  days: text('days', { mode: 'json' }).$type<unknown[]>().notNull(),
+  summary: text('summary'),
+  reflection: text('reflection'),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const workouts = sqliteTable('workouts', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),
+  type: text('type').notNull(),
+  duration: integer('duration'),
+  exercises: text('exercises', { mode: 'json' }).$type<unknown[]>().notNull(),
+  notes: text('notes'),
+  createdAt: text('created_at').notNull(),
+}, (table) => [
+  index('idx_workouts_date').on(table.date),
+]);
+
+export const bodyMeasurements = sqliteTable('body_measurements', {
+  id: text('id').primaryKey(),
+  date: text('date').notNull(),
+  weight: integer('weight'),
+  bodyFat: integer('body_fat'),
+  muscleMass: integer('muscle_mass'),
+  boneMass: integer('bone_mass'),
+  waterPercentage: integer('water_percentage'),
+  visceralFat: integer('visceral_fat'),
+  source: text('source'),
+  createdAt: text('created_at').notNull(),
+}, (table) => [
+  index('idx_measurements_date').on(table.date),
+]);
+
+export const fitnessGoals = sqliteTable('fitness_goals', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  target: integer('target').notNull(),
+  current: integer('current').notNull().default(0),
+  unit: text('unit').notNull(),
+  deadline: text('deadline'),
+  createdAt: text('created_at').notNull(),
+});
+
+export const briefings = sqliteTable('briefings', {
+  date: text('date').primaryKey(), // YYYY-MM-DD
+  content: text('content', { mode: 'json' }).$type<unknown>().notNull(),
+  generatedAt: text('generated_at').notNull(),
+});
+
+export const briefingConfig = sqliteTable('briefing_config', {
+  key: text('key').primaryKey(), // singleton row with key='default'
+  config: text('config', { mode: 'json' }).$type<unknown>().notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const notifications = sqliteTable('notifications', {
+  id: text('id').primaryKey(),
+  source: text('source').notNull(),
+  title: text('title'),
+  message: text('message'),
+  url: text('url'),
+  read: integer('read', { mode: 'boolean' }).notNull().default(false),
+  timestamp: text('timestamp').notNull(),
+  metadata: text('metadata', { mode: 'json' }).$type<Record<string, unknown>>(),
+}, (table) => [
+  index('idx_notifications_source').on(table.source),
+  index('idx_notifications_timestamp').on(table.timestamp),
+]);
+
+export const notificationConfig = sqliteTable('notification_config', {
+  key: text('key').primaryKey(), // singleton row
+  config: text('config', { mode: 'json' }).$type<unknown>().notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const changelogEntries = sqliteTable('changelog_entries', {
+  version: text('version').primaryKey(),
+  date: text('date').notNull(),
+  categories: text('categories', { mode: 'json' }).$type<Array<{ type: string; items: string[] }>>().notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 // ── Bus Infrastructure Tables ───────────────────────────────
 
 export const commands = sqliteTable('commands', {
