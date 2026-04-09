@@ -15,6 +15,13 @@
       "when": 1775709841193,
       "tag": "0001_jazzy_post",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775711430700,
+      "tag": "0002_perfect_jubilee",
+      "breakpoints": true
     }
   ]
 }

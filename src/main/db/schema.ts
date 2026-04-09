@@ -23,6 +23,54 @@ export const notes = sqliteTable('notes', {
   index('idx_notes_updated_at').on(table.updatedAt),
 ]);
 
+export const alerts = sqliteTable('alerts', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(), // 'reminder' | 'deadline' | 'notification' | 'recurring'
+  message: text('message').notNull(),
+  triggerAt: text('trigger_at').notNull(),
+  recurring: text('recurring', { mode: 'json' }).$type<{ frequency: string; time: string; daysOfWeek?: number[] } | null>(),
+  linkedTo: text('linked_to', { mode: 'json' }).$type<{ type: string; id: string } | null>(),
+  dismissed: integer('dismissed', { mode: 'boolean' }).notNull().default(false),
+  createdAt: text('created_at').notNull(),
+});
+
+export const ideas = sqliteTable('ideas', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  status: text('status').notNull(), // 'new' | 'exploring' | 'accepted' | 'rejected' | 'implemented'
+  category: text('category').notNull(), // 'feature' | 'improvement' | 'bug' | 'performance'
+  tags: text('tags', { mode: 'json' }).$type<string[]>().notNull(),
+  projectId: text('project_id'),
+  votes: integer('votes').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  index('idx_ideas_project_id').on(table.projectId),
+  index('idx_ideas_status').on(table.status),
+]);
+
+export const milestones = sqliteTable('milestones', {
+  id: text('id').primaryKey(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  targetDate: text('target_date').notNull(),
+  status: text('status').notNull(), // 'planned' | 'in-progress' | 'completed'
+  tasks: text('tasks', { mode: 'json' }).$type<Array<{ id: string; title: string; completed: boolean }>>().notNull(),
+  projectId: text('project_id'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+}, (table) => [
+  index('idx_milestones_project_id').on(table.projectId),
+]);
+
+export const changelogEntries = sqliteTable('changelog_entries', {
+  version: text('version').primaryKey(),
+  date: text('date').notNull(),
+  categories: text('categories', { mode: 'json' }).$type<Array<{ type: string; items: string[] }>>().notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
 // ── Bus Infrastructure Tables ───────────────────────────────
 
 export const commands = sqliteTable('commands', {
