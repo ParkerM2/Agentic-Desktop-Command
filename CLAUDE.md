@@ -31,6 +31,25 @@
 6. Query keys MUST use factory pattern, not inline arrays
 7. Mutations MUST invalidate via `onSuccess`/`onSettled`, not external event listeners
 
+## Command Bus
+
+All IPC channels are tracked by a central command bus backed by SQLite (`adc.db`).
+
+1. **Channel constants** — use `DOMAIN.VERB.NOUN` constants from `src/shared/ipc/<domain>/channels.ts`. Never use string literals for channel names.
+2. **Bus dispatch** — the IPC router dispatches through the bus. Every command is logged with source attribution.
+3. **Sessions** — all Claude sessions are tracked in the `sessions` SQLite table via `BusSessionManager`. No in-memory-only session tracking.
+4. **Queries** — use `bus.queryCommands()` and `bus.queryEvents()` for analytics. Use `busSessionManager.list()` for session queries.
+
+### Channel Constant Pattern
+```typescript
+// Import constants from the domain's channels.ts
+import { PROGRESS } from '@shared/ipc/progress/channels';
+
+// Use in contracts, handlers, and renderer calls
+router.handle(PROGRESS.CREATE.TASK, async (input) => { ... });
+const result = await ipc(PROGRESS.CREATE.TASK, { slug, title });
+```
+
 ## Finding Things
 
 - Features/services/IPC lookup: `docs/routing/FEATURES-INDEX.md`
@@ -41,6 +60,9 @@
 - Caching layer guide: `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`
 - File placement rules: `docs/patterns/CODEBASE-GUARDIAN.md`
 - Plan status: `docs/tracker.json`
+- Command bus: `src/main/bus/`
+- Database schema: `src/main/db/schema.ts`
+- Channel constants: `src/shared/ipc/<domain>/channels.ts`
 - Worktree setup script: `scripts/worktree-setup.sh`
 - Worktree include list: `.worktreeinclude`
 

@@ -10,9 +10,9 @@
 | Category | Count |
 |----------|-------|
 | Renderer Features | 37 |
-| Main Process Services | 36 |
+| Main Process Services | 35 |
 | IPC Handler Files | 43 |
-| IPC Domain Folders | 29 |
+| IPC Domain Folders | 30 |
 | Hub Type Modules | 9 |
 | Bootstrap Modules | 5 |
 | FEATURE.md Files | 16 |
@@ -44,7 +44,7 @@ Location: `src/renderer/features/`
 | **projects** | Project management | ProjectListPage, ProjectSettings, WorktreeManager, ProjectEditDialog, GitStatusIndicator (branch name + clean/changed badge in project list) | `projects.*`, `git.status` |
 | **roadmap** | Project roadmap | RoadmapPage, MilestoneCard | `milestones.*` |
 | **settings** | App settings (6-tab layout: Display, Profile, Hub, Integrations, Storage, Advanced) | SettingsPage (tabbed), LayoutSection (sidebar layout selector with SVG wireframe preview), ProfileFormModal (TanStack Form + Zod + FormSelect), HubSettings (ConnectionForm uses TanStack Form + Zod), OAuthProviderSettings, OAuthConnectionStatus, WebhookSettings (SlackForm + GitHubForm use TanStack Form + Zod), StorageManagementSection, StorageUsageBar, RetentionControl, ColorThemeSection; **Theme Editor** (`components/theme-editor/`, 10 files): ThemeEditorPage, ColorControl, ColorSection, ThemePreview, SavedThemesBar, CssImportDialog, css-parser.ts, css-exporter.ts, token-sections.ts — Route: `/settings/themes` | `settings.*`, `oauth.*`, `dataManagement.*` |
-| **tasks** | Task management (TanStack Table) | TaskDataGrid (TanStack Table + `@ui` Table primitives in `<Card>`), TaskFiltersToolbar, TaskDetailRow (subtasks use `?? []` fallback), TaskStatusBadge, CreateTaskDialog, PlanFeedbackDialog, TaskResultView, CreatePrDialog; **Hooks**: useTaskEvents, useAgentMutations, useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*`, `qa.*`, `git.createPr`, `event:agent.orchestrator.*`, `event:qa.*` |
+| **tasks** | Task management (TanStack Table) | TaskDataGrid (TanStack Table + `@ui` Table primitives in `<Card>`), TaskFiltersToolbar, TaskDetailRow (subtasks use `?? []` fallback), TaskStatusBadge, CreateTaskDialog, PlanFeedbackDialog, TaskResultView, CreatePrDialog; **Hooks**: useTaskEvents, useAgentMutations, useQaMutations, QaReportViewer | `hub.tasks.*`, `tasks.*`, `agent.*`, `qa.*`, `git.createPr`, `event:bus.*`, `event:qa.*` |
 | **terminals** | Terminal emulator | TerminalGrid, TerminalInstance | `terminals.*` |
 | **briefing** | Daily briefing & suggestions *(accessed via Productivity > Briefing tab)* | BriefingPage, SuggestionCard | `briefing.*` |
 | **merge** | Branch merge workflow | MergeConfirmModal, MergePreviewPanel, ConflictResolver, FileDiffViewer (`@git-diff-view/react`) | `merge.*` |
@@ -113,9 +113,8 @@ Location: `src/main/services/`
 | **time-parser** | Natural language time parsing | parseTimeExpression | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |
 | **device** | Device registration & heartbeat via Hub API | registerDevice, updateDevice, sendHeartbeat | `event:hub.devices.*` |
-| **agent-orchestrator** | Headless Claude agent lifecycle management. Hooks config merges into `.claude/settings.local.json` (restored on cleanup). Planning completion auto-detects plan files and transitions to `plan_ready`. Security hardened: taskId sanitization (regex allowlist), environment scrubbing (glob-based blocklist/allowlist), working directory validation (existsSync + restricted paths). | spawnSession, stopSession, listSessions, onSessionEvent | `event:agent.orchestrator.*` |
-| **agent-orchestrator/jsonl-progress-watcher** | JSONL progress file watcher (debounced tail parsing) | start, stop, onProgress | `event:agent.orchestrator.progress`, `event:agent.orchestrator.planReady` |
-| **agent-orchestrator/agent-watchdog** | Health monitoring for active agent sessions (PID checks, heartbeat age, auto-restart on overflow) | start, stop, checkNow, onAlert, dispose | `event:agent.orchestrator.watchdogAlert` (wired in index.ts) |
+| **command-bus** | Unified command bus for all agent lifecycle operations. SQLite-backed (Drizzle ORM). Dispatches commands, tracks sessions. Location: `src/main/bus/`. Sub-modules: `command-bus.ts`, `session-manager.ts`, `dispatcher.ts` | dispatch, query, subscribe | `event:bus.*` |
+| **database** | SQLite database layer (better-sqlite3 + Drizzle ORM). Schema: sessions, commands, events. Location: `src/main/db/`. Sub-modules: `schema.ts`, `connection.ts`, `migrations/` | getDb, migrate | - |
 | **qa** | Two-tier automated QA system (quiet + full) | startQuiet, startFull, getSession, getReportForTask, cancel, onSessionEvent | `event:qa.started`, `event:qa.progress`, `event:qa.completed` |
 | **assistant/watch-store** | Persistent watch subscription storage (JSON file) | add, remove, getActive, getAll, markTriggered, clear | - |
 | **assistant/watch-evaluator** | Evaluates IPC events against active watches | start, stop, onTrigger | `event:assistant.proactive` (via index.ts wiring) |
@@ -179,11 +178,11 @@ Location: `src/main/ipc/handlers/`
 | `workspace-handlers.ts` | workspace.* |
 | `auth-handlers.ts` | auth.* |
 | `device-handlers.ts` | devices.* |
-| `orchestrator-handlers.ts` | orchestrator.* (spawn, stop, replan with feedback, list sessions, get progress) |
+| `orchestrator-handlers.ts` | orchestrator.* (legacy — being replaced by bus-handlers.ts) |
 | `qa-handlers.ts` | qa.* (run quiet, run full, get reports) |
 | `data-management-handlers.ts` | dataManagement.* (registry, usage, retention, cleanup, export/import) |
 | `security-handlers.ts` | security.getSettings, security.updateSettings, security.exportAudit |
-| `agent-orchestrator-handlers.ts` | agent.startPlanning, agent.startExecution, agent.replanWithFeedback, agent.killSession, agent.restartFromCheckpoint, agent.getOrchestratorSession, agent.listOrchestratorSessions |
+| `bus-handlers.ts` | bus.dispatch, bus.query, bus.listSessions, bus.getSession, bus.killSession, bus.subscribe |
 | `window-handlers.ts` | window.minimize, window.maximize, window.close, window.isMaximized |
 | `progress-handlers.ts` | progress.* (listTasks, getTask, createTask, updateTask, archiveTask, deleteTask, listArchived, startResearch, createPlan, spinUpTeam, runWorkflow, cancelAction, runLogCleanup + 7 event channels) |
 | `workflow-template-handlers.ts` | workflowTemplates.* (list, get, create, update, delete, scanArtifacts, writeArtifact + 3 event channels) |
@@ -210,7 +209,7 @@ Location: `src/main/ipc/handlers/`
 | `alert.ts` | Alert, AlertType, AlertPriority |
 | `assistant.ts` | AssistantCommand, AssistantResponse, IntentType (16 types), AssistantAction (30+ actions), AssistantContext |
 | `assistant-watch.ts` | AssistantWatch, WatchType, WatchOperator, WatchAction, WatchCondition |
-| `agent-orchestrator.ts` | OrchestratorSession, SessionEvent, SessionStatus (if exists) |
+| `session.ts` | SessionRecord, SessionStatus, SessionLifecycle (command bus types) |
 | `qa.ts` | QaReport, QaResult, QaTier (if exists) |
 | `fitness.ts` | FitnessMetrics, Workout, HealthData |
 | `ideas.ts` | Idea, IdeaCategory |
@@ -283,7 +282,8 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 
 | Domain | Contents |
 |--------|----------|
-| `agents` | Agent + orchestrator invoke/event contracts |
+| `agents` | Agent invoke/event contracts |
+| `bus` | Command bus dispatch, query, session lifecycle, crash recovery |
 | `app` | App lifecycle, update, version |
 | `assistant` | Assistant commands, responses, rate limits |
 | `auth` | Login, register, refresh token |
@@ -351,7 +351,7 @@ Each split directory contains a `FEATURE.md` documenting its purpose, public API
 |----------|-------|
 | `src/main/bootstrap/FEATURE.md` | Bootstrap module architecture |
 | `src/main/ipc/handlers/tasks/FEATURE.md` | Split task handler files |
-| `src/main/services/agent-orchestrator/FEATURE.md` | Agent orchestrator lifecycle, watchdog, progress watcher |
+| `src/main/bus/FEATURE.md` | Command bus, session manager, SQLite schema |
 | `src/main/services/assistant/FEATURE.md` | Assistant service: intent classification + command execution |
 | `src/main/services/assistant/executors/FEATURE.md` | 22 domain executor files |
 | `src/main/services/assistant/intent-classifier/FEATURE.md` | Classifier + 13 pattern files |
