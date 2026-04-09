@@ -258,7 +258,7 @@ export function createServiceRegistry(
     () => projectService.listProjectsSync().map((p) => ({ id: p.id, path: p.path })),
     router,
   );
-  const settingsService = createSettingsService();
+  const settingsService = createSettingsService({ db, dataDir });
 
   // ─── Task repository (local-first + Hub mirror) ──────────────
   const taskRepository = createTaskRepository({

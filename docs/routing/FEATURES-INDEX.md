@@ -102,7 +102,7 @@ Location: `src/main/services/`
 | **notes** | Note CRUD | list, create, update, delete | - |
 | **planner** | Daily time blocks | listBlocks, createBlock, updateBlock | `event:planner.*` |
 | **project** | Project management. Sub-modules: `project-detector.ts`, `task-service.ts` (UUID support, metadata persistence), `task-slug.ts`, `task-spec-parser.ts`, `task-store.ts` (reads metadata, maps legacy statuses via `LEGACY_STATUS_MAP`), `codebase-analyzer.ts` (tech stack detection: languages, frameworks, package managers, build tools, test frameworks, linters, TypeScript, Tailwind, Node version, monorepo tools — sync, max 3 levels deep) | list, add, remove, selectDirectory, analyzeCodebase | `event:project.*` |
-| **settings** | App settings persistence. Sub-modules: `settings-defaults.ts`, `settings-encryption.ts`, `settings-store.ts` | get, update | `event:settings.changed` |
+| **settings** | App settings persistence (SQLite-backed). Sub-modules: `settings-defaults.ts`, `settings-encryption.ts`, `settings-store.ts` (SQLite via `settings_kv` + `profiles` tables). Deps: `db`, `dataDir`. One-time JSON migration from `settings.json`. | get, update | `event:settings.changed` |
 | **spotify** | Spotify integration | getCurrentTrack, play, pause, skip | - |
 | **terminal** | PTY terminal management | create, sendInput, resize, kill | `event:terminal.*` |
 | **briefing** | Daily briefing & suggestions (SQLite-backed). Sub-modules: `briefing-cache.ts` (SQLite), `briefing-config.ts` (SQLite), `briefing-generator.ts`, `briefing-summary.ts`, `suggestion-engine.ts`. Deps: `db`, `dataDir`. | generateBriefing, getSuggestions | - |

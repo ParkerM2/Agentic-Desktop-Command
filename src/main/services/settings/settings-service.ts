@@ -15,7 +15,9 @@ import type { AgentSettings, AppSettings, Profile, WebhookConfig } from '@shared
 import { fsLogger } from '@main/lib/logger';
 
 import { DEFAULT_AGENT_SETTINGS } from './settings-defaults';
-import { loadSettingsFile, saveSettingsFile } from './settings-store';
+import { loadSettingsFile, migrateFromJson, saveSettingsFile } from './settings-store';
+
+import type { AdcDatabase } from '../../db';
 
 export interface LayoutState {
   openProjectTabs: string[];
@@ -56,11 +58,16 @@ export interface SettingsService {
   saveLayout: (updates: LayoutUpdate) => { success: boolean };
 }
 
-export function createSettingsService(): SettingsService {
-  const { data: store, needsMigration } = loadSettingsFile();
+export function createSettingsService(deps: { db: AdcDatabase; dataDir: string }): SettingsService {
+  const { db, dataDir } = deps;
+
+  // One-time migration from legacy settings.json
+  migrateFromJson(db, dataDir);
+
+  const { data: store, needsMigration } = loadSettingsFile(db);
 
   function persist(): void {
-    saveSettingsFile(store);
+    saveSettingsFile(db, store);
   }
 
   // Migrate plaintext secrets to encrypted format on first load

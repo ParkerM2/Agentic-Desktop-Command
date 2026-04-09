@@ -710,7 +710,8 @@ App settings persistence — profiles, encryption, webhooks.
 | IPC Contract | `shared/ipc/settings/` (contract.ts + schemas.ts) |
 | IPC Contract (webhooks) | `shared/ipc/misc/webhook.contract.ts` |
 | Service | `main/services/settings/settings-service.ts` |
-| Service Sub-modules | `settings-defaults.ts`, `settings-encryption.ts`, `settings-store.ts` |
+| Service Sub-modules | `settings-defaults.ts`, `settings-encryption.ts`, `settings-store.ts` (SQLite-backed) |
+| DB Tables | `settings_kv` (singleton key-value blob), `profiles` (one row per profile) |
 | Handler | `main/ipc/handlers/settings-handlers.ts`, `webhook-settings-handlers.ts` |
 | Event Wiring | `event:settings.changed` |
 | Feature Module | `renderer/features/settings/` |
