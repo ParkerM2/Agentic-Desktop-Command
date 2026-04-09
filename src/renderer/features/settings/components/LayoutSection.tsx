@@ -13,12 +13,17 @@
  * to match the actual app shell.
  */
 
+import { useNavigate } from '@tanstack/react-router';
+import { Check, Settings2 } from 'lucide-react';
+
+import { ROUTES } from '@shared/constants';
 import type { ContentLayoutId, SidebarLayoutId, ToolbarStyleId } from '@shared/types/layout';
 import { CONTENT_LAYOUTS, SIDEBAR_LAYOUTS, TOOLBAR_STYLES } from '@shared/types/layout';
 
-import { useLayoutStore } from '@renderer/shared/stores';
+import { useLayoutStore, useThemeStore } from '@renderer/shared/stores';
 
 import {
+  Button,
   Label,
   Select,
   SelectContent,
@@ -26,6 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
   Text,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@ui';
 
 import { useUpdateSettings } from '../api/useSettings';
@@ -233,7 +241,9 @@ export function LayoutSection() {
     toolbarStyle, setToolbarStyle,
     contentLayout, setContentLayout,
   } = useLayoutStore();
+  const { colorTheme, setColorTheme, customThemes } = useThemeStore();
   const updateSettings = useUpdateSettings();
+  const navigate = useNavigate();
 
   const selectedSidebar = SIDEBAR_LAYOUTS.find((l) => l.id === sidebarLayout);
   const selectedToolbar = TOOLBAR_STYLES.find((l) => l.id === toolbarStyle);
@@ -252,6 +262,15 @@ export function LayoutSection() {
 
   function handleContentChange(value: string) {
     setContentLayout(value as ContentLayoutId);
+  }
+
+  function handleThemeChange(value: string) {
+    setColorTheme(value);
+    updateSettings.mutate({ colorTheme: value });
+  }
+
+  function handleCustomizeTheme() {
+    void navigate({ to: ROUTES.THEMES as '/' });
   }
 
   return (
@@ -330,16 +349,53 @@ export function LayoutSection() {
           </div>
         </div>
 
-        {/* ── Bottom-right: Unified preview ──────── */}
-        <div className="bg-card/50 flex flex-col items-center justify-center p-4">
-          <div className="h-[120px] w-full max-w-[300px]">
+        {/* ── Bottom-right: Theme + Preview ────────── */}
+        <div className="bg-card/50 flex flex-col gap-3 p-4">
+          {/* Theme selector row */}
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1 space-y-1">
+              <Label htmlFor="color-theme">Color Theme</Label>
+              <Select value={colorTheme} onValueChange={handleThemeChange}>
+                <SelectTrigger id="color-theme">
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">
+                    <span className="flex items-center gap-2">
+                      Default
+                      {colorTheme === 'default' ? <Check className="text-success h-3 w-3" /> : null}
+                    </span>
+                  </SelectItem>
+                  {customThemes.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      <span className="flex items-center gap-2">
+                        {t.name}
+                        {colorTheme === t.id ? <Check className="text-success h-3 w-3" /> : null}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="outline" onClick={handleCustomizeTheme}>
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Edit themes</TooltipContent>
+            </Tooltip>
+          </div>
+
+          {/* SVG preview */}
+          <div className="h-[90px] w-full">
             <UnifiedLayoutPreview
               contentLayoutId={contentLayout}
               sidebarConfig={previewConfig}
               toolbarStyleId={toolbarStyle}
             />
           </div>
-          <div className="mt-2 flex gap-4">
+          <div className="flex justify-center gap-4">
             <div className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: SIDEBAR_TINT }} />
               <Text className="text-[9px]" variant="muted">Sidebar</Text>

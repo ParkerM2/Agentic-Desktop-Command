@@ -19,7 +19,6 @@ import { useSettings, useUpdateSettings } from '../api/useSettings';
 import { AppearanceModeSection } from './AppearanceModeSection';
 import { BackgroundSettings } from './BackgroundSettings';
 import { ClaudeAuthSettings } from './ClaudeAuthSettings';
-import { ColorThemeSection } from './ColorThemeSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
 import { HubSettings } from './HubSettings';
@@ -48,7 +47,7 @@ const SETTINGS_TABS = [
 export function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { mode, colorTheme, uiScale, setMode, setUiScale } = useThemeStore();
+  const { mode, uiScale, setMode, setUiScale } = useThemeStore();
 
   const currentFontFamily = settings?.fontFamily ?? 'system-ui';
   const currentFontSize = settings?.fontSize ?? 14;
@@ -104,7 +103,6 @@ export function SettingsPage() {
             <LayoutSection />
             <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
             <BackgroundSettings />
-            <ColorThemeSection currentTheme={colorTheme} />
             <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
             <TypographySection
               currentFontFamily={currentFontFamily}
