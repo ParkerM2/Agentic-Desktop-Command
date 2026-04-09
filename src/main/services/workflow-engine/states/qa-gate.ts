@@ -20,9 +20,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { QaVerdictEntrySchema } from '@shared/ipc/workflow-engine/verdict-schemas';
 import type { QaVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
 
+
+import type { BusSessionManager } from '@main/bus/session-manager';
+import type { SessionRecord } from '@main/bus/types';
+
 import { WorkflowState } from '../types';
 
-import type { AgentOrchestrator, AgentSession } from '../../agent-orchestrator/types';
 import type { WorkflowRuntimeRecord } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────
@@ -34,10 +37,11 @@ const MAX_POLL_WAIT_MS = 30 * 60 * 1_000; // 30 minutes
 
 /**
  * Resolves the progress JSONL file path for a task session.
- * AgentOrchestrator writes progress to `<progressDir>/<taskId>.jsonl`.
+ * Extracts from spawnConfig or derives from session metadata.
  */
-function resolveProgressFile(session: AgentSession): string {
-  return session.progressFile;
+function resolveProgressFile(session: SessionRecord): string {
+  const config = session.spawnConfig as Record<string, unknown>;
+  return (config.progressFile as string | undefined) ?? '';
 }
 
 /**
@@ -85,7 +89,7 @@ function findLatestQaVerdict(progressFile: string): QaVerdict | null {
  * Returns true when the agent session is in a terminal state
  * (completed or error — not still running).
  */
-function isSessionTerminal(session: AgentSession): boolean {
+function isSessionTerminal(session: SessionRecord): boolean {
   return session.status === 'completed' || session.status === 'error' || session.status === 'killed';
 }
 
@@ -95,19 +99,19 @@ function isSessionTerminal(session: AgentSession): boolean {
  */
 async function waitForAllSessions(
   taskSlugs: string[],
-  agentOrchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
   timeoutMs: number,
-): Promise<Map<string, AgentSession | null>> {
+): Promise<Map<string, SessionRecord | null>> {
   const deadline = Date.now() + timeoutMs;
-  const result = new Map<string, AgentSession | null>();
+  const result = new Map<string, SessionRecord | null>();
 
   while (Date.now() < deadline) {
     let allDone = true;
 
     for (const slug of taskSlugs) {
-      const session = agentOrchestrator.getSessionByTaskId(slug) ?? null;
+      const session = busSessionManager.list({ taskSlug: slug }).at(0);
 
-      if (session === null || !isSessionTerminal(session)) {
+      if (!session || !isSessionTerminal(session)) {
         allDone = false;
       } else {
         result.set(slug, session);
@@ -125,7 +129,7 @@ async function waitForAllSessions(
   // Fill in any still-missing sessions as null
   for (const slug of taskSlugs) {
     if (!result.has(slug)) {
-      result.set(slug, agentOrchestrator.getSessionByTaskId(slug) ?? null);
+      result.set(slug, busSessionManager.list({ taskSlug: slug }).at(0) ?? null);
     }
   }
 
@@ -143,7 +147,7 @@ async function waitForAllSessions(
  */
 export async function runQaGate(
   record: WorkflowRuntimeRecord,
-  agentOrchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
 ): Promise<WorkflowState> {
   const { featureName, maxQaRounds, useGuardian } = record.config;
 
@@ -168,7 +172,7 @@ export async function runQaGate(
   );
 
   // ── 1. Wait for all sessions to complete ─────────────────────
-  const sessions = await waitForAllSessions(taskSlugs, agentOrchestrator, MAX_POLL_WAIT_MS);
+  const sessions = await waitForAllSessions(taskSlugs, busSessionManager, MAX_POLL_WAIT_MS);
 
   // ── 2. Read verdicts from JSONL progress files ────────────────
   const failedTasks: string[] = [];

@@ -4,6 +4,9 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { GIT } from '@shared/ipc/git/channels';
+import { MERGE } from '@shared/ipc/misc/merge.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { projectKeys } from './queryKeys';
@@ -21,7 +24,7 @@ export const gitKeys = {
 export function useGitStatus(repoPath: string | null) {
   return useQuery({
     queryKey: gitKeys.status(repoPath ?? ''),
-    queryFn: () => ipc('git.status', { repoPath: repoPath ?? '' }),
+    queryFn: () => ipc(GIT.GET.STATUS, { repoPath: repoPath ?? '' }),
     enabled: repoPath !== null,
     refetchInterval: 10_000,
   });
@@ -31,7 +34,7 @@ export function useGitStatus(repoPath: string | null) {
 export function useGitBranches(repoPath: string | null) {
   return useQuery({
     queryKey: gitKeys.branches(repoPath ?? ''),
-    queryFn: () => ipc('git.branches', { repoPath: repoPath ?? '' }),
+    queryFn: () => ipc(GIT.GET.BRANCHES, { repoPath: repoPath ?? '' }),
     enabled: repoPath !== null,
   });
 }
@@ -40,7 +43,7 @@ export function useGitBranches(repoPath: string | null) {
 export function useWorktrees(projectId: string | null) {
   return useQuery({
     queryKey: gitKeys.worktrees(projectId ?? ''),
-    queryFn: () => ipc('git.listWorktrees', { projectId: projectId ?? '' }),
+    queryFn: () => ipc(GIT.LIST.WORKTREES, { projectId: projectId ?? '' }),
     enabled: projectId !== null,
   });
 }
@@ -49,7 +52,7 @@ export function useWorktrees(projectId: string | null) {
 export function useRepoStructure(repoPath: string | null) {
   return useQuery({
     queryKey: gitKeys.structure(repoPath ?? ''),
-    queryFn: () => ipc('git.detectStructure', { repoPath: repoPath ?? '' }),
+    queryFn: () => ipc(GIT.DETECT.STRUCTURE, { repoPath: repoPath ?? '' }),
     enabled: repoPath !== null,
     staleTime: 300_000,
   });
@@ -60,7 +63,7 @@ export function useCreateBranch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { repoPath: string; branchName: string; baseBranch?: string }) =>
-      ipc('git.createBranch', input),
+      ipc(GIT.CREATE.BRANCH, input),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: gitKeys.branches(variables.repoPath),
@@ -77,7 +80,7 @@ export function useCreateWorktree() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { repoPath: string; worktreePath: string; branch: string }) =>
-      ipc('git.createWorktree', input),
+      ipc(GIT.CREATE.WORKTREE, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: gitKeys.all });
       void queryClient.invalidateQueries({ queryKey: projectKeys.all });
@@ -90,7 +93,7 @@ export function useRemoveWorktree() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { repoPath: string; worktreePath: string }) =>
-      ipc('git.removeWorktree', input),
+      ipc(GIT.REMOVE.WORKTREE, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: gitKeys.all });
       void queryClient.invalidateQueries({ queryKey: projectKeys.all });
@@ -102,7 +105,7 @@ export function useRemoveWorktree() {
 export function useMergePreview() {
   return useMutation({
     mutationFn: (input: { repoPath: string; sourceBranch: string; targetBranch: string }) =>
-      ipc('merge.previewDiff', input),
+      ipc(MERGE.PREVIEW.DIFF, input),
   });
 }
 
@@ -110,7 +113,7 @@ export function useMergePreview() {
 export function useCheckConflicts() {
   return useMutation({
     mutationFn: (input: { repoPath: string; sourceBranch: string; targetBranch: string }) =>
-      ipc('merge.checkConflicts', input),
+      ipc(MERGE.CHECK.CONFLICTS, input),
   });
 }
 
@@ -119,7 +122,7 @@ export function useMergeBranch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { repoPath: string; sourceBranch: string; targetBranch: string }) =>
-      ipc('merge.mergeBranch', input),
+      ipc(MERGE.EXECUTE.MERGE, input),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: gitKeys.status(variables.repoPath),
@@ -135,7 +138,7 @@ export function useMergeBranch() {
 export function useAbortMerge() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (repoPath: string) => ipc('merge.abort', { repoPath }),
+    mutationFn: (repoPath: string) => ipc(MERGE.ABORT.MERGE, { repoPath }),
     onSuccess: (_data, repoPath) => {
       void queryClient.invalidateQueries({
         queryKey: gitKeys.status(repoPath),

@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 
+import { PROGRESS, PROGRESS_EVENTS } from './channels';
 import {
   progressActionCompletedPayloadSchema,
   progressActionFailedPayloadSchema,
@@ -33,55 +34,55 @@ import {
 // ── Invoke Channels ─────────────────────────────────────────────
 
 export const progressInvoke = {
-  'progress.listTasks': {
+  [PROGRESS.LIST.TASKS]: {
     input: z.object({}),
     output: z.array(progressTaskSchema),
   },
-  'progress.getTask': {
+  [PROGRESS.GET.TASK]: {
     input: progressGetTaskInputSchema,
     output: progressTaskSchema.nullable(),
   },
-  'progress.createTask': {
+  [PROGRESS.CREATE.TASK]: {
     input: progressCreateTaskInputSchema,
     output: progressTaskSchema,
   },
-  'progress.updateTask': {
+  [PROGRESS.UPDATE.TASK]: {
     input: progressUpdateTaskInputSchema,
     output: progressTaskSchema,
   },
-  'progress.archiveTask': {
+  [PROGRESS.ARCHIVE.TASK]: {
     input: progressSlugInputSchema,
     output: progressSuccessOutputSchema,
   },
-  'progress.deleteTask': {
+  [PROGRESS.DELETE.TASK]: {
     input: progressSlugInputSchema,
     output: progressSuccessOutputSchema,
   },
-  'progress.listArchived': {
+  [PROGRESS.LIST.ARCHIVED]: {
     input: z.object({}),
     output: z.array(progressTaskSchema),
   },
-  'progress.startResearch': {
+  [PROGRESS.START.RESEARCH]: {
     input: progressActionInputSchema,
     output: progressSessionOutputSchema,
   },
-  'progress.createPlan': {
+  [PROGRESS.CREATE.PLAN]: {
     input: progressActionInputSchema,
     output: progressSessionOutputSchema,
   },
-  'progress.spinUpTeam': {
+  [PROGRESS.START.TEAM]: {
     input: progressActionInputSchema,
     output: progressSpinUpTeamOutputSchema,
   },
-  'progress.runWorkflow': {
+  [PROGRESS.START.WORKFLOW]: {
     input: progressRunWorkflowInputSchema,
     output: progressRunWorkflowOutputSchema,
   },
-  'progress.cancelAction': {
+  [PROGRESS.CANCEL.ACTION]: {
     input: progressSlugInputSchema,
     output: progressSuccessOutputSchema,
   },
-  'progress.runLogCleanup': {
+  [PROGRESS.RUN['LOG-CLEANUP']]: {
     input: z.object({}),
     output: progressLogCleanupOutputSchema,
   },
@@ -90,25 +91,25 @@ export const progressInvoke = {
 // ── Event Channels ──────────────────────────────────────────────
 
 export const progressEvents = {
-  'event:progress.taskUpdated': {
+  [PROGRESS_EVENTS.TASK.UPDATED]: {
     payload: progressTaskUpdatedPayloadSchema,
   },
-  'event:progress.taskCreated': {
+  [PROGRESS_EVENTS.TASK.CREATED]: {
     payload: progressTaskCreatedPayloadSchema,
   },
-  'event:progress.taskArchived': {
+  [PROGRESS_EVENTS.TASK.ARCHIVED]: {
     payload: progressTaskArchivedPayloadSchema,
   },
-  'event:progress.actionStarted': {
+  [PROGRESS_EVENTS.ACTION.STARTED]: {
     payload: progressActionStartedPayloadSchema,
   },
-  'event:progress.actionCompleted': {
+  [PROGRESS_EVENTS.ACTION.COMPLETED]: {
     payload: progressActionCompletedPayloadSchema,
   },
-  'event:progress.actionFailed': {
+  [PROGRESS_EVENTS.ACTION.FAILED]: {
     payload: progressActionFailedPayloadSchema,
   },
-  'event:progress.workflowStep': {
+  [PROGRESS_EVENTS.WORKFLOW.STEP]: {
     payload: progressWorkflowStepPayloadSchema,
   },
 } as const;

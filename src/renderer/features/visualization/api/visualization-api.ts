@@ -4,6 +4,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { VISUALIZATION } from '@shared/ipc/visualization/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { visualizationKeys } from './queryKeys';
@@ -12,7 +14,7 @@ import { visualizationKeys } from './queryKeys';
 export function useCodebaseGraph(projectId: string) {
   return useQuery({
     queryKey: visualizationKeys.codebaseGraph(projectId),
-    queryFn: () => ipc('visualization.getCodebaseGraph', { projectId }),
+    queryFn: () => ipc(VISUALIZATION.GET['CODEBASE-GRAPH'], { projectId }),
     staleTime: 300_000,
     enabled: !!projectId,
   });
@@ -22,7 +24,7 @@ export function useCodebaseGraph(projectId: string) {
 export function useAgentTeams(projectId: string) {
   return useQuery({
     queryKey: visualizationKeys.agentTeams(projectId),
-    queryFn: () => ipc('visualization.getAgentTeams', { projectId }),
+    queryFn: () => ipc(VISUALIZATION.GET['AGENT-TEAMS'], { projectId }),
     refetchInterval: 10_000,
     enabled: !!projectId,
   });
@@ -37,7 +39,7 @@ export function useSessionLog(
 ) {
   return useQuery({
     queryKey: visualizationKeys.sessionLog(projectId, feature, agentName, cursor),
-    queryFn: () => ipc('visualization.getSessionLog', { projectId, feature, agentName, cursor }),
+    queryFn: () => ipc(VISUALIZATION.GET['SESSION-LOG'], { projectId, feature, agentName, cursor }),
     enabled: !!projectId && !!feature && !!agentName,
   });
 }

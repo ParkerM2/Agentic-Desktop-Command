@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 
+import { DOCKER } from '@shared/ipc/docker/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 export const dockerKeys = {
@@ -15,7 +17,7 @@ export const dockerKeys = {
 export function useDockerStatus() {
   return useQuery({
     queryKey: dockerKeys.status(),
-    queryFn: () => ipc('docker.getStatus', {}),
+    queryFn: () => ipc(DOCKER.GET.STATUS, {}),
     staleTime: 30_000,
   });
 }
@@ -23,6 +25,6 @@ export function useDockerStatus() {
 /** Auto-setup Hub: pull image, start container, generate API key. */
 export function useDockerSetupHub() {
   return useMutation({
-    mutationFn: () => ipc('docker.setupHub', {}),
+    mutationFn: () => ipc(DOCKER.SETUP.HUB, {}),
   });
 }

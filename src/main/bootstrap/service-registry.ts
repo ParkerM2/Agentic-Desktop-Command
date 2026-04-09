@@ -6,9 +6,11 @@
  */
 
 import { hostname } from 'node:os';
-import { join } from 'node:path';
 
 import { app } from 'electron';
+
+import { APP_EVENTS } from '@shared/ipc/app/channels';
+import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
@@ -17,15 +19,16 @@ import { loadOAuthCredentials } from '../auth/providers/provider-config';
 import { SLACK_OAUTH_CONFIG } from '../auth/providers/slack';
 import { SPOTIFY_OAUTH_CONFIG } from '../auth/providers/spotify';
 import { createTokenStore } from '../auth/token-store';
+import { createCommandBus } from '../bus';
+import { createBusSessionManager } from '../bus/session-manager';
+import { initDatabase } from '../db';
 import { IpcRouter } from '../ipc/router';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
-import { createAgentOrchestrator } from '../services/agent-orchestrator/agent-orchestrator';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
-import { createJsonlProgressWatcher } from '../services/agent-orchestrator/jsonl-progress-watcher';
 import { createAlertService } from '../services/alerts/alert-service';
 import { createAlertStore } from '../services/alerts/alert-store';
 import { createAppUpdateService } from '../services/app/app-update-service';
@@ -47,7 +50,6 @@ import {
   type ReinitializableService,
 } from '../services/data-management';
 import { createCleanupService } from '../services/data-management/cleanup-service';
-import { createCrashRecovery } from '../services/data-management/crash-recovery';
 import { createStorageInspector } from '../services/data-management/storage-inspector';
 import { createDeviceService } from '../services/device/device-service';
 import { createDockerService } from '../services/docker/docker-service';
@@ -77,7 +79,6 @@ import {
 } from '../services/notifications';
 import { createPlannerService } from '../services/planner/planner-service';
 import { createProgressService } from '../services/progress';
-import { createProgressWatcherV2 } from '../services/progress-watcher-v2';
 import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
 import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
 import { createDocGenerator } from '../services/project/doc-generator';
@@ -103,7 +104,6 @@ import { createTimeParserService } from '../services/time-parser/time-parser-ser
 import { createTrackerService } from '../services/tracker/tracker-service';
 import { createVisualizationService } from '../services/visualization';
 import { createVoiceService } from '../services/voice/voice-service';
-import { createTaskLauncher } from '../services/workflow/task-launcher';
 import { createWorkflowEngineService } from '../services/workflow-engine';
 import { createWorkflowTemplateService } from '../services/workflow-templates';
 import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
@@ -112,6 +112,9 @@ import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
 
 import type { OAuthConfig } from '../auth/types';
+import type { CommandBus } from '../bus';
+import type { BusSessionManager } from '../bus/session-manager';
+import type { AdcDatabase } from '../db';
 import type { Services } from '../ipc';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { UserSessionManager } from '../services/auth';
@@ -125,14 +128,15 @@ import type { WorkspaceSessionManager } from '../services/workspace/workspace-se
 export interface ServiceRegistryResult {
   router: IpcRouter;
   services: Services;
+  db: AdcDatabase;
+  commandBus: CommandBus;
+  busSessionManager: BusSessionManager;
   agentManagerService: AgentManagerService;
   workspaceSessionManager: WorkspaceSessionManager;
   assistantService: ReturnType<typeof createAssistantService>;
-  agentOrchestrator: ReturnType<typeof createAgentOrchestrator>;
   agentWatchdog: ReturnType<typeof createAgentWatchdog>;
   errorCollector: ReturnType<typeof createErrorCollector>;
   healthRegistry: ReturnType<typeof createHealthRegistry>;
-  jsonlProgressWatcher: ReturnType<typeof createJsonlProgressWatcher>;
   qaTrigger: ReturnType<typeof createQaTrigger>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
   webhookRelay: ReturnType<typeof createWebhookRelay>;
@@ -145,7 +149,6 @@ export interface ServiceRegistryResult {
   quickInput: ReturnType<typeof createQuickInputWindow>;
   settingsService: ReturnType<typeof createSettingsService>;
   cleanupService: ReturnType<typeof createCleanupService>;
-  crashRecovery: ReturnType<typeof createCrashRecovery>;
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
@@ -173,18 +176,18 @@ export function createServiceRegistry(
   // ─── Error collector + health registry (created early) ──────
   const errorCollector = createErrorCollector(dataDir, {
     onError: (entry) => {
-      router.emit('event:app.error', entry);
+      router.emit(APP_EVENTS.ERROR.OCCURRED, entry);
     },
     onCapacityAlert: (count, message) => {
-      router.emit('event:app.capacityAlert', { count, message });
+      router.emit(APP_EVENTS.CAPACITY.ALERT, { count, message });
     },
     onDataRecovery: (store, message) => {
-      router.emit('event:app.dataRecovery', { store, message });
+      router.emit(APP_EVENTS.DATA.RECOVERY, { store, message });
     },
   });
   const healthRegistry = createHealthRegistry({
     onUnhealthy: (serviceName, missedCount) => {
-      router.emit('event:app.serviceUnhealthy', { serviceName, missedCount });
+      router.emit(APP_EVENTS.SERVICE.UNHEALTHY, { serviceName, missedCount });
     },
   });
 
@@ -445,36 +448,34 @@ export function createServiceRegistry(
     getRetentionSettings: () => settingsService.getSettings().dataRetention,
     router,
   });
-  const crashRecovery = createCrashRecovery({
-    dataDir,
-    listProjectPaths: () => projectService.listProjectsSync().map((p) => p.path),
-    listActiveSessions: () => [],
-  });
-
-  // ─── Workflow + orchestrator ──────────────────────────────────
-  const taskLauncher = createTaskLauncher();
+  // ─── Workflow + templates ─────────────────────────────────────
   const workflowTemplateService = createWorkflowTemplateService({ dataDir });
-  const agentOrchestrator = createAgentOrchestrator(dataDir, milestonesService ?? undefined);
+
+  // ─── Agent Manager (v2 — headless stream-json) ──────────────
+  const agentManagerService = createAgentManagerService({ router });
+
+  // ─── Command Bus + Session Manager ─────────────────────────
+  const db = initDatabase(dataDir);
+  const commandBus = createCommandBus(db);
+  const busSessionManager = createBusSessionManager(db, agentManagerService);
+  busSessionManager.recoverInterrupted();
 
   // ─── WorkflowEngine service ──────────────────────────────────
   const workflowEngineService = createWorkflowEngineService({
-    agentOrchestrator,
+    busSessionManager,
     gitService,
     templateService: workflowTemplateService,
     progressBaseDir: dataDir,
     onStateChanged: (event) => {
-      router.emit('event:workflow-engine.stateChanged', event);
+      router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event);
     },
     onCompleted: (event) => {
-      router.emit('event:workflow-engine.completed', event);
+      router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event);
     },
     onError: (event) => {
-      router.emit('event:workflow-engine.error', event);
+      router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event);
     },
   });
-
-  // ─── Agent Manager (v2 — headless stream-json) ──────────────
-  const agentManagerService = createAgentManagerService({ router });
 
   // ─── Worktree provisioner (isolates team-lead sessions) ──────
   const worktreeProvisioner = createWorktreeProvisioner();
@@ -486,10 +487,10 @@ export function createServiceRegistry(
     getMainWindow,
   );
 
-  const qaRunner = createQaRunner(agentOrchestrator, dataDir, notificationManager);
+  const qaRunner = createQaRunner(busSessionManager, dataDir, notificationManager);
 
   // Agent watchdog — monitors active sessions for dead/stale processes
-  const agentWatchdog = createAgentWatchdog(agentOrchestrator, {}, notificationManager);
+  const agentWatchdog = createAgentWatchdog(busSessionManager, {}, notificationManager);
   agentWatchdog.onAlert((alert) => {
     router.emit('event:agent.orchestrator.watchdogAlert', alert);
   });
@@ -498,7 +499,7 @@ export function createServiceRegistry(
   // QA auto-trigger — starts QA when tasks enter review
   const qaTrigger = createQaTrigger({
     qaRunner,
-    orchestrator: agentOrchestrator,
+    busSessionManager,
     taskRepository,
     router,
   });
@@ -510,13 +511,13 @@ export function createServiceRegistry(
   const suggestionEngine = createSuggestionEngine({
     projectService,
     taskService,
-    agentOrchestrator,
+    busSessionManager,
   });
 
   const insightsService = createInsightsService({
     taskService,
     projectService,
-    agentOrchestrator,
+    busSessionManager,
     qaRunner,
   });
 
@@ -528,7 +529,7 @@ export function createServiceRegistry(
     claudeClient,
     notificationManager,
     suggestionEngine,
-    agentOrchestrator,
+    busSessionManager,
   });
   briefingService.startScheduler();
 
@@ -567,14 +568,9 @@ export function createServiceRegistry(
   // ─── Webhook relay ───────────────────────────────────────────
   const webhookRelay = createWebhookRelay({ assistantService, router });
 
-  // ─── JSONL progress watcher ──────────────────────────────────
-  const progressDir = join(dataDir, 'progress');
-  const jsonlProgressWatcher = createJsonlProgressWatcher(progressDir);
-
   // ─── Agent dashboard services (Layer 1: Agent Visibility) ────
   const teamWatcherService = createTeamWatcherService();
   const sessionJsonlReaderService = createSessionJSONLReaderService();
-  const progressWatcherV2 = createProgressWatcherV2();
   const fileTreeService = createFileTreeService();
 
   // ─── Tracker service (reads/writes docs/tracker.json) ────────
@@ -588,10 +584,10 @@ export function createServiceRegistry(
 
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
+    commandBus,
+    busSessionManager,
     agentManagerService,
-    agentOrchestrator,
     progressService,
-    progressWatcherV2,
     teamWatcherService: null,
     projectService,
     taskService,
@@ -636,7 +632,6 @@ export function createServiceRegistry(
     hubApiClient,
     hubAuthService,
     qaRunner,
-    taskLauncher,
     workflowTemplateService,
     cleanupService,
     storageInspector,
@@ -691,14 +686,15 @@ export function createServiceRegistry(
   return {
     router,
     services,
+    db,
+    commandBus,
+    busSessionManager,
     agentManagerService,
     workspaceSessionManager,
     assistantService,
-    agentOrchestrator,
     agentWatchdog,
     errorCollector,
     healthRegistry,
-    jsonlProgressWatcher,
     qaTrigger,
     watchEvaluator,
     webhookRelay,
@@ -713,7 +709,6 @@ export function createServiceRegistry(
     hubApiClient,
     taskRepository,
     cleanupService,
-    crashRecovery,
     teamWatcherService,
     sessionJsonlReaderService,
     heartbeatIntervalId,

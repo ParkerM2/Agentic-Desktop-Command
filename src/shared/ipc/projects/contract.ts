@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 
+import { PROJECTS, PROJECTS_EVENTS } from './channels';
 import {
   CodebaseAnalysisSchema,
   CreateProjectInputSchema,
@@ -18,11 +19,11 @@ import {
 
 /** Invoke channels for project operations */
 export const projectsInvoke = {
-  'projects.list': {
+  [PROJECTS.LIST.ALL]: {
     input: z.object({}),
     output: z.array(ProjectSchema),
   },
-  'projects.add': {
+  [PROJECTS.ADD.PROJECT]: {
     input: z.object({
       path: z.string(),
       name: z.string().optional(),
@@ -33,23 +34,23 @@ export const projectsInvoke = {
     }),
     output: ProjectSchema,
   },
-  'projects.remove': {
+  [PROJECTS.REMOVE.PROJECT]: {
     input: z.object({ projectId: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'projects.initialize': {
+  [PROJECTS.INITIALIZE.PROJECT]: {
     input: z.object({ projectId: z.string() }),
     output: z.object({ success: z.boolean(), error: z.string().optional() }),
   },
-  'projects.selectDirectory': {
+  [PROJECTS.SELECT.DIRECTORY]: {
     input: z.object({}),
     output: z.object({ path: z.string().nullable() }),
   },
-  'projects.detectRepo': {
+  [PROJECTS.DETECT.REPO]: {
     input: z.object({ path: z.string() }),
     output: RepoDetectionResultSchema,
   },
-  'projects.update': {
+  [PROJECTS.UPDATE.PROJECT]: {
     input: z.object({
       projectId: z.string(),
       name: z.string().optional(),
@@ -60,11 +61,11 @@ export const projectsInvoke = {
     }),
     output: ProjectSchema,
   },
-  'projects.getSubProjects': {
+  [PROJECTS.GET['SUB-PROJECTS']]: {
     input: z.object({ projectId: z.string() }),
     output: z.array(SubProjectSchema),
   },
-  'projects.createSubProject': {
+  [PROJECTS.CREATE['SUB-PROJECT']]: {
     input: z.object({
       projectId: z.string(),
       name: z.string(),
@@ -74,19 +75,19 @@ export const projectsInvoke = {
     }),
     output: SubProjectSchema,
   },
-  'projects.deleteSubProject': {
+  [PROJECTS.DELETE['SUB-PROJECT']]: {
     input: z.object({ projectId: z.string(), subProjectId: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'projects.setupExisting': {
+  [PROJECTS.SETUP.EXISTING]: {
     input: z.object({ projectId: z.string() }),
     output: z.object({ success: z.boolean(), error: z.string().optional() }),
   },
-  'projects.createNew': {
+  [PROJECTS.CREATE.NEW]: {
     input: CreateProjectInputSchema,
     output: ProjectSchema,
   },
-  'projects.analyzeCodebase': {
+  [PROJECTS.ANALYZE.CODEBASE]: {
     input: z.object({ path: z.string() }),
     output: CodebaseAnalysisSchema,
   },
@@ -94,10 +95,10 @@ export const projectsInvoke = {
 
 /** Event channels for project-related events */
 export const projectsEvents = {
-  'event:project.updated': {
+  [PROJECTS_EVENTS.PROJECT.UPDATED]: {
     payload: z.object({ projectId: z.string() }),
   },
-  'event:project.setupProgress': {
+  [PROJECTS_EVENTS.SETUP.PROGRESS]: {
     payload: SetupProgressEventSchema,
   },
 } as const;

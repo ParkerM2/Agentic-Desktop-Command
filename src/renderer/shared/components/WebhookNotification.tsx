@@ -11,6 +11,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { GitBranch, MessageSquare, X } from 'lucide-react';
 
+import { WEBHOOK_EVENTS } from '@shared/ipc/misc/webhook.channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -50,7 +52,7 @@ export function WebhookNotification() {
   }, []);
 
   // Subscribe to webhook events from main process
-  useIpcEvent('event:webhook.received', (payload) => {
+  useIpcEvent(WEBHOOK_EVENTS.COMMAND.RECEIVED, (payload) => {
     const item: WebhookNotificationItem = {
       id: `wh-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       source: payload.source,

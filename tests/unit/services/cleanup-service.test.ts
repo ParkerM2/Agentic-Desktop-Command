@@ -189,7 +189,7 @@ describe('CleanupService', () => {
       await service.runCleanup();
 
       expect(router.emit).toHaveBeenCalledWith(
-        'event:dataManagement.cleanupComplete',
+        'event:data-management.cleanup.complete',
         expect.objectContaining({ cleaned: 4 }),
       );
     });

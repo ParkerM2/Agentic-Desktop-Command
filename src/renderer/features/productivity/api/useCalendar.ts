@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { CALENDAR } from '@shared/ipc/misc/calendar.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { calendarKeys } from './queryKeys';
@@ -12,7 +14,7 @@ import { calendarKeys } from './queryKeys';
 export function useCalendarEvents(timeMin: string, timeMax: string) {
   return useQuery({
     queryKey: calendarKeys.events(timeMin, timeMax),
-    queryFn: () => ipc('calendar.listEvents', { timeMin, timeMax }),
+    queryFn: () => ipc(CALENDAR.LIST.EVENTS, { timeMin, timeMax }),
     enabled: timeMin.length > 0 && timeMax.length > 0,
   });
 }
@@ -29,7 +31,7 @@ export function useCalendarCreateEvent() {
       location?: string;
       timeZone?: string;
       attendees?: string[];
-    }) => ipc('calendar.createEvent', params),
+    }) => ipc(CALENDAR.CREATE.EVENT, params),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
     },
@@ -41,7 +43,7 @@ export function useCalendarDeleteEvent() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (params: { eventId: string; calendarId?: string }) =>
-      ipc('calendar.deleteEvent', params),
+      ipc(CALENDAR.DELETE.EVENT, params),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: calendarKeys.all });
     },

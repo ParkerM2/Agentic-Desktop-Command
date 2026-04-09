@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { MILESTONES } from '@shared/ipc/misc/milestones.channels';
 import type { MilestoneStatus } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { milestoneKeys } from './queryKeys';
 export function useMilestones(projectId?: string) {
   return useQuery({
     queryKey: milestoneKeys.list(projectId),
-    queryFn: () => ipc('milestones.list', { projectId }),
+    queryFn: () => ipc(MILESTONES.LIST.ALL, { projectId }),
   });
 }
 
@@ -27,7 +28,7 @@ export function useCreateMilestone() {
       description: string;
       targetDate: string;
       projectId?: string;
-    }) => ipc('milestones.create', data),
+    }) => ipc(MILESTONES.CREATE.MILESTONE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },
@@ -44,7 +45,7 @@ export function useUpdateMilestone() {
       description?: string;
       targetDate?: string;
       status?: MilestoneStatus;
-    }) => ipc('milestones.update', data),
+    }) => ipc(MILESTONES.UPDATE.MILESTONE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },
@@ -55,7 +56,7 @@ export function useUpdateMilestone() {
 export function useDeleteMilestone() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('milestones.delete', { id }),
+    mutationFn: (id: string) => ipc(MILESTONES.DELETE.MILESTONE, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },
@@ -66,7 +67,7 @@ export function useDeleteMilestone() {
 export function useAddMilestoneTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { milestoneId: string; title: string }) => ipc('milestones.addTask', data),
+    mutationFn: (data: { milestoneId: string; title: string }) => ipc(MILESTONES.ADD.TASK, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },
@@ -78,7 +79,7 @@ export function useToggleMilestoneTask() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { milestoneId: string; taskId: string }) =>
-      ipc('milestones.toggleTask', data),
+      ipc(MILESTONES.TOGGLE.TASK, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },

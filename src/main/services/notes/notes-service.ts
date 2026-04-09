@@ -9,7 +9,9 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { NOTES_EVENTS } from '@shared/ipc/misc/notes.channels';
 import type { Note } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -66,7 +68,7 @@ export function createNotesService(deps: { dataDir: string; router: IpcRouter })
   }
 
   function emitChanged(noteId: string): void {
-    deps.router.emit('event:note.changed', { noteId });
+    deps.router.emit(NOTES_EVENTS.NOTE.CHANGED, { noteId });
   }
 
   return {

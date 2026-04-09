@@ -5,6 +5,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { SETTINGS } from '@shared/ipc/settings/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 // ── Types ───────────────────────────────────────────────────
@@ -99,7 +101,7 @@ export function validateCredentials(clientId: string, clientSecret: string): Val
 export function useOAuthProviders() {
   return useQuery<OAuthProviderInfo[]>({
     queryKey: ['settings', 'oauthProviders'],
-    queryFn: () => ipc('settings.getOAuthProviders', {}),
+    queryFn: () => ipc(SETTINGS.GET['OAUTH-PROVIDERS'], {}),
   });
 }
 
@@ -107,7 +109,7 @@ export function useSaveOAuthProvider() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { name: string; clientId: string; clientSecret: string }) =>
-      ipc('settings.setOAuthProvider', data),
+      ipc(SETTINGS.SET['OAUTH-PROVIDER'], data),
     async onSuccess() {
       await queryClient.invalidateQueries({ queryKey: ['settings', 'oauthProviders'] });
     },

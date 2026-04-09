@@ -6,6 +6,7 @@
  * and revoke provider tokens.
  */
 
+import { OAUTH } from './channels';
 import {
   OAuthAuthStatusOutputSchema,
   OAuthAuthorizeOutputSchema,
@@ -15,15 +16,15 @@ import {
 
 /** Invoke channels for OAuth operations */
 export const oauthInvoke = {
-  'oauth.authorize': {
+  [OAUTH.AUTHORIZE.PROVIDER]: {
     input: OAuthProviderInputSchema,
     output: OAuthAuthorizeOutputSchema,
   },
-  'oauth.isAuthenticated': {
+  [OAUTH.CHECK.AUTHENTICATED]: {
     input: OAuthProviderInputSchema,
     output: OAuthAuthStatusOutputSchema,
   },
-  'oauth.revoke': {
+  [OAUTH.REVOKE.PROVIDER]: {
     input: OAuthProviderInputSchema,
     output: OAuthRevokeOutputSchema,
   },

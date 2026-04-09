@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { MERGE } from '@shared/ipc/misc/merge.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { gitKeys } from '@features/projects';
@@ -27,7 +29,7 @@ export function useMergeDiff(
   return useQuery({
     queryKey: mergeKeys.diff(repoPath ?? '', sourceBranch ?? '', targetBranch ?? ''),
     queryFn: () =>
-      ipc('merge.previewDiff', {
+      ipc(MERGE.PREVIEW.DIFF, {
         repoPath: repoPath ?? '',
         sourceBranch: sourceBranch ?? '',
         targetBranch: targetBranch ?? '',
@@ -47,7 +49,7 @@ export function useFileDiff(
   return useQuery({
     queryKey: mergeKeys.fileDiff(repoPath, sourceBranch, targetBranch, filePath),
     queryFn: () =>
-      ipc('merge.getFileDiff', { repoPath, sourceBranch, targetBranch, filePath }),
+      ipc(MERGE.GET['FILE-DIFF'], { repoPath, sourceBranch, targetBranch, filePath }),
     enabled:
       repoPath.length > 0 &&
       sourceBranch.length > 0 &&
@@ -68,7 +70,7 @@ export function useMergeConflicts(
   return useQuery({
     queryKey: mergeKeys.conflicts(repoPath ?? '', sourceBranch ?? '', targetBranch ?? ''),
     queryFn: () =>
-      ipc('merge.checkConflicts', {
+      ipc(MERGE.CHECK.CONFLICTS, {
         repoPath: repoPath ?? '',
         sourceBranch: sourceBranch ?? '',
         targetBranch: targetBranch ?? '',
@@ -84,7 +86,7 @@ export function useMergeBranch() {
 
   return useMutation({
     mutationFn: ({ repoPath, sourceBranch, targetBranch }: MergeBranchParams) =>
-      ipc('merge.mergeBranch', { repoPath, sourceBranch, targetBranch }),
+      ipc(MERGE.EXECUTE.MERGE, { repoPath, sourceBranch, targetBranch }),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
         queryKey: gitKeys.status(variables.repoPath),
@@ -104,7 +106,7 @@ export function useAbortMerge() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (repoPath: string) => ipc('merge.abort', { repoPath }),
+    mutationFn: (repoPath: string) => ipc(MERGE.ABORT.MERGE, { repoPath }),
     onSuccess: (_data, repoPath) => {
       void queryClient.invalidateQueries({
         queryKey: gitKeys.status(repoPath),

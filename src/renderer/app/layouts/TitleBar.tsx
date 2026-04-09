@@ -12,6 +12,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { Minus, Settings, Square, X } from 'lucide-react';
 
 import { ROUTES } from '@shared/constants';
+import { WINDOW } from '@shared/ipc/window/channels';
 
 import { HubStatus } from '@renderer/shared/components/HubStatus';
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -29,7 +30,7 @@ export function TitleBar() {
   // Query maximize state on mount and when window events occur
   const refreshMaximizedState = useCallback(async () => {
     try {
-      const result = await ipc('window.isMaximized', {});
+      const result = await ipc(WINDOW.CHECK.MAXIMIZED, {});
       setIsMaximized(result.isMaximized);
     } catch {
       // Silently ignore — non-critical UI state
@@ -53,16 +54,16 @@ export function TitleBar() {
   }, [refreshMaximizedState]);
 
   function handleMinimize() {
-    void ipc('window.minimize', {});
+    void ipc(WINDOW.MINIMIZE.APP, {});
   }
 
   function handleMaximize() {
-    void ipc('window.maximize', {});
+    void ipc(WINDOW.MAXIMIZE.APP, {});
     setIsMaximized((prev) => !prev);
   }
 
   function handleClose() {
-    void ipc('window.close', {});
+    void ipc(WINDOW.CLOSE.APP, {});
   }
 
   return (

@@ -5,13 +5,14 @@
  * expected by the renderer's `tasks.*` channels.
  */
 
+import type { TASKS } from '@shared/ipc/tasks/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 import type { Task as HubTask } from '@shared/types/hub-protocol';
 
 // Hub and local now share the same TaskStatus enum.
 // This transform converts the Hub API shape to the local Task shape.
-type LegacyTask = InvokeOutput<'tasks.get'>;
-type LegacyTaskList = InvokeOutput<'tasks.list'>;
+type LegacyTask = InvokeOutput<typeof TASKS.GET.TASK>;
+type LegacyTaskList = InvokeOutput<typeof TASKS.LIST.ALL>;
 
 /**
  * Transforms a Hub API task response into the local (legacy) Task shape.

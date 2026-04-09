@@ -16,7 +16,7 @@ Each row traces a domain from shared types through to the rendered route.
 | Domain | Types | IPC Contract | Service | Handler | Feature Module | Route Group |
 |--------|-------|-------------|---------|---------|----------------|-------------|
 | agents | `types/agent.ts` | `ipc/agents/` | `services/agent/` | `handlers/agent-handlers.ts` | `features/agents/` | `project.routes.ts` |
-| agent-orchestrator | `types/agent.ts` | `ipc/agents/` (shared) | `services/agent-orchestrator/` | `handlers/agent-orchestrator-handlers.ts` | `features/tasks/` (hooks) | `project.routes.ts` |
+| bus | `types/session.ts` | `ipc/bus/` | `main/bus/` | `handlers/bus-handlers.ts` | `features/tasks/` (hooks) | `project.routes.ts` |
 | alerts | `types/alert.ts` | `ipc/misc/alerts.contract.ts` | `services/alerts/` | `handlers/alert-handlers.ts` | `features/alerts/` | `productivity.routes.ts` |
 | app | -- | `ipc/app/` | `services/app/` | `handlers/app-handlers.ts`, `app-update-handlers.ts` | `features/onboarding/` | -- |
 | assistant | `types/assistant.ts`, `types/assistant-watch.ts` | `ipc/assistant/` | `services/assistant/` | `handlers/assistant-handlers.ts` | `features/assistant/` | -- (widget) |
@@ -88,19 +88,23 @@ Agent process management — spawn, stop, pause, resume Claude CLI agents.
 
 ---
 
-### agent-orchestrator
+### bus (command bus + sessions)
 
-Headless Claude agent lifecycle (spawn sessions, progress watching, watchdog).
+Unified command bus for agent lifecycle, session management, and crash recovery. SQLite-backed via Drizzle ORM.
 
 | Layer | Path |
 |-------|------|
-| Types | `shared/types/agent.ts` (shared with agents) |
-| IPC Contract | `shared/ipc/agents/` (shared — orchestrator channels included) |
-| Service | `main/services/agent-orchestrator/` |
-| Service Sub-modules | `jsonl-progress-watcher.ts`, `agent-watchdog.ts` |
-| Handler | `main/ipc/handlers/agent-orchestrator-handlers.ts` |
-| Event Wiring | `event:agent.orchestrator.*`, `event:agent.orchestrator.progress`, `event:agent.orchestrator.planReady` |
-| Feature Module | `renderer/features/tasks/` (consumes orchestrator events) |
+| Types | `shared/types/session.ts` |
+| IPC Channels | `shared/ipc/bus/channels.ts` |
+| IPC Contract | `shared/ipc/bus/contract.ts` |
+| Handler | `main/ipc/handlers/bus-handlers.ts` |
+| Bus Core | `main/bus/command-bus.ts` |
+| Session Manager | `main/bus/session-manager.ts` |
+| Dispatcher | `main/bus/dispatcher.ts` |
+| Database Schema | `main/db/schema.ts` (SQLite via better-sqlite3 + Drizzle ORM) |
+| Database Connection | `main/db/connection.ts` |
+| Event Wiring | `event:bus.*` |
+| Feature Module | `renderer/features/tasks/` (consumes bus events) |
 | Event Hook | `renderer/features/tasks/hooks/useAgentEvents.ts` |
 
 ---
@@ -636,6 +640,46 @@ Project management — CRUD, multi-repo, sub-projects, directory detection.
 
 ---
 
+### relay
+
+Cross-device session relay — project claims, session lifecycle (spawn/input/output/kill/resume), and WebSocket message routing between claimer and host devices.
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/types/relay.ts` |
+| Schemas | `shared/ipc/relay/schemas.ts` |
+| Contract | `shared/ipc/relay/contract.ts` |
+| Handlers | `main/ipc/handlers/relay-handlers.ts` |
+| Service | `main/services/relay/relay-service.ts` |
+| Service Types | `main/services/relay/relay-types.ts` |
+| Heartbeat | `main/services/device/heartbeat.ts` |
+| Hub WS | `hub/src/ws/relay-router.ts` |
+| Hub Routes | `hub/src/routes/relay.ts` |
+| Hub Migration | `hub/src/db/migrations/006_relay_tables.sql` |
+| Renderer Hook | `src/renderer/features/workspace/hooks/useRelaySession.ts` |
+| Renderer Mutations | `src/renderer/features/projects/api/useProjects.ts` |
+| Renderer Mutations | `src/renderer/features/workspace/api/useWorkspace.ts` |
+| EventBridge | `src/renderer/shared/components/EventBridge.tsx` |
+
+---
+
+### sessions
+
+Universal session lifecycle — list, kill, restart, crash recovery.
+
+| Layer | Path |
+|-------|------|
+| Types | `shared/types/session-config.ts` |
+| Schemas | `shared/ipc/sessions/schemas.ts` |
+| IPC Contract | `shared/ipc/sessions/contract.ts` (5 invoke + 4 event channels) |
+| Handlers | `main/ipc/handlers/session-handlers.ts` |
+| Config I/O | `main/services/progress/session-config-io.ts` |
+| Assistant Tools | `main/services/assistant/tool-definitions.ts` (`list_sessions`, `kill_session`, `restart_session`) |
+| Integration | `main/bootstrap/service-registry.ts` (crash recovery boot scan) |
+| Storage | `progress/<slug>/session.config.json` (append-only array of SessionRecord) |
+
+---
+
 ### qa
 
 Automated QA system — quiet + full tiers.
@@ -701,7 +745,7 @@ Task management — local + Hub tasks, TanStack Table dashboard, task execution.
 | Service Sub-modules | `task-decomposer.ts`, `github-importer.ts` |
 | Handler | `main/ipc/handlers/tasks/` (5 files) |
 | Handler Sub-modules | `hub-task-handlers.ts`, `legacy-task-handlers.ts`, `status-mapping.ts`, `task-transform.ts`, `index.ts` |
-| Event Wiring | `event:hub.*` (task-related), `event:agent.orchestrator.*` |
+| Event Wiring | `event:hub.*` (task-related), `event:bus.*` |
 | Feature Module | `renderer/features/tasks/` |
 | API Hooks | `renderer/features/tasks/api/useTasks.ts`, `useTaskMutations.ts`, `useAgentMutations.ts`, `useQaMutations.ts` |
 | Query Keys | `renderer/features/tasks/api/queryKeys.ts` |
@@ -875,7 +919,7 @@ Shows which layers exist for each domain. `Y` = exists, `-` = not applicable or 
 | Domain | Types | IPC | Service | Handler | Events | API Hooks | Query Keys | Store | Components | Route |
 |--------|:-----:|:---:|:-------:|:-------:|:------:|:---------:|:----------:|:-----:|:----------:|:-----:|
 | agents | Y | Y | Y | Y | Y | Y | Y | - | Y | Y |
-| agent-orchestrator | Y | Y | Y | Y | Y | - | - | - | - | - |
+| bus | Y | Y | Y | Y | Y | - | - | - | - | - |
 | alerts | Y | Y | Y | Y | Y | Y | Y | Y | Y | Y |
 | app | - | Y | Y | Y | Y | - | - | - | Y | - |
 | assistant | Y | Y | Y | Y | Y | Y | Y | Y | Y | - |
@@ -916,7 +960,7 @@ Shows which layers exist for each domain. `Y` = exists, `-` = not applicable or 
 
 **Fully wired domains** (all applicable layers present): agents, alerts, notes, planner, tasks, terminals.
 
-**Backend-only domains** (no dedicated route/components): agent-orchestrator, claude, email, hotkeys, notifications.
+**Backend-only domains** (no dedicated route/components): bus, claude, email, hotkeys, notifications.
 
 **Aggregation features** (no own backend — compose other domains): dashboard, my-work, onboarding, productivity.
 

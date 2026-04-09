@@ -11,12 +11,14 @@
  * Default poll interval is 60 seconds to stay well under limits.
  */
 
+import { NOTIFICATIONS_EVENTS } from '@shared/ipc/notifications/channels';
 import type {
   Notification,
   NotificationMetadata,
   SlackNotificationType,
   SlackWatcherConfig,
 } from '@shared/types';
+
 
 import { watcherLogger } from '@main/lib/logger';
 
@@ -210,7 +212,7 @@ export function createSlackWatcher(deps: SlackWatcherDeps): NotificationWatcher 
       const client = await getClient();
 
       // Emit polling status
-      router.emit('event:notifications.watcherStatusChanged', {
+      router.emit(NOTIFICATIONS_EVENTS.WATCHER['STATUS-CHANGED'], {
         source: 'slack',
         status: 'polling',
       });
@@ -277,7 +279,7 @@ export function createSlackWatcher(deps: SlackWatcherDeps): NotificationWatcher 
       lastError = message;
       watcherLogger.error('[SlackWatcher] Poll error:', message);
 
-      router.emit('event:notifications.watcherError', {
+      router.emit(NOTIFICATIONS_EVENTS.WATCHER.ERROR, {
         source: 'slack',
         error: message,
       });

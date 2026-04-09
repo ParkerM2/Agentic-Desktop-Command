@@ -7,23 +7,24 @@
 
 import { z } from 'zod';
 
+import { WINDOW } from './channels';
 import { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './schemas';
 
 /** Invoke channels for window control operations */
 export const windowInvoke = {
-  'window.minimize': {
+  [WINDOW.MINIMIZE.APP]: {
     input: WindowEmptyInputSchema,
     output: z.object({ success: z.boolean() }),
   },
-  'window.maximize': {
+  [WINDOW.MAXIMIZE.APP]: {
     input: WindowEmptyInputSchema,
     output: z.object({ success: z.boolean() }),
   },
-  'window.close': {
+  [WINDOW.CLOSE.APP]: {
     input: WindowEmptyInputSchema,
     output: z.object({ success: z.boolean() }),
   },
-  'window.isMaximized': {
+  [WINDOW.CHECK.MAXIMIZED]: {
     input: WindowEmptyInputSchema,
     output: WindowIsMaximizedOutputSchema,
   },

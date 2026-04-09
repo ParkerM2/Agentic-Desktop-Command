@@ -18,6 +18,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 
+import { WORKSPACE } from '@shared/ipc/workspace/channels';
 import type { AgentTextMessage } from '@shared/types/agent-dashboard';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -212,7 +213,7 @@ export function TextMessage({ message, className, showHandOff = true }: TextMess
         className="h-7 gap-1.5 text-xs"
         size="sm"
         variant="outline"
-        onClick={() => void ipc('workspace.handOffPlan', { projectId: activeProjectId, planPath })}
+        onClick={() => void ipc(WORKSPACE.HANDOFF.PLAN, { projectId: activeProjectId, planPath })}
       >
         <Send className="h-3 w-3" />
         Send to Team Lead

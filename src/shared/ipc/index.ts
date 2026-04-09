@@ -14,6 +14,7 @@ import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
+import { busEvents, busInvoke } from './bus';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
@@ -124,6 +125,8 @@ export const ipcInvokeContract = {
   ...workflowEngineInvoke,
 
   ...progressInvoke,
+
+  ...busInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -162,6 +165,8 @@ export const ipcEventContract = {
   ...workflowTemplatesEvents,
   ...workflowEngineEvents,
   ...progressEvents,
+
+  ...busEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────

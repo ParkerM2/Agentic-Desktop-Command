@@ -7,6 +7,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { agentDashboardKeys } from '../api/queryKeys';
@@ -15,7 +17,7 @@ import { agentDashboardKeys } from '../api/queryKeys';
 export function useProgressEvents() {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:agent-dashboard.taskUpdated', (event) => {
+  useIpcEvent(AGENT_DASHBOARD_EVENTS.TASK.UPDATED, (event) => {
     void queryClient.invalidateQueries({
       queryKey: agentDashboardKeys.tasks(event.featureSlug),
     });

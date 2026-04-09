@@ -5,12 +5,13 @@
  * error log retrieval, error stats, renderer error reporting,
  * and service health status.
  *
- * Note: channels keep the `app.*` prefix for backward compatibility
- * even though schemas live in the health/ domain folder.
+ * Note: channels use the `app.*` prefix via APP/APP_EVENTS constants
+ * from the app domain, even though schemas live in the health/ domain folder.
  */
 
 import { z } from 'zod';
 
+import { APP, APP_EVENTS } from '../app/channels';
 import { SuccessResponseSchema } from '../common/schemas';
 
 import {
@@ -25,19 +26,19 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const healthInvoke = {
-  'app.getErrorLog': {
+  [APP.GET['ERROR-LOG']]: {
     input: z.object({ since: z.string().optional() }),
     output: z.object({ entries: z.array(ErrorEntrySchema) }),
   },
-  'app.getErrorStats': {
+  [APP.GET['ERROR-STATS']]: {
     input: z.object({}),
     output: ErrorStatsSchema,
   },
-  'app.clearErrorLog': {
+  [APP.CLEAR['ERROR-LOG']]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'app.reportRendererError': {
+  [APP.REPORT['RENDERER-ERROR']]: {
     input: z.object({
       severity: ErrorSeveritySchema,
       tier: ErrorTierSchema,
@@ -50,7 +51,7 @@ export const healthInvoke = {
     }),
     output: SuccessResponseSchema,
   },
-  'app.getHealthStatus': {
+  [APP.GET['HEALTH-STATUS']]: {
     input: z.object({}),
     output: HealthStatusSchema,
   },
@@ -59,16 +60,16 @@ export const healthInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const healthEvents = {
-  'event:app.error': {
+  [APP_EVENTS.ERROR.OCCURRED]: {
     payload: ErrorEntrySchema,
   },
-  'event:app.capacityAlert': {
+  [APP_EVENTS.CAPACITY.ALERT]: {
     payload: z.object({ count: z.number(), message: z.string() }),
   },
-  'event:app.dataRecovery': {
+  [APP_EVENTS.DATA.RECOVERY]: {
     payload: z.object({ store: z.string(), message: z.string() }),
   },
-  'event:app.serviceUnhealthy': {
+  [APP_EVENTS.SERVICE.UNHEALTHY]: {
     payload: z.object({ serviceName: z.string(), missedCount: z.number() }),
   },
 } as const;

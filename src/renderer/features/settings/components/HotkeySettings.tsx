@@ -10,6 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Keyboard, RotateCcw } from 'lucide-react';
 
 
+import { HOTKEYS } from '@shared/ipc/misc/hotkeys.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -147,7 +149,7 @@ export function HotkeySettings() {
   useEffect(() => {
     void (async () => {
       try {
-        const loaded = await ipc('hotkeys.get', {});
+        const loaded = await ipc(HOTKEYS.GET.CONFIG, {});
         if (Object.keys(loaded).length > 0) {
           setHotkeys((previous) => ({ ...previous, ...loaded }));
         }
@@ -170,7 +172,7 @@ export function HotkeySettings() {
 
     void (async () => {
       try {
-        await ipc('hotkeys.update', { hotkeys: updated });
+        await ipc(HOTKEYS.UPDATE.CONFIG, { hotkeys: updated });
         showFeedback('success', 'Hotkey saved');
       } catch {
         showFeedback('error', 'Failed to save hotkey');
@@ -181,7 +183,7 @@ export function HotkeySettings() {
   function handleReset() {
     void (async () => {
       try {
-        const defaults = await ipc('hotkeys.reset', {});
+        const defaults = await ipc(HOTKEYS.RESET.CONFIG, {});
         setHotkeys(defaults);
         showFeedback('success', 'Hotkeys reset to defaults');
       } catch {

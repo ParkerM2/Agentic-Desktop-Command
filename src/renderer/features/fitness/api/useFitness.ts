@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { FITNESS } from '@shared/ipc/fitness/channels';
 import type { Exercise, FitnessGoalType, MeasurementSource, WorkoutType } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -18,7 +19,7 @@ export function useWorkouts(filters?: {
 }) {
   return useQuery({
     queryKey: fitnessKeys.workoutList(filters),
-    queryFn: () => ipc('fitness.listWorkouts', filters ?? {}),
+    queryFn: () => ipc(FITNESS.LIST.WORKOUTS, filters ?? {}),
   });
 }
 
@@ -32,7 +33,7 @@ export function useLogWorkout() {
       duration: number;
       exercises: Exercise[];
       notes?: string;
-    }) => ipc('fitness.logWorkout', data),
+    }) => ipc(FITNESS.LOG.WORKOUT, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.workouts() });
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.stats() });
@@ -44,7 +45,7 @@ export function useLogWorkout() {
 export function useDeleteWorkout() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('fitness.deleteWorkout', { id }),
+    mutationFn: (id: string) => ipc(FITNESS.DELETE.WORKOUT, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.workouts() });
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.stats() });
@@ -56,7 +57,7 @@ export function useDeleteWorkout() {
 export function useMeasurements(limit?: number) {
   return useQuery({
     queryKey: fitnessKeys.measurementList(limit),
-    queryFn: () => ipc('fitness.getMeasurements', { limit }),
+    queryFn: () => ipc(FITNESS.GET.MEASUREMENTS, { limit }),
   });
 }
 
@@ -73,7 +74,7 @@ export function useLogMeasurement() {
       waterPercentage?: number;
       visceralFat?: number;
       source: MeasurementSource;
-    }) => ipc('fitness.logMeasurement', data),
+    }) => ipc(FITNESS.LOG.MEASUREMENT, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.measurements() });
     },
@@ -84,7 +85,7 @@ export function useLogMeasurement() {
 export function useFitnessStats() {
   return useQuery({
     queryKey: fitnessKeys.stats(),
-    queryFn: () => ipc('fitness.getStats', {}),
+    queryFn: () => ipc(FITNESS.GET.STATS, {}),
   });
 }
 
@@ -92,7 +93,7 @@ export function useFitnessStats() {
 export function useFitnessGoals() {
   return useQuery({
     queryKey: fitnessKeys.goals(),
-    queryFn: () => ipc('fitness.listGoals', {}),
+    queryFn: () => ipc(FITNESS.LIST.GOALS, {}),
   });
 }
 
@@ -105,7 +106,7 @@ export function useSetGoal() {
       target: number;
       unit: string;
       deadline?: string;
-    }) => ipc('fitness.setGoal', data),
+    }) => ipc(FITNESS.SET.GOAL, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
     },
@@ -117,7 +118,7 @@ export function useUpdateGoalProgress() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: { goalId: string; current: number }) =>
-      ipc('fitness.updateGoalProgress', data),
+      ipc(FITNESS.UPDATE['GOAL-PROGRESS'], data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
     },
@@ -128,7 +129,7 @@ export function useUpdateGoalProgress() {
 export function useDeleteGoal() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => ipc('fitness.deleteGoal', { id }),
+    mutationFn: (id: string) => ipc(FITNESS.DELETE.GOAL, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
     },

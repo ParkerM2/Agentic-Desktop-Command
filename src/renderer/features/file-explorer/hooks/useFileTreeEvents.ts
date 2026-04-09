@@ -11,6 +11,9 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { GIT_EVENTS } from '@shared/ipc/git/channels';
+import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { fileExplorerKeys } from '../api/queryKeys';
@@ -20,12 +23,12 @@ export function useFileTreeEvents() {
 
   // When a project is updated, invalidate the tree cache
   // so it refetches from the file system
-  useIpcEvent('event:project.updated', () => {
+  useIpcEvent(PROJECTS_EVENTS.PROJECT.UPDATED, () => {
     void queryClient.invalidateQueries({ queryKey: fileExplorerKeys.all });
   });
 
   // When git worktree changes, file structure may have changed
-  useIpcEvent('event:git.worktreeChanged', () => {
+  useIpcEvent(GIT_EVENTS.WORKTREE.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: fileExplorerKeys.all });
   });
 }

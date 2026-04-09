@@ -8,6 +8,7 @@
 
 import { z } from 'zod';
 
+import { SETTINGS } from './channels';
 import {
   AppSettingsSchema,
   LayoutStateSchema,
@@ -23,19 +24,19 @@ import {
 
 /** Invoke channels for app settings operations */
 export const settingsInvoke = {
-  'settings.get': {
+  [SETTINGS.GET.ALL]: {
     input: z.object({}),
     output: AppSettingsSchema,
   },
-  'settings.update': {
+  [SETTINGS.UPDATE.ALL]: {
     input: z.record(z.string(), z.unknown()),
     output: AppSettingsSchema,
   },
-  'settings.getProfiles': {
+  [SETTINGS.GET.PROFILES]: {
     input: z.object({}),
     output: z.array(ProfileSchema),
   },
-  'settings.createProfile': {
+  [SETTINGS.CREATE.PROFILE]: {
     input: z.object({
       name: z.string(),
       apiKey: z.string().optional(),
@@ -43,7 +44,7 @@ export const settingsInvoke = {
     }),
     output: ProfileSchema,
   },
-  'settings.updateProfile': {
+  [SETTINGS.UPDATE.PROFILE]: {
     input: z.object({
       id: z.string(),
       updates: z.object({
@@ -54,15 +55,15 @@ export const settingsInvoke = {
     }),
     output: ProfileSchema,
   },
-  'settings.deleteProfile': {
+  [SETTINGS.DELETE.PROFILE]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'settings.setDefaultProfile': {
+  [SETTINGS.SET['DEFAULT-PROFILE']]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'settings.getOAuthProviders': {
+  [SETTINGS.GET['OAUTH-PROVIDERS']]: {
     input: z.object({}),
     output: z.array(
       z.object({
@@ -71,7 +72,7 @@ export const settingsInvoke = {
       }),
     ),
   },
-  'settings.setOAuthProvider': {
+  [SETTINGS.SET['OAUTH-PROVIDER']]: {
     input: z.object({
       name: z.string(),
       clientId: z.string(),
@@ -79,11 +80,11 @@ export const settingsInvoke = {
     }),
     output: z.object({ success: z.boolean() }),
   },
-  'settings.getWebhookConfig': {
+  [SETTINGS.GET['WEBHOOK-CONFIG']]: {
     input: z.object({}),
     output: WebhookConfigSchema,
   },
-  'settings.updateWebhookConfig': {
+  [SETTINGS.UPDATE['WEBHOOK-CONFIG']]: {
     input: z.object({
       slack: z
         .object({
@@ -99,23 +100,23 @@ export const settingsInvoke = {
     }),
     output: z.object({ success: z.boolean() }),
   },
-  'settings.getAgentSettings': {
+  [SETTINGS.GET['AGENT-SETTINGS']]: {
     input: z.object({}),
     output: z.object({
       maxConcurrentAgents: z.number(),
     }),
   },
-  'settings.setAgentSettings': {
+  [SETTINGS.SET['AGENT-SETTINGS']]: {
     input: z.object({
       maxConcurrentAgents: z.number(),
     }),
     output: z.object({ success: z.boolean() }),
   },
-  'settings.getLayout': {
+  [SETTINGS.GET.LAYOUT]: {
     input: z.object({}),
     output: LayoutStateSchema,
   },
-  'settings.saveLayout': {
+  [SETTINGS.SAVE.LAYOUT]: {
     input: LayoutUpdateSchema,
     output: z.object({ success: z.boolean() }),
   },

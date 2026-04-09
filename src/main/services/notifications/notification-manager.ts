@@ -9,12 +9,14 @@
 
 import { randomUUID } from 'node:crypto';
 
+import { NOTIFICATIONS_EVENTS } from '@shared/ipc/notifications/channels';
 import type {
   Notification,
   NotificationFilter,
   NotificationSource,
   NotificationWatcherConfig,
 } from '@shared/types';
+
 
 import { matchesFilter } from './notification-filter';
 import {
@@ -96,7 +98,7 @@ export interface NotificationManager {
 // ── Constants ────────────────────────────────────────────────
 
 const SEEN_IDS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const EVENT_WATCHER_STATUS = 'event:notifications.watcherStatusChanged' as const;
+const EVENT_WATCHER_STATUS = NOTIFICATIONS_EVENTS.WATCHER['STATUS-CHANGED'];
 
 // ── Factory ──────────────────────────────────────────────────
 
@@ -320,7 +322,7 @@ export function createNotificationManager(router: IpcRouter): NotificationManage
       persist();
 
       // Emit event to renderer
-      router.emit('event:notifications.new', { notification: notificationWithId });
+      router.emit(NOTIFICATIONS_EVENTS.NOTIFICATION.NEW, { notification: notificationWithId });
     },
 
     dispose() {

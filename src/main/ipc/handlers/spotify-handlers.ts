@@ -2,39 +2,41 @@
  * Spotify IPC handlers
  */
 
+import { SPOTIFY } from '@shared/ipc/spotify/channels';
+
 import type { SpotifyService } from '../../services/spotify/spotify-service';
 import type { IpcRouter } from '../router';
 
 export function registerSpotifyHandlers(router: IpcRouter, service: SpotifyService): void {
-  router.handle('spotify.getPlayback', async () => {
+  router.handle(SPOTIFY.GET.PLAYBACK, async () => {
     return await service.getPlayback();
   });
 
-  router.handle('spotify.play', async (params) => {
+  router.handle(SPOTIFY.PLAY.TRACK, async (params) => {
     return await service.play(params);
   });
 
-  router.handle('spotify.pause', async () => {
+  router.handle(SPOTIFY.PAUSE.TRACK, async () => {
     return await service.pause();
   });
 
-  router.handle('spotify.next', async () => {
+  router.handle(SPOTIFY.SKIP.NEXT, async () => {
     return await service.next();
   });
 
-  router.handle('spotify.previous', async () => {
+  router.handle(SPOTIFY.SKIP.PREVIOUS, async () => {
     return await service.previous();
   });
 
-  router.handle('spotify.search', async (params) => {
+  router.handle(SPOTIFY.SEARCH.TRACKS, async (params) => {
     return await service.search(params);
   });
 
-  router.handle('spotify.setVolume', async (params) => {
+  router.handle(SPOTIFY.SET.VOLUME, async (params) => {
     return await service.setVolume(params);
   });
 
-  router.handle('spotify.addToQueue', async (params) => {
+  router.handle(SPOTIFY.ADD['TO-QUEUE'], async (params) => {
     return await service.addToQueue(params);
   });
 }

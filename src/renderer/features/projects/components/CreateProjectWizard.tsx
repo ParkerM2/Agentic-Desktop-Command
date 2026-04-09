@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Check, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 
+import { PROJECTS } from '@shared/ipc/projects/channels';
 import type { CreateProjectInput } from '@shared/types/project-setup';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -68,11 +69,11 @@ export function CreateProjectWizard({
   });
 
   const selectDirectory = useMutation({
-    mutationFn: () => ipc('projects.selectDirectory', {}),
+    mutationFn: () => ipc(PROJECTS.SELECT.DIRECTORY, {}),
   });
 
   const createProject = useMutation({
-    mutationFn: (input: CreateProjectInput) => ipc('projects.createNew', input),
+    mutationFn: (input: CreateProjectInput) => ipc(PROJECTS.CREATE.NEW, input),
   });
 
   // 2. Derived state

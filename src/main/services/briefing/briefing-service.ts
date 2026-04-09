@@ -12,7 +12,9 @@ import { join } from 'node:path';
 
 import { app } from 'electron';
 
+import { BRIEFING_EVENTS } from '@shared/ipc/briefing/channels';
 import type { BriefingConfig, DailyBriefing, Suggestion } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -21,8 +23,8 @@ import { createBriefingConfigManager } from './briefing-config';
 import { createBriefingGenerator } from './briefing-generator';
 
 import type { SuggestionEngine } from './suggestion-engine';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { IpcRouter } from '../../ipc/router';
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
 import type { ProjectService } from '../project/project-service';
@@ -30,7 +32,7 @@ import type { TaskService } from '../project/task-service';
 
 const BRIEFING_FILE = 'briefings.json';
 const CONFIG_FILE = 'briefing-config.json';
-const BRIEFING_READY_EVENT = 'event:briefing.ready' as const;
+const BRIEFING_READY_EVENT = BRIEFING_EVENTS.BRIEFING.READY;
 
 /** Briefing service interface */
 export interface BriefingService extends ReinitializableService {
@@ -58,7 +60,7 @@ export interface BriefingServiceDeps {
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
-  agentOrchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
 }
 
 /**
@@ -82,7 +84,7 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
     claudeClient: deps.claudeClient,
     notificationManager: deps.notificationManager,
     suggestionEngine: deps.suggestionEngine,
-    agentOrchestrator: deps.agentOrchestrator,
+    busSessionManager: deps.busSessionManager,
   });
 
   let schedulerInterval: ReturnType<typeof setInterval> | null = null;

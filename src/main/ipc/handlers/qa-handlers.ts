@@ -5,9 +5,14 @@
  * Bridges QA session events to IPC events for real-time UI updates.
  */
 
+import { QA, QA_EVENTS } from '@shared/ipc/qa/channels';
+
+
+import type { BusSessionManager } from '@main/bus/session-manager';
+import type { SessionRecord } from '@main/bus/types';
+
 import { createThrottle } from '../throttle';
 
-import type { AgentOrchestrator } from '../../services/agent-orchestrator/types';
 import type { QaRunner } from '../../services/qa/qa-types';
 import type { TaskRepository } from '../../services/tasks/types';
 import type { IpcRouter } from '../router';
@@ -36,7 +41,7 @@ async function resolveTaskDescription(taskRepository: TaskRepository, taskId: st
 export function registerQaHandlers(
   router: IpcRouter,
   qaRunner: QaRunner,
-  orchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
   taskRepository: TaskRepository,
 ): void {
   const allowFullQa = createThrottle(10000);
@@ -44,14 +49,14 @@ export function registerQaHandlers(
   // Wire QA session events to IPC events for the renderer
   qaRunner.onSessionEvent((event) => {
     if (event.type === 'started') {
-      router.emit('event:qa.started', {
+      router.emit(QA_EVENTS.SESSION.STARTED, {
         taskId: event.session.taskId,
         mode: event.session.mode,
       });
     }
 
     if (event.type === 'progress' && event.step && event.total !== undefined && event.current !== undefined) {
-      router.emit('event:qa.progress', {
+      router.emit(QA_EVENTS.SESSION.PROGRESS, {
         taskId: event.session.taskId,
         step: event.step,
         total: event.total,
@@ -60,7 +65,7 @@ export function registerQaHandlers(
     }
 
     if (event.type === 'completed') {
-      router.emit('event:qa.completed', {
+      router.emit(QA_EVENTS.SESSION.COMPLETED, {
         taskId: event.session.taskId,
         result: event.session.report?.result ?? 'fail',
         issueCount: event.session.report?.issues.length ?? 0,
@@ -68,9 +73,10 @@ export function registerQaHandlers(
     }
   });
 
-  router.handle('qa.startQuiet', async ({ taskId }) => {
-    const agentSession = orchestrator.getSessionByTaskId(taskId);
-    const projectPath = agentSession?.projectPath ?? '';
+  router.handle(QA.START.QUIET, async ({ taskId }) => {
+    const agentSession = busSessionManager.list({ taskSlug: taskId })[0] as SessionRecord | undefined;
+    const agentSpawnCfg = agentSession?.spawnConfig as Record<string, unknown> | undefined;
+    const projectPath = (agentSpawnCfg?.projectPath as string | undefined) ?? '';
 
     if (projectPath.length === 0) {
       throw new Error('No project path available for QA');
@@ -87,13 +93,14 @@ export function registerQaHandlers(
     return { sessionId: session.id };
   });
 
-  router.handle('qa.startFull', async ({ taskId }) => {
+  router.handle(QA.START.FULL, async ({ taskId }) => {
     if (!allowFullQa()) {
       throw new Error('Too many requests. Please wait.');
     }
 
-    const agentSession = orchestrator.getSessionByTaskId(taskId);
-    const projectPath = agentSession?.projectPath ?? '';
+    const agentSession = busSessionManager.list({ taskSlug: taskId })[0] as SessionRecord | undefined;
+    const agentSpawnCfg = agentSession?.spawnConfig as Record<string, unknown> | undefined;
+    const projectPath = (agentSpawnCfg?.projectPath as string | undefined) ?? '';
 
     if (projectPath.length === 0) {
       throw new Error('No project path available for QA');
@@ -110,17 +117,17 @@ export function registerQaHandlers(
     return { sessionId: session.id };
   });
 
-  router.handle('qa.getReport', ({ taskId }) => {
+  router.handle(QA.GET.REPORT, ({ taskId }) => {
     const report = qaRunner.getReportForTask(taskId);
     return Promise.resolve(report ?? null);
   });
 
-  router.handle('qa.getSession', ({ taskId }) => {
+  router.handle(QA.GET.SESSION, ({ taskId }) => {
     const session = qaRunner.getSessionByTaskId(taskId);
     return Promise.resolve(session ?? null);
   });
 
-  router.handle('qa.cancel', ({ sessionId }) => {
+  router.handle(QA.CANCEL.SESSION, ({ sessionId }) => {
     qaRunner.cancel(sessionId);
     return Promise.resolve({ success: true });
   });

@@ -9,6 +9,7 @@
 
 import { create } from 'zustand';
 
+import { SETTINGS } from '@shared/ipc/settings/channels';
 import type { SidebarLayoutId } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -52,7 +53,7 @@ function persistLayout() {
   debounceTimer = setTimeout(() => {
     const { sidebarCollapsed, sidebarLayout, activeProjectId, projectTabOrder } =
       useLayoutStore.getState();
-    void ipc('settings.saveLayout', {
+    void ipc(SETTINGS.SAVE.LAYOUT, {
       sidebarCollapsed,
       sidebarLayout,
       activeProjectId,

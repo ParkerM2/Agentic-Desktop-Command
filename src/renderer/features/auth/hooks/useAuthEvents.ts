@@ -10,6 +10,8 @@ import { useEffect, useRef } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { AUTH } from '@shared/ipc/auth/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { authKeys } from '../api/queryKeys';
@@ -47,7 +49,7 @@ export function useAuthInit(): void {
 
     void (async () => {
       try {
-        const result = await ipc('auth.restore', {});
+        const result = await ipc(AUTH.RESTORE.SESSION, {});
 
         if (result.restored) {
           setAuth(result.user, result.tokens);

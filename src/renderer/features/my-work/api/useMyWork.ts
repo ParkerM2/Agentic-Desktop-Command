@@ -4,6 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { HUB_TASKS } from '@shared/ipc/tasks/channels';
 import type { Task } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -15,7 +16,7 @@ export function useAllTasks() {
   return useQuery({
     queryKey: myWorkKeys.tasks(),
     queryFn: async () => {
-      const result = await ipc('hub.tasks.list', {});
+      const result = await ipc(HUB_TASKS.LIST.ALL, {});
       return result.tasks as Task[];
     },
     staleTime: 30_000,

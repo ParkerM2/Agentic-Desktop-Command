@@ -2,19 +2,21 @@
  * Briefing IPC handlers
  */
 
+import { BRIEFING } from '@shared/ipc/briefing/channels';
+
 import type { BriefingService } from '../../services/briefing/briefing-service';
 import type { IpcRouter } from '../router';
 
 export function registerBriefingHandlers(router: IpcRouter, service: BriefingService): void {
-  router.handle('briefing.getDaily', () => Promise.resolve(service.getDailyBriefing()));
+  router.handle(BRIEFING.GET.DAILY, () => Promise.resolve(service.getDailyBriefing()));
 
-  router.handle('briefing.generate', async () => await service.generateBriefing());
+  router.handle(BRIEFING.GENERATE.DAILY, async () => await service.generateBriefing());
 
-  router.handle('briefing.getConfig', () => Promise.resolve(service.getConfig()));
+  router.handle(BRIEFING.GET.CONFIG, () => Promise.resolve(service.getConfig()));
 
-  router.handle('briefing.updateConfig', (updates) =>
+  router.handle(BRIEFING.UPDATE.CONFIG, (updates) =>
     Promise.resolve(service.updateConfig(updates)),
   );
 
-  router.handle('briefing.getSuggestions', () => Promise.resolve(service.getSuggestions()));
+  router.handle(BRIEFING.GET.SUGGESTIONS, () => Promise.resolve(service.getSuggestions()));
 }

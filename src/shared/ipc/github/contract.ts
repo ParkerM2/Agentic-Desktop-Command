@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 
+import { GITHUB, GITHUB_EVENTS } from './channels';
 import {
   GitHubAuthStatusSchema,
   GitHubIssueSchema,
@@ -17,7 +18,7 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const githubInvoke = {
-  'github.listPrs': {
+  [GITHUB.LIST.PRS]: {
     input: z.object({
       owner: z.string(),
       repo: z.string(),
@@ -25,11 +26,11 @@ export const githubInvoke = {
     }),
     output: z.array(GitHubPullRequestSchema),
   },
-  'github.getPr': {
+  [GITHUB.GET.PR]: {
     input: z.object({ owner: z.string(), repo: z.string(), number: z.number() }),
     output: GitHubPullRequestSchema,
   },
-  'github.listIssues': {
+  [GITHUB.LIST.ISSUES]: {
     input: z.object({
       owner: z.string(),
       repo: z.string(),
@@ -37,7 +38,7 @@ export const githubInvoke = {
     }),
     output: z.array(GitHubIssueSchema),
   },
-  'github.createIssue': {
+  [GITHUB.CREATE.ISSUE]: {
     input: z.object({
       owner: z.string(),
       repo: z.string(),
@@ -48,15 +49,15 @@ export const githubInvoke = {
     }),
     output: GitHubIssueSchema,
   },
-  'github.getNotifications': {
+  [GITHUB.GET.NOTIFICATIONS]: {
     input: z.object({ all: z.boolean().optional() }),
     output: z.array(GitHubNotificationSchema),
   },
-  'github.authStatus': {
+  [GITHUB.GET['AUTH-STATUS']]: {
     input: z.object({}),
     output: GitHubAuthStatusSchema,
   },
-  'github.getRepos': {
+  [GITHUB.LIST.REPOS]: {
     input: z.object({ limit: z.number().optional() }),
     output: z.array(GitHubRepoSchema),
   },
@@ -65,7 +66,7 @@ export const githubInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const githubEvents = {
-  'event:github.updated': {
+  [GITHUB_EVENTS.DATA.UPDATED]: {
     payload: z.object({
       type: z.enum(['pr', 'issue', 'notification']),
       owner: z.string(),

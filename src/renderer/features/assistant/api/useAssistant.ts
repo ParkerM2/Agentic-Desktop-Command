@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { ASSISTANT } from '@shared/ipc/assistant/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { setLastCommand } from '../hooks/useAssistantEvents';
@@ -15,7 +17,7 @@ import { assistantKeys } from './queryKeys';
 export function useHistory(limit?: number) {
   return useQuery({
     queryKey: assistantKeys.history(limit),
-    queryFn: () => ipc('assistant.getHistory', { limit }),
+    queryFn: () => ipc(ASSISTANT.GET.HISTORY, { limit }),
     staleTime: 30_000,
   });
 }
@@ -30,7 +32,7 @@ export function useSendCommand() {
       input: string;
       context?: { activeView?: string; activeProjectId?: string };
     }) => {
-      return ipc('assistant.sendCommand', {
+      return ipc(ASSISTANT.SEND.COMMAND, {
         input: data.input,
         context: data.context,
       });
@@ -54,7 +56,7 @@ export function useClearHistory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => ipc('assistant.clearHistory', {}),
+    mutationFn: () => ipc(ASSISTANT.CLEAR.HISTORY, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: assistantKeys.history() });
     },

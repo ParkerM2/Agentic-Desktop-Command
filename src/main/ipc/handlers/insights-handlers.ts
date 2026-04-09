@@ -2,23 +2,25 @@
  * Insights IPC handlers
  */
 
+import { INSIGHTS } from '@shared/ipc/misc/insights.channels';
+
 import type { InsightsService } from '../../services/insights/insights-service';
 import type { IpcRouter } from '../router';
 
 export function registerInsightsHandlers(router: IpcRouter, service: InsightsService): void {
-  router.handle('insights.getMetrics', ({ projectId }) =>
+  router.handle(INSIGHTS.GET.METRICS, ({ projectId }) =>
     Promise.resolve(service.getMetrics(projectId)),
   );
 
-  router.handle('insights.getTimeSeries', ({ projectId, days }) =>
+  router.handle(INSIGHTS.GET['TIME-SERIES'], ({ projectId, days }) =>
     Promise.resolve(service.getTimeSeries(projectId, days)),
   );
 
-  router.handle('insights.getTaskDistribution', ({ projectId }) =>
+  router.handle(INSIGHTS.GET['TASK-DISTRIBUTION'], ({ projectId }) =>
     Promise.resolve(service.getTaskDistribution(projectId)),
   );
 
-  router.handle('insights.getProjectBreakdown', () =>
+  router.handle(INSIGHTS.GET['PROJECT-BREAKDOWN'], () =>
     Promise.resolve(service.getProjectBreakdown()),
   );
 }

@@ -7,6 +7,8 @@
 
 import { z } from 'zod';
 
+import { INSIGHTS } from './insights.channels';
+
 export const InsightMetricsSchema = z.object({
   totalTasks: z.number(),
   completedTasks: z.number(),
@@ -37,19 +39,19 @@ export const ProjectInsightsSchema = z.object({
 });
 
 export const insightsInvoke = {
-  'insights.getMetrics': {
+  [INSIGHTS.GET.METRICS]: {
     input: z.object({ projectId: z.string().optional() }),
     output: InsightMetricsSchema,
   },
-  'insights.getTimeSeries': {
+  [INSIGHTS.GET['TIME-SERIES']]: {
     input: z.object({ projectId: z.string().optional(), days: z.number().optional() }),
     output: z.array(InsightTimeSeriesSchema),
   },
-  'insights.getTaskDistribution': {
+  [INSIGHTS.GET['TASK-DISTRIBUTION']]: {
     input: z.object({ projectId: z.string().optional() }),
     output: z.array(TaskDistributionSchema),
   },
-  'insights.getProjectBreakdown': {
+  [INSIGHTS.GET['PROJECT-BREAKDOWN']]: {
     input: z.object({}),
     output: z.array(ProjectInsightsSchema),
   },

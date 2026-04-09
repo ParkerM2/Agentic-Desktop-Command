@@ -2,11 +2,12 @@
  * StepSubRepos — Wizard step for selecting child repositories
  */
 
+import type { PROJECTS } from '@shared/ipc/projects/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 
 import { SubRepoSelector } from '../SubRepoSelector';
 
-type ChildRepo = InvokeOutput<'projects.detectRepo'>['childRepos'][number];
+type ChildRepo = InvokeOutput<typeof PROJECTS.DETECT.REPO>['childRepos'][number];
 
 interface StepSubReposProps {
   repos: ChildRepo[];

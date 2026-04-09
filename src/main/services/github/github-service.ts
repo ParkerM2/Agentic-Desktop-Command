@@ -5,7 +5,9 @@
  * Maps raw API responses to the shared GitHubPullRequest / GitHubIssue / GitHubNotification types.
  */
 
+import { GITHUB_EVENTS } from '@shared/ipc/github/channels';
 import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared/types';
+
 
 import type { IpcRouter } from '../../ipc/router';
 import type {
@@ -114,7 +116,7 @@ export function createGitHubService(deps: {
   const { client, router } = deps;
 
   function emitUpdated(type: 'pr' | 'issue' | 'notification', owner: string, repo: string): void {
-    router.emit('event:github.updated', { type, owner, repo });
+    router.emit(GITHUB_EVENTS.DATA.UPDATED, { type, owner, repo });
   }
 
   return {

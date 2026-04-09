@@ -5,6 +5,7 @@
  * Security settings are stored as a sub-object within AppSettings.
  */
 
+import { SECURITY } from '@shared/ipc/security/channels';
 import { ipcInvokeContract } from '@shared/ipc-contract';
 import { DEFAULT_SECURITY_SETTINGS } from '@shared/types/security';
 import type { SecuritySettings } from '@shared/types/security';
@@ -13,12 +14,12 @@ import type { SettingsService } from '../../services/settings/settings-service';
 import type { IpcRouter } from '../router';
 
 export function registerSecurityHandlers(router: IpcRouter, service: SettingsService): void {
-  router.handle('security.getSettings', () => {
+  router.handle(SECURITY.GET.SETTINGS, () => {
     const settings = service.getSettings();
     return Promise.resolve(settings.securitySettings ?? DEFAULT_SECURITY_SETTINGS);
   });
 
-  router.handle('security.updateSettings', (updates) => {
+  router.handle(SECURITY.UPDATE.SETTINGS, (updates) => {
     const current = service.getSettings();
     const currentSecurity = current.securitySettings ?? DEFAULT_SECURITY_SETTINGS;
     const merged: SecuritySettings = {
@@ -29,7 +30,7 @@ export function registerSecurityHandlers(router: IpcRouter, service: SettingsSer
     return Promise.resolve(merged);
   });
 
-  router.handle('security.exportAudit', () => {
+  router.handle(SECURITY.EXPORT.AUDIT, () => {
     const settings = service.getSettings();
     const securitySettings = settings.securitySettings ?? DEFAULT_SECURITY_SETTINGS;
     const channelCount = Object.keys(ipcInvokeContract).length;

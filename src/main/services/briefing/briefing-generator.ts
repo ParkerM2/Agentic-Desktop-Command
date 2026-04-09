@@ -10,7 +10,7 @@ import type { AgentActivitySummary, BriefingConfig, DailyBriefing, TaskSummary }
 import { createBriefingSummarizer } from './briefing-summary';
 
 import type { SuggestionEngine } from './suggestion-engine';
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../notifications';
 import type { ProjectService } from '../project/project-service';
@@ -23,7 +23,7 @@ export interface BriefingGeneratorDeps {
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
-  agentOrchestrator: AgentOrchestrator;
+  busSessionManager: BusSessionManager;
 }
 
 export interface BriefingGenerator {
@@ -40,12 +40,12 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
     taskService,
     notificationManager,
     suggestionEngine,
-    agentOrchestrator,
+    busSessionManager,
   } = deps;
 
   const summarizer = createBriefingSummarizer({
     claudeClient: deps.claudeClient,
-    agentOrchestrator,
+    busSessionManager,
     getTodayDate,
   });
 
@@ -113,9 +113,9 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
     let completedToday = 0;
     let errorCount = 0;
 
-    for (const session of agentOrchestrator.listActiveSessions()) {
+    for (const session of busSessionManager.list()) {
       if (session.status === 'active' || session.status === 'spawning') runningCount++;
-      if (session.status === 'completed' && session.spawnedAt.startsWith(today)) completedToday++;
+      if (session.status === 'completed' && session.startedAt.startsWith(today)) completedToday++;
       if (session.status === 'error') errorCount++;
     }
 

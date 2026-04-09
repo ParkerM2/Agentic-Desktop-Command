@@ -8,6 +8,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { PROGRESS } from '@shared/ipc/progress/channels';
 import type { ProgressPriority, ProgressStatus } from '@shared/types/progress';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
@@ -25,7 +26,7 @@ export function useCreateProgressTask() {
       title: string;
       description: string;
       priority?: ProgressPriority;
-    }) => ipc('progress.createTask', data),
+    }) => ipc(PROGRESS.CREATE.TASK, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
@@ -58,7 +59,7 @@ export function useUpdateProgressTask() {
         archivedAt?: string;
         teamName?: string;
       };
-    }) => ipc('progress.updateTask', data),
+    }) => ipc(PROGRESS.UPDATE.TASK, data),
     onSettled: (_data, _error, variables) => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
       void queryClient.invalidateQueries({
@@ -74,7 +75,7 @@ export function useArchiveProgressTask() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: { slug: string }) => ipc('progress.archiveTask', data),
+    mutationFn: (data: { slug: string }) => ipc(PROGRESS.ARCHIVE.TASK, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.archived() });
@@ -88,7 +89,7 @@ export function useDeleteProgressTask() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: { slug: string }) => ipc('progress.deleteTask', data),
+    mutationFn: (data: { slug: string }) => ipc(PROGRESS.DELETE.TASK, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
@@ -102,7 +103,7 @@ export function useStartResearch() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (data: { slug: string; prompt?: string }) =>
-      ipc('progress.startResearch', data),
+      ipc(PROGRESS.START.RESEARCH, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
@@ -116,7 +117,7 @@ export function useCreatePlan() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (data: { slug: string; prompt?: string }) =>
-      ipc('progress.createPlan', data),
+      ipc(PROGRESS.CREATE.PLAN, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
@@ -130,7 +131,7 @@ export function useSpinUpTeam() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (data: { slug: string; prompt?: string }) =>
-      ipc('progress.spinUpTeam', data),
+      ipc(PROGRESS.START.TEAM, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
@@ -144,7 +145,7 @@ export function useRunWorkflow() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (data: { slug: string; templateId?: string }) =>
-      ipc('progress.runWorkflow', data),
+      ipc(PROGRESS.START.WORKFLOW, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
@@ -157,7 +158,7 @@ export function useCancelAction() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: (data: { slug: string }) => ipc('progress.cancelAction', data),
+    mutationFn: (data: { slug: string }) => ipc(PROGRESS.CANCEL.ACTION, data),
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.sessions() });

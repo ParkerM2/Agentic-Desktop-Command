@@ -2,12 +2,13 @@
  * StepDetection — Wizard step for repository detection results
  */
 
+import type { PROJECTS } from '@shared/ipc/projects/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 
 import { RepoTypeSelector } from '../RepoTypeSelector';
 import { SubRepoDetector } from '../SubRepoDetector';
 
-type RepoDetectionResult = InvokeOutput<'projects.detectRepo'>;
+type RepoDetectionResult = InvokeOutput<typeof PROJECTS.DETECT.REPO>;
 
 interface StepDetectionProps {
   selectedPath: string | null;

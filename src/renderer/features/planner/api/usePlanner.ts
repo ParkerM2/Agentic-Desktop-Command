@@ -4,6 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { PLANNER } from '@shared/ipc/planner/channels';
 import type { ScheduledTask, TimeBlock } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -14,7 +15,7 @@ import { plannerKeys } from './queryKeys';
 export function useDay(date: string) {
   return useQuery({
     queryKey: plannerKeys.day(date),
-    queryFn: () => ipc('planner.getDay', { date }),
+    queryFn: () => ipc(PLANNER.GET.DAY, { date }),
     staleTime: 30_000,
   });
 }
@@ -29,7 +30,7 @@ export function useUpdateDay() {
       completedGoals?: string[];
       scheduledTasks?: ScheduledTask[];
       reflection?: string;
-    }) => ipc('planner.updateDay', input),
+    }) => ipc(PLANNER.UPDATE.DAY, input),
     onSuccess: (data) => {
       queryClient.setQueryData(plannerKeys.day(data.date), data);
     },
@@ -41,7 +42,7 @@ export function useAddTimeBlock() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { date: string; timeBlock: Omit<TimeBlock, 'id'> }) =>
-      ipc('planner.addTimeBlock', input),
+      ipc(PLANNER.ADD['TIME-BLOCK'], input),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: plannerKeys.day(variables.date) });
     },
@@ -56,7 +57,7 @@ export function useUpdateTimeBlock() {
       date: string;
       blockId: string;
       updates: Partial<Omit<TimeBlock, 'id'>>;
-    }) => ipc('planner.updateTimeBlock', input),
+    }) => ipc(PLANNER.MODIFY['TIME-BLOCK'], input),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: plannerKeys.day(variables.date) });
     },
@@ -67,7 +68,7 @@ export function useUpdateTimeBlock() {
 export function useRemoveTimeBlock() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: { date: string; blockId: string }) => ipc('planner.removeTimeBlock', input),
+    mutationFn: (input: { date: string; blockId: string }) => ipc(PLANNER.REMOVE['TIME-BLOCK'], input),
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({ queryKey: plannerKeys.day(variables.date) });
     },

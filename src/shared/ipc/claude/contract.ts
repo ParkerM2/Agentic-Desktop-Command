@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { CLAUDE, CLAUDE_EVENTS } from './channels';
 import {
   ClaudeConversationSchema,
   ClaudeMessageSchema,
@@ -19,7 +20,7 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const claudeInvoke = {
-  'claude.sendMessage': {
+  [CLAUDE.SEND.MESSAGE]: {
     input: z.object({
       conversationId: z.string(),
       message: z.string(),
@@ -29,7 +30,7 @@ export const claudeInvoke = {
     }),
     output: ClaudeSendMessageResponseSchema,
   },
-  'claude.streamMessage': {
+  [CLAUDE.STREAM.MESSAGE]: {
     input: z.object({
       conversationId: z.string(),
       message: z.string(),
@@ -39,23 +40,23 @@ export const claudeInvoke = {
     }),
     output: SuccessResponseSchema,
   },
-  'claude.createConversation': {
+  [CLAUDE.CREATE.CONVERSATION]: {
     input: z.object({ title: z.string().optional() }),
     output: z.object({ conversationId: z.string() }),
   },
-  'claude.listConversations': {
+  [CLAUDE.LIST.CONVERSATIONS]: {
     input: z.object({}),
     output: z.array(ClaudeConversationSchema),
   },
-  'claude.getMessages': {
+  [CLAUDE.GET.MESSAGES]: {
     input: z.object({ conversationId: z.string() }),
     output: z.array(ClaudeMessageSchema),
   },
-  'claude.clearConversation': {
+  [CLAUDE.CLEAR.CONVERSATION]: {
     input: z.object({ conversationId: z.string() }),
     output: SuccessResponseSchema,
   },
-  'claude.isConfigured': {
+  [CLAUDE.CHECK.CONFIGURED]: {
     input: z.object({}),
     output: z.object({ configured: z.boolean() }),
   },
@@ -64,7 +65,7 @@ export const claudeInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const claudeEvents = {
-  'event:claude.streamChunk': {
+  [CLAUDE_EVENTS.STREAM.CHUNK]: {
     payload: ClaudeStreamChunkSchema,
   },
 } as const;

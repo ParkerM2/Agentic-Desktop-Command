@@ -7,24 +7,25 @@
 
 import { z } from 'zod';
 
+import { BRIEFING, BRIEFING_EVENTS } from './channels';
 import { BriefingConfigSchema, DailyBriefingSchema, SuggestionSchema } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const briefingInvoke = {
-  'briefing.getDaily': {
+  [BRIEFING.GET.DAILY]: {
     input: z.object({}),
     output: DailyBriefingSchema.nullable(),
   },
-  'briefing.generate': {
+  [BRIEFING.GENERATE.DAILY]: {
     input: z.object({}),
     output: DailyBriefingSchema,
   },
-  'briefing.getConfig': {
+  [BRIEFING.GET.CONFIG]: {
     input: z.object({}),
     output: BriefingConfigSchema,
   },
-  'briefing.updateConfig': {
+  [BRIEFING.UPDATE.CONFIG]: {
     input: z.object({
       enabled: z.boolean().optional(),
       scheduledTime: z.string().optional(),
@@ -33,7 +34,7 @@ export const briefingInvoke = {
     }),
     output: BriefingConfigSchema,
   },
-  'briefing.getSuggestions': {
+  [BRIEFING.GET.SUGGESTIONS]: {
     input: z.object({}),
     output: z.array(SuggestionSchema),
   },
@@ -42,7 +43,7 @@ export const briefingInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const briefingEvents = {
-  'event:briefing.ready': {
+  [BRIEFING_EVENTS.BRIEFING.READY]: {
     payload: z.object({
       briefingId: z.string(),
       date: z.string(),

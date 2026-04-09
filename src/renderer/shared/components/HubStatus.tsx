@@ -10,6 +10,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 
 import { ROUTES } from '@shared/constants';
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
@@ -47,7 +48,7 @@ export function HubStatus() {
   const { data: hubStatus } = useHubStatus();
 
   // Real-time status updates
-  useIpcEvent('event:hub.connectionChanged', () => {
+  useIpcEvent(HUB_EVENTS.CONNECTION.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: hubKeys.status() });
   });
 

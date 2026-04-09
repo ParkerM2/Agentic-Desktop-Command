@@ -12,6 +12,8 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Terminal, XCircle } from 'lucide-react';
 
 
+import { APP } from '@shared/ipc/app/channels';
+
 import { useClaudeAuth } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -46,7 +48,7 @@ export function ClaudeAuthSettings() {
 
   function handleAuthorize() {
     setAuthorizing(true);
-    void ipc('app.launchClaudeAuth', {});
+    void ipc(APP.LAUNCH['CLAUDE-AUTH'], {});
   }
 
   if (isLoading) {

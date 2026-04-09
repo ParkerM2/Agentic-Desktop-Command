@@ -10,9 +10,10 @@
  * Optionally auto-restarts on context overflow (exit code 2).
  */
 
+import type { BusSessionManager } from '@main/bus/session-manager';
+import type { SessionRecord } from '@main/bus/types';
 import { agentLogger } from '@main/lib/logger';
 
-import type { AgentOrchestrator, AgentSession } from './types';
 import type { NotificationManager } from '../notifications';
 
 // ─── Types ────────────────────────────────────────────────────
@@ -87,7 +88,7 @@ function isProcessAlive(pid: number): boolean {
 // ─── Factory ──────────────────────────────────────────────────
 
 export function createAgentWatchdog(
-  orchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
   config: Partial<WatchdogConfig> = {},
   notificationManager?: NotificationManager,
 ): AgentWatchdog {
@@ -142,11 +143,14 @@ export function createAgentWatchdog(
     alertedSessions.delete(sessionId);
   }
 
-  function checkSession(session: AgentSession): WatchdogReport {
+  function checkSession(session: SessionRecord): WatchdogReport {
     const now = Date.now();
-    const heartbeatTime = new Date(session.lastHeartbeat).getTime();
+    // SessionRecord has no heartbeat field; use startedAt as baseline
+    const heartbeatTime = new Date(session.startedAt).getTime();
     const heartbeatAgeMs = now - heartbeatTime;
-    const alive = isProcessAlive(session.pid);
+    const pid = session.pid ?? 0;
+    const taskSlug = session.taskSlug ?? '';
+    const alive = isProcessAlive(pid);
     const alerts: WatchdogAlert[] = [];
 
     // Check 1: Process dead
@@ -155,8 +159,8 @@ export function createAgentWatchdog(
         const alert: WatchdogAlert = {
           type: 'dead',
           sessionId: session.id,
-          taskId: session.taskId,
-          message: `Agent process (PID ${String(session.pid)}) is no longer running`,
+          taskId: taskSlug,
+          message: `Agent process (PID ${String(pid)}) is no longer running`,
           suggestedAction: 'restart_checkpoint',
           timestamp: new Date().toISOString(),
         };
@@ -167,8 +171,8 @@ export function createAgentWatchdog(
 
       return {
         sessionId: session.id,
-        taskId: session.taskId,
-        pid: session.pid,
+        taskId: taskSlug,
+        pid,
         isAlive: false,
         heartbeatAgeMs,
         alerts,
@@ -182,7 +186,7 @@ export function createAgentWatchdog(
         const alert: WatchdogAlert = {
           type: 'stale',
           sessionId: session.id,
-          taskId: session.taskId,
+          taskId: taskSlug,
           message: `Agent stalled (no activity for ${String(minutes)} min)`,
           suggestedAction: 'restart_checkpoint',
           timestamp: new Date().toISOString(),
@@ -199,7 +203,7 @@ export function createAgentWatchdog(
         const alert: WatchdogAlert = {
           type: 'warning',
           sessionId: session.id,
-          taskId: session.taskId,
+          taskId: taskSlug,
           message: `Agent slow (no activity for ${String(minutes)} min)`,
           suggestedAction: 'mark_error',
           timestamp: new Date().toISOString(),
@@ -216,8 +220,8 @@ export function createAgentWatchdog(
 
     return {
       sessionId: session.id,
-      taskId: session.taskId,
-      pid: session.pid,
+      taskId: taskSlug,
+      pid,
       isAlive: true,
       heartbeatAgeMs,
       alerts,
@@ -225,23 +229,23 @@ export function createAgentWatchdog(
   }
 
   function runCheck(): WatchdogReport[] {
-    const activeSessions = orchestrator.listActiveSessions();
+    const activeSessions = busSessionManager.list({ status: 'active' });
     return activeSessions.map((session) => checkSession(session));
   }
 
-  // Listen for orchestrator session events to handle auto-recovery
-  orchestrator.onSessionEvent((event) => {
+  // Listen for session events to handle auto-recovery
+  busSessionManager.onEvent((event) => {
     // On exit with code 2 (context overflow), auto-restart if enabled
     if (
       event.type === 'error' &&
-      event.exitCode === 2 &&
+      event.session.exitCode === 2 &&
       resolvedConfig.autoRestartOnOverflow
     ) {
       const { session } = event;
       const alert: WatchdogAlert = {
         type: 'dead',
         sessionId: session.id,
-        taskId: session.taskId,
+        taskId: session.taskSlug ?? '',
         message: 'Agent hit context overflow (exit code 2) — auto-restarting from checkpoint',
         suggestedAction: 'restart_checkpoint',
         timestamp: new Date().toISOString(),

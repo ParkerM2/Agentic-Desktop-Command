@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema, SuccessWithErrorSchema } from '../common/schemas';
 
+import { HUB, HUB_EVENTS } from './channels';
 import {
   HubConfigOutputSchema,
   HubConnectionStatusSchema,
@@ -20,27 +21,27 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const hubInvoke = {
-  'hub.connect': {
+  [HUB.CONNECT.SERVER]: {
     input: z.object({ url: z.string(), apiKey: z.string() }),
     output: SuccessWithErrorSchema,
   },
-  'hub.disconnect': {
+  [HUB.DISCONNECT.SERVER]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
-  'hub.getStatus': {
+  [HUB.GET.STATUS]: {
     input: z.object({}),
     output: HubStatusOutputSchema,
   },
-  'hub.sync': {
+  [HUB.SYNC.DATA]: {
     input: z.object({}),
     output: HubSyncOutputSchema,
   },
-  'hub.getConfig': {
+  [HUB.GET.CONFIG]: {
     input: z.object({}),
     output: HubConfigOutputSchema,
   },
-  'hub.removeConfig': {
+  [HUB.REMOVE.CONFIG]: {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
@@ -49,24 +50,24 @@ export const hubInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const hubEvents = {
-  'event:hub.connectionChanged': {
+  [HUB_EVENTS.CONNECTION.CHANGED]: {
     payload: z.object({
       status: HubConnectionStatusSchema,
     }),
   },
-  'event:hub.syncCompleted': {
+  [HUB_EVENTS.SYNC.COMPLETED]: {
     payload: z.object({ entities: z.array(z.string()), syncedCount: z.number() }),
   },
-  'event:hub.devices.online': {
+  [HUB_EVENTS.DEVICE.ONLINE]: {
     payload: z.object({ deviceId: z.string(), name: z.string() }),
   },
-  'event:hub.devices.offline': {
+  [HUB_EVENTS.DEVICE.OFFLINE]: {
     payload: z.object({ deviceId: z.string() }),
   },
-  'event:hub.workspaces.updated': {
+  [HUB_EVENTS.WORKSPACE.UPDATED]: {
     payload: z.object({ workspaceId: z.string() }),
   },
-  'event:hub.projects.updated': {
+  [HUB_EVENTS.PROJECT.UPDATED]: {
     payload: z.object({ projectId: z.string() }),
   },
 } as const;

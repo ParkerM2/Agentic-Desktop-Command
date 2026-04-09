@@ -11,6 +11,8 @@ import type { ErrorInfo, ReactNode } from 'react';
 
 import { AlertCircle, ClipboardCopy, RotateCcw } from 'lucide-react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 // ─── Types ─────────────────────────────────────────────────────
 
 interface FeatureErrorBoundaryProps {
@@ -42,7 +44,7 @@ export class FeatureErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    void window.api.invoke('app.reportRendererError', {
+    void window.api.invoke(APP.REPORT['RENDERER-ERROR'], {
       severity: 'error',
       tier: 'app',
       category: 'renderer',

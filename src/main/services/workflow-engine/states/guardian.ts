@@ -20,9 +20,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { GuardianVerdictEntrySchema } from '@shared/ipc/workflow-engine/verdict-schemas';
 import type { GuardianVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
 
+
+import type { BusSessionManager } from '@main/bus/session-manager';
+import type { SessionRecord } from '@main/bus/types';
+
 import { WorkflowState } from '../types';
 
-import type { AgentOrchestrator, AgentSession } from '../../agent-orchestrator/types';
 import type { WorkflowRuntimeRecord } from '../types';
 
 // ─── Constants ────────────────────────────────────────────────
@@ -77,7 +80,7 @@ function findGuardianVerdict(progressFile: string): GuardianVerdict | null {
 /**
  * Returns true when the agent session is in a terminal state.
  */
-function isSessionTerminal(session: AgentSession): boolean {
+function isSessionTerminal(session: SessionRecord): boolean {
   return session.status === 'completed' || session.status === 'error' || session.status === 'killed';
 }
 
@@ -129,7 +132,7 @@ function buildGuardianPrompt(
  */
 export async function runGuardian(
   record: WorkflowRuntimeRecord,
-  agentOrchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
 ): Promise<WorkflowState> {
   const { featureName, projectPath } = record.config;
 
@@ -138,8 +141,10 @@ export async function runGuardian(
   // ── 1. Spawn Guardian agent ──────────────────────────────────
   const prompt = buildGuardianPrompt(record);
 
-  const session = await agentOrchestrator.spawn({
-    taskId: GUARDIAN_TASK_ID,
+  const session = await busSessionManager.spawn({
+    name: `guardian-${featureName}`,
+    type: 'qa',
+    taskSlug: GUARDIAN_TASK_ID,
     projectPath,
     prompt,
     phase: 'qa',
@@ -153,7 +158,7 @@ export async function runGuardian(
   const deadline = Date.now() + MAX_POLL_WAIT_MS;
 
   while (Date.now() < deadline) {
-    const current = agentOrchestrator.getSession(session.id);
+    const current = busSessionManager.get(session.id);
     if (current && isSessionTerminal(current)) break;
     await new Promise<void>((resolve) => {
       setTimeout(resolve, POLL_INTERVAL_MS);
@@ -161,11 +166,13 @@ export async function runGuardian(
   }
 
   // ── 3. Read verdict from JSONL ────────────────────────────────
-  const verdict = findGuardianVerdict(session.progressFile);
+  const spawnCfg = session.spawnConfig as Record<string, unknown>;
+  const progressFile = (spawnCfg.progressFile as string | undefined) ?? '';
+  const verdict = findGuardianVerdict(progressFile);
 
   if (!verdict) {
     throw new Error(
-      `GUARDIAN FAIL: No guardian.verdict found in progress file: ${session.progressFile}. ` +
+      `GUARDIAN FAIL: No guardian.verdict found in progress file: ${progressFile}. ` +
         `Guardian agent must emit a structured JSONL verdict.`,
     );
   }

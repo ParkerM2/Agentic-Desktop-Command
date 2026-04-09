@@ -7,6 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { PROGRESS } from '@shared/ipc/progress/channels';
 import type { ProgressTask } from '@shared/types/progress';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -18,7 +19,7 @@ export function useProgressTasks() {
   return useQuery({
     queryKey: progressKeys.list(),
     queryFn: async () => {
-      const result = await ipc('progress.listTasks', {});
+      const result = await ipc(PROGRESS.LIST.TASKS, {});
       return result as ProgressTask[];
     },
     staleTime: 30_000,
@@ -30,7 +31,7 @@ export function useProgressTask(slug: string | null) {
   return useQuery({
     queryKey: progressKeys.detail(slug ?? ''),
     queryFn: async () => {
-      const result = await ipc('progress.getTask', { slug: slug ?? '' });
+      const result = await ipc(PROGRESS.GET.TASK, { slug: slug ?? '' });
       return result as ProgressTask | null;
     },
     enabled: slug !== null,
@@ -43,7 +44,7 @@ export function useArchivedProgressTasks() {
   return useQuery({
     queryKey: progressKeys.archived(),
     queryFn: async () => {
-      const result = await ipc('progress.listArchived', {});
+      const result = await ipc(PROGRESS.LIST.ARCHIVED, {});
       return result as ProgressTask[];
     },
     staleTime: 60_000,

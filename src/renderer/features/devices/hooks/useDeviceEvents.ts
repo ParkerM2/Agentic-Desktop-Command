@@ -6,6 +6,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
+
 import { useHubEvent } from '@renderer/shared/hooks';
 
 import { deviceKeys } from '../api/queryKeys';
@@ -14,11 +16,11 @@ import { deviceKeys } from '../api/queryKeys';
 export function useDeviceEvents() {
   const queryClient = useQueryClient();
 
-  useHubEvent('event:hub.devices.online', () => {
+  useHubEvent(HUB_EVENTS.DEVICE.ONLINE, () => {
     void queryClient.invalidateQueries({ queryKey: deviceKeys.list() });
   });
 
-  useHubEvent('event:hub.devices.offline', () => {
+  useHubEvent(HUB_EVENTS.DEVICE.OFFLINE, () => {
     void queryClient.invalidateQueries({ queryKey: deviceKeys.list() });
   });
 }

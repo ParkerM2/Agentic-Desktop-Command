@@ -2,11 +2,13 @@
  * Time Parser IPC handlers
  */
 
+import { TIME } from '@shared/ipc/misc/time.channels';
+
 import type { TimeParserService } from '../../services/time-parser/time-parser-service';
 import type { IpcRouter } from '../router';
 
 export function registerTimeHandlers(router: IpcRouter, service: TimeParserService): void {
-  router.handle('time.parse', ({ text, referenceDate }) => {
+  router.handle(TIME.PARSE.EXPRESSION, ({ text, referenceDate }) => {
     const ref = referenceDate ? new Date(referenceDate) : undefined;
     const result = service.parseTime(text, ref);
 

@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { PLANNER } from '@shared/ipc/planner/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { plannerKeys } from './queryKeys';
@@ -27,7 +29,7 @@ export function useWeeklyReview(startDate: string) {
 
   return useQuery({
     queryKey: plannerKeys.week(mondayDate),
-    queryFn: () => ipc('planner.getWeek', { startDate: mondayDate }),
+    queryFn: () => ipc(PLANNER.GET.WEEK, { startDate: mondayDate }),
     staleTime: 30_000,
   });
 }
@@ -38,7 +40,7 @@ export function useGenerateWeeklyReview() {
   return useMutation({
     mutationFn: (startDate: string) => {
       const mondayDate = getWeekMonday(startDate);
-      return ipc('planner.generateWeeklyReview', { startDate: mondayDate });
+      return ipc(PLANNER.GENERATE['WEEKLY-REVIEW'], { startDate: mondayDate });
     },
     onSuccess: (data) => {
       queryClient.setQueryData(plannerKeys.week(data.weekStartDate), data);
@@ -52,7 +54,7 @@ export function useUpdateWeeklyReflection() {
   return useMutation({
     mutationFn: (input: { startDate: string; reflection: string }) => {
       const mondayDate = getWeekMonday(input.startDate);
-      return ipc('planner.updateWeeklyReflection', {
+      return ipc(PLANNER.UPDATE['WEEKLY-REFLECTION'], {
         startDate: mondayDate,
         reflection: input.reflection,
       });

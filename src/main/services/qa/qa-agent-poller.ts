@@ -1,21 +1,22 @@
 /**
  * QA Agent Poller
  *
- * Polls the agent orchestrator for session completion and parses the resulting report.
+ * Polls the bus session manager for session completion and parses the resulting report.
  */
 
 import { readFileSync } from 'node:fs';
 
+import type { BusSessionManager } from '@main/bus/session-manager';
+
 import { createFallbackReport, parseQaReport } from './qa-report-parser';
 
 import type { QaReport } from './qa-types';
-import type { AgentOrchestrator } from '../agent-orchestrator/types';
 
 const POLL_INTERVAL_MS = 2000;
 const POLL_INITIAL_DELAY_MS = 3000;
 
 export function waitForAgentCompletion(
-  orchestrator: AgentOrchestrator,
+  busSessionManager: BusSessionManager,
   agentSessionId: string,
   logFile: string,
 ): Promise<QaReport> {
@@ -23,7 +24,7 @@ export function waitForAgentCompletion(
 
   return new Promise<QaReport>((resolve) => {
     const checkCompletion = (): void => {
-      const currentAgentSession = orchestrator.getSession(agentSessionId);
+      const currentAgentSession = busSessionManager.get(agentSessionId);
       const isFinished =
         !currentAgentSession ||
         currentAgentSession.status === 'completed' ||

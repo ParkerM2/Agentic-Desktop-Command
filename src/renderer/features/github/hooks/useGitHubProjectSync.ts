@@ -5,6 +5,8 @@
 
 import { useEffect } from 'react';
 
+import { GIT } from '@shared/ipc/git/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 import { useLayoutStore } from '@renderer/shared/stores';
 
@@ -42,7 +44,7 @@ export function useGitHubProjectSync() {
 
     void (async () => {
       try {
-        const { url } = await ipc('git.getRemoteUrl', { repoPath: project.path });
+        const { url } = await ipc(GIT.GET['REMOTE-URL'], { repoPath: project.path });
         if (url.length === 0) return;
 
         const parsed = parseGitHubUrl(url);

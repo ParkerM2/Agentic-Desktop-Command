@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 
+import { PLANNER, PLANNER_EVENTS } from './channels';
 import {
   DailyPlanSchema,
   ScheduledTaskSchema,
@@ -17,11 +18,11 @@ import {
 
 /** Invoke channels for planner operations */
 export const plannerInvoke = {
-  'planner.getDay': {
+  [PLANNER.GET.DAY]: {
     input: z.object({ date: z.string() }),
     output: DailyPlanSchema,
   },
-  'planner.updateDay': {
+  [PLANNER.UPDATE.DAY]: {
     input: z.object({
       date: z.string(),
       goals: z.array(z.string()).optional(),
@@ -31,7 +32,7 @@ export const plannerInvoke = {
     }),
     output: DailyPlanSchema,
   },
-  'planner.addTimeBlock': {
+  [PLANNER.ADD['TIME-BLOCK']]: {
     input: z.object({
       date: z.string(),
       timeBlock: z.object({
@@ -44,7 +45,7 @@ export const plannerInvoke = {
     }),
     output: TimeBlockSchema,
   },
-  'planner.updateTimeBlock': {
+  [PLANNER.MODIFY['TIME-BLOCK']]: {
     input: z.object({
       date: z.string(),
       blockId: z.string(),
@@ -58,19 +59,19 @@ export const plannerInvoke = {
     }),
     output: TimeBlockSchema,
   },
-  'planner.removeTimeBlock': {
+  [PLANNER.REMOVE['TIME-BLOCK']]: {
     input: z.object({ date: z.string(), blockId: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'planner.getWeek': {
+  [PLANNER.GET.WEEK]: {
     input: z.object({ startDate: z.string() }),
     output: WeeklyReviewSchema,
   },
-  'planner.generateWeeklyReview': {
+  [PLANNER.GENERATE['WEEKLY-REVIEW']]: {
     input: z.object({ startDate: z.string() }),
     output: WeeklyReviewSchema,
   },
-  'planner.updateWeeklyReflection': {
+  [PLANNER.UPDATE['WEEKLY-REFLECTION']]: {
     input: z.object({ startDate: z.string(), reflection: z.string() }),
     output: WeeklyReviewSchema,
   },
@@ -78,7 +79,7 @@ export const plannerInvoke = {
 
 /** Event channels for planner-related events */
 export const plannerEvents = {
-  'event:planner.dayChanged': {
+  [PLANNER_EVENTS.DAY.CHANGED]: {
     payload: z.object({ date: z.string() }),
   },
 } as const;

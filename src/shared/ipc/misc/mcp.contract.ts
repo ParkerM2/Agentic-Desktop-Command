@@ -6,8 +6,10 @@
 
 import { z } from 'zod';
 
+import { MCP } from './mcp.channels';
+
 export const mcpInvoke = {
-  'mcp.callTool': {
+  [MCP.CALL.TOOL]: {
     input: z.object({
       server: z.string(),
       tool: z.string(),
@@ -23,11 +25,11 @@ export const mcpInvoke = {
       isError: z.boolean(),
     }),
   },
-  'mcp.listConnected': {
+  [MCP.LIST.CONNECTED]: {
     input: z.object({}),
     output: z.array(z.string()),
   },
-  'mcp.getConnectionState': {
+  [MCP.GET['CONNECTION-STATE']]: {
     input: z.object({ server: z.string() }),
     output: z.enum(['disconnected', 'connecting', 'connected', 'error']),
   },

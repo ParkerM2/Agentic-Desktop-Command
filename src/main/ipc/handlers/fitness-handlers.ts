@@ -2,33 +2,35 @@
  * Fitness IPC handlers
  */
 
+import { FITNESS } from '@shared/ipc/fitness/channels';
+
 import type { FitnessService } from '../../services/fitness/fitness-service';
 import type { IpcRouter } from '../router';
 
 export function registerFitnessHandlers(router: IpcRouter, service: FitnessService): void {
-  router.handle('fitness.logWorkout', (data) => Promise.resolve(service.logWorkout(data)));
+  router.handle(FITNESS.LOG.WORKOUT, (data) => Promise.resolve(service.logWorkout(data)));
 
-  router.handle('fitness.listWorkouts', (filters) =>
+  router.handle(FITNESS.LIST.WORKOUTS, (filters) =>
     Promise.resolve(service.listWorkouts(filters)),
   );
 
-  router.handle('fitness.deleteWorkout', ({ id }) => Promise.resolve(service.deleteWorkout(id)));
+  router.handle(FITNESS.DELETE.WORKOUT, ({ id }) => Promise.resolve(service.deleteWorkout(id)));
 
-  router.handle('fitness.logMeasurement', (data) => Promise.resolve(service.logMeasurement(data)));
+  router.handle(FITNESS.LOG.MEASUREMENT, (data) => Promise.resolve(service.logMeasurement(data)));
 
-  router.handle('fitness.getMeasurements', ({ limit }) =>
+  router.handle(FITNESS.GET.MEASUREMENTS, ({ limit }) =>
     Promise.resolve(service.getMeasurements(limit)),
   );
 
-  router.handle('fitness.getStats', () => Promise.resolve(service.getStats()));
+  router.handle(FITNESS.GET.STATS, () => Promise.resolve(service.getStats()));
 
-  router.handle('fitness.setGoal', (data) => Promise.resolve(service.setGoal(data)));
+  router.handle(FITNESS.SET.GOAL, (data) => Promise.resolve(service.setGoal(data)));
 
-  router.handle('fitness.listGoals', () => Promise.resolve(service.listGoals()));
+  router.handle(FITNESS.LIST.GOALS, () => Promise.resolve(service.listGoals()));
 
-  router.handle('fitness.updateGoalProgress', ({ goalId, current }) =>
+  router.handle(FITNESS.UPDATE['GOAL-PROGRESS'], ({ goalId, current }) =>
     Promise.resolve(service.updateGoalProgress(goalId, current)),
   );
 
-  router.handle('fitness.deleteGoal', ({ id }) => Promise.resolve(service.deleteGoal(id)));
+  router.handle(FITNESS.DELETE.GOAL, ({ id }) => Promise.resolve(service.deleteGoal(id)));
 }

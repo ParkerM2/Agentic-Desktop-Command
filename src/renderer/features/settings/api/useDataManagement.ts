@@ -4,6 +4,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { DATA_MANAGEMENT } from '@shared/ipc/data-management/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -18,7 +20,7 @@ export const dataManagementKeys = {
 export function useDataRegistry() {
   return useQuery({
     queryKey: dataManagementKeys.registry(),
-    queryFn: () => ipc('dataManagement.getRegistry', {}),
+    queryFn: () => ipc(DATA_MANAGEMENT.GET.REGISTRY, {}),
     staleTime: 60_000,
   });
 }
@@ -27,7 +29,7 @@ export function useDataRegistry() {
 export function useDataUsage() {
   return useQuery({
     queryKey: dataManagementKeys.usage(),
-    queryFn: () => ipc('dataManagement.getUsage', {}),
+    queryFn: () => ipc(DATA_MANAGEMENT.GET.USAGE, {}),
     staleTime: 30_000,
   });
 }
@@ -36,7 +38,7 @@ export function useDataUsage() {
 export function useDataRetention() {
   return useQuery({
     queryKey: dataManagementKeys.retention(),
-    queryFn: () => ipc('dataManagement.getRetention', {}),
+    queryFn: () => ipc(DATA_MANAGEMENT.GET.RETENTION, {}),
     staleTime: 60_000,
   });
 }
@@ -52,7 +54,7 @@ export function useUpdateRetention() {
       cleanupIntervalHours?: number;
       overrides?: Record<string, { maxAgeDays?: number; maxItems?: number; enabled: boolean }>;
       lastCleanupAt?: string;
-    }) => ipc('dataManagement.updateRetention', updates),
+    }) => ipc(DATA_MANAGEMENT.UPDATE.RETENTION, updates),
     onSuccess: (data) => {
       queryClient.setQueryData(dataManagementKeys.retention(), data);
     },
@@ -66,7 +68,7 @@ export function useClearStore() {
   const { onError } = useMutationErrorToast();
 
   return useMutation({
-    mutationFn: (storeId: string) => ipc('dataManagement.clearStore', { storeId }),
+    mutationFn: (storeId: string) => ipc(DATA_MANAGEMENT.CLEAR.STORE, { storeId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: dataManagementKeys.usage() });
     },
@@ -80,7 +82,7 @@ export function useRunCleanup() {
   const { onError } = useMutationErrorToast();
 
   return useMutation({
-    mutationFn: () => ipc('dataManagement.runCleanup', {}),
+    mutationFn: () => ipc(DATA_MANAGEMENT.RUN.CLEANUP, {}),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: dataManagementKeys.usage() });
       void queryClient.invalidateQueries({ queryKey: dataManagementKeys.retention() });
@@ -94,7 +96,7 @@ export function useExportData() {
   const { onError } = useMutationErrorToast();
 
   return useMutation({
-    mutationFn: () => ipc('dataManagement.exportData', {}),
+    mutationFn: () => ipc(DATA_MANAGEMENT.EXPORT.DATA, {}),
     onError: onError('export data'),
   });
 }
@@ -105,7 +107,7 @@ export function useImportData() {
   const { onError } = useMutationErrorToast();
 
   return useMutation({
-    mutationFn: (filePath: string) => ipc('dataManagement.importData', { filePath }),
+    mutationFn: (filePath: string) => ipc(DATA_MANAGEMENT.IMPORT.DATA, { filePath }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: dataManagementKeys.all });
     },

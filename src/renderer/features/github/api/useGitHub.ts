@@ -7,6 +7,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { GITHUB } from '@shared/ipc/github/channels';
 import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared/types';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
@@ -28,7 +29,7 @@ export type GitHubPr = GitHubPullRequest;
 export function useGitHubAuthStatus() {
   return useQuery({
     queryKey: githubKeys.authStatus(),
-    queryFn: () => ipc('github.authStatus', {}),
+    queryFn: () => ipc(GITHUB.GET['AUTH-STATUS'], {}),
     staleTime: 60_000,
   });
 }
@@ -37,7 +38,7 @@ export function useGitHubAuthStatus() {
 export function useGitHubRepos() {
   return useQuery({
     queryKey: githubKeys.repos(),
-    queryFn: () => ipc('github.getRepos', { limit: 30 }),
+    queryFn: () => ipc(GITHUB.LIST.REPOS, { limit: 30 }),
     staleTime: 120_000,
   });
 }
@@ -50,7 +51,7 @@ export function useGitHubPrs() {
 
   return useQuery({
     queryKey: githubKeys.prList(owner, repo),
-    queryFn: () => ipc('github.listPrs', { owner, repo }),
+    queryFn: () => ipc(GITHUB.LIST.PRS, { owner, repo }),
     enabled: owner.length > 0 && repo.length > 0,
     staleTime: 60_000,
   });
@@ -62,7 +63,7 @@ export function useGitHubPrDetail(prNumber: number | null) {
 
   return useQuery({
     queryKey: githubKeys.prDetail(owner, repo, prNumber ?? 0),
-    queryFn: () => ipc('github.getPr', { owner, repo, number: prNumber ?? 0 }),
+    queryFn: () => ipc(GITHUB.GET.PR, { owner, repo, number: prNumber ?? 0 }),
     enabled: prNumber !== null && owner.length > 0,
     staleTime: 60_000,
   });
@@ -74,7 +75,7 @@ export function useGitHubIssues() {
 
   return useQuery({
     queryKey: githubKeys.issueList(owner, repo),
-    queryFn: () => ipc('github.listIssues', { owner, repo }),
+    queryFn: () => ipc(GITHUB.LIST.ISSUES, { owner, repo }),
     enabled: owner.length > 0 && repo.length > 0,
     staleTime: 60_000,
   });
@@ -84,7 +85,7 @@ export function useGitHubIssues() {
 export function useGitHubNotifications() {
   return useQuery({
     queryKey: githubKeys.notifications(),
-    queryFn: () => ipc('github.getNotifications', {}),
+    queryFn: () => ipc(GITHUB.GET.NOTIFICATIONS, {}),
     staleTime: 60_000,
   });
 }
@@ -97,7 +98,7 @@ export function useCreateIssue() {
 
   return useMutation({
     mutationFn: (input: { title: string; body?: string; labels?: string[] }) =>
-      ipc('github.createIssue', { owner, repo, ...input }),
+      ipc(GITHUB.CREATE.ISSUE, { owner, repo, ...input }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: githubKeys.issueList(owner, repo) });
     },

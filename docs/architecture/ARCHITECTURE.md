@@ -39,10 +39,12 @@
 │                                          ├─ HubService (9)     │
 │                                          ├─ ProjectService (6)  │
 │                                          ├─ DataMgmtService (7) │
-│                                          └─ ... (33 total)      │
+│                                          ├─ CommandBus (3)      │
+│                                          ├─ Database (SQLite)    │
+│                                          └─ ... (35 total)      │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
-│  │ IPC Contract: src/shared/ipc/ (27 domain folders)            ││
+│  │ IPC Contract: src/shared/ipc/ (28 domain folders)            ││
 │  │ Each folder: contract.ts + schemas.ts + index.ts             ││
 │  │ Root barrel merges all into ipcInvokeContract/ipcEventContract││
 │  └──────────────────────────────────────────────────────────────┘│
@@ -70,7 +72,7 @@
 
 ## Domain-Based IPC Structure
 
-The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 27 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
+The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 28 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
 
 - `schemas.ts` — Zod schemas for the domain
 - `contract.ts` — Invoke and event contract entries using those schemas
@@ -87,7 +89,7 @@ The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modu
 | Module | Responsibility |
 |--------|---------------|
 | `lifecycle.ts` | Electron app lifecycle events, BrowserWindow creation, graceful shutdown (disposes all services including HealthRegistry + ErrorCollector last) |
-| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Creates `taskRepository` (local-first with Hub mirror) wired to TaskService + HubApiClient + HubConnectionManager. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient`, `taskRepository`, and `oauthManager` in registry result for use by event-wiring, IPC handlers, and OAuth handler registration. |
+| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Creates `taskRepository` (local-first with Hub mirror) wired to TaskService + HubApiClient + HubConnectionManager. Initializes CommandBus + SQLite database. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient`, `taskRepository`, `commandBus`, and `oauthManager` in registry result for use by event-wiring, IPC handlers, and OAuth handler registration. |
 | `ipc-wiring.ts` | Registers all IPC handlers (connects handler files to router). Includes OAuth handlers (`oauth-handlers.ts`) for `oauth.authorize`, `oauth.isAuthenticated`, and `oauth.revoke` channels. |
 | `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via `taskRepository` (local-first). |
 | `index.ts` | Barrel re-export |
@@ -97,7 +99,7 @@ The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modu
 - **ErrorCollector** — Created first in `service-registry.ts`. Captures service errors to file-based log with capacity alerts. Reports errors via `event:app.error` IPC event. Used by `initNonCritical()` to record initialization failures.
 - **HealthRegistry** — Created early. Monitors service liveness via periodic pulses. Services call `healthRegistry.pulse(name)` during normal operation; the registry emits `event:app.serviceUnhealthy` when pulses are missed.
 - **initNonCritical()** — Wrapper function in `service-registry.ts`. Non-essential services (milestones, ideas, changelog, fitness, spotify, calendar, voice) are wrapped so that if their factory throws, the app continues running with `null` for that service. Failures are reported to ErrorCollector.
-- **AgentWatchdog** — Created after the orchestrator. Monitors active agent sessions for dead/stale processes (30s interval, PID checks, heartbeat age thresholds). Alerts are forwarded to the renderer via `event:agent.orchestrator.watchdogAlert`.
+- **AgentWatchdog** — Created after the command bus. Monitors active agent sessions for dead/stale processes (30s interval, PID checks, heartbeat age thresholds). Alerts are forwarded to the renderer via `event:bus.watchdogAlert`.
 - **QaTrigger** — Created after QA runner. Listens for task status changes to `review` and automatically starts quiet QA sessions. Disposed in `lifecycle.ts` during shutdown.
 
 This replaces the previous monolithic `index.ts` where all initialization lived in a single file.
@@ -282,47 +284,48 @@ Key files:
 - Emits `event:agent.statusChanged` and `event:agent.log` events
 - Agents are linked to tasks via `taskId` and projects via `projectId`
 
-## Agent Orchestrator System (Primary)
+## Command Bus + SQLite Layer (Primary)
 
-The Agent Orchestrator is the primary system for task planning and execution.
-It manages headless Claude agent sessions via `child_process.spawn`:
+The Command Bus is the primary system for agent lifecycle and session management.
+It replaces the former Agent Orchestrator with a unified, SQLite-backed architecture.
 
-- **AgentOrchestrator** (`agent-orchestrator.ts`) — Session lifecycle: spawn, kill, getSession, listActive, dispose
-- **JsonlProgressWatcher** (`jsonl-progress-watcher.ts`) — Watches `{dataDir}/progress/*.jsonl` files using incremental tail parsing (100ms debounce)
-- **AgentWatchdog** (`agent-watchdog.ts`) — Health monitoring: 30s check interval, PID alive checks, heartbeat age thresholds (5min warn, 15min stale), auto-restart on context overflow (exit code 2)
-- **HooksTemplate** (`hooks-template.ts`) — Generates Claude hooks config (PostToolUse writes tool_use entries, Stop writes agent_stopped entries to JSONL). Merges hooks into `.claude/settings.local.json` rather than writing separate hook files, ensuring Claude CLI loads them. The original `settings.local.json` content is saved in `AgentSession.originalSettingsContent` and restored on cleanup.
-- **Types** (`types.ts`) — AgentSession (incl. `originalSettingsContent`), SpawnOptions, ProgressEntry (6 entry types)
+### Core Components
+
+- **CommandBus** (`src/main/bus/command-bus.ts`) — Central dispatch: accepts commands, routes to handlers, persists state to SQLite
+- **SessionManager** (`src/main/bus/session-manager.ts`) — Session lifecycle: spawn, kill, list, crash recovery on boot. All sessions stored in SQLite via Drizzle ORM
+- **Dispatcher** (`src/main/bus/dispatcher.ts`) — Command routing and execution coordination
+- **Database** (`src/main/db/`) — SQLite via better-sqlite3 + Drizzle ORM. Schema: `schema.ts`, connection: `connection.ts`
 
 ### Session Lifecycle
 
 ```
-spawn() → 'spawned' → 'active' → 'completed' | 'error' | 'killed'
+dispatch(spawn) → 'spawned' → 'active' → 'completed' | 'error' | 'killed'
 ```
 
-### IPC Event Channels (6 events)
+### IPC Channels
 
-- `event:agent.orchestrator.heartbeat` — Session activity heartbeat (from spawn, JSONL heartbeat, tool_use)
-- `event:agent.orchestrator.stopped` — Session completed or killed (with reason + exitCode)
-- `event:agent.orchestrator.error` — Session error (with error message)
-- `event:agent.orchestrator.progress` — Tool use or phase change data
-- `event:agent.orchestrator.planReady` — Plan file detected (with summary + path)
-- `event:agent.orchestrator.watchdogAlert` — Watchdog alert (type, sessionId, taskId, message, suggestedAction)
+- `bus.dispatch` — Dispatch a command to the bus
+- `bus.query` — Query bus state (sessions, commands)
+- `bus.listSessions` — List active/recent sessions
+- `bus.getSession` — Get session details
+- `bus.killSession` — Kill a session by ID
+- `bus.subscribe` — Subscribe to bus events
 
-### Wiring Chain (index.ts)
+### Event Channels
 
-1. `createAgentOrchestrator(dataDir, milestonesService)` — creates orchestrator
-2. `createAgentWatchdog(orchestrator, {}, notificationManager)` — creates watchdog
-3. `agentWatchdog.onAlert()` → `router.emit('event:agent.orchestrator.watchdogAlert')` — alert forwarding
-4. `agentWatchdog.start()` — starts 30s health check loop
-5. `agentOrchestrator.onSessionEvent()` → `router.emit(...)` — event forwarding
-6. `createJsonlProgressWatcher(progressDir)` → `onProgress()` → typed `router.emit(...)` — progress forwarding
-7. `jsonlProgressWatcher.start()` — starts file watching
-8. Both cleaned up in `before-quit` handler
+- `event:bus.sessionStarted` — Session spawned
+- `event:bus.sessionCompleted` — Session completed
+- `event:bus.sessionFailed` — Session error
+- `event:bus.commandDispatched` — Command accepted by bus
+
+### Database Schema (SQLite)
+
+Sessions, commands, and events are persisted to a local SQLite database, enabling crash recovery, session history, and token/tool usage tracking across restarts.
 
 ### Renderer Integration
 
-- **useAgentMutations** — 5 mutation hooks (startPlanning, startExecution, replanWithFeedback, killAgent, restartFromCheckpoint)
-- **useAgentEvents** — 6 event listeners → optimistic cache updates + full invalidation
+- **useAgentMutations** — Mutation hooks wired to `bus.dispatch` / `bus.killSession`
+- **useAgentEvents** — Event listeners for `event:bus.*` → cache invalidation
 - **useTaskEvents** — orchestrates useAgentEvents + useQaEvents, called by TaskDataGrid
 - **ActionsCell** — context-sensitive buttons wired to mutations
 - **StatusBadgeCell** — supports all statuses including `planning`, `plan_ready` with pulsing indicators

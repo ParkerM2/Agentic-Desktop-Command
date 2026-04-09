@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { PLANNER_EVENTS } from '@shared/ipc/planner/channels';
 import type {
   DailyPlan,
   ScheduledTask,
@@ -16,6 +17,7 @@ import type {
   WeeklyReview,
   WeeklyReviewSummary,
 } from '@shared/types';
+
 
 import type { ReinitializableService } from '@main/services/data-management';
 
@@ -217,7 +219,7 @@ export function createPlannerService(deps: { dataDir: string; router: IpcRouter 
   }
 
   function emitDayChanged(date: string): void {
-    deps.router.emit('event:planner.dayChanged', { date });
+    deps.router.emit(PLANNER_EVENTS.DAY.CHANGED, { date });
   }
 
   return {
@@ -306,7 +308,7 @@ export function createPlannerService(deps: { dataDir: string; router: IpcRouter 
     updateWeeklyReflection(startDate, reflection) {
       const monday = getWeekMonday(startDate);
       saveWeeklyReflection(monday, reflection);
-      deps.router.emit('event:planner.dayChanged', { date: monday });
+      deps.router.emit(PLANNER_EVENTS.DAY.CHANGED, { date: monday });
       return this.getWeek(startDate);
     },
 

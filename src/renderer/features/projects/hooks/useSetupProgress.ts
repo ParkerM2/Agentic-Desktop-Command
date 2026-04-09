@@ -7,6 +7,7 @@
 
 import { useCallback, useState } from 'react';
 
+import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
 import type { CodebaseAnalysis, SetupStep } from '@shared/types/project-setup';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
@@ -43,7 +44,7 @@ export function useSetupProgress(projectId: string): SetupProgressState {
     [projectId],
   );
 
-  useIpcEvent('event:project.setupProgress', handleProgress);
+  useIpcEvent(PROJECTS_EVENTS.SETUP.PROGRESS, handleProgress);
 
   const isComplete =
     steps.length > 0 &&

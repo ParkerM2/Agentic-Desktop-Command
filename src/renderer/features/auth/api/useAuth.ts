@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { AUTH } from '@shared/ipc/auth/channels';
 import type { LoginInput, RegisterInput } from '@shared/types/auth';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -22,7 +23,7 @@ export function useLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: LoginInput) => ipc('auth.login', data),
+    mutationFn: (data: LoginInput) => ipc(AUTH.LOGIN.USER, data),
     onSuccess: (result) => {
       setAuth(result.user, result.tokens);
       setExpiresAt(Date.now() + result.tokens.expiresIn * 1000);
@@ -38,7 +39,7 @@ export function useRegister() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RegisterInput) => ipc('auth.register', data),
+    mutationFn: (data: RegisterInput) => ipc(AUTH.REGISTER.USER, data),
     onSuccess: (result) => {
       setAuth(result.user, result.tokens);
       setExpiresAt(Date.now() + result.tokens.expiresIn * 1000);
@@ -53,7 +54,7 @@ export function useLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => ipc('auth.logout', {}),
+    mutationFn: () => ipc(AUTH.LOGOUT.USER, {}),
     onSuccess: () => {
       clearAuth();
       useLayoutStore.getState().clearLayout();
@@ -69,7 +70,7 @@ export function useRefreshToken() {
   const refreshToken = useAuthStore((s) => s.refreshToken);
 
   return useMutation({
-    mutationFn: () => ipc('auth.refresh', { refreshToken: refreshToken ?? '' }),
+    mutationFn: () => ipc(AUTH.REFRESH.TOKEN, { refreshToken: refreshToken ?? '' }),
     onSuccess: (result) => {
       updateTokens(result.tokens);
       setExpiresAt(Date.now() + result.tokens.expiresIn * 1000);
@@ -90,7 +91,7 @@ export function useForceLogout(): () => Promise<void> {
 
   return useCallback(async () => {
     try {
-      await ipc('auth.logout', {});
+      await ipc(AUTH.LOGOUT.USER, {});
     } catch {
       // Hub unreachable — ignore, we'll clear local state regardless
     }
@@ -105,7 +106,7 @@ export function useCurrentUser() {
 
   return useQuery({
     queryKey: authKeys.me(),
-    queryFn: () => ipc('auth.me', {}),
+    queryFn: () => ipc(AUTH.GET.USER, {}),
     enabled: isAuthenticated,
     staleTime: 300_000,
   });

@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
+import { APP } from '@shared/ipc/app/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { Button, Spinner } from '@ui';
@@ -31,7 +33,7 @@ function GitHubIcon({ className }: { className?: string }) {
 function useGitHubAuth() {
   return useQuery({
     queryKey: ['app', 'githubAuth'],
-    queryFn: () => ipc('app.checkGitHubAuth', {}),
+    queryFn: () => ipc(APP.CHECK['GITHUB-AUTH'], {}),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
@@ -66,7 +68,7 @@ export function GitHubAuthSettings() {
 
   function handleConnect() {
     setAuthorizing(true);
-    void ipc('app.launchGitHubAuth', {});
+    void ipc(APP.LAUNCH['GITHUB-AUTH'], {});
   }
 
   if (isLoading) {

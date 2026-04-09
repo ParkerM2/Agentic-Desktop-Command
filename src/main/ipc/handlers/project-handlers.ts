@@ -2,6 +2,7 @@
  * Project IPC handlers — proxies to Hub API via ProjectService
  */
 
+import { PROJECTS } from '@shared/ipc/projects/channels';
 import type { Project } from '@shared/types';
 
 import { detectRepoStructure } from '../../services/project/project-detector';
@@ -39,13 +40,13 @@ export function registerProjectHandlers(
   codebaseAnalyzer: CodebaseAnalyzerService,
   setupPipeline: SetupPipelineService,
 ): void {
-  router.handle('projects.list', async () => {
+  router.handle(PROJECTS.LIST.ALL, async () => {
     const projects = await service.listProjects();
     return projects.map((p) => transformHubProject(p as unknown as Record<string, unknown>));
   });
 
   router.handle(
-    'projects.add',
+    PROJECTS.ADD.PROJECT,
     async ({ path, name, workspaceId, description, repoStructure, defaultBranch }) => {
       const project = await service.addProject({
         path,
@@ -59,49 +60,49 @@ export function registerProjectHandlers(
     },
   );
 
-  router.handle('projects.remove', async ({ projectId }) => {
+  router.handle(PROJECTS.REMOVE.PROJECT, async ({ projectId }) => {
     return await service.removeProject(projectId);
   });
 
-  router.handle('projects.initialize', ({ projectId }) =>
+  router.handle(PROJECTS.INITIALIZE.PROJECT, ({ projectId }) =>
     Promise.resolve(service.initializeProject(projectId)),
   );
 
-  router.handle('projects.selectDirectory', async () => {
+  router.handle(PROJECTS.SELECT.DIRECTORY, async () => {
     return await service.selectDirectory();
   });
 
-  router.handle('projects.detectRepo', ({ path }) =>
+  router.handle(PROJECTS.DETECT.REPO, ({ path }) =>
     Promise.resolve(detectRepoStructure(path)),
   );
 
-  router.handle('projects.update', async ({ projectId, ...updates }) => {
+  router.handle(PROJECTS.UPDATE.PROJECT, async ({ projectId, ...updates }) => {
     const project = await service.updateProject({ projectId, ...updates });
     return transformHubProject(project as unknown as Record<string, unknown>);
   });
 
-  router.handle('projects.getSubProjects', async ({ projectId }) => {
+  router.handle(PROJECTS.GET['SUB-PROJECTS'], async ({ projectId }) => {
     return await service.getSubProjects(projectId);
   });
 
-  router.handle('projects.createSubProject', async (input) => {
+  router.handle(PROJECTS.CREATE['SUB-PROJECT'], async (input) => {
     return await service.createSubProject(input);
   });
 
-  router.handle('projects.deleteSubProject', async ({ projectId, subProjectId }) => {
+  router.handle(PROJECTS.DELETE['SUB-PROJECT'], async ({ projectId, subProjectId }) => {
     return await service.deleteSubProject(projectId, subProjectId);
   });
 
-  router.handle('projects.analyzeCodebase', ({ path }) =>
+  router.handle(PROJECTS.ANALYZE.CODEBASE, ({ path }) =>
     Promise.resolve(codebaseAnalyzer.analyzeCodebase(path)),
   );
 
-  router.handle('projects.setupExisting', ({ projectId }) => {
+  router.handle(PROJECTS.SETUP.EXISTING, ({ projectId }) => {
     void setupPipeline.runForExisting(projectId);
     return Promise.resolve({ success: true });
   });
 
-  router.handle('projects.createNew', async (input) => {
+  router.handle(PROJECTS.CREATE.NEW, async (input) => {
     const project = await service.addProject({
       path: input.path,
       name: input.name,

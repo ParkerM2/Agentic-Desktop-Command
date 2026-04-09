@@ -6,11 +6,12 @@
 
 import { z } from 'zod';
 
+import { FILES } from './channels';
 import { FileTreeNodeSchema } from './schemas';
 
 /** Invoke channels for file operations */
 export const filesInvoke = {
-  'files.listTree': {
+  [FILES.LIST.TREE]: {
     input: z.object({ path: z.string() }),
     output: z.array(FileTreeNodeSchema),
   },

@@ -11,6 +11,12 @@
 
 import { useEffect } from 'react';
 
+
+import { ASSISTANT } from '@shared/ipc/assistant/channels';
+import { PROJECTS } from '@shared/ipc/projects/channels';
+import { SETTINGS } from '@shared/ipc/settings/channels';
+import { WORKSPACE } from '@shared/ipc/workspace/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { useLayoutStore } from '../stores/layout-store';
@@ -21,11 +27,11 @@ export function useLayoutSync(): void {
   useEffect(() => {
     void (async () => {
       try {
-        const layout = await ipc('settings.getLayout', {});
+        const layout = await ipc(SETTINGS.GET.LAYOUT, {});
         hydrate(layout);
 
         // Fetch full project list to map IDs → names/paths
-        const allProjects = await ipc('projects.list', {});
+        const allProjects = await ipc(PROJECTS.LIST.ALL, {});
 
         // Build project info for open tabs (fall back to full list if no tabs)
         const tabIds = new Set(layout.openProjectTabs);
@@ -41,10 +47,10 @@ export function useLayoutSync(): void {
         }));
 
         // Start global assistant session with project context
-        await ipc('assistant.start', { projects: projectInfos });
+        await ipc(ASSISTANT.START.SESSION, { projects: projectInfos });
 
         // Eagerly spawn workspace sessions for all persisted project tabs
-        await ipc('workspace.initAllProjects', {
+        await ipc(WORKSPACE.INIT['ALL-PROJECTS'], {
           projects: activeProjects.map((p) => ({ id: p.id, path: p.path })),
         });
       } catch {

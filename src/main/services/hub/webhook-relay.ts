@@ -6,7 +6,9 @@
  * Emits event:webhook.received so the renderer can show a notification.
  */
 
+import { WEBHOOK_EVENTS } from '@shared/ipc/misc/webhook.channels';
 import type { WebhookCommand } from '@shared/types';
+
 
 import { hubLogger } from '@main/lib/logger';
 
@@ -107,7 +109,7 @@ export function createWebhookRelay(deps: WebhookRelayDeps): WebhookRelay {
         );
 
         // Emit event for renderer notification
-        router.emit('event:webhook.received', {
+        router.emit(WEBHOOK_EVENTS.COMMAND.RECEIVED, {
           source: command.source,
           commandText: command.commandText,
           sourceContext: {

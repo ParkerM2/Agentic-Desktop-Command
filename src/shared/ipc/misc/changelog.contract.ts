@@ -6,6 +6,8 @@
 
 import { z } from 'zod';
 
+import { CHANGELOG } from './changelog.channels';
+
 export const ChangeTypeSchema = z.enum([
   'added',
   'changed',
@@ -27,11 +29,11 @@ export const ChangelogEntrySchema = z.object({
 });
 
 export const changelogInvoke = {
-  'changelog.list': {
+  [CHANGELOG.LIST.ENTRIES]: {
     input: z.object({}),
     output: z.array(ChangelogEntrySchema),
   },
-  'changelog.addEntry': {
+  [CHANGELOG.ADD.ENTRY]: {
     input: z.object({
       version: z.string(),
       date: z.string(),
@@ -39,7 +41,7 @@ export const changelogInvoke = {
     }),
     output: ChangelogEntrySchema,
   },
-  'changelog.generate': {
+  [CHANGELOG.GENERATE.ENTRY]: {
     input: z.object({
       repoPath: z.string(),
       version: z.string(),

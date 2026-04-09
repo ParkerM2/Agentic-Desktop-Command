@@ -6,6 +6,8 @@
  * to match the IPC contract schemas (UserSchema, AuthTokensSchema).
  */
 
+import { AUTH } from '@shared/ipc/auth/channels';
+
 import type { UserSessionManager } from '@main/services/auth';
 import type { HubAuthService } from '@main/services/hub/hub-auth-service';
 
@@ -29,7 +31,7 @@ function expiresAtToExpiresIn(expiresAt: string): number {
 export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDependencies): void {
   const { hubAuthService, userSessionManager } = deps;
 
-  router.handle('auth.login', async ({ email, password }) => {
+  router.handle(AUTH.LOGIN.USER, async ({ email, password }) => {
     const result = await hubAuthService.login({ email, password });
 
     if (!result.ok || !result.data) {
@@ -61,7 +63,7 @@ export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDepende
     };
   });
 
-  router.handle('auth.register', async ({ email, password, displayName }) => {
+  router.handle(AUTH.REGISTER.USER, async ({ email, password, displayName }) => {
     const result = await hubAuthService.register({ email, password, displayName });
 
     if (!result.ok || !result.data) {
@@ -86,7 +88,7 @@ export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDepende
     };
   });
 
-  router.handle('auth.me', async () => {
+  router.handle(AUTH.GET.USER, async () => {
     const result = await hubAuthService.getCurrentUser();
 
     if (!result.ok || !result.data) {
@@ -104,7 +106,7 @@ export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDepende
     };
   });
 
-  router.handle('auth.logout', async () => {
+  router.handle(AUTH.LOGOUT.USER, async () => {
     await hubAuthService.logout();
 
     // Clear user session for user-scoped storage
@@ -117,7 +119,7 @@ export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDepende
   // secure TokenStore and uses its own stored refresh token for rotation.
   // The renderer's refreshToken input is ignored; the rotated token from
   // the Hub response is returned so the renderer can update its local copy.
-  router.handle('auth.refresh', async (_input) => {
+  router.handle(AUTH.REFRESH.TOKEN, async (_input) => {
     const result = await hubAuthService.refreshToken();
 
     if (!result.ok || !result.data) {
@@ -135,7 +137,7 @@ export function registerAuthHandlers(router: IpcRouter, deps: AuthHandlerDepende
 
   // Restore a previously authenticated session from encrypted token storage.
   // Called on app startup to silently re-authenticate without user interaction.
-  router.handle('auth.restore', async () => {
+  router.handle(AUTH.RESTORE.SESSION, async () => {
     const result = await hubAuthService.restoreSession();
 
     if (!result.restored) {

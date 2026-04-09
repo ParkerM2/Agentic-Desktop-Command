@@ -2,19 +2,21 @@
  * Notes IPC handlers
  */
 
+import { NOTES } from '@shared/ipc/misc/notes.channels';
+
 import type { NotesService } from '../../services/notes/notes-service';
 import type { IpcRouter } from '../router';
 
 export function registerNotesHandlers(router: IpcRouter, service: NotesService): void {
-  router.handle('notes.list', (filters) => Promise.resolve(service.listNotes(filters)));
+  router.handle(NOTES.LIST.ALL, (filters) => Promise.resolve(service.listNotes(filters)));
 
-  router.handle('notes.create', (data) => Promise.resolve(service.createNote(data)));
+  router.handle(NOTES.CREATE.NOTE, (data) => Promise.resolve(service.createNote(data)));
 
-  router.handle('notes.update', ({ id, ...updates }) =>
+  router.handle(NOTES.UPDATE.NOTE, ({ id, ...updates }) =>
     Promise.resolve(service.updateNote(id, updates)),
   );
 
-  router.handle('notes.delete', ({ id }) => Promise.resolve(service.deleteNote(id)));
+  router.handle(NOTES.DELETE.NOTE, ({ id }) => Promise.resolve(service.deleteNote(id)));
 
-  router.handle('notes.search', ({ query }) => Promise.resolve(service.searchNotes(query)));
+  router.handle(NOTES.SEARCH.NOTES, ({ query }) => Promise.resolve(service.searchNotes(query)));
 }

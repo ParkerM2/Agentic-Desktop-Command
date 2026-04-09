@@ -6,6 +6,7 @@
  * cleanup, export, and import.
  */
 
+import { DATA_MANAGEMENT } from '@shared/ipc/data-management/channels';
 import type { DataRetentionSettings } from '@shared/types';
 
 import { exportData, importData } from '../../services/data-management/data-export';
@@ -30,21 +31,21 @@ export function registerDataManagementHandlers(
   settingsService: SettingsService,
   dataDir: string,
 ): void {
-  router.handle('dataManagement.getRegistry', () =>
+  router.handle(DATA_MANAGEMENT.GET.REGISTRY, () =>
     Promise.resolve(DATA_STORE_REGISTRY),
   );
 
-  router.handle('dataManagement.getUsage', () =>
+  router.handle(DATA_MANAGEMENT.GET.USAGE, () =>
     Promise.resolve(storageInspector.getUsage()),
   );
 
-  router.handle('dataManagement.getRetention', () => {
+  router.handle(DATA_MANAGEMENT.GET.RETENTION, () => {
     const settings = settingsService.getSettings();
     const retention = settings.dataRetention ?? DEFAULT_RETENTION_SETTINGS;
     return Promise.resolve(retention);
   });
 
-  router.handle('dataManagement.updateRetention', (updates) => {
+  router.handle(DATA_MANAGEMENT.UPDATE.RETENTION, (updates) => {
     const current = settingsService.getSettings().dataRetention ?? DEFAULT_RETENTION_SETTINGS;
     const merged: DataRetentionSettings = {
       ...current,
@@ -54,7 +55,7 @@ export function registerDataManagementHandlers(
     return Promise.resolve(merged);
   });
 
-  router.handle('dataManagement.clearStore', async ({ storeId }) => {
+  router.handle(DATA_MANAGEMENT.CLEAR.STORE, async ({ storeId }) => {
     if (!Object.hasOwn(STORE_CLEANUP_FUNCTIONS, storeId)) {
       return { success: false };
     }
@@ -64,16 +65,16 @@ export function registerDataManagementHandlers(
     return { success: true };
   });
 
-  router.handle('dataManagement.runCleanup', () =>
+  router.handle(DATA_MANAGEMENT.RUN.CLEANUP, () =>
     cleanupService.runCleanup(),
   );
 
-  router.handle('dataManagement.exportData', async () => {
+  router.handle(DATA_MANAGEMENT.EXPORT.DATA, async () => {
     const filePath = await exportData(dataDir);
     return { filePath };
   });
 
-  router.handle('dataManagement.importData', ({ filePath }) =>
+  router.handle(DATA_MANAGEMENT.IMPORT.DATA, ({ filePath }) =>
     Promise.resolve(importData(dataDir, filePath)),
   );
 }

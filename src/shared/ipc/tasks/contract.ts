@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 
+import { HUB_TASKS, HUB_TASKS_EVENTS, TASKS, TASKS_EVENTS } from './channels';
 import {
   ExecutionProgressSchema,
   GithubIssueImportSchema,
@@ -21,47 +22,47 @@ import {
 
 /** Invoke channels for local task operations */
 export const tasksInvoke = {
-  'tasks.list': {
+  [TASKS.LIST.ALL]: {
     input: z.object({ projectId: z.string() }),
     output: z.array(TaskSchema),
   },
-  'tasks.get': {
+  [TASKS.GET.TASK]: {
     input: z.object({ projectId: z.string(), taskId: z.string() }),
     output: TaskSchema,
   },
-  'tasks.create': {
+  [TASKS.CREATE.TASK]: {
     input: TaskDraftSchema,
     output: TaskSchema,
   },
-  'tasks.update': {
+  [TASKS.UPDATE.TASK]: {
     input: z.object({ taskId: z.string(), updates: z.record(z.string(), z.unknown()) }),
     output: TaskSchema,
   },
-  'tasks.updateStatus': {
+  [TASKS.UPDATE.STATUS]: {
     input: z.object({ taskId: z.string(), status: TaskStatusSchema }),
     output: TaskSchema,
   },
-  'tasks.delete': {
+  [TASKS.DELETE.TASK]: {
     input: z.object({ taskId: z.string(), projectId: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'tasks.execute': {
+  [TASKS.EXECUTE.TASK]: {
     input: z.object({ taskId: z.string(), projectId: z.string() }),
     output: z.object({ agentId: z.string() }),
   },
-  'tasks.listAll': {
+  [TASKS.LIST.EVERY]: {
     input: z.object({}),
     output: z.array(TaskSchema),
   },
-  'tasks.decompose': {
+  [TASKS.DECOMPOSE.TASK]: {
     input: z.object({ description: z.string().min(1) }),
     output: TaskDecompositionResultSchema,
   },
-  'tasks.importFromGithub': {
+  [TASKS.IMPORT['GITHUB-ISSUES']]: {
     input: z.object({ url: z.string(), projectId: z.string() }),
     output: TaskSchema,
   },
-  'tasks.listGithubIssues': {
+  [TASKS.LIST_GITHUB.ISSUES]: {
     input: z.object({ owner: z.string(), repo: z.string() }),
     output: z.array(GithubIssueImportSchema),
   },
@@ -69,18 +70,18 @@ export const tasksInvoke = {
 
 /** Invoke channels for Hub task operations */
 export const hubTasksInvoke = {
-  'hub.tasks.list': {
+  [HUB_TASKS.LIST.ALL]: {
     input: z.object({
       projectId: z.string().optional(),
       workspaceId: z.string().optional(),
     }),
     output: z.object({ tasks: z.array(HubTaskSchema) }),
   },
-  'hub.tasks.get': {
+  [HUB_TASKS.GET.TASK]: {
     input: z.object({ taskId: z.string() }),
     output: HubTaskSchema,
   },
-  'hub.tasks.create': {
+  [HUB_TASKS.CREATE.TASK]: {
     input: z.object({
       projectId: z.string(),
       workspaceId: z.string().optional(),
@@ -91,7 +92,7 @@ export const hubTasksInvoke = {
     }),
     output: HubTaskSchema,
   },
-  'hub.tasks.update': {
+  [HUB_TASKS.UPDATE.TASK]: {
     input: z.object({
       taskId: z.string(),
       title: z.string().optional(),
@@ -102,22 +103,22 @@ export const hubTasksInvoke = {
     }),
     output: HubTaskSchema,
   },
-  'hub.tasks.updateStatus': {
+  [HUB_TASKS.UPDATE.STATUS]: {
     input: z.object({
       taskId: z.string(),
       status: HubTaskStatusSchema,
     }),
     output: HubTaskSchema,
   },
-  'hub.tasks.delete': {
+  [HUB_TASKS.DELETE.TASK]: {
     input: z.object({ taskId: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
-  'hub.tasks.execute': {
+  [HUB_TASKS.EXECUTE.TASK]: {
     input: z.object({ taskId: z.string() }),
     output: z.object({ sessionId: z.string(), status: z.enum(['started', 'queued']) }),
   },
-  'hub.tasks.cancel': {
+  [HUB_TASKS.CANCEL.TASK]: {
     input: z.object({
       taskId: z.string(),
       reason: z.string().optional(),
@@ -131,35 +132,35 @@ export const hubTasksInvoke = {
 
 /** Event channels for task-related events */
 export const tasksEvents = {
-  'event:task.statusChanged': {
+  [TASKS_EVENTS.STATUS.CHANGED]: {
     payload: z.object({ taskId: z.string(), status: TaskStatusSchema, projectId: z.string() }),
   },
-  'event:task.progressUpdated': {
+  [TASKS_EVENTS.PROGRESS.UPDATED]: {
     payload: z.object({ taskId: z.string(), progress: ExecutionProgressSchema }),
   },
-  'event:task.logAppended': {
+  [TASKS_EVENTS.LOG.APPENDED]: {
     payload: z.object({ taskId: z.string(), log: z.string() }),
   },
-  'event:task.planUpdated': {
+  [TASKS_EVENTS.PLAN.UPDATED]: {
     payload: z.object({ taskId: z.string(), plan: z.unknown() }),
   },
 } as const;
 
 /** Hub task event channels */
 export const hubTasksEvents = {
-  'event:hub.tasks.created': {
+  [HUB_TASKS_EVENTS.TASK.CREATED]: {
     payload: z.object({ taskId: z.string(), projectId: z.string() }),
   },
-  'event:hub.tasks.updated': {
+  [HUB_TASKS_EVENTS.TASK.UPDATED]: {
     payload: z.object({ taskId: z.string(), projectId: z.string() }),
   },
-  'event:hub.tasks.deleted': {
+  [HUB_TASKS_EVENTS.TASK.DELETED]: {
     payload: z.object({ taskId: z.string(), projectId: z.string() }),
   },
-  'event:hub.tasks.progress': {
+  [HUB_TASKS_EVENTS.PROGRESS.UPDATED]: {
     payload: z.object({ taskId: z.string(), progress: z.number(), phase: z.string() }),
   },
-  'event:hub.tasks.completed': {
+  [HUB_TASKS_EVENTS.TASK_RUN.COMPLETED]: {
     payload: z.object({
       taskId: z.string(),
       projectId: z.string(),

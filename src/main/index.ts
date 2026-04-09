@@ -9,6 +9,8 @@ import { join } from 'node:path';
 
 import { app, BrowserWindow, dialog, shell } from 'electron';
 
+import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
+
 import {
   createServiceRegistry,
   setupLifecycle,
@@ -73,7 +75,7 @@ function createWindow(): void {
   mainWindow.webContents.once('did-finish-load', () => {
     if (settingsServiceRef?.getSettings().assistantAutoStart !== false) {
       setTimeout(() => {
-        registryRef?.router.emit('event:assistant.autostart', { autoStarted: true });
+        registryRef?.router.emit(ASSISTANT_EVENTS.SESSION.AUTOSTART, { autoStarted: true });
       }, 800);
     }
   });
@@ -147,23 +149,18 @@ function initializeApp(): void {
   // Wire service events → renderer
   wireEventForwarding({
     router: registry.router,
-    agentOrchestrator: registry.agentOrchestrator,
-    jsonlProgressWatcher: registry.jsonlProgressWatcher,
     watchEvaluator: registry.watchEvaluator,
     webhookRelay: registry.webhookRelay,
     hubConnectionManager: registry.hubConnectionManager,
-    taskRepository: registry.taskRepository,
   });
 
   // Register app lifecycle handlers (quit, activate, cleanup)
   setupLifecycle({
     createWindow,
     terminalService: registry.terminalService,
-    agentOrchestrator: registry.agentOrchestrator,
     agentWatchdog: registry.agentWatchdog,
     errorCollector: registry.errorCollector,
     healthRegistry: registry.healthRegistry,
-    jsonlProgressWatcher: registry.jsonlProgressWatcher,
     qaTrigger: registry.qaTrigger,
     alertService: registry.alertService,
     hubConnectionManager: registry.hubConnectionManager,
@@ -171,9 +168,10 @@ function initializeApp(): void {
     briefingService: registry.briefingService,
     watchEvaluator: registry.watchEvaluator,
     cleanupService: registry.cleanupService,
-    crashRecovery: registry.crashRecovery,
     hotkeyManager: registry.hotkeyManager,
     appUpdateService: registry.services.appUpdateService,
+    commandBus: registry.commandBus,
+    busSessionManager: registry.busSessionManager,
     getHeartbeatIntervalId: () => registry.heartbeatIntervalId,
   });
 }

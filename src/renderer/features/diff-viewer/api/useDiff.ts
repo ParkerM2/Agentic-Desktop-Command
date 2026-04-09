@@ -7,6 +7,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { MERGE } from '@shared/ipc/misc/merge.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { diffKeys } from './queryKeys';
@@ -59,7 +61,7 @@ export function useDiffSummary(
   return useQuery({
     queryKey: diffKeys.summary(repoPath ?? '', `${sourceBranch ?? ''}...${targetBranch ?? ''}`),
     queryFn: async (): Promise<DiffSummary> => {
-      const result = await ipc('merge.previewDiff', {
+      const result = await ipc(MERGE.PREVIEW.DIFF, {
         repoPath: repoPath ?? '',
         sourceBranch: sourceBranch ?? '',
         targetBranch: targetBranch ?? '',
@@ -113,7 +115,7 @@ export function useFileDiffContent(
       filePath ?? '',
     ),
     queryFn: () =>
-      ipc('merge.getFileDiff', {
+      ipc(MERGE.GET['FILE-DIFF'], {
         repoPath: repoPath ?? '',
         sourceBranch: sourceBranch ?? '',
         targetBranch: targetBranch ?? '',

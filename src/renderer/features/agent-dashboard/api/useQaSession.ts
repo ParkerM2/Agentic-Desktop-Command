@@ -8,6 +8,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { agentDashboardKeys } from './queryKeys';
@@ -17,7 +19,7 @@ export function useQaSession(taskId: string | undefined) {
   return useQuery({
     queryKey: agentDashboardKeys.qaSession(taskId ?? ''),
     queryFn: () =>
-      ipc('agent-dashboard.getQaSession', {
+      ipc(AGENT_DASHBOARD.GET['QA-SESSION'], {
         taskId: taskId ?? '',
       }),
     enabled: taskId !== undefined,
@@ -29,7 +31,7 @@ export function useQaSession(taskId: string | undefined) {
 export function useQaSessions() {
   return useQuery({
     queryKey: agentDashboardKeys.qaSessions(),
-    queryFn: () => ipc('agent-dashboard.listQaSessions', {}),
+    queryFn: () => ipc(AGENT_DASHBOARD.LIST['QA-SESSIONS'], {}),
     staleTime: 5_000,
   });
 }

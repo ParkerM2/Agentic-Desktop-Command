@@ -13,6 +13,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, Briefcase, Filter, FolderOpen, RefreshCw } from 'lucide-react';
 
 import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
+import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
 import type { Task, TaskStatus } from '@shared/types';
 
 import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
@@ -222,21 +223,21 @@ export function MyWorkPage() {
   const { data: projects } = useProjects();
 
   // Invalidate task list when Hub task events arrive
-  useHubEvent('event:hub.tasks.created', () => {
+  useHubEvent(HUB_TASKS_EVENTS.TASK.CREATED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
-  useHubEvent('event:hub.tasks.updated', () => {
+  useHubEvent(HUB_TASKS_EVENTS.TASK.UPDATED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
-  useHubEvent('event:hub.tasks.deleted', () => {
+  useHubEvent(HUB_TASKS_EVENTS.TASK.DELETED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
-  useHubEvent('event:hub.tasks.completed', () => {
+  useHubEvent(HUB_TASKS_EVENTS.TASK_RUN.COMPLETED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
 
   // Refresh on local task status changes
-  useIpcEvent('event:task.statusChanged', () => {
+  useIpcEvent(TASKS_EVENTS.STATUS.CHANGED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
 

@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { SCREEN } from '@shared/ipc/misc/screen.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { screenKeys } from './queryKeys';
@@ -16,7 +18,7 @@ export function useAvailableSources(options?: {
   return useQuery({
     queryKey: screenKeys.sourcesWithOptions(options?.types, options?.thumbnailSize),
     queryFn: () =>
-      ipc('screen.listSources', {
+      ipc(SCREEN.LIST.SOURCES, {
         types: options?.types,
         thumbnailSize: options?.thumbnailSize,
       }),
@@ -37,7 +39,7 @@ export function useCaptureScreen() {
         height?: number;
       };
     }) =>
-      ipc('screen.capture', {
+      ipc(SCREEN.CAPTURE.SCREEN, {
         sourceId: params.sourceId,
         options: params.options,
       }),
@@ -52,7 +54,7 @@ export function useCaptureScreen() {
 export function useScreenPermission() {
   return useQuery({
     queryKey: screenKeys.permission(),
-    queryFn: () => ipc('screen.checkPermission', {}),
+    queryFn: () => ipc(SCREEN.CHECK.PERMISSION, {}),
     staleTime: Infinity, // Permission doesn't change during runtime
   });
 }

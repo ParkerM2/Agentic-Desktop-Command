@@ -12,6 +12,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { Folder, FolderOpen, Minus, PanelLeft, Plus, Settings, Square, X } from 'lucide-react';
 
 import { PROJECT_VIEWS, ROUTES, projectViewPath } from '@shared/constants';
+import { WINDOW } from '@shared/ipc/window/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
@@ -35,7 +36,7 @@ export function TopBar() {
 
   const refreshMaximizedState = useCallback(async () => {
     try {
-      const result = await ipc('window.isMaximized', {});
+      const result = await ipc(WINDOW.CHECK.MAXIMIZED, {});
       setIsMaximized(result.isMaximized);
     } catch {
       // non-critical
@@ -70,16 +71,16 @@ export function TopBar() {
   }
 
   function handleMinimize() {
-    void ipc('window.minimize', {});
+    void ipc(WINDOW.MINIMIZE.APP, {});
   }
 
   function handleMaximize() {
-    void ipc('window.maximize', {});
+    void ipc(WINDOW.MAXIMIZE.APP, {});
     setIsMaximized((prev) => !prev);
   }
 
   function handleClose() {
-    void ipc('window.close', {});
+    void ipc(WINDOW.CLOSE.APP, {});
   }
 
   return (

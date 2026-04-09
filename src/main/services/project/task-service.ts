@@ -14,6 +14,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { REQUIREMENTS_FILENAME, PLAN_FILENAME, METADATA_FILENAME } from '@shared/constants';
+import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
 import type { Task, TaskDraft, TaskStatus } from '@shared/types';
 
 import { getNextNum, slugify } from './task-slug';
@@ -223,7 +224,7 @@ export function createTaskService(
       writeFileSync(planPath, JSON.stringify(plan, null, 2));
       const task = readTask(getTaskDir(projectPath, taskId), taskId);
       if (!task) throw new Error('Failed to read updated task');
-      router?.emit('event:task.statusChanged', {
+      router?.emit(TASKS_EVENTS.STATUS.CHANGED, {
         taskId,
         status,
         projectId: projectPath,

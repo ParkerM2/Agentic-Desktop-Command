@@ -4,7 +4,9 @@
 
 import nodemailer from 'nodemailer';
 
+import { EMAIL_EVENTS } from '@shared/ipc/email/channels';
 import type { Email, EmailSendResult } from '@shared/types';
+
 
 import type { IpcRouter } from '@main/ipc/router';
 
@@ -95,7 +97,7 @@ export async function sendEmailViaSmtp(
     const info = (await transporter.sendMail(mailOptions)) as { messageId?: string };
     const messageId = typeof info.messageId === 'string' ? info.messageId : '';
 
-    router.emit('event:email.sent', {
+    router.emit(EMAIL_EVENTS.MESSAGE.SENT, {
       messageId,
       to: email.to,
       subject: email.subject,
@@ -105,7 +107,7 @@ export async function sendEmailViaSmtp(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    router.emit('event:email.failed', {
+    router.emit(EMAIL_EVENTS.MESSAGE.FAILED, {
       to: email.to,
       subject: email.subject,
       error: errorMessage,

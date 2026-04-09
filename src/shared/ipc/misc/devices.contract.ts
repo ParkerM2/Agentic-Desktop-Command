@@ -6,6 +6,8 @@
 
 import { z } from 'zod';
 
+import { DEVICES } from './devices.channels';
+
 export const DeviceCapabilitiesSchema = z.object({
   canExecute: z.boolean(),
   repos: z.array(z.string()),
@@ -28,11 +30,11 @@ export const DeviceSchema = z.object({
 });
 
 export const devicesInvoke = {
-  'devices.list': {
+  [DEVICES.LIST.ALL]: {
     input: z.object({}),
     output: z.array(DeviceSchema),
   },
-  'devices.register': {
+  [DEVICES.REGISTER.DEVICE]: {
     input: z.object({
       machineId: z.string(),
       deviceName: z.string(),
@@ -42,11 +44,11 @@ export const devicesInvoke = {
     }),
     output: DeviceSchema,
   },
-  'devices.heartbeat': {
+  [DEVICES.HEARTBEAT.DEVICE]: {
     input: z.object({ deviceId: z.string() }),
     output: z.object({ success: z.boolean(), lastSeen: z.string() }),
   },
-  'devices.update': {
+  [DEVICES.UPDATE.DEVICE]: {
     input: z.object({
       deviceId: z.string(),
       deviceName: z.string().optional(),

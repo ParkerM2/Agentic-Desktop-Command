@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { GIT, GIT_EVENTS } from './channels';
 import {
   GitBranchSchema,
   GitCommitInputSchema,
@@ -28,15 +29,15 @@ import {
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const gitInvoke = {
-  'git.status': {
+  [GIT.GET.STATUS]: {
     input: z.object({ repoPath: z.string() }),
     output: GitStatusSchema,
   },
-  'git.branches': {
+  [GIT.GET.BRANCHES]: {
     input: z.object({ repoPath: z.string() }),
     output: z.array(GitBranchSchema),
   },
-  'git.createBranch': {
+  [GIT.CREATE.BRANCH]: {
     input: z.object({
       repoPath: z.string(),
       branchName: z.string(),
@@ -44,39 +45,39 @@ export const gitInvoke = {
     }),
     output: SuccessResponseSchema,
   },
-  'git.commit': {
+  [GIT.COMMIT.CHANGES]: {
     input: GitCommitInputSchema,
     output: GitCommitOutputSchema,
   },
-  'git.push': {
+  [GIT.PUSH.CHANGES]: {
     input: GitPushInputSchema,
     output: GitPushOutputSchema,
   },
-  'git.resolveConflict': {
+  [GIT.RESOLVE.CONFLICT]: {
     input: GitResolveConflictInputSchema,
     output: GitResolveConflictOutputSchema,
   },
-  'git.createPr': {
+  [GIT.CREATE.PR]: {
     input: GitCreatePrInputSchema,
     output: GitCreatePrOutputSchema,
   },
-  'git.createWorktree': {
+  [GIT.CREATE.WORKTREE]: {
     input: z.object({ repoPath: z.string(), worktreePath: z.string(), branch: z.string() }),
     output: WorktreeSchema,
   },
-  'git.removeWorktree': {
+  [GIT.REMOVE.WORKTREE]: {
     input: z.object({ repoPath: z.string(), worktreePath: z.string() }),
     output: SuccessResponseSchema,
   },
-  'git.listWorktrees': {
+  [GIT.LIST.WORKTREES]: {
     input: z.object({ projectId: z.string() }),
     output: z.array(WorktreeSchema),
   },
-  'git.detectStructure': {
+  [GIT.DETECT.STRUCTURE]: {
     input: z.object({ repoPath: z.string() }),
     output: z.object({ structure: RepoStructureSchema }),
   },
-  'git.getRemoteUrl': {
+  [GIT.GET['REMOTE-URL']]: {
     input: z.object({ repoPath: z.string(), remote: z.string().optional() }),
     output: z.object({ url: z.string() }),
   },
@@ -85,7 +86,7 @@ export const gitInvoke = {
 // ─── Event Channels ───────────────────────────────────────────
 
 export const gitEvents = {
-  'event:git.worktreeChanged': {
+  [GIT_EVENTS.WORKTREE.CHANGED]: {
     payload: z.object({ projectId: z.string() }),
   },
 } as const;

@@ -6,6 +6,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
+
 import { useHubEvent } from '@renderer/shared/hooks';
 
 import { workspaceKeys } from '../api/queryKeys';
@@ -14,7 +16,7 @@ import { workspaceKeys } from '../api/queryKeys';
 export function useWorkspaceEvents() {
   const queryClient = useQueryClient();
 
-  useHubEvent('event:hub.workspaces.updated', () => {
+  useHubEvent(HUB_EVENTS.WORKSPACE.UPDATED, () => {
     void queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
   });
 }

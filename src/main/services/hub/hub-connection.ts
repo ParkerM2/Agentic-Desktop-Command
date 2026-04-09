@@ -7,7 +7,9 @@
  * - Event mapping (via hub-event-mapper)
  */
 
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import type { HubConnection, HubConnectionStatus } from '@shared/types';
+
 
 import { hubLogger } from '@main/lib/logger';
 
@@ -71,7 +73,7 @@ export function createHubConnectionManager(router: IpcRouter): HubConnectionMana
       return;
     }
     status = newStatus;
-    router.emit('event:hub.connectionChanged', { status: newStatus });
+    router.emit(HUB_EVENTS.CONNECTION.CHANGED, { status: newStatus });
     hubLogger.info(`[Hub] Connection status: ${newStatus}`);
   }
 

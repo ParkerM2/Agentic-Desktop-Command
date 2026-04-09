@@ -7,6 +7,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { taskKeys } from '@features/tasks/api/queryKeys';
@@ -15,7 +17,7 @@ import { taskKeys } from '@features/tasks/api/queryKeys';
 export function useWorkflowEvents() {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:task.progressUpdated', ({ taskId }) => {
+  useIpcEvent(TASKS_EVENTS.PROGRESS.UPDATED, ({ taskId }) => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
     void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
   });

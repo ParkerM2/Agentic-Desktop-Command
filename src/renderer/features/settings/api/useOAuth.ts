@@ -7,6 +7,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { OAUTH } from '@shared/ipc/oauth/channels';
+
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -20,7 +22,7 @@ export const oauthKeys = {
 export function useOAuthStatus(provider: string) {
   return useQuery({
     queryKey: oauthKeys.status(provider),
-    queryFn: () => ipc('oauth.isAuthenticated', { provider }),
+    queryFn: () => ipc(OAUTH.CHECK.AUTHENTICATED, { provider }),
     enabled: provider.length > 0,
   });
 }
@@ -31,7 +33,7 @@ export function useOAuthAuthorize() {
   const { onError } = useMutationErrorToast();
 
   return useMutation({
-    mutationFn: (provider: string) => ipc('oauth.authorize', { provider }),
+    mutationFn: (provider: string) => ipc(OAUTH.AUTHORIZE.PROVIDER, { provider }),
     onSuccess: (_data, provider) => {
       void queryClient.invalidateQueries({ queryKey: oauthKeys.status(provider) });
     },
@@ -45,7 +47,7 @@ export function useOAuthRevoke() {
   const { onError } = useMutationErrorToast();
 
   return useMutation({
-    mutationFn: (provider: string) => ipc('oauth.revoke', { provider }),
+    mutationFn: (provider: string) => ipc(OAUTH.REVOKE.PROVIDER, { provider }),
     onSuccess: (_data, provider) => {
       void queryClient.invalidateQueries({ queryKey: oauthKeys.status(provider) });
     },

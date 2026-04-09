@@ -5,14 +5,16 @@
  * Each handler file is thin — it maps channels to service calls.
  */
 
+import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
+
 import { registerAgentDashboardHandlers } from './handlers/agent-dashboard-handlers';
-import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
 import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
 import { registerAssistantHandlers } from './handlers/assistant-handlers';
 import { registerAuthHandlers } from './handlers/auth-handlers';
 import { registerBriefingHandlers } from './handlers/briefing-handlers';
+import { registerBusHandlers } from './handlers/bus-handlers';
 import { registerCalendarHandlers } from './handlers/calendar-handlers';
 import { registerChangelogHandlers } from './handlers/changelog-handlers';
 import { registerClaudeHandlers } from './handlers/claude-handlers';
@@ -57,15 +59,17 @@ import { registerWorkflowHandlers } from './handlers/workflow-handlers';
 import { registerWorkflowTemplateHandlers } from './handlers/workflow-template-handlers';
 import { registerWorkspaceHandlers } from './handlers/workspace-handlers';
 
+
 import type { TeamWatcherService } from './handlers/agent-dashboard-handlers';
 import type { IpcRouter } from './router';
 import type { OAuthManager } from '../auth/oauth-manager';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
-import type { McpManager } from '../mcp/mcp-manager';
+import type { CommandBus } from '../bus';
 import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
+import type { BusSessionManager } from '../bus/session-manager';
+import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentManagerService } from '../services/agent-manager';
-import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
 import type { AppUpdateService } from '../services/app/app-update-service';
 import type { AssistantService } from '../services/assistant/assistant-service';
@@ -97,7 +101,6 @@ import type { NotesService } from '../services/notes/notes-service';
 import type { NotificationManager } from '../services/notifications';
 import type { PlannerService } from '../services/planner/planner-service';
 import type { ProgressService } from '../services/progress/progress-service';
-import type { ProgressWatcherV2 } from '../services/progress-watcher-v2';
 import type { CodebaseAnalyzerService } from '../services/project/codebase-analyzer';
 import type { ProjectService } from '../services/project/project-service';
 import type { SetupPipelineService } from '../services/project/setup-pipeline';
@@ -114,15 +117,15 @@ import type { TimeParserService } from '../services/time-parser/time-parser-serv
 import type { TrackerService } from '../services/tracker/tracker-service';
 import type { VisualizationService } from '../services/visualization';
 import type { VoiceService } from '../services/voice/voice-service';
-import type { TaskLauncherService } from '../services/workflow/task-launcher';
 import type { WorkflowEngineService } from '../services/workflow-engine';
 import type { WorkflowTemplateService } from '../services/workflow-templates';
 import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
+  commandBus: CommandBus;
+  busSessionManager: BusSessionManager;
   agentManagerService: AgentManagerService;
-  agentOrchestrator: AgentOrchestrator;
   projectService: ProjectService;
   taskService: TaskService;
   terminalService: TerminalService;
@@ -163,7 +166,6 @@ export interface Services {
   hubApiClient: HubApiClient;
   hubAuthService: HubAuthService;
   qaRunner: QaRunner;
-  taskLauncher: TaskLauncherService;
   workflowTemplateService: WorkflowTemplateService;
   dashboardService: DashboardService;
   dockerService: DockerService;
@@ -177,7 +179,6 @@ export interface Services {
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
   progressService: ProgressService;
-  progressWatcherV2: ProgressWatcherV2;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
   workflowEngineService: WorkflowEngineService;
@@ -262,15 +263,14 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerBriefingHandlers(router, services.briefingService);
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
-  registerWorkflowHandlers(router, services.hubApiClient, services.taskLauncher);
+  registerWorkflowHandlers(router, services.hubApiClient);
   registerWorkflowTemplateHandlers(router, services.workflowTemplateService);
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);
-  registerAgentOrchestratorHandlers(router, services.agentOrchestrator, services.taskRepository);
   registerQaHandlers(
     router,
     services.qaRunner,
-    services.agentOrchestrator,
+    services.busSessionManager,
     services.taskRepository,
   );
   registerDashboardHandlers(router, services.dashboardService);
@@ -288,19 +288,19 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
+  registerBusHandlers(router, services.commandBus, services.busSessionManager);
 
   // Stub: workspaces CRUD (Hub-backed, no local service yet)
-  router.handle('workspaces.list', () => Promise.resolve([]));
-  router.handle('workspaces.create', () => { throw new Error('Hub not configured'); });
-  router.handle('workspaces.update', () => { throw new Error('Hub not configured'); });
-  router.handle('workspaces.delete', () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.LIST.ALL, () => Promise.resolve([]));
+  router.handle(WORKSPACES.CREATE.WORKSPACE, () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.UPDATE.WORKSPACE, () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.DELETE.WORKSPACE, () => { throw new Error('Hub not configured'); });
 
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
       router,
       services.agentManagerService,
       services.teamWatcherService,
-      services.progressWatcherV2,
       services.qaRunner,
       services.gitService,
     );

@@ -12,6 +12,8 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
+import { AUTH_EVENTS } from '@shared/ipc/auth/channels';
+
 import { useIpcEvent } from '@renderer/shared/hooks';
 
 /**
@@ -22,7 +24,7 @@ import { useIpcEvent } from '@renderer/shared/hooks';
 export function useSessionEvents(): void {
   const queryClient = useQueryClient();
 
-  useIpcEvent('event:user.sessionChanged', () => {
+  useIpcEvent(AUTH_EVENTS.SESSION.CHANGED, () => {
     // Clear the entire query cache when session changes.
     // This ensures no stale data from the previous user is displayed.
     queryClient.clear();

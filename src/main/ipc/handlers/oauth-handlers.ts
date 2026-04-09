@@ -5,11 +5,13 @@
  * authentication status checks, and token revocation.
  */
 
+import { OAUTH } from '@shared/ipc/oauth/channels';
+
 import type { OAuthManager } from '../../auth/oauth-manager';
 import type { IpcRouter } from '../router';
 
 export function registerOAuthHandlers(router: IpcRouter, oauthManager: OAuthManager): void {
-  router.handle('oauth.authorize', async ({ provider }) => {
+  router.handle(OAUTH.AUTHORIZE.PROVIDER, async ({ provider }) => {
     try {
       await oauthManager.authorize(provider);
       return { success: true };
@@ -19,7 +21,7 @@ export function registerOAuthHandlers(router: IpcRouter, oauthManager: OAuthMana
     }
   });
 
-  router.handle('oauth.isAuthenticated', async ({ provider }) => {
+  router.handle(OAUTH.CHECK.AUTHENTICATED, async ({ provider }) => {
     const authenticated = oauthManager.isAuthenticated(provider);
 
     if (!authenticated) {
@@ -35,7 +37,7 @@ export function registerOAuthHandlers(router: IpcRouter, oauthManager: OAuthMana
     }
   });
 
-  router.handle('oauth.revoke', async ({ provider }) => {
+  router.handle(OAUTH.REVOKE.PROVIDER, async ({ provider }) => {
     try {
       await oauthManager.revoke(provider);
       return { success: true };

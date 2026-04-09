@@ -4,6 +4,8 @@
  * Hub task channels (`hub.tasks.*`) are registered in `task-handlers.ts`.
  */
 
+import { HUB, HUB_EVENTS } from '@shared/ipc/hub/channels';
+
 import type { HubApiClient } from '../../services/hub/hub-api-client';
 import type { HubConnectionManager } from '../../services/hub/hub-connection';
 import type { HubSyncService } from '../../services/hub/hub-sync';
@@ -15,18 +17,18 @@ export function registerHubHandlers(
   syncService: HubSyncService,
   _hubApiClient: HubApiClient,
 ): void {
-  router.handle('hub.connect', async ({ url, apiKey }) => {
+  router.handle(HUB.CONNECT.SERVER, async ({ url, apiKey }) => {
     connectionManager.configure(url, apiKey);
     const result = await connectionManager.connect();
     return { success: result.success, error: result.error };
   });
 
-  router.handle('hub.disconnect', () => {
+  router.handle(HUB.DISCONNECT.SERVER, () => {
     connectionManager.disconnect();
     return Promise.resolve({ success: true });
   });
 
-  router.handle('hub.getStatus', () => {
+  router.handle(HUB.GET.STATUS, () => {
     const connection = connectionManager.getConnection();
     return Promise.resolve({
       status: connectionManager.getStatus(),
@@ -37,15 +39,15 @@ export function registerHubHandlers(
     });
   });
 
-  router.handle('hub.sync', async () => {
+  router.handle(HUB.SYNC.DATA, async () => {
     const syncedCount = await syncService.syncPending();
     if (syncedCount > 0) {
-      router.emit('event:hub.syncCompleted', { entities: [], syncedCount });
+      router.emit(HUB_EVENTS.SYNC.COMPLETED, { entities: [], syncedCount });
     }
     return { syncedCount, pendingCount: syncService.getPendingCount() };
   });
 
-  router.handle('hub.getConfig', () => {
+  router.handle(HUB.GET.CONFIG, () => {
     const connection = connectionManager.getConnection();
     return Promise.resolve({
       hubUrl: connection?.hubUrl,
@@ -54,7 +56,7 @@ export function registerHubHandlers(
     });
   });
 
-  router.handle('hub.removeConfig', () => {
+  router.handle(HUB.REMOVE.CONFIG, () => {
     connectionManager.removeConfig();
     return Promise.resolve({ success: true });
   });

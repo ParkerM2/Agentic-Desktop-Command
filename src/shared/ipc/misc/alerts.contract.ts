@@ -8,6 +8,8 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import { ALERTS, ALERTS_EVENTS } from './alerts.channels';
+
 export const AlertTypeSchema = z.enum(['reminder', 'deadline', 'notification', 'recurring']);
 
 export const RecurringConfigSchema = z.object({
@@ -33,11 +35,11 @@ export const AlertSchema = z.object({
 });
 
 export const alertsInvoke = {
-  'alerts.list': {
+  [ALERTS.LIST.ALL]: {
     input: z.object({ includeExpired: z.boolean().optional() }),
     output: z.array(AlertSchema),
   },
-  'alerts.create': {
+  [ALERTS.CREATE.ALERT]: {
     input: z.object({
       type: AlertTypeSchema,
       message: z.string(),
@@ -47,21 +49,21 @@ export const alertsInvoke = {
     }),
     output: AlertSchema,
   },
-  'alerts.dismiss': {
+  [ALERTS.DISMISS.ALERT]: {
     input: z.object({ id: z.string() }),
     output: AlertSchema,
   },
-  'alerts.delete': {
+  [ALERTS.DELETE.ALERT]: {
     input: z.object({ id: z.string() }),
     output: SuccessResponseSchema,
   },
 } as const;
 
 export const alertsEvents = {
-  'event:alert.triggered': {
+  [ALERTS_EVENTS.ALERT.TRIGGERED]: {
     payload: z.object({ alertId: z.string(), message: z.string() }),
   },
-  'event:alert.changed': {
+  [ALERTS_EVENTS.ALERT.CHANGED]: {
     payload: z.object({ alertId: z.string() }),
   },
 } as const;

@@ -7,7 +7,9 @@
 
 import { randomUUID } from 'node:crypto';
 
+import { ALERTS_EVENTS } from '@shared/ipc/misc/alerts.channels';
 import type { Alert, AlertLinkedTo, RecurringConfig } from '@shared/types';
+
 
 import type { AlertStore } from './alert-store';
 import type { IpcRouter } from '../../ipc/router';
@@ -121,7 +123,7 @@ export function createAlertService(deps: {
       };
       alerts.push(alert);
       persist();
-      router.emit('event:alert.changed', { alertId: alert.id });
+      router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: alert.id });
       return alert;
     },
 
@@ -144,7 +146,7 @@ export function createAlertService(deps: {
       }
 
       persist();
-      router.emit('event:alert.changed', { alertId: alert.id });
+      router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: alert.id });
       return alert;
     },
 
@@ -152,7 +154,7 @@ export function createAlertService(deps: {
       const index = findAlertIndex(id);
       alerts.splice(index, 1);
       persist();
-      router.emit('event:alert.changed', { alertId: id });
+      router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: id });
       return { success: true };
     },
 
@@ -162,7 +164,7 @@ export function createAlertService(deps: {
         if (alert.dismissed) continue;
         const triggerDate = new Date(alert.triggerAt);
         if (triggerDate <= now) {
-          router.emit('event:alert.triggered', {
+          router.emit(ALERTS_EVENTS.ALERT.TRIGGERED, {
             alertId: alert.id,
             message: alert.message,
           });
@@ -178,7 +180,7 @@ export function createAlertService(deps: {
           if (alert.dismissed) continue;
           const triggerDate = new Date(alert.triggerAt);
           if (triggerDate <= now) {
-            router.emit('event:alert.triggered', {
+            router.emit(ALERTS_EVENTS.ALERT.TRIGGERED, {
               alertId: alert.id,
               message: alert.message,
             });

@@ -8,6 +8,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 
+import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { agentDashboardKeys } from './queryKeys';
@@ -20,7 +22,7 @@ export function useAgentSessions(options?: {
   return useQuery({
     queryKey: agentDashboardKeys.sessions(),
     queryFn: () =>
-      ipc('agent-dashboard.listSessions', {
+      ipc(AGENT_DASHBOARD.LIST.SESSIONS, {
         type: options?.type,
         teamName: options?.teamName,
       }),
@@ -33,7 +35,7 @@ export function useAgentSession(sessionId: string | null) {
   return useQuery({
     queryKey: agentDashboardKeys.session(sessionId ?? ''),
     queryFn: () =>
-      ipc('agent-dashboard.getSession', {
+      ipc(AGENT_DASHBOARD.GET.SESSION, {
         sessionId: sessionId ?? '',
       }),
     enabled: sessionId !== null,
@@ -46,7 +48,7 @@ export function useSessionsForTask(slug: string | null) {
   return useQuery({
     queryKey: agentDashboardKeys.sessionsForTask(slug ?? ''),
     queryFn: () =>
-      ipc('agent-dashboard.getSessionsForTask', { slug: slug ?? '' }),
+      ipc(AGENT_DASHBOARD.LIST['SESSIONS-FOR-TASK'], { slug: slug ?? '' }),
     enabled: slug !== null && slug !== '',
     staleTime: 5_000,
   });
@@ -60,7 +62,7 @@ export function useSessionLog(
   return useQuery({
     queryKey: agentDashboardKeys.sessionLog(sessionId ?? ''),
     queryFn: () =>
-      ipc('agent-dashboard.getSessionLog', {
+      ipc(AGENT_DASHBOARD.GET['SESSION-LOG'], {
         sessionId: sessionId ?? '',
         offset: options?.offset,
         limit: options?.limit,
@@ -75,7 +77,7 @@ export function useGitDiff(sessionId: string | null) {
   return useQuery({
     queryKey: agentDashboardKeys.gitDiff(sessionId ?? ''),
     queryFn: () =>
-      ipc('agent-dashboard.getGitDiff', { sessionId: sessionId ?? '' }),
+      ipc(AGENT_DASHBOARD.GET['GIT-DIFF'], { sessionId: sessionId ?? '' }),
     enabled: sessionId !== null,
     staleTime: 10_000,
   });

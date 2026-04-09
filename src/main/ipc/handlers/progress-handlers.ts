@@ -6,6 +6,8 @@
  * No business logic here.
  */
 
+import { PROGRESS, PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
+
 import type { ProgressService } from '../../services/progress/progress-service';
 import type { IpcRouter } from '../router';
 
@@ -28,68 +30,68 @@ export function registerProgressHandlers(
 ): void {
   // ── Invoke Handlers ──────────────────────────────────────────
 
-  router.handle('progress.listTasks', () => progressService.listTasks());
+  router.handle(PROGRESS.LIST.TASKS, () => progressService.listTasks());
 
-  router.handle('progress.getTask', ({ slug }) => progressService.getTask(slug));
+  router.handle(PROGRESS.GET.TASK, ({ slug }) => progressService.getTask(slug));
 
-  router.handle('progress.createTask', ({ slug, title, description, priority }) =>
+  router.handle(PROGRESS.CREATE.TASK, ({ slug, title, description, priority }) =>
     progressService.createTask(slug, title, description, priority),
   );
 
-  router.handle('progress.updateTask', ({ slug, updates }) =>
+  router.handle(PROGRESS.UPDATE.TASK, ({ slug, updates }) =>
     progressService.updateTask(slug, updates),
   );
 
-  router.handle('progress.archiveTask', async ({ slug }) => {
+  router.handle(PROGRESS.ARCHIVE.TASK, async ({ slug }) => {
     await progressService.archiveTask(slug);
     return { success: true };
   });
 
-  router.handle('progress.deleteTask', async ({ slug }) => {
+  router.handle(PROGRESS.DELETE.TASK, async ({ slug }) => {
     await progressService.deleteTask(slug);
     return { success: true };
   });
 
-  router.handle('progress.listArchived', () => progressService.listArchived());
+  router.handle(PROGRESS.LIST.ARCHIVED, () => progressService.listArchived());
 
-  router.handle('progress.startResearch', ({ slug, prompt }) =>
+  router.handle(PROGRESS.START.RESEARCH, ({ slug, prompt }) =>
     progressService.startResearch(slug, prompt),
   );
 
-  router.handle('progress.createPlan', ({ slug, prompt }) =>
+  router.handle(PROGRESS.CREATE.PLAN, ({ slug, prompt }) =>
     progressService.createPlan(slug, prompt),
   );
 
-  router.handle('progress.spinUpTeam', async ({ slug, prompt }) => {
+  router.handle(PROGRESS.START.TEAM, async ({ slug, prompt }) => {
     const result = await progressService.spinUpTeam(slug, prompt);
     return { sessionId: result.sessionId, teamLeadIndex: 0, action: result.action };
   });
 
-  router.handle('progress.runWorkflow', ({ slug, templateId }) =>
+  router.handle(PROGRESS.START.WORKFLOW, ({ slug, templateId }) =>
     progressService.runWorkflow(slug, templateId),
   );
 
-  router.handle('progress.cancelAction', ({ slug }) => progressService.cancelAction(slug));
+  router.handle(PROGRESS.CANCEL.ACTION, ({ slug }) => progressService.cancelAction(slug));
 
-  router.handle('progress.runLogCleanup', () => progressService.runLogCleanup());
+  router.handle(PROGRESS.RUN['LOG-CLEANUP'], () => progressService.runLogCleanup());
 
   // ── Event Forwarding ─────────────────────────────────────────
   // Subscribe to service events and forward them to the renderer via router.emit().
 
   progressService.onTaskUpdated((slug, task) => {
-    router.emit('event:progress.taskUpdated', { slug, task });
+    router.emit(PROGRESS_EVENTS.TASK.UPDATED, { slug, task });
   });
 
   progressService.onTaskCreated((slug, task) => {
-    router.emit('event:progress.taskCreated', { slug, task });
+    router.emit(PROGRESS_EVENTS.TASK.CREATED, { slug, task });
   });
 
   progressService.onTaskArchived((slug) => {
-    router.emit('event:progress.taskArchived', { slug });
+    router.emit(PROGRESS_EVENTS.TASK.ARCHIVED, { slug });
   });
 
   progressService.onActionStarted((slug, action, sessionId) => {
-    router.emit('event:progress.actionStarted', {
+    router.emit(PROGRESS_EVENTS.ACTION.STARTED, {
       slug,
       action: toProgressAction(action),
       sessionId,
@@ -97,15 +99,15 @@ export function registerProgressHandlers(
   });
 
   progressService.onActionCompleted((slug, action) => {
-    router.emit('event:progress.actionCompleted', { slug, action: toProgressAction(action) });
+    router.emit(PROGRESS_EVENTS.ACTION.COMPLETED, { slug, action: toProgressAction(action) });
   });
 
   progressService.onActionFailed((slug, action, error) => {
-    router.emit('event:progress.actionFailed', { slug, action: toProgressAction(action), error });
+    router.emit(PROGRESS_EVENTS.ACTION.FAILED, { slug, action: toProgressAction(action), error });
   });
 
   progressService.onWorkflowStep((slug, step, status) => {
-    router.emit('event:progress.workflowStep', {
+    router.emit(PROGRESS_EVENTS.WORKFLOW.STEP, {
       slug,
       step: toProgressAction(step),
       status: toWorkflowStepStatus(status),

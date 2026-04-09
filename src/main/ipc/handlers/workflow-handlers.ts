@@ -7,6 +7,9 @@
  * Launches Claude CLI sessions for task execution.
  */
 
+import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import { WORKFLOW, WORKFLOW_EVENTS } from '@shared/ipc/workflow/channels';
+
 import { createJsonlWatcher } from '../../services/workflow/jsonl-watcher';
 import { createProgressSyncer } from '../../services/workflow/progress-syncer';
 import { createProgressWatcher } from '../../services/workflow/progress-watcher';
@@ -14,7 +17,6 @@ import { createProgressWatcher } from '../../services/workflow/progress-watcher'
 import type { HubApiClient } from '../../services/hub/hub-api-client';
 import type { JsonlWatcher } from '../../services/workflow/jsonl-watcher';
 import type { ProgressWatcher } from '../../services/workflow/progress-watcher';
-import type { TaskLauncherService } from '../../services/workflow/task-launcher';
 import type { IpcRouter } from '../router';
 
 interface ActiveWatcher {
@@ -28,9 +30,8 @@ const activeWatchers = new Map<string, ActiveWatcher>();
 export function registerWorkflowHandlers(
   router: IpcRouter,
   hubApiClient: HubApiClient,
-  taskLauncher: TaskLauncherService,
 ): void {
-  router.handle('workflow.watchProgress', ({ projectPath }) => {
+  router.handle(WORKFLOW.WATCH.PROGRESS, ({ projectPath }) => {
     // Stop existing watchers for this path if any
     const existing = activeWatchers.get(projectPath);
     if (existing) {
@@ -46,7 +47,7 @@ export function registerWorkflowHandlers(
       void syncer.syncProgress(data.taskId, data);
     });
     legacyWatcher.onProgress((data) => {
-      router.emit('event:task.progressUpdated', {
+      router.emit(TASKS_EVENTS.PROGRESS.UPDATED, {
         taskId: data.taskId,
         progress: {
           phase: data.phase as 'idle' | 'planning' | 'coding' | 'testing' | 'reviewing' | 'complete' | 'error',
@@ -62,7 +63,7 @@ export function registerWorkflowHandlers(
     const jsonlWatcher = createJsonlWatcher(projectPath);
 
     jsonlWatcher.onMilestone((event) => {
-      router.emit('event:workflow.milestone', {
+      router.emit(WORKFLOW_EVENTS.WORKFLOW.MILESTONE, {
         ticket: event.ticket,
         run: event.run,
         event: event.event,
@@ -73,7 +74,7 @@ export function registerWorkflowHandlers(
     });
 
     jsonlWatcher.onContext((ctx) => {
-      router.emit('event:workflow.context', {
+      router.emit(WORKFLOW_EVENTS.WORKFLOW.CONTEXT, {
         ticket: ctx?.ticket ?? null,
         phase: ctx?.phase ?? null,
         runSlug: ctx?.runSlug ?? null,
@@ -81,7 +82,7 @@ export function registerWorkflowHandlers(
     });
 
     jsonlWatcher.onPermission((ticket, agent, message) => {
-      router.emit('event:workflow.permission', { ticket, agent, message });
+      router.emit(WORKFLOW_EVENTS.WORKFLOW.PERMISSION, { ticket, agent, message });
     });
 
     jsonlWatcher.start();
@@ -90,7 +91,7 @@ export function registerWorkflowHandlers(
     return Promise.resolve({ success: true });
   });
 
-  router.handle('workflow.stopWatching', ({ projectPath }) => {
+  router.handle(WORKFLOW.STOP.WATCHING, ({ projectPath }) => {
     const watcher = activeWatchers.get(projectPath);
     if (watcher) {
       watcher.jsonl.stop();
@@ -100,17 +101,17 @@ export function registerWorkflowHandlers(
     return Promise.resolve({ success: true });
   });
 
-  // ── Task Launcher ──
+  // ── Task Launcher (deprecated — use command bus sessions) ──
 
-  router.handle('workflow.launch', ({ taskDescription, projectPath, subProjectPath }) =>
-    Promise.resolve(taskLauncher.launch(taskDescription, projectPath, subProjectPath)),
+  router.handle(WORKFLOW.LAUNCH.WORKFLOW, () => {
+    throw new Error('Task launcher has been removed. Use command bus sessions instead.');
+  });
+
+  router.handle(WORKFLOW.CHECK.RUNNING, () =>
+    Promise.resolve({ running: false }),
   );
 
-  router.handle('workflow.isRunning', ({ sessionId }) =>
-    Promise.resolve({ running: taskLauncher.isRunning(sessionId) }),
-  );
-
-  router.handle('workflow.stop', ({ sessionId }) =>
-    Promise.resolve({ stopped: taskLauncher.stop(sessionId) }),
+  router.handle(WORKFLOW.STOP.RUNNING, () =>
+    Promise.resolve({ stopped: false }),
   );
 }

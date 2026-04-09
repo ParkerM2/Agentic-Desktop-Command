@@ -4,6 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { CHANGELOG } from '@shared/ipc/misc/changelog.channels';
+
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { changelogKeys } from './queryKeys';
@@ -12,7 +14,7 @@ import { changelogKeys } from './queryKeys';
 export function useChangelog() {
   return useQuery({
     queryKey: changelogKeys.list(),
-    queryFn: () => ipc('changelog.list', {}),
+    queryFn: () => ipc(CHANGELOG.LIST.ENTRIES, {}),
   });
 }
 
@@ -20,7 +22,7 @@ export function useChangelog() {
 export function useGenerateChangelog() {
   return useMutation({
     mutationFn: (params: { repoPath: string; version: string; fromTag?: string }) =>
-      ipc('changelog.generate', params),
+      ipc(CHANGELOG.GENERATE.ENTRY, params),
   });
 }
 
@@ -33,7 +35,7 @@ export function useAddChangelogEntry() {
       version: string;
       date: string;
       categories: Array<{ type: string; items: string[] }>;
-    }) => ipc('changelog.addEntry', params as Parameters<typeof ipc<'changelog.addEntry'>>[1]),
+    }) => ipc(CHANGELOG.ADD.ENTRY, params as Parameters<typeof ipc<typeof CHANGELOG.ADD.ENTRY>>[1]),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: changelogKeys.list() });
     },
