@@ -23,7 +23,10 @@ export function DailyStats() {
   const tasksCompleted =
     tasks?.filter((task) => task.status === 'done' && task.updatedAt.startsWith(todayStr)).length ??
     0;
-  const agentsRan = allSessions?.filter((s) => s.spawnedAt.startsWith(todayStr)).length ?? 0;
+
+  // Count agent sessions started today
+  const sessionList = Array.isArray(allSessions) ? allSessions : [];
+  const agentsRan = sessionList.filter((s) => s.startedAt.startsWith(todayStr)).length;
 
   return (
     <Card>

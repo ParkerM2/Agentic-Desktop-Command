@@ -1,7 +1,7 @@
 /**
- * ActiveAgents — Shows running agent sessions from both the orchestrator
+ * ActiveAgents — Shows running agent sessions from the agent dashboard
  * and workspace/progress systems. Reads from useWorkspaceSessions (React Query)
- * and useAllAgents (orchestrator) to provide a unified view.
+ * and useAllAgents (agent dashboard) to provide a unified view.
  */
 
 import { Bot, CheckCircle2, Loader2, XCircle } from 'lucide-react';
@@ -21,7 +21,10 @@ const STATUS_ICON = {
   spawning: { icon: Loader2, className: 'text-info' },
   live: { icon: Loader2, className: 'text-info' },
   starting: { icon: Loader2, className: 'text-info' },
+  running: { icon: Loader2, className: 'text-info' },
+  idle: { icon: Loader2, className: 'text-info' },
   completed: { icon: CheckCircle2, className: 'text-success' },
+  failed: { icon: XCircle, className: 'text-destructive' },
   error: { icon: XCircle, className: 'text-destructive' },
   crashed: { icon: XCircle, className: 'text-destructive' },
 } as const;
@@ -36,7 +39,7 @@ function getStatusConfig(status: string) {
 }
 
 function isActive(status: string): boolean {
-  return status === 'active' || status === 'spawning' || status === 'live' || status === 'starting';
+  return status === 'active' || status === 'spawning' || status === 'live' || status === 'starting' || status === 'running' || status === 'idle';
 }
 
 // ─── Unified Agent Entry ────────────────────────────────────
@@ -57,15 +60,15 @@ export function ActiveAgents() {
   const { data: workspaceSessions = [], isLoading: wsLoading } =
     useWorkspaceSessions(activeProjectId);
 
-  // Orchestrator sessions (legacy agent orchestrator)
-  const { data: orchSessions, isLoading: orchLoading } = useAllAgents();
+  // Agent dashboard sessions
+  const { data: dashboardSessions, isLoading: dashLoading } = useAllAgents();
 
-  const isLoading = wsLoading || orchLoading;
+  const isLoading = wsLoading || dashLoading;
 
   // Build unified entry list
   const entries: AgentEntry[] = [];
 
-  // Workspace sessions → entries
+  // Workspace sessions -> entries
   for (const ws of workspaceSessions) {
     if (!isActive(ws.status)) continue;
     const typeLabel = ws.key.type === 'primary' ? 'Primary' : `Team Lead #${String(ws.key.index)}`;
@@ -78,17 +81,18 @@ export function ActiveAgents() {
     });
   }
 
-  // Orchestrator sessions → entries (deduplicate by session ID)
+  // Dashboard sessions -> entries (deduplicate by session ID)
   const wsIds = new Set(workspaceSessions.map((s) => s.agentSessionId));
-  for (const orch of orchSessions ?? []) {
-    if (wsIds.has(orch.id)) continue; // already shown via workspace
-    if (!isActive(orch.status)) continue;
+  const dashList = Array.isArray(dashboardSessions) ? dashboardSessions : [];
+  for (const dash of dashList) {
+    if (wsIds.has(dash.id)) continue; // already shown via workspace
+    if (!isActive(dash.status)) continue;
     entries.push({
-      id: `orch-${orch.id}`,
-      label: orch.phase,
-      detail: `Task: ${orch.taskId}`,
-      status: orch.status,
-      startedAt: null,
+      id: `dash-${dash.id}`,
+      label: dash.name,
+      detail: `${dash.type} · ${dash.model}`,
+      status: dash.status,
+      startedAt: new Date(dash.startedAt).getTime(),
     });
   }
 

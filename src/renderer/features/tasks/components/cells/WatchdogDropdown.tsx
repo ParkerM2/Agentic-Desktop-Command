@@ -1,25 +1,26 @@
 /**
  * WatchdogDropdown — Alert action dropdown for watchdog alerts on task rows.
  *
- * Shows alert message and recovery action buttons when a watchdog
- * alert is active for a task. Opened by clicking the warning overlay
- * on the StatusBadgeCell.
+ * The agent orchestrator watchdog system has been removed. This component
+ * is preserved as a generic alert dropdown that can be reused if a new
+ * alerting system is added. It no longer depends on orchestrator types.
  */
 
 import { useEffect, useRef, useState } from 'react';
 
 import { AlertTriangle, FileText, Play, RefreshCw, XCircle } from 'lucide-react';
 
-import type { EventPayload } from '@shared/ipc-contract';
-
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Button } from '@ui';
 
-type WatchdogAlertPayload = EventPayload<'event:agent.orchestrator.watchdogAlert'>;
+export interface WatchdogAlert {
+  type: 'warning' | 'dead' | 'stale';
+  message: string;
+}
 
 interface WatchdogDropdownProps {
-  alert: WatchdogAlertPayload;
+  alert: WatchdogAlert;
   onRestartCheckpoint: () => void;
   onRestartFresh: () => void;
   onViewLogs: () => void;

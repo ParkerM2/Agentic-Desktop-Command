@@ -25,13 +25,11 @@ import type { createHubConnectionManager } from '../features/hub/hub-connection'
 import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
 import type { createTerminalService } from '../features/terminal/terminal-service';
-import type { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface LifecycleDeps {
   createWindow: () => void;
   terminalService: ReturnType<typeof createTerminalService>;
-  agentWatchdog: ReturnType<typeof createAgentWatchdog>;
   errorCollector: ErrorCollector;
   healthRegistry: HealthRegistry;
   qaTrigger: QaTrigger;
@@ -76,7 +74,6 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     (app as unknown as Record<string, boolean>).isQuitting = true;
     deps.cleanupService.dispose();
     deps.hotkeyManager.unregisterAll();
-    deps.agentWatchdog.dispose();
     deps.qaTrigger.dispose();
     deps.terminalService.dispose();
     deps.alertService.stopChecking();
