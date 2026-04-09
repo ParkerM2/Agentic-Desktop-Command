@@ -15,7 +15,7 @@ import type { IpcRouter } from '@main/ipc/router';
 import type {
   ErrorCollectorHandler,
   HealthRegistryHandler,
-} from '@main/ipc/handlers/error-handlers';
+} from '@main/features/health/error-handlers';
 
 // ─── Mock Factories ─────────────────────────────────────────────
 
@@ -121,7 +121,7 @@ describe('Error & Health IPC Handlers', () => {
     const testRouter = createTestRouter();
     invoke = testRouter.invoke;
 
-    const { registerErrorHandlers } = await import('@main/ipc/handlers/error-handlers');
+    const { registerErrorHandlers } = await import('@main/features/health/error-handlers');
     registerErrorHandlers(testRouter.router, errorCollector, healthRegistry);
   });
 

@@ -7,9 +7,9 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createHealthRegistry } from '@main/services/health/health-registry';
+import { createHealthRegistry } from '@main/features/health/health-registry';
 
-import type { HealthRegistry, HealthRegistryCallbacks } from '@main/services/health/health-registry';
+import type { HealthRegistry, HealthRegistryCallbacks } from '@main/features/health/health-registry';
 
 // ── Constants (match source values) ─────────────────────────────
 

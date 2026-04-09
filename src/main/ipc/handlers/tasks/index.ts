@@ -5,9 +5,9 @@
 import { registerHubTaskHandlers } from './hub-task-handlers';
 import { registerLegacyTaskHandlers } from './legacy-task-handlers';
 
-import type { GithubTaskImporter } from '../../../services/tasks/github-importer';
-import type { TaskDecomposer } from '../../../services/tasks/task-decomposer';
-import type { TaskRepository } from '../../../services/tasks/types';
+import type { GithubTaskImporter } from '../../../features/tasks/github-importer';
+import type { TaskDecomposer } from '../../../features/tasks/task-decomposer';
+import type { TaskRepository } from '../../../features/tasks/types';
 import type { IpcRouter } from '../../router';
 
 export interface TaskHandlerDeps {

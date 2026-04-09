@@ -7,7 +7,7 @@
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-import { createWorkspaceSessionManager } from '@main/services/workspace/workspace-session-manager';
+import { createWorkspaceSessionManager } from '@main/features/workspace/workspace-session-manager';
 
 // ── Mock Factories ────────────────────────────────────────────
 

@@ -46,7 +46,7 @@ vi.mock('node:fs', async () => {
 });
 
 // Mock store registry with minimal entries
-vi.mock('@main/services/data-management/store-registry', () => ({
+vi.mock('@main/features/data-management/store-registry', () => ({
   DATA_STORE_REGISTRY: [
     {
       id: 'notes',
@@ -94,7 +94,7 @@ vi.mock('@main/services/data-management/store-registry', () => ({
 }));
 
 const { exportData, importData } = await import(
-  '@main/services/data-management/data-export'
+  '@main/features/data-management/data-export'
 );
 
 // ── Helpers ──────────────────────────────────────────────��──────

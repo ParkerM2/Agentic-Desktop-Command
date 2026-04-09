@@ -14,9 +14,9 @@ vi.mock('@main/lib/logger', () => ({
   appLogger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-const { createQaSessionStore } = await import('@main/services/qa/qa-session-store');
+const { createQaSessionStore } = await import('@main/features/qa/qa-session-store');
 
-import type { QaReport, QaSession, QaSessionEvent } from '@main/services/qa/qa-types';
+import type { QaReport, QaSession, QaSessionEvent } from '@main/features/qa/qa-types';
 
 // ── Helpers ─────────────────────────────────────────────────────
 

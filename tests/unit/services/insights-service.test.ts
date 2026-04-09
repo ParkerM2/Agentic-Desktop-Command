@@ -7,7 +7,7 @@
 
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-import { createInsightsService } from '@main/services/insights/insights-service';
+import { createInsightsService } from '@main/features/insights/insights-service';
 
 // ── Mock Factories ────────────────────────────────────────────
 

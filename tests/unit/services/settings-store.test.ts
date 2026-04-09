@@ -48,7 +48,7 @@ const mockIsProfileSecretKey = vi.fn(
   (key: string): boolean => ['apiKey', 'oauthToken'].includes(key),
 );
 
-vi.mock('@main/services/settings/settings-encryption', () => ({
+vi.mock('@main/features/settings/settings-encryption', () => ({
   encryptSecret: mockEncryptSecret,
   decryptSecret: mockDecryptSecret,
   isEncryptedEntry: mockIsEncryptedEntry,
@@ -81,10 +81,10 @@ vi.mock('node:path', async (importOriginal) => {
 
 // Import after mocks
 const { loadSettingsFile, saveSettingsFile, migrateFromJson } = await import(
-  '@main/services/settings/settings-store'
+  '@main/features/settings/settings-store'
 );
 const { DEFAULT_SETTINGS, DEFAULT_PROFILES } = await import(
-  '@main/services/settings/settings-defaults'
+  '@main/features/settings/settings-defaults'
 );
 
 // ── Helpers ─────────────────────────────────────────────────────────

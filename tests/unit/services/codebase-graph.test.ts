@@ -44,7 +44,7 @@ vi.mock('node:fs', async () => {
 
 // Import after mocks are set up
 const { detectFramework, getFileGroup, buildCodebaseGraph } =
-  await import('@main/services/visualization/codebase-graph');
+  await import('@main/features/visualization/codebase-graph');
 
 // ── Helpers ─────────────────────────────────────────────────────────
 

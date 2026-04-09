@@ -8,8 +8,8 @@
 
 import { AUTH } from '@shared/ipc/auth/channels';
 
-import type { UserSessionManager } from '@main/services/auth';
-import type { HubAuthService } from '@main/services/hub/hub-auth-service';
+import type { UserSessionManager } from '@main/features/auth';
+import type { HubAuthService } from '@main/features/hub/hub-auth-service';
 
 import type { IpcRouter } from '../router';
 

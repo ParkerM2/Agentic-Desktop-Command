@@ -10,9 +10,9 @@
 import { TASKS } from '@shared/ipc/tasks/channels';
 import type { Task as HubTask, TaskUpdateRequest } from '@shared/types/hub-protocol';
 
-import type { GithubTaskImporter } from '../../../services/tasks/github-importer';
-import type { TaskDecomposer } from '../../../services/tasks/task-decomposer';
-import type { TaskRepository } from '../../../services/tasks/types';
+import type { GithubTaskImporter } from '../../../features/tasks/github-importer';
+import type { TaskDecomposer } from '../../../features/tasks/task-decomposer';
+import type { TaskRepository } from '../../../features/tasks/types';
 import type { IpcRouter } from '../../router';
 
 /** Augment a HubTask with the `subtasks` field required by TaskSchema. */

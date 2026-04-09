@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { QaContext, QaReport, QaSession } from '@main/services/qa/qa-types';
+import type { QaContext, QaReport, QaSession } from '@main/features/qa/qa-types';
 
 // Mock logger
 vi.mock('@main/lib/logger', () => ({
@@ -29,23 +29,23 @@ vi.mock('node:path', async (importOriginal) => {
 });
 
 // Mock qa-prompt
-vi.mock('@main/services/qa/qa-prompt', () => ({
+vi.mock('@main/features/qa/qa-prompt', () => ({
   buildQaPrompt: vi.fn(() => 'test prompt'),
 }));
 
 // Mock qa-agent-poller
 const mockWaitForAgentCompletion = vi.fn<() => Promise<QaReport>>();
-vi.mock('@main/services/qa/qa-agent-poller', () => ({
+vi.mock('@main/features/qa/qa-agent-poller', () => ({
   waitForAgentCompletion: (...args: unknown[]) => mockWaitForAgentCompletion(...(args as [])),
 }));
 
 // Mock qa-report-parser (fallback)
-vi.mock('@main/services/qa/qa-report-parser', async () => {
-  const actual = await import('@main/services/qa/qa-report-parser');
+vi.mock('@main/features/qa/qa-report-parser', async () => {
+  const actual = await import('@main/features/qa/qa-report-parser');
   return actual;
 });
 
-const { createQaRunner } = await import('@main/services/qa/qa-runner');
+const { createQaRunner } = await import('@main/features/qa/qa-runner');
 
 // ── Helpers ─────────────────────────────────────────────────────
 

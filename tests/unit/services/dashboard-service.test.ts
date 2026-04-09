@@ -10,7 +10,7 @@ vi.mock('electron', () => ({
 
 import { closeDatabase, initDatabase } from '@main/db';
 import { captures } from '@main/db/schema';
-import { createDashboardService } from '@main/services/dashboard/dashboard-service';
+import { createDashboardService } from '@main/features/dashboard/dashboard-service';
 
 import type { AdcDatabase } from '@main/db';
 

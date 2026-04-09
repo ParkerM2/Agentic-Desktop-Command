@@ -22,6 +22,79 @@ import { createTokenStore } from '../auth/token-store';
 import { createCommandBus } from '../bus';
 import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
+import { createAlertService } from '../features/alerts/alert-service';
+import { createAppUpdateService } from '../features/app/app-update-service';
+import { createAssistantService } from '../features/assistant/assistant-service';
+import { createToolExecutor } from '../features/assistant/tool-executor';
+import { createWatchEvaluator } from '../features/assistant/watch-evaluator';
+import { createWatchStore } from '../features/assistant/watch-store';
+import { createUserSessionManager } from '../features/auth';
+import { createBriefingService } from '../features/briefing/briefing-service';
+import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
+import { createCalendarService } from '../features/calendar/calendar-service';
+import { createChangelogService } from '../features/changelog/changelog-service';
+import { createClaudeClient } from '../features/claude';
+import { createDashboardService } from '../features/dashboard/dashboard-service';
+import {
+  createUserDataMigrator,
+  createUserDataResolver,
+} from '../features/data-management';
+import { createCleanupService } from '../features/data-management/cleanup-service';
+import { createStorageInspector } from '../features/data-management/storage-inspector';
+import { createDeviceService } from '../features/device/device-service';
+import { createDockerService } from '../features/docker/docker-service';
+import { createEmailService } from '../features/email/email-service';
+import { createFileTreeService } from '../features/file-tree/file-tree-service';
+import { createFitnessService } from '../features/fitness/fitness-service';
+import { createGitService } from '../features/git/git-service';
+import { createPolyrepoService } from '../features/git/polyrepo-service';
+import { createWorktreeService } from '../features/git/worktree-service';
+import { createGitHubService } from '../features/github/github-service';
+import { createErrorCollector } from '../features/health/error-collector';
+import { createHealthRegistry } from '../features/health/health-registry';
+import { createHubApiClient } from '../features/hub/hub-api-client';
+import { createHubAuthService } from '../features/hub/hub-auth-service';
+import { createHubConnectionManager } from '../features/hub/hub-connection';
+import { createHubSyncService } from '../features/hub/hub-sync';
+import { createWebhookRelay } from '../features/hub/webhook-relay';
+import { createIdeasService } from '../features/ideas/ideas-service';
+import { createInsightsService } from '../features/insights/insights-service';
+import { createMergeService } from '../features/merge/merge-service';
+import { createMilestonesService } from '../features/milestones/milestones-service';
+import { createNotesService } from '../features/notes/notes-service';
+import {
+  createGitHubWatcher,
+  createNotificationManager,
+  createSlackWatcher,
+} from '../features/notifications';
+import { createPlannerService } from '../features/planner/planner-service';
+import { createProgressService } from '../features/progress';
+import { createClaudeMdGenerator } from '../features/project/claudemd-generator';
+import { createCodebaseAnalyzer } from '../features/project/codebase-analyzer';
+import { createDocGenerator } from '../features/project/doc-generator';
+import { createGitHubRepoCreator } from '../features/project/github-repo-creator';
+import { createProjectService } from '../features/project/project-service';
+import { createSetupPipeline } from '../features/project/setup-pipeline';
+import { createSkillsResolver } from '../features/project/skills-resolver';
+import { createTaskService } from '../features/project/task-service';
+import { createQaRunner } from '../features/qa/qa-runner';
+import { createQaTrigger } from '../features/qa/qa-trigger';
+import { createScreenCaptureService } from '../features/screen/screen-capture-service';
+import { createSettingsService } from '../features/settings/settings-service';
+import { createSpotifyService } from '../features/spotify/spotify-service';
+import {
+  createGithubImporter,
+  createTaskDecomposer,
+  createTaskRepository,
+} from '../features/tasks';
+import { createTerminalService } from '../features/terminal/terminal-service';
+import { createTimeParserService } from '../features/time-parser/time-parser-service';
+import { createTrackerService } from '../features/tracker/tracker-service';
+import { createVisualizationService } from '../features/visualization';
+import { createVoiceService } from '../features/voice/voice-service';
+import { createWorkflowEngineService } from '../features/workflow-engine';
+import { createWorkflowTemplateService } from '../features/workflow-templates';
+import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { IpcRouter } from '../ipc/router';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
@@ -29,81 +102,8 @@ import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
 import { createAgentManagerService } from '../services/agent-manager';
 import { createAgentWatchdog } from '../services/agent-orchestrator/agent-watchdog';
-import { createAlertService } from '../services/alerts/alert-service';
-import { createAppUpdateService } from '../services/app/app-update-service';
-import { createAssistantService } from '../services/assistant/assistant-service';
-import { createToolExecutor } from '../services/assistant/tool-executor';
-import { createWatchEvaluator } from '../services/assistant/watch-evaluator';
-import { createWatchStore } from '../services/assistant/watch-store';
-import { createUserSessionManager } from '../services/auth';
-import { createBriefingService } from '../services/briefing/briefing-service';
-import { createSuggestionEngine } from '../services/briefing/suggestion-engine';
-import { createCalendarService } from '../services/calendar/calendar-service';
-import { createChangelogService } from '../services/changelog/changelog-service';
-import { createClaudeClient } from '../services/claude';
-import { createDashboardService } from '../services/dashboard/dashboard-service';
-import {
-  createUserDataMigrator,
-  createUserDataResolver,
-} from '../services/data-management';
-import { createCleanupService } from '../services/data-management/cleanup-service';
-import { createStorageInspector } from '../services/data-management/storage-inspector';
-import { createDeviceService } from '../services/device/device-service';
-import { createDockerService } from '../services/docker/docker-service';
-import { createEmailService } from '../services/email/email-service';
-import { createFileTreeService } from '../services/file-tree/file-tree-service';
-import { createFitnessService } from '../services/fitness/fitness-service';
-import { createGitService } from '../services/git/git-service';
-import { createPolyrepoService } from '../services/git/polyrepo-service';
-import { createWorktreeService } from '../services/git/worktree-service';
-import { createGitHubService } from '../services/github/github-service';
-import { createErrorCollector } from '../services/health/error-collector';
-import { createHealthRegistry } from '../services/health/health-registry';
-import { createHubApiClient } from '../services/hub/hub-api-client';
-import { createHubAuthService } from '../services/hub/hub-auth-service';
-import { createHubConnectionManager } from '../services/hub/hub-connection';
-import { createHubSyncService } from '../services/hub/hub-sync';
-import { createWebhookRelay } from '../services/hub/webhook-relay';
-import { createIdeasService } from '../services/ideas/ideas-service';
-import { createInsightsService } from '../services/insights/insights-service';
-import { createMergeService } from '../services/merge/merge-service';
-import { createMilestonesService } from '../services/milestones/milestones-service';
-import { createNotesService } from '../services/notes/notes-service';
-import {
-  createGitHubWatcher,
-  createNotificationManager,
-  createSlackWatcher,
-} from '../services/notifications';
-import { createPlannerService } from '../services/planner/planner-service';
-import { createProgressService } from '../services/progress';
-import { createClaudeMdGenerator } from '../services/project/claudemd-generator';
-import { createCodebaseAnalyzer } from '../services/project/codebase-analyzer';
-import { createDocGenerator } from '../services/project/doc-generator';
-import { createGitHubRepoCreator } from '../services/project/github-repo-creator';
-import { createProjectService } from '../services/project/project-service';
-import { createSetupPipeline } from '../services/project/setup-pipeline';
-import { createSkillsResolver } from '../services/project/skills-resolver';
-import { createTaskService } from '../services/project/task-service';
-import { createQaRunner } from '../services/qa/qa-runner';
-import { createQaTrigger } from '../services/qa/qa-trigger';
-import { createScreenCaptureService } from '../services/screen/screen-capture-service';
 import { createSessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
-import { createSettingsService } from '../services/settings/settings-service';
-import { createSpotifyService } from '../services/spotify/spotify-service';
-import {
-  createGithubImporter,
-  createTaskDecomposer,
-  createTaskRepository,
-} from '../services/tasks';
 import { createTeamWatcherService } from '../services/team-watcher/team-watcher-service';
-import { createTerminalService } from '../services/terminal/terminal-service';
-import { createTimeParserService } from '../services/time-parser/time-parser-service';
-import { createTrackerService } from '../services/tracker/tracker-service';
-import { createVisualizationService } from '../services/visualization';
-import { createVoiceService } from '../services/voice/voice-service';
-import { createWorkflowEngineService } from '../services/workflow-engine';
-import { createWorkflowTemplateService } from '../services/workflow-templates';
-import { createWorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 import { createWorktreeProvisioner } from '../services/worktree-provisioner';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
@@ -112,14 +112,14 @@ import type { OAuthConfig } from '../auth/types';
 import type { CommandBus } from '../bus';
 import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
+import type { UserSessionManager } from '../features/auth';
+import type { HubApiClient } from '../features/hub/hub-api-client';
+import type { TaskRepository } from '../features/tasks/types';
+import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
 import type { AgentManagerService } from '../services/agent-manager';
-import type { UserSessionManager } from '../services/auth';
-import type { HubApiClient } from '../services/hub/hub-api-client';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
-import type { TaskRepository } from '../services/tasks/types';
 import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
-import type { WorkspaceSessionManager } from '../services/workspace/workspace-session-manager';
 
 /** Everything createServiceRegistry produces — services + extras needed for lifecycle/event wiring. */
 export interface ServiceRegistryResult {

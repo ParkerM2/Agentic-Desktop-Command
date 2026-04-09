@@ -16,7 +16,7 @@ const {
   isEncryptedEntry,
   isWebhookSecretKey,
   isProfileSecretKey,
-} = await import('@main/services/settings/settings-encryption');
+} = await import('@main/features/settings/settings-encryption');
 
 // ── Tests ───────────────────────────────────────────────────────────
 

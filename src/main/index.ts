@@ -20,8 +20,8 @@ import {
 import { appLogger } from './lib/logger';
 import { createTrayManager } from './tray/tray-manager';
 
-import type { ErrorCollector } from './services/health/error-collector';
-import type { SettingsService } from './services/settings/settings-service';
+import type { ErrorCollector } from './features/health/error-collector';
+import type { SettingsService } from './features/settings/settings-service';
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');

@@ -39,7 +39,7 @@ vi.mock('node:fs', async () => {
 
 // ── Imports (must come after vi.mock calls) ───────────────────────
 
-import { createWorkflowTemplateService } from '../../../src/main/services/workflow-templates/workflow-template-service';
+import { createWorkflowTemplateService } from '../../../src/main/features/workflow-templates/workflow-template-service';
 
 // ── Helpers ───────────────────────────────────────────────────────
 

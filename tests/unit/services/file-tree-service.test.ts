@@ -40,7 +40,7 @@ vi.mock('node:fs', async () => {
 });
 
 const { createFileTreeService } = await import(
-  '@main/services/file-tree/file-tree-service'
+  '@main/features/file-tree/file-tree-service'
 );
 
 // ── Helpers ───────────────────────────────────────────────────

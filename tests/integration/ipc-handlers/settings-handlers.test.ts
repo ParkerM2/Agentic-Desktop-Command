@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
 
 import type { IpcRouter } from '@main/ipc/router';
-import type { SettingsService } from '@main/services/settings/settings-service';
+import type { SettingsService } from '@main/features/settings/settings-service';
 import type { AgentSettings, AppSettings, Profile } from '@shared/types';
 
 // ─── Mock Modules ──────────────────────────────────────────────
@@ -119,7 +119,7 @@ describe('Settings IPC Handlers', () => {
     const testRouter = createTestRouter();
     ({ router, invoke } = testRouter);
 
-    const { registerSettingsHandlers } = await import('@main/ipc/handlers/settings-handlers');
+    const { registerSettingsHandlers } = await import('@main/features/settings/settings-handlers');
     registerSettingsHandlers(router, service, {
       dataDir: '/mock/data',
       providers: mockProviders as never,

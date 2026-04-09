@@ -37,7 +37,7 @@ vi.mock('node:fs', async () => {
 });
 
 const { createTrackerService } = await import(
-  '@main/services/tracker/tracker-service'
+  '@main/features/tracker/tracker-service'
 );
 
 // ── Helpers ───────────────────────────────────────────────────
