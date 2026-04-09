@@ -163,6 +163,9 @@
     "files": [
       "out/**/*"
     ],
+    "extraResources": [
+      "drizzle/**"
+    ],
     "win": {
       "icon": "resources/icon.ico",
       "target": [
