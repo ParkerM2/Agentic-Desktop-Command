@@ -606,6 +606,8 @@ export function createServiceRegistry(
 
   // ─── Build the Services bag for IPC handler registration ─────
   const services: Services = {
+    commandBus,
+    busSessionManager,
     agentManagerService,
     agentOrchestrator,
     progressService,

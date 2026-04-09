@@ -9,6 +9,7 @@ import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
 
 import { registerAgentDashboardHandlers } from './handlers/agent-dashboard-handlers';
 import { registerAgentOrchestratorHandlers } from './handlers/agent-orchestrator-handlers';
+import { registerBusHandlers } from './handlers/bus-handlers';
 import { registerAlertHandlers } from './handlers/alert-handlers';
 import { registerAppHandlers } from './handlers/app-handlers';
 import { registerAppUpdateHandlers } from './handlers/app-update-handlers';
@@ -67,6 +68,8 @@ import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { ErrorCollectorHandler, HealthRegistryHandler } from './handlers/error-handlers';
+import type { CommandBus } from '../bus';
+import type { BusSessionManager } from '../bus/session-manager';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { AgentOrchestrator } from '../services/agent-orchestrator/types';
 import type { AlertService } from '../services/alerts/alert-service';
@@ -124,6 +127,8 @@ import type { WorkspaceSessionManager } from '../services/workspace/workspace-se
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
+  commandBus: CommandBus;
+  busSessionManager: BusSessionManager;
   agentManagerService: AgentManagerService;
   agentOrchestrator: AgentOrchestrator;
   projectService: ProjectService;
@@ -291,6 +296,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
+  registerBusHandlers(router, services.commandBus, services.busSessionManager);
 
   // Stub: workspaces CRUD (Hub-backed, no local service yet)
   router.handle(WORKSPACES.LIST.ALL, () => Promise.resolve([]));

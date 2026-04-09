@@ -10,6 +10,7 @@
 
 import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
 import { orchestratorEvents, orchestratorInvoke } from './agents';
+import { busEvents, busInvoke } from './bus';
 import { appEvents, appInvoke } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
@@ -124,6 +125,8 @@ export const ipcInvokeContract = {
   ...workflowEngineInvoke,
 
   ...progressInvoke,
+
+  ...busInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -162,6 +165,8 @@ export const ipcEventContract = {
   ...workflowTemplatesEvents,
   ...workflowEngineEvents,
   ...progressEvents,
+
+  ...busEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
