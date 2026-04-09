@@ -10,10 +10,11 @@
 import { TASKS } from '@shared/ipc/tasks/channels';
 import type { Task as HubTask, TaskUpdateRequest } from '@shared/types/hub-protocol';
 
-import type { GithubTaskImporter } from '../../../features/tasks/github-importer';
-import type { TaskDecomposer } from '../../../features/tasks/task-decomposer';
-import type { TaskRepository } from '../../../features/tasks/types';
-import type { IpcRouter } from '../../router';
+
+import type { GithubTaskImporter } from './github-importer';
+import type { TaskDecomposer } from './task-decomposer';
+import type { TaskRepository } from './types';
+import type { IpcRouter } from '../../ipc/router';
 
 /** Augment a HubTask with the `subtasks` field required by TaskSchema. */
 function toLegacyTask(hubTask: HubTask): HubTask & { subtasks: never[] } {

@@ -11,7 +11,7 @@ import { AUTH } from '@shared/ipc/auth/channels';
 import type { UserSessionManager } from '@main/features/auth';
 import type { HubAuthService } from '@main/features/hub/hub-auth-service';
 
-import type { IpcRouter } from '../router';
+import type { IpcRouter } from '../../ipc/router';
 
 export interface AuthHandlerDependencies {
   hubAuthService: HubAuthService;

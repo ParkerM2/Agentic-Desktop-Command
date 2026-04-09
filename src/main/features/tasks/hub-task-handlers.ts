@@ -6,8 +6,9 @@
 
 import { HUB_TASKS } from '@shared/ipc/tasks/channels';
 
-import type { TaskRepository } from '../../../features/tasks/types';
-import type { IpcRouter } from '../../router';
+import type { TaskRepository } from './types';
+import type { IpcRouter } from '../../ipc/router';
+
 
 export function registerHubTaskHandlers(
   router: IpcRouter,

@@ -125,7 +125,7 @@ describe('Auth IPC Handlers', () => {
     const testRouter = createTestRouter();
     ({ router, invoke } = testRouter);
 
-    const { registerAuthHandlers } = await import('@main/ipc/handlers/auth-handlers');
+    const { registerAuthHandlers } = await import('@main/features/auth/auth-handlers');
     registerAuthHandlers(router, { hubAuthService, userSessionManager });
   });
 

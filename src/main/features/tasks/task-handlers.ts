@@ -6,5 +6,5 @@
  * falling back to local services for decompose/GitHub import.
  */
 
-export { registerTaskHandlers } from '../../ipc/handlers/tasks';
-export type { TaskHandlerDeps } from '../../ipc/handlers/tasks';
+export { registerTaskHandlers } from './task-handlers-index';
+export type { TaskHandlerDeps } from './task-handlers-index';

@@ -12,6 +12,7 @@ import { registerAlertHandlers } from '../features/alerts/alert-handlers';
 import { registerAppHandlers } from '../features/app/app-handlers';
 import { registerAppUpdateHandlers } from '../features/app/app-update-handlers';
 import { registerAssistantHandlers } from '../features/assistant/assistant-handlers';
+import { registerAuthHandlers } from '../features/auth/auth-handlers';
 import { registerBriefingHandlers } from '../features/briefing/briefing-handlers';
 import { registerBusHandlers } from '../features/bus/bus-handlers';
 import { registerCalendarHandlers } from '../features/calendar/calendar-handlers';
@@ -58,7 +59,6 @@ import { registerWorkflowEngineHandlers } from '../features/workflow-engine/work
 import { registerWorkflowTemplateHandlers } from '../features/workflow-templates/workflow-template-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
 
-import { registerAuthHandlers } from './handlers/auth-handlers';
 
 
 import type { IpcRouter } from './router';
