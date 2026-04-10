@@ -16,6 +16,7 @@ import {
   Network,
   Plug,
   Terminal,
+  TestTube2,
   User,
   Wrench,
 } from 'lucide-react';
@@ -51,4 +52,5 @@ export const developmentItems: NavItem[] = [
   { label: 'Git', icon: GitBranch, path: PROJECT_VIEWS.GIT },
   { label: 'Tools', icon: Wrench, path: PROJECT_VIEWS.TOOLS },
   { label: 'Visual Map', icon: Network, path: PROJECT_VIEWS.VISUALIZATION },
+  { label: 'QA', icon: TestTube2, path: PROJECT_VIEWS.QA_RECORDER },
 ];

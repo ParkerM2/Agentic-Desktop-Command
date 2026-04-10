@@ -7,7 +7,7 @@
 
 import { join } from 'node:path';
 
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell, session } from 'electron';
 
 import { ENV_VARS } from '@shared/constants/env';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
@@ -60,6 +60,7 @@ function createWindow(): void {
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
     },
   });
 
@@ -217,6 +218,17 @@ void (async () => {
   });
 
   await app.whenReady();
+
+  // Bypass certificate errors for localhost webview content only
+  session.defaultSession.setCertificateVerifyProc((request, callback) => {
+    const { hostname } = request;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      callback(0); // 0 = success (bypass)
+    } else {
+      callback(-3); // -3 = use default verification
+    }
+  });
+
   initializeApp();
   createWindow();
 
