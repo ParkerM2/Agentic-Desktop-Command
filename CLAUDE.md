@@ -1,12 +1,12 @@
-# Task #10: Integrations Domain — Main Process
-Workbranch: work/codebase-upgrade-test-suite/integrations-domain-main-process
+# Task #18: Workspace Tasks Merge
+Workbranch: work/codebase-upgrade-test-suite/workspace-tasks-merge
 Team: codebase-upgrade-test-suite. Leader: team-lead.
 
-Physically consolidate 5 integration domains into src/main/features/integrations/.
-Move from email(9), notifications(9), spotify(2), github(2), calendar(2) into sub-modules.
-Email and notifications are large — keep as sub-directories. Smaller ones as single files.
-Create unified createIntegrationsService().
+Unify local tasks + hub-tasks into single tasks/ domain if separate.
+Investigate whether hub-tasks logic exists separately or is already integrated.
+If separate: merge hub-tasks service into tasks/ as sub-module.
+If already integrated: verify and document — may be a no-op.
 
-Read the full task file at .claude/progress/codebase-upgrade-test-suite/tasks/task-10.md for complete details.
+Read .claude/progress/codebase-upgrade-test-suite/tasks/task-18.md for full details.
 Run npm run lint + npm run typecheck + npm run build before reporting.
 Commit on the workbranch. Report to team-lead via SendMessage.
