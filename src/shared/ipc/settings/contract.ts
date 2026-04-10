@@ -11,12 +11,14 @@ import { z } from 'zod';
 import { SETTINGS } from './channels';
 import {
   AppSettingsSchema,
+  DataDirInfoSchema,
   LayoutStateSchema,
   LayoutUpdateSchema,
   ProfileSchema,
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
   ScreenshotSchema,
+  ValidationCheckSchema,
   VoiceConfigSchema,
   VoiceInputModeSchema,
   WebhookConfigSchema,
@@ -119,6 +121,26 @@ export const settingsInvoke = {
   [SETTINGS.SAVE.LAYOUT]: {
     input: LayoutUpdateSchema,
     output: z.object({ success: z.boolean() }),
+  },
+  [SETTINGS.GET['DATA-DIR']]: {
+    input: z.object({}),
+    output: DataDirInfoSchema,
+  },
+  [SETTINGS.SET['DATA-DIR']]: {
+    input: z.object({ path: z.string() }),
+    output: z.object({ validationResults: z.array(ValidationCheckSchema) }),
+  },
+  [SETTINGS.VALIDATE['DATA-DIR']]: {
+    input: z.object({ path: z.string() }),
+    output: z.object({ checks: z.array(ValidationCheckSchema) }),
+  },
+  [SETTINGS.CONFIRM['DATA-DIR']]: {
+    input: z.object({ path: z.string(), useExisting: z.boolean().optional() }),
+    output: z.object({ requiresRestart: z.literal(true) }),
+  },
+  [SETTINGS.RESET['DATA-DIR']]: {
+    input: z.object({}),
+    output: z.object({ requiresRestart: z.literal(true) }),
   },
 } as const;
 

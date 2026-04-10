@@ -10,3 +10,4 @@ export { type ReinitializableService, isReinitializable } from './reinitializabl
 export { createUserDataMigrator, type UserDataMigrator } from './user-data-migrator';
 export { createConfigReader, type ConfigReader } from './config-reader';
 export { createDataMigrator, type DataMigrator } from './data-migrator';
+export { registerDataDirHandlers } from './data-dir-handlers';
