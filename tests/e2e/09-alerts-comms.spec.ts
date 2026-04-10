@@ -1,8 +1,8 @@
 /**
- * Alerts + Communications E2E tests.
+ * Alerts + Integrations E2E tests.
  *
- * Verifies the Alerts page (tabs, create modal, alert actions) and
- * Communications page (tabs, integration panels, notification rules).
+ * Verifies the Alerts tab (under /personal) and the Integrations page
+ * (Slack, Discord, Rules, GitHub, Calendar tabs).
  */
 
 import { expect, test } from './electron.setup';
@@ -18,11 +18,14 @@ test.describe('Alerts Page', () => {
 
   test.beforeEach(async ({ authenticatedWindow }) => {
     collector = createConsoleCollector(authenticatedWindow);
-    await navigateToSidebarItem(authenticatedWindow, 'Alerts');
+    await navigateToSidebarItem(authenticatedWindow, 'Personal');
+    await expect(authenticatedWindow).toHaveURL(/\/personal/, { timeout: 10_000 });
+    await authenticatedWindow.getByRole('tab', { name: 'Alerts' }).click();
+    await authenticatedWindow.waitForLoadState('networkidle');
   });
 
-  test('page loads at /alerts with heading visible', async ({ authenticatedWindow }) => {
-    await expect(authenticatedWindow).toHaveURL(/\/alerts/, { timeout: 10_000 });
+  test('page loads at /personal (Alerts tab) with heading visible', async ({ authenticatedWindow }) => {
+    await expect(authenticatedWindow).toHaveURL(/\/personal/, { timeout: 10_000 });
     await expect(
       authenticatedWindow.getByRole('heading', { name: 'Alerts' }),
     ).toBeVisible({ timeout: 5_000 });
@@ -141,42 +144,34 @@ test.describe('Alerts Page', () => {
   });
 });
 
-// ─── Communications Page ──────────────────────────────────────
+// ─── Integrations Page ───────────────────────────────────────
 
-test.describe('Communications Page', () => {
+test.describe('Integrations Page', () => {
   let collector: ConsoleCollector;
 
   test.beforeEach(async ({ authenticatedWindow }) => {
     collector = createConsoleCollector(authenticatedWindow);
-    await navigateToSidebarItem(authenticatedWindow, 'Comms');
+    await navigateToSidebarItem(authenticatedWindow, 'Integrations');
+    await expect(authenticatedWindow).toHaveURL(/\/integrations/, { timeout: 10_000 });
   });
 
-  test('page loads at /communications with heading visible', async ({ authenticatedWindow }) => {
-    await expect(authenticatedWindow).toHaveURL(/\/communications/, { timeout: 10_000 });
+  test('page loads at /integrations with heading visible', async ({ authenticatedWindow }) => {
+    await expect(authenticatedWindow).toHaveURL(/\/integrations/, { timeout: 10_000 });
     await expect(
-      authenticatedWindow.getByRole('heading', { name: 'Communications' }),
+      authenticatedWindow.getByRole('heading', { name: 'Integrations' }),
     ).toBeVisible({ timeout: 5_000 });
   });
 
-  test('Overview, Slack, Discord, and Rules tabs are visible', async ({ authenticatedWindow }) => {
-    await expect(authenticatedWindow.getByRole('button', { name: 'Overview' })).toBeVisible();
-    await expect(authenticatedWindow.getByRole('button', { name: 'Slack' })).toBeVisible();
-    await expect(authenticatedWindow.getByRole('button', { name: 'Discord' })).toBeVisible();
-    await expect(authenticatedWindow.getByRole('button', { name: 'Rules' })).toBeVisible();
-  });
-
-  test('Overview tab shows Slack and Discord panels', async ({ authenticatedWindow }) => {
-    // Overview is the default tab — should show both panels
-    await expect(
-      authenticatedWindow.getByRole('heading', { name: 'Slack' }),
-    ).toBeVisible({ timeout: 5_000 });
-    await expect(
-      authenticatedWindow.getByRole('heading', { name: 'Discord' }),
-    ).toBeVisible({ timeout: 5_000 });
+  test('Slack, Discord, Rules, GitHub, and Calendar tabs are visible', async ({ authenticatedWindow }) => {
+    await expect(authenticatedWindow.getByRole('tab', { name: 'Slack' })).toBeVisible();
+    await expect(authenticatedWindow.getByRole('tab', { name: 'Discord' })).toBeVisible();
+    await expect(authenticatedWindow.getByRole('tab', { name: 'Rules' })).toBeVisible();
+    await expect(authenticatedWindow.getByRole('tab', { name: 'GitHub' })).toBeVisible();
+    await expect(authenticatedWindow.getByRole('tab', { name: 'Calendar' })).toBeVisible();
   });
 
   test('Slack tab shows Slack panel content', async ({ authenticatedWindow }) => {
-    await authenticatedWindow.getByRole('button', { name: 'Slack' }).click();
+    await authenticatedWindow.getByRole('tab', { name: 'Slack' }).click();
 
     // Should show Slack heading and quick action buttons
     await expect(
@@ -190,7 +185,7 @@ test.describe('Communications Page', () => {
   });
 
   test('Discord tab shows Discord panel content', async ({ authenticatedWindow }) => {
-    await authenticatedWindow.getByRole('button', { name: 'Discord' }).click();
+    await authenticatedWindow.getByRole('tab', { name: 'Discord' }).click();
 
     // Should show Discord heading and quick action buttons
     await expect(
@@ -204,7 +199,7 @@ test.describe('Communications Page', () => {
   });
 
   test('Rules tab shows notification rules panel', async ({ authenticatedWindow }) => {
-    await authenticatedWindow.getByRole('button', { name: 'Rules' }).click();
+    await authenticatedWindow.getByRole('tab', { name: 'Rules' }).click();
 
     // Should show Notification Rules heading
     await expect(
@@ -224,10 +219,10 @@ test.describe('Communications Page', () => {
   });
 
   test('each tab renders non-blank content', async ({ authenticatedWindow }) => {
-    const tabNames = ['Overview', 'Slack', 'Discord', 'Rules'];
+    const tabNames = ['Slack', 'Discord', 'Rules', 'GitHub', 'Calendar'];
 
     for (const tabName of tabNames) {
-      await authenticatedWindow.getByRole('button', { name: tabName }).click();
+      await authenticatedWindow.getByRole('tab', { name: tabName }).click();
       // Brief wait for tab content to render
       await authenticatedWindow.waitForTimeout(300);
 
@@ -237,7 +232,7 @@ test.describe('Communications Page', () => {
     }
   });
 
-  test('no unexpected console errors on communications page', async () => {
+  test('no unexpected console errors on integrations page', async () => {
     assertNoConsoleErrors(collector);
   });
 });
