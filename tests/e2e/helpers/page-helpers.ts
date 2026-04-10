@@ -133,3 +133,13 @@ export async function waitForPageContent(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
   await waitForLoadingComplete(page);
 }
+
+// ─── POM Re-exports ───────────────────────────────────────────
+export {
+  BasePage,
+  DashboardPage,
+  IntegrationsPage,
+  PersonalPage,
+  ProjectPage,
+  SettingsPage,
+} from './pages';
