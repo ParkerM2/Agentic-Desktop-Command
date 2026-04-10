@@ -42,6 +42,7 @@ export const PROJECT_NAV_ITEMS = [
   'GitHub',
   'Changelog',
   'Insights',
+  'QA',
 ] as const;
 
 // ─── Top-Level Navigation ─────────────────────────────────────

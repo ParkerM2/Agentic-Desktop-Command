@@ -169,6 +169,18 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
+  const qaRecorderRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_QA_RECORDER,
+    staticData: { breadcrumbLabel: 'QA Recorder' },
+    pendingComponent: ProjectSkeleton,
+    component: lazyRouteComponent(
+      // @ts-expect-error -- qa-recorder feature is built in parallel (Task #37); resolves at runtime
+      () => import('@features/qa-recorder'),
+      'QaRecorderPage',
+    ),
+  });
+
   return [
     projectsRoute,
     projectRoute,
@@ -180,6 +192,7 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     toolsRoute,
     workflowRoute,
     visualizationRoute,
+    qaRecorderRoute,
     // Legacy redirects
     roadmapRedirect,
     ideationRedirect,
