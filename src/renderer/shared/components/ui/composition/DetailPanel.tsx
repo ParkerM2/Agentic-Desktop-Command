@@ -11,7 +11,7 @@ import { X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ export function DetailPanel({
       >
         {/* Header */}
         <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
-          <h2 className="text-foreground truncate text-base font-semibold">{title}</h2>
+          <Heading as="h3" className="truncate">{title}</Heading>
           <Button
             aria-label="Close panel"
             size="icon"
