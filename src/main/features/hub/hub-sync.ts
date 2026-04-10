@@ -7,11 +7,10 @@
  * locally and synced on reconnect.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { eq } from 'drizzle-orm';
 
-import { app } from 'electron';
-
+import type { AdcDatabase } from '@main/db';
+import { settingsKv } from '@main/db/schema';
 import { hubLogger } from '@main/lib/logger';
 
 import type { HubClient } from './hub-client';
@@ -43,23 +42,15 @@ export interface HubSyncService {
   shouldSync: () => boolean;
 }
 
-const SYNC_QUEUE_FILENAME = 'hub-sync-queue.json';
+const HUB_SYNC_KEY = 'hub-sync-queue';
 
-function getQueuePath(): string {
-  return join(app.getPath('userData'), SYNC_QUEUE_FILENAME);
-}
-
-function loadQueue(): PendingMutation[] {
-  const queuePath = getQueuePath();
-  if (!existsSync(queuePath)) {
-    return [];
-  }
-
+function loadQueue(db: AdcDatabase): PendingMutation[] {
+  const rows = db.select().from(settingsKv).where(eq(settingsKv.key, HUB_SYNC_KEY)).all();
+  if (rows.length === 0) return [];
   try {
-    const raw = readFileSync(queuePath, 'utf-8');
-    const parsed = JSON.parse(raw) as unknown;
-    if (Array.isArray(parsed)) {
-      return parsed as PendingMutation[];
+    const stored = rows[0].settings;
+    if (Array.isArray(stored)) {
+      return stored as PendingMutation[];
     }
     return [];
   } catch {
@@ -68,13 +59,12 @@ function loadQueue(): PendingMutation[] {
   }
 }
 
-function saveQueue(queue: PendingMutation[]): void {
-  const queuePath = getQueuePath();
-  const dir = join(queuePath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(queuePath, JSON.stringify(queue, null, 2), 'utf-8');
+function saveQueue(db: AdcDatabase, queue: PendingMutation[]): void {
+  const now = new Date().toISOString();
+  db.insert(settingsKv)
+    .values({ key: HUB_SYNC_KEY, settings: queue, updatedAt: now })
+    .onConflictDoUpdate({ target: settingsKv.key, set: { settings: queue, updatedAt: now } })
+    .run();
 }
 
 function generateId(): string {
@@ -196,8 +186,11 @@ async function syncMutation(client: HubClient, mutation: PendingMutation): Promi
   }
 }
 
-export function createHubSyncService(connectionManager: HubConnectionManager): HubSyncService {
-  let queue: PendingMutation[] = loadQueue();
+export function createHubSyncService(
+  connectionManager: HubConnectionManager,
+  db: AdcDatabase,
+): HubSyncService {
+  let queue: PendingMutation[] = loadQueue(db);
 
   return {
     queueMutation(entity, action, data) {
@@ -209,7 +202,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
         timestamp: new Date().toISOString(),
       };
       queue.push(mutation);
-      saveQueue(queue);
+      saveQueue(db, queue);
       hubLogger.info(`[HubSync] Queued ${entity}.${action} (${String(queue.length)} pending)`);
     },
 
@@ -237,7 +230,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
       }
 
       queue = failedMutations;
-      saveQueue(queue);
+      saveQueue(db, queue);
 
       hubLogger.info(
         `[HubSync] Synced ${String(syncedCount)} mutations, ${String(queue.length)} remaining`,
@@ -251,7 +244,7 @@ export function createHubSyncService(connectionManager: HubConnectionManager): H
 
     clearPending() {
       queue = [];
-      saveQueue(queue);
+      saveQueue(db, queue);
       hubLogger.info('[HubSync] Cleared sync queue');
     },
 

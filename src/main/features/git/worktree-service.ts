@@ -2,13 +2,13 @@
  * Worktree Service — Git worktree lifecycle management
  *
  * Worktrees are created in a .worktrees/ directory inside the project.
- * Metadata is persisted to dataDir/worktrees.json for tracking.
+ * The list of worktrees is derived at runtime from `git worktree list --porcelain`
+ * rather than persisted to disk.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
-
-import { app } from 'electron';
 
 import simpleGit from 'simple-git';
 import { v4 as uuid } from 'uuid';
@@ -22,43 +22,50 @@ export interface WorktreeService {
   linkToTask: (worktreeId: string, taskId: string) => void;
 }
 
-/** Path to worktrees metadata JSON */
-function getWorktreesFilePath(): string {
-  return join(app.getPath('userData'), 'worktrees.json');
-}
+/** Parse `git worktree list --porcelain` output into Worktree objects. */
+function parseWorktreePorcelain(raw: string, projectId: string): Worktree[] {
+  const result: Worktree[] = [];
+  const blocks = raw.trim().split(/\n\n+/);
 
-/** Load worktree metadata from disk */
-function loadWorktrees(): Map<string, Worktree> {
-  const filePath = getWorktreesFilePath();
-  const worktrees = new Map<string, Worktree>();
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const arr = JSON.parse(raw) as unknown as Worktree[];
-      for (const wt of arr) {
-        worktrees.set(wt.id, wt);
-      }
-    } catch {
-      // Corrupted file — start fresh
-    }
+  for (const block of blocks) {
+    const lines = block.split('\n');
+    const pathLine = lines.find((l) => l.startsWith('worktree '));
+    const branchLine = lines.find((l) => l.startsWith('branch '));
+
+    if (!pathLine) continue;
+
+    const path = pathLine.slice('worktree '.length).trim();
+    const branchRef = branchLine ? branchLine.slice('branch '.length).trim() : '';
+    const branch = branchRef.replace(/^refs\/heads\//, '');
+
+    result.push({
+      id: uuid(),
+      projectId,
+      path,
+      branch,
+      createdAt: new Date().toISOString(),
+    });
   }
-  return worktrees;
+
+  return result;
 }
 
-/** Save worktree metadata to disk */
-function saveWorktrees(worktrees: Map<string, Worktree>): void {
-  const filePath = getWorktreesFilePath();
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  const arr = Array.from(worktrees.values());
-  writeFileSync(filePath, JSON.stringify(arr, null, 2), 'utf-8');
+/** Derive worktrees for a project from git at runtime. */
+function deriveWorktrees(projectPath: string, projectId: string): Worktree[] {
+  try {
+    const raw = execSync('git worktree list --porcelain', {
+      cwd: projectPath,
+      encoding: 'utf-8',
+    });
+    return parseWorktreePorcelain(raw, projectId);
+  } catch {
+    return [];
+  }
 }
 
 export function createWorktreeService(
   resolveProjectPath: (id: string) => string | undefined,
 ): WorktreeService {
-  const worktrees = loadWorktrees();
-
   return {
     async createWorktree(repoPath, worktreePath, branch) {
       if (!existsSync(repoPath)) {
@@ -74,23 +81,15 @@ export function createWorktreeService(
       const git = simpleGit(repoPath);
       await git.raw(['worktree', 'add', worktreePath, branch]);
 
-      const id = uuid();
-      const now = new Date().toISOString();
-
-      // Derive projectId from repoPath by finding matching project
       const projectId = basename(repoPath);
 
-      const worktree: Worktree = {
-        id,
+      return {
+        id: uuid(),
         projectId,
         path: worktreePath,
         branch,
-        createdAt: now,
+        createdAt: new Date().toISOString(),
       };
-
-      worktrees.set(id, worktree);
-      saveWorktrees(worktrees);
-      return worktree;
     },
 
     async removeWorktree(repoPath, worktreePath) {
@@ -100,38 +99,17 @@ export function createWorktreeService(
 
       const git = simpleGit(repoPath);
       await git.raw(['worktree', 'remove', worktreePath, '--force']);
-
-      // Remove from metadata
-      for (const [id, wt] of worktrees) {
-        if (wt.path === worktreePath) {
-          worktrees.delete(id);
-          break;
-        }
-      }
-      saveWorktrees(worktrees);
       return { success: true };
     },
 
     listWorktrees(projectId) {
       const projectPath = resolveProjectPath(projectId);
       if (!projectPath) return [];
-
-      const result: Worktree[] = [];
-      for (const wt of worktrees.values()) {
-        if (wt.projectId === projectId) {
-          result.push(wt);
-        }
-      }
-      return result;
+      return deriveWorktrees(projectPath, projectId);
     },
 
-    linkToTask(worktreeId, taskId) {
-      const wt = worktrees.get(worktreeId);
-      if (!wt) {
-        throw new Error(`Worktree not found: ${worktreeId}`);
-      }
-      wt.taskId = taskId;
-      saveWorktrees(worktrees);
+    linkToTask(_worktreeId, _taskId) {
+      // Task linkage is ephemeral — worktrees are derived from git, not stored.
     },
   };
 }

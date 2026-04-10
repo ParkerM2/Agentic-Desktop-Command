@@ -3,15 +3,18 @@
  *
  * Voice recognition happens in the renderer process using Web Speech API.
  * This service handles config persistence and permission checking.
+ * Config is stored in the settings_kv table under key 'voice-config'.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { systemPreferences } from 'electron';
 
-import { app, systemPreferences } from 'electron';
+import { eq } from 'drizzle-orm';
 
 import type { VoiceConfig, VoiceInputMode } from '@shared/types';
 import { DEFAULT_VOICE_CONFIG } from '@shared/types';
+
+import type { AdcDatabase } from '@main/db';
+import { settingsKv } from '@main/db/schema';
 
 export interface VoiceService {
   getConfig: () => VoiceConfig;
@@ -19,49 +22,33 @@ export interface VoiceService {
   checkPermission: () => { granted: boolean; canRequest: boolean };
 }
 
-interface VoiceConfigFile {
-  config: VoiceConfig;
-}
+const VOICE_CONFIG_KEY = 'voice-config';
 
-function getConfigFilePath(): string {
-  return join(app.getPath('userData'), 'voice-config.json');
-}
+export function createVoiceService(deps: { db: AdcDatabase }): VoiceService {
+  const { db } = deps;
 
-function loadConfig(): VoiceConfig {
-  const filePath = getConfigFilePath();
-  if (!existsSync(filePath)) {
-    return { ...DEFAULT_VOICE_CONFIG };
+  function loadConfig(): VoiceConfig {
+    const rows = db.select().from(settingsKv).where(eq(settingsKv.key, VOICE_CONFIG_KEY)).all();
+    if (rows.length === 0) {
+      return { ...DEFAULT_VOICE_CONFIG };
+    }
+    try {
+      const stored = rows[0].settings as VoiceConfig;
+      return { ...DEFAULT_VOICE_CONFIG, ...stored };
+    } catch {
+      return { ...DEFAULT_VOICE_CONFIG };
+    }
   }
 
-  try {
-    const raw = readFileSync(filePath, 'utf-8');
-    const parsed = JSON.parse(raw) as VoiceConfigFile;
-    return {
-      ...DEFAULT_VOICE_CONFIG,
-      ...parsed.config,
-    };
-  } catch {
-    return { ...DEFAULT_VOICE_CONFIG };
-  }
-}
-
-function saveConfig(config: VoiceConfig): void {
-  const filePath = getConfigFilePath();
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
+  function saveConfig(config: VoiceConfig): void {
+    const now = new Date().toISOString();
+    db.insert(settingsKv)
+      .values({ key: VOICE_CONFIG_KEY, settings: config, updatedAt: now })
+      .onConflictDoUpdate({ target: settingsKv.key, set: { settings: config, updatedAt: now } })
+      .run();
   }
 
-  const data: VoiceConfigFile = { config };
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-export function createVoiceService(): VoiceService {
   let config = loadConfig();
-
-  function persist(): void {
-    saveConfig(config);
-  }
 
   return {
     getConfig() {
@@ -69,10 +56,7 @@ export function createVoiceService(): VoiceService {
     },
 
     updateConfig(updates) {
-      config = {
-        ...config,
-        ...updates,
-      };
+      config = { ...config, ...updates };
 
       // Validate inputMode if provided
       if (updates.inputMode !== undefined) {
@@ -82,7 +66,7 @@ export function createVoiceService(): VoiceService {
         }
       }
 
-      persist();
+      saveConfig(config);
       return { ...config };
     },
 
@@ -97,7 +81,6 @@ export function createVoiceService(): VoiceService {
       }
 
       // On Windows and Linux, assume granted (browser handles permission)
-      // The actual permission dialog is shown by the browser when using Web Speech API
       return {
         granted: true,
         canRequest: false,

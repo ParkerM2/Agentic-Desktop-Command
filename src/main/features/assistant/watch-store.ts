@@ -1,48 +1,19 @@
 /**
- * Watch Store — Persistent JSON file storage for assistant watches
+ * Watch Store — SQLite-backed storage for assistant watches
  *
- * Watches are stored at `userData/assistant-watches.json` and loaded on app start.
+ * Watches are stored in the assistant_watches table.
  * One-shot watches (default) are marked triggered after firing.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 
-import { app } from 'electron';
+import { eq } from 'drizzle-orm';
 
 import type { AssistantWatch } from '@shared/types';
 
-interface WatchStoreData {
-  watches: AssistantWatch[];
-}
+import type { AdcDatabase } from '@main/db';
 
-function getFilePath(): string {
-  return join(app.getPath('userData'), 'assistant-watches.json');
-}
-
-function loadFromDisk(): AssistantWatch[] {
-  const filePath = getFilePath();
-  if (existsSync(filePath)) {
-    try {
-      const raw = readFileSync(filePath, 'utf-8');
-      const data = JSON.parse(raw) as unknown as WatchStoreData;
-      return Array.isArray(data.watches) ? data.watches : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
-}
-
-function saveToDisk(watches: AssistantWatch[]): void {
-  const filePath = getFilePath();
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  const data: WatchStoreData = { watches };
-  writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-}
+import { assistantWatches } from './schema';
 
 export interface WatchStore {
   add: (watch: Omit<AssistantWatch, 'id' | 'createdAt' | 'triggered'>) => AssistantWatch;
@@ -53,46 +24,76 @@ export interface WatchStore {
   clear: () => void;
 }
 
-export function createWatchStore(): WatchStore {
-  let watches = loadFromDisk();
+function rowToWatch(row: typeof assistantWatches.$inferSelect): AssistantWatch {
+  return {
+    id: row.id,
+    type: row.type as AssistantWatch['type'],
+    targetId: row.targetId,
+    condition: row.condition as AssistantWatch['condition'],
+    action: row.action as AssistantWatch['action'],
+    followUp: row.followUp ?? undefined,
+    createdAt: row.createdAt,
+    triggered: row.triggered,
+    expiresAt: row.expiresAt ?? undefined,
+  };
+}
+
+export function createWatchStore(deps: { db: AdcDatabase }): WatchStore {
+  const { db } = deps;
 
   return {
     add(partial) {
-      const watch: AssistantWatch = {
+      const id = randomUUID();
+      const now = new Date().toISOString();
+
+      db.insert(assistantWatches)
+        .values({
+          id,
+          type: partial.type,
+          targetId: partial.targetId,
+          condition: partial.condition,
+          action: partial.action,
+          followUp: partial.followUp ?? null,
+          createdAt: now,
+          triggered: false,
+          expiresAt: partial.expiresAt ?? null,
+        })
+        .run();
+
+      return {
         ...partial,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
+        id,
+        createdAt: now,
         triggered: false,
       };
-      watches.push(watch);
-      saveToDisk(watches);
-      return watch;
     },
 
     remove(id) {
-      watches = watches.filter((w) => w.id !== id);
-      saveToDisk(watches);
+      db.delete(assistantWatches).where(eq(assistantWatches.id, id)).run();
     },
 
     getActive() {
-      return watches.filter((w) => !w.triggered);
+      return db
+        .select()
+        .from(assistantWatches)
+        .where(eq(assistantWatches.triggered, false))
+        .all()
+        .map(rowToWatch);
     },
 
     getAll() {
-      return [...watches];
+      return db.select().from(assistantWatches).all().map(rowToWatch);
     },
 
     markTriggered(id) {
-      const watch = watches.find((w) => w.id === id);
-      if (watch) {
-        watch.triggered = true;
-        saveToDisk(watches);
-      }
+      db.update(assistantWatches)
+        .set({ triggered: true })
+        .where(eq(assistantWatches.id, id))
+        .run();
     },
 
     clear() {
-      watches = [];
-      saveToDisk(watches);
+      db.delete(assistantWatches).run();
     },
   };
 }

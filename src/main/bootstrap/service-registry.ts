@@ -253,7 +253,7 @@ export function createServiceRegistry(
     })();
   }
 
-  const hubSyncService = createHubSyncService(hubConnectionManager);
+  const hubSyncService = createHubSyncService(hubConnectionManager, db);
   const hubAuthService = createHubAuthService({
     tokenStore,
     getHubUrl: () => hubConnectionManager.getConnection()?.hubUrl ?? null,
@@ -422,7 +422,7 @@ export function createServiceRegistry(
   const githubImporter = createGithubImporter({ githubService, taskService });
 
   // ─── Misc services ───────────────────────────────────────────
-  const voiceService = initNonCritical('voice', () => createVoiceService());
+  const voiceService = initNonCritical('voice', () => createVoiceService({ db }));
   const screenCaptureService = initNonCritical('screenCapture', () => createScreenCaptureService());
   const appUpdateService = createAppUpdateService(router);
 
@@ -546,7 +546,7 @@ export function createServiceRegistry(
   briefingService.startScheduler();
 
   // ─── Watch system ────────────────────────────────────────────
-  const watchStore = createWatchStore();
+  const watchStore = createWatchStore({ db });
   const watchEvaluator = createWatchEvaluator(watchStore);
 
   // ─── Assistant service ───────────────────────────────────────
@@ -573,6 +573,7 @@ export function createServiceRegistry(
     getWindow: getMainWindow,
     agentManager: agentManagerService,
     toolExecutor,
+    db,
   });
   // Fill closure ref for quick input
   assistantServiceRef = assistantService;

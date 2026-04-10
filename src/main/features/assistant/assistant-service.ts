@@ -14,6 +14,7 @@ import type { BrowserWindow } from 'electron';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 import type { AgentChatMessage, ToolUseBlock } from '@shared/types/agent-dashboard';
 
+import type { AdcDatabase } from '@main/db';
 import { serviceLogger } from '@main/lib/logger';
 
 import { createHistoryStore } from './history-store';
@@ -45,6 +46,7 @@ export interface AssistantServiceDeps {
   getWindow: () => BrowserWindow | null;
   agentManager: AgentManagerService;
   toolExecutor: ToolExecutor | null;
+  db: AdcDatabase;
 }
 
 /**
@@ -68,8 +70,8 @@ function extractToolUseBlocks(message: AgentChatMessage): ToolUseBlock[] {
 }
 
 export function createAssistantService(deps: AssistantServiceDeps): AssistantService {
-  const { getWindow, agentManager, toolExecutor } = deps;
-  const historyStore = createHistoryStore();
+  const { getWindow, agentManager, toolExecutor, db } = deps;
+  const historyStore = createHistoryStore({ db });
 
   let sessionId: string | null = null;
   let eventCleanup: (() => void) | null = null;
