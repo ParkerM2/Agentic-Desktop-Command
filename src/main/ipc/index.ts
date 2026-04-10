@@ -19,6 +19,7 @@ import { registerCalendarHandlers } from '../features/calendar/calendar-handlers
 import { registerChangelogHandlers } from '../features/changelog/changelog-handlers';
 import { registerClaudeHandlers } from '../features/claude/claude-handlers';
 import { registerDashboardHandlers } from '../features/dashboard/dashboard-handlers';
+import { registerDataDirHandlers } from '../features/data-management/data-dir-handlers';
 import { registerDataManagementHandlers } from '../features/data-management/data-management-handlers';
 import { registerDeviceHandlers } from '../features/device/device-handlers';
 import { registerDockerHandlers } from '../features/docker/docker-handlers';
@@ -78,6 +79,8 @@ import type { ChangelogService } from '../features/changelog/changelog-service';
 import type { ClaudeClient } from '../features/claude';
 import type { DashboardService } from '../features/dashboard/dashboard-service';
 import type { CleanupService } from '../features/data-management/cleanup-service';
+import type { ConfigReader } from '../features/data-management/config-reader';
+import type { DataMigrator } from '../features/data-management/data-migrator';
 import type { StorageInspector } from '../features/data-management/storage-inspector';
 import type { DeviceService } from '../features/device/device-service';
 import type { DockerService } from '../features/docker/docker-service';
@@ -171,6 +174,8 @@ export interface Services {
   dashboardService: DashboardService;
   dockerService: DockerService;
   oauthManager: OAuthManager;
+  configReader: ConfigReader;
+  dataMigrator: DataMigrator;
   cleanupService: CleanupService;
   storageInspector: StorageInspector;
   codebaseAnalyzer: CodebaseAnalyzerService;
@@ -284,6 +289,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.settingsService,
     services.dataDir,
   );
+  registerDataDirHandlers(router, services.configReader, services.dataMigrator);
   registerWindowHandlers(router);
   registerWorkflowEngineHandlers(router, services.workflowEngineService);
   registerTrackerHandlers(router, services.trackerService);
