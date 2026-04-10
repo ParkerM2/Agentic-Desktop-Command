@@ -9,6 +9,7 @@ import { join } from 'node:path';
 
 import { app, BrowserWindow, dialog, shell } from 'electron';
 
+import { ENV_VARS } from '@shared/constants/env';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 
 import {
@@ -22,6 +23,13 @@ import { createTrayManager } from './tray/tray-manager';
 
 import type { ErrorCollector } from './features/health/error-collector';
 import type { SettingsService } from './features/settings/settings-service';
+
+// Dev mode: rename app before any app.getPath('userData') calls so data isolates to %APPDATA%/ADC-Dev/
+const isDevMode = process.env[ENV_VARS.ADC_DEV_MODE] === 'true' || !app.isPackaged;
+
+if (isDevMode) {
+  app.setName('ADC-Dev');
+}
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');

@@ -11,6 +11,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 
+import { ENV_VARS, APP_INFO_BRIDGE } from '@shared/constants/env';
 import type {
   InvokeChannel,
   InvokeInput,
@@ -61,9 +62,24 @@ const api: IpcBridge = {
 
 contextBridge.exposeInMainWorld('api', api);
 
+const appInfo = {
+  devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
+  version: process.env.npm_package_version ?? 'unknown',
+  devEmail: process.env[ENV_VARS.ADC_DEV_EMAIL] ?? '',
+  devPassword: process.env[ENV_VARS.ADC_DEV_PASSWORD] ?? '',
+} as const;
+
+contextBridge.exposeInMainWorld(APP_INFO_BRIDGE, appInfo);
+
 // Type declaration for the renderer process
 declare global {
   interface Window {
     api: IpcBridge;
+    appInfo: {
+      devMode: boolean;
+      version: string;
+      devEmail: string;
+      devPassword: string;
+    };
   }
 }
