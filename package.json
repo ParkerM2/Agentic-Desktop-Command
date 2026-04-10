@@ -124,6 +124,7 @@
     "autoprefixer": "^10.4.22",
     "drizzle-kit": "^0.31.10",
     "electron": "39.2.7",
+    "electron-playwright-helpers": "2.1.0",
     "electron-builder": "^26.4.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",

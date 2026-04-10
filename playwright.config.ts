@@ -33,5 +33,10 @@ export default defineConfig({
   reporter: [['html', { open: 'never' }]],
   expect: {
     timeout: 10_000,
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.05,
+      animations: 'disabled',
+    },
   },
+  snapshotDir: './tests/e2e/screenshots/baselines',
 });
