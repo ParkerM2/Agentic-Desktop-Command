@@ -110,7 +110,7 @@ describe('ScriptStore', () => {
       expect(script).toMatchObject<Partial<QaScript>>({
         id: 'seed-id',
         name: 'Seed Script',
-        steps: expect.any(Array) as unknown[],
+        steps: expect.any(Array) as QaScript['steps'],
         createdAt: expect.any(String) as string,
         updatedAt: expect.any(String) as string,
       });
@@ -165,7 +165,7 @@ describe('ScriptStore', () => {
     });
 
     it('preserves the steps array in the returned script', () => {
-      const steps = [{ type: 'navigate', url: 'https://example.com' }];
+      const steps = [{ type: 'navigate' as const, url: 'https://example.com' }];
       const script = store.save({ name: 'With Steps', steps });
       expect(script.steps).toEqual(steps);
     });
