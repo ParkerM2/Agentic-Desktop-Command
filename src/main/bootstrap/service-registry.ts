@@ -91,8 +91,7 @@ import { createTimeParserService } from '../features/time-parser/time-parser-ser
 import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
 import { createVoiceService } from '../features/voice/voice-service';
-import { createWorkflowEngineService } from '../features/workflow-engine';
-import { createWorkflowTemplateService } from '../features/workflow-templates';
+import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
@@ -497,22 +496,23 @@ export function createServiceRegistry(
     }),
   );
 
-  // ─── Tier 1: Workflow + templates ────────────────────────────
+  // ─── Tier 1: Workflow (unified: engine + templates) ──────────
 
-  const workflowTemplateService = lazyService(() => createWorkflowTemplateService({ dataDir }));
-
-  const workflowEngineService = lazyService(() =>
-    createWorkflowEngineService({
+  const workflowService = lazyService(() =>
+    createWorkflowService({
       db,
       busSessionManager,
       gitService,
-      templateService: workflowTemplateService,
+      dataDir,
       progressBaseDir: dataDir,
       onStateChanged: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event); },
       onCompleted: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event); },
       onError: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event); },
     }),
   );
+
+  const workflowEngineService = lazyService(() => workflowService.engine);
+  const workflowTemplateService = lazyService(() => workflowService.templates);
 
   // ─── Tier 1: Agent dashboard + misc ──────────────────────────
 
