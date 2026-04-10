@@ -15,3 +15,5 @@ export {
   DEFAULT_LIGHT_TOKENS,
   DEFAULT_DARK_TOKENS,
 } from './themes';
+
+export { ENV_VARS, APP_INFO_BRIDGE } from './env';

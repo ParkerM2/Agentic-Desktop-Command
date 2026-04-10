@@ -19,6 +19,8 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
+import { Badge } from '@ui';
+
 import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
 import { WorkflowStatusBar } from '@features/workflow';
@@ -163,6 +165,7 @@ export function TopBar() {
 
       {/* Utility buttons — same w-10 sizing as window controls */}
       <div className="electron-no-drag flex h-full items-center">
+        <Badge display={window.appInfo.devMode} size="sm" value="DEV" variant="warning" />
         <WorkflowStatusBar />
         <button
           aria-label="Settings"

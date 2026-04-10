@@ -42,8 +42,8 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
 
   const form = useForm({
     defaultValues: {
-      email: '',
-      password: '',
+      email: window.appInfo.devMode ? window.appInfo.devEmail : '',
+      password: window.appInfo.devMode ? window.appInfo.devPassword : '',
     },
     validators: {
       onChange: loginSchema,
