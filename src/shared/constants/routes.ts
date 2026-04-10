@@ -14,7 +14,7 @@ export const ROUTES = {
   ALERTS: '/alerts',
   ASSISTANT: '/assistant',
   BRIEFING: '/briefing',
-  COMMUNICATIONS: '/communications',
+  INTEGRATIONS: '/integrations',
   DASHBOARD: '/dashboard',
   FITNESS: '/fitness',
   MY_WORK: '/my-work',

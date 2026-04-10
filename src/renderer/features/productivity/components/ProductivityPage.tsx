@@ -8,7 +8,7 @@ import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { AlertsPage } from '@features/alerts';
 import { BriefingPage } from '@features/briefing';
-import { CommunicationsPage } from '@features/communications';
+import { IntegrationsPage } from '@features/integrations';
 import { NotesPage } from '@features/notes';
 import { PlannerPage } from '@features/planner';
 
@@ -89,7 +89,7 @@ export function ProductivityPage() {
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="comms">
-            <CommunicationsPage />
+            <IntegrationsPage />
           </PageHeader.TabContent>
         </PageContent>
       </PageHeader.Tabs>

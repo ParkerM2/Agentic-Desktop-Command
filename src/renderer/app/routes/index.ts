@@ -3,7 +3,7 @@
  */
 
 export { createAuthRoutes } from './auth.routes';
-export { createCommunicationRoutes } from './communication.routes';
+export { createIntegrationsRoutes } from './integrations.routes';
 export { createDashboardRoutes } from './dashboard.routes';
 export { createMiscRoutes } from './misc.routes';
 export { createProductivityRoutes } from './productivity.routes';

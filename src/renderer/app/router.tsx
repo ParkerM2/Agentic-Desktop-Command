@@ -26,8 +26,8 @@ import { Spinner } from '@ui/spinner';
 import { RootLayout } from './layouts/RootLayout';
 import {
   createAuthRoutes,
-  createCommunicationRoutes,
   createDashboardRoutes,
+  createIntegrationsRoutes,
   createMiscRoutes,
   createProductivityRoutes,
   createProjectRoutes,
@@ -104,7 +104,7 @@ const { loginRoute, registerRoute, hubSetupRoute } = createAuthRoutes(rootRoute)
 const dashboardRoutes = createDashboardRoutes(appLayoutRoute);
 const projectRoutes = createProjectRoutes(appLayoutRoute);
 const productivityRoutes = createProductivityRoutes(appLayoutRoute);
-const communicationRoutes = createCommunicationRoutes(appLayoutRoute);
+const integrationsRoutes = createIntegrationsRoutes(appLayoutRoute);
 const settingsRoutes = createSettingsRoutes(appLayoutRoute);
 const miscRoutes = createMiscRoutes(appLayoutRoute);
 
@@ -120,7 +120,7 @@ const routeTree = rootRoute.addChildren([
       ...dashboardRoutes,
       ...projectRoutes,
       ...productivityRoutes,
-      ...communicationRoutes,
+      ...integrationsRoutes,
       ...settingsRoutes,
       ...miscRoutes,
     ]),

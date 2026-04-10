@@ -12,7 +12,7 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useProjects } from '@features/projects';
 
-import { useGitHubStore } from '../store';
+import { useIntegrationsStore } from '../store';
 
 /** Parse owner/repo from a GitHub URL (HTTPS or SSH) */
 function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
@@ -34,7 +34,7 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
 export function useGitHubProjectSync() {
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
   const { data: projects } = useProjects();
-  const setRepo = useGitHubStore((s) => s.setRepo);
+  const setGitHubRepo = useIntegrationsStore((s) => s.setGitHubRepo);
 
   useEffect(() => {
     if (!activeProjectId || !projects) return;
@@ -49,11 +49,11 @@ export function useGitHubProjectSync() {
 
         const parsed = parseGitHubUrl(url);
         if (parsed) {
-          setRepo(parsed.owner, parsed.repo);
+          setGitHubRepo(parsed.owner, parsed.repo);
         }
       } catch {
         // Project may not be a git repo — silently ignore
       }
     })();
-  }, [activeProjectId, projects, setRepo]);
+  }, [activeProjectId, projects, setGitHubRepo]);
 }

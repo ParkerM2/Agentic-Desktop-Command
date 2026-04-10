@@ -1,12 +1,13 @@
-# Task #10: Integrations Domain — Main Process
-Workbranch: work/codebase-upgrade-test-suite/integrations-domain-main-process
+# Task #12: Integrations Domain — Renderer
+Workbranch: work/codebase-upgrade-test-suite/integrations-domain-renderer
 Team: codebase-upgrade-test-suite. Leader: team-lead.
 
-Physically consolidate 5 integration domains into src/main/features/integrations/.
-Move from email(9), notifications(9), spotify(2), github(2), calendar(2) into sub-modules.
-Email and notifications are large — keep as sub-directories. Smaller ones as single files.
-Create unified createIntegrationsService().
+Physically consolidate integration renderer features into src/renderer/features/integrations/.
+Build IntegrationsPage with tabbed layout. Move from communications (already has tabs), github, calendar.
+The existing Communications page has 4 tabs — extend to include GitHub and Calendar.
+Delete old directories after moving.
 
-Read the full task file at .claude/progress/codebase-upgrade-test-suite/tasks/task-10.md for complete details.
+Read .claude/progress/codebase-upgrade-test-suite/tasks/task-12.md for full details.
+Use @ui primitives only. PageHeader compound component.
 Run npm run lint + npm run typecheck + npm run build before reporting.
 Commit on the workbranch. Report to team-lead via SendMessage.

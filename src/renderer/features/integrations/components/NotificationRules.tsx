@@ -17,11 +17,11 @@ import {
   SelectValue,
 } from '@ui';
 
-import { useCommunicationsStore } from '../store';
+import { useIntegrationsStore } from '../store';
 
 export function NotificationRules() {
   const { notificationRules, addNotificationRule, removeNotificationRule, toggleNotificationRule } =
-    useCommunicationsStore();
+    useIntegrationsStore();
 
   const [newPattern, setNewPattern] = useState('');
   const [newService, setNewService] = useState<'slack' | 'discord'>('slack');
