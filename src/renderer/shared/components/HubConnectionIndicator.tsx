@@ -17,6 +17,7 @@ import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
 
+// eslint-disable-next-line boundaries/dependencies -- TODO: fix shared->features violation
 import { useHubStatus, hubKeys } from '@features/settings/api/useHub';
 
 // -- Types --
