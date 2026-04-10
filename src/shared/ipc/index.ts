@@ -52,8 +52,8 @@ import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
-import { relayEvents, relayInvoke } from './relay';
 import { projectsEvents, projectsInvoke } from './projects';
+import { relayEvents, relayInvoke } from './relay';
 import { qaEvents, qaInvoke } from './qa';
 import { securityInvoke } from './security';
 import { settingsInvoke } from './settings';
@@ -516,8 +516,8 @@ export {
   relayClaimProjectInputSchema,
   relayClaimProjectOutputSchema,
   relayClaimReclaimedPayloadSchema,
-  relayGetSessionBufferInputSchema,
-  relayGetSessionBufferOutputSchema,
+  relayGetBufferInputSchema,
+  relayGetBufferOutputSchema,
   relayListSessionsInputSchema,
   relayMessageTypeSchema,
   relayProjectClaimedPayloadSchema,

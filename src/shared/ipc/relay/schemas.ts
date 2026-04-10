@@ -66,7 +66,7 @@ export const relayListSessionsInputSchema = z.object({
   projectId: z.string(),
 });
 
-export const relayGetSessionBufferInputSchema = z.object({
+export const relayGetBufferInputSchema = z.object({
   sessionId: z.string(),
 });
 
@@ -99,9 +99,15 @@ export const relaySendInputOutputSchema = z.object({
   success: z.boolean(),
 });
 
-export const relayGetSessionBufferOutputSchema = z.object({
+export const relayGetBufferOutputSchema = z.object({
   sessionId: z.string(),
-  buffer: z.string(),
+  messages: z.array(
+    z.object({
+      seq: z.number(),
+      message: z.unknown(),
+      timestamp: z.string(),
+    }),
+  ),
 });
 
 export const relayRenewClaimOutputSchema = z.object({

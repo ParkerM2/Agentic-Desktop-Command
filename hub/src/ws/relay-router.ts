@@ -123,37 +123,73 @@ function sendError(socket: WebSocket, sessionId: string, reason: string): void {
 /**
  * Append a frame to session_buffer. Enforces the 200-message cap by
  * deleting the oldest rows when the cap is exceeded.
+ * Wrapped in a transaction to prevent seq collisions on concurrent writes.
  */
-function appendToBuffer(
+const appendToBuffer = (() => {
+  let txn: ReturnType<Database.Database['transaction']> | null = null;
+
+  return (db: Database.Database, sessionId: string, payload: Record<string, unknown>): void => {
+    if (!txn) {
+      txn = db.transaction(
+        (sid: string, payloadJson: string, createdAt: string) => {
+          const maxSeqRow = db
+            .prepare('SELECT MAX(seq) AS max_seq FROM session_buffer WHERE session_id = ?')
+            .get(sid) as { max_seq: number | null };
+
+          const nextSeq = (maxSeqRow.max_seq ?? 0) + 1;
+
+          db.prepare(
+            `INSERT INTO session_buffer (session_id, seq, payload, created_at)
+             VALUES (?, ?, ?, ?)`,
+          ).run(sid, nextSeq, payloadJson, createdAt);
+
+          // Enforce cap: delete oldest rows if over limit
+          const countRow = db
+            .prepare('SELECT COUNT(*) AS cnt FROM session_buffer WHERE session_id = ?')
+            .get(sid) as { cnt: number };
+
+          if (countRow.cnt > SESSION_BUFFER_CAP) {
+            const excess = countRow.cnt - SESSION_BUFFER_CAP;
+            db.prepare(
+              `DELETE FROM session_buffer WHERE session_id = ? AND seq IN (
+                 SELECT seq FROM session_buffer WHERE session_id = ? ORDER BY seq ASC LIMIT ?
+               )`,
+            ).run(sid, sid, excess);
+          }
+        },
+      );
+    }
+
+    txn(sessionId, JSON.stringify(payload), new Date().toISOString());
+  };
+})();
+
+// ─── Session Lookup ──────────────────────────────────────────────────────────
+
+/**
+ * Look up an active relay session by sessionId, joining with its project claim.
+ * @param statusFilter - if provided, only match sessions with this status; otherwise match any status.
+ */
+function getRelaySession(
   db: Database.Database,
   sessionId: string,
-  payload: Record<string, unknown>,
-): void {
-  // Get the next sequence number
-  const maxSeqRow = db
-    .prepare('SELECT MAX(seq) AS max_seq FROM session_buffer WHERE session_id = ?')
-    .get(sessionId) as { max_seq: number | null };
+  statusFilter?: 'active',
+): RelayJoinRow | null {
+  const sql = statusFilter
+    ? `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id, pc.project_id
+       FROM session_relay sr
+       JOIN project_claims pc ON sr.claim_id = pc.project_id
+       WHERE sr.id = ? AND sr.status = ?`
+    : `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id, pc.project_id
+       FROM session_relay sr
+       JOIN project_claims pc ON sr.claim_id = pc.project_id
+       WHERE sr.id = ?`;
 
-  const nextSeq = (maxSeqRow.max_seq ?? 0) + 1;
+  const row = statusFilter
+    ? db.prepare(sql).get(sessionId, statusFilter) as RelayJoinRow | undefined
+    : db.prepare(sql).get(sessionId) as RelayJoinRow | undefined;
 
-  db.prepare(
-    `INSERT INTO session_buffer (session_id, seq, payload, created_at)
-     VALUES (?, ?, ?, ?)`,
-  ).run(sessionId, nextSeq, JSON.stringify(payload), new Date().toISOString());
-
-  // Enforce cap: delete oldest rows if over limit
-  const countRow = db
-    .prepare('SELECT COUNT(*) AS cnt FROM session_buffer WHERE session_id = ?')
-    .get(sessionId) as { cnt: number };
-
-  if (countRow.cnt > SESSION_BUFFER_CAP) {
-    const excess = countRow.cnt - SESSION_BUFFER_CAP;
-    db.prepare(
-      `DELETE FROM session_buffer WHERE session_id = ? AND seq IN (
-         SELECT seq FROM session_buffer WHERE session_id = ? ORDER BY seq ASC LIMIT ?
-       )`,
-    ).run(sessionId, sessionId, excess);
-  }
+  return row ?? null;
 }
 
 // ─── Claim Validation ─────────────────────────────────────────────────────────
@@ -314,14 +350,7 @@ function handleSessionInput(
 ): void {
   const { sessionId, data } = msg;
 
-  const relay = db
-    .prepare(
-      `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id, pc.project_id
-       FROM session_relay sr
-       JOIN project_claims pc ON sr.claim_id = pc.project_id
-       WHERE sr.id = ? AND sr.status = 'active'`,
-    )
-    .get(sessionId) as RelayJoinRow | undefined;
+  const relay = getRelaySession(db, sessionId, 'active');
 
   if (!relay) {
     sendError(socket, sessionId, 'No active relay session found');
@@ -360,14 +389,7 @@ function handleSessionOutput(
 ): void {
   const { sessionId, data } = msg;
 
-  const relay = db
-    .prepare(
-      `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id, pc.project_id
-       FROM session_relay sr
-       JOIN project_claims pc ON sr.claim_id = pc.project_id
-       WHERE sr.id = ? AND sr.status = 'active'`,
-    )
-    .get(sessionId) as RelayJoinRow | undefined;
+  const relay = getRelaySession(db, sessionId, 'active');
 
   if (!relay) {
     sendError(socket, sessionId, 'No active relay session found');
@@ -409,14 +431,7 @@ function handleSessionKill(
 ): void {
   const { sessionId, data } = msg;
 
-  const relay = db
-    .prepare(
-      `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id, pc.project_id
-       FROM session_relay sr
-       JOIN project_claims pc ON sr.claim_id = pc.project_id
-       WHERE sr.id = ? AND sr.status = 'active'`,
-    )
-    .get(sessionId) as RelayJoinRow | undefined;
+  const relay = getRelaySession(db, sessionId, 'active');
 
   if (!relay) {
     sendError(socket, sessionId, 'No active relay session found');
@@ -455,14 +470,7 @@ function handleSessionEnded(
 ): void {
   const { sessionId, data } = msg;
 
-  const relay = db
-    .prepare(
-      `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id, pc.project_id
-       FROM session_relay sr
-       JOIN project_claims pc ON sr.claim_id = pc.project_id
-       WHERE sr.id = ?`,
-    )
-    .get(sessionId) as RelayJoinRow | undefined;
+  const relay = getRelaySession(db, sessionId);
 
   if (!relay) {
     sendError(socket, sessionId, 'Relay session not found');
@@ -508,14 +516,7 @@ function handleSessionResume(
   const afterSeq = lastSeq ?? 0;
 
   // Verify device is authorized for this session
-  const relay = db
-    .prepare(
-      `SELECT sr.*, pc.claimed_by_device_id, pc.host_device_id
-       FROM session_relay sr
-       JOIN project_claims pc ON sr.claim_id = pc.project_id
-       WHERE sr.id = ?`,
-    )
-    .get(sessionId) as (SessionRelayRow & { claimed_by_device_id: string; host_device_id: string }) | undefined;
+  const relay = getRelaySession(db, sessionId);
 
   if (!relay) {
     sendError(socket, sessionId, 'Relay session not found');

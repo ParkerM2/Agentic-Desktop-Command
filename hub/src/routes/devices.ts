@@ -328,8 +328,9 @@ export async function deviceRoutes(app: FastifyInstance): Promise<void> {
         if (typeof projectId === 'string') {
           try {
             upsertProject.run(request.params.id, projectId, now);
-          } catch {
-            // Skip invalid project IDs (FK constraint failures)
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.warn(`[Devices] Skipping invalid project ID "${projectId}": ${msg}`);
           }
         }
       }

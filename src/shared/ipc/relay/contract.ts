@@ -13,8 +13,8 @@ import {
   relayClaimProjectInputSchema,
   relayClaimProjectOutputSchema,
   relayClaimReclaimedPayloadSchema,
-  relayGetSessionBufferInputSchema,
-  relayGetSessionBufferOutputSchema,
+  relayGetBufferInputSchema,
+  relayGetBufferOutputSchema,
   relayListSessionsInputSchema,
   relayProjectClaimedPayloadSchema,
   relayProjectUnclaimedPayloadSchema,
@@ -61,9 +61,9 @@ export const relayInvoke = {
     input: relayListSessionsInputSchema,
     output: z.array(relaySessionSchema),
   },
-  [RELAY.GET['SESSION-BUFFER']]: {
-    input: relayGetSessionBufferInputSchema,
-    output: relayGetSessionBufferOutputSchema,
+  [RELAY.GET.BUFFER]: {
+    input: relayGetBufferInputSchema,
+    output: relayGetBufferOutputSchema,
   },
   [RELAY.RENEW.CLAIM]: {
     input: relayRenewClaimInputSchema,

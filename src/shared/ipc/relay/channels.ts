@@ -14,7 +14,7 @@ export const RELAY = domain('relay', {
   SPAWN: ['session'],
   SEND: ['input'],
   LIST: ['sessions'],
-  GET: ['session-buffer'],
+  GET: ['buffer'],
   RENEW: ['claim'],
 });
 
