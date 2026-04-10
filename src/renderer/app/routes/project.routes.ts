@@ -175,7 +175,6 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'QA Recorder' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      // @ts-expect-error -- qa-recorder feature is built in parallel (Task #37); resolves at runtime
       () => import('@features/qa-recorder'),
       'QaRecorderPage',
     ),
