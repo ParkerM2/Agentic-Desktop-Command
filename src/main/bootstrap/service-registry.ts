@@ -96,8 +96,7 @@ import { createTerminalService } from '../features/terminal/terminal-service';
 import { createTimeParserService } from '../features/time-parser/time-parser-service';
 import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
-import { createWorkflowEngineService } from '../features/workflow-engine';
-import { createWorkflowTemplateService } from '../features/workflow-templates';
+import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
@@ -511,9 +510,9 @@ export function createServiceRegistry(
       gitService,
       dataDir,
       progressBaseDir: dataDir,
-      onStateChanged: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event); },
-      onCompleted: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event); },
-      onError: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event); },
+      onStateChanged: (event: Parameters<typeof router.emit<typeof WORKFLOW_ENGINE_EVENTS.STATE.CHANGED>>[1]) => { router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event); },
+      onCompleted: (event: Parameters<typeof router.emit<typeof WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED>>[1]) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event); },
+      onError: (event: Parameters<typeof router.emit<typeof WORKFLOW_ENGINE_EVENTS.RUN.ERROR>>[1]) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event); },
     }),
   );
 
