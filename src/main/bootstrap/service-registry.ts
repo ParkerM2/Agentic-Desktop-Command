@@ -28,6 +28,12 @@ import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
+import { createDockerService } from '../features/app/docker';
+import {
+  createErrorCollector,
+  createHealthRegistry,
+  createHealthService,
+} from '../features/app/health';
 import { createAssistantService } from '../features/assistant/assistant-service';
 import { createToolExecutor } from '../features/assistant/tool-executor';
 import { createWatchEvaluator } from '../features/assistant/watch-evaluator';
@@ -39,16 +45,6 @@ import { createCalendarService } from '../features/calendar/calendar-service';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
-import {
-  createConfigReader,
-  createDataMigrator,
-  createUserDataMigrator,
-  createUserDataResolver,
-} from '../features/data-management';
-import { createCleanupService } from '../features/data-management/cleanup-service';
-import { createStorageInspector } from '../features/data-management/storage-inspector';
-import { createDeviceService } from '../features/device/device-service';
-import { createDockerService } from '../features/docker/docker-service';
 import { createEmailService } from '../features/email/email-service';
 import { createFileTreeService } from '../features/file-tree/file-tree-service';
 import { createFitnessService } from '../features/fitness/fitness-service';
@@ -56,9 +52,7 @@ import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
 import { createGitHubService } from '../features/github/github-service';
-import { createErrorCollector } from '../features/health/error-collector';
-import { createHealthRegistry } from '../features/health/health-registry';
-import { createHealthService } from '../features/health/health-service';
+import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
 import { createHubConnectionManager } from '../features/hub/hub-connection';
@@ -86,8 +80,17 @@ import { createSkillsResolver } from '../features/project/skills-resolver';
 import { createTaskService } from '../features/project/task-service';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
-import { createScreenCaptureService } from '../features/screen/screen-capture-service';
+import {
+  createCleanupService,
+  createConfigReader,
+  createDataMigrator,
+  createStorageInspector,
+  createUserDataMigrator,
+  createUserDataResolver,
+} from '../features/settings/data-management';
+import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
+import { createVoiceService } from '../features/settings/voice';
 import { createSpotifyService } from '../features/spotify/spotify-service';
 import {
   createGithubImporter,
@@ -98,7 +101,6 @@ import { createTerminalService } from '../features/terminal/terminal-service';
 import { createTimeParserService } from '../features/time-parser/time-parser-service';
 import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
-import { createVoiceService } from '../features/voice/voice-service';
 import { createWorkflowEngineService } from '../features/workflow-engine';
 import { createWorkflowTemplateService } from '../features/workflow-templates';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
