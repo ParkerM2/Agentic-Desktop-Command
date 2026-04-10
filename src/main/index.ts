@@ -168,6 +168,7 @@ function initializeApp(): void {
     terminalService: registry.terminalService,
     errorCollector: registry.errorCollector,
     healthRegistry: registry.healthRegistry,
+    healthService: registry.healthService,
     qaTrigger: registry.qaTrigger,
     alertService: registry.alertService,
     hubConnectionManager: registry.hubConnectionManager,

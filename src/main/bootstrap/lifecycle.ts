@@ -21,6 +21,7 @@ import type { createBriefingService } from '../features/briefing/briefing-servic
 import type { CleanupService } from '../features/data-management/cleanup-service';
 import type { ErrorCollector } from '../features/health/error-collector';
 import type { HealthRegistry } from '../features/health/health-registry';
+import type { HealthService } from '../features/health/health-service';
 import type { createHubConnectionManager } from '../features/hub/hub-connection';
 import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
@@ -32,6 +33,7 @@ export interface LifecycleDeps {
   terminalService: ReturnType<typeof createTerminalService>;
   errorCollector: ErrorCollector;
   healthRegistry: HealthRegistry;
+  healthService: HealthService;
   qaTrigger: QaTrigger;
   alertService: ReturnType<typeof createAlertService>;
   hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
@@ -92,6 +94,7 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     deps.commandBus.dispose();
 
     // Dispose health + error last (may log during shutdown)
+    deps.healthService.dispose();
     deps.healthRegistry.dispose();
     deps.errorCollector.dispose();
 
