@@ -18,14 +18,17 @@ import { useEffect } from 'react';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { RELAY } from '@shared/ipc/relay/channels';
 import { WORKSPACE, WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
 
-import { useIpcEvent } from '@renderer/shared/hooks';
+import { useIpcEvent, useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
+import { useAgentContextStore } from '@renderer/shared/stores/agent-context-store';
 
 export const workspaceKeys = {
   all: ['workspace'] as const,
   sessions: (projectId: string) => ['workspace', 'sessions', projectId] as const,
+  relaySessions: (projectId: string) => ['workspace', 'relay-sessions', projectId] as const,
 };
 
 /** Poll active sessions for a project. Invalidates on session lifecycle events. */
@@ -171,5 +174,82 @@ export function useTeardownTeammate(projectId: string) {
   return useMutation({
     mutationFn: ({ slug }: { slug: string }) =>
       ipc(WORKSPACE.TEARDOWN.TEAMMATE, { projectId, slug }),
+  });
+}
+
+// ── Relay Session Hooks ────────────────────────────────────────
+
+/**
+ * Spawn a remote session via the hub relay.
+ * Registers the new session in the agent context store on success.
+ */
+export function useSpawnRemoteSession(projectId: string) {
+  const queryClient = useQueryClient();
+  const { onError } = useMutationErrorToast();
+  const upsertSession = useAgentContextStore((s) => s.upsertSession);
+
+  return useMutation({
+    mutationFn: ({
+      agentRole,
+      prompt,
+      workDir,
+      taskId,
+    }: {
+      agentRole: string;
+      prompt: string;
+      workDir: string;
+      taskId?: string;
+    }) =>
+      ipc(RELAY.SPAWN.SESSION, { projectId, agentRole, prompt, workDir, taskId }),
+    onSuccess: (data, variables) => {
+      upsertSession({
+        sessionId: data.sessionId,
+        projectId,
+        source: 'relay',
+        status: 'active',
+        agentRole: variables.agentRole,
+        startedAt: new Date().toISOString(),
+        endedAt: null,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: workspaceKeys.relaySessions(projectId),
+      });
+    },
+    onError: onError('spawn remote session'),
+  });
+}
+
+/**
+ * Send input to an active relay session.
+ */
+export function useSendRelayInput() {
+  const { onError } = useMutationErrorToast();
+
+  return useMutation({
+    mutationFn: ({ sessionId, data }: { sessionId: string; data: string }) =>
+      ipc(RELAY.SEND.INPUT, { sessionId, data }),
+    onError: onError('send relay input'),
+  });
+}
+
+/**
+ * List relay sessions for a project.
+ */
+export function useRelaySessions(projectId: string | null) {
+  return useQuery({
+    queryKey: workspaceKeys.relaySessions(projectId ?? ''),
+    queryFn: () => ipc(RELAY.LIST.SESSIONS, { projectId: projectId ?? '' }),
+    enabled: projectId !== null,
+  });
+}
+
+/**
+ * Get the output buffer for a relay session.
+ */
+export function useRelayBuffer(sessionId: string | null) {
+  return useQuery({
+    queryKey: ['workspace', 'relay-buffer', sessionId ?? ''],
+    queryFn: () => ipc(RELAY.GET.BUFFER, { sessionId: sessionId ?? '' }),
+    enabled: sessionId !== null,
   });
 }

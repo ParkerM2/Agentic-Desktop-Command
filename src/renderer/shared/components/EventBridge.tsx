@@ -72,6 +72,7 @@ const PROJECTS = ['projects'] as const;
 const TASKS = ['tasks'] as const;
 const AGENT_SESSIONS = ['agent-sessions'] as const;
 const WORKSPACE_SESSIONS = ['workspace-sessions'] as const;
+const RELAY_SESSIONS = ['workspace', 'relay-sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
 
@@ -128,9 +129,13 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [RELAY_EVENTS.PROJECT.CLAIMED]: { keys: [PROJECTS] },
   [RELAY_EVENTS.PROJECT.UNCLAIMED]: { keys: [PROJECTS] },
   [RELAY_EVENTS.CLAIM.RECLAIMED]: {
-    keys: [PROJECTS],
+    keys: [PROJECTS, RELAY_SESSIONS],
     toast: { message: 'A project claim was reclaimed by another device', type: 'warning' },
   },
+
+  // Relay session events
+  [RELAY_EVENTS.SESSION.SPAWNED]: { keys: [RELAY_SESSIONS] },
+  [RELAY_EVENTS.SESSION.ENDED]: { keys: [RELAY_SESSIONS] },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
