@@ -121,8 +121,6 @@ export const ipcInvokeContract = {
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
-  ...workflowTemplatesInvoke,
-  ...workflowEngineInvoke,
   ...progressInvoke,
   ...busInvoke,
 
@@ -277,17 +275,8 @@ export {
   HubSyncOutputSchema,
 } from './hub';
 
-// Personal schemas (alerts, notes, ideas, milestones, changelog) now re-exported from personal/ (see bottom of file)
+// Non-personal schemas from misc (personal schemas re-exported from ./personal below)
 export {
-  AlertLinkedToSchema,
-  AlertSchema,
-  AlertTypeSchema,
-  ChangeCategorySchema,
-  ChangelogEntrySchema,
-  ChangeTypeSchema,
-  IdeaCategorySchema,
-  IdeaSchema,
-  IdeaStatusSchema,
   InsightMetricsSchema,
   InsightTimeSeriesSchema,
   MergeDiffFileSchema,
@@ -296,7 +285,6 @@ export {
   MergeFileDiffOutputSchema,
   MergeResultSchema,
   ProjectInsightsSchema,
-  RecurringConfigSchema,
   TaskDistributionSchema,
   WorkspaceSchema,
   WorkspaceSettingsSchema,
