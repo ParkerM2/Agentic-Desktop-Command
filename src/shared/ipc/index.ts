@@ -63,9 +63,8 @@ import { terminalsEvents, terminalsInvoke } from './terminals';
 import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
 import { windowInvoke } from './window';
+// workflow-engine and workflow-templates are absorbed into ./workflow
 import { workflowEvents, workflowInvoke } from './workflow';
-import { workflowEngineEvents, workflowEngineInvoke } from './workflow-engine';
-import { workflowTemplatesEvents, workflowTemplatesInvoke } from './workflow-templates';
 import { workspaceEvents, workspaceInvoke } from './workspace';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
@@ -119,10 +118,6 @@ export const ipcInvokeContract = {
   ...workspaceInvoke,
   ...visualizationInvoke,
 
-  ...workflowTemplatesInvoke,
-
-  ...workflowEngineInvoke,
-
   ...progressInvoke,
 
   ...busInvoke,
@@ -162,8 +157,6 @@ export const ipcEventContract = {
   ...agentDashboardEvents,
   ...workspaceEvents,
   ...workflowEvents,
-  ...workflowTemplatesEvents,
-  ...workflowEngineEvents,
   ...progressEvents,
 
   ...busEvents,
@@ -435,6 +428,7 @@ export {
 } from './visualization';
 
 export {
+  // Template schemas (now in ./workflow)
   WorkflowBranchingSchema,
   WorkflowGuardianSchema,
   WorkflowModeSchema,
@@ -442,18 +436,7 @@ export {
   WorkflowQaSchema,
   WorkflowTeamSchema,
   WorkflowTemplateSchema,
-} from './workflow-templates';
-export type {
-  WorkflowBranching,
-  WorkflowGuardian,
-  WorkflowMode,
-  WorkflowPermissions,
-  WorkflowQa,
-  WorkflowTeam,
-  WorkflowTemplate,
-} from './workflow-templates';
-
-export {
+  // Engine schemas (now in ./workflow)
   AgentDefinitionSchema,
   WorkflowApplyInputSchema,
   WorkflowCompletedEventSchema,
@@ -462,8 +445,17 @@ export {
   WorkflowRunConfigSchema,
   WorkflowStateChangedEventSchema,
   WorkflowStateSchema,
-} from './workflow-engine';
-export type { AgentDefinition } from './workflow-engine';
+} from './workflow';
+export type {
+  WorkflowBranching,
+  WorkflowGuardian,
+  WorkflowMode,
+  WorkflowPermissions,
+  WorkflowQa,
+  WorkflowTeam,
+  WorkflowTemplate,
+  AgentDefinition,
+} from './workflow';
 
 export {
   progressActionSchema,
