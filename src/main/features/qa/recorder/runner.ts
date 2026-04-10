@@ -7,9 +7,9 @@
  */
 
 import { spawn } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
 
 import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 
 import { qaRuns } from '../../../db/schema';
 
@@ -65,7 +65,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
 
   return {
     run({ scriptId, filePath, projectPath, triggeredBy, handlers }) {
-      const runId = randomUUID();
+      const runId = nanoid();
       const now = new Date().toISOString();
 
       db.insert(qaRuns).values({

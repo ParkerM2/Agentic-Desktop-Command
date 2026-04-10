@@ -2,9 +2,8 @@
  * QA Recorder Script Store — Drizzle CRUD for qa_scripts table
  */
 
-import { randomUUID } from 'node:crypto';
-
 import { eq } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 
 import { qaScripts } from '../../../db/schema';
 
@@ -72,7 +71,7 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
       }
 
       const record = {
-        id: data.id ?? randomUUID(),
+        id: data.id ?? nanoid(),
         name: data.name,
         baseUrl: '',
         steps: data.steps,
