@@ -1,12 +1,10 @@
 /**
- * Hub — Device sub-module
- *
- * Re-exports device service, heartbeat, and handler. Absorbed from features/device/.
+ * Hub — Device sub-module barrel
  */
 
-export { createDeviceService } from '../device/device-service';
-export { createHeartbeatService } from '../device/heartbeat';
-export { registerDeviceHandlers } from '../device/device-handlers';
+export { createDeviceService } from './device/device-service';
+export { createHeartbeatService } from './device/heartbeat';
+export { registerDeviceHandlers } from './device/device-handlers';
 
-export type { DeviceService, DeviceRegisterInput, DeviceUpdateInput } from '../device/device-service';
-export type { HeartbeatService } from '../device/heartbeat';
+export type { DeviceService, DeviceRegisterInput, DeviceUpdateInput } from './device/device-service';
+export type { HeartbeatService } from './device/heartbeat';

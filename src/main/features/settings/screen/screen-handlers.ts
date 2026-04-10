@@ -5,7 +5,7 @@
 import { SCREEN } from '@shared/ipc/misc/screen.channels';
 
 import type { ScreenCaptureService } from "./screen-capture-service";
-import type { IpcRouter } from '../../ipc/router';
+import type { IpcRouter } from '../../../ipc/router';
 
 export function registerScreenHandlers(router: IpcRouter, service: ScreenCaptureService): void {
   router.handle(SCREEN.LIST.SOURCES, (input) =>

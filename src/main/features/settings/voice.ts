@@ -1,10 +1,8 @@
 /**
- * Settings — Voice sub-module
- *
- * Re-exports voice service and handler. Absorbed from features/voice/.
+ * Settings — Voice sub-module barrel
  */
 
-export { createVoiceService } from '../voice/voice-service';
-export { registerVoiceHandlers } from '../voice/voice-handlers';
+export { createVoiceService } from './voice/voice-service';
+export { registerVoiceHandlers } from './voice/voice-handlers';
 
-export type { VoiceService } from '../voice/voice-service';
+export type { VoiceService } from './voice/voice-service';

@@ -7,7 +7,7 @@
 import type { Device, DeviceCapabilities } from '@shared/types';
 import type { DeviceType } from '@shared/types/hub-protocol';
 
-import type { HubApiClient } from '../hub/hub-api-client';
+import type { HubApiClient } from '../hub-api-client';
 
 // ─── Types ───────────────────────────────────────────────────
 

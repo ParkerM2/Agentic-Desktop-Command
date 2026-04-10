@@ -5,7 +5,7 @@
 import { DEVICES } from '@shared/ipc/misc/devices.channels';
 
 import type { DeviceService } from "./device-service";
-import type { IpcRouter } from '../../ipc/router';
+import type { IpcRouter } from '../../../ipc/router';
 
 export function registerDeviceHandlers(router: IpcRouter, deviceService: DeviceService): void {
   router.handle(DEVICES.LIST.ALL, async () => {

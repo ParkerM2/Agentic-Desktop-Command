@@ -16,7 +16,7 @@ import type {
   HealthStatus,
 } from '@shared/types/health';
 
-import type { IpcRouter } from '../../ipc/router';
+import type { IpcRouter } from '../../../ipc/router';
 
 /** Minimal ErrorCollector interface matching the IPC contract types */
 export interface ErrorCollectorHandler {

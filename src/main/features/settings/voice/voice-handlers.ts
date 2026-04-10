@@ -5,7 +5,7 @@
 import { VOICE } from '@shared/ipc/misc/voice.channels';
 
 import type { VoiceService } from "./voice-service";
-import type { IpcRouter } from '../../ipc/router';
+import type { IpcRouter } from '../../../ipc/router';
 
 export function registerVoiceHandlers(router: IpcRouter, service: VoiceService): void {
   router.handle(VOICE.GET.CONFIG, () => Promise.resolve(service.getConfig()));

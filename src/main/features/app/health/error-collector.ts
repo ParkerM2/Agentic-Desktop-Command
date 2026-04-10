@@ -20,7 +20,7 @@ import type {
 
 import { serviceLogger } from '@main/lib/logger';
 
-import { safeWriteJson } from '../../lib/safe-write-json';
+import { safeWriteJson } from '../../../lib/safe-write-json';
 
 // ─── Types ───────────────────────────────────────────────────────
 
