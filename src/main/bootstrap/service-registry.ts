@@ -116,7 +116,6 @@ import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { NotificationManager } from '../features/integrations/notifications';
-import type { QaRecorderService } from '../features/qa/recorder/recorder-handlers';
 import type { TaskRepository } from '../features/tasks/types';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
