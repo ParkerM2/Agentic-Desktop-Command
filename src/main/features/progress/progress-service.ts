@@ -1027,6 +1027,9 @@ export function createProgressService(
 
       await service.updateTask(slug, { status: 'researching' });
 
+      // Ensure research subdirectory exists before spawning agent
+      await mkdir(join(progressDir, slug, 'research'), { recursive: true });
+
       const researchOutPath = `progress/${slug}/research/research.md`;
       const defaultResearchPrompt =
         `Deep research on "${task.title}". ` +
@@ -1049,6 +1052,9 @@ export function createProgressService(
 
       await service.updateTask(slug, { status: 'planning' });
 
+      // Ensure plans subdirectory exists before spawning agent
+      await mkdir(join(progressDir, slug, 'plans'), { recursive: true });
+
       const researchPath = `progress/${slug}/research/research.md`;
       const planOutPath = `progress/${slug}/plans/plan.md`;
       const defaultPlanPrompt =
@@ -1068,6 +1074,9 @@ export function createProgressService(
 
       const task = await service.getTask(slug);
       if (!task) throw new Error(`Task not found: ${slug}`);
+
+      // Ensure tasks subdirectory exists before spawning team
+      await mkdir(join(progressDir, slug, 'tasks'), { recursive: true });
 
       const planPath = join(projectPath, 'progress', slug, 'plans', 'plan.md');
       const hasPlanFile = await fileExists(planPath);
