@@ -9,7 +9,14 @@
  */
 
 import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
-import { appEvents, appInvoke } from './app';
+import {
+  appEvents,
+  appInvoke,
+  dockerInvoke,
+  healthEvents,
+  healthInvoke,
+  windowInvoke,
+} from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
@@ -17,21 +24,17 @@ import { busEvents, busInvoke } from './bus';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
-import { dockerInvoke } from './docker';
 import { emailEvents, emailInvoke } from './email';
 import { filesInvoke } from './files';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
-import { healthEvents, healthInvoke } from './health';
-import { hubEvents, hubInvoke } from './hub';
+import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import {
   alertsEvents,
   alertsInvoke,
   calendarInvoke,
   changelogInvoke,
-  devicesInvoke,
-  hotkeysInvoke,
   ideasEvents,
   ideasInvoke,
   insightsInvoke,
@@ -41,10 +44,7 @@ import {
   milestonesInvoke,
   notesEvents,
   notesInvoke,
-  screenInvoke,
   timeInvoke,
-  voiceEvents,
-  voiceInvoke,
   webhookEvents,
   workspacesInvoke,
 } from './misc';
@@ -54,14 +54,19 @@ import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
-import { securityInvoke } from './security';
-import { settingsInvoke } from './settings';
+import {
+  hotkeysInvoke,
+  screenInvoke,
+  securityInvoke,
+  settingsInvoke,
+  voiceEvents,
+  voiceInvoke,
+} from './settings';
 import { spotifyInvoke } from './spotify';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents, tasksInvoke } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
-import { windowInvoke } from './window';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workflowEngineEvents, workflowEngineInvoke } from './workflow-engine';
 import { workflowTemplatesEvents, workflowTemplatesInvoke } from './workflow-templates';
@@ -76,6 +81,9 @@ export const ipcInvokeContract = {
   ...terminalsInvoke,
   ...settingsInvoke,
   ...hotkeysInvoke,
+  ...voiceInvoke,
+  ...screenInvoke,
+  ...securityInvoke,
   ...notesInvoke,
   ...plannerInvoke,
   ...alertsInvoke,
@@ -89,41 +97,34 @@ export const ipcInvokeContract = {
   ...fitnessInvoke,
   ...assistantInvoke,
   ...hubInvoke,
+  ...devicesInvoke,
   ...githubInvoke,
   ...spotifyInvoke,
   ...calendarInvoke,
   ...appInvoke,
   ...healthInvoke,
+  ...dockerInvoke,
+  ...windowInvoke,
   ...qaInvoke,
   ...timeInvoke,
   ...mcpInvoke,
   ...claudeInvoke,
   ...emailInvoke,
   ...notificationsInvoke,
-  ...voiceInvoke,
-  ...screenInvoke,
   ...briefingInvoke,
   ...workspacesInvoke,
-  ...devicesInvoke,
   ...authInvoke,
   ...oauthInvoke,
   ...workflowInvoke,
   ...dashboardInvoke,
-  ...dockerInvoke,
-  ...securityInvoke,
   ...dataManagementInvoke,
-  ...windowInvoke,
   ...trackerInvoke,
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
-
   ...workflowTemplatesInvoke,
-
   ...workflowEngineInvoke,
-
   ...progressInvoke,
-
   ...busInvoke,
 } as const;
 
@@ -136,6 +137,7 @@ export const ipcEventContract = {
   ...projectsEvents,
   ...appEvents,
   ...healthEvents,
+  ...voiceEvents,
   ...assistantEvents,
   ...claudeEvents,
   ...webhookEvents,
@@ -150,7 +152,6 @@ export const ipcEventContract = {
   ...githubEvents,
   ...emailEvents,
   ...notificationsEvents,
-  ...voiceEvents,
   ...briefingEvents,
   ...qaEvents,
   ...dashboardEvents,
@@ -162,7 +163,6 @@ export const ipcEventContract = {
   ...workflowTemplatesEvents,
   ...workflowEngineEvents,
   ...progressEvents,
-
   ...busEvents,
 } as const;
 
@@ -205,7 +205,7 @@ export {
 
 export { CaptureSchema } from './dashboard';
 
-export { DockerHubSetupResultSchema, DockerStatusSchema } from './docker';
+export { DockerHubSetupResultSchema, DockerStatusSchema } from './app';
 
 export {
   ClaudeConversationSchema,
@@ -286,7 +286,7 @@ export {
   HealthStatusSchema,
   ServiceHealthSchema,
   ServiceHealthStatusSchema,
-} from './health';
+} from './app';
 
 export {
   HubConfigOutputSchema,
@@ -302,9 +302,6 @@ export {
   ChangeCategorySchema,
   ChangelogEntrySchema,
   ChangeTypeSchema,
-  DeviceCapabilitiesSchema,
-  DeviceSchema,
-  DeviceTypeSchema,
   IdeaCategorySchema,
   IdeaSchema,
   IdeaStatusSchema,
@@ -321,15 +318,20 @@ export {
   NoteSchema,
   ProjectInsightsSchema,
   RecurringConfigSchema,
-  ScreenPermissionStatusSchema,
-  ScreenSourceSchema,
-  ScreenshotSchema,
   TaskDistributionSchema,
-  VoiceConfigSchema,
-  VoiceInputModeSchema,
   WorkspaceSchema,
   WorkspaceSettingsSchema,
 } from './misc';
+
+export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './hub';
+
+export {
+  ScreenPermissionStatusSchema,
+  ScreenSourceSchema,
+  ScreenshotSchema,
+  VoiceConfigSchema,
+  VoiceInputModeSchema,
+} from './settings';
 
 export {
   GitHubNotificationTypeSchema,
@@ -391,7 +393,7 @@ export {
   SecurityAuditExportSchema,
   SecurityModeSchema,
   SecuritySettingsSchema,
-} from './security';
+} from './settings';
 
 export { AppSettingsSchema, ProfileSchema, WebhookConfigSchema } from './settings';
 
@@ -415,7 +417,7 @@ export {
 
 export { TerminalSessionSchema } from './terminals';
 
-export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './window';
+export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './app';
 
 export { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './tracker';
 

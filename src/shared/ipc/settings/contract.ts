@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 
-import { SETTINGS } from './channels';
+import { HOTKEYS, SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
 import {
   AppSettingsSchema,
   DataDirInfoSchema,
@@ -18,6 +18,8 @@ import {
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
   ScreenshotSchema,
+  SecurityAuditExportSchema,
+  SecuritySettingsSchema,
   ValidationCheckSchema,
   VoiceConfigSchema,
   VoiceInputModeSchema,
@@ -144,31 +146,31 @@ export const settingsInvoke = {
   },
 } as const;
 
-/** Invoke channels for hotkey operations */
+/** Invoke channels for hotkey operations (absorbed from misc/hotkeys) */
 export const hotkeysInvoke = {
-  'hotkeys.get': {
+  [HOTKEYS.GET.CONFIG]: {
     input: z.object({}),
     output: z.record(z.string(), z.string()),
   },
-  'hotkeys.update': {
+  [HOTKEYS.UPDATE.CONFIG]: {
     input: z.object({
       hotkeys: z.record(z.string(), z.string()),
     }),
     output: z.object({ success: z.boolean() }),
   },
-  'hotkeys.reset': {
+  [HOTKEYS.RESET.CONFIG]: {
     input: z.object({}),
     output: z.record(z.string(), z.string()),
   },
 } as const;
 
-/** Invoke channels for voice operations */
+/** Invoke channels for voice operations (absorbed from misc/voice) */
 export const voiceInvoke = {
-  'voice.getConfig': {
+  [VOICE.GET.CONFIG]: {
     input: z.object({}),
     output: VoiceConfigSchema,
   },
-  'voice.updateConfig': {
+  [VOICE.UPDATE.CONFIG]: {
     input: z.object({
       enabled: z.boolean().optional(),
       language: z.string().optional(),
@@ -176,7 +178,7 @@ export const voiceInvoke = {
     }),
     output: VoiceConfigSchema,
   },
-  'voice.checkPermission': {
+  [VOICE.CHECK.PERMISSION]: {
     input: z.object({}),
     output: z.object({
       granted: z.boolean(),
@@ -185,16 +187,26 @@ export const voiceInvoke = {
   },
 } as const;
 
-/** Invoke channels for screen capture operations */
+/** Event channels for voice operations */
+export const voiceEvents = {
+  [VOICE_EVENTS.SPEECH.TRANSCRIPT]: {
+    payload: z.object({
+      transcript: z.string(),
+      isFinal: z.boolean(),
+    }),
+  },
+} as const;
+
+/** Invoke channels for screen capture operations (absorbed from misc/screen) */
 export const screenInvoke = {
-  'screen.listSources': {
+  [SCREEN.LIST.SOURCES]: {
     input: z.object({
       types: z.array(z.enum(['screen', 'window'])).optional(),
       thumbnailSize: z.object({ width: z.number(), height: z.number() }).optional(),
     }),
     output: z.array(ScreenSourceSchema),
   },
-  'screen.capture': {
+  [SCREEN.CAPTURE.SCREEN]: {
     input: z.object({
       sourceId: z.string(),
       options: z
@@ -206,12 +218,28 @@ export const screenInvoke = {
     }),
     output: ScreenshotSchema,
   },
-  'screen.checkPermission': {
+  [SCREEN.CHECK.PERMISSION]: {
     input: z.object({}),
     output: z.object({
       status: ScreenPermissionStatusSchema,
       platform: z.string(),
     }),
+  },
+} as const;
+
+/** Invoke channels for security operations (absorbed from security/) */
+export const securityInvoke = {
+  [SECURITY.GET.SETTINGS]: {
+    input: z.object({}),
+    output: SecuritySettingsSchema,
+  },
+  [SECURITY.UPDATE.SETTINGS]: {
+    input: SecuritySettingsSchema.partial(),
+    output: SecuritySettingsSchema,
+  },
+  [SECURITY.EXPORT.AUDIT]: {
+    input: z.object({}),
+    output: SecurityAuditExportSchema,
   },
 } as const;
 
