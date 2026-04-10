@@ -45,14 +45,14 @@ test.describe('Project-Scoped Pages', () => {
 
   // ── 1. Tasks Page ────────────────────────────────────────────────
 
-  test('Tasks page — AG-Grid renders with toolbar and search input', async ({
+  test('Tasks page — table renders with toolbar and search input', async ({
     authenticatedWindow,
   }) => {
     const page = authenticatedWindow;
 
-    // AG-Grid theme class should be present
-    const agGrid = page.locator('.ag-theme-quartz');
-    await expect(agGrid).toBeVisible({ timeout: 15_000 });
+    // TanStack Table renders a semantic <table> element
+    const table = page.getByRole('table');
+    await expect(table).toBeVisible({ timeout: 15_000 });
 
     // Search input is present and accepts text
     const searchInput = page.locator('input[placeholder="Search tasks..."]');
@@ -73,11 +73,11 @@ test.describe('Project-Scoped Pages', () => {
   }) => {
     const page = authenticatedWindow;
 
-    // Wait for grid to render
-    await expect(page.locator('.ag-theme-quartz')).toBeVisible({ timeout: 15_000 });
+    // Wait for TanStack Table to render
+    await expect(page.getByRole('table')).toBeVisible({ timeout: 15_000 });
 
-    // Check if there are any data rows
-    const dataRows = page.locator('.ag-row:not(.ag-full-width-row-detail)');
+    // Check if there are any data rows (tbody rows only, not header)
+    const dataRows = page.locator('tbody tr');
     const rowCount = await dataRows.count();
 
     if (rowCount === 0) {
@@ -86,12 +86,12 @@ test.describe('Project-Scoped Pages', () => {
       return;
     }
 
-    // Click the expand toggle on the first row (first cell in the row)
-    const firstRowExpandCell = dataRows.first().locator('.ag-cell').first();
+    // Click the expand toggle on the first row (first td in the row)
+    const firstRowExpandCell = dataRows.first().locator('td').first();
     await firstRowExpandCell.click();
 
-    // Verify a detail row appeared (full-width row)
-    const detailRow = page.locator('.ag-full-width-row-detail');
+    // Verify a detail row appeared — the expanded detail renders as a <td colspan>
+    const detailRow = page.locator('td[colspan]');
     await expect(detailRow).toBeVisible({ timeout: 5_000 });
   });
 
