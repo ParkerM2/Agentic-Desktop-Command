@@ -18,12 +18,15 @@ import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
+import { RELAY_EVENTS } from '@shared/ipc/relay/channels';
 import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
 import { WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
+
+import { useToastStore } from '@renderer/shared/stores';
 
 // ─── Exported Types ─────────────────────────────────────────
 
@@ -46,6 +49,8 @@ interface RegistryEntry {
    * - 'append': writes event payload into the cache directly
    */
   readonly handler?: 'invalidate' | 'append';
+  /** Optional toast to show when the event fires. */
+  readonly toast?: { message: string; type: 'error' | 'success' | 'warning' };
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -63,6 +68,7 @@ function extractTextPreview(content: ContentBlock[]): string {
 // ─── Shared Key Constants ───────────────────────────────────
 
 const PROGRESS_LIST = ['progress', 'list'] as const;
+const PROJECTS = ['projects'] as const;
 const TASKS = ['tasks'] as const;
 const AGENT_SESSIONS = ['agent-sessions'] as const;
 const WORKSPACE_SESSIONS = ['workspace-sessions'] as const;
@@ -117,6 +123,14 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 
   // Task status events
   [TASKS_EVENTS.STATUS.CHANGED]: { keys: [TASKS] },
+
+  // Relay project events
+  [RELAY_EVENTS.PROJECT.CLAIMED]: { keys: [PROJECTS] },
+  [RELAY_EVENTS.PROJECT.UNCLAIMED]: { keys: [PROJECTS] },
+  [RELAY_EVENTS.CLAIM.RECLAIMED]: {
+    keys: [PROJECTS],
+    toast: { message: 'A project claim was reclaimed by another device', type: 'warning' },
+  },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -153,6 +167,7 @@ function handleAppend(queryClient: QueryClient, event: EventChannel, payload: un
 
 export function EventBridge() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     // Guard: window.api only exists in Electron (preload bridge)
@@ -180,10 +195,13 @@ export function EventBridge() {
         );
         cleanups.push(cleanup);
       } else {
-        // Default: invalidate matching query keys
+        // Default: invalidate matching query keys + optional toast
         const cleanup = window.api.on(typedEvent, () => {
           for (const key of entry.keys) {
             void queryClient.invalidateQueries({ queryKey: [...key] });
+          }
+          if (entry.toast) {
+            addToast(entry.toast.message, entry.toast.type);
           }
         });
         cleanups.push(cleanup);
@@ -195,7 +213,7 @@ export function EventBridge() {
         cleanup();
       }
     };
-  }, [queryClient]);
+  }, [queryClient, addToast]);
 
   return null;
 }
