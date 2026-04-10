@@ -26,6 +26,7 @@ function createTestDb() {
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS settings_kv (
       key TEXT PRIMARY KEY,
+      category TEXT NOT NULL DEFAULT 'settings',
       settings TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
