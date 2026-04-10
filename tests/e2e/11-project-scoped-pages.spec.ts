@@ -43,6 +43,11 @@ test.describe('Project-Scoped Pages', () => {
     await authenticatedWindow.waitForLoadState('networkidle');
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   // ── 1. Tasks Page ────────────────────────────────────────────────
 
   test('Tasks page — table renders with toolbar and search input', async ({

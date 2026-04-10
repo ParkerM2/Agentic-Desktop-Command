@@ -16,6 +16,11 @@ import {
 } from './helpers/navigation';
 
 test.describe('Navigation Sweep', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('click Dashboard navigates to /dashboard', async ({ authenticatedWindow: page }) => {
     await navigateToSidebarItem(page, 'Dashboard');
     await expect(page).toHaveURL(/\/dashboard/);

@@ -21,6 +21,11 @@ test.describe('Project Management', () => {
     collector = createConsoleCollector(authenticatedWindow);
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   // 1. Navigate to projects via TopBar
   test('navigate to projects via TopBar "+" button', async ({ authenticatedWindow }) => {
     // Use the navigation helper that clicks the "+" button (title="Open project")

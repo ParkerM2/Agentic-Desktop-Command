@@ -24,6 +24,11 @@ test.describe('Alerts Page', () => {
     await authenticatedWindow.waitForLoadState('networkidle');
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('page loads at /personal (Alerts tab) with heading visible', async ({ authenticatedWindow }) => {
     await expect(authenticatedWindow).toHaveURL(/\/personal/, { timeout: 10_000 });
     await expect(
@@ -153,6 +158,11 @@ test.describe('Integrations Page', () => {
     collector = createConsoleCollector(authenticatedWindow);
     await navigateToSidebarItem(authenticatedWindow, 'Integrations');
     await expect(authenticatedWindow).toHaveURL(/\/integrations/, { timeout: 10_000 });
+  });
+
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
   });
 
   test('page loads at /integrations with heading visible', async ({ authenticatedWindow }) => {

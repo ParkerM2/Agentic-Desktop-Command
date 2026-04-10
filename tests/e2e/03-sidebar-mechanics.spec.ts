@@ -16,6 +16,11 @@ import {
 import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Sidebar Mechanics', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('sidebar visible after login', async ({ authenticatedWindow: page }) => {
     const sidebar = page.locator('aside');
     await expect(sidebar).toBeVisible();

@@ -21,6 +21,11 @@ test.describe('Assistant Widget', () => {
     await expect(authenticatedWindow.locator('aside').first()).toBeVisible({ timeout: 10_000 });
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('FAB button visible in bottom-right', async ({ authenticatedWindow }) => {
     // WidgetFab has aria-label "Open assistant" when closed
     const fab = authenticatedWindow.getByRole('button', { name: 'Open assistant' });

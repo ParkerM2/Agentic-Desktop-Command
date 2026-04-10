@@ -25,6 +25,11 @@ test.describe('Briefing Page', () => {
     await waitForPageContent(authenticatedWindow);
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('briefing page loads with header and content', async ({ authenticatedWindow }) => {
     // Verify we navigated to the personal route with briefing tab active
     await expect(authenticatedWindow).toHaveURL(/\/personal/);

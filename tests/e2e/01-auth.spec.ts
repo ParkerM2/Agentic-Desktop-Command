@@ -19,6 +19,11 @@ test.describe('Auth — Login Page', () => {
     collector = createConsoleCollector(mainWindow);
   });
 
+  test.afterEach(async ({ mainWindow }) => {
+    await mainWindow.keyboard.press('Escape');
+    await mainWindow.waitForTimeout(200);
+  });
+
   test('login page loads with email and password inputs and Sign In button', async ({ mainWindow }) => {
     // The app should land on the login page by default (unauthenticated)
     await expect(mainWindow.getByRole('heading', { name: 'Sign In' })).toBeVisible();
@@ -122,6 +127,11 @@ test.describe('Auth — Login Page', () => {
 // ─── Authenticated test (uses authenticatedWindow) ──────────────────
 
 test.describe('Auth — Successful Login', () => {
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('successful login redirects to dashboard with sidebar visible', async ({ authenticatedWindow }) => {
     const collector = createConsoleCollector(authenticatedWindow);
 
