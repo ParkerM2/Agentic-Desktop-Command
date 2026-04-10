@@ -54,6 +54,7 @@ import { createWorktreeService } from '../features/git/worktree-service';
 import { createGitHubService } from '../features/github/github-service';
 import { createErrorCollector } from '../features/health/error-collector';
 import { createHealthRegistry } from '../features/health/health-registry';
+import { createHealthService } from '../features/health/health-service';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
 import { createHubConnectionManager } from '../features/hub/hub-connection';
@@ -134,6 +135,7 @@ export interface ServiceRegistryResult {
   assistantService: ReturnType<typeof createAssistantService>;
   errorCollector: ReturnType<typeof createErrorCollector>;
   healthRegistry: ReturnType<typeof createHealthRegistry>;
+  healthService: ReturnType<typeof createHealthService>;
   qaTrigger: ReturnType<typeof createQaTrigger>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
   webhookRelay: ReturnType<typeof createWebhookRelay>;
@@ -202,6 +204,7 @@ export function createServiceRegistry(
       router.emit(APP_EVENTS.SERVICE.UNHEALTHY, { serviceName, missedCount });
     },
   });
+  const healthService = createHealthService(healthRegistry);
 
   /** Wrap non-critical service init — returns null on failure and reports to errorCollector. */
   function initNonCritical<T>(name: string, factory: () => T): T | null {
@@ -681,6 +684,7 @@ export function createServiceRegistry(
     assistantService,
     errorCollector,
     healthRegistry,
+    healthService,
     qaTrigger,
     watchEvaluator,
     webhookRelay,
