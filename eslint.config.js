@@ -10,6 +10,7 @@ import sonarjs from 'eslint-plugin-sonarjs';
 import promise from 'eslint-plugin-promise';
 import prettier from 'eslint-config-prettier';
 import globals from 'globals';
+import boundaries from 'eslint-plugin-boundaries';
 
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────
@@ -381,6 +382,40 @@ export default tseslint.config(
       'react-hooks/rules-of-hooks': 'off',
       // Playwright fixture pattern requires empty object destructuring
       'no-empty-pattern': 'off',
+    },
+  },
+
+  // ── Layer boundaries (app -> features -> shared) ──────────────
+  {
+    plugins: { boundaries },
+    settings: {
+      'boundaries/elements': [
+        { type: 'app', pattern: ['src/renderer/app/**/*'] },
+        { type: 'features', pattern: ['src/renderer/features/**/*'] },
+        { type: 'shared', pattern: ['src/renderer/shared/**/*'] },
+      ],
+      // Use typescript resolver for alias resolution (boundaries/alias is deprecated)
+      'import/resolver': {
+        typescript: {
+          alwaysTryTypes: true,
+        },
+      },
+    },
+    rules: {
+      'boundaries/dependencies': [
+        2,
+        {
+          default: 'disallow',
+          rules: [
+            // app layer: can import from app (intra-layer), features, and shared
+            { from: { type: 'app' }, allow: { to: { type: ['app', 'features', 'shared'] } } },
+            // features layer: can import from features (intra-layer) and shared, NOT app
+            { from: { type: 'features' }, allow: { to: { type: ['features', 'shared'] } } },
+            // shared layer: can import from shared (intra-layer), NOT app or features
+            { from: { type: 'shared' }, allow: { to: { type: 'shared' } } },
+          ],
+        },
+      ],
     },
   },
 
