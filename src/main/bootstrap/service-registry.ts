@@ -2,7 +2,11 @@
  * Service Registry — instantiates all services and their dependencies.
  *
  * Extracted from main/index.ts to keep the entry point small.
- * Every service factory call lives here.
+ *
+ * Tier 0 (7 eager): SQLite DB, IPC Router, Command Bus, Auth, Settings,
+ *                   Error collector, Project service
+ * Tier 1 (~60 lazy): All other services via lazyService() — initialized
+ *                    on first property access (first IPC call).
  */
 
 import { hostname } from 'node:os';
@@ -99,6 +103,7 @@ import { createWorkflowEngineService } from '../features/workflow-engine';
 import { createWorkflowTemplateService } from '../features/workflow-templates';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { IpcRouter } from '../ipc/router';
+import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
@@ -160,45 +165,35 @@ export interface ServiceRegistryResult {
 /**
  * Instantiates every service in the app, wires cross-service dependencies,
  * and returns the full registry for IPC/event/lifecycle wiring.
+ *
+ * Tier 0 services are eagerly created at boot. All other services are wrapped
+ * in lazyService() and initialize on first property access (first IPC call).
  */
 export function createServiceRegistry(
   getMainWindow: () => Electron.BrowserWindow | null,
 ): ServiceRegistryResult {
+  // ─── Tier 0: Eager — Router, DB, Auth, Settings, Error/Health, Project ───
+
   const router = new IpcRouter(getMainWindow);
 
-  // ─── Resolve data directory (may be user-configured) ─────────
   const defaultDataDir = app.getPath('userData');
   const configReader = createConfigReader(defaultDataDir);
   const dataMigrator = createDataMigrator(configReader);
 
-  // Run pending migration before opening database
   const migrationResult = dataMigrator.runPendingMigration();
   if (migrationResult.error) {
     appLogger.error(`[Bootstrap] Data migration failed: ${migrationResult.error}`);
   }
 
   const dataDir = configReader.resolveDataDir();
-
-  // ─── Database (created early — many services depend on it) ──
   const db = initDatabase(dataDir);
 
-  // ─── User session management ─────────────────────────────────
-  const userDataResolver = createUserDataResolver(dataDir);
-  const userDataMigrator = createUserDataMigrator();
-  const userSessionManager = createUserSessionManager(router);
-
-  // ─── Error collector + health registry (created early) ──────
   const errorCollector = createErrorCollector(dataDir, {
-    onError: (entry) => {
-      router.emit(APP_EVENTS.ERROR.OCCURRED, entry);
-    },
-    onCapacityAlert: (count, message) => {
-      router.emit(APP_EVENTS.CAPACITY.ALERT, { count, message });
-    },
-    onDataRecovery: (store, message) => {
-      router.emit(APP_EVENTS.DATA.RECOVERY, { store, message });
-    },
+    onError: (entry) => { router.emit(APP_EVENTS.ERROR.OCCURRED, entry); },
+    onCapacityAlert: (count, message) => { router.emit(APP_EVENTS.CAPACITY.ALERT, { count, message }); },
+    onDataRecovery: (store, message) => { router.emit(APP_EVENTS.DATA.RECOVERY, { store, message }); },
   });
+
   const healthRegistry = createHealthRegistry({
     onUnhealthy: (serviceName, missedCount) => {
       router.emit(APP_EVENTS.SERVICE.UNHEALTHY, { serviceName, missedCount });
@@ -206,25 +201,19 @@ export function createServiceRegistry(
   });
   const healthService = createHealthService(healthRegistry);
 
-  /** Wrap non-critical service init — returns null on failure and reports to errorCollector. */
-  function initNonCritical<T>(name: string, factory: () => T): T | null {
-    try {
-      return factory();
-    } catch (error) {
-      const msg = error instanceof Error ? error.message : String(error);
-      appLogger.warn(`[Bootstrap] Non-critical service "${name}" failed to init: ${msg}`);
-      errorCollector.report({
-        severity: 'warning',
-        tier: 'app',
-        category: 'service',
-        message: `Service initialization failed: ${name} - ${msg}`,
-      });
-      return null;
-    }
-  }
+  const settingsService = createSettingsService({ db, dataDir });
+  const userSessionManager = createUserSessionManager(router);
+  const projectService = createProjectService({ hubApiClient: lazyService(() => hubApiClient) });
 
-  // ─── OAuth + MCP infrastructure ──────────────────────────────
-  const tokenStore = createTokenStore({ db, dataDir });
+  const commandBus = createCommandBus(db);
+  const agentManagerService = createAgentManagerService({ router });
+  const busSessionManager = createBusSessionManager(db, agentManagerService);
+  busSessionManager.recoverInterrupted();
+
+  // ─── Tier 1: Infrastructure — deferred ───────────────────────
+
+  const tokenStore = lazyService(() => createTokenStore({ db, dataDir }));
+
   const savedCreds = loadOAuthCredentials(dataDir);
   const providers = new Map<string, OAuthConfig>([
     ['github', { ...GITHUB_OAUTH_CONFIG, ...savedCreds.get('github') }],
@@ -232,101 +221,53 @@ export function createServiceRegistry(
     ['slack', { ...SLACK_OAUTH_CONFIG, ...savedCreds.get('slack') }],
     ['spotify', { ...SPOTIFY_OAUTH_CONFIG, ...savedCreds.get('spotify') }],
   ]);
-  const oauthManager = createOAuthManager({ tokenStore, providers });
-  const mcpRegistry = createMcpRegistry();
-  const mcpManager = createMcpManager({ registry: mcpRegistry });
 
-  // ─── Hub services ────────────────────────────────────────────
-  const hubConnectionManager = createHubConnectionManager({ router, db, dataDir });
+  const oauthManager = lazyService(() => createOAuthManager({ tokenStore, providers }));
+  const mcpRegistry = lazyService(() => createMcpRegistry());
+  const mcpManager = lazyService(() => createMcpManager({ registry: mcpRegistry }));
 
-  // Auto-connect if Hub was previously configured and enabled
-  const savedHubConfig = hubConnectionManager.getConnection();
-  if (savedHubConfig?.enabled) {
-    appLogger.info('[Hub] Auto-connecting to saved Hub:', savedHubConfig.hubUrl);
-    void (async () => {
-      const result = await hubConnectionManager.connect();
-      if (result.success) {
-        appLogger.info('[Hub] Auto-connect succeeded');
-      } else {
-        appLogger.warn('[Hub] Auto-connect failed:', result.error);
+  // ─── Tier 1: Hub domain ───────────────────────────────────────
+
+  const hubConnectionManager = lazyService(() => {
+    const mgr = createHubConnectionManager({ router, db, dataDir });
+    const savedHubConfig = mgr.getConnection();
+    if (savedHubConfig?.enabled) {
+      appLogger.info('[Hub] Auto-connecting to saved Hub:', savedHubConfig.hubUrl);
+      void (async () => {
+        const result = await mgr.connect();
+        if (result.success) {
+          appLogger.info('[Hub] Auto-connect succeeded');
+        } else {
+          appLogger.warn('[Hub] Auto-connect failed:', result.error);
+        }
+      })();
+    }
+    mgr.onWebSocketMessage(() => {
+      healthRegistry.pulse('hubWebSocket');
+      if (registeredDeviceId === null && hubAuthService.isAuthenticated()) {
+        void registerDeviceAndStartHeartbeat(hubApiClient);
       }
-    })();
-  }
-
-  const hubSyncService = createHubSyncService(hubConnectionManager, db);
-  const hubAuthService = createHubAuthService({
-    tokenStore,
-    getHubUrl: () => hubConnectionManager.getConnection()?.hubUrl ?? null,
-  });
-  const hubApiClient = createHubApiClient(
-    () => hubConnectionManager.getConnection()?.hubUrl ?? null,
-    () => hubAuthService.getAccessToken(),
-  );
-
-  // ─── Core services ───────────────────────────────────────────
-  const projectService = createProjectService({ hubApiClient });
-  const terminalService = createTerminalService(router);
-  const taskService = createTaskService(
-    (id) => projectService.getProjectPath(id),
-    () => projectService.listProjectsSync().map((p) => ({ id: p.id, path: p.path })),
-    router,
-  );
-  const settingsService = createSettingsService({ db, dataDir });
-
-  // ─── Task repository (local-first + Hub mirror) ──────────────
-  const taskRepository = createTaskRepository({
-    taskService,
-    hubApiClient,
-    hubConnectionManager,
-    projectService,
+    });
+    return mgr;
   });
 
-  // ─── Persistence services ────────────────────────────────────
-  const notesService = createNotesService({ db, dataDir, router });
-  const dashboardService = createDashboardService({ db, dataDir, router });
-  const dockerService = createDockerService();
-  const plannerService = createPlannerService({ db, dataDir, router });
-  const alertService = createAlertService({ db, router, dataDir });
-  alertService.startChecking();
-
-  // ─── Git services ────────────────────────────────────────────
-  const polyrepoService = createPolyrepoService();
-  const gitService = createGitService(polyrepoService);
-  const worktreeService = createWorktreeService((id) => projectService.getProjectPath(id));
-  const mergeService = createMergeService();
-
-  // ─── Project setup pipeline services ────────────────────────
-  const codebaseAnalyzer = createCodebaseAnalyzer();
-  const claudeMdGenerator = createClaudeMdGenerator();
-  const skillsResolver = createSkillsResolver();
-  const docGenerator = createDocGenerator();
-  const githubRepoCreator = createGitHubRepoCreator();
-  const setupPipeline = createSetupPipeline({
-    codebaseAnalyzer,
-    claudeMdGenerator,
-    skillsResolver,
-    docGenerator,
-    githubRepoCreator,
-    projectService,
-    gitService,
-    router,
-  });
-
-  // ─── Data services (non-critical wrapped) ────────────────────
-  const milestonesService = initNonCritical('milestones', () =>
-    createMilestonesService({ db, dataDir, router }),
+  const hubAuthService = lazyService(() =>
+    createHubAuthService({
+      tokenStore,
+      getHubUrl: () => hubConnectionManager.getConnection()?.hubUrl ?? null,
+    }),
   );
-  const ideasService = initNonCritical('ideas', () => createIdeasService({ db, dataDir, router }));
-  const changelogService = initNonCritical('changelog', () =>
-    createChangelogService({ db, router, dataDir }),
-  );
-  const fitnessService = initNonCritical('fitness', () =>
-    createFitnessService({ db, dataDir, router }),
-  );
-  const emailService = createEmailService({ db, dataDir, router });
 
-  // ─── Device + heartbeat ──────────────────────────────────────
-  const deviceService = createDeviceService({ hubApiClient });
+  const hubApiClient = lazyService(() =>
+    createHubApiClient(
+      () => hubConnectionManager.getConnection()?.hubUrl ?? null,
+      () => hubAuthService.getAccessToken(),
+    ),
+  );
+
+  const hubSyncService = lazyService(() => createHubSyncService(hubConnectionManager, db));
+
+  // ─── Device + heartbeat (stateful, kept at module scope) ─────
 
   let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
   let registeredDeviceId: string | null = null;
@@ -335,7 +276,6 @@ export function createServiceRegistry(
   async function registerDeviceAndStartHeartbeat(client: HubApiClient): Promise<void> {
     const machineId = hostname();
     const deviceName = `${hostname()} (Desktop)`;
-
     try {
       const result = await client.registerDevice({
         machineId,
@@ -344,258 +284,281 @@ export function createServiceRegistry(
         capabilities: { canExecute: true, repos: [] },
         appVersion: app.getVersion(),
       });
-
       if (result.ok && result.data) {
         registeredDeviceId = result.data.id;
         appLogger.info(`[Hub] Device registered: ${result.data.id}`);
-
-        if (heartbeatIntervalId !== null) {
-          clearInterval(heartbeatIntervalId);
-        }
-
+        if (heartbeatIntervalId !== null) clearInterval(heartbeatIntervalId);
         heartbeatIntervalId = setInterval(() => {
           if (registeredDeviceId) {
             healthRegistry.pulse('hubHeartbeat');
             void client.heartbeat(registeredDeviceId).then((res) => {
-              if (!res.ok) {
-                appLogger.warn('[Hub] Heartbeat failed:', res.error);
-              }
+              if (!res.ok) appLogger.warn('[Hub] Heartbeat failed:', res.error);
               return res;
             });
           }
         }, HEARTBEAT_INTERVAL_MS);
-
         appLogger.info('[Hub] Heartbeat interval started (30s)');
       } else {
         appLogger.warn('[Hub] Device registration failed:', result.error);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      appLogger.error('[Hub] Device registration error:', message);
+      appLogger.error('[Hub] Device registration error:', error instanceof Error ? error.message : 'Unknown error');
     }
   }
 
-  hubConnectionManager.onWebSocketMessage(() => {
-    healthRegistry.pulse('hubWebSocket');
-    if (registeredDeviceId === null && hubAuthService.isAuthenticated()) {
-      void registerDeviceAndStartHeartbeat(hubApiClient);
-    }
-  });
+  const deviceService = lazyService(() => createDeviceService({ hubApiClient }));
 
-  // ─── External API services ───────────────────────────────────
-  const githubCliClient = createGitHubCliClient();
-  const githubService = createGitHubService({ client: githubCliClient, router });
-  const spotifyService = initNonCritical('spotify', () => createSpotifyService({ oauthManager }));
-  const calendarService = initNonCritical('calendar', () =>
-    createCalendarService({ oauthManager }),
-  );
-  const claudeClient = createClaudeClient({
-    router,
-    getApiKey: () => settingsService.getSettings().anthropicApiKey,
-  });
-
-  // ─── Notifications ───────────────────────────────────────────
-  const notificationManager = createNotificationManager(router, db, dataDir);
-
-  const slackWatcher = createSlackWatcher({
-    oauthManager,
-    router,
-    notificationManager,
-    getConfig: () => notificationManager.getConfig().slack,
-  });
-  notificationManager.registerWatcher(slackWatcher);
-
-  const githubWatcher = createGitHubWatcher({
-    router,
-    notificationManager,
-    getConfig: () => notificationManager.getConfig().github,
-  });
-  notificationManager.registerWatcher(githubWatcher);
-
-  const notifConfig = notificationManager.getConfig();
-  if (notifConfig.enabled) {
-    notificationManager.startWatching();
-  }
-
-  // ─── Smart task services ─────────────────────────────────────
-  const taskDecomposer = createTaskDecomposer({ claudeClient });
-  const githubImporter = createGithubImporter({ githubService, taskService });
-
-  // ─── Misc services ───────────────────────────────────────────
-  const voiceService = initNonCritical('voice', () => createVoiceService({ db }));
-  const screenCaptureService = initNonCritical('screenCapture', () => createScreenCaptureService());
-  const appUpdateService = createAppUpdateService(router);
-
-  // ─── Hotkey + quick input ────────────────────────────────────
-  // assistantService is created below — quick input references it via closure
-  let assistantServiceRef: ReturnType<typeof createAssistantService> | null = null;
-  const quickInput = createQuickInputWindow({
-    onCommand: (command) => {
-      appLogger.info('[Main] Quick command received:', command);
-      if (assistantServiceRef) {
-        assistantServiceRef.sendCommand(command);
-      }
-      // Bring main window to foreground so user can see the assistant response
-      const win = getMainWindow();
-      if (win) {
-        if (win.isMinimized()) win.restore();
-        win.show();
-        win.focus();
-      }
-    },
-  });
-
-  const hotkeyManager = createHotkeyManager({
-    quickInput,
-    getMainWindow,
-  });
-
-  const customHotkeys = settingsService.getSettings().hotkeys;
-  if (customHotkeys) {
-    hotkeyManager.registerFromConfig(customHotkeys);
-  } else {
-    hotkeyManager.registerDefaults();
-  }
-
-  // ─── Data management services ─────────────────────────────────
-  const storageInspector = createStorageInspector({ dataDir });
-  const cleanupService = createCleanupService({
-    dataDir,
-    getRetentionSettings: () => settingsService.getSettings().dataRetention,
-    router,
-  });
-  // ─── Workflow + templates ─────────────────────────────────────
-  const workflowTemplateService = createWorkflowTemplateService({ dataDir });
-
-  // ─── Agent Manager (v2 — headless stream-json) ──────────────
-  const agentManagerService = createAgentManagerService({ router });
-
-  // ─── Command Bus + Session Manager ─────────────────────────
-  const commandBus = createCommandBus(db);
-  const busSessionManager = createBusSessionManager(db, agentManagerService);
-  busSessionManager.recoverInterrupted();
-
-  // ─── WorkflowEngine service ──────────────────────────────────
-  const workflowEngineService = createWorkflowEngineService({
-    db,
-    busSessionManager,
-    gitService,
-    templateService: workflowTemplateService,
-    progressBaseDir: dataDir,
-    onStateChanged: (event) => {
-      router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event);
-    },
-    onCompleted: (event) => {
-      router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event);
-    },
-    onError: (event) => {
-      router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event);
-    },
-  });
-
-  // ─── Worktree provisioner (isolates team-lead sessions) ──────
-  const worktreeProvisioner = createWorktreeProvisioner();
-
-  // ─── Workspace session manager ───────────────────────────────
-  const workspaceSessionManager = createWorkspaceSessionManager(
-    agentManagerService,
-    worktreeProvisioner,
-    getMainWindow,
-    busSessionManager,
-  );
-
-  const qaRunner = createQaRunner(busSessionManager, dataDir, notificationManager);
-
-  // QA auto-trigger — starts QA when tasks enter review
-  const qaTrigger = createQaTrigger({
-    qaRunner,
-    busSessionManager,
-    taskRepository,
-    router,
-  });
-
-  // Health registry enrollment — register background services for monitoring
   healthRegistry.register('hubHeartbeat', 60_000);
   healthRegistry.register('hubWebSocket', 30_000);
 
-  const suggestionEngine = createSuggestionEngine({
-    projectService,
-    taskService,
-    busSessionManager,
-  });
+  // ─── Tier 1: Workspace / Git domain ──────────────────────────
 
-  const insightsService = createInsightsService({
-    taskService,
-    projectService,
-    busSessionManager,
-    qaRunner,
-  });
+  const polyrepoService = lazyService(() => createPolyrepoService());
+  const gitService = lazyService(() => createGitService(polyrepoService));
+  const worktreeService = lazyService(() => createWorktreeService((id) => projectService.getProjectPath(id)));
+  const mergeService = lazyService(() => createMergeService());
+  const githubCliClient = lazyService(() => createGitHubCliClient());
+  const githubService = lazyService(() => createGitHubService({ client: githubCliClient, router }));
+  const worktreeProvisioner = lazyService(() => createWorktreeProvisioner());
+  const workspaceSessionManager = lazyService(() =>
+    createWorkspaceSessionManager(agentManagerService, worktreeProvisioner, getMainWindow, busSessionManager),
+  );
 
-  // ─── Briefing service ────────────────────────────────────────
-  const briefingService = createBriefingService({
-    db,
-    dataDir,
-    router,
-    projectService,
-    taskService,
-    claudeClient,
-    notificationManager,
-    suggestionEngine,
-    busSessionManager,
-  });
-  briefingService.startScheduler();
+  // ─── Tier 1: Project setup domain ────────────────────────────
 
-  // ─── Watch system ────────────────────────────────────────────
-  const watchStore = createWatchStore({ db });
-  const watchEvaluator = createWatchEvaluator(watchStore);
-
-  // ─── Assistant service ───────────────────────────────────────
-  const toolExecutor = createToolExecutor({
-    notesService,
-    milestonesService: milestonesService ?? null,
-    ideasService: ideasService ?? null,
-    plannerService,
-    projectService,
-    taskRepository,
-    briefingService,
-    changelogService: changelogService ?? null,
-    gitToolDeps: {
+  const taskService = lazyService(() =>
+    createTaskService(
+      (id) => projectService.getProjectPath(id),
+      () => projectService.listProjectsSync().map((p) => ({ id: p.id, path: p.path })),
+      router,
+    ),
+  );
+  const taskRepository = lazyService(() =>
+    createTaskRepository({ taskService, hubApiClient, hubConnectionManager, projectService }),
+  );
+  const codebaseAnalyzer = lazyService(() => createCodebaseAnalyzer());
+  const claudeMdGenerator = lazyService(() => createClaudeMdGenerator());
+  const skillsResolver = lazyService(() => createSkillsResolver());
+  const docGenerator = lazyService(() => createDocGenerator());
+  const githubRepoCreator = lazyService(() => createGitHubRepoCreator());
+  const setupPipeline = lazyService(() =>
+    createSetupPipeline({
+      codebaseAnalyzer,
+      claudeMdGenerator,
+      skillsResolver,
+      docGenerator,
+      githubRepoCreator,
       projectService,
       gitService,
-      githubService,
-    },
-    workspaceSessionManager,
-    sendEvent: (channel, payload) => {
-      getMainWindow()?.webContents.send(channel, payload);
-    },
+      router,
+    }),
+  );
+
+  // ─── Tier 1: Personal data domain ────────────────────────────
+
+  const notesService = lazyService(() => createNotesService({ db, dataDir, router }));
+  const dashboardService = lazyService(() => createDashboardService({ db, dataDir, router }));
+  const plannerService = lazyService(() => createPlannerService({ db, dataDir, router }));
+  const milestonesService = lazyService(() => createMilestonesService({ db, dataDir, router }));
+  const ideasService = lazyService(() => createIdeasService({ db, dataDir, router }));
+  const changelogService = lazyService(() => createChangelogService({ db, router, dataDir }));
+  const fitnessService = lazyService(() => createFitnessService({ db, dataDir, router }));
+  const emailService = lazyService(() => createEmailService({ db, dataDir, router }));
+  const dockerService = lazyService(() => createDockerService());
+  const voiceService = lazyService(() => createVoiceService({ db }));
+  const screenCaptureService = lazyService(() => createScreenCaptureService());
+
+  // ─── Tier 1: External integrations ───────────────────────────
+
+  const spotifyService = lazyService(() => createSpotifyService({ oauthManager }));
+  const calendarService = lazyService(() => createCalendarService({ oauthManager }));
+  const claudeClient = lazyService(() =>
+    createClaudeClient({
+      router,
+      getApiKey: () => settingsService.getSettings().anthropicApiKey,
+    }),
+  );
+  const insightsService = lazyService(() =>
+    createInsightsService({ taskService, projectService, busSessionManager, qaRunner }),
+  );
+
+  // ─── Tier 1: Notifications ────────────────────────────────────
+
+  const notificationManager = lazyService(() => {
+    const mgr = createNotificationManager(router, db, dataDir);
+    const slackWatcher = createSlackWatcher({
+      oauthManager,
+      router,
+      notificationManager: mgr,
+      getConfig: () => mgr.getConfig().slack,
+    });
+    mgr.registerWatcher(slackWatcher);
+    const githubWatcher = createGitHubWatcher({
+      router,
+      notificationManager: mgr,
+      getConfig: () => mgr.getConfig().github,
+    });
+    mgr.registerWatcher(githubWatcher);
+    const notifConfig = mgr.getConfig();
+    if (notifConfig.enabled) mgr.startWatching();
+    return mgr;
   });
-  const assistantService = createAssistantService({
-    getWindow: getMainWindow,
-    agentManager: agentManagerService,
-    toolExecutor,
-    db,
+
+  // ─── Tier 1: Alert + terminal ─────────────────────────────────
+
+  const alertService = lazyService(() => {
+    const svc = createAlertService({ db, router, dataDir });
+    svc.startChecking();
+    return svc;
   });
-  // Fill closure ref for quick input
-  assistantServiceRef = assistantService;
 
-  // ─── Webhook relay ───────────────────────────────────────────
-  const webhookRelay = createWebhookRelay({ assistantService, router });
+  const terminalService = lazyService(() => createTerminalService(router));
 
-  // ─── Agent dashboard services (Layer 1: Agent Visibility) ────
-  const teamWatcherService = createTeamWatcherService();
-  const sessionJsonlReaderService = createSessionJSONLReaderService();
-  const fileTreeService = createFileTreeService();
+  // ─── Tier 1: Briefing + suggestions ──────────────────────────
 
-  // ─── Tracker service (reads/writes docs/tracker.json) ────────
-  const trackerService = createTrackerService(process.cwd());
+  const suggestionEngine = lazyService(() =>
+    createSuggestionEngine({ projectService, taskService, busSessionManager }),
+  );
 
-  // ─── Visualization service (stateless — reads from disk on each call) ───
-  const visualizationService = createVisualizationService(agentManagerService);
+  const briefingService = lazyService(() => {
+    const svc = createBriefingService({
+      db,
+      dataDir,
+      router,
+      projectService,
+      taskService,
+      claudeClient,
+      notificationManager,
+      suggestionEngine,
+      busSessionManager,
+    });
+    svc.startScheduler();
+    return svc;
+  });
 
-  // ─── Progress service (task pipeline — reads/writes progress/ dir) ──────
-  const progressService = createProgressService(process.cwd(), agentManagerService, db);
+  // ─── Tier 1: Watch + Assistant ────────────────────────────────
 
-  // ─── Build the Services bag for IPC handler registration ─────
+  const watchStore = lazyService(() => createWatchStore({ db }));
+  const watchEvaluator = lazyService(() => createWatchEvaluator(watchStore));
+
+  const taskDecomposer = lazyService(() => createTaskDecomposer({ claudeClient }));
+  const githubImporter = lazyService(() => createGithubImporter({ githubService, taskService }));
+
+  const toolExecutor = lazyService(() =>
+    createToolExecutor({
+      notesService,
+      milestonesService,
+      ideasService,
+      plannerService,
+      projectService,
+      taskRepository,
+      briefingService,
+      changelogService,
+      gitToolDeps: { projectService, gitService, githubService },
+      workspaceSessionManager,
+      sendEvent: (channel, payload) => { getMainWindow()?.webContents.send(channel, payload); },
+    }),
+  );
+
+  const assistantService = lazyService(() =>
+    createAssistantService({
+      getWindow: getMainWindow,
+      agentManager: agentManagerService,
+      toolExecutor,
+      db,
+    }),
+  );
+
+  const webhookRelay = lazyService(() => createWebhookRelay({ assistantService, router }));
+
+  // ─── Tier 1: QA ──────────────────────────────────────────────
+
+  const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
+  const qaTrigger = lazyService(() =>
+    createQaTrigger({ qaRunner, busSessionManager, taskRepository, router }),
+  );
+
+  // ─── Tier 1: App update + hotkeys ────────────────────────────
+
+  const appUpdateService = lazyService(() => createAppUpdateService(router));
+
+  const quickInput = lazyService(() =>
+    createQuickInputWindow({
+      onCommand: (command) => {
+        appLogger.info('[Main] Quick command received:', command);
+        assistantService.sendCommand(command);
+        const win = getMainWindow();
+        if (win) {
+          if (win.isMinimized()) win.restore();
+          win.show();
+          win.focus();
+        }
+      },
+    }),
+  );
+
+  const hotkeyManager = lazyService(() => {
+    const mgr = createHotkeyManager({ quickInput, getMainWindow });
+    const customHotkeys = settingsService.getSettings().hotkeys;
+    if (customHotkeys) {
+      mgr.registerFromConfig(customHotkeys);
+    } else {
+      mgr.registerDefaults();
+    }
+    return mgr;
+  });
+
+  // ─── Tier 1: Data management ──────────────────────────────────
+
+  const storageInspector = lazyService(() => createStorageInspector({ dataDir }));
+  const cleanupService = lazyService(() =>
+    createCleanupService({
+      dataDir,
+      getRetentionSettings: () => settingsService.getSettings().dataRetention,
+      router,
+    }),
+  );
+
+  // ─── Tier 1: Workflow + templates ────────────────────────────
+
+  const workflowTemplateService = lazyService(() => createWorkflowTemplateService({ dataDir }));
+
+  const workflowEngineService = lazyService(() =>
+    createWorkflowEngineService({
+      db,
+      busSessionManager,
+      gitService,
+      templateService: workflowTemplateService,
+      progressBaseDir: dataDir,
+      onStateChanged: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event); },
+      onCompleted: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event); },
+      onError: (event) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event); },
+    }),
+  );
+
+  // ─── Tier 1: Agent dashboard + misc ──────────────────────────
+
+  const teamWatcherService = lazyService(() => createTeamWatcherService());
+  const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
+  const fileTreeService = lazyService(() => createFileTreeService());
+  const trackerService = lazyService(() => createTrackerService(process.cwd()));
+  const visualizationService = lazyService(() => createVisualizationService(agentManagerService));
+  const progressService = lazyService(() => createProgressService(process.cwd(), agentManagerService, db));
+
+  // ─── User session change handling ────────────────────────────
+
+  const userDataResolver = createUserDataResolver(dataDir);
+  const userDataMigrator = createUserDataMigrator();
+
+  userSessionManager.onSessionChange((session) => {
+    if (session) {
+      const userDataDir = userDataResolver.getUserDataDir(session.userId);
+      userDataMigrator.migrateIfNeeded(dataDir, userDataDir);
+    }
+  });
+
+  // ─── Services bag for IPC handler registration ───────────────
+
   const services: Services = {
     commandBus,
     busSessionManager,
@@ -662,17 +625,6 @@ export function createServiceRegistry(
     providers,
     tokenStore,
   };
-
-  // ─── User session change handling ────────────────────────────
-  // All domain services now use SQLite (shared db), so no per-user
-  // directory reinitialization is needed. Session changes only trigger
-  // data migration for any remaining file-based stores.
-  userSessionManager.onSessionChange((session) => {
-    if (session) {
-      const userDataDir = userDataResolver.getUserDataDir(session.userId);
-      userDataMigrator.migrateIfNeeded(dataDir, userDataDir);
-    }
-  });
 
   return {
     router,
