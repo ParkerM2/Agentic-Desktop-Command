@@ -42,6 +42,7 @@ interface IncomingRelaySession {
   projectId: string;
   localSessionId: string;
   sourceDeviceId: string;
+  startedAt: string;
 }
 
 /** Tracks state for a relay session on a remote device (outgoing — we are claimer). */
@@ -50,6 +51,7 @@ interface OutgoingRelaySession {
   sessionId: string;
   projectId: string;
   hostDeviceId: string;
+  startedAt: string;
 }
 
 type RelaySessionState = IncomingRelaySession | OutgoingRelaySession;
@@ -112,6 +114,9 @@ export function createRelayService(deps: {
 
   // Claim renewal timers keyed by projectId
   const renewalTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+  // Event listener cleanup functions keyed by sessionId (C1/C2 fix)
+  const sessionCleanups = new Map<string, () => void>();
 
   // WS send function — injected after bootstrap via setSendFn
   let sendFn: RelaySendFn | null = null;
@@ -233,12 +238,14 @@ export function createRelayService(deps: {
     }
 
     // Track the incoming session
+    const now = new Date().toISOString();
     const state: IncomingRelaySession = {
       direction: 'incoming',
       sessionId,
       projectId,
       localSessionId: localSession.id,
       sourceDeviceId,
+      startedAt: now,
     };
     sessions.set(sessionId, state);
 
@@ -264,6 +271,7 @@ export function createRelayService(deps: {
         });
 
         sessions.delete(sessionId);
+        sessionCleanups.delete(sessionId);
         unsubscribe();
       } else if (event.type === 'stream.event') {
         // Pipe agent output back to claimer via WS (Gap E fix)
@@ -278,6 +286,9 @@ export function createRelayService(deps: {
         });
       }
     });
+
+    // Track cleanup for this session's listener (C1/C2 fix)
+    sessionCleanups.set(sessionId, unsubscribe);
 
     log.info(`Local session spawned: localId=${localSession.id} for relayId=${sessionId}`);
   }
@@ -300,6 +311,12 @@ export function createRelayService(deps: {
     log.info(`Killing local session ${state.localSessionId} (relay=${sessionId})`);
     agentManagerService.stopSession(state.localSessionId);
     sessions.delete(sessionId);
+    // Clean up event listener (C1 fix)
+    const cleanup = sessionCleanups.get(sessionId);
+    if (cleanup) {
+      cleanup();
+      sessionCleanups.delete(sessionId);
+    }
   }
 
   function handleIncomingOutput(sessionId: string, data: Record<string, unknown>): void {
@@ -466,7 +483,7 @@ export function createRelayService(deps: {
 
       const claimResult: ClaimResult = {
         success: true,
-        claimedAt: result.data.data.expiresAt,
+        claimedAt: new Date().toISOString(),
         deviceId: did,
       };
 
@@ -527,6 +544,9 @@ export function createRelayService(deps: {
         throw new Error(result.error ?? `Failed to force-reclaim project ${projectId}`);
       }
 
+      // Start renewal timer — we now hold the claim (I3 fix)
+      startRenewalTimer(projectId);
+
       log.info(`Project force-reclaimed: ${projectId}`);
     },
 
@@ -543,6 +563,7 @@ export function createRelayService(deps: {
         sessionId,
         projectId,
         hostDeviceId: '', // Host device is determined by the Hub
+        startedAt: new Date().toISOString(),
       };
       sessions.set(sessionId, state);
 
@@ -599,7 +620,7 @@ export function createRelayService(deps: {
           projectId: state.projectId,
           status: 'active',
           source: state.direction === 'outgoing' ? 'relay' : 'local',
-          startedAt: new Date().toISOString(),
+          startedAt: state.startedAt,
         });
       }
 
@@ -640,7 +661,7 @@ export function createRelayService(deps: {
       }
       renewalTimers.clear();
 
-      // Stop all incoming sessions
+      // Stop all incoming sessions and clean up listeners (C2 fix)
       for (const [sid, state] of sessions) {
         if (state.direction === 'incoming') {
           agentManagerService.stopSession(state.localSessionId);
@@ -648,6 +669,12 @@ export function createRelayService(deps: {
         }
       }
       sessions.clear();
+
+      // Clean up all event listener subscriptions
+      for (const cleanup of sessionCleanups.values()) {
+        cleanup();
+      }
+      sessionCleanups.clear();
 
       log.info('Relay service disposed');
     },
