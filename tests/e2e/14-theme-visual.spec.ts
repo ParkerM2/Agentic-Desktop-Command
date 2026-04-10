@@ -16,6 +16,11 @@ import { navigateToSettings } from './helpers/navigation';
 import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Theme Visual Verification', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('Default dark mode — html has class "dark" and no data-theme', async ({
     authenticatedWindow: page,
   }) => {

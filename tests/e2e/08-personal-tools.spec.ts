@@ -27,6 +27,11 @@ async function navigateToPersonalTab(page: Parameters<typeof navigateToSidebarIt
 // ─── Fitness Tab ──────────────────────────────────────────────
 
 test.describe('Fitness Tab (under /personal)', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('page loads via Personal sidebar click + Fitness tab', async ({ authenticatedWindow: page }) => {
     await navigateToPersonalTab(page, 'Fitness');
     await assertPageLoaded(page);
@@ -96,6 +101,11 @@ test.describe('Fitness Tab (under /personal)', () => {
 // ─── Planner Tab ──────────────────────────────────────────────
 
 test.describe('Planner Tab (under /personal)', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('page loads via Personal sidebar click + Planner tab', async ({ authenticatedWindow: page }) => {
     await navigateToPersonalTab(page, 'Planner');
     await assertPageLoaded(page);

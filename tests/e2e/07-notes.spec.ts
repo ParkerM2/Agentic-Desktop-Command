@@ -24,6 +24,11 @@ test.describe('Notes Page', () => {
     await waitForPageContent(authenticatedWindow);
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('notes page loads', async ({ authenticatedWindow }) => {
     // Verify we navigated to the personal route (notes tab is default)
     await expect(authenticatedWindow).toHaveURL(/\/personal/);

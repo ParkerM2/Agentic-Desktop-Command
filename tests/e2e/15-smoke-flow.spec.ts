@@ -32,6 +32,11 @@ import { waitForPageContent } from './helpers/page-helpers';
 import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Full Smoke Flow', () => {
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('complete app walkthrough via real clicks', async ({ authenticatedWindow }) => {
     test.setTimeout(180_000); // 3 minutes for full walkthrough
     const page = authenticatedWindow;
