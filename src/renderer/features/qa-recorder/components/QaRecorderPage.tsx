@@ -166,9 +166,9 @@ export function QaRecorderPage({ preloadPath = '' }: QaRecorderPageProps) {
             </Stack>
 
             {/* Right panel — 70% */}
-            <div className="min-w-0 flex-1 p-3">
+            <Flex className="min-w-0 flex-1 p-3">
               <WebviewPanel initialUrl="about:blank" preloadPath={preloadPath} />
-            </div>
+            </Flex>
           </Flex>
         )}
       </PageContent>
