@@ -16,7 +16,7 @@ import { STORE_CLEANUP_FUNCTIONS } from './store-cleaners';
 import { DATA_STORE_REGISTRY } from './store-registry';
 
 import type { CleanupFn } from './store-cleaners';
-import type { IpcRouter } from '../../ipc/router';
+import type { IpcRouter } from '../../../ipc/router';
 
 // ─── Types ────────────────────────────────────────────────────
 

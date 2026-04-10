@@ -8,7 +8,7 @@
 import { WORKFLOW_TEMPLATES, WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
 
 import type { WorkflowTemplateService } from ".";
-import type { IpcRouter } from '../../ipc/router';
+import type { IpcRouter } from '../../../ipc/router';
 
 export function registerWorkflowTemplateHandlers(
   router: IpcRouter,

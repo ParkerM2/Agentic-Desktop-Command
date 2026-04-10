@@ -15,8 +15,8 @@ import { DATA_STORE_REGISTRY } from "./store-registry";
 
 import type { CleanupService } from "./cleanup-service";
 import type { StorageInspector } from "./storage-inspector";
-import type { IpcRouter } from '../../ipc/router';
-import type { SettingsService } from "../settings/settings-service";
+import type { IpcRouter } from '../../../ipc/router';
+import type { SettingsService } from "../settings-service";
 
 const DEFAULT_RETENTION_SETTINGS: DataRetentionSettings = {
   autoCleanupEnabled: true,

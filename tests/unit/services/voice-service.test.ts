@@ -33,7 +33,7 @@ function createTestDb() {
   return drizzle(sqlite, { schema });
 }
 
-const { createVoiceService } = await import('@main/features/voice/voice-service');
+const { createVoiceService } = await import('@main/features/settings/voice/voice-service');
 
 // ── Tests ─────────────────────────────────────────────────────
 

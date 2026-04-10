@@ -11,7 +11,7 @@ import { BRIEFING_EVENTS } from '@shared/ipc/briefing/channels';
 import type { BriefingConfig, DailyBriefing, Suggestion } from '@shared/types';
 
 
-import type { ReinitializableService } from '@main/features/data-management';
+import type { ReinitializableService } from '@main/features/settings/data-management';
 
 import { createBriefingCache } from './briefing-cache';
 import { createBriefingConfigManager } from './briefing-config';

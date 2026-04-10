@@ -44,7 +44,7 @@ vi.mock('@main/lib/safe-write-json', () => ({
 }));
 
 // Import after mocks are set up
-const { createErrorCollector } = await import('@main/features/health/error-collector');
+const { createErrorCollector } = await import('@main/features/app/health/error-collector');
 
 // ── Helpers ─────────────────────────────────────────────────────────
 
