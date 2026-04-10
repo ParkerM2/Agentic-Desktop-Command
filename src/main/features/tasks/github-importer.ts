@@ -7,7 +7,7 @@
 
 import type { GithubIssueImport, Task, TaskDraft } from '@shared/types';
 
-import type { GitHubService } from '../github/github-service';
+import type { GitHubService } from '../integrations/github-integration';
 import type { TaskService } from '../project/task-service';
 
 // ── Interface ─────────────────────────────────────────────────
