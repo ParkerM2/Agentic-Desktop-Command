@@ -506,3 +506,12 @@ export {
   progressTaskSchema,
   workflowStepStatusSchema,
 } from './progress';
+
+// ─── Integrations Domain (unified namespace) ─────────────────
+// Provides integrationsInvoke / integrationsEvents as a combined
+// object spanning email, notifications, Spotify, and GitHub.
+// Individual domain contracts continue to be merged above via the
+// existing per-domain spreads for backwards compatibility.
+
+export { integrationsEvents, integrationsInvoke } from './integrations';
+export { INTEGRATIONS } from './integrations';
