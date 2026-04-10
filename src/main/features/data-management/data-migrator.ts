@@ -6,12 +6,16 @@
  * disk space, existing files) and performs recursive copy with integrity checks.
  */
 
-import { copyFileSync, existsSync, mkdirSync, readdirSync, statfsSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statfsSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { ValidationCheck } from '@shared/types';
 
+import { createScopedLogger } from '@main/lib/logger';
+
 import type { ConfigReader } from './config-reader';
+
+const logger = createScopedLogger('data-migrator');
 
 export interface DataMigrator {
   /** Run all 4 validation checks against a target directory */
@@ -69,7 +73,8 @@ export function createDataMigrator(configReader: ConfigReader): DataMigrator {
       writeFileSync(tempFile, 'test', 'utf-8');
       unlinkSync(tempFile);
       return { id, label, status: 'pass', message: 'Directory is writable' };
-    } catch {
+    } catch (err: unknown) {
+      logger.error('Write permission check failed', { targetPath, error: err instanceof Error ? err.message : String(err) });
       return { id, label, status: 'fail', message: 'Cannot write to this directory. Check permissions.' };
     }
   }
@@ -154,10 +159,10 @@ export function createDataMigrator(configReader: ConfigReader): DataMigrator {
 
   function validateTarget(targetPath: string): ValidationCheck[] {
     return [
-      checkWritePermission(targetPath),
-      checkDiskSpace(targetPath),
       checkNonEmpty(targetPath),
       checkExistingDb(targetPath),
+      checkWritePermission(targetPath),
+      checkDiskSpace(targetPath),
     ];
   }
 
@@ -165,6 +170,7 @@ export function createDataMigrator(configReader: ConfigReader): DataMigrator {
     sourcePath: string,
     targetPath: string,
   ): { success: boolean; error?: string } {
+    logger.info('Migration starting', { sourcePath, targetPath });
     try {
       mkdirSync(targetPath, { recursive: true });
       copyDirRecursive(sourcePath, targetPath);
@@ -176,21 +182,24 @@ export function createDataMigrator(configReader: ConfigReader): DataMigrator {
       const targetSize = getDirectorySize(targetPath);
 
       if (targetCount < sourceCount) {
-        return {
-          success: false,
-          error: `File count mismatch: expected ${sourceCount}, got ${targetCount}`,
-        };
+        const error = `File count mismatch: expected ${sourceCount}, got ${targetCount}`;
+        logger.error('Migration integrity check failed', error);
+        rmSync(targetPath, { recursive: true, force: true });
+        return { success: false, error };
       }
       if (targetSize < sourceSize) {
-        return {
-          success: false,
-          error: `Size mismatch: expected ${formatBytes(sourceSize)}, got ${formatBytes(targetSize)}`,
-        };
+        const error = `Size mismatch: expected ${formatBytes(sourceSize)}, got ${formatBytes(targetSize)}`;
+        logger.error('Migration integrity check failed', error);
+        rmSync(targetPath, { recursive: true, force: true });
+        return { success: false, error };
       }
 
+      logger.info('Migration complete', { sourcePath, targetPath, fileCount: targetCount, size: formatBytes(targetSize) });
       return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown migration error';
+      logger.error('Migration failed', message);
+      rmSync(targetPath, { recursive: true, force: true });
       return { success: false, error: message };
     }
   }
@@ -217,6 +226,11 @@ export function createDataMigrator(configReader: ConfigReader): DataMigrator {
         previousDataDir: null,
       });
       return { migrated: true };
+    }
+
+    // Clean up partially-copied target before reverting config
+    if (existsSync(target)) {
+      rmSync(target, { recursive: true, force: true });
     }
 
     // Revert to previous data dir on failure

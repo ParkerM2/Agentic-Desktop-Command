@@ -11,6 +11,10 @@ import { join } from 'node:path';
 
 import type { AdcConfig } from '@shared/types';
 
+import { createScopedLogger } from '@main/lib/logger';
+
+const logger = createScopedLogger('config-reader');
+
 const ADC_CONFIG_FILENAME = 'adc-config.json';
 
 const DEFAULT_CONFIG: AdcConfig = {
@@ -39,7 +43,8 @@ export function createConfigReader(defaultUserDataPath: string): ConfigReader {
     try {
       const raw = readFileSync(configPath, 'utf-8');
       return { ...DEFAULT_CONFIG, ...(JSON.parse(raw) as Partial<AdcConfig>) };
-    } catch {
+    } catch (err: unknown) {
+      logger.warn('Failed to parse adc-config.json, using defaults', { error: err instanceof Error ? err.message : String(err) });
       return { ...DEFAULT_CONFIG };
     }
   }
