@@ -57,7 +57,7 @@ export const test = base.extend<TestFixtures>({
     const appPath = join(currentDir, '../../out/main/index.cjs');
 
     const app = await electron.launch({
-      args: [appPath],
+      args: ['--remote-debugging-port=0', appPath],
       env: {
         ...process.env,
         NODE_ENV: 'test',
