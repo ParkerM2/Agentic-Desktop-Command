@@ -5,27 +5,34 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
+import type { QaRecorderStepSchema } from '@shared/ipc/qa-recorder/schemas';
+
 import { qaScripts } from '../../../db/schema';
 
 import type { AdcDatabase } from '../../../db';
+
+type QaRecorderStep = typeof QaRecorderStepSchema extends { _output: infer T } ? T : never;
 
 export interface QaScript {
   id: string;
   name: string;
   description?: string;
-  steps: unknown[];
+  filePath?: string;
+  projectId?: string;
+  steps: QaRecorderStep[];
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ScriptStore {
   list: () => QaScript[];
+  listByProject: (projectId: string) => QaScript[];
   get: (id: string) => QaScript | null;
   save: (data: {
     id?: string;
     name: string;
     description?: string;
-    steps: unknown[];
+    steps: QaRecorderStep[];
   }) => QaScript;
   delete: (id: string) => { success: boolean };
 }
@@ -35,7 +42,9 @@ function toQaScript(row: typeof qaScripts.$inferSelect): QaScript {
     id: row.id,
     name: row.name,
     description: undefined,
-    steps: row.steps,
+    filePath: row.filePath ?? undefined,
+    projectId: row.projectId ?? undefined,
+    steps: row.steps as QaRecorderStep[],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -45,6 +54,10 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
   return {
     list() {
       return db.select().from(qaScripts).all().map(toQaScript);
+    },
+
+    listByProject(projectId) {
+      return db.select().from(qaScripts).where(eq(qaScripts.projectId, projectId)).all().map(toQaScript);
     },
 
     get(id) {

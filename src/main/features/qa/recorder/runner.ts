@@ -19,7 +19,7 @@ export interface QaRunRecord {
   id: string;
   scriptId: string;
   status: 'running' | 'passed' | 'failed' | 'cancelled';
-  triggeredBy: 'manual' | 'scheduled' | 'ci';
+  triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
   startedAt: string;
   completedAt?: string;
   outputLines: string[];
@@ -37,7 +37,8 @@ export interface QaRunner {
     scriptId: string;
     filePath: string;
     projectPath: string;
-    triggeredBy: 'manual' | 'scheduled' | 'ci';
+    triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
+    taskId?: string;
     handlers?: RunnerEventHandlers;
   }) => string;
   get: (runId: string) => QaRunRecord | null;
@@ -64,7 +65,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, filePath, projectPath, triggeredBy, handlers }) {
+    run({ scriptId, filePath, projectPath, triggeredBy, taskId, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
@@ -72,7 +73,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
         id: runId,
         scriptId,
         projectId: projectPath,
-        taskId: null,
+        taskId: taskId ?? null,
         sessionId: null,
         status: 'running',
         triggeredBy,
