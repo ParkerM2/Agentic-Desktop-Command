@@ -16,15 +16,13 @@ import type { CommandBus } from '../bus';
 import type { BusSessionManager } from '../bus/session-manager';
 import type { createAlertService } from '../features/alerts/alert-service';
 import type { AppUpdateService } from '../features/app/app-update-service';
+import type { ErrorCollector, HealthRegistry, HealthService } from '../features/app/health';
 import type { createWatchEvaluator } from '../features/assistant/watch-evaluator';
 import type { createBriefingService } from '../features/briefing/briefing-service';
-import type { CleanupService } from '../features/settings/data-management';
-import type { ErrorCollector } from '../features/app/health';
-import type { HealthRegistry } from '../features/app/health';
-import type { HealthService } from '../features/app/health';
 import type { createHubConnectionManager } from '../features/hub/hub-connection';
 import type { createNotificationManager } from '../features/integrations/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
+import type { CleanupService } from '../features/settings/data-management';
 import type { createTerminalService } from '../features/terminal/terminal-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 

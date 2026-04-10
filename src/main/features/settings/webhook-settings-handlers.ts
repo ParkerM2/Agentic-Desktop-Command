@@ -4,8 +4,8 @@
 
 import { SETTINGS } from '@shared/ipc/settings/channels';
 
-import type { IpcRouter } from '../../ipc/router';
 import type { SettingsService } from "./settings-service";
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerWebhookSettingsHandlers(router: IpcRouter, service: SettingsService): void {
   router.handle(SETTINGS.GET['WEBHOOK-CONFIG'], () => Promise.resolve(service.getWebhookConfig()));

@@ -6,9 +6,9 @@ import { HOTKEYS } from '@shared/ipc/misc/hotkeys.channels';
 
 import { DEFAULT_HOTKEYS } from '../../tray/hotkey-manager';
 
+import type { SettingsService } from "./settings-service";
 import type { IpcRouter } from '../../ipc/router';
 import type { HotkeyManager } from '../../tray/hotkey-manager';
-import type { SettingsService } from "./settings-service";
 
 export function registerHotkeyHandlers(
   router: IpcRouter,
