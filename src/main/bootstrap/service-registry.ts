@@ -44,13 +44,11 @@ import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
-import { createEmailService } from '../features/email/email-service';
 import { createFileTreeService } from '../features/file-tree/file-tree-service';
 import { createFitnessService } from '../features/fitness/fitness-service';
 import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
-import { createGitHubService } from '../features/github/github-service';
 import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
@@ -86,7 +84,6 @@ import {
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
-import { createSpotifyService } from '../features/spotify/spotify-service';
 import {
   createGithubImporter,
   createTaskDecomposer,

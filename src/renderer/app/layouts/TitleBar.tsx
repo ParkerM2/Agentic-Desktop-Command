@@ -19,7 +19,7 @@ import { ipc } from '@renderer/shared/lib/ipc';
 
 import { Button, Separator } from '@ui';
 
-import { HealthIndicator } from '@features/health';
+import { HealthIndicator } from '@features/settings';
 
 import { TitleBarScreenshot } from './TitleBarScreenshot';
 

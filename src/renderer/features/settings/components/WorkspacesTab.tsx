@@ -10,8 +10,9 @@ import type { Workspace } from '@shared/types';
 
 import { Button, Spinner } from '@ui';
 
-import { useDevices } from '@features/devices';
 import { useWorkspaces } from '@features/workspaces';
+
+import { useDevices } from '../api/useDevices';
 
 import { WorkspaceCard } from './WorkspaceCard';
 import { WorkspaceEditor } from './WorkspaceEditor';

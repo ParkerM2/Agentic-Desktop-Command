@@ -11,7 +11,7 @@ import { cn } from '@renderer/shared/lib/utils';
 import { Button } from '@ui';
 
 
-import { useDevices } from '@features/devices';
+import { useDevices } from '../api/useDevices';
 
 interface DeviceSelectorProps {
   value: string | undefined;
