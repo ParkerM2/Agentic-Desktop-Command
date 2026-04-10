@@ -419,6 +419,32 @@ export default tseslint.config(
     },
   },
 
+  // ── Resources (plain JS bundles, not processed by tsc) ────────
+  // tseslint.configs.disableTypeChecked turns off all rules that require
+  // type information so they don't crash when projectService is absent.
+  {
+    ...tseslint.configs.disableTypeChecked,
+    files: ['resources/**/*.js'],
+  },
+  {
+    files: ['resources/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+      },
+      parserOptions: {
+        projectService: false,
+        project: false,
+      },
+    },
+    rules: {
+      // Plain JS resources — allow var/no-const patterns used in the IIFE
+      'no-var': 'off',
+      'prefer-const': 'off',
+      '@typescript-eslint/naming-convention': 'off',
+    },
+  },
+
   // ── Prettier must be last (disables conflicting format rules) ──
   prettier,
 );
