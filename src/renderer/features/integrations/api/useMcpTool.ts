@@ -10,7 +10,7 @@ import { MCP } from '@shared/ipc/misc/mcp.channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { communicationsKeys } from './queryKeys';
+import { integrationsKeys } from './queryKeys';
 
 export interface McpToolCallParams {
   server: string;
@@ -39,7 +39,7 @@ export function useMcpToolCall() {
  */
 export function useMcpConnectionState(server: string) {
   return useQuery({
-    queryKey: communicationsKeys.mcpConnection(server),
+    queryKey: integrationsKeys.mcpConnection(server),
     queryFn: () => ipc(MCP.GET['CONNECTION-STATE'], { server }),
     staleTime: 10_000,
     refetchInterval: 30_000,
@@ -51,7 +51,7 @@ export function useMcpConnectionState(server: string) {
  */
 export function useMcpConnectedServers() {
   return useQuery({
-    queryKey: communicationsKeys.mcpConnected(),
+    queryKey: integrationsKeys.mcpConnected(),
     queryFn: () => ipc(MCP.LIST.CONNECTED, {}),
     staleTime: 10_000,
     refetchInterval: 30_000,

@@ -13,9 +13,9 @@ import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { useGitHubStore } from '../store';
+import { useIntegrationsStore } from '../store';
 
-import { githubKeys } from './queryKeys';
+import { integrationsKeys } from './queryKeys';
 
 // Re-export shared types for components
 export type { GitHubIssue, GitHubNotification, GitHubPullRequest };
@@ -28,7 +28,7 @@ export type GitHubPr = GitHubPullRequest;
 /** Check gh CLI auth status (installed, authenticated, username, scopes) */
 export function useGitHubAuthStatus() {
   return useQuery({
-    queryKey: githubKeys.authStatus(),
+    queryKey: integrationsKeys.githubAuthStatus(),
     queryFn: () => ipc(GITHUB.GET['AUTH-STATUS'], {}),
     staleTime: 60_000,
   });
@@ -37,7 +37,7 @@ export function useGitHubAuthStatus() {
 /** Fetch list of repos accessible to the authenticated GitHub user */
 export function useGitHubRepos() {
   return useQuery({
-    queryKey: githubKeys.repos(),
+    queryKey: integrationsKeys.githubRepos(),
     queryFn: () => ipc(GITHUB.LIST.REPOS, { limit: 30 }),
     staleTime: 120_000,
   });
@@ -47,10 +47,10 @@ export function useGitHubRepos() {
 
 /** Fetch pull requests for the active repo */
 export function useGitHubPrs() {
-  const { owner, repo } = useGitHubStore();
+  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
 
   return useQuery({
-    queryKey: githubKeys.prList(owner, repo),
+    queryKey: integrationsKeys.githubPrList(owner, repo),
     queryFn: () => ipc(GITHUB.LIST.PRS, { owner, repo }),
     enabled: owner.length > 0 && repo.length > 0,
     staleTime: 60_000,
@@ -59,10 +59,10 @@ export function useGitHubPrs() {
 
 /** Fetch a single PR detail */
 export function useGitHubPrDetail(prNumber: number | null) {
-  const { owner, repo } = useGitHubStore();
+  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
 
   return useQuery({
-    queryKey: githubKeys.prDetail(owner, repo, prNumber ?? 0),
+    queryKey: integrationsKeys.githubPrDetail(owner, repo, prNumber ?? 0),
     queryFn: () => ipc(GITHUB.GET.PR, { owner, repo, number: prNumber ?? 0 }),
     enabled: prNumber !== null && owner.length > 0,
     staleTime: 60_000,
@@ -71,10 +71,10 @@ export function useGitHubPrDetail(prNumber: number | null) {
 
 /** Fetch issues for the active repo */
 export function useGitHubIssues() {
-  const { owner, repo } = useGitHubStore();
+  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
 
   return useQuery({
-    queryKey: githubKeys.issueList(owner, repo),
+    queryKey: integrationsKeys.githubIssueList(owner, repo),
     queryFn: () => ipc(GITHUB.LIST.ISSUES, { owner, repo }),
     enabled: owner.length > 0 && repo.length > 0,
     staleTime: 60_000,
@@ -84,7 +84,7 @@ export function useGitHubIssues() {
 /** Fetch notifications for the authenticated user */
 export function useGitHubNotifications() {
   return useQuery({
-    queryKey: githubKeys.notifications(),
+    queryKey: integrationsKeys.githubNotifications(),
     queryFn: () => ipc(GITHUB.GET.NOTIFICATIONS, {}),
     staleTime: 60_000,
   });
@@ -93,14 +93,16 @@ export function useGitHubNotifications() {
 /** Create a new GitHub issue */
 export function useCreateIssue() {
   const queryClient = useQueryClient();
-  const { owner, repo } = useGitHubStore();
+  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
   const { onError } = useMutationErrorToast();
 
   return useMutation({
     mutationFn: (input: { title: string; body?: string; labels?: string[] }) =>
       ipc(GITHUB.CREATE.ISSUE, { owner, repo, ...input }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: githubKeys.issueList(owner, repo) });
+      void queryClient.invalidateQueries({
+        queryKey: integrationsKeys.githubIssueList(owner, repo),
+      });
     },
     onError: onError('create issue'),
   });

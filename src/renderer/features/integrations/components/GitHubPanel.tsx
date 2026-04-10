@@ -1,27 +1,19 @@
 /**
- * GitHubPage — Full GitHub integration page
+ * GitHubPanel — GitHub integration content for the Integrations page
  *
- * Tabbed interface: Pull Requests, Issues, Notifications.
- * Replaces the previous stub page with real feature module.
+ * Shows connection status, repo selector, and sub-tabs for PRs, Issues, Notifications.
  */
 
 import { Bell, CircleDot, GitPullRequest } from 'lucide-react';
 
-import {
-  Badge,
-  MetricCard,
-  Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@ui';
+import { Badge, Spinner, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/useGitHub';
 import { useGitHubEvents } from '../hooks/useGitHubEvents';
 import { useGitHubProjectSync } from '../hooks/useGitHubProjectSync';
-import { useGitHubStore } from '../store';
+import { useIntegrationsStore } from '../store';
 
+import { GitHubConnectionStatus } from './GitHubConnectionStatus';
 import { IssueCreateForm } from './IssueCreateForm';
 import { IssueList } from './IssueList';
 import { NotificationList } from './NotificationList';
@@ -30,13 +22,28 @@ import { PrList } from './PrList';
 
 // ── Types ────────────────────────────────────────────────────
 
-type GitHubTab = 'prs' | 'issues' | 'notifications';
+type GitHubSubTab = 'prs' | 'issues' | 'notifications';
+
+// ── Helper ───────────────────────────────────────────────────
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <Spinner className="text-muted-foreground" size="md" />
+    </div>
+  );
+}
 
 // ── Component ────────────────────────────────────────────────
 
-export function GitHubPage() {
-  const { activeTab, selectedPrNumber, setActiveTab, selectPr } =
-    useGitHubStore();
+export function GitHubPanel() {
+  const {
+    githubActiveTab: activeTab,
+    githubSelectedPrNumber: selectedPrNumber,
+    setGitHubActiveTab: setActiveTab,
+    selectPr,
+  } = useIntegrationsStore();
+
   const { data: prs, isLoading: prsLoading } = useGitHubPrs();
   const { data: issues, isLoading: issuesLoading } = useGitHubIssues();
   const { data: notifications, isLoading: notificationsLoading } = useGitHubNotifications();
@@ -64,31 +71,10 @@ export function GitHubPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-4">
-        <MetricCard
-          icon={GitPullRequest}
-          label="Open PRs"
-          value={String(openPrCount)}
-          variant="compact"
-        />
-        <MetricCard
-          icon={CircleDot}
-          label="Open Issues"
-          value={String(openIssueCount)}
-          variant="compact"
-        />
-        <MetricCard
-          icon={Bell}
-          label="Unread"
-          value={String(unreadNotifCount)}
-          variant="compact"
-        />
-      </div>
+    <div className="space-y-4">
+      <GitHubConnectionStatus />
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GitHubTab)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as GitHubSubTab)}>
         <TabsList className="mb-4">
           <TabsTrigger value="prs">
             <GitPullRequest className="h-4 w-4" />
@@ -131,16 +117,6 @@ export function GitHubPage() {
 
       {/* Issue Create Dialog */}
       <IssueCreateForm />
-    </div>
-  );
-}
-
-// ── LoadingSpinner ───────────────────────────────────────────
-
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center py-12">
-      <Spinner className="text-muted-foreground" size="md" />
     </div>
   );
 }

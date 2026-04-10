@@ -10,7 +10,7 @@ import { GITHUB_EVENTS } from '@shared/ipc/github/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks/useIpcEvent';
 
-import { githubKeys } from '../api/queryKeys';
+import { integrationsKeys } from '../api/queryKeys';
 
 /**
  * Subscribe to GitHub IPC events and invalidate relevant queries.
@@ -20,11 +20,17 @@ export function useGitHubEvents(): void {
 
   useIpcEvent(GITHUB_EVENTS.DATA.UPDATED, ({ type, owner, repo }) => {
     if (type === 'pr') {
-      void queryClient.invalidateQueries({ queryKey: githubKeys.prList(owner, repo) });
+      void queryClient.invalidateQueries({
+        queryKey: integrationsKeys.githubPrList(owner, repo),
+      });
     } else if (type === 'issue') {
-      void queryClient.invalidateQueries({ queryKey: githubKeys.issueList(owner, repo) });
+      void queryClient.invalidateQueries({
+        queryKey: integrationsKeys.githubIssueList(owner, repo),
+      });
     } else {
-      void queryClient.invalidateQueries({ queryKey: githubKeys.notifications() });
+      void queryClient.invalidateQueries({
+        queryKey: integrationsKeys.githubNotifications(),
+      });
     }
   });
 }

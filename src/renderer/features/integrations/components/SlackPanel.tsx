@@ -1,21 +1,21 @@
 /**
- * DiscordPanel — Quick Discord actions and status display
+ * SlackPanel — Quick Slack actions and status display
  */
 
 import { useState } from 'react';
 
 import { useNavigate } from '@tanstack/react-router';
-import { MessageSquare, Phone, Server, Settings, UserCircle } from 'lucide-react';
+import { Hash, MessageSquare, Search, Settings, UserCircle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, StatusIndicator } from '@ui';
 
-import { useCommunicationsStore } from '../store';
+import { useIntegrationsStore } from '../store';
 
-import { DiscordActionModal } from './DiscordActionModal';
+import { SlackActionModal } from './SlackActionModal';
 
-import type { DiscordActionType } from './DiscordActionModal';
+import type { SlackActionType } from './SlackActionModal';
 
 type ServiceStatus = 'connected' | 'disconnected' | 'error';
 
@@ -29,43 +29,43 @@ interface QuickAction {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
-  actionType: DiscordActionType;
+  actionType: SlackActionType;
 }
 
-const discordActions: QuickAction[] = [
+const slackActions: QuickAction[] = [
   {
     label: 'Send Message',
     icon: MessageSquare,
-    description: 'Send to a channel',
+    description: 'Send to a channel or DM',
     actionType: 'send_message',
   },
   {
-    label: 'Call User',
-    icon: Phone,
-    description: 'Start a voice/video call',
-    actionType: 'call_user',
+    label: 'Read Channel',
+    icon: Hash,
+    description: 'View recent messages',
+    actionType: 'read_channel',
   },
   {
-    label: 'List Servers',
-    icon: Server,
-    description: 'Browse your servers',
-    actionType: 'list_servers',
+    label: 'Search',
+    icon: Search,
+    description: 'Search workspace messages',
+    actionType: 'search',
   },
   {
     label: 'Set Status',
     icon: UserCircle,
-    description: 'Update your presence',
+    description: 'Update your Slack status',
     actionType: 'set_status',
   },
 ];
 
-export function DiscordPanel() {
-  const { discordStatus } = useCommunicationsStore();
+export function SlackPanel() {
+  const { slackStatus } = useIntegrationsStore();
   const navigate = useNavigate();
-  const [activeAction, setActiveAction] = useState<DiscordActionType | null>(null);
+  const [activeAction, setActiveAction] = useState<SlackActionType | null>(null);
 
-  function handleAction(actionType: DiscordActionType): void {
-    if (discordStatus !== 'connected') {
+  function handleAction(actionType: SlackActionType): void {
+    if (slackStatus !== 'connected') {
       void navigate({ to: '/settings' });
       return;
     }
@@ -85,14 +85,14 @@ export function DiscordPanel() {
       <div className="bg-card border-border rounded-lg border p-4">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-foreground text-sm font-semibold">Discord</span>
+            <span className="text-foreground text-sm font-semibold">Slack</span>
             <StatusIndicator
-              label={discordStatus}
+              label={slackStatus}
               size="sm"
-              variant={STATUS_VARIANT[discordStatus]}
+              variant={STATUS_VARIANT[slackStatus]}
             />
           </div>
-          {discordStatus === 'disconnected' ? (
+          {slackStatus === 'disconnected' ? (
             <Button
               size="sm"
               type="button"
@@ -106,10 +106,10 @@ export function DiscordPanel() {
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          {discordActions.map((action) => (
+          {slackActions.map((action) => (
             <button
               key={action.label}
-              disabled={discordStatus === 'error'}
+              disabled={slackStatus === 'error'}
               type="button"
               className={cn(
                 'border-border flex items-start gap-2 rounded-md border p-3 text-left',
@@ -130,7 +130,7 @@ export function DiscordPanel() {
         </div>
       </div>
 
-      <DiscordActionModal actionType={activeAction} onClose={handleCloseModal} />
+      <SlackActionModal actionType={activeAction} onClose={handleCloseModal} />
     </>
   );
 }

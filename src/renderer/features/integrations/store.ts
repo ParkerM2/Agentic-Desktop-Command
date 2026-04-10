@@ -1,12 +1,25 @@
 /**
- * Communications Store — UI state for the communications feature.
+ * Integrations Store — UI state for the integrations feature.
+ *
+ * Merges UI state from communications (Slack/Discord/rules) and GitHub.
  * Notification rules are persisted to localStorage so they survive restarts.
  * Service connection status is ephemeral and re-established on mount.
  */
 
 import { create } from 'zustand';
 
+// ── Types ────────────────────────────────────────────────────
+
 type ServiceStatus = 'connected' | 'disconnected' | 'error';
+
+type GitHubTab = 'prs' | 'issues' | 'notifications';
+
+export type IntegrationsTab =
+  | 'slack'
+  | 'discord'
+  | 'rules'
+  | 'github'
+  | 'calendar';
 
 interface NotificationRule {
   id: string;
@@ -15,18 +28,34 @@ interface NotificationRule {
   enabled: boolean;
 }
 
-interface CommunicationsState {
+interface IntegrationsState {
+  // ── Page-level tab ──
+  activeTab: IntegrationsTab;
+  setActiveTab: (tab: IntegrationsTab) => void;
+
+  // ── Communications (Slack / Discord) ──
   slackStatus: ServiceStatus;
   discordStatus: ServiceStatus;
   notificationRules: NotificationRule[];
-  activeTab: 'overview' | 'slack' | 'discord' | 'rules';
   setSlackStatus: (status: ServiceStatus) => void;
   setDiscordStatus: (status: ServiceStatus) => void;
-  setActiveTab: (tab: CommunicationsState['activeTab']) => void;
   addNotificationRule: (rule: Omit<NotificationRule, 'id'>) => void;
   removeNotificationRule: (id: string) => void;
   toggleNotificationRule: (id: string) => void;
+
+  // ── GitHub ──
+  githubActiveTab: GitHubTab;
+  githubSelectedPrNumber: number | null;
+  githubOwner: string;
+  githubRepo: string;
+  githubIssueCreateDialogOpen: boolean;
+  setGitHubActiveTab: (tab: GitHubTab) => void;
+  selectPr: (prNumber: number | null) => void;
+  setGitHubRepo: (owner: string, repo: string) => void;
+  setIssueCreateDialogOpen: (open: boolean) => void;
 }
+
+// ── localStorage helpers ──────────────────────────────────────
 
 const RULES_STORAGE_KEY = 'adc:notification-rules';
 
@@ -54,17 +83,20 @@ function saveRules(rules: NotificationRule[]): void {
   localStorage.setItem(RULES_STORAGE_KEY, JSON.stringify(rules));
 }
 
-export const useCommunicationsStore = create<CommunicationsState>((set) => ({
+// ── Store ────────────────────────────────────────────────────
+
+export const useIntegrationsStore = create<IntegrationsState>((set) => ({
+  // Page-level tab
+  activeTab: 'slack',
+  setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // Communications
   slackStatus: 'disconnected',
   discordStatus: 'disconnected',
   notificationRules: loadRules(),
-  activeTab: 'overview',
 
   setSlackStatus: (status) => set({ slackStatus: status }),
-
   setDiscordStatus: (status) => set({ discordStatus: status }),
-
-  setActiveTab: (tab) => set({ activeTab: tab }),
 
   addNotificationRule: (rule) =>
     set((state) => {
@@ -88,4 +120,16 @@ export const useCommunicationsStore = create<CommunicationsState>((set) => ({
       saveRules(next);
       return { notificationRules: next };
     }),
+
+  // GitHub
+  githubActiveTab: 'prs',
+  githubSelectedPrNumber: null,
+  githubOwner: '',
+  githubRepo: '',
+  githubIssueCreateDialogOpen: false,
+
+  setGitHubActiveTab: (tab) => set({ githubActiveTab: tab }),
+  selectPr: (prNumber) => set({ githubSelectedPrNumber: prNumber }),
+  setGitHubRepo: (owner, repo) => set({ githubOwner: owner, githubRepo: repo }),
+  setIssueCreateDialogOpen: (open) => set({ githubIssueCreateDialogOpen: open }),
 }));

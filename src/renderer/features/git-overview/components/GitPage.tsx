@@ -7,7 +7,7 @@
 
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
-import { GitHubPage } from '@features/github';
+import { GitHubPanel } from '@features/integrations';
 
 import { ChangelogSummary } from './ChangelogSummary';
 
@@ -25,7 +25,7 @@ export function GitPage() {
         </PageHeader.Row>
       </PageHeader>
       <PageContent>
-        <GitHubPage />
+        <GitHubPanel />
       </PageContent>
     </PageLayout>
   );
