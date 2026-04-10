@@ -29,6 +29,8 @@ export interface HubWsClient {
   connect: () => void;
   disconnect: () => void;
   cancelReconnect: () => void;
+  /** Send a JSON message through the WebSocket. Returns true if sent. */
+  send: (data: Record<string, unknown>) => boolean;
 }
 
 export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
@@ -128,5 +130,14 @@ export function createHubWsClient(options: HubWsClientOptions): HubWsClient {
     }
   }
 
-  return { connect, disconnect, cancelReconnect };
+  function send(data: Record<string, unknown>): boolean {
+    if (wsConnection?.readyState === WebSocket.OPEN) {
+      wsConnection.send(JSON.stringify(data));
+      return true;
+    }
+    hubLogger.warn('[Hub] Cannot send WS message — not connected');
+    return false;
+  }
+
+  return { connect, disconnect, cancelReconnect, send };
 }

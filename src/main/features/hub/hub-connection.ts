@@ -49,6 +49,8 @@ export interface HubConnectionManager {
   removeConfig: () => void;
   /** Register a callback for raw WebSocket messages. */
   onWebSocketMessage: (callback: (data: unknown) => void) => void;
+  /** Send a JSON message through the WebSocket. Returns true if sent. */
+  sendWebSocketMessage: (data: Record<string, unknown>) => boolean;
   /** Clean up resources. */
   dispose: () => void;
 }
@@ -206,6 +208,10 @@ export function createHubConnectionManager(deps: HubConnectionManagerDeps): HubC
 
     onWebSocketMessage(callback) {
       messageListeners.push(callback);
+    },
+
+    sendWebSocketMessage(data) {
+      return ws.send(data);
     },
 
     dispose() {

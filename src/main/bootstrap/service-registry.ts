@@ -80,6 +80,7 @@ import { createSetupPipeline } from '../features/project/setup-pipeline';
 import { createSkillsResolver } from '../features/project/skills-resolver';
 import { createTaskService } from '../features/project/task-service';
 import { createQaRunner } from '../features/qa/qa-runner';
+import { createRelayService } from '../features/relay';
 import { createQaTrigger } from '../features/qa/qa-trigger';
 import { createScreenCaptureService } from '../features/screen/screen-capture-service';
 import { createSettingsService } from '../features/settings/settings-service';
@@ -344,6 +345,7 @@ export function createServiceRegistry(
 
       if (result.ok && result.data) {
         registeredDeviceId = result.data.id;
+        relayService.setDeviceId(result.data.id);
         appLogger.info(`[Hub] Device registered: ${result.data.id}`);
 
         if (heartbeatIntervalId !== null) {
@@ -466,6 +468,16 @@ export function createServiceRegistry(
 
   // ─── Agent Manager (v2 — headless stream-json) ──────────────
   const agentManagerService = createAgentManagerService({ router });
+
+  // ─── Relay service (cross-device session relay) ────────────
+  const relayService = createRelayService({
+    hubApiClient,
+    hubConnectionManager,
+    router,
+    agentManagerService,
+  });
+  // Wire WS send function for relay envelopes
+  relayService.setSendFn((msg) => hubConnectionManager.sendWebSocketMessage(msg));
 
   // ─── Command Bus + Session Manager ─────────────────────────
   const commandBus = createCommandBus(db);
@@ -597,6 +609,7 @@ export function createServiceRegistry(
     busSessionManager,
     agentManagerService,
     progressService,
+    relayService,
     teamWatcherService: null,
     projectService,
     taskService,

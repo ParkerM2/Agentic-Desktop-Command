@@ -41,6 +41,7 @@ import { registerNotificationHandlers } from '../features/notifications/notifica
 import { registerOAuthHandlers } from '../features/oauth/oauth-handlers';
 import { registerPlannerHandlers } from '../features/planner/planner-handlers';
 import { registerProgressHandlers } from '../features/progress/progress-handlers';
+import { registerRelayHandlers } from '../features/relay';
 import { registerProjectHandlers } from '../features/project/project-handlers';
 import { registerQaHandlers } from '../features/qa/qa-handlers';
 import { registerScreenHandlers } from '../features/screen/screen-handlers';
@@ -103,6 +104,7 @@ import type { NotesService } from '../features/notes/notes-service';
 import type { NotificationManager } from '../features/notifications';
 import type { PlannerService } from '../features/planner/planner-service';
 import type { ProgressService } from '../features/progress/progress-service';
+import type { RelayService } from '../features/relay';
 import type { CodebaseAnalyzerService } from '../features/project/codebase-analyzer';
 import type { ProjectService } from '../features/project/project-service';
 import type { SetupPipelineService } from '../features/project/setup-pipeline';
@@ -185,6 +187,7 @@ export interface Services {
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
   progressService: ProgressService;
+  relayService: RelayService;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
   workflowEngineService: WorkflowEngineService;
@@ -295,6 +298,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
+  registerRelayHandlers(router, services.relayService);
   registerBusHandlers(router, services.commandBus, services.busSessionManager);
 
   // Stub: workspaces CRUD (Hub-backed, no local service yet)
