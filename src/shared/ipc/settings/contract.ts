@@ -140,7 +140,7 @@ export const settingsInvoke = {
   },
   [SETTINGS.RESET['DATA-DIR']]: {
     input: z.object({}),
-    output: z.object({ requiresRestart: z.literal(true) }),
+    output: z.object({ requiresRestart: z.boolean() }),
   },
 } as const;
 

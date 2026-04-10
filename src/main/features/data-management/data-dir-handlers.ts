@@ -31,9 +31,19 @@ export function registerDataDirHandlers(
     return Promise.resolve({ checks });
   });
 
-  // SET data dir — validate then return results (doesn't apply yet)
+  // SET data dir — validate then apply config if no failures
   router.handle(SETTINGS.SET['DATA-DIR'], ({ path }) => {
     const validationResults = dataMigrator.validateTarget(path);
+    const hasFailed = validationResults.some((c) => c.status === 'fail');
+    if (!hasFailed) {
+      const currentDir = configReader.resolveDataDir();
+      configReader.updateConfig({
+        dataDir: path,
+        previousDataDir: currentDir,
+        pendingMigration: true,
+        confirmedNonEmpty: false,
+      });
+    }
     return Promise.resolve({ validationResults });
   });
 
@@ -53,14 +63,15 @@ export function registerDataDirHandlers(
   router.handle(SETTINGS.RESET['DATA-DIR'], () => {
     const currentDir = configReader.resolveDataDir();
     const defaultDir = configReader.getDefaultDataDir();
-    if (currentDir !== defaultDir) {
-      configReader.updateConfig({
-        dataDir: null,
-        previousDataDir: currentDir,
-        pendingMigration: true,
-        confirmedNonEmpty: false,
-      });
+    if (currentDir === defaultDir) {
+      return Promise.resolve({ requiresRestart: false });
     }
-    return Promise.resolve({ requiresRestart: true as const });
+    configReader.updateConfig({
+      dataDir: null,
+      previousDataDir: currentDir,
+      pendingMigration: true,
+      confirmedNonEmpty: false,
+    });
+    return Promise.resolve({ requiresRestart: true });
   });
 }
