@@ -188,3 +188,13 @@ export async function waitForRoute(page: Page, urlPattern: string | RegExp): Pro
     await page.waitForURL(urlPattern, { timeout: 10_000 });
   }
 }
+
+// ─── POM Re-exports ───────────────────────────────────────────
+export {
+  BasePage,
+  DashboardPage,
+  IntegrationsPage,
+  PersonalPage,
+  ProjectPage,
+  SettingsPage,
+} from './pages';
