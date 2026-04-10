@@ -11,7 +11,7 @@ import { asc, desc, sql } from 'drizzle-orm';
 import type { CommandHistoryEntry } from '@shared/types';
 
 import type { AdcDatabase } from '@main/db';
-import type { ReinitializableService } from '@main/features/data-management';
+import type { ReinitializableService } from '@main/features/settings/data-management';
 import { serviceLogger } from '@main/lib/logger';
 
 import { commandHistory } from './schema';

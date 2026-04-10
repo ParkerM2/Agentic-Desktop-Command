@@ -7,7 +7,7 @@
  */
 
 import type { GitService } from '../../git/git-service';
-import type { GitHubService } from '../../github/github-service';
+import type { GitHubService } from '../../integrations/github-integration';
 import type { ProjectService } from '../../project/project-service';
 import type { ToolResult } from '../tool-executor';
 

@@ -21,7 +21,7 @@ import {
 import { appLogger } from './lib/logger';
 import { createTrayManager } from './tray/tray-manager';
 
-import type { ErrorCollector } from './features/health/error-collector';
+import type { ErrorCollector } from './features/app/health';
 import type { SettingsService } from './features/settings/settings-service';
 
 // Dev mode: rename app before any app.getPath('userData') calls so data isolates to %APPDATA%/ADC-Dev/

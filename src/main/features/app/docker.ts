@@ -1,10 +1,8 @@
 /**
- * App — Docker sub-module
- *
- * Re-exports Docker service components. Absorbed from features/docker/.
+ * App — Docker sub-module barrel
  */
 
-export { createDockerService } from '../docker/docker-service';
-export { registerDockerHandlers } from '../docker/docker-handlers';
+export { createDockerService } from './docker/docker-service';
+export { registerDockerHandlers } from './docker/docker-handlers';
 
-export type { DockerService } from '../docker/docker-service';
+export type { DockerService } from './docker/docker-service';

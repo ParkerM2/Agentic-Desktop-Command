@@ -1,7 +1,16 @@
 /**
- * Settings — Webhook settings handlers sub-module
- *
- * Re-exports webhook settings handler. Absorbed from features/webhook-settings/.
+ * Webhook Settings IPC handlers
  */
 
-export { registerWebhookSettingsHandlers } from '../webhook-settings/webhook-settings-handlers';
+import { SETTINGS } from '@shared/ipc/settings/channels';
+
+import type { SettingsService } from "./settings-service";
+import type { IpcRouter } from '../../ipc/router';
+
+export function registerWebhookSettingsHandlers(router: IpcRouter, service: SettingsService): void {
+  router.handle(SETTINGS.GET['WEBHOOK-CONFIG'], () => Promise.resolve(service.getWebhookConfig()));
+
+  router.handle(SETTINGS.UPDATE['WEBHOOK-CONFIG'], (updates) =>
+    Promise.resolve(service.updateWebhookConfig(updates)),
+  );
+}

@@ -11,7 +11,7 @@ import { BRIEFING_EVENTS } from '@shared/ipc/briefing/channels';
 import type { BriefingConfig, DailyBriefing, Suggestion } from '@shared/types';
 
 
-import type { ReinitializableService } from '@main/features/data-management';
+import type { ReinitializableService } from '@main/features/settings/data-management';
 
 import { createBriefingCache } from './briefing-cache';
 import { createBriefingConfigManager } from './briefing-config';
@@ -22,7 +22,7 @@ import type { BusSessionManager } from '../../bus/session-manager';
 import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 import type { ClaudeClient } from '../claude/claude-client';
-import type { NotificationManager } from '../notifications';
+import type { NotificationManager } from '../integrations/notifications';
 import type { ProjectService } from '../project/project-service';
 import type { TaskService } from '../project/task-service';
 
