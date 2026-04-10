@@ -14,7 +14,7 @@ import { PROJECTS } from '@shared/ipc/projects/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { Badge, Button, InlineAlert, Spinner, Text } from '@ui';
+import { Badge, Button, Heading, InlineAlert, Spinner, Text } from '@ui';
 
 import {
   useConfirmDataDir,
@@ -116,9 +116,9 @@ export function DataLocationSection() {
 
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+      <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         Data Location
-      </h2>
+      </Heading>
       <div className="border-border bg-card space-y-4 rounded-lg border p-4">
         {/* Current path */}
         <div className="flex items-center justify-between gap-4">
