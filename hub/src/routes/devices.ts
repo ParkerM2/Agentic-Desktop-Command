@@ -287,8 +287,12 @@ export async function deviceRoutes(app: FastifyInstance): Promise<void> {
 
   // ─────────────────────────────────────────────────────────────
   // POST /api/devices/:id/heartbeat — Update device online status
+  // Optionally registers project associations for the device.
   // ─────────────────────────────────────────────────────────────
-  app.post<{ Params: { id: string } }>('/api/devices/:id/heartbeat', async (request, reply) => {
+  app.post<{
+    Params: { id: string };
+    Body: { projectIds?: string[] };
+  }>('/api/devices/:id/heartbeat', async (request, reply) => {
     if (!request.user) {
       return reply.status(401).send({
         error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
@@ -310,6 +314,26 @@ export async function deviceRoutes(app: FastifyInstance): Promise<void> {
       now,
       request.params.id,
     );
+
+    // Register project associations if provided
+    const { projectIds } = request.body ?? {};
+    if (Array.isArray(projectIds) && projectIds.length > 0) {
+      const upsertProject = db.prepare(
+        `INSERT INTO device_projects (device_id, project_id, granted_at)
+         VALUES (?, ?, ?)
+         ON CONFLICT(device_id, project_id) DO NOTHING`,
+      );
+
+      for (const projectId of projectIds) {
+        if (typeof projectId === 'string') {
+          try {
+            upsertProject.run(request.params.id, projectId, now);
+          } catch {
+            // Skip invalid project IDs (FK constraint failures)
+          }
+        }
+      }
+    }
 
     return { success: true, lastSeen: now };
   });
