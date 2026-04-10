@@ -55,11 +55,11 @@ const mockRegistry = [
 const mockCleanErrorLog = vi.fn(() => Promise.resolve(3));
 const mockCleanNotes = vi.fn(() => Promise.resolve(1));
 
-vi.mock('@main/features/data-management/store-registry', () => ({
+vi.mock('@main/features/settings/data-management/store-registry', () => ({
   DATA_STORE_REGISTRY: mockRegistry,
 }));
 
-vi.mock('@main/features/data-management/store-cleaners', () => ({
+vi.mock('@main/features/settings/data-management/store-cleaners', () => ({
   STORE_CLEANUP_FUNCTIONS: {
     'error-log': (...args: unknown[]) => mockCleanErrorLog(...(args as [])),
     notes: (...args: unknown[]) => mockCleanNotes(...(args as [])),
@@ -67,7 +67,7 @@ vi.mock('@main/features/data-management/store-cleaners', () => ({
 }));
 
 const { createCleanupService } = await import(
-  '@main/features/data-management/cleanup-service'
+  '@main/features/settings/data-management/cleanup-service'
 );
 
 // ── Helpers ─────────────────────────────────────────────────────
