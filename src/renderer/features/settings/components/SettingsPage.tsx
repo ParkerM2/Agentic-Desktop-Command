@@ -12,8 +12,6 @@ import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores'
 
 import { PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
 
-import { VoiceSettings } from '@features/voice';
-
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
 import { AppearanceModeSection } from './AppearanceModeSection';
@@ -29,6 +27,7 @@ import { ProfileSection } from './ProfileSection';
 import { StorageManagementSection } from './StorageManagementSection';
 import { TypographySection } from './TypographySection';
 import { UiScaleSection } from './UiScaleSection';
+import { VoiceSettings } from './voice/VoiceSettings';
 import { WebhookSettings } from './WebhookSettings';
 import { WorkspacesTab } from './WorkspacesTab';
 

@@ -15,7 +15,7 @@ import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widge
 
 import { ThinkingIndicator } from '@ui';
 
-import { useSpeechSynthesis } from '@features/voice';
+import { useSpeechSynthesis } from '@features/settings';
 
 import { useAssistantStore } from '../store';
 

@@ -21,8 +21,8 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { Badge } from '@ui';
 
-import { HealthIndicator } from '@features/health';
 import { useProjects } from '@features/projects';
+import { HealthIndicator } from '@features/settings';
 import { WorkflowStatusBar } from '@features/workflow';
 
 import { useSidebar } from '@ui/sidebar';

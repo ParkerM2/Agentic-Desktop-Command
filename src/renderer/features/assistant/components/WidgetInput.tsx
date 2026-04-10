@@ -12,7 +12,7 @@ import { ArrowUp } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { VoiceButton } from '@features/voice';
+import { VoiceButton } from '@features/settings';
 
 import { Button } from '@ui/button';
 import { Textarea } from '@ui/textarea';

@@ -24,9 +24,8 @@ import { useLayoutSync, useThemeSync } from '@renderer/shared/hooks';
 import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
-import { useErrorEvents } from '@features/health';
 import { OnboardingWizard } from '@features/onboarding';
-import { useSettings } from '@features/settings';
+import { useErrorEvents, useSettings } from '@features/settings';
 import { useHubStatus } from '@features/settings/api/useHub';
 import { WorkflowPermissionModal } from '@features/workflow';
 
