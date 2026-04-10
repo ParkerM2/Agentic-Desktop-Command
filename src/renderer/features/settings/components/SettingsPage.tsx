@@ -19,6 +19,7 @@ import { useSettings, useUpdateSettings } from '../api/useSettings';
 import { AppearanceModeSection } from './AppearanceModeSection';
 import { BackgroundSettings } from './BackgroundSettings';
 import { ClaudeAuthSettings } from './ClaudeAuthSettings';
+import { DataLocationSection } from './DataLocationSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
 import { HubSettings } from './HubSettings';
@@ -158,6 +159,7 @@ export function SettingsPage() {
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="storage">
+            <DataLocationSection />
             <section className="mb-8">
               <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Storage Management

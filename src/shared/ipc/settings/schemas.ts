@@ -166,3 +166,17 @@ export const ScreenPermissionStatusSchema = z.enum([
   'not-determined',
   'restricted',
 ]);
+
+// ── Data Directory Schemas ─────────────────────────────────────
+
+export const ValidationCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  status: z.enum(['pass', 'warn', 'fail']),
+  message: z.string(),
+});
+
+export const DataDirInfoSchema = z.object({
+  current: z.string(),
+  isCustom: z.boolean(),
+});

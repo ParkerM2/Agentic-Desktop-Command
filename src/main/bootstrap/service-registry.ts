@@ -36,6 +36,8 @@ import { createChangelogService } from '../features/changelog/changelog-service'
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
 import {
+  createConfigReader,
+  createDataMigrator,
   createUserDataMigrator,
   createUserDataResolver,
 } from '../features/data-management';
@@ -161,7 +163,19 @@ export function createServiceRegistry(
   getMainWindow: () => Electron.BrowserWindow | null,
 ): ServiceRegistryResult {
   const router = new IpcRouter(getMainWindow);
-  const dataDir = app.getPath('userData');
+
+  // ─── Resolve data directory (may be user-configured) ─────────
+  const defaultDataDir = app.getPath('userData');
+  const configReader = createConfigReader(defaultDataDir);
+  const dataMigrator = createDataMigrator(configReader);
+
+  // Run pending migration before opening database
+  const migrationResult = dataMigrator.runPendingMigration();
+  if (migrationResult.error) {
+    appLogger.error(`[Bootstrap] Data migration failed: ${migrationResult.error}`);
+  }
+
+  const dataDir = configReader.resolveDataDir();
 
   // ─── Database (created early — many services depend on it) ──
   const db = initDatabase(dataDir);
@@ -638,6 +652,8 @@ export function createServiceRegistry(
     userSessionManager,
     workspaceSessionManager,
     workflowEngineService,
+    configReader,
+    dataMigrator,
     dataDir,
     providers,
     tokenStore,

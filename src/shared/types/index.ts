@@ -33,6 +33,7 @@ export type * from './screen';
 export type * from './security';
 export { DEFAULT_SECURITY_SETTINGS } from './security';
 export type * from './briefing';
+export type * from './data-dir';
 export type * from './health';
 export type * from './workspace';
 export type * from './hub-events';

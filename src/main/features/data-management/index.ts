@@ -8,3 +8,6 @@ export { STORE_CLEANUP_FUNCTIONS } from './store-cleaners';
 export { createUserDataResolver, type UserDataResolver } from './user-data-resolver';
 export { type ReinitializableService, isReinitializable } from './reinitializable-service';
 export { createUserDataMigrator, type UserDataMigrator } from './user-data-migrator';
+export { createConfigReader, type ConfigReader } from './config-reader';
+export { createDataMigrator, type DataMigrator } from './data-migrator';
+export { registerDataDirHandlers } from './data-dir-handlers';
