@@ -38,6 +38,7 @@ import { registerPlannerHandlers } from '../features/planner/planner-handlers';
 import { registerProgressHandlers } from '../features/progress/progress-handlers';
 import { registerProjectHandlers } from '../features/project/project-handlers';
 import { registerQaHandlers } from '../features/qa/qa-handlers';
+import { registerQaRecorderHandlers } from '../features/qa/recorder/recorder-handlers';
 import { registerDataDirHandlers, registerDataManagementHandlers } from '../features/settings/data-management';
 import { registerHotkeyHandlers } from '../features/settings/hotkeys';
 import { registerScreenHandlers } from '../features/settings/screen';
@@ -98,6 +99,7 @@ import type { ProjectService } from '../features/project/project-service';
 import type { SetupPipelineService } from '../features/project/setup-pipeline';
 import type { TaskService } from '../features/project/task-service';
 import type { QaRunner } from '../features/qa/qa-types';
+import type { QaRecorderService } from '../features/qa/recorder/recorder-handlers';
 import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/settings/data-management';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
@@ -160,6 +162,7 @@ export interface Services {
   hubApiClient: HubApiClient;
   hubAuthService: HubAuthService;
   qaRunner: QaRunner;
+  qaRecorderService: QaRecorderService;
   workflowTemplateService: WorkflowTemplateService;
   dashboardService: DashboardService;
   dockerService: DockerService;
@@ -271,6 +274,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.busSessionManager,
     services.taskRepository,
   );
+  registerQaRecorderHandlers(router, services.qaRecorderService);
   registerDashboardHandlers(router, services.dashboardService);
   registerDockerHandlers(router, services.dockerService);
   registerSecurityHandlers(router, services.settingsService);
