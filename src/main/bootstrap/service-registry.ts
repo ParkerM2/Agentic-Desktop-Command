@@ -73,6 +73,7 @@ import { createSkillsResolver } from '../features/project/skills-resolver';
 import { createTaskService } from '../features/project/task-service';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
+import { createQaRecorderService } from '../features/qa/recorder';
 import {
   createCleanupService,
   createConfigReader,
@@ -454,6 +455,7 @@ export function createServiceRegistry(
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
+  const qaRecorderService = lazyService(() => createQaRecorderService(db));
   const qaTrigger = lazyService(() =>
     createQaTrigger({ qaRunner, busSessionManager, taskRepository, router }),
   );
@@ -589,7 +591,7 @@ export function createServiceRegistry(
     hubApiClient,
     hubAuthService,
     qaRunner,
-    qaRecorderService: null as unknown as QaRecorderService,
+    qaRecorderService,
     workflowTemplateService,
     cleanupService,
     storageInspector,

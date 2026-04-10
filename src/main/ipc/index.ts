@@ -99,7 +99,7 @@ import type { ProjectService } from '../features/project/project-service';
 import type { SetupPipelineService } from '../features/project/setup-pipeline';
 import type { TaskService } from '../features/project/task-service';
 import type { QaRunner } from '../features/qa/qa-types';
-import type { QaRecorderService } from '../features/qa/recorder/recorder-handlers';
+import type { QaRecorderService } from '../features/qa/recorder';
 import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/settings/data-management';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
