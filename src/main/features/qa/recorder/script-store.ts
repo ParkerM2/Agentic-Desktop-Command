@@ -5,9 +5,13 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
+import type { QaRecorderStepSchema } from '@shared/ipc/qa-recorder/schemas';
+
 import { qaScripts } from '../../../db/schema';
 
 import type { AdcDatabase } from '../../../db';
+
+type QaRecorderStep = typeof QaRecorderStepSchema extends { _output: infer T } ? T : never;
 
 export interface QaScript {
   id: string;
@@ -15,7 +19,7 @@ export interface QaScript {
   description?: string;
   filePath?: string;
   projectId?: string;
-  steps: unknown[];
+  steps: QaRecorderStep[];
   createdAt: string;
   updatedAt: string;
 }
@@ -28,7 +32,7 @@ export interface ScriptStore {
     id?: string;
     name: string;
     description?: string;
-    steps: unknown[];
+    steps: QaRecorderStep[];
   }) => QaScript;
   delete: (id: string) => { success: boolean };
 }
@@ -40,7 +44,7 @@ function toQaScript(row: typeof qaScripts.$inferSelect): QaScript {
     description: undefined,
     filePath: row.filePath ?? undefined,
     projectId: row.projectId ?? undefined,
-    steps: row.steps,
+    steps: row.steps as QaRecorderStep[],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
