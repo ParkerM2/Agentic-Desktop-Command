@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
+import { TASKS, HUB_TASKS } from '@shared/ipc/tasks/channels';
 
 import type { IpcRouter } from '@main/ipc/router';
 import type { Task as HubTask, TaskCancelResponse, TaskExecuteResponse } from '@shared/types/hub-protocol';
@@ -114,7 +115,7 @@ describe('Task IPC Handlers', () => {
       const tasks = [createMockHubTask({ id: 'task-1' }), createMockHubTask({ id: 'task-2' })];
       vi.mocked(taskRepository.listTasks).mockResolvedValue({ tasks });
 
-      const result = await invoke('tasks.list', { projectId: 'project-1' });
+      const result = await invoke(TASKS.LIST.ALL, { projectId: 'project-1' });
 
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
@@ -125,14 +126,14 @@ describe('Task IPC Handlers', () => {
     it('returns empty array for project with no tasks', async () => {
       vi.mocked(taskRepository.listTasks).mockResolvedValue({ tasks: [] });
 
-      const result = await invoke('tasks.list', { projectId: 'empty-project' });
+      const result = await invoke(TASKS.LIST.ALL, { projectId: 'empty-project' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('tasks.list', {});
+      const result = await invoke(TASKS.LIST.ALL, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -140,7 +141,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - projectId must be string', async () => {
-      const result = await invoke('tasks.list', { projectId: 123 });
+      const result = await invoke(TASKS.LIST.ALL, { projectId: 123 });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -149,7 +150,7 @@ describe('Task IPC Handlers', () => {
     it('throws on TaskRepository error', async () => {
       vi.mocked(taskRepository.listTasks).mockRejectedValue(new Error('Connection refused'));
 
-      const result = await invoke('tasks.list', { projectId: 'project-1' });
+      const result = await invoke(TASKS.LIST.ALL, { projectId: 'project-1' });
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Connection refused');
@@ -163,7 +164,7 @@ describe('Task IPC Handlers', () => {
       const hubTask = createMockHubTask({ title: 'New Task' });
       vi.mocked(taskRepository.createTask).mockResolvedValue(hubTask);
 
-      const result = await invoke('tasks.create', {
+      const result = await invoke(TASKS.CREATE.TASK, {
         title: 'New Task',
         description: 'Task description',
         projectId: 'project-1',
@@ -178,7 +179,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing title', async () => {
-      const result = await invoke('tasks.create', {
+      const result = await invoke(TASKS.CREATE.TASK, {
         description: 'Task without title',
         projectId: 'project-1',
       });
@@ -189,7 +190,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - empty title', async () => {
-      const result = await invoke('tasks.create', {
+      const result = await invoke(TASKS.CREATE.TASK, {
         title: '',
         description: 'Task with empty title',
         projectId: 'project-1',
@@ -200,7 +201,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('tasks.create', {
+      const result = await invoke(TASKS.CREATE.TASK, {
         title: 'Task Title',
         description: 'Description',
       });
@@ -218,7 +219,7 @@ describe('Task IPC Handlers', () => {
       const updatedTask = createMockHubTask({ id: 'update-me', title: 'Updated Title' });
       vi.mocked(taskRepository.updateTask).mockResolvedValue(updatedTask);
 
-      const result = await invoke('tasks.update', {
+      const result = await invoke(TASKS.UPDATE.TASK, {
         taskId: 'update-me',
         updates: { title: 'Updated Title' },
       });
@@ -228,7 +229,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing taskId', async () => {
-      const result = await invoke('tasks.update', {
+      const result = await invoke(TASKS.UPDATE.TASK, {
         updates: { title: 'New Title' },
       });
 
@@ -238,7 +239,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing updates', async () => {
-      const result = await invoke('tasks.update', {
+      const result = await invoke(TASKS.UPDATE.TASK, {
         taskId: 'task-1',
       });
 
@@ -250,7 +251,7 @@ describe('Task IPC Handlers', () => {
     it('handles TaskRepository error for non-existent task', async () => {
       vi.mocked(taskRepository.updateTask).mockRejectedValue(new Error('Task not found'));
 
-      const result = await invoke('tasks.update', {
+      const result = await invoke(TASKS.UPDATE.TASK, {
         taskId: 'non-existent',
         updates: { title: 'New Title' },
       });
@@ -267,7 +268,7 @@ describe('Task IPC Handlers', () => {
       const updatedTask = createMockHubTask({ id: 'status-task', status: 'running' });
       vi.mocked(taskRepository.updateTaskStatus).mockResolvedValue(updatedTask);
 
-      const result = await invoke('tasks.updateStatus', {
+      const result = await invoke(TASKS.UPDATE.STATUS, {
         taskId: 'status-task',
         status: 'running',
       });
@@ -278,7 +279,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - invalid status', async () => {
-      const result = await invoke('tasks.updateStatus', {
+      const result = await invoke(TASKS.UPDATE.STATUS, {
         taskId: 'task-1',
         status: 'invalid_status',
       });
@@ -288,7 +289,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing taskId', async () => {
-      const result = await invoke('tasks.updateStatus', {
+      const result = await invoke(TASKS.UPDATE.STATUS, {
         status: 'done',
       });
 
@@ -298,7 +299,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing status', async () => {
-      const result = await invoke('tasks.updateStatus', {
+      const result = await invoke(TASKS.UPDATE.STATUS, {
         taskId: 'task-1',
       });
 
@@ -314,7 +315,7 @@ describe('Task IPC Handlers', () => {
     it('deletes task', async () => {
       vi.mocked(taskRepository.deleteTask).mockResolvedValue({ success: true });
 
-      const result = await invoke('tasks.delete', {
+      const result = await invoke(TASKS.DELETE.TASK, {
         taskId: 'delete-me',
         projectId: 'project-1',
       });
@@ -325,7 +326,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing taskId', async () => {
-      const result = await invoke('tasks.delete', {
+      const result = await invoke(TASKS.DELETE.TASK, {
         projectId: 'project-1',
       });
 
@@ -335,7 +336,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('tasks.delete', {
+      const result = await invoke(TASKS.DELETE.TASK, {
         taskId: 'task-1',
       });
 
@@ -352,7 +353,7 @@ describe('Task IPC Handlers', () => {
       const hubTask = createMockHubTask({ id: 'get-me', title: 'Get This Task' });
       vi.mocked(taskRepository.getTask).mockResolvedValue(hubTask);
 
-      const result = await invoke('tasks.get', {
+      const result = await invoke(TASKS.GET.TASK, {
         projectId: 'project-1',
         taskId: 'get-me',
       });
@@ -362,7 +363,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('tasks.get', {
+      const result = await invoke(TASKS.GET.TASK, {
         taskId: 'task-1',
       });
 
@@ -372,7 +373,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing taskId', async () => {
-      const result = await invoke('tasks.get', {
+      const result = await invoke(TASKS.GET.TASK, {
         projectId: 'project-1',
       });
 
@@ -384,7 +385,7 @@ describe('Task IPC Handlers', () => {
     it('handles TaskRepository error for non-existent task', async () => {
       vi.mocked(taskRepository.getTask).mockRejectedValue(new Error('Task not found'));
 
-      const result = await invoke('tasks.get', {
+      const result = await invoke(TASKS.GET.TASK, {
         projectId: 'project-1',
         taskId: 'non-existent',
       });
@@ -404,7 +405,7 @@ describe('Task IPC Handlers', () => {
       ];
       vi.mocked(taskRepository.listTasks).mockResolvedValue({ tasks });
 
-      const result = await invoke('tasks.listAll', {});
+      const result = await invoke(TASKS.LIST.EVERY, {});
 
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
@@ -415,7 +416,7 @@ describe('Task IPC Handlers', () => {
     it('returns empty array when no tasks exist', async () => {
       vi.mocked(taskRepository.listTasks).mockResolvedValue({ tasks: [] });
 
-      const result = await invoke('tasks.listAll', {});
+      const result = await invoke(TASKS.LIST.EVERY, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
@@ -429,7 +430,7 @@ describe('Task IPC Handlers', () => {
       const response: TaskExecuteResponse = { sessionId: 'session-123', status: 'started' };
       vi.mocked(taskRepository.executeTask).mockResolvedValue(response);
 
-      const result = await invoke('tasks.execute', {
+      const result = await invoke(TASKS.EXECUTE.TASK, {
         taskId: 'exec-task',
         projectId: 'project-1',
       });
@@ -440,7 +441,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing taskId', async () => {
-      const result = await invoke('tasks.execute', {
+      const result = await invoke(TASKS.EXECUTE.TASK, {
         projectId: 'project-1',
       });
 
@@ -450,7 +451,7 @@ describe('Task IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('tasks.execute', {
+      const result = await invoke(TASKS.EXECUTE.TASK, {
         taskId: 'task-1',
       });
 
@@ -467,7 +468,7 @@ describe('Task IPC Handlers', () => {
       const tasks = [createMockHubTask()];
       vi.mocked(taskRepository.listTasks).mockResolvedValue({ tasks });
 
-      const result = await invoke('hub.tasks.list', { projectId: 'p1' });
+      const result = await invoke(HUB_TASKS.LIST.ALL, { projectId: 'p1' });
 
       expect(result.success).toBe(true);
       expect(taskRepository.listTasks).toHaveBeenCalledWith({ projectId: 'p1' });
@@ -476,7 +477,7 @@ describe('Task IPC Handlers', () => {
     it('returns all tasks when no filter', async () => {
       vi.mocked(taskRepository.listTasks).mockResolvedValue({ tasks: [] });
 
-      const result = await invoke('hub.tasks.list', {});
+      const result = await invoke(HUB_TASKS.LIST.ALL, {});
 
       expect(result.success).toBe(true);
       expect(taskRepository.listTasks).toHaveBeenCalledWith({});
@@ -488,7 +489,7 @@ describe('Task IPC Handlers', () => {
       const hubTask = createMockHubTask({ id: 'hub-task-1' });
       vi.mocked(taskRepository.getTask).mockResolvedValue(hubTask);
 
-      const result = await invoke('hub.tasks.get', { taskId: 'hub-task-1' });
+      const result = await invoke(HUB_TASKS.GET.TASK, { taskId: 'hub-task-1' });
 
       expect(result.success).toBe(true);
       expect(taskRepository.getTask).toHaveBeenCalledWith('hub-task-1');
@@ -500,7 +501,7 @@ describe('Task IPC Handlers', () => {
       const hubTask = createMockHubTask({ title: 'Hub Task' });
       vi.mocked(taskRepository.createTask).mockResolvedValue(hubTask);
 
-      const result = await invoke('hub.tasks.create', {
+      const result = await invoke(HUB_TASKS.CREATE.TASK, {
         projectId: 'p1',
         title: 'Hub Task',
         description: 'Description',
@@ -517,7 +518,7 @@ describe('Task IPC Handlers', () => {
     it('deletes task via TaskRepository', async () => {
       vi.mocked(taskRepository.deleteTask).mockResolvedValue({ success: true });
 
-      const result = await invoke('hub.tasks.delete', { taskId: 'del-1' });
+      const result = await invoke(HUB_TASKS.DELETE.TASK, { taskId: 'del-1' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -530,7 +531,7 @@ describe('Task IPC Handlers', () => {
       const response: TaskExecuteResponse = { sessionId: 'sess-1', status: 'started' };
       vi.mocked(taskRepository.executeTask).mockResolvedValue(response);
 
-      const result = await invoke('hub.tasks.execute', { taskId: 'exec-1' });
+      const result = await invoke(HUB_TASKS.EXECUTE.TASK, { taskId: 'exec-1' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ sessionId: 'sess-1', status: 'started' });
@@ -542,7 +543,7 @@ describe('Task IPC Handlers', () => {
       const response: TaskCancelResponse = { success: true, previousStatus: 'running' };
       vi.mocked(taskRepository.cancelTask).mockResolvedValue(response);
 
-      const result = await invoke('hub.tasks.cancel', { taskId: 'cancel-1', reason: 'user request' });
+      const result = await invoke(HUB_TASKS.CANCEL.TASK, { taskId: 'cancel-1', reason: 'user request' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true, previousStatus: 'running' });

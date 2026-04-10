@@ -8,6 +8,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
+import { APP } from '@shared/ipc/app/channels';
+import { SETTINGS } from '@shared/ipc/settings/channels';
 
 import type { IpcRouter } from '@main/ipc/router';
 import type { SettingsService } from '@main/features/settings/settings-service';
@@ -137,7 +139,7 @@ describe('Settings IPC Handlers', () => {
       const settings = createMockAppSettings();
       vi.mocked(service.getSettings).mockReturnValue(settings);
 
-      const result = await invoke('settings.get', {});
+      const result = await invoke(SETTINGS.GET.ALL, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(settings);
@@ -152,7 +154,7 @@ describe('Settings IPC Handlers', () => {
       const updated = createMockAppSettings({ theme: 'dark', uiScale: 110 });
       vi.mocked(service.updateSettings).mockReturnValue(updated);
 
-      const result = await invoke('settings.update', { theme: 'dark', uiScale: 110 });
+      const result = await invoke(SETTINGS.UPDATE.ALL, { theme: 'dark', uiScale: 110 });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updated);
@@ -170,7 +172,7 @@ describe('Settings IPC Handlers', () => {
       ];
       vi.mocked(service.getProfiles).mockReturnValue(profiles);
 
-      const result = await invoke('settings.getProfiles', {});
+      const result = await invoke(SETTINGS.GET.PROFILES, {});
 
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
@@ -180,7 +182,7 @@ describe('Settings IPC Handlers', () => {
     it('returns empty array when no profiles', async () => {
       vi.mocked(service.getProfiles).mockReturnValue([]);
 
-      const result = await invoke('settings.getProfiles', {});
+      const result = await invoke(SETTINGS.GET.PROFILES, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
@@ -194,7 +196,7 @@ describe('Settings IPC Handlers', () => {
       const profile = createMockProfile({ id: 'new-id', name: 'New Profile' });
       vi.mocked(service.createProfile).mockReturnValue(profile);
 
-      const result = await invoke('settings.createProfile', {
+      const result = await invoke(SETTINGS.CREATE.PROFILE, {
         name: 'New Profile',
       });
 
@@ -211,7 +213,7 @@ describe('Settings IPC Handlers', () => {
       });
       vi.mocked(service.createProfile).mockReturnValue(profile);
 
-      const result = await invoke('settings.createProfile', {
+      const result = await invoke(SETTINGS.CREATE.PROFILE, {
         name: 'New Profile',
         apiKey: 'sk-test',
         model: 'claude-opus-4-6',
@@ -226,7 +228,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing name', async () => {
-      const result = await invoke('settings.createProfile', {});
+      const result = await invoke(SETTINGS.CREATE.PROFILE, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -241,7 +243,7 @@ describe('Settings IPC Handlers', () => {
       const updated = createMockProfile({ id: 'p1', name: 'Updated Name' });
       vi.mocked(service.updateProfile).mockReturnValue(updated);
 
-      const result = await invoke('settings.updateProfile', {
+      const result = await invoke(SETTINGS.UPDATE.PROFILE, {
         id: 'p1',
         updates: { name: 'Updated Name' },
       });
@@ -251,7 +253,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing id', async () => {
-      const result = await invoke('settings.updateProfile', {
+      const result = await invoke(SETTINGS.UPDATE.PROFILE, {
         updates: { name: 'New Name' },
       });
 
@@ -261,7 +263,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing updates', async () => {
-      const result = await invoke('settings.updateProfile', {
+      const result = await invoke(SETTINGS.UPDATE.PROFILE, {
         id: 'p1',
       });
 
@@ -275,7 +277,7 @@ describe('Settings IPC Handlers', () => {
         throw new Error('Profile not found: non-existent');
       });
 
-      const result = await invoke('settings.updateProfile', {
+      const result = await invoke(SETTINGS.UPDATE.PROFILE, {
         id: 'non-existent',
         updates: { name: 'New Name' },
       });
@@ -291,7 +293,7 @@ describe('Settings IPC Handlers', () => {
     it('deletes profile', async () => {
       vi.mocked(service.deleteProfile).mockReturnValue({ success: true });
 
-      const result = await invoke('settings.deleteProfile', { id: 'p1' });
+      const result = await invoke(SETTINGS.DELETE.PROFILE, { id: 'p1' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -299,7 +301,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing id', async () => {
-      const result = await invoke('settings.deleteProfile', {});
+      const result = await invoke(SETTINGS.DELETE.PROFILE, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -311,7 +313,7 @@ describe('Settings IPC Handlers', () => {
         throw new Error('Profile not found: bad-id');
       });
 
-      const result = await invoke('settings.deleteProfile', { id: 'bad-id' });
+      const result = await invoke(SETTINGS.DELETE.PROFILE, { id: 'bad-id' });
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Profile not found');
@@ -324,7 +326,7 @@ describe('Settings IPC Handlers', () => {
     it('sets default profile', async () => {
       vi.mocked(service.setDefaultProfile).mockReturnValue({ success: true });
 
-      const result = await invoke('settings.setDefaultProfile', { id: 'p2' });
+      const result = await invoke(SETTINGS.SET['DEFAULT-PROFILE'], { id: 'p2' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -332,7 +334,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing id', async () => {
-      const result = await invoke('settings.setDefaultProfile', {});
+      const result = await invoke(SETTINGS.SET['DEFAULT-PROFILE'], {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -344,7 +346,7 @@ describe('Settings IPC Handlers', () => {
         throw new Error('Profile not found: bad-id');
       });
 
-      const result = await invoke('settings.setDefaultProfile', { id: 'bad-id' });
+      const result = await invoke(SETTINGS.SET['DEFAULT-PROFILE'], { id: 'bad-id' });
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Profile not found');
@@ -358,7 +360,7 @@ describe('Settings IPC Handlers', () => {
       mockProviders.set('github', { clientId: 'gh-id', clientSecret: 'gh-secret' });
       mockProviders.set('google', { clientId: '', clientSecret: '' });
 
-      const result = await invoke('settings.getOAuthProviders', {});
+      const result = await invoke(SETTINGS.GET['OAUTH-PROVIDERS'], {});
 
       expect(result.success).toBe(true);
       const data = result.data as Array<{ name: string; hasCredentials: boolean }>;
@@ -371,7 +373,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('returns empty array when no providers configured', async () => {
-      const result = await invoke('settings.getOAuthProviders', {});
+      const result = await invoke(SETTINGS.GET['OAUTH-PROVIDERS'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
@@ -387,7 +389,7 @@ describe('Settings IPC Handlers', () => {
         clientSecret: 'old-secret',
       } as never);
 
-      const result = await invoke('settings.setOAuthProvider', {
+      const result = await invoke(SETTINGS.SET['OAUTH-PROVIDER'], {
         name: 'github',
         clientId: 'new-client-id',
         clientSecret: 'new-client-secret',
@@ -398,7 +400,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing name', async () => {
-      const result = await invoke('settings.setOAuthProvider', {
+      const result = await invoke(SETTINGS.SET['OAUTH-PROVIDER'], {
         clientId: 'id',
         clientSecret: 'secret',
       });
@@ -409,7 +411,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing clientId', async () => {
-      const result = await invoke('settings.setOAuthProvider', {
+      const result = await invoke(SETTINGS.SET['OAUTH-PROVIDER'], {
         name: 'github',
         clientSecret: 'secret',
       });
@@ -420,7 +422,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing clientSecret', async () => {
-      const result = await invoke('settings.setOAuthProvider', {
+      const result = await invoke(SETTINGS.SET['OAUTH-PROVIDER'], {
         name: 'github',
         clientId: 'id',
       });
@@ -438,7 +440,7 @@ describe('Settings IPC Handlers', () => {
       const agentSettings: AgentSettings = { maxConcurrentAgents: 3 };
       vi.mocked(service.getAgentSettings).mockReturnValue(agentSettings);
 
-      const result = await invoke('settings.getAgentSettings', {});
+      const result = await invoke(SETTINGS.GET['AGENT-SETTINGS'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ maxConcurrentAgents: 3 });
@@ -452,7 +454,7 @@ describe('Settings IPC Handlers', () => {
     it('updates agent settings', async () => {
       vi.mocked(service.setAgentSettings).mockReturnValue({ success: true });
 
-      const result = await invoke('settings.setAgentSettings', {
+      const result = await invoke(SETTINGS.SET['AGENT-SETTINGS'], {
         maxConcurrentAgents: 5,
       });
 
@@ -462,7 +464,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing maxConcurrentAgents', async () => {
-      const result = await invoke('settings.setAgentSettings', {});
+      const result = await invoke(SETTINGS.SET['AGENT-SETTINGS'], {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -470,7 +472,7 @@ describe('Settings IPC Handlers', () => {
     });
 
     it('validates input with Zod - maxConcurrentAgents must be number', async () => {
-      const result = await invoke('settings.setAgentSettings', {
+      const result = await invoke(SETTINGS.SET['AGENT-SETTINGS'], {
         maxConcurrentAgents: 'five',
       });
 
@@ -485,7 +487,7 @@ describe('Settings IPC Handlers', () => {
     it('returns app version', async () => {
       vi.mocked(service.getAppVersion).mockReturnValue({ version: '1.2.3' });
 
-      const result = await invoke('app.getVersion', {});
+      const result = await invoke(APP.GET.VERSION, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ version: '1.2.3' });

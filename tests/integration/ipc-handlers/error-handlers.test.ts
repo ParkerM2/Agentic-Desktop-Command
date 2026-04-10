@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
+import { APP } from '@shared/ipc/app/channels';
 import type { ErrorEntry, ErrorStats, HealthStatus } from '@shared/types/health';
 
 import type { IpcRouter } from '@main/ipc/router';
@@ -139,7 +140,7 @@ describe('Error & Health IPC Handlers', () => {
       ];
       vi.mocked(errorCollector.getLog).mockReturnValue(entries);
 
-      const result = await invoke('app.getErrorLog', {});
+      const result = await invoke(APP.GET['ERROR-LOG'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ entries });
@@ -150,7 +151,7 @@ describe('Error & Health IPC Handlers', () => {
       vi.mocked(errorCollector.getLog).mockReturnValue([]);
 
       const since = '2026-02-15T00:00:00.000Z';
-      const result = await invoke('app.getErrorLog', { since });
+      const result = await invoke(APP.GET['ERROR-LOG'], { since });
 
       expect(result.success).toBe(true);
       expect(errorCollector.getLog).toHaveBeenCalledWith(since);
@@ -159,7 +160,7 @@ describe('Error & Health IPC Handlers', () => {
     it('returns empty entries array when no errors exist', async () => {
       vi.mocked(errorCollector.getLog).mockReturnValue([]);
 
-      const result = await invoke('app.getErrorLog', {});
+      const result = await invoke(APP.GET['ERROR-LOG'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ entries: [] });
@@ -173,7 +174,7 @@ describe('Error & Health IPC Handlers', () => {
       const stats = createMockErrorStats();
       vi.mocked(errorCollector.getStats).mockReturnValue(stats);
 
-      const result = await invoke('app.getErrorStats', {});
+      const result = await invoke(APP.GET['ERROR-STATS'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(stats);
@@ -189,7 +190,7 @@ describe('Error & Health IPC Handlers', () => {
       });
       vi.mocked(errorCollector.getStats).mockReturnValue(emptyStats);
 
-      const result = await invoke('app.getErrorStats', {});
+      const result = await invoke(APP.GET['ERROR-STATS'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(emptyStats);
@@ -200,7 +201,7 @@ describe('Error & Health IPC Handlers', () => {
 
   describe('app.clearErrorLog', () => {
     it('calls clear on ErrorCollector and returns success', async () => {
-      const result = await invoke('app.clearErrorLog', {});
+      const result = await invoke(APP.CLEAR['ERROR-LOG'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -215,7 +216,7 @@ describe('Error & Health IPC Handlers', () => {
       const mockEntry = createMockErrorEntry({ message: 'Renderer crash' });
       vi.mocked(errorCollector.report).mockReturnValue(mockEntry);
 
-      const result = await invoke('app.reportRendererError', {
+      const result = await invoke(APP.REPORT['RENDERER-ERROR'], {
         severity: 'error',
         tier: 'app',
         category: 'renderer',
@@ -246,7 +247,7 @@ describe('Error & Health IPC Handlers', () => {
       const mockEntry = createMockErrorEntry();
       vi.mocked(errorCollector.report).mockReturnValue(mockEntry);
 
-      const result = await invoke('app.reportRendererError', {
+      const result = await invoke(APP.REPORT['RENDERER-ERROR'], {
         severity: 'warning',
         tier: 'project',
         category: 'general',
@@ -270,7 +271,7 @@ describe('Error & Health IPC Handlers', () => {
     });
 
     it('validates input - rejects invalid severity', async () => {
-      const result = await invoke('app.reportRendererError', {
+      const result = await invoke(APP.REPORT['RENDERER-ERROR'], {
         severity: 'critical',
         tier: 'app',
         category: 'general',
@@ -282,7 +283,7 @@ describe('Error & Health IPC Handlers', () => {
     });
 
     it('validates input - rejects missing message', async () => {
-      const result = await invoke('app.reportRendererError', {
+      const result = await invoke(APP.REPORT['RENDERER-ERROR'], {
         severity: 'error',
         tier: 'app',
         category: 'general',
@@ -300,7 +301,7 @@ describe('Error & Health IPC Handlers', () => {
       const status = createMockHealthStatus();
       vi.mocked(healthRegistry.getStatus).mockReturnValue(status);
 
-      const result = await invoke('app.getHealthStatus', {});
+      const result = await invoke(APP.GET['HEALTH-STATUS'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(status);
@@ -310,7 +311,7 @@ describe('Error & Health IPC Handlers', () => {
     it('returns empty services array when none registered', async () => {
       vi.mocked(healthRegistry.getStatus).mockReturnValue({ services: [] });
 
-      const result = await invoke('app.getHealthStatus', {});
+      const result = await invoke(APP.GET['HEALTH-STATUS'], {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ services: [] });
@@ -327,11 +328,11 @@ describe('Error & Health IPC Handlers', () => {
       // the handlers map from the already-registered router in beforeEach
       // Instead, just verify all channels can be invoked
       const expectedChannels = [
-        'app.getErrorLog',
-        'app.getErrorStats',
-        'app.clearErrorLog',
-        'app.reportRendererError',
-        'app.getHealthStatus',
+        APP.GET['ERROR-LOG'],
+        APP.GET['ERROR-STATS'],
+        APP.CLEAR['ERROR-LOG'],
+        APP.REPORT['RENDERER-ERROR'],
+        APP.GET['HEALTH-STATUS'],
       ];
 
       for (const channel of expectedChannels) {
