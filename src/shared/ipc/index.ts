@@ -514,3 +514,7 @@ export {
   WorkoutSchema,
   WorkoutTypeSchema,
 } from './personal';
+
+// ─── Integrations Domain (unified namespace) ─────────────────
+export { integrationsEvents, integrationsInvoke } from './integrations';
+export { INTEGRATIONS } from './integrations';
