@@ -1,14 +1,15 @@
 /**
  * Notification Store — SQLite persistence for notification config and cached notifications.
  *
- * Uses the `notifications` and `notificationConfig` tables from the shared schema.
+ * Config uses the `settings_kv` table with category='notification' and key='default'.
+ * Notifications use the `notifications` table.
  * One-time migration from JSON files on first access if tables are empty.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { asc, count, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 
 import type { Notification, NotificationWatcherConfig } from '@shared/types';
 import {
@@ -17,7 +18,7 @@ import {
   DEFAULT_SLACK_WATCHER_CONFIG,
 } from '@shared/types';
 
-import { notificationConfig, notifications } from '../../db/schema';
+import { notifications, settingsKv } from '../../db/schema';
 import { createScopedLogger } from '../../lib/logger';
 
 import type { AdcDatabase } from '../../db';
@@ -28,6 +29,7 @@ const CONFIG_FILE = 'notification-watcher-config.json';
 const NOTIFICATIONS_FILE = 'notifications-cache.json';
 export const MAX_CACHED_NOTIFICATIONS = 1000;
 const CONFIG_KEY = 'default';
+const CONFIG_CATEGORY = 'notification';
 
 const logger = createScopedLogger('notification-store');
 
@@ -79,8 +81,8 @@ function migrateNotificationsFromJson(db: AdcDatabase, dataDir: string): void {
 function migrateConfigFromJson(db: AdcDatabase, dataDir: string): void {
   const existing = db
     .select()
-    .from(notificationConfig)
-    .where(eq(notificationConfig.key, CONFIG_KEY))
+    .from(settingsKv)
+    .where(and(eq(settingsKv.category, CONFIG_CATEGORY), eq(settingsKv.key, CONFIG_KEY)))
     .all();
   if (existing.length > 0) return;
 
@@ -92,10 +94,11 @@ function migrateConfigFromJson(db: AdcDatabase, dataDir: string): void {
     const parsed = JSON.parse(raw) as unknown;
 
     if (typeof parsed === 'object' && parsed !== null) {
-      db.insert(notificationConfig)
+      db.insert(settingsKv)
         .values({
           key: CONFIG_KEY,
-          config: parsed,
+          category: CONFIG_CATEGORY,
+          settings: parsed,
           updatedAt: new Date().toISOString(),
         })
         .run();
@@ -129,8 +132,8 @@ export function createNotificationStore(db: AdcDatabase, dataDir: string): Notif
     loadConfig(): NotificationWatcherConfig {
       const row = db
         .select()
-        .from(notificationConfig)
-        .where(eq(notificationConfig.key, CONFIG_KEY))
+        .from(settingsKv)
+        .where(and(eq(settingsKv.category, CONFIG_CATEGORY), eq(settingsKv.key, CONFIG_KEY)))
         .get();
 
       if (!row) {
@@ -138,7 +141,7 @@ export function createNotificationStore(db: AdcDatabase, dataDir: string): Notif
       }
 
       try {
-        const data = row.config as Record<string, unknown>;
+        const data = row.settings as Record<string, unknown>;
         return {
           enabled: typeof data.enabled === 'boolean' ? data.enabled : false,
           slack: {
@@ -160,16 +163,17 @@ export function createNotificationStore(db: AdcDatabase, dataDir: string): Notif
     },
 
     saveConfig(config: NotificationWatcherConfig): void {
-      db.insert(notificationConfig)
+      db.insert(settingsKv)
         .values({
           key: CONFIG_KEY,
-          config: config as unknown,
+          category: CONFIG_CATEGORY,
+          settings: config as unknown,
           updatedAt: new Date().toISOString(),
         })
         .onConflictDoUpdate({
-          target: notificationConfig.key,
+          target: settingsKv.key,
           set: {
-            config: config as unknown,
+            settings: config as unknown,
             updatedAt: new Date().toISOString(),
           },
         })

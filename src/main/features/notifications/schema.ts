@@ -14,8 +14,4 @@ export const notifications = sqliteTable('notifications', {
   index('idx_notifications_timestamp').on(table.timestamp),
 ]);
 
-export const notificationConfig = sqliteTable('notification_config', {
-  key: text('key').primaryKey(), // singleton row
-  config: text('config', { mode: 'json' }).$type<unknown>().notNull(),
-  updatedAt: text('updated_at').notNull(),
-});
+// notification_config has been consolidated into settings_kv (category='notification').

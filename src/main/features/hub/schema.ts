@@ -1,10 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-
-export const hubConfig = sqliteTable('hub_config', {
-  key: text('key').primaryKey(), // singleton 'default'
-  hubUrl: text('hub_url').notNull(),
-  encryptedApiKey: text('encrypted_api_key').notNull(),
-  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
-  lastConnected: text('last_connected'),
-  updatedAt: text('updated_at').notNull(),
-});
+// hub_config has been consolidated into settings_kv (category='hub').
+// This file is kept as a placeholder to avoid breaking the db/schema barrel import.
+// If no other tables are added to the hub feature, this file can be removed
+// and the barrel export updated accordingly.

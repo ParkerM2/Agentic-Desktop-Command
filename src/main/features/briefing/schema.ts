@@ -6,8 +6,4 @@ export const briefings = sqliteTable('briefings', {
   generatedAt: text('generated_at').notNull(),
 });
 
-export const briefingConfig = sqliteTable('briefing_config', {
-  key: text('key').primaryKey(), // singleton row with key='default'
-  config: text('config', { mode: 'json' }).$type<unknown>().notNull(),
-  updatedAt: text('updated_at').notNull(),
-});
+// briefing_config has been consolidated into settings_kv (category='briefing').

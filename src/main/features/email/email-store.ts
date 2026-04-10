@@ -2,15 +2,15 @@
  * Email Store — SQLite-backed persistence for email configuration
  *
  * Migrates from legacy JSON file (email-config.json) on first access.
- * Config is stored as a singleton row in `emailConfig` table (key='default').
+ * Config is stored in `settings_kv` with category='email' and key='default'.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
-import { emailConfig } from '../../db/schema';
+import { settingsKv } from '../../db/schema';
 import { createScopedLogger } from '../../lib/logger';
 
 import { encryptSecret } from './email-encryption';
@@ -21,6 +21,7 @@ import type { AdcDatabase } from '../../db';
 const logger = createScopedLogger('email-store');
 
 const SINGLETON_KEY = 'default';
+const CATEGORY = 'email';
 
 export interface StoredEmailConfig {
   host: string;
@@ -38,11 +39,15 @@ export interface EmailStoreData {
 }
 
 /**
- * Migrate legacy email-config.json into SQLite emailConfig table.
+ * Migrate legacy email-config.json into SQLite settings_kv table.
  */
 export function migrateEmailConfigFromJson(db: AdcDatabase, dataDir: string): boolean {
   // Check if SQLite already has config
-  const existing = db.select().from(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).all();
+  const existing = db
+    .select()
+    .from(settingsKv)
+    .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
+    .all();
   if (existing.length > 0) return false;
 
   const jsonPath = join(dataDir, 'email-config.json');
@@ -54,15 +59,16 @@ export function migrateEmailConfigFromJson(db: AdcDatabase, dataDir: string): bo
     if (!parsed.config) return false;
 
     // Encrypt plaintext password during migration
-    let {config} = parsed;
+    let { config } = parsed;
     if (typeof config.pass === 'string' && config.pass.length > 0) {
       config = { ...config, pass: encryptSecret(config.pass) };
     }
 
-    db.insert(emailConfig)
+    db.insert(settingsKv)
       .values({
         key: SINGLETON_KEY,
-        config: config as unknown,
+        category: CATEGORY,
+        settings: config as unknown,
         updatedAt: new Date().toISOString(),
       })
       .run();
@@ -80,12 +86,16 @@ export function migrateEmailConfigFromJson(db: AdcDatabase, dataDir: string): bo
  * Returns the stored config and whether a plaintext password migration is needed.
  */
 export function loadEmailConfig(db: AdcDatabase): { config: StoredEmailConfig | null; needsMigration: boolean } {
-  const rows = db.select().from(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).all();
+  const rows = db
+    .select()
+    .from(settingsKv)
+    .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
+    .all();
   if (rows.length === 0) {
     return { config: null, needsMigration: false };
   }
 
-  const stored = rows[0].config as StoredEmailConfig;
+  const stored = rows[0].settings as StoredEmailConfig;
   const needsMigration = typeof stored.pass === 'string' && stored.pass.length > 0;
 
   return { config: stored, needsMigration };
@@ -96,7 +106,9 @@ export function loadEmailConfig(db: AdcDatabase): { config: StoredEmailConfig | 
  */
 export function saveEmailConfig(db: AdcDatabase, config: StoredEmailConfig | null): void {
   if (!config) {
-    db.delete(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).run();
+    db.delete(settingsKv)
+      .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
+      .run();
     return;
   }
 
@@ -109,17 +121,22 @@ export function saveEmailConfig(db: AdcDatabase, config: StoredEmailConfig | nul
         : config.pass,
   };
 
-  const existing = db.select().from(emailConfig).where(eq(emailConfig.key, SINGLETON_KEY)).all();
+  const existing = db
+    .select()
+    .from(settingsKv)
+    .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
+    .all();
   if (existing.length > 0) {
-    db.update(emailConfig)
-      .set({ config: toSave as unknown, updatedAt: new Date().toISOString() })
-      .where(eq(emailConfig.key, SINGLETON_KEY))
+    db.update(settingsKv)
+      .set({ settings: toSave as unknown, updatedAt: new Date().toISOString() })
+      .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
       .run();
   } else {
-    db.insert(emailConfig)
+    db.insert(settingsKv)
       .values({
         key: SINGLETON_KEY,
-        config: toSave as unknown,
+        category: CATEGORY,
+        settings: toSave as unknown,
         updatedAt: new Date().toISOString(),
       })
       .run();
