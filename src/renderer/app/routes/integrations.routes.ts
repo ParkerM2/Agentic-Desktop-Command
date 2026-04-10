@@ -1,11 +1,12 @@
 /**
- * Integrations route group
+ * Integrations route group — /integrations + legacy redirects
  */
 
 import {
   type AnyRoute,
   createRoute,
   lazyRouteComponent,
+  redirect,
 } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
@@ -24,5 +25,15 @@ export function createIntegrationsRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
-  return [integrationsRoute] as const;
+  // Legacy /communications → /integrations (slack tab)
+  const communicationsRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTES.COMMUNICATIONS,
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.INTEGRATIONS });
+    },
+  });
+
+  return [integrationsRoute, communicationsRoute] as const;
 }

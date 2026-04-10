@@ -1,71 +1,58 @@
 /**
- * Productivity route group — Planner, notes, alerts, productivity
+ * Productivity route group — legacy redirects to /personal tabs
+ *
+ * All old individual routes now redirect to the consolidated /personal page
+ * with the appropriate tab selected via the `tab` search param.
  */
 
-import {
-  type AnyRoute,
-  createRoute,
-  lazyRouteComponent,
-} from '@tanstack/react-router';
+import { type AnyRoute, createRoute, redirect } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
-
-import { GenericPageSkeleton } from '../components/route-skeletons';
 
 export function createProductivityRoutes(appLayoutRoute: AnyRoute) {
   const alertsRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.ALERTS,
-    staticData: { breadcrumbLabel: 'Alerts' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/personal'),
-      'AlertsPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL, search: { tab: 'alerts' } });
+    },
   });
 
   const notesRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.NOTES,
-    staticData: { breadcrumbLabel: 'Notes' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/personal'),
-      'NotesPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL, search: { tab: 'notes' } });
+    },
   });
 
   const plannerRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.PLANNER,
-    staticData: { breadcrumbLabel: 'Planner' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/personal'),
-      'PlannerPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL, search: { tab: 'planner' } });
+    },
   });
 
   const plannerWeeklyRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.PLANNER_WEEKLY,
-    staticData: { breadcrumbLabel: 'Weekly Review' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/personal'),
-      'WeeklyReviewPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL, search: { tab: 'planner' } });
+    },
   });
 
   const productivityRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.PRODUCTIVITY,
-    staticData: { breadcrumbLabel: 'Productivity' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/productivity'),
-      'ProductivityPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL });
+    },
   });
 
   return [

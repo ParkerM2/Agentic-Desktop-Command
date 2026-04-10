@@ -128,7 +128,7 @@ test.describe('Sidebar Mechanics', () => {
     const sidebar = page.locator('aside');
 
     // Navigate to several pages, verify sidebar stays visible each time
-    const pages = ['Dashboard', 'Briefing', 'Notes', 'Fitness', 'Alerts'];
+    const pages = ['Dashboard', 'My Work', 'Personal', 'Integrations'];
 
     for (const label of pages) {
       await navigateToSidebarItem(page, label);
@@ -160,8 +160,8 @@ test.describe('Sidebar Mechanics', () => {
 
     // Perform various sidebar interactions
     await navigateToSidebarItem(page, 'Dashboard');
-    await navigateToSidebarItem(page, 'Notes');
-    await navigateToSidebarItem(page, 'Fitness');
+    await navigateToSidebarItem(page, 'Personal');
+    await navigateToSidebarItem(page, 'Integrations');
 
     // Collapse and expand
     await toggleSidebarCollapse(page);

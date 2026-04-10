@@ -2,8 +2,9 @@
  * PersonalPage — Tabbed layout for personal features
  */
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 
+import { useSearch } from '@tanstack/react-router';
 import { Bell, CalendarDays, Dumbbell, Newspaper, ScrollText, StickyNote } from 'lucide-react';
 
 import { PageContent, PageHeader, PageLayout, Spinner } from '@ui';
@@ -54,6 +55,16 @@ function TabFallback() {
 
 export function PersonalPage() {
   const { activeTab, setActiveTab } = usePersonalStore();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const search = useSearch({ strict: false });
+  const tabFromUrl = (search as { tab?: string } | undefined)?.tab;
+
+  // Sync URL ?tab= param to store on mount / when URL changes
+  useEffect(() => {
+    if (tabFromUrl !== undefined) {
+      setActiveTab(tabFromUrl as typeof activeTab);
+    }
+  }, [tabFromUrl, setActiveTab]);
 
   return (
     <PageLayout data-testid="personal-page">

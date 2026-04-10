@@ -1,38 +1,30 @@
 /**
- * Misc route group — Fitness, briefing
+ * Misc route group — legacy redirects to /personal tabs
+ *
+ * /briefing and /fitness were individual pages; now they are tabs under /personal.
  */
 
-import {
-  type AnyRoute,
-  createRoute,
-  lazyRouteComponent,
-} from '@tanstack/react-router';
+import { type AnyRoute, createRoute, redirect } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
-
-import { GenericPageSkeleton } from '../components/route-skeletons';
 
 export function createMiscRoutes(appLayoutRoute: AnyRoute) {
   const briefingRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.BRIEFING,
-    staticData: { breadcrumbLabel: 'Briefing' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/personal'),
-      'BriefingPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL, search: { tab: 'briefing' } });
+    },
   });
 
   const fitnessRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTES.FITNESS,
-    staticData: { breadcrumbLabel: 'Fitness' },
-    pendingComponent: GenericPageSkeleton,
-    component: lazyRouteComponent(
-      () => import('@features/personal'),
-      'FitnessPage',
-    ),
+    beforeLoad: () => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
+      throw redirect({ to: ROUTES.PERSONAL, search: { tab: 'fitness' } });
+    },
   });
 
   return [briefingRoute, fitnessRoute] as const;

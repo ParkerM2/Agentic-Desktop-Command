@@ -9,14 +9,14 @@
 import {
   Bot,
   Briefcase,
-  Dumbbell,
   GitBranch,
-  Headphones,
   Home,
   ListTodo,
   Map,
   Network,
+  Plug,
   Terminal,
+  User,
   Wrench,
 } from 'lucide-react';
 
@@ -34,12 +34,12 @@ export interface NavItem {
 
 // ── Navigation Data ────────────────────────────────────────────
 
-/** Personal nav items (not project-scoped) */
+/** Top-level nav items (not project-scoped) */
 export const personalItems: NavItem[] = [
-  { label: 'Home', icon: Home, path: ROUTES.DASHBOARD },
+  { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
-  { label: 'Fitness', icon: Dumbbell, path: ROUTES.FITNESS },
-  { label: 'Productivity', icon: Headphones, path: ROUTES.PRODUCTIVITY },
+  { label: 'Personal', icon: User, path: ROUTES.PERSONAL },
+  { label: 'Integrations', icon: Plug, path: ROUTES.INTEGRATIONS },
 ];
 
 /** Development nav items (project-scoped) */

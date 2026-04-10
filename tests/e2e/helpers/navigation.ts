@@ -12,23 +12,23 @@ import type { Page } from 'playwright';
 // ─── Constants ────────────────────────────────────────────────
 
 /**
- * Top-level sidebar navigation labels (matches Sidebar.tsx personalItems).
- * Briefing, Notes, Planner, Alerts, Comms were moved to Productivity tabs
- * in the ui-layout-refactor and are no longer sidebar items.
+ * Top-level sidebar navigation labels (matches shared-nav.ts personalItems).
+ * Old individual pages (Fitness, Productivity, Notes, etc.) are now tabs under
+ * /personal or /integrations and are no longer top-level sidebar items.
  */
 export const TOP_LEVEL_NAV_ITEMS = [
   'Dashboard',
   'My Work',
-  'Fitness',
-  'Productivity',
+  'Personal',
+  'Integrations',
 ] as const;
 
 /** Expected URL path segments for each top-level sidebar label. */
 export const ROUTE_URL_MAP: Record<string, string> = {
   Dashboard: '/dashboard',
   'My Work': '/my-work',
-  Fitness: '/fitness',
-  Productivity: '/productivity',
+  Personal: '/personal',
+  Integrations: '/integrations',
 };
 
 /** Project-scoped sidebar navigation labels (matches Sidebar.tsx projectItems). */
