@@ -55,6 +55,7 @@ import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
+import { qaRecorderEvents, qaRecorderInvoke } from './qa-recorder';
 import {
   hotkeysInvoke,
   screenInvoke,
@@ -105,6 +106,7 @@ export const ipcInvokeContract = {
   ...dockerInvoke,
   ...windowInvoke,
   ...qaInvoke,
+  ...qaRecorderInvoke,
   ...timeInvoke,
   ...mcpInvoke,
   ...claudeInvoke,
@@ -153,6 +155,7 @@ export const ipcEventContract = {
   ...notificationsEvents,
   ...briefingEvents,
   ...qaEvents,
+  ...qaRecorderEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
   ...authEvents,
