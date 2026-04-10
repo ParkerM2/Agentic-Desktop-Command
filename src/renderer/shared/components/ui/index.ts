@@ -287,3 +287,9 @@ export type { InlineAlertProps } from './inline-alert';
 
 export { ThinkingIndicator, thinkingVariants } from './thinking-indicator';
 export type { ThinkingIndicatorProps } from './thinking-indicator';
+
+// Tier 5: Composition Components
+export * from './composition';
+
+// Tier 6: Data Display Components
+export * from './data-display';
