@@ -456,7 +456,7 @@ export function createServiceRegistry(
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
   const qaRecorderService = lazyService(() => createQaRecorderService(db));
   const qaTrigger = lazyService(() =>
-    createQaTrigger({ qaRunner, busSessionManager, taskRepository, router }),
+    createQaTrigger({ qaRunner, busSessionManager, taskRepository, router, qaRecorderService }),
   );
 
   // ─── Tier 1: App update + hotkeys ────────────────────────────

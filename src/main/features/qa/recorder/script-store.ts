@@ -13,6 +13,8 @@ export interface QaScript {
   id: string;
   name: string;
   description?: string;
+  filePath?: string;
+  projectId?: string;
   steps: unknown[];
   createdAt: string;
   updatedAt: string;
@@ -20,6 +22,7 @@ export interface QaScript {
 
 export interface ScriptStore {
   list: () => QaScript[];
+  listByProject: (projectId: string) => QaScript[];
   get: (id: string) => QaScript | null;
   save: (data: {
     id?: string;
@@ -35,6 +38,8 @@ function toQaScript(row: typeof qaScripts.$inferSelect): QaScript {
     id: row.id,
     name: row.name,
     description: undefined,
+    filePath: row.filePath ?? undefined,
+    projectId: row.projectId ?? undefined,
     steps: row.steps,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -45,6 +50,10 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
   return {
     list() {
       return db.select().from(qaScripts).all().map(toQaScript);
+    },
+
+    listByProject(projectId) {
+      return db.select().from(qaScripts).where(eq(qaScripts.projectId, projectId)).all().map(toQaScript);
     },
 
     get(id) {
