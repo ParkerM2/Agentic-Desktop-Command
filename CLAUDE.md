@@ -63,8 +63,46 @@ const result = await ipc(PROGRESS.CREATE.TASK, { slug, title });
 - Command bus: `src/main/bus/`
 - Database schema: `src/main/db/schema.ts`
 - Channel constants: `src/shared/ipc/<domain>/channels.ts`
+- Relay service: `src/main/features/relay/relay-service.ts`
+- Relay IPC contract: `src/shared/ipc/relay/`
+- Relay channel constants: `src/shared/ipc/relay/channels.ts`
+- Relay types: `src/shared/types/relay.ts`
 - Worktree setup script: `scripts/worktree-setup.sh`
 - Worktree include list: `.worktreeinclude`
+
+## Hub Relay (Cross-Device Session Management)
+
+Remote session relay between devices through the Hub. Allows claiming projects on remote devices and streaming agent sessions.
+
+**IPC domain:** `relay`
+**Contract:** `src/shared/ipc/relay/contract.ts`
+**Types:** `src/shared/types/relay.ts` — `RelayEnvelope`, `RelaySession`, `ProjectClaimEvent`, `ClaimReclaimedEvent`
+**Service:** `src/main/features/relay/relay-service.ts` — `createRelayService(deps)`
+**Handler:** `src/main/features/relay/relay-handlers.ts`
+
+### Invoke Channels (8 total)
+
+| Channel | Input | Output | Description |
+|---------|-------|--------|-------------|
+| `relay.claim.project` | `{ projectId }` | `ClaimResult` | Claim a remote project |
+| `relay.release.project` | `{ projectId }` | `void` | Release a project claim |
+| `relay.reclaim.project` | `{ projectId }` | `void` | Force-reclaim a project |
+| `relay.spawn.session` | `{ projectId, agentRole, prompt, workDir }` | `{ sessionId }` | Spawn remote session |
+| `relay.send.input` | `{ sessionId, data }` | `{ success }` | Send input to relay session |
+| `relay.list.sessions` | `{ projectId }` | `RelaySession[]` | List active relay sessions |
+| `relay.get.buffer` | `{ sessionId }` | `{ sessionId, messages }` | Get buffered session messages |
+| `relay.renew.claim` | `{ projectId }` | `{ success, renewedAt }` | Renew a project claim |
+
+### Event Channels (6 total)
+
+| Channel | Payload | When |
+|---------|---------|------|
+| `event:relay.project.claimed` | `{ projectId, claimedByDeviceId, claimedAt }` | Project claimed |
+| `event:relay.project.unclaimed` | `{ projectId, unclaimedAt }` | Project released |
+| `event:relay.session.spawned` | `{ sessionId, projectId, agentRole }` | Remote session spawned |
+| `event:relay.session.output` | `{ sessionId, data, stream }` | Session output received |
+| `event:relay.session.ended` | `{ sessionId, exitCode, endedAt }` | Session ended |
+| `event:relay.claim.reclaimed` | `{ projectId, reclaimedByDeviceId, reclaimedAt }` | Claim force-reclaimed |
 
 ## Progress Task Pipeline
 

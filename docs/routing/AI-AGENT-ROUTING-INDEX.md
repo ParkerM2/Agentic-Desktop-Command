@@ -47,6 +47,7 @@ Each row traces a domain from shared types through to the rendered route.
 | productivity | -- | -- (aggregates calendar + spotify) | -- | -- | `features/productivity/` | `productivity.routes.ts` |
 | projects | `types/project.ts` | `ipc/projects/` | `services/project/` | `handlers/project-handlers.ts` | `features/projects/` | `project.routes.ts` |
 | qa | -- | `ipc/qa/` | `services/qa/` | `handlers/qa-handlers.ts` | `features/tasks/` (`useQaMutations`) | -- |
+| relay | `types/relay.ts` | `ipc/relay/` | `features/relay/relay-service.ts` | `features/relay/relay-handlers.ts` | `features/projects/` (claim UI), `features/workspace/` (session relay) | `project.routes.ts` |
 | roadmap | `types/milestone.ts` (shared) | `ipc/misc/milestones.contract.ts` (shared) | `services/milestones/` (shared) | `handlers/milestones-handlers.ts` (shared) | `features/roadmap/` | `project.routes.ts` |
 | settings | `types/settings.ts` | `ipc/settings/` | `services/settings/` | `handlers/settings-handlers.ts`, `webhook-settings-handlers.ts` | `features/settings/` | `settings.routes.ts` |
 | spotify | -- | `ipc/spotify/` | `services/spotify/` | `handlers/spotify-handlers.ts` | `features/productivity/` | `productivity.routes.ts` |
