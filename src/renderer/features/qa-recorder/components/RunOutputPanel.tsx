@@ -17,6 +17,7 @@ import {
   CardTitle,
   ScrollArea,
   Spinner,
+  Stack,
   Text,
 } from '@ui';
 
@@ -68,10 +69,11 @@ export function RunOutputPanel() {
       </CardHeader>
       <CardContent className="min-h-0 flex-1 p-0">
         <ScrollArea className="h-full font-mono" data-testid="run-output-scroll">
-          <div
+          <Stack
             ref={scrollRef}
             className="space-y-0.5 p-3"
             data-testid="run-output-lines"
+          gap="none"
           >
             {outputLines.length === 0 && !isRunning ? (
               <Text className="text-xs text-muted-foreground">
@@ -88,7 +90,7 @@ export function RunOutputPanel() {
                 </Text>
               ))
             )}
-          </div>
+          </Stack>
         </ScrollArea>
       </CardContent>
     </Card>

@@ -15,6 +15,8 @@ import {
 
 import {
   Badge,
+  Flex,
+  Stack,
   Card,
   CardContent,
   CardHeader,
@@ -117,32 +119,34 @@ export function StepPanel({ steps: propSteps }: StepPanelProps) {
           />
         ) : (
           <ScrollArea className="h-full" data-testid="step-panel-list">
-            <div className="space-y-1 p-3">
+            <Stack className="p-3" gap="sm">
               {steps.map((step, idx) => {
                 const Icon = STEP_ICONS[step.type];
                 const key = `${step.type}-${idx}`;
                 return (
-                  <div
+                  <Flex
                     key={key}
-                    className="flex items-start gap-2 rounded-md p-2 text-sm hover:bg-muted/50"
-                    data-testid={`step-item-${idx}`}
+                    align="start"
+                    className="rounded-md p-2 text-sm hover:bg-muted/50"
+                  data-testid="step-item-"
+                  gap="sm"
                   >
                     <Text className="w-5 shrink-0 text-xs text-muted-foreground">
                       {idx + 1}
                     </Text>
                     <Icon className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0 flex-1">
+                    <Stack className="min-w-0 flex-1" gap="none">
                       <Badge className="mb-0.5 text-xs" variant="outline">
                         {STEP_LABELS[step.type]}
                       </Badge>
                       <Text className="truncate text-xs text-muted-foreground">
                         {stepDescription(step)}
                       </Text>
-                    </div>
-                  </div>
+                    </Stack>
+                  </Flex>
                 );
               })}
-            </div>
+            </Stack>
           </ScrollArea>
         )}
       </CardContent>
