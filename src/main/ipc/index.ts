@@ -56,8 +56,6 @@ import { registerVoiceHandlers } from '../features/voice/voice-handlers';
 import { registerWebhookSettingsHandlers } from '../features/webhook-settings/webhook-settings-handlers';
 import { registerWindowHandlers } from '../features/window/window-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
-import { registerWorkflowEngineHandlers } from '../features/workflow-engine/workflow-engine-handlers';
-import { registerWorkflowTemplateHandlers } from '../features/workflow-templates/workflow-template-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
 
 
@@ -119,8 +117,8 @@ import type { TimeParserService } from '../features/time-parser/time-parser-serv
 import type { TrackerService } from '../features/tracker/tracker-service';
 import type { VisualizationService } from '../features/visualization';
 import type { VoiceService } from '../features/voice/voice-service';
-import type { WorkflowEngineService } from '../features/workflow-engine';
-import type { WorkflowTemplateService } from '../features/workflow-templates';
+import type { WorkflowEngineService } from '../features/workflow/engine';
+import type { WorkflowTemplateService } from '../features/workflow/templates';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { AgentManagerService } from '../services/agent-manager';
@@ -269,8 +267,12 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerBriefingHandlers(router, services.briefingService);
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
   registerAppUpdateHandlers(router, services.appUpdateService);
-  registerWorkflowHandlers(router, services.hubApiClient);
-  registerWorkflowTemplateHandlers(router, services.workflowTemplateService);
+  registerWorkflowHandlers(
+    router,
+    services.hubApiClient,
+    services.workflowEngineService,
+    services.workflowTemplateService,
+  );
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);
   registerQaHandlers(
@@ -291,7 +293,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerDataDirHandlers(router, services.configReader, services.dataMigrator);
   registerWindowHandlers(router);
-  registerWorkflowEngineHandlers(router, services.workflowEngineService);
   registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
