@@ -52,6 +52,7 @@ import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
+import { relayEvents, relayInvoke } from './relay';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
 import { securityInvoke } from './security';
@@ -124,6 +125,8 @@ export const ipcInvokeContract = {
 
   ...progressInvoke,
 
+  ...relayInvoke,
+
   ...busInvoke,
 } as const;
 
@@ -162,6 +165,8 @@ export const ipcEventContract = {
   ...workflowTemplatesEvents,
   ...workflowEngineEvents,
   ...progressEvents,
+
+  ...relayEvents,
 
   ...busEvents,
 } as const;
@@ -506,3 +511,32 @@ export {
   progressTaskSchema,
   workflowStepStatusSchema,
 } from './progress';
+
+export {
+  relayClaimProjectInputSchema,
+  relayClaimProjectOutputSchema,
+  relayClaimReclaimedPayloadSchema,
+  relayGetSessionBufferInputSchema,
+  relayGetSessionBufferOutputSchema,
+  relayListSessionsInputSchema,
+  relayMessageTypeSchema,
+  relayProjectClaimedPayloadSchema,
+  relayProjectUnclaimedPayloadSchema,
+  relayReclaimProjectInputSchema,
+  relayReclaimProjectOutputSchema,
+  relayReleaseProjectInputSchema,
+  relayReleaseProjectOutputSchema,
+  relayRenewClaimInputSchema,
+  relayRenewClaimOutputSchema,
+  relaySendInputInputSchema,
+  relaySendInputOutputSchema,
+  relaySessionEndedPayloadSchema,
+  relaySessionOutputPayloadSchema,
+  relaySessionSchema,
+  relaySessionSourceSchema,
+  relaySessionSpawnedPayloadSchema,
+  relaySessionStatusSchema,
+  relaySpawnSessionInputSchema,
+  relaySpawnSessionOutputSchema,
+  relayStreamSchema,
+} from './relay';

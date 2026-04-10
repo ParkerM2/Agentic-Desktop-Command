@@ -14,6 +14,9 @@ export interface Project {
   description?: string;
   createdAt: string;
   updatedAt: string;
+  hubDeviceId?: string;
+  isRemote?: boolean;
+  claimedBy?: string;
 }
 
 export interface SubProject {
