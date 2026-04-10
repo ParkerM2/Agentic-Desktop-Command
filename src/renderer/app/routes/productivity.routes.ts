@@ -19,7 +19,7 @@ export function createProductivityRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Alerts' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/alerts'),
+      () => import('@features/personal'),
       'AlertsPage',
     ),
   });
@@ -30,7 +30,7 @@ export function createProductivityRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Notes' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/notes'),
+      () => import('@features/personal'),
       'NotesPage',
     ),
   });
@@ -41,7 +41,7 @@ export function createProductivityRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Planner' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/planner'),
+      () => import('@features/personal'),
       'PlannerPage',
     ),
   });
@@ -52,7 +52,7 @@ export function createProductivityRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Weekly Review' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/planner'),
+      () => import('@features/personal'),
       'WeeklyReviewPage',
     ),
   });

@@ -26,6 +26,7 @@ export const ROUTES = {
   SETTINGS: '/settings',
   AGENTS: '/agents',
   THEMES: '/settings/themes',
+  PERSONAL: '/personal',
 } as const;
 
 /** Project sub-view path segments (appended to /projects/$projectId/) */

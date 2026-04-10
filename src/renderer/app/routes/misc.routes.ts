@@ -19,7 +19,7 @@ export function createMiscRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Briefing' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/briefing'),
+      () => import('@features/personal'),
       'BriefingPage',
     ),
   });
@@ -30,7 +30,7 @@ export function createMiscRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Fitness' },
     pendingComponent: GenericPageSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/fitness'),
+      () => import('@features/personal'),
       'FitnessPage',
     ),
   });

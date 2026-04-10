@@ -29,6 +29,7 @@ import {
   createCommunicationRoutes,
   createDashboardRoutes,
   createMiscRoutes,
+  createPersonalRoutes,
   createProductivityRoutes,
   createProjectRoutes,
   createSettingsRoutes,
@@ -103,6 +104,7 @@ const { loginRoute, registerRoute, hubSetupRoute } = createAuthRoutes(rootRoute)
 
 const dashboardRoutes = createDashboardRoutes(appLayoutRoute);
 const projectRoutes = createProjectRoutes(appLayoutRoute);
+const personalRoutes = createPersonalRoutes(appLayoutRoute);
 const productivityRoutes = createProductivityRoutes(appLayoutRoute);
 const communicationRoutes = createCommunicationRoutes(appLayoutRoute);
 const settingsRoutes = createSettingsRoutes(appLayoutRoute);
@@ -119,6 +121,7 @@ const routeTree = rootRoute.addChildren([
       indexRoute,
       ...dashboardRoutes,
       ...projectRoutes,
+      ...personalRoutes,
       ...productivityRoutes,
       ...communicationRoutes,
       ...settingsRoutes,
