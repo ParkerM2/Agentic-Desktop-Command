@@ -35,7 +35,6 @@ import { createWatchStore } from '../features/assistant/watch-store';
 import { createUserSessionManager } from '../features/auth';
 import { createBriefingService } from '../features/briefing/briefing-service';
 import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
-import { createCalendarService } from '../features/calendar/calendar-service';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
@@ -49,13 +48,11 @@ import { createCleanupService } from '../features/data-management/cleanup-servic
 import { createStorageInspector } from '../features/data-management/storage-inspector';
 import { createDeviceService } from '../features/device/device-service';
 import { createDockerService } from '../features/docker/docker-service';
-import { createEmailService } from '../features/email/email-service';
 import { createFileTreeService } from '../features/file-tree/file-tree-service';
 import { createFitnessService } from '../features/fitness/fitness-service';
 import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
-import { createGitHubService } from '../features/github/github-service';
 import { createErrorCollector } from '../features/health/error-collector';
 import { createHealthRegistry } from '../features/health/health-registry';
 import { createHealthService } from '../features/health/health-service';
@@ -66,14 +63,10 @@ import { createHubSyncService } from '../features/hub/hub-sync';
 import { createWebhookRelay } from '../features/hub/webhook-relay';
 import { createIdeasService } from '../features/ideas/ideas-service';
 import { createInsightsService } from '../features/insights/insights-service';
+import { createIntegrationsService } from '../features/integrations/integrations-service';
 import { createMergeService } from '../features/merge/merge-service';
 import { createMilestonesService } from '../features/milestones/milestones-service';
 import { createNotesService } from '../features/notes/notes-service';
-import {
-  createGitHubWatcher,
-  createNotificationManager,
-  createSlackWatcher,
-} from '../features/notifications';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
 import { createClaudeMdGenerator } from '../features/project/claudemd-generator';
@@ -88,7 +81,6 @@ import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
 import { createScreenCaptureService } from '../features/screen/screen-capture-service';
 import { createSettingsService } from '../features/settings/settings-service';
-import { createSpotifyService } from '../features/spotify/spotify-service';
 import {
   createGithubImporter,
   createTaskDecomposer,
@@ -121,6 +113,7 @@ import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
+import type { NotificationManager } from '../features/integrations/notifications';
 import type { TaskRepository } from '../features/tasks/types';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
@@ -147,7 +140,7 @@ export interface ServiceRegistryResult {
   hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
   terminalService: ReturnType<typeof createTerminalService>;
   alertService: ReturnType<typeof createAlertService>;
-  notificationManager: ReturnType<typeof createNotificationManager>;
+  notificationManager: NotificationManager;
   briefingService: ReturnType<typeof createBriefingService>;
   hotkeyManager: ReturnType<typeof createHotkeyManager>;
   quickInput: ReturnType<typeof createQuickInputWindow>;
@@ -318,7 +311,6 @@ export function createServiceRegistry(
   const worktreeService = lazyService(() => createWorktreeService((id) => projectService.getProjectPath(id)));
   const mergeService = lazyService(() => createMergeService());
   const githubCliClient = lazyService(() => createGitHubCliClient());
-  const githubService = lazyService(() => createGitHubService({ client: githubCliClient, router }));
   const worktreeProvisioner = lazyService(() => createWorktreeProvisioner());
   const workspaceSessionManager = lazyService(() =>
     createWorkspaceSessionManager(agentManagerService, worktreeProvisioner, getMainWindow, busSessionManager),
@@ -363,15 +355,23 @@ export function createServiceRegistry(
   const ideasService = lazyService(() => createIdeasService({ db, dataDir, router }));
   const changelogService = lazyService(() => createChangelogService({ db, router, dataDir }));
   const fitnessService = lazyService(() => createFitnessService({ db, dataDir, router }));
-  const emailService = lazyService(() => createEmailService({ db, dataDir, router }));
   const dockerService = lazyService(() => createDockerService());
   const voiceService = lazyService(() => createVoiceService({ db }));
   const screenCaptureService = lazyService(() => createScreenCaptureService());
 
-  // ─── Tier 1: External integrations ───────────────────────────
+  // ─── Tier 1: External integrations (unified) ─────────────────
 
-  const spotifyService = lazyService(() => createSpotifyService({ oauthManager }));
-  const calendarService = lazyService(() => createCalendarService({ oauthManager }));
+  const integrationsService = lazyService(() =>
+    createIntegrationsService({ db, dataDir, router, oauthManager, githubCliClient }),
+  );
+
+  // Convenience accessors — expose sub-services from the unified service
+  const emailService = lazyService(() => integrationsService.email);
+  const notificationManager = lazyService(() => integrationsService.notifications);
+  const spotifyService = lazyService(() => integrationsService.spotify);
+  const githubService = lazyService(() => integrationsService.github);
+  const calendarService = lazyService(() => integrationsService.calendar);
+
   const claudeClient = lazyService(() =>
     createClaudeClient({
       router,
@@ -381,28 +381,6 @@ export function createServiceRegistry(
   const insightsService = lazyService(() =>
     createInsightsService({ taskService, projectService, busSessionManager, qaRunner }),
   );
-
-  // ─── Tier 1: Notifications ────────────────────────────────────
-
-  const notificationManager = lazyService(() => {
-    const mgr = createNotificationManager(router, db, dataDir);
-    const slackWatcher = createSlackWatcher({
-      oauthManager,
-      router,
-      notificationManager: mgr,
-      getConfig: () => mgr.getConfig().slack,
-    });
-    mgr.registerWatcher(slackWatcher);
-    const githubWatcher = createGitHubWatcher({
-      router,
-      notificationManager: mgr,
-      getConfig: () => mgr.getConfig().github,
-    });
-    mgr.registerWatcher(githubWatcher);
-    const notifConfig = mgr.getConfig();
-    if (notifConfig.enabled) mgr.startWatching();
-    return mgr;
-  });
 
   // ─── Tier 1: Alert + terminal ─────────────────────────────────
 
