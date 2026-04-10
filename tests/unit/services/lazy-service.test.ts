@@ -10,7 +10,7 @@
  * - TypeScript type inference (validated via compile-time checks)
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { lazyService } from '@main/lib/lazy-service';
 
@@ -18,7 +18,7 @@ import { lazyService } from '@main/lib/lazy-service';
 
 interface FooService {
   name: string;
-  greet(): string;
+  greet: () => string;
   value: number;
 }
 
@@ -76,11 +76,11 @@ describe('lazyService', () => {
       const factory = vi.fn(makeFooFactory());
       const proxy = lazyService(factory);
 
-      // Multiple accesses
-      const _ = proxy.name;
-      const __ = proxy.value;
-      const ___ = proxy.greet();
-      const ____ = proxy.name;
+      // Multiple accesses — void each to trigger initialization without storing results
+      void proxy.name;
+      void proxy.value;
+      void proxy.greet();
+      void proxy.name;
 
       expect(factory).toHaveBeenCalledTimes(1);
     });
@@ -185,8 +185,8 @@ describe('lazyService', () => {
       expect(() => proxy.name).toThrow();
 
       // Second and third accesses succeed and reuse the same instance
-      const _ = proxy.name;
-      const __ = proxy.name;
+      void proxy.name;
+      void proxy.name;
 
       expect(factory).toHaveBeenCalledTimes(2);
     });
@@ -238,12 +238,12 @@ describe('lazyService', () => {
     it('works with complex nested object types', () => {
       interface DeepService {
         config: { timeout: number; retries: number };
-        run(input: string): Promise<string>;
+        run: (input: string) => Promise<string>;
       }
 
       const factory = (): DeepService => ({
         config: { timeout: 5000, retries: 3 },
-        run: async (input: string) => `result: ${input}`,
+        run: (input: string) => Promise.resolve(`result: ${input}`),
       });
 
       const proxy = lazyService(factory);
