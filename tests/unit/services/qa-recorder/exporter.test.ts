@@ -25,6 +25,11 @@ const { createExporter } = await import('@main/features/qa/recorder/exporter');
 const mockMkdirSync = mkdirSync as ReturnType<typeof vi.fn>;
 const mockWriteFileSync = writeFileSync as ReturnType<typeof vi.fn>;
 
+/** Normalise Windows backslashes so path assertions work cross-platform. */
+function normPath(p: string): string {
+  return p.replaceAll('\\', '/');
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function runExport(overrides: {
@@ -61,33 +66,26 @@ describe('QaExporter', () => {
   describe('file structure', () => {
     it('creates the output directory recursively', () => {
       runExport({});
-      expect(mockMkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining('tests/e2e/recorded'),
-        { recursive: true },
-      );
+      const [dirArg] = mockMkdirSync.mock.calls[0] as [string];
+      expect(normPath(dirArg)).toContain('tests/e2e/recorded');
+      expect(mockMkdirSync).toHaveBeenCalledWith(expect.anything(), { recursive: true });
     });
 
     it('writes a .spec.ts file', () => {
       runExport({ scriptName: 'Login Flow' });
-      expect(mockWriteFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('Login_Flow.spec.ts'),
-        expect.any(String),
-        'utf-8',
-      );
+      const [fileArg] = mockWriteFileSync.mock.calls[0] as [string];
+      expect(normPath(fileArg)).toContain('Login_Flow.spec.ts');
     });
 
     it('sanitizes the script name for the file name', () => {
       runExport({ scriptName: '123 invalid!name' });
-      expect(mockWriteFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('_123_invalid_name.spec.ts'),
-        expect.any(String),
-        'utf-8',
-      );
+      const [fileArg] = mockWriteFileSync.mock.calls[0] as [string];
+      expect(normPath(fileArg)).toContain('_123_invalid_name.spec.ts');
     });
 
     it('returns the filePath and content', () => {
       const result = runExport({ scriptName: 'My Script' });
-      expect(result.filePath).toContain('My_Script.spec.ts');
+      expect(normPath(result.filePath)).toContain('My_Script.spec.ts');
       expect(result.content).toBeTypeOf('string');
     });
   });
