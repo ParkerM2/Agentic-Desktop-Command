@@ -23,8 +23,8 @@ import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../integrations/notifications';
+import type { ProgressService } from '../progress/progress-service';
 import type { ProjectService } from '../project/project-service';
-import type { TaskService } from '../project/task-service';
 
 const BRIEFING_READY_EVENT = BRIEFING_EVENTS.BRIEFING.READY;
 
@@ -39,7 +39,7 @@ export interface BriefingService extends ReinitializableService {
   /** Update briefing configuration */
   updateConfig: (updates: Partial<BriefingConfig>) => BriefingConfig;
   /** Get proactive suggestions */
-  getSuggestions: () => Suggestion[];
+  getSuggestions: () => Promise<Suggestion[]>;
   /** Start the scheduled briefing checker */
   startScheduler: () => void;
   /** Stop the scheduled briefing checker */
@@ -52,7 +52,7 @@ export interface BriefingServiceDeps {
   dataDir: string;
   router: IpcRouter;
   projectService: ProjectService;
-  taskService: TaskService;
+  progressService: ProgressService;
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
@@ -68,8 +68,7 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
   let configManager = createBriefingConfigManager(db, dataDir);
   let cache = createBriefingCache(db, dataDir);
   const generator = createBriefingGenerator({
-    projectService: deps.projectService,
-    taskService: deps.taskService,
+    progressService: deps.progressService,
     claudeClient: deps.claudeClient,
     notificationManager: deps.notificationManager,
     suggestionEngine: deps.suggestionEngine,
@@ -124,7 +123,7 @@ export function createBriefingService(deps: BriefingServiceDeps): BriefingServic
       return updated;
     },
 
-    getSuggestions: () => suggestionEngine.getSuggestions(),
+    getSuggestions: () => suggestionEngine.getSuggestions(),  // returns Promise<Suggestion[]>
 
     startScheduler() {
       if (schedulerInterval !== null) return;

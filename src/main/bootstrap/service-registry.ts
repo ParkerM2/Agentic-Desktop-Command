@@ -397,7 +397,7 @@ export function createServiceRegistry(
   // ─── Tier 1: Briefing + suggestions ──────────────────────────
 
   const suggestionEngine = lazyService(() =>
-    createSuggestionEngine({ projectService, taskService, busSessionManager }),
+    createSuggestionEngine({ projectService, progressService, busSessionManager }),
   );
 
   const briefingService = lazyService(() => {
@@ -406,7 +406,7 @@ export function createServiceRegistry(
       dataDir,
       router,
       projectService,
-      taskService,
+      progressService,
       claudeClient,
       notificationManager,
       suggestionEngine,

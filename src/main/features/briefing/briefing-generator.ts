@@ -13,13 +13,11 @@ import type { SuggestionEngine } from './suggestion-engine';
 import type { BusSessionManager } from '../../bus/session-manager';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../integrations/notifications';
-import type { ProjectService } from '../project/project-service';
-import type { TaskService } from '../project/task-service';
+import type { ProgressService } from '../progress/progress-service';
 
 /** Dependencies for the briefing generator */
 export interface BriefingGeneratorDeps {
-  projectService: ProjectService;
-  taskService: TaskService;
+  progressService: ProgressService;
   claudeClient: ClaudeClient;
   notificationManager?: NotificationManager;
   suggestionEngine: SuggestionEngine;
@@ -36,8 +34,7 @@ export interface BriefingGenerator {
  */
 export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGenerator {
   const {
-    projectService,
-    taskService,
+    progressService,
     notificationManager,
     suggestionEngine,
     busSessionManager,
@@ -72,8 +69,8 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
   }
 
   function isDueToday(task: { status: string; createdAt: string }, today: string): boolean {
-    if (task.status !== 'queued' && task.status !== 'backlog') return false;
-    return task.createdAt.split('T')[0] === today || task.status === 'queued';
+    if (task.status !== 'backlog' && task.status !== 'plan_ready') return false;
+    return task.createdAt.split('T')[0] === today || task.status === 'plan_ready';
   }
 
   function isOverdue(task: { status: string; updatedAt: string }): boolean {
@@ -84,8 +81,7 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
 
   // -- Data gathering --
 
-  function getTaskSummary(): TaskSummary {
-    const projects = projectService.listProjectsSync();
+  async function getTaskSummary(): Promise<TaskSummary> {
     const today = getTodayDate();
     const yesterday = getYesterdayDate();
 
@@ -94,14 +90,12 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
     let overdue = 0;
     let inProgress = 0;
 
-    for (const project of projects) {
-      const tasks = taskService.listTasks(project.id);
-      for (const task of tasks) {
-        if (task.status === 'running') inProgress++;
-        if (isCompletedYesterday(task, yesterday)) completedYesterday++;
-        if (isDueToday(task, today)) dueToday++;
-        if (isOverdue(task)) overdue++;
-      }
+    const tasks = await progressService.listTasks();
+    for (const task of tasks) {
+      if (task.status === 'executing') inProgress++;
+      if (isCompletedYesterday(task, yesterday)) completedYesterday++;
+      if (isDueToday(task, today)) dueToday++;
+      if (isOverdue(task)) overdue++;
     }
 
     return { dueToday, completedYesterday, overdue, inProgress };
@@ -137,11 +131,11 @@ export function createBriefingGenerator(deps: BriefingGeneratorDeps): BriefingGe
 
   return {
     async generate(config) {
-      const taskSummary = getTaskSummary();
+      const taskSummary = await getTaskSummary();
       const agentActivity = config.includeAgentActivity
         ? getAgentActivitySummary()
         : { runningCount: 0, completedToday: 0, errorCount: 0 };
-      const suggestions = suggestionEngine.getSuggestions();
+      const suggestions = await suggestionEngine.getSuggestions();
       const githubNotifications = config.includeGitHub ? getGitHubNotificationCount() : 0;
 
       const summary = await summarizer.generateSummary(

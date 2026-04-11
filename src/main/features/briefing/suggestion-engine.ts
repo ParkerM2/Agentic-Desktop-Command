@@ -10,27 +10,27 @@
 import type { Suggestion, SuggestionType } from '@shared/types';
 
 import type { BusSessionManager } from '../../bus/session-manager';
+import type { ProgressService } from '../progress/progress-service';
 import type { ProjectService } from '../project/project-service';
-import type { TaskService } from '../project/task-service';
 
 const STALE_PROJECT_DAYS = 7;
 
 /** Suggestion engine interface */
 export interface SuggestionEngine {
   /** Generate all suggestions */
-  getSuggestions: () => Suggestion[];
+  getSuggestions: () => Promise<Suggestion[]>;
   /** Check for stale projects */
   getStaleProjectSuggestions: () => Suggestion[];
   /** Check for parallel task opportunities */
-  getParallelTaskSuggestions: () => Suggestion[];
+  getParallelTaskSuggestions: () => Promise<Suggestion[]>;
   /** Check for blocked tasks */
-  getBlockedTaskSuggestions: () => Suggestion[];
+  getBlockedTaskSuggestions: () => Promise<Suggestion[]>;
 }
 
 /** Dependencies for the suggestion engine */
 export interface SuggestionEngineDeps {
   projectService: ProjectService;
-  taskService: TaskService;
+  progressService: ProgressService;
   busSessionManager: BusSessionManager;
 }
 
@@ -38,7 +38,7 @@ export interface SuggestionEngineDeps {
  * Create a suggestion engine instance.
  */
 export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEngine {
-  const { projectService, taskService, busSessionManager } = deps;
+  const { projectService, progressService, busSessionManager } = deps;
 
   function getStaleProjectSuggestions(): Suggestion[] {
     const suggestions: Suggestion[] = [];
@@ -69,47 +69,28 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
     return suggestions;
   }
 
-  function getParallelTaskSuggestions(): Suggestion[] {
+  async function getParallelTaskSuggestions(): Promise<Suggestion[]> {
     const suggestions: Suggestion[] = [];
-    const projects = projectService.listProjectsSync();
+    const tasks = await progressService.listTasks();
     const activeSessions = busSessionManager.list({ status: 'active' });
     const maxConcurrent = 3; // Could be fetched from settings
 
-    for (const project of projects) {
-      const tasks = taskService.listTasks(project.id);
-      const queuedTasks = tasks.filter((t) => t.status === 'queued');
-      const runningTasks = tasks.filter((t) => t.status === 'running');
-      const runningSessionsForProject = activeSessions.filter((s) => s.projectId === project.id);
+    const backlogTasks = tasks.filter((t) => t.status === 'backlog' || t.status === 'plan_ready');
+    const executingTasks = tasks.filter((t) => t.status === 'executing');
 
-      // If there are queued tasks but room for more agents
-      if (queuedTasks.length > 1 && runningSessionsForProject.length < maxConcurrent) {
-        const availableSlots = maxConcurrent - runningSessionsForProject.length;
-        const parallelizableCount = Math.min(queuedTasks.length, availableSlots);
+    // If there are backlog tasks but room for more agents
+    if (backlogTasks.length > 1 && activeSessions.length < maxConcurrent) {
+      const availableSlots = maxConcurrent - activeSessions.length;
+      const parallelizableCount = Math.min(backlogTasks.length, availableSlots);
 
-        if (parallelizableCount > 0) {
-          suggestions.push(
-            createSuggestion('parallel_tasks', {
-              title: `${String(parallelizableCount)} tasks can run in parallel`,
-              description: `${project.name} has ${String(queuedTasks.length)} queued tasks and ${String(availableSlots)} available agent slots. Consider starting more tasks in parallel.`,
-              action: {
-                label: 'View Tasks',
-                targetId: project.id,
-                targetType: 'project',
-              },
-            }),
-          );
-        }
-      }
-
-      // Also suggest if there are many queued tasks
-      if (queuedTasks.length > 3 && runningTasks.length === 0) {
+      if (parallelizableCount > 0) {
         suggestions.push(
           createSuggestion('parallel_tasks', {
-            title: 'Multiple tasks waiting',
-            description: `${project.name} has ${String(queuedTasks.length)} tasks in queue but none running. Consider starting some tasks.`,
+            title: `${String(parallelizableCount)} tasks can run in parallel`,
+            description: `There are ${String(backlogTasks.length)} queued tasks and ${String(availableSlots)} available agent slots. Consider starting more tasks in parallel.`,
             action: {
-              label: 'View Queue',
-              targetId: project.id,
+              label: 'View Tasks',
+              targetId: 'progress',
               targetType: 'project',
             },
           }),
@@ -117,65 +98,81 @@ export function createSuggestionEngine(deps: SuggestionEngineDeps): SuggestionEn
       }
     }
 
+    // Also suggest if there are many backlog tasks
+    if (backlogTasks.length > 3 && executingTasks.length === 0) {
+      suggestions.push(
+        createSuggestion('parallel_tasks', {
+          title: 'Multiple tasks waiting',
+          description: `There are ${String(backlogTasks.length)} tasks in queue but none running. Consider starting some tasks.`,
+          action: {
+            label: 'View Queue',
+            targetId: 'progress',
+            targetType: 'project',
+          },
+        }),
+      );
+    }
+
     return suggestions;
   }
 
-  function getBlockedTaskSuggestions(): Suggestion[] {
+  async function getBlockedTaskSuggestions(): Promise<Suggestion[]> {
     const suggestions: Suggestion[] = [];
-    const projects = projectService.listProjectsSync();
+    const tasks = await progressService.listTasks();
 
-    for (const project of projects) {
-      const tasks = taskService.listTasks(project.id);
+    // Find tasks in error state
+    const errorTasks = tasks.filter((t) => t.status === 'error');
+    for (const task of errorTasks) {
+      suggestions.push(
+        createSuggestion('blocked_task', {
+          title: `Task "${task.title}" failed`,
+          description:
+            'This task encountered an error and needs attention. Check the logs for details.',
+          action: {
+            label: 'View Task',
+            targetId: task.slug,
+            targetType: 'task',
+          },
+        }),
+      );
+    }
 
-      // Find tasks in error state
-      const errorTasks = tasks.filter((t) => t.status === 'error');
-      for (const task of errorTasks) {
+    // Find tasks stuck in review for too long (>24h)
+    const now = Date.now();
+    const reviewTasks = tasks.filter((t) => t.status === 'review');
+    for (const task of reviewTasks) {
+      const updatedAt = new Date(task.updatedAt).getTime();
+      const hoursSinceUpdate = (now - updatedAt) / (60 * 60 * 1000);
+
+      if (hoursSinceUpdate > 24) {
         suggestions.push(
           createSuggestion('blocked_task', {
-            title: `Task "${task.title}" failed`,
-            description:
-              'This task encountered an error and needs attention. Check the logs for details.',
+            title: `"${task.title}" awaiting review`,
+            description: `This task has been waiting for human review for ${String(Math.floor(hoursSinceUpdate))} hours.`,
             action: {
-              label: 'View Task',
-              targetId: task.id,
+              label: 'Review Task',
+              targetId: task.slug,
               targetType: 'task',
             },
           }),
         );
-      }
-
-      // Find tasks stuck in human_review for too long (>24h)
-      const now = Date.now();
-      const reviewTasks = tasks.filter((t) => t.status === 'review');
-      for (const task of reviewTasks) {
-        const updatedAt = new Date(task.updatedAt).getTime();
-        const hoursSinceUpdate = (now - updatedAt) / (60 * 60 * 1000);
-
-        if (hoursSinceUpdate > 24) {
-          suggestions.push(
-            createSuggestion('blocked_task', {
-              title: `"${task.title}" awaiting review`,
-              description: `This task has been waiting for human review for ${String(Math.floor(hoursSinceUpdate))} hours.`,
-              action: {
-                label: 'Review Task',
-                targetId: task.id,
-                targetType: 'task',
-              },
-            }),
-          );
-        }
       }
     }
 
     return suggestions;
   }
 
-  function getSuggestions(): Suggestion[] {
+  async function getSuggestions(): Promise<Suggestion[]> {
     // Collect all suggestions
+    const [parallelSuggestions, blockedSuggestions] = await Promise.all([
+      getParallelTaskSuggestions(),
+      getBlockedTaskSuggestions(),
+    ]);
+
     const suggestions: Suggestion[] = [
       ...getStaleProjectSuggestions(),
-      ...getParallelTaskSuggestions(),
-      ...getBlockedTaskSuggestions(),
+      ...parallelSuggestions,
+      ...blockedSuggestions,
     ];
 
     // Limit to top 5 most actionable suggestions

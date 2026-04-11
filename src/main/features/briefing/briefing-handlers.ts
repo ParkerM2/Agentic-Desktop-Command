@@ -18,5 +18,5 @@ export function registerBriefingHandlers(router: IpcRouter, service: BriefingSer
     Promise.resolve(service.updateConfig(updates)),
   );
 
-  router.handle(BRIEFING.GET.SUGGESTIONS, () => Promise.resolve(service.getSuggestions()));
+  router.handle(BRIEFING.GET.SUGGESTIONS, async () => await service.getSuggestions());
 }
