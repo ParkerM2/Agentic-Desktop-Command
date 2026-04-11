@@ -17,7 +17,7 @@ export const dashboardInvoke = {
     output: z.array(CaptureSchema),
   },
   [DASHBOARD.CREATE.CAPTURE]: {
-    input: z.object({ text: z.string() }),
+    input: z.object({ id: z.string().optional(), text: z.string() }),
     output: CaptureSchema,
   },
   [DASHBOARD.DELETE.CAPTURE]: {

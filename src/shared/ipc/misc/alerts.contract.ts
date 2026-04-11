@@ -41,6 +41,7 @@ export const alertsInvoke = {
   },
   [ALERTS.CREATE.ALERT]: {
     input: z.object({
+      id: z.string().optional(),
       type: AlertTypeSchema,
       message: z.string(),
       triggerAt: z.string(),

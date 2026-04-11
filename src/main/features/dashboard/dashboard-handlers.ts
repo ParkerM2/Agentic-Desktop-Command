@@ -10,8 +10,8 @@ import type { IpcRouter } from '../../ipc/router';
 export function registerDashboardHandlers(router: IpcRouter, service: DashboardService): void {
   router.handle(DASHBOARD.LIST.CAPTURES, () => Promise.resolve(service.listCaptures()));
 
-  router.handle(DASHBOARD.CREATE.CAPTURE, ({ text }) =>
-    Promise.resolve(service.createCapture(text)),
+  router.handle(DASHBOARD.CREATE.CAPTURE, ({ text, id }) =>
+    Promise.resolve(service.createCapture(text, id)),
   );
 
   router.handle(DASHBOARD.DELETE.CAPTURE, ({ id }) =>

@@ -5,13 +5,13 @@
  * One-time migration from captures.json on first access.
  */
 
-import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { desc, eq } from 'drizzle-orm';
 
 import { DASHBOARD_EVENTS } from '@shared/ipc/dashboard/channels';
+import { generateId } from '@shared/lib/id';
 
 import { captures } from '../../db/schema';
 import { createScopedLogger } from '../../lib/logger';
@@ -29,7 +29,7 @@ export interface Capture {
 
 export interface DashboardService {
   listCaptures: () => Capture[];
-  createCapture: (text: string) => Capture;
+  createCapture: (text: string, id?: string) => Capture;
   deleteCapture: (id: string) => { success: boolean };
 }
 
@@ -74,9 +74,9 @@ export function createDashboardService(deps: {
         .all();
     },
 
-    createCapture(text) {
+    createCapture(text, id?) {
       const capture: Capture = {
-        id: randomUUID(),
+        id: id ?? generateId(),
         text,
         createdAt: new Date().toISOString(),
       };
