@@ -157,6 +157,10 @@ process.parentPort.on('message', (e: Electron.MessageEvent) => {
 
 // ── Cleanup ─────────────────────────────────────────────────
 
+process.on('beforeExit', () => {
+  agentManager?.dispose();
+});
+
 process.on('SIGTERM', () => {
   agentManager?.dispose();
   process.exit(0);
@@ -165,4 +169,15 @@ process.on('SIGTERM', () => {
 process.on('disconnect', () => {
   agentManager?.dispose();
   process.exit(0);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[agent-host] Uncaught exception:', error);
+  agentManager?.dispose();
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[agent-host] Unhandled rejection:', reason);
+  // Don't exit — just log. Let the event loop continue.
 });

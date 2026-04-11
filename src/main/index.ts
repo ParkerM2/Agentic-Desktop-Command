@@ -175,7 +175,10 @@ function initializeApp(): void {
   // Handle utility process crashes
   agentHost.on('exit', (code) => {
     appLogger.error(`[AgentHost] Utility process exited with code ${code}`);
-    // TODO: auto-restart logic (Task 11)
+    // TODO(Task 11 follow-up): Auto-restart agent host on crash.
+    // Requires re-creating MessagePort channels, re-forking the utility process,
+    // and updating the service registry's agentHostClient reference.
+    // Add a brief delay (e.g. setTimeout 1000ms) to avoid crash loops.
   });
 
   // ── Initialize services ───────────────────────────────────
