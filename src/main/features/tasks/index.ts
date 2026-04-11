@@ -1,11 +1,7 @@
 /**
  * Tasks services barrel export
+ *
+ * The old task system (TaskService, TaskRepository, TaskDecomposer,
+ * GithubImporter) has been removed. Task data now flows through
+ * ProgressService (SQLite-backed progress_tasks table).
  */
-
-export { createGithubImporter } from './github-importer';
-export { createTaskDecomposer } from './task-decomposer';
-export { createTaskRepository } from './task-repository';
-
-export type { GithubTaskImporter } from './github-importer';
-export type { TaskDecomposer } from './task-decomposer';
-export type { TaskRepository, TaskRepositoryDeps } from './types';

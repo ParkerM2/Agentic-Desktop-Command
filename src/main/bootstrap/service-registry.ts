@@ -70,7 +70,6 @@ import { createGitHubRepoCreator } from '../features/project/github-repo-creator
 import { createProjectService } from '../features/project/project-service';
 import { createSetupPipeline } from '../features/project/setup-pipeline';
 import { createSkillsResolver } from '../features/project/skills-resolver';
-import { createTaskService } from '../features/project/task-service';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
 import { createQaRecorderService } from '../features/qa/recorder';
@@ -85,11 +84,6 @@ import {
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
-import {
-  createGithubImporter,
-  createTaskDecomposer,
-  createTaskRepository,
-} from '../features/tasks';
 import { createTerminalService } from '../features/terminal/terminal-service';
 import { createTimeParserService } from '../features/time-parser/time-parser-service';
 import { createTrackerService } from '../features/tracker/tracker-service';
@@ -116,7 +110,6 @@ import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { NotificationManager } from '../features/integrations/notifications';
-import type { TaskRepository } from '../features/tasks/types';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
 import type { AgentManagerService } from '../services/agent-manager';
@@ -151,7 +144,6 @@ export interface ServiceRegistryResult {
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
-  taskRepository: TaskRepository;
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
@@ -320,16 +312,6 @@ export function createServiceRegistry(
 
   // ─── Tier 1: Project setup domain ────────────────────────────
 
-  const taskService = lazyService(() =>
-    createTaskService(
-      (id) => projectService.getProjectPath(id),
-      () => projectService.listProjectsSync().map((p) => ({ id: p.id, path: p.path })),
-      router,
-    ),
-  );
-  const taskRepository = lazyService(() =>
-    createTaskRepository({ taskService, hubApiClient, hubConnectionManager, projectService }),
-  );
   const codebaseAnalyzer = lazyService(() => createCodebaseAnalyzer());
   const claudeMdGenerator = lazyService(() => createClaudeMdGenerator());
   const skillsResolver = lazyService(() => createSkillsResolver());
@@ -420,9 +402,6 @@ export function createServiceRegistry(
 
   const watchStore = lazyService(() => createWatchStore({ db }));
   const watchEvaluator = lazyService(() => createWatchEvaluator(watchStore));
-
-  const taskDecomposer = lazyService(() => createTaskDecomposer({ claudeClient }));
-  const githubImporter = lazyService(() => createGithubImporter({ githubService, taskService }));
 
   const toolExecutor = lazyService(() =>
     createToolExecutor({
@@ -548,7 +527,6 @@ export function createServiceRegistry(
     progressService,
     teamWatcherService: null,
     projectService,
-    taskService,
     terminalService,
     settingsService,
     claudeClient,
@@ -579,9 +557,6 @@ export function createServiceRegistry(
     worktreeService,
     mergeService,
     timeParserService: createTimeParserService(),
-    taskDecomposer,
-    taskRepository,
-    githubImporter,
     voiceService,
     screenCaptureService,
     briefingService,
@@ -633,7 +608,6 @@ export function createServiceRegistry(
     quickInput,
     settingsService,
     hubApiClient,
-    taskRepository,
     cleanupService,
     teamWatcherService,
     sessionJsonlReaderService,

@@ -20,7 +20,6 @@ export * from '../features/integrations/email/schema';
 // hub/schema.ts has no exports — hub_config consolidated into settings_kv
 export * from '../features/changelog/schema';
 export * from '../features/progress/session-logs-schema';
-export * from '../features/project/task-specs-schema';
 export * from '../bus/schema';
 export * from '../features/assistant/schema';
 export * from '../features/qa/recorder/schema';

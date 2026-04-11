@@ -46,7 +46,6 @@ import { registerSecurityHandlers } from '../features/settings/security-handlers
 import { registerSettingsHandlers } from '../features/settings/settings-handlers';
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
-import { registerTaskHandlers } from '../features/tasks/task-handlers';
 import { registerTerminalHandlers } from '../features/terminal/terminal-handlers';
 import { registerTimeHandlers } from '../features/time-parser/time-handlers';
 import { registerTrackerHandlers } from '../features/tracker/tracker-handlers';
@@ -97,16 +96,12 @@ import type { ProgressService } from '../features/progress/progress-service';
 import type { CodebaseAnalyzerService } from '../features/project/codebase-analyzer';
 import type { ProjectService } from '../features/project/project-service';
 import type { SetupPipelineService } from '../features/project/setup-pipeline';
-import type { TaskService } from '../features/project/task-service';
 import type { QaRunner } from '../features/qa/qa-types';
 import type { QaRecorderService } from '../features/qa/recorder';
 import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/settings/data-management';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
-import type { GithubTaskImporter } from '../features/tasks/github-importer';
-import type { TaskDecomposer } from '../features/tasks/task-decomposer';
-import type { TaskRepository } from '../features/tasks/types';
 import type { TerminalService } from '../features/terminal/terminal-service';
 import type { TimeParserService } from '../features/time-parser/time-parser-service';
 import type { TrackerService } from '../features/tracker/tracker-service';
@@ -123,7 +118,6 @@ export interface Services {
   busSessionManager: BusSessionManager;
   agentManagerService: AgentManagerService;
   projectService: ProjectService;
-  taskService: TaskService;
   terminalService: TerminalService;
   settingsService: SettingsService;
   claudeClient: ClaudeClient;
@@ -151,9 +145,6 @@ export interface Services {
   worktreeService: WorktreeService;
   mergeService: MergeService;
   timeParserService: TimeParserService;
-  taskRepository: TaskRepository;
-  taskDecomposer: TaskDecomposer;
-  githubImporter: GithubTaskImporter;
   voiceService: VoiceService | null;
   screenCaptureService: ScreenCaptureService | null;
   briefingService: BriefingService;
@@ -192,12 +183,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.projectService,
     services.codebaseAnalyzer,
     services.setupPipeline,
-  );
-  registerTaskHandlers(
-    router,
-    services.taskRepository,
-    services.taskDecomposer,
-    services.githubImporter,
   );
   registerTerminalHandlers(router, services.terminalService);
   registerSettingsHandlers(router, services.settingsService, {
@@ -272,7 +257,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     router,
     services.qaRunner,
     services.busSessionManager,
-    services.taskRepository,
+    services.progressService,
   );
   registerQaRecorderHandlers(router, services.qaRecorderService);
   registerDashboardHandlers(router, services.dashboardService);

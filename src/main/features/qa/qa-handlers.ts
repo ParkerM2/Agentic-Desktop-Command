@@ -15,24 +15,16 @@ import { createThrottle } from '../../ipc/throttle';
 
 import type { QaRunner } from './qa-types';
 import type { IpcRouter } from '../../ipc/router';
-import type { TaskRepository } from '../tasks/types';
+import type { ProgressService } from '../progress/progress-service';
 
 const UNKNOWN_TASK = 'Unknown task';
 
-function extractDescription(data: Record<string, unknown>): string {
-  if (typeof data.description === 'string' && data.description.length > 0) {
-    return data.description;
-  }
-  if (typeof data.title === 'string' && data.title.length > 0) {
-    return data.title;
-  }
-  return UNKNOWN_TASK;
-}
-
-async function resolveTaskDescription(taskRepository: TaskRepository, taskId: string): Promise<string> {
+async function resolveTaskDescription(progressService: ProgressService, taskId: string): Promise<string> {
   try {
-    const task = await taskRepository.getTask(taskId);
-    return extractDescription(task as unknown as Record<string, unknown>);
+    const task = await progressService.getTask(taskId);
+    if (task?.description && task.description.length > 0) return task.description;
+    if (task?.title && task.title.length > 0) return task.title;
+    return UNKNOWN_TASK;
   } catch {
     return UNKNOWN_TASK;
   }
@@ -42,7 +34,7 @@ export function registerQaHandlers(
   router: IpcRouter,
   qaRunner: QaRunner,
   busSessionManager: BusSessionManager,
-  taskRepository: TaskRepository,
+  progressService: ProgressService,
 ): void {
   const allowFullQa = createThrottle(10000);
 
@@ -82,7 +74,7 @@ export function registerQaHandlers(
       throw new Error('No project path available for QA');
     }
 
-    const taskDescription = await resolveTaskDescription(taskRepository, taskId);
+    const taskDescription = await resolveTaskDescription(progressService, taskId);
 
     const session = await qaRunner.startQuiet(taskId, {
       projectPath,
@@ -106,7 +98,7 @@ export function registerQaHandlers(
       throw new Error('No project path available for QA');
     }
 
-    const taskDescription = await resolveTaskDescription(taskRepository, taskId);
+    const taskDescription = await resolveTaskDescription(progressService, taskId);
 
     const session = await qaRunner.startFull(taskId, {
       projectPath,
