@@ -11,6 +11,7 @@ import type {
   SessionRecord,
   SessionSpawnRequest,
 } from './types';
+import type { AgentHostClient } from '../agent-host/agent-host-client';
 import type { AgentManagerService } from '../services/agent-manager';
 
 const logger = createScopedLogger('bus-sessions');
@@ -27,7 +28,7 @@ export interface BusSessionManager {
 
 export function createBusSessionManager(
   db: AdcDatabase,
-  agentManager: AgentManagerService,
+  agentManager: AgentManagerService | AgentHostClient,
 ): BusSessionManager {
   const eventHandlers = new Set<SessionEventHandler>();
   const cleanups: Array<() => void> = [];

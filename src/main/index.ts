@@ -7,11 +7,12 @@
 
 import { join } from 'node:path';
 
-import { app, BrowserWindow, dialog, shell, session } from 'electron';
+import { app, BrowserWindow, dialog, MessageChannelMain, shell, session, utilityProcess } from 'electron';
 
 import { ENV_VARS } from '@shared/constants/env';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 
+import { createAgentHostClient } from './agent-host/agent-host-client';
 import {
   createServiceRegistry,
   setupLifecycle,
@@ -21,6 +22,7 @@ import {
 import { appLogger } from './lib/logger';
 import { createTrayManager } from './tray/tray-manager';
 
+import type { AgentHostClient } from './agent-host/agent-host-client';
 import type { ErrorCollector } from './features/app/health';
 import type { SettingsService } from './features/settings/settings-service';
 
@@ -38,6 +40,7 @@ let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
 let errorCollectorRef: ErrorCollector | null = null;
 let registryRef: ReturnType<typeof createServiceRegistry> | null = null;
+let agentHostClientRef: AgentHostClient | null = null;
 
 // Renderer crash tracking
 let rendererCrashCount = 0;
@@ -80,8 +83,17 @@ function createWindow(): void {
     }
   });
 
-  // Emit assistant autostart after renderer finishes loading
+  // Forward agent host event port to the renderer
   mainWindow.webContents.once('did-finish-load', () => {
+    if (agentHostClientRef && mainWindow) {
+      const rendererEventChannel = new MessageChannelMain();
+      mainWindow.webContents.postMessage('agent-host-events', null, [rendererEventChannel.port2]);
+      agentHostClientRef.onEvent((event) => {
+        rendererEventChannel.port1.postMessage(event);
+      });
+    }
+
+    // Emit assistant autostart after renderer finishes loading
     if (settingsServiceRef?.getSettings().assistantAutoStart !== false) {
       setTimeout(() => {
         registryRef?.router.emit(ASSISTANT_EVENTS.SESSION.AUTOSTART, { autoStarted: true });
@@ -145,7 +157,29 @@ function createWindow(): void {
 // ─── Initialize & Start ──────────────────────────────────────────
 
 function initializeApp(): void {
-  const registry = createServiceRegistry(getMainWindow);
+  // ── Fork agent host utility process ───────────────────────
+  const agentHostModule = join(__dirname, 'agent-host/index.cjs');
+  const agentHost = utilityProcess.fork(agentHostModule, [], { stdio: 'pipe' });
+
+  // Create MessagePort channels for control + event communication
+  const controlChannel = new MessageChannelMain();
+  const eventChannel = new MessageChannelMain();
+
+  // Send ports to the utility process — it will bootstrap on receipt
+  agentHost.postMessage({ type: 'init' }, [controlChannel.port2, eventChannel.port2]);
+
+  // Create the client that wraps the port pair
+  const agentHostClient = createAgentHostClient(controlChannel.port1, eventChannel.port1);
+  agentHostClientRef = agentHostClient;
+
+  // Handle utility process crashes
+  agentHost.on('exit', (code) => {
+    appLogger.error(`[AgentHost] Utility process exited with code ${code}`);
+    // TODO: auto-restart logic (Task 11)
+  });
+
+  // ── Initialize services ───────────────────────────────────
+  const registry = createServiceRegistry(getMainWindow, agentHostClient);
 
   // Store refs for createWindow() settings checks and global error reporting
   settingsServiceRef = registry.settingsService;

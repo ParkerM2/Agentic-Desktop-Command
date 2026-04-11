@@ -96,7 +96,6 @@ import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
 import { createMcpRegistry } from '../mcp/mcp-registry';
 import { createGitHubCliClient } from '../mcp-servers/github/github-client';
-import { createAgentManagerService } from '../services/agent-manager';
 import { createSessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import { createTeamWatcherService } from '../services/team-watcher/team-watcher-service';
 import { createWorktreeProvisioner } from '../services/worktree-provisioner';
@@ -111,8 +110,8 @@ import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { NotificationManager } from '../features/integrations/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
+import type { AgentHostClient } from '../agent-host/agent-host-client';
 import type { Services } from '../ipc';
-import type { AgentManagerService } from '../services/agent-manager';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
 
@@ -123,7 +122,7 @@ export interface ServiceRegistryResult {
   db: AdcDatabase;
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
-  agentManagerService: AgentManagerService;
+  agentHostClient: AgentHostClient;
   workspaceSessionManager: WorkspaceSessionManager;
   assistantService: ReturnType<typeof createAssistantService>;
   errorCollector: ReturnType<typeof createErrorCollector>;
@@ -158,6 +157,7 @@ export interface ServiceRegistryResult {
  */
 export function createServiceRegistry(
   getMainWindow: () => Electron.BrowserWindow | null,
+  agentHostClient: AgentHostClient,
 ): ServiceRegistryResult {
   // ─── Tier 0: Eager — Router, DB, Auth, Settings, Error/Health, Project ───
 
@@ -193,8 +193,7 @@ export function createServiceRegistry(
   const projectService = createProjectService({ hubApiClient: lazyService(() => hubApiClient) });
 
   const commandBus = createCommandBus(db);
-  const agentManagerService = createAgentManagerService({ router });
-  const busSessionManager = createBusSessionManager(db, agentManagerService);
+  const busSessionManager = createBusSessionManager(db, agentHostClient);
   busSessionManager.recoverInterrupted();
 
   // ─── Tier 1: Infrastructure — deferred ───────────────────────
@@ -307,7 +306,7 @@ export function createServiceRegistry(
   const githubCliClient = lazyService(() => createGitHubCliClient());
   const worktreeProvisioner = lazyService(() => createWorktreeProvisioner());
   const workspaceSessionManager = lazyService(() =>
-    createWorkspaceSessionManager(agentManagerService, worktreeProvisioner, getMainWindow, busSessionManager),
+    createWorkspaceSessionManager(agentHostClient, worktreeProvisioner, getMainWindow, busSessionManager),
   );
 
   // ─── Tier 1: Project setup domain ────────────────────────────
@@ -422,7 +421,7 @@ export function createServiceRegistry(
   const assistantService = lazyService(() =>
     createAssistantService({
       getWindow: getMainWindow,
-      agentManager: agentManagerService,
+      agentManager: agentHostClient,
       toolExecutor,
       db,
     }),
@@ -503,8 +502,8 @@ export function createServiceRegistry(
   const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
   const fileTreeService = lazyService(() => createFileTreeService());
   const trackerService = lazyService(() => createTrackerService(process.cwd()));
-  const visualizationService = lazyService(() => createVisualizationService(agentManagerService));
-  const progressService = lazyService(() => createProgressService(process.cwd(), agentManagerService, db));
+  const visualizationService = lazyService(() => createVisualizationService(agentHostClient));
+  const progressService = lazyService(() => createProgressService(process.cwd(), agentHostClient, db));
 
   // ─── User session change handling ────────────────────────────
 
@@ -523,7 +522,7 @@ export function createServiceRegistry(
   const services: Services = {
     commandBus,
     busSessionManager,
-    agentManagerService,
+    agentManagerService: agentHostClient,
     progressService,
     teamWatcherService: null,
     projectService,
@@ -590,7 +589,7 @@ export function createServiceRegistry(
     db,
     commandBus,
     busSessionManager,
-    agentManagerService,
+    agentHostClient,
     workspaceSessionManager,
     assistantService,
     errorCollector,

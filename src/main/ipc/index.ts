@@ -110,13 +110,14 @@ import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { McpManager } from '../mcp/mcp-manager';
+import type { AgentHostClient } from '../agent-host/agent-host-client';
 import type { AgentManagerService } from '../services/agent-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
-  agentManagerService: AgentManagerService;
+  agentManagerService: AgentManagerService | AgentHostClient;
   projectService: ProjectService;
   terminalService: TerminalService;
   settingsService: SettingsService;
