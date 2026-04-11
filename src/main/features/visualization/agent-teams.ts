@@ -17,7 +17,7 @@ import type {
   AgentTeamsData,
   FeatureAgentData,
 } from './types';
-import type { AgentManagerService } from '../../services/agent-manager/agent-manager-service';
+import type { AgentManager } from '../../agent-host/agent-host-client';
 
 // ─── Agent Name Helpers ───────────────────────────────────────
 
@@ -192,7 +192,7 @@ function scanTaskFiles(taskDir: string): string[] {
 
 // ─── Session Status Mapper ────────────────────────────────────
 
-type LiveSessions = ReturnType<AgentManagerService['listSessions']>;
+type LiveSessions = ReturnType<AgentManager['listSessions']>;
 type LiveSession = LiveSessions[number];
 
 /**
@@ -412,7 +412,7 @@ function buildFeatureData(
 
 export function buildAgentTeamsData(
   projectPath: string,
-  agentManagerService: AgentManagerService,
+  agentManagerService: AgentManager,
 ): AgentTeamsData {
   const progressDir = join(projectPath, 'progress');
 

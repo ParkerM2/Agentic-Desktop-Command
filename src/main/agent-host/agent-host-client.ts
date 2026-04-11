@@ -29,13 +29,33 @@ import type { SpawnTeamLeadResult } from '../services/agent-manager/agent-manage
 /** Local alias — matches the unexported type in agent-manager-service */
 type AgentManagerEventHandler = (event: AgentManagerEvent) => void;
 
+// ── Shared Interface ────────────────────────────────────────
+
+/**
+ * Shared agent manager interface that both AgentManagerService (sync spawn)
+ * and AgentHostClient (async spawn) satisfy. Spawn methods return
+ * `T | Promise<T>` so callers always use `await`.
+ */
+export interface AgentManager {
+  spawnProjectOwner: (config: ProjectOwnerConfig) => AgentSession | Promise<AgentSession>;
+  spawnTeamLead: (config: TeamLeadConfig) => SpawnTeamLeadResult | Promise<SpawnTeamLeadResult>;
+  listSessions: (filter?: { type?: AgentSessionType; teamName?: string }) => AgentSession[];
+  getSession: (sessionId: string) => AgentSession | undefined;
+  sendMessage: (sessionId: string, message: string) => boolean;
+  stopSession: (sessionId: string) => boolean;
+  onEvent: (handler: (event: AgentManagerEvent) => void) => () => void;
+  getSessionProjectPath: (sessionId: string) => string | undefined;
+  getMessages: (sessionId: string) => AgentChatMessage[];
+  dispose: () => void;
+}
+
 // ── Client Interface ────────────────────────────────────────
 
 /**
- * Same shape as AgentManagerService except spawn methods return Promises.
+ * Same shape as AgentManager except spawn methods always return Promises.
  * This is the only breaking change — callers of spawn must add `await`.
  */
-export interface AgentHostClient {
+export interface AgentHostClient extends AgentManager {
   spawnProjectOwner: (config: ProjectOwnerConfig) => Promise<AgentSession>;
   spawnTeamLead: (config: TeamLeadConfig) => Promise<SpawnTeamLeadResult>;
   listSessions: (filter?: { type?: AgentSessionType; teamName?: string }) => AgentSession[];

@@ -56,6 +56,7 @@ import { registerWorkspaceHandlers } from '../features/workspace/workspace-handl
 
 
 import type { IpcRouter } from './router';
+import type { AgentManager } from '../agent-host/agent-host-client';
 import type { OAuthManager } from '../auth/oauth-manager';
 import type { TokenStore } from '../auth/token-store';
 import type { OAuthConfig } from '../auth/types';
@@ -110,14 +111,12 @@ import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { McpManager } from '../mcp/mcp-manager';
-import type { AgentHostClient } from '../agent-host/agent-host-client';
-import type { AgentManagerService } from '../services/agent-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface Services {
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
-  agentManagerService: AgentManagerService | AgentHostClient;
+  agentManagerService: AgentManager;
   projectService: ProjectService;
   terminalService: TerminalService;
   settingsService: SettingsService;

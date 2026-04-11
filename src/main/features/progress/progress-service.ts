@@ -26,7 +26,7 @@ import { serviceLogger } from '@main/lib/logger';
 import { runLogCleanup as runLogCleanupFn } from './log-cleanup';
 import { detectRootFile, readFrontmatter, writeFrontmatter } from './task-file-io';
 
-import type { AgentManagerService } from '../../services/agent-manager/agent-manager-service';
+import type { AgentManager } from '../../agent-host/agent-host-client';
 import type { FSWatcher } from 'node:fs';
 
 // ─── Service Interface ────────────────────────────────────────
@@ -456,7 +456,7 @@ function buildSummaryInstruction(summarySpec: { maxChars: number; tableFields: s
 
 export function createProgressService(
   projectPath: string,
-  agentManagerService: AgentManagerService,
+  agentManagerService: AgentManager,
   db: AdcDatabase,
 ): ProgressService {
   const progressDir = join(projectPath, 'progress');
@@ -655,11 +655,11 @@ export function createProgressService(
     }
   }
 
-  function spawnAndTrack(
+  async function spawnAndTrack(
     slug: string,
     action: string,
     prompt: string,
-  ): { sessionId: string } {
+  ): Promise<{ sessionId: string }> {
     // Subscribe to events BEFORE spawning to avoid race condition where
     // a fast session ends before the listener is registered.
     let targetSessionId: string | null = null;
@@ -678,7 +678,7 @@ export function createProgressService(
       handleSessionEnd(slug, action, exitCode);
     });
 
-    const session = agentManagerService.spawnProjectOwner({
+    const session = await agentManagerService.spawnProjectOwner({
       projectPath,
       prompt,
       name: `progress-${action}-${slug}`,
@@ -1050,7 +1050,7 @@ export function createProgressService(
       const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
       const fullPrompt = (customPrompt ?? defaultResearchPrompt) + summaryInstruction;
 
-      return spawnAndTrack(slug, 'research', fullPrompt);
+      return await spawnAndTrack(slug, 'research', fullPrompt);
     },
 
     async createPlan(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {
@@ -1075,7 +1075,7 @@ export function createProgressService(
       const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
       const fullPrompt = (customPrompt ?? defaultPlanPrompt) + summaryInstruction;
 
-      return spawnAndTrack(slug, 'plan', fullPrompt);
+      return await spawnAndTrack(slug, 'plan', fullPrompt);
     },
 
     async spinUpTeam(slug: string, customPrompt?: string): Promise<{ sessionId: string; action: string }> {
@@ -1097,7 +1097,7 @@ export function createProgressService(
         : `Implement the feature described in progress/${slug}/task.md. ` +
           `Create task files under progress/${slug}/tasks/ and execute them.`;
 
-      const { sessionId } = spawnAndTrack(slug, 'team', customPrompt ?? defaultPrompt);
+      const { sessionId } = await spawnAndTrack(slug, 'team', customPrompt ?? defaultPrompt);
       return { sessionId, action: 'team' };
     },
 

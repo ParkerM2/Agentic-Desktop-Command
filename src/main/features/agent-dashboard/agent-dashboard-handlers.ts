@@ -20,8 +20,8 @@ import type {
   TeamMember,
 } from '@shared/types/agent-dashboard';
 
+import type { AgentManager } from '../../agent-host/agent-host-client';
 import type { IpcRouter } from '../../ipc/router';
-import type { AgentManagerService } from '../../services/agent-manager';
 import type { GitService } from '../git/git-service';
 import type { QaRunner, QaSession } from '../qa/qa-types';
 
@@ -103,27 +103,27 @@ function mapQaSessionToDashboard(session: QaSession): QaDashboardSession {
 
 export function registerAgentDashboardHandlers(
   router: IpcRouter,
-  agentManager: AgentManagerService,
+  agentManager: AgentManager,
   teamWatcher: TeamWatcherService,
   qaRunner: QaRunner,
   gitService: GitService,
 ): void {
   // ── Invoke Handlers ──────────────────────────────────────
 
-  router.handle(AGENT_DASHBOARD.SPAWN['PROJECT-OWNER'], (config) => {
-    const session = agentManager.spawnProjectOwner(config);
-    return Promise.resolve({ sessionId: session.id, status: 'spawned' as const });
+  router.handle(AGENT_DASHBOARD.SPAWN['PROJECT-OWNER'], async (config) => {
+    const session = await agentManager.spawnProjectOwner(config);
+    return { sessionId: session.id, status: 'spawned' as const };
   });
 
-  router.handle(AGENT_DASHBOARD.SPAWN['TEAM-LEAD'], (config) => {
-    const result = agentManager.spawnTeamLead(config);
+  router.handle(AGENT_DASHBOARD.SPAWN['TEAM-LEAD'], async (config) => {
+    const result = await agentManager.spawnTeamLead(config);
     if ('error' in result) {
       throw new Error(`spawnTeamLead failed: ${result.error}`);
     }
-    return Promise.resolve({
+    return {
       sessionId: result.id,
       status: 'spawned' as const,
-    });
+    };
   });
 
   router.handle(AGENT_DASHBOARD.LIST.SESSIONS, (filter) =>

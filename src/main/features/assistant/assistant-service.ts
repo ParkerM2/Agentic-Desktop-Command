@@ -21,7 +21,7 @@ import { createHistoryStore } from './history-store';
 import { buildSystemPrompt } from './tool-definitions';
 
 import type { ToolExecutor } from './tool-executor';
-import type { AgentManagerService } from '../../services/agent-manager';
+import type { AgentManager } from '../../agent-host/agent-host-client';
 
 const ASSISTANT_MODEL = 'claude-sonnet-4-6';
 
@@ -33,7 +33,7 @@ export interface AssistantProject {
 
 export interface AssistantService {
   /** Start the global assistant session. Call after auth + hydration. */
-  start: (projects: AssistantProject[]) => void;
+  start: (projects: AssistantProject[]) => void | Promise<void>;
   /** Send a command to the global assistant session. */
   sendCommand: (input: string, context?: { activeView?: string; activeProjectId?: string }) => void;
   /** Stop the global assistant session (call on app quit). */
@@ -44,7 +44,7 @@ export interface AssistantService {
 
 export interface AssistantServiceDeps {
   getWindow: () => BrowserWindow | null;
-  agentManager: AgentManagerService;
+  agentManager: AgentManager;
   toolExecutor: ToolExecutor | null;
   db: AdcDatabase;
 }
@@ -199,7 +199,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
   }
 
   return {
-    start(projects) {
+    async start(projects) {
       if (ensureSession()) {
         serviceLogger.info('[Assistant] Session already running, skipping start');
         return;
@@ -207,7 +207,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
 
       try {
         const systemPrompt = buildSystemPrompt(projects);
-        const session = agentManager.spawnProjectOwner({
+        const session = await agentManager.spawnProjectOwner({
           projectPath: process.cwd(),
           prompt: systemPrompt,
           model: ASSISTANT_MODEL,
