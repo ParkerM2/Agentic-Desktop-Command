@@ -27,20 +27,20 @@ function slugify(title: string): string {
     .replaceAll(/^-|-$/g, '');
 }
 
+interface CreateProgressTaskInput {
+  title: string;
+  description: string;
+  priority?: ProgressPriority;
+  slug?: string;
+  id?: string;
+}
+
 /** Create a new progress task */
 export function useCreateProgressTask() {
   const queryClient = useQueryClient();
   const { onError: toastOnError } = useMutationErrorToast();
 
-  interface CreateInput {
-    title: string;
-    description: string;
-    priority?: ProgressPriority;
-    slug?: string;
-    id?: string;
-  }
-
-  const optimistic = optimisticCreate<CreateInput, ProgressTask>(
+  const optimistic = optimisticCreate<CreateProgressTaskInput, ProgressTask>(
     queryClient,
     progressKeys.list(),
     (input) => {
@@ -66,7 +66,7 @@ export function useCreateProgressTask() {
   );
 
   return useMutation({
-    mutationFn: (data: CreateInput) => {
+    mutationFn: (data: CreateProgressTaskInput) => {
       const id = data.id ?? crypto.randomUUID();
       const slug = data.slug ?? slugify(data.title);
       return ipc(PROGRESS.CREATE.TASK, { ...data, id, slug });

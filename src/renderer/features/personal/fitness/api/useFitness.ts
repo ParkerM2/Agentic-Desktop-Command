@@ -5,9 +5,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { FITNESS } from '@shared/ipc/fitness/channels';
-import type { Exercise, FitnessGoalType, MeasurementSource, WorkoutType } from '@shared/types';
+import type {
+  BodyMeasurement,
+  Exercise,
+  FitnessGoal,
+  FitnessGoalType,
+  MeasurementSource,
+  Workout,
+  WorkoutType,
+} from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
+import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { fitnessKeys } from './queryKeys';
 
@@ -33,11 +42,30 @@ export function useLogWorkout() {
       duration: number;
       exercises: Exercise[];
       notes?: string;
-    }) => ipc(FITNESS.LOG.WORKOUT, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.workouts() });
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.stats() });
+      id?: string;
+    }) => {
+      const id = data.id ?? crypto.randomUUID();
+      return ipc(FITNESS.LOG.WORKOUT, { ...data, id });
     },
+    ...optimisticCreate<
+      {
+        date: string;
+        type: WorkoutType;
+        duration: number;
+        exercises: Exercise[];
+        notes?: string;
+        id?: string;
+      },
+      Workout
+    >(queryClient, fitnessKeys.workouts(), (input) => ({
+      id: input.id ?? '',
+      date: input.date,
+      type: input.type,
+      duration: input.duration,
+      exercises: input.exercises,
+      notes: input.notes,
+      createdAt: new Date().toISOString(),
+    })),
   });
 }
 
@@ -46,10 +74,7 @@ export function useDeleteWorkout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(FITNESS.DELETE.WORKOUT, { id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.workouts() });
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.stats() });
-    },
+    ...optimisticDelete<Workout>(queryClient, fitnessKeys.workouts()),
   });
 }
 
@@ -74,10 +99,36 @@ export function useLogMeasurement() {
       waterPercentage?: number;
       visceralFat?: number;
       source: MeasurementSource;
-    }) => ipc(FITNESS.LOG.MEASUREMENT, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.measurements() });
+      id?: string;
+    }) => {
+      const id = data.id ?? crypto.randomUUID();
+      return ipc(FITNESS.LOG.MEASUREMENT, { ...data, id });
     },
+    ...optimisticCreate<
+      {
+        date: string;
+        weight?: number;
+        bodyFat?: number;
+        muscleMass?: number;
+        boneMass?: number;
+        waterPercentage?: number;
+        visceralFat?: number;
+        source: MeasurementSource;
+        id?: string;
+      },
+      BodyMeasurement
+    >(queryClient, fitnessKeys.measurements(), (input) => ({
+      id: input.id ?? '',
+      date: input.date,
+      weight: input.weight,
+      bodyFat: input.bodyFat,
+      muscleMass: input.muscleMass,
+      boneMass: input.boneMass,
+      waterPercentage: input.waterPercentage,
+      visceralFat: input.visceralFat,
+      source: input.source,
+      createdAt: new Date().toISOString(),
+    })),
   });
 }
 
@@ -106,10 +157,29 @@ export function useSetGoal() {
       target: number;
       unit: string;
       deadline?: string;
-    }) => ipc(FITNESS.SET.GOAL, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
+      id?: string;
+    }) => {
+      const id = data.id ?? crypto.randomUUID();
+      return ipc(FITNESS.SET.GOAL, { ...data, id });
     },
+    ...optimisticCreate<
+      {
+        type: FitnessGoalType;
+        target: number;
+        unit: string;
+        deadline?: string;
+        id?: string;
+      },
+      FitnessGoal
+    >(queryClient, fitnessKeys.goals(), (input) => ({
+      id: input.id ?? '',
+      type: input.type,
+      target: input.target,
+      current: 0,
+      unit: input.unit,
+      deadline: input.deadline,
+      createdAt: new Date().toISOString(),
+    })),
   });
 }
 
@@ -130,8 +200,6 @@ export function useDeleteGoal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(FITNESS.DELETE.GOAL, { id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
-    },
+    ...optimisticDelete<FitnessGoal>(queryClient, fitnessKeys.goals()),
   });
 }

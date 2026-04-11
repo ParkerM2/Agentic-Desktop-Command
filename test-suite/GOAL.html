@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADC Test Suite — Feature Goal</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg-card: #181a20;
+    --bg-card-hover: #1e2028;
+    --bg-surface: #232530;
+    --border: #2a2d38;
+    --border-active: #3ecf8e;
+    --text: #e4e4e7;
+    --text-muted: #71717a;
+    --text-dim: #52525b;
+    --accent: #3ecf8e;
+    --accent-dim: #2a9d6a;
+    --destructive: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── Navigation ── */
+  .top-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .top-nav .logo { font-weight: 700; font-size: 18px; color: var(--accent); }
+  .top-nav .nav-links { display: flex; gap: 4px; }
+  .top-nav .nav-links a {
+    color: var(--text-muted); text-decoration: none; padding: 6px 14px;
+    border-radius: var(--radius); font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .top-nav .nav-links a:hover, .top-nav .nav-links a.active {
+    color: var(--text); background: var(--bg-surface);
+  }
+  .top-nav .nav-links a.active { color: var(--accent); }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 80px 32px 60px;
+    max-width: 2400px; margin: 0 auto;
+    text-align: center;
+  }
+  .hero .badge {
+    display: inline-block; background: rgba(62,207,142,0.1);
+    color: var(--accent); padding: 4px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+    text-transform: uppercase; margin-bottom: 16px;
+  }
+  .hero h1 { font-size: 42px; font-weight: 800; margin-bottom: 16px; line-height: 1.2; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { color: var(--text-muted); font-size: 18px; max-width: 900px; margin: 0 auto; }
+
+  /* ── Section ── */
+  .section {
+    max-width: 2400px; margin: 0 auto;
+    padding: 60px 32px;
+  }
+  .section-label {
+    color: var(--accent); font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px;
+  }
+  .section h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; }
+  .section > p { color: var(--text-muted); font-size: 15px; margin-bottom: 32px; max-width: 900px; }
+
+  /* ── Cards grid ── */
+  .card-grid {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border-active); }
+  .card .card-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 14px;
+  }
+  .card .card-icon.green { background: rgba(62,207,142,0.12); color: var(--accent); }
+  .card .card-icon.blue { background: rgba(59,130,246,0.12); color: var(--info); }
+  .card .card-icon.yellow { background: rgba(245,158,11,0.12); color: var(--warning); }
+  .card .card-icon.red { background: rgba(239,68,68,0.12); color: var(--destructive); }
+  .card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .card p { color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+  .card ul { color: var(--text-muted); font-size: 13px; margin-top: 8px; padding-left: 18px; }
+  .card ul li { margin-bottom: 4px; }
+
+  /* ── Wireframe container ── */
+  .wireframe-section { padding: 60px 32px; max-width: 2400px; margin: 0 auto; }
+  .wireframe-section h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .wireframe-tabs {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border); padding-bottom: 0;
+  }
+  .wireframe-tabs button {
+    background: none; border: none; color: var(--text-muted);
+    padding: 10px 16px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.15s; font-family: var(--font);
+  }
+  .wireframe-tabs button:hover { color: var(--text); }
+  .wireframe-tabs button.active {
+    color: var(--accent); border-bottom-color: var(--accent);
+  }
+  .wireframe-panel { display: none; }
+  .wireframe-panel.active { display: block; }
+
+  /* ── Wireframe: App chrome ── */
+  .wf-app {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); overflow: hidden;
+    font-size: 12px;
+  }
+  .wf-titlebar {
+    background: var(--bg-card); border-bottom: 1px solid var(--border);
+    padding: 8px 12px; display: flex; align-items: center; gap: 8px;
+  }
+  .wf-titlebar .dots { display: flex; gap: 5px; }
+  .wf-titlebar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .wf-titlebar .dot.r { background: #ef4444; }
+  .wf-titlebar .dot.y { background: #f59e0b; }
+  .wf-titlebar .dot.g { background: #3ecf8e; }
+  .wf-titlebar .title { color: var(--text-muted); font-size: 12px; margin-left: 8px; }
+  .wf-titlebar .health {
+    margin-left: auto; background: rgba(62,207,142,0.15);
+    color: var(--accent); padding: 2px 10px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .wf-body { display: flex; min-height: 480px; }
+
+  .wf-sidebar {
+    width: 36px; min-width: 36px; background: var(--bg-card);
+    border-right: 1px solid var(--border); padding: 8px 0;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .wf-sidebar .sb-icon {
+    width: 26px; height: 26px; display: flex;
+    align-items: center; justify-content: center;
+    border-radius: 5px; color: var(--text-dim);
+    font-size: 13px; cursor: default;
+  }
+  .wf-sidebar .sb-icon:hover { color: var(--text-muted); }
+  .wf-sidebar .sb-icon.active {
+    background: var(--bg-surface); color: var(--text);
+  }
+  .wf-sidebar .sb-spacer { height: 8px; }
+  .wf-sidebar .sb-divider {
+    width: 18px; height: 1px; background: var(--border); margin: 4px 0;
+  }
+
+  .wf-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  /* ── Wireframe: Toolbar ── */
+  .wf-toolbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .wf-toolbar h3 { font-size: 15px; font-weight: 700; margin-right: auto; }
+  .wf-toolbar .url-bar {
+    flex: 1; max-width: 400px; background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 10px; color: var(--text-muted); font-size: 12px;
+    font-family: var(--font-mono);
+  }
+  .wf-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 12px; border-radius: 6px; font-size: 12px;
+    font-weight: 500; border: 1px solid var(--border);
+    background: var(--bg-surface); color: var(--text-muted);
+    cursor: default; font-family: var(--font);
+  }
+  .wf-btn.primary { background: var(--accent); color: #0f1117; border-color: var(--accent); font-weight: 600; }
+  .wf-btn.destructive { background: var(--destructive); color: white; border-color: var(--destructive); }
+  .wf-btn.ghost { background: transparent; border-color: transparent; }
+
+  /* ── Wireframe: Content panels ── */
+  .wf-content { display: flex; flex: 1; min-height: 0; }
+
+  .wf-panel-left {
+    width: 280px; min-width: 280px; border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; background: var(--bg-card);
+  }
+  .wf-panel-left .panel-header {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 600; display: flex;
+    align-items: center; gap: 6px;
+  }
+  .wf-panel-left .panel-header .count {
+    background: var(--bg-surface); color: var(--text-muted);
+    padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600;
+  }
+  .wf-panel-left .panel-header .rec-badge {
+    background: rgba(239,68,68,0.15); color: var(--destructive);
+    padding: 1px 7px; border-radius: 10px; font-size: 10px;
+    font-weight: 600; animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .wf-step-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .wf-step {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 6px 8px; border-radius: 6px; margin-bottom: 4px;
+  }
+  .wf-step:hover { background: var(--bg-surface); }
+  .wf-step .step-num { color: var(--text-dim); font-size: 11px; width: 16px; text-align: right; }
+  .wf-step .step-icon { font-size: 12px; width: 16px; text-align: center; }
+  .wf-step .step-body { flex: 1; min-width: 0; }
+  .wf-step .step-type {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    background: var(--bg-surface); color: var(--text-muted);
+    padding: 1px 6px; border-radius: 4px; margin-bottom: 2px;
+  }
+  .wf-step .step-detail { font-size: 11px; color: var(--text-dim); font-family: var(--font-mono); }
+
+  .wf-panel-right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  .wf-browser-chrome {
+    background: var(--bg-surface); padding: 6px 10px;
+    border-bottom: 1px solid var(--border); display: flex;
+    align-items: center; gap: 6px;
+  }
+  .wf-browser-chrome .nav-btn {
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    color: var(--text-dim); font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .wf-browser-chrome .browser-url {
+    flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 10px; color: var(--accent);
+    font-size: 11px; font-family: var(--font-mono);
+  }
+  .wf-browser-chrome .dim-label {
+    font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);
+  }
+
+  .wf-browserview {
+    flex: 1; background: #1a1a2e;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .wf-browserview .site-mock {
+    width: 100%; height: 100%; padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .wf-browserview .site-header {
+    background: #262640; border-radius: 8px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .wf-browserview .site-header .logo-mock {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 6px; opacity: 0.7;
+  }
+  .wf-browserview .site-header .nav-mock {
+    display: flex; gap: 16px;
+  }
+  .wf-browserview .site-header .nav-mock span {
+    width: 50px; height: 8px; background: #3a3a5c; border-radius: 4px;
+  }
+  .wf-browserview .site-content {
+    flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .wf-browserview .site-card {
+    background: #262640; border-radius: 8px; padding: 16px;
+  }
+  .wf-browserview .site-card .line {
+    height: 6px; background: #3a3a5c; border-radius: 3px; margin-bottom: 8px;
+  }
+  .wf-browserview .site-card .line.short { width: 60%; }
+  .wf-browserview .site-card .line.med { width: 80%; }
+  .wf-browserview .site-card .btn-mock {
+    display: inline-block; width: 70px; height: 24px;
+    background: var(--accent); border-radius: 4px; opacity: 0.6;
+    margin-top: 8px;
+  }
+
+  /* Recording border */
+  .wf-browserview.recording { box-shadow: inset 0 0 0 2px var(--destructive); }
+  .wf-browserview .rec-overlay {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--destructive); color: white;
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; gap: 4px;
+    animation: pulse 1.5s infinite;
+  }
+  .wf-browserview .rec-overlay .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: white;
+  }
+
+  /* Click indicator */
+  .click-ring {
+    position: absolute; width: 28px; height: 28px;
+    border: 2px solid var(--accent); border-radius: 50%;
+    opacity: 0.7; pointer-events: none;
+  }
+  .click-ring::after {
+    content: ''; position: absolute; top: 50%; left: 50%;
+    width: 6px; height: 6px; background: var(--accent);
+    border-radius: 50%; transform: translate(-50%, -50%);
+  }
+
+  /* ── Wireframe: Output panel ── */
+  .wf-output {
+    border-top: 1px solid var(--border); background: var(--bg-card);
+    max-height: 140px; overflow-y: auto; padding: 8px 12px;
+  }
+  .wf-output .output-header {
+    font-size: 11px; font-weight: 600; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .wf-output .output-line {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-dim); padding: 1px 0;
+  }
+  .wf-output .output-line.pass { color: var(--accent); }
+  .wf-output .output-line.fail { color: var(--destructive); }
+
+  /* ── Setup wireframe ── */
+  .wf-setup-content {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .wf-setup-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 32px; max-width: 480px;
+    width: 100%; text-align: center;
+  }
+  .wf-setup-card .setup-icon {
+    width: 56px; height: 56px; border-radius: 12px;
+    background: rgba(62,207,142,0.1); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin: 0 auto 16px;
+  }
+  .wf-setup-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .wf-setup-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+  .wf-setup-card .form-group {
+    text-align: left; margin-bottom: 14px;
+  }
+  .wf-setup-card .form-group label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 4px;
+  }
+  .wf-setup-card .form-group .input-mock {
+    width: 100%; background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; color: var(--text); font-size: 13px;
+    font-family: var(--font-mono);
+  }
+  .wf-setup-card .form-row {
+    display: flex; gap: 12px;
+  }
+  .wf-setup-card .form-row .form-group { flex: 1; }
+
+  /* ── Screenshots wireframe ── */
+  .wf-screenshots-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    padding: 12px;
+  }
+  .wf-screenshot-thumb {
+    background: var(--bg-surface); border: 1px solid var(--border);
+    border-radius: 6px; aspect-ratio: 16/10; position: relative;
+    overflow: hidden; cursor: default;
+  }
+  .wf-screenshot-thumb:hover { border-color: var(--accent); }
+  .wf-screenshot-thumb .thumb-content {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 4px;
+  }
+  .wf-screenshot-thumb .thumb-icon { font-size: 18px; opacity: 0.4; }
+  .wf-screenshot-thumb .thumb-label {
+    font-size: 9px; color: var(--text-dim); text-align: center;
+    padding: 0 6px;
+  }
+  .wf-screenshot-thumb .thumb-badge {
+    position: absolute; top: 4px; right: 4px;
+    font-size: 9px; padding: 1px 5px; border-radius: 3px;
+    font-weight: 600;
+  }
+  .wf-screenshot-thumb .thumb-badge.pass { background: rgba(62,207,142,0.15); color: var(--accent); }
+  .wf-screenshot-thumb .thumb-badge.nav { background: rgba(59,130,246,0.15); color: var(--info); }
+  .wf-screenshot-thumb .thumb-badge.click { background: rgba(245,158,11,0.15); color: var(--warning); }
+
+  /* ── Settings wireframe ── */
+  .wf-settings-content { padding: 20px; }
+  .wf-settings-section { margin-bottom: 20px; }
+  .wf-settings-section .settings-label {
+    font-size: 10px; font-weight: 700; color: var(--text-dim);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;
+  }
+  .wf-settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--bg-surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 6px;
+  }
+  .wf-settings-row .label { font-size: 13px; font-weight: 500; }
+  .wf-settings-row .desc { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+  .wf-settings-row .value {
+    font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);
+    background: var(--bg-card); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 5px;
+  }
+  .wf-toggle {
+    width: 34px; height: 18px; border-radius: 9px;
+    background: var(--accent); position: relative;
+  }
+  .wf-toggle::after {
+    content: ''; position: absolute; top: 2px; right: 2px;
+    width: 14px; height: 14px; border-radius: 50%; background: white;
+  }
+  .wf-toggle.off { background: var(--border); }
+  .wf-toggle.off::after { right: auto; left: 2px; }
+
+  /* ── Comparison: Before/After ── */
+  .comparison {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    margin-top: 16px;
+  }
+  .comparison .comp-card {
+    border: 1px solid var(--border); border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .comparison .comp-card .comp-label {
+    padding: 8px 14px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .comparison .comp-card.before .comp-label {
+    background: rgba(239,68,68,0.1); color: var(--destructive);
+  }
+  .comparison .comp-card.after .comp-label {
+    background: rgba(62,207,142,0.1); color: var(--accent);
+  }
+
+  /* ── Feature table ── */
+  .feature-table {
+    width: 100%; border-collapse: collapse; font-size: 13px;
+  }
+  .feature-table th {
+    text-align: left; padding: 10px 14px;
+    background: var(--bg-surface); color: var(--text-muted);
+    font-weight: 600; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.5px; border-bottom: 1px solid var(--border);
+  }
+  .feature-table td {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .feature-table tr:hover td { background: var(--bg-card); }
+  .status-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .status-badge.mvp { background: rgba(62,207,142,0.12); color: var(--accent); }
+  .status-badge.next { background: rgba(59,130,246,0.12); color: var(--info); }
+  .status-badge.future { background: rgba(113,113,122,0.2); color: var(--text-muted); }
+
+  /* ── Milestones ── */
+  .milestone-track {
+    display: flex; gap: 0; margin-top: 24px; position: relative;
+  }
+  .milestone-track::before {
+    content: ''; position: absolute; top: 18px; left: 0; right: 0;
+    height: 2px; background: var(--border);
+  }
+  .milestone {
+    flex: 1; text-align: center; position: relative; padding-top: 36px;
+  }
+  .milestone .dot {
+    position: absolute; top: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid var(--border); background: var(--bg);
+  }
+  .milestone .dot.done { background: var(--accent); border-color: var(--accent); }
+  .milestone .dot.current { background: var(--bg); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(62,207,142,0.2); }
+  .milestone .ms-label { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+  .milestone .ms-desc { font-size: 11px; color: var(--text-dim); }
+
+  /* ── File tree ── */
+  .file-tree {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px 20px;
+    font-family: var(--font-mono); font-size: 12px;
+    color: var(--text-muted); line-height: 1.8;
+    max-width: 500px;
+  }
+  .file-tree .dir { color: var(--info); }
+  .file-tree .file { color: var(--text-dim); }
+  .file-tree .highlight { color: var(--accent); }
+  .file-tree .comment { color: var(--text-dim); opacity: 0.5; }
+
+  /* ── Divider ── */
+  .divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center; padding: 40px 32px;
+    color: var(--text-dim); font-size: 12px;
+  }
+
+  /* ── Annotations ── */
+  .annotation {
+    display: inline-block; background: rgba(245,158,11,0.1);
+    color: var(--warning); font-size: 11px; padding: 2px 8px;
+    border-radius: 4px; font-weight: 500; margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ NAV ════════ -->
+<nav class="top-nav">
+  <div class="logo">ADC Test Suite</div>
+  <div class="nav-links">
+    <a href="#overview" class="active">Overview</a>
+    <a href="#features">Features</a>
+    <a href="#wireframes">Wireframes</a>
+    <a href="#current">Current State</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#storage">Storage</a>
+  </div>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<div class="hero">
+  <div class="badge">Priority #1</div>
+  <h1>Record. Run. <span>Ship with confidence.</span></h1>
+  <p>A Playwright-based test recording and execution system built into ADC. Record browser interactions, save reusable tests, capture screenshots, and export as GitHub Actions CI workflows.</p>
+</div>
+
+<!-- ════════ FEATURES ════════ -->
+<div class="section" id="features">
+  <div class="section-label">Core Features</div>
+  <h2>What we're building</h2>
+  <p>Five capabilities that make up the full Test Suite feature.</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-icon green">&#9673;</div>
+      <h3>1. BrowserView Recorder</h3>
+      <p>Embed any URL in a fixed-dimension BrowserView. Record clicks, inputs, navigations, and keyboard actions as Playwright steps in real time.</p>
+      <ul>
+        <li>Fixed pixel width/height for deterministic coordinates</li>
+        <li>Selector priority: data-testid > ARIA > label > text > CSS > coordinates</li>
+        <li>Chrome DevTools MCP selectors when available</li>
+        <li>Works with localhost, preview URLs, and staging</li>
+      </ul>
+      <div class="annotation">MVP</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon blue">&#128194;</div>
+      <h3>2. Team-Wide Test Storage</h3>
+      <p>Tests save to <code>test-suite/</code> in the project repo. Shared config, auto-generated README, and gitignored screenshot output.</p>
+      <ul>
+        <li>Each recording = standalone <code>.spec.ts</code></li>
+        <li>Shared <code>playwright.config.ts</code> generated on first save</li>
+        <li>Auto-generated <code>README.md</code> with test inventory</li>
+        <li>Committed to repo for team-wide access</li>
+      </ul>
+      <div class="annotation">MVP</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon yellow">&#128247;</div>
+      <h3>3. Screenshot Capture</h3>
+      <p>Configurable screenshot triggers: per-click, per-navigation, per-form, per-assertion, manual, or smart mode (default).</p>
+      <ul>
+        <li>Saved per test run with timestamps</li>
+        <li>Temp folder mode for PR/ticket attachments</li>
+        <li>In-app screenshot viewer with share/export</li>
+        <li>Future: attach to PR, Jira, Slack</li>
+      </ul>
+      <div class="annotation">MVP (capture) + Next (sharing)</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon green">&#127760;</div>
+      <h3>4. Any URL Support</h3>
+      <p>Test against localhost, Vercel preview URLs, staging environments, or any HTTPS site. Auth fixtures handle login flows.</p>
+      <ul>
+        <li>Self-signed cert bypass for HTTPS localhost</li>
+        <li>Auth fixture records login separately</li>
+        <li>No restrictions on target URL</li>
+      </ul>
+      <div class="annotation">MVP</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon blue">&#9881;</div>
+      <h3>5. GitHub CI Export</h3>
+      <p>Export recorded tests as GitHub Actions workflows. Generates <code>.github/workflows/test-suite.yml</code> with Playwright setup, artifact upload.</p>
+      <ul>
+        <li>One-click export from in-app</li>
+        <li>Additive: new tests add to existing workflow</li>
+        <li>Artifact upload for screenshots + reports</li>
+        <li>Runs on PR against <code>src/**</code> and <code>test-suite/**</code></li>
+      </ul>
+      <div class="annotation">MVP</div>
+    </div>
+
+    <div class="card">
+      <div class="card-icon yellow">&#9881;</div>
+      <h3>6. Settings & Configuration</h3>
+      <p>Persistent QA recorder config in Settings. Default URL, BrowserView dimensions, screenshot mode, preload path. Auto-loads last-used config.</p>
+      <ul>
+        <li>Stored in <code>settings_kv</code> (existing infra)</li>
+        <li>Multiple saved configs (selectable)</li>
+        <li>Auto-loads on app start</li>
+        <li>Per-project overrides</li>
+      </ul>
+      <div class="annotation">MVP</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ════════ CURRENT STATE ════════ -->
+<div class="section" id="current">
+  <div class="section-label">Current State</div>
+  <h2>Before vs. After</h2>
+  <p>The current QA Recorder page has no configuration, broken layout, and no setup flow.</p>
+
+  <div class="comparison">
+    <div class="comp-card before">
+      <div class="comp-label">Current — Problems</div>
+      <div style="padding: 16px;">
+        <div class="wf-app" style="font-size: 11px;">
+          <div class="wf-titlebar">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">ADC — QA Recorder (current)</div>
+          </div>
+          <div class="wf-body" style="min-height: 280px;">
+            <div class="wf-sidebar">
+              <div class="sb-icon">&#9633;</div>
+              <div class="sb-icon">&#9776;</div>
+              <div class="sb-icon">&#62;</div>
+              <div class="sb-icon active">&#9881;</div>
+              <div class="sb-divider"></div>
+              <div class="sb-icon">&#8962;</div>
+              <div class="sb-icon">&#9744;</div>
+            </div>
+            <div class="wf-main">
+              <div class="wf-toolbar">
+                <h3 style="font-size: 13px;">QA Recorder</h3>
+                <div class="wf-btn primary" style="font-size: 10px;">Record</div>
+                <div class="wf-btn" style="font-size: 10px;">Save</div>
+                <div class="wf-btn" style="font-size: 10px;">Run</div>
+                <div class="wf-btn" style="font-size: 10px;">Export</div>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px;">
+                <div style="text-align: center;">
+                  <div style="font-size: 28px; opacity: 0.3; margin-bottom: 6px;">&#128196;</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text-muted);">No scripts saved</div>
+                  <div style="font-size: 10px; color: var(--text-dim);">Record and save a QA script</div>
+                </div>
+                <div style="width: 100%; border-top: 1px solid var(--border); margin: 8px 0;"></div>
+                <div style="text-align: center;">
+                  <div style="font-size: 28px; opacity: 0.3; margin-bottom: 6px;">&#127909;</div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Webview preload not configured</div>
+                  <div style="font-size: 10px; color: var(--text-dim);">Pass a preloadPath prop with the recorder preload script path</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+          <div style="color: var(--destructive); font-weight: 600; margin-bottom: 4px;">Issues:</div>
+          <ul style="padding-left: 16px; font-size: 11px; color: var(--text-dim);">
+            <li>No setup/onboarding flow when unconfigured</li>
+            <li>Developer-facing error message ("Pass a preloadPath prop")</li>
+            <li>Two empty states fighting for space</li>
+            <li>No way to configure from the UI</li>
+            <li>No URL input bar</li>
+            <li>Massive wasted space</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-card after">
+      <div class="comp-label">Proposed — Test Suite</div>
+      <div style="padding: 16px;">
+        <div class="wf-app" style="font-size: 11px;">
+          <div class="wf-titlebar">
+            <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+            <div class="title">ADC — Test Suite (proposed)</div>
+          </div>
+          <div class="wf-body" style="min-height: 280px;">
+            <div class="wf-sidebar">
+              <div class="sb-icon">&#9633;</div>
+              <div class="sb-icon">&#9776;</div>
+              <div class="sb-icon">&#62;</div>
+              <div class="sb-icon active">&#9673;</div>
+              <div class="sb-divider"></div>
+              <div class="sb-icon">&#8962;</div>
+              <div class="sb-icon">&#9744;</div>
+            </div>
+            <div class="wf-main">
+              <div class="wf-toolbar" style="gap: 6px;">
+                <h3 style="font-size: 13px;">Test Suite</h3>
+                <div class="url-bar" style="font-size: 10px; max-width: 200px;">https://localhost:3000</div>
+                <div class="wf-btn destructive" style="font-size: 10px;">&#9679; Stop</div>
+                <div class="wf-btn" style="font-size: 10px;">Save</div>
+                <div class="wf-btn" style="font-size: 10px;">Run</div>
+              </div>
+              <div class="wf-content">
+                <div class="wf-panel-left" style="width: 160px; min-width: 160px;">
+                  <div class="panel-header" style="font-size: 10px;">
+                    Steps <span class="count">4</span>
+                    <span class="rec-badge">REC</span>
+                  </div>
+                  <div class="wf-step-list">
+                    <div class="wf-step"><span class="step-num">1</span><div class="step-body"><span class="step-type">Navigate</span><div class="step-detail">/dashboard</div></div></div>
+                    <div class="wf-step"><span class="step-num">2</span><div class="step-body"><span class="step-type">Click</span><div class="step-detail">[data-testid="add"]</div></div></div>
+                    <div class="wf-step"><span class="step-num">3</span><div class="step-body"><span class="step-type">Fill</span><div class="step-detail">Title: "Test"</div></div></div>
+                    <div class="wf-step"><span class="step-num">4</span><div class="step-body"><span class="step-type">Click</span><div class="step-detail">button "Save"</div></div></div>
+                  </div>
+                </div>
+                <div class="wf-panel-right">
+                  <div class="wf-browser-chrome" style="padding: 4px 8px;">
+                    <div class="browser-url" style="font-size: 10px;">https://localhost:3000/dashboard</div>
+                    <div class="dim-label">1280x720</div>
+                  </div>
+                  <div class="wf-browserview recording" style="min-height: 150px;">
+                    <div class="rec-overlay"><div class="dot"></div>REC</div>
+                    <div style="opacity: 0.2; font-size: 24px;">Site renders here</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">
+          <div style="color: var(--accent); font-weight: 600; margin-bottom: 4px;">Improvements:</div>
+          <ul style="padding-left: 16px; font-size: 11px; color: var(--text-dim);">
+            <li>Setup flow when unconfigured (not an error)</li>
+            <li>URL bar in toolbar for any target</li>
+            <li>Recording indicator with red border + badge</li>
+            <li>Step panel shows live captured actions</li>
+            <li>Fixed-dimension BrowserView with size label</li>
+            <li>Structured 3-panel layout</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ════════ WIREFRAMES ════════ -->
+<div class="wireframe-section" id="wireframes">
+  <div class="section-label">Wireframes</div>
+  <h2>Layout Drafts</h2>
+
+  <div class="wireframe-tabs">
+    <button class="active" onclick="showPanel('recording')">Recording View</button>
+    <button onclick="showPanel('library')">Test Library</button>
+    <button onclick="showPanel('taskrunner')">Task Test Runner</button>
+    <button onclick="showPanel('setup')">Setup / Onboarding</button>
+    <button onclick="showPanel('results')">Run Results</button>
+    <button onclick="showPanel('screenshots')">Screenshots</button>
+    <button onclick="showPanel('settings')">Settings</button>
+    <button onclick="showPanel('export')">CI Export</button>
+  </div>
+
+  <!-- ── Recording ── -->
+  <div class="wireframe-panel active" id="panel-recording">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Test Suite &mdash; Recording</div>
+        <div class="health">Healthy</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon active">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Test Suite</h3>
+            <div class="url-bar">https://localhost:3000</div>
+            <div class="wf-btn destructive">&#9679; Stop Recording</div>
+            <div class="wf-btn">Save</div>
+            <div class="wf-btn">&#9654; Run</div>
+            <div class="wf-btn ghost">&#8943;</div>
+          </div>
+          <div class="wf-content">
+            <div class="wf-panel-left">
+              <div class="panel-header">
+                Steps <span class="count">7</span>
+                <span class="rec-badge">REC</span>
+              </div>
+              <div class="wf-step-list">
+                <div class="wf-step">
+                  <span class="step-num">1</span>
+                  <span class="step-icon">&#8594;</span>
+                  <div class="step-body">
+                    <span class="step-type">Navigate</span>
+                    <div class="step-detail">/dashboard</div>
+                  </div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num">2</span>
+                  <span class="step-icon">&#128433;</span>
+                  <div class="step-body">
+                    <span class="step-type">Click</span>
+                    <div class="step-detail">[data-testid="new-task"]</div>
+                  </div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num">3</span>
+                  <span class="step-icon">&#9998;</span>
+                  <div class="step-body">
+                    <span class="step-type">Fill</span>
+                    <div class="step-detail">Title &rarr; "Login flow test"</div>
+                  </div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num">4</span>
+                  <span class="step-icon">&#9998;</span>
+                  <div class="step-body">
+                    <span class="step-type">Fill</span>
+                    <div class="step-detail">Desc &rarr; "Verify auth redirect"</div>
+                  </div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num">5</span>
+                  <span class="step-icon">&#128433;</span>
+                  <div class="step-body">
+                    <span class="step-type">Click</span>
+                    <div class="step-detail">button "Save"</div>
+                  </div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num">6</span>
+                  <span class="step-icon">&#8594;</span>
+                  <div class="step-body">
+                    <span class="step-type">Navigate</span>
+                    <div class="step-detail">/tasks</div>
+                  </div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num">7</span>
+                  <span class="step-icon">&#10003;</span>
+                  <div class="step-body">
+                    <span class="step-type">Assert</span>
+                    <div class="step-detail">"Login flow test" visible</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="wf-panel-right">
+              <div class="wf-browser-chrome">
+                <div class="nav-btn">&larr;</div>
+                <div class="nav-btn">&rarr;</div>
+                <div class="nav-btn">&#8635;</div>
+                <div class="browser-url">https://localhost:3000/tasks</div>
+                <div class="dim-label">1280 &times; 720</div>
+              </div>
+              <div class="wf-browserview recording">
+                <div class="rec-overlay"><div class="dot"></div>REC</div>
+                <div class="site-mock">
+                  <div class="site-header">
+                    <div class="logo-mock"></div>
+                    <div class="nav-mock">
+                      <span></span><span></span><span></span><span></span>
+                    </div>
+                  </div>
+                  <div class="site-content">
+                    <div class="site-card">
+                      <div class="line short"></div>
+                      <div class="line med"></div>
+                      <div class="line"></div>
+                      <div class="btn-mock"></div>
+                    </div>
+                    <div class="site-card">
+                      <div class="line med"></div>
+                      <div class="line short"></div>
+                      <div class="line"></div>
+                      <div class="line short"></div>
+                    </div>
+                    <div class="site-card">
+                      <div class="line"></div>
+                      <div class="line short"></div>
+                      <div class="btn-mock"></div>
+                    </div>
+                    <div class="site-card">
+                      <div class="line med"></div>
+                      <div class="line"></div>
+                      <div class="line short"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="click-ring" style="top: 65%; left: 22%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Test Library ── -->
+  <div class="wireframe-panel" id="panel-library">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Test Suite &mdash; Library</div>
+        <div class="health">Healthy</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon active">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Test Suite</h3>
+            <div style="display:flex;gap:4px;margin-left:8px;">
+              <div class="wf-btn" style="font-size:11px;opacity:0.6;">Record</div>
+              <div class="wf-btn primary" style="font-size:11px;">Library</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+              <div class="url-bar" style="max-width:200px;font-size:11px;">Search tests...</div>
+              <div class="wf-btn" style="font-size:11px;">+ New Test</div>
+            </div>
+          </div>
+          <div class="wf-content" style="flex-direction:column;">
+            <!-- Test list table -->
+            <div style="flex:1;overflow-y:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead>
+                  <tr style="border-bottom:1px solid var(--border);background:var(--bg-surface);">
+                    <th style="padding:8px 14px;text-align:left;width:30px;">
+                      <input type="checkbox" style="accent-color:var(--accent);">
+                    </th>
+                    <th style="padding:8px 14px;text-align:left;color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Name</th>
+                    <th style="padding:8px 14px;text-align:left;color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Steps</th>
+                    <th style="padding:8px 14px;text-align:left;color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Last Run</th>
+                    <th style="padding:8px 14px;text-align:left;color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Status</th>
+                    <th style="padding:8px 14px;text-align:left;color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Target URL</th>
+                    <th style="padding:8px 14px;text-align:right;color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style="border-bottom:1px solid var(--border);background:rgba(62,207,142,0.03);">
+                    <td style="padding:8px 14px;"><input type="checkbox" checked style="accent-color:var(--accent);"></td>
+                    <td style="padding:8px 14px;font-weight:600;">login-flow</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);">5 steps</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);font-size:11px;">2 min ago</td>
+                    <td style="padding:8px 14px;"><span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">Passed</span></td>
+                    <td style="padding:8px 14px;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;">localhost:3000</td>
+                    <td style="padding:8px 14px;text-align:right;">
+                      <div style="display:flex;gap:4px;justify-content:flex-end;">
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">&#9654; Run</div>
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">Edit</div>
+                        <div class="wf-btn ghost" style="font-size:10px;padding:3px 8px;">&#8943;</div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:8px 14px;"><input type="checkbox" style="accent-color:var(--accent);"></td>
+                    <td style="padding:8px 14px;font-weight:600;">task-crud</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);">12 steps</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);font-size:11px;">1 hr ago</td>
+                    <td style="padding:8px 14px;"><span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">Passed</span></td>
+                    <td style="padding:8px 14px;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;">localhost:3000</td>
+                    <td style="padding:8px 14px;text-align:right;">
+                      <div style="display:flex;gap:4px;justify-content:flex-end;">
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">&#9654; Run</div>
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">Edit</div>
+                        <div class="wf-btn ghost" style="font-size:10px;padding:3px 8px;">&#8943;</div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:8px 14px;"><input type="checkbox" style="accent-color:var(--accent);"></td>
+                    <td style="padding:8px 14px;font-weight:600;">dashboard-widgets</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);">8 steps</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);font-size:11px;">3 hrs ago</td>
+                    <td style="padding:8px 14px;"><span style="background:rgba(239,68,68,0.12);color:var(--destructive);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">Failed</span></td>
+                    <td style="padding:8px 14px;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;">localhost:3000</td>
+                    <td style="padding:8px 14px;text-align:right;">
+                      <div style="display:flex;gap:4px;justify-content:flex-end;">
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">&#9654; Run</div>
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">Edit</div>
+                        <div class="wf-btn ghost" style="font-size:10px;padding:3px 8px;">&#8943;</div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:8px 14px;"><input type="checkbox" style="accent-color:var(--accent);"></td>
+                    <td style="padding:8px 14px;font-weight:600;">navigation-sweep</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);">15 steps</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);font-size:11px;">Yesterday</td>
+                    <td style="padding:8px 14px;"><span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">Passed</span></td>
+                    <td style="padding:8px 14px;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;">preview.syrnia.dev</td>
+                    <td style="padding:8px 14px;text-align:right;">
+                      <div style="display:flex;gap:4px;justify-content:flex-end;">
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">&#9654; Run</div>
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">Edit</div>
+                        <div class="wf-btn ghost" style="font-size:10px;padding:3px 8px;">&#8943;</div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border);">
+                    <td style="padding:8px 14px;"><input type="checkbox" style="accent-color:var(--accent);"></td>
+                    <td style="padding:8px 14px;font-weight:600;">onboarding-wizard</td>
+                    <td style="padding:8px 14px;color:var(--text-muted);">9 steps</td>
+                    <td style="padding:8px 14px;color:var(--text-dim);font-size:11px;">Never</td>
+                    <td style="padding:8px 14px;"><span style="background:rgba(113,113,122,0.2);color:var(--text-muted);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">New</span></td>
+                    <td style="padding:8px 14px;color:var(--text-dim);font-family:var(--font-mono);font-size:11px;">localhost:3000</td>
+                    <td style="padding:8px 14px;text-align:right;">
+                      <div style="display:flex;gap:4px;justify-content:flex-end;">
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">&#9654; Run</div>
+                        <div class="wf-btn" style="font-size:10px;padding:3px 8px;">Edit</div>
+                        <div class="wf-btn ghost" style="font-size:10px;padding:3px 8px;">&#8943;</div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Bottom action bar -->
+            <div style="border-top:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:12px;background:var(--bg-card);">
+              <span style="font-size:11px;color:var(--text-muted);">1 selected</span>
+              <div class="wf-btn primary" style="font-size:11px;">&#9654; Run Selected</div>
+              <div class="wf-btn" style="font-size:11px;">Run All</div>
+              <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+                <div class="wf-btn" style="font-size:11px;">Export to CI</div>
+                <div class="wf-btn" style="font-size:11px;color:var(--destructive);">Delete</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Task Test Runner ── -->
+  <div class="wireframe-panel" id="panel-taskrunner">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Tasks &mdash; Test Phase</div>
+        <div class="health">Healthy</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon active">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Tasks</h3>
+            <div style="font-size:12px;color:var(--text-muted);margin-left:8px;">&rsaquo; Implement login page</div>
+            <div style="margin-left:auto;display:flex;gap:4px;">
+              <div class="wf-btn" style="font-size:11px;">Details</div>
+              <div class="wf-btn" style="font-size:11px;">Code</div>
+              <div class="wf-btn" style="font-size:11px;">PR</div>
+              <div class="wf-btn primary" style="font-size:11px;">Test Phase</div>
+            </div>
+          </div>
+          <div class="wf-content">
+            <!-- Left: test selection + config -->
+            <div class="wf-panel-left" style="width:340px;min-width:340px;">
+              <div class="panel-header" style="justify-content:space-between;">
+                <span>Test Configuration</span>
+              </div>
+              <div style="padding:12px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;">
+                <!-- Status badge -->
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <span style="background:rgba(59,130,246,0.12);color:var(--info);padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">Review</span>
+                  <span style="font-size:11px;color:var(--text-muted);">Task ready for testing</span>
+                </div>
+
+                <!-- Test selection -->
+                <div>
+                  <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Select Tests to Run</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:default;">
+                      <input type="checkbox" checked style="accent-color:var(--accent);">
+                      <span style="flex:1;">login-flow</span>
+                      <span style="color:var(--text-dim);font-size:10px;">5 steps</span>
+                      <span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;">Pass</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:default;">
+                      <input type="checkbox" checked style="accent-color:var(--accent);">
+                      <span style="flex:1;">task-crud</span>
+                      <span style="color:var(--text-dim);font-size:10px;">12 steps</span>
+                      <span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;">Pass</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:default;">
+                      <input type="checkbox" style="accent-color:var(--accent);">
+                      <span style="flex:1;">dashboard-widgets</span>
+                      <span style="color:var(--text-dim);font-size:10px;">8 steps</span>
+                      <span style="background:rgba(239,68,68,0.12);color:var(--destructive);padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;">Fail</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:default;">
+                      <input type="checkbox" checked style="accent-color:var(--accent);">
+                      <span style="flex:1;">navigation-sweep</span>
+                      <span style="color:var(--text-dim);font-size:10px;">15 steps</span>
+                      <span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:1px 6px;border-radius:8px;font-size:9px;font-weight:600;">Pass</span>
+                    </label>
+                  </div>
+                  <div style="margin-top:6px;display:flex;gap:6px;">
+                    <div class="wf-btn" style="font-size:10px;">Select All</div>
+                    <div class="wf-btn" style="font-size:10px;">Select Passing</div>
+                    <div class="wf-btn" style="font-size:10px;">Clear</div>
+                  </div>
+                </div>
+
+                <!-- Run settings -->
+                <div>
+                  <div style="font-size:11px;font-weight:600;margin-bottom:6px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Run Settings</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;">
+                      <span style="font-size:12px;">Target URL</span>
+                      <span style="font-size:11px;color:var(--accent);font-family:var(--font-mono);">localhost:3000</span>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;">
+                      <span style="font-size:12px;">Viewport</span>
+                      <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">1280 &times; 720</span>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;">
+                      <span style="font-size:12px;">Screenshots</span>
+                      <span style="font-size:11px;color:var(--text-muted);">Smart</span>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;">
+                      <span style="font-size:12px;">Config</span>
+                      <span style="font-size:11px;color:var(--text-muted);">syrnia-helpsite</span>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;">
+                      <span style="font-size:12px;">Stop on first failure</span>
+                      <div class="wf-toggle off"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Run button -->
+                <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;">
+                  <div class="wf-btn primary" style="text-align:center;justify-content:center;padding:10px;font-size:13px;">&#9654; Start Test Phase &mdash; 3 tests</div>
+                  <div style="font-size:10px;color:var(--text-dim);text-align:center;">Results will be attached to this task's review</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: live results / previous results -->
+            <div class="wf-panel-right" style="display:flex;flex-direction:column;">
+              <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;font-weight:600;">Test Results</span>
+                <span style="font-size:11px;color:var(--text-dim);">Last run: 2 min ago</span>
+                <div style="margin-left:auto;display:flex;gap:12px;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+                    <span style="font-size:11px;color:var(--text-muted);">3 passed</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:var(--destructive);"></div>
+                    <span style="font-size:11px;color:var(--text-muted);">0 failed</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <div style="width:8px;height:8px;border-radius:50%;background:var(--text-dim);"></div>
+                    <span style="font-size:11px;color:var(--text-muted);">1 skipped</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Test result cards -->
+              <div style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;">
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:12px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span style="color:var(--accent);font-weight:700;">&#10003;</span>
+                    <span style="font-size:13px;font-weight:600;">login-flow.spec.ts</span>
+                    <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">1.1s</span>
+                  </div>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Navigate /login &#10003;</span>
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Fill email &#10003;</span>
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Fill password &#10003;</span>
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Click Sign In &#10003;</span>
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Assert /dashboard &#10003;</span>
+                  </div>
+                  <div style="margin-top:8px;display:flex;gap:6px;">
+                    <div class="wf-btn" style="font-size:10px;padding:2px 8px;">View Screenshots</div>
+                    <div class="wf-btn" style="font-size:10px;padding:2px 8px;">View Output</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:12px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span style="color:var(--accent);font-weight:700;">&#10003;</span>
+                    <span style="font-size:13px;font-weight:600;">task-crud.spec.ts</span>
+                    <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">3.4s</span>
+                  </div>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Navigate /tasks &#10003;</span>
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Click New Task &#10003;</span>
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">Fill form &#10003;</span>
+                    <span style="font-size:10px;color:var(--text-dim);padding:2px 6px;">+9 more</span>
+                  </div>
+                  <div style="margin-top:8px;display:flex;gap:6px;">
+                    <div class="wf-btn" style="font-size:10px;padding:2px 8px;">View Screenshots</div>
+                    <div class="wf-btn" style="font-size:10px;padding:2px 8px;">View Output</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:12px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <span style="color:var(--accent);font-weight:700;">&#10003;</span>
+                    <span style="font-size:13px;font-weight:600;">navigation-sweep.spec.ts</span>
+                    <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">2.8s</span>
+                  </div>
+                  <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                    <span style="font-size:10px;background:rgba(62,207,142,0.08);color:var(--accent);padding:2px 6px;border-radius:4px;">15/15 steps passed &#10003;</span>
+                  </div>
+                  <div style="margin-top:8px;display:flex;gap:6px;">
+                    <div class="wf-btn" style="font-size:10px;padding:2px 8px;">View Screenshots</div>
+                    <div class="wf-btn" style="font-size:10px;padding:2px 8px;">View Output</div>
+                  </div>
+                </div>
+
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-left:3px solid var(--text-dim);border-radius:6px;padding:12px;opacity:0.6;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="color:var(--text-dim);font-weight:700;">&#8212;</span>
+                    <span style="font-size:13px;font-weight:600;">dashboard-widgets.spec.ts</span>
+                    <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">Skipped</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Not selected for this run</div>
+                </div>
+              </div>
+              <!-- Bottom summary -->
+              <div style="border-top:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:12px;background:var(--bg-card);">
+                <span style="font-size:12px;font-weight:600;color:var(--accent);">&#10003; All 3 tests passed</span>
+                <span style="font-size:11px;color:var(--text-dim);">7.3s total</span>
+                <div style="margin-left:auto;display:flex;gap:6px;">
+                  <div class="wf-btn" style="font-size:11px;">Attach to Task</div>
+                  <div class="wf-btn primary" style="font-size:11px;">Mark Review Complete</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Setup ── -->
+  <div class="wireframe-panel" id="panel-setup">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Test Suite &mdash; Setup</div>
+        <div class="health">Healthy</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon active">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Test Suite</h3>
+          </div>
+          <div class="wf-setup-content">
+            <div class="wf-setup-card">
+              <div class="setup-icon">&#9673;</div>
+              <h3>Set up Test Suite</h3>
+              <p>Configure your test environment to start recording browser tests. These settings can be changed later in Settings &gt; Testing.</p>
+              <div class="form-group">
+                <label>Target URL</label>
+                <div class="input-mock">https://localhost:3000</div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>BrowserView Width</label>
+                  <div class="input-mock">1280</div>
+                </div>
+                <div class="form-group">
+                  <label>BrowserView Height</label>
+                  <div class="input-mock">720</div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Screenshot Mode</label>
+                <div class="input-mock">Smart (navigation + forms + assertions)</div>
+              </div>
+              <div class="form-group">
+                <label>Test Directory</label>
+                <div class="input-mock">test-suite/</div>
+              </div>
+              <div style="margin-top: 20px; display: flex; gap: 8px; justify-content: flex-end;">
+                <div class="wf-btn">Skip for now</div>
+                <div class="wf-btn primary">Save & Start Recording</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Results ── -->
+  <div class="wireframe-panel" id="panel-results">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Test Suite &mdash; Run Results</div>
+        <div class="health">Healthy</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon active">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Test Suite</h3>
+            <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
+              <div class="wf-btn" style="font-size:11px;">login-flow.spec.ts</div>
+              <div class="wf-btn primary" style="font-size:11px;">&#9654; Run</div>
+              <div class="wf-btn" style="font-size:11px;">Export CI</div>
+            </div>
+          </div>
+          <div class="wf-content">
+            <div class="wf-panel-left">
+              <div class="panel-header">
+                Steps <span class="count">5</span>
+                <span style="margin-left:auto;background:rgba(62,207,142,0.15);color:var(--accent);padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;">PASSED</span>
+              </div>
+              <div class="wf-step-list">
+                <div class="wf-step">
+                  <span class="step-num" style="color:var(--accent);">&#10003;</span>
+                  <div class="step-body"><span class="step-type">Navigate</span><div class="step-detail">/login &bull; 120ms</div></div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num" style="color:var(--accent);">&#10003;</span>
+                  <div class="step-body"><span class="step-type">Fill</span><div class="step-detail">email &rarr; "test@test.com" &bull; 45ms</div></div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num" style="color:var(--accent);">&#10003;</span>
+                  <div class="step-body"><span class="step-type">Fill</span><div class="step-detail">password &rarr; "****" &bull; 32ms</div></div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num" style="color:var(--accent);">&#10003;</span>
+                  <div class="step-body"><span class="step-type">Click</span><div class="step-detail">button "Sign In" &bull; 890ms</div></div>
+                </div>
+                <div class="wf-step">
+                  <span class="step-num" style="color:var(--accent);">&#10003;</span>
+                  <div class="step-body"><span class="step-type">Assert</span><div class="step-detail">URL = /dashboard &bull; 15ms</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="wf-panel-right" style="display:flex;flex-direction:column;">
+              <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;font-weight:600;">Screenshots</span>
+                <span style="font-size:11px;color:var(--text-dim);">5 captured (Smart mode)</span>
+                <div style="margin-left:auto;display:flex;gap:4px;">
+                  <div class="wf-btn" style="font-size:10px;">Copy All</div>
+                  <div class="wf-btn" style="font-size:10px;">Export</div>
+                </div>
+              </div>
+              <div class="wf-screenshots-grid" style="flex:1;">
+                <div class="wf-screenshot-thumb">
+                  <div class="thumb-badge nav">nav</div>
+                  <div class="thumb-content"><div class="thumb-icon">&#128247;</div><div class="thumb-label">01-navigate-login.png</div></div>
+                </div>
+                <div class="wf-screenshot-thumb">
+                  <div class="thumb-badge click">fill</div>
+                  <div class="thumb-content"><div class="thumb-icon">&#128247;</div><div class="thumb-label">02-fill-email.png</div></div>
+                </div>
+                <div class="wf-screenshot-thumb">
+                  <div class="thumb-badge click">fill</div>
+                  <div class="thumb-content"><div class="thumb-icon">&#128247;</div><div class="thumb-label">03-fill-password.png</div></div>
+                </div>
+                <div class="wf-screenshot-thumb">
+                  <div class="thumb-badge click">click</div>
+                  <div class="thumb-content"><div class="thumb-icon">&#128247;</div><div class="thumb-label">04-click-signin.png</div></div>
+                </div>
+                <div class="wf-screenshot-thumb">
+                  <div class="thumb-badge pass">assert</div>
+                  <div class="thumb-content"><div class="thumb-icon">&#128247;</div><div class="thumb-label">05-assert-dashboard.png</div></div>
+                </div>
+              </div>
+              <div class="wf-output">
+                <div class="output-header">&#9654; Run Output</div>
+                <div class="output-line pass">&#10003; Navigate to /login (120ms)</div>
+                <div class="output-line pass">&#10003; Fill email input (45ms)</div>
+                <div class="output-line pass">&#10003; Fill password input (32ms)</div>
+                <div class="output-line pass">&#10003; Click "Sign In" (890ms)</div>
+                <div class="output-line pass">&#10003; Assert URL = /dashboard (15ms)</div>
+                <div class="output-line" style="color:var(--accent);font-weight:600;margin-top:4px;">5/5 passed &mdash; 1.1s total</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Screenshots ── -->
+  <div class="wireframe-panel" id="panel-screenshots">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Test Suite &mdash; Screenshot Viewer</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon active">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Screenshots</h3>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div class="wf-btn" style="font-size:11px;">login-flow &bull; Run #3 &bull; Apr 10</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:4px;">
+              <div class="wf-btn" style="font-size:11px;">&#128203; Copy to clipboard</div>
+              <div class="wf-btn" style="font-size:11px;">&#128190; Export as ZIP</div>
+              <div class="wf-btn primary" style="font-size:11px;">Share</div>
+            </div>
+          </div>
+          <div style="display:flex;flex:1;">
+            <!-- Left: thumbnail strip -->
+            <div style="width:120px;border-right:1px solid var(--border);padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+              <div class="wf-screenshot-thumb" style="border-color:var(--accent);">
+                <div class="thumb-content"><div class="thumb-icon" style="font-size:14px;">&#128247;</div><div class="thumb-label">01-login</div></div>
+              </div>
+              <div class="wf-screenshot-thumb">
+                <div class="thumb-content"><div class="thumb-icon" style="font-size:14px;">&#128247;</div><div class="thumb-label">02-email</div></div>
+              </div>
+              <div class="wf-screenshot-thumb">
+                <div class="thumb-content"><div class="thumb-icon" style="font-size:14px;">&#128247;</div><div class="thumb-label">03-pass</div></div>
+              </div>
+              <div class="wf-screenshot-thumb">
+                <div class="thumb-content"><div class="thumb-icon" style="font-size:14px;">&#128247;</div><div class="thumb-label">04-submit</div></div>
+              </div>
+              <div class="wf-screenshot-thumb">
+                <div class="thumb-content"><div class="thumb-icon" style="font-size:14px;">&#128247;</div><div class="thumb-label">05-dash</div></div>
+              </div>
+            </div>
+            <!-- Right: large preview -->
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;">
+              <div style="width:100%;max-width:640px;aspect-ratio:16/9;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+                <div style="font-size:48px;opacity:0.15;">&#128247;</div>
+                <div style="font-size:13px;color:var(--text-muted);">01-navigate-login.png</div>
+                <div style="font-size:11px;color:var(--text-dim);">1280 x 720 &bull; Step 1: Navigate to /login</div>
+                <div style="font-size:11px;color:var(--text-dim);">Captured: Apr 10, 2026 3:42 PM</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings ── -->
+  <div class="wireframe-panel" id="panel-settings">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Settings &mdash; Testing</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon active">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Settings</h3>
+            <div style="display:flex;gap:2px;">
+              <div class="wf-btn" style="font-size:11px;">Display</div>
+              <div class="wf-btn" style="font-size:11px;">Profile</div>
+              <div class="wf-btn" style="font-size:11px;">Hub</div>
+              <div class="wf-btn" style="font-size:11px;">Integrations</div>
+              <div class="wf-btn primary" style="font-size:11px;">Testing</div>
+              <div class="wf-btn" style="font-size:11px;">Storage</div>
+              <div class="wf-btn" style="font-size:11px;">Advanced</div>
+            </div>
+          </div>
+          <div class="wf-settings-content" style="max-width:600px;">
+            <div class="wf-settings-section">
+              <div class="settings-label">Test Environment</div>
+              <div class="wf-settings-row">
+                <div><div class="label">Default Target URL</div><div class="desc">Pre-filled when opening the recorder</div></div>
+                <div class="value">https://localhost:3000</div>
+              </div>
+              <div class="wf-settings-row">
+                <div><div class="label">Test Directory</div><div class="desc">Where test files are saved in the project</div></div>
+                <div class="value">test-suite/</div>
+              </div>
+            </div>
+            <div class="wf-settings-section">
+              <div class="settings-label">BrowserView Dimensions</div>
+              <div class="wf-settings-row">
+                <div><div class="label">Width</div><div class="desc">Fixed pixel width for reproducible clicks</div></div>
+                <div class="value">1280</div>
+              </div>
+              <div class="wf-settings-row">
+                <div><div class="label">Height</div><div class="desc">Fixed pixel height for reproducible clicks</div></div>
+                <div class="value">720</div>
+              </div>
+            </div>
+            <div class="wf-settings-section">
+              <div class="settings-label">Screenshot Capture</div>
+              <div class="wf-settings-row">
+                <div><div class="label">Default Mode</div><div class="desc">When to auto-capture screenshots</div></div>
+                <div class="value">Smart</div>
+              </div>
+              <div class="wf-settings-row">
+                <div><div class="label">Save to temp folder</div><div class="desc">Use OS temp dir instead of project dir</div></div>
+                <div class="wf-toggle off"></div>
+              </div>
+            </div>
+            <div class="wf-settings-section">
+              <div class="settings-label">Saved Configurations</div>
+              <div class="wf-settings-row" style="border-color:var(--accent);">
+                <div>
+                  <div class="label">syrnia-helpsite <span style="background:rgba(62,207,142,0.12);color:var(--accent);padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;margin-left:4px;">Active</span></div>
+                  <div class="desc">localhost:3000 &bull; 1280x720 &bull; Smart</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                  <div class="wf-btn" style="font-size:10px;">Edit</div>
+                  <div class="wf-btn" style="font-size:10px;">&#128465;</div>
+                </div>
+              </div>
+              <div class="wf-settings-row">
+                <div>
+                  <div class="label">staging-preview</div>
+                  <div class="desc">preview.syrnia.dev &bull; 1440x900 &bull; Per-nav</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                  <div class="wf-btn" style="font-size:10px;">Use</div>
+                  <div class="wf-btn" style="font-size:10px;">Edit</div>
+                  <div class="wf-btn" style="font-size:10px;">&#128465;</div>
+                </div>
+              </div>
+              <div style="margin-top:8px;">
+                <div class="wf-btn" style="font-size:11px;">+ Add Configuration</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Export ── -->
+  <div class="wireframe-panel" id="panel-export">
+    <div class="wf-app">
+      <div class="wf-titlebar">
+        <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="title">ADC &mdash; Test Suite &mdash; CI Export</div>
+      </div>
+      <div class="wf-body">
+        <div class="wf-sidebar">
+          <div class="sb-icon">&#9633;</div>
+          <div class="sb-icon">&#9776;</div>
+          <div class="sb-icon">&#62;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#8919;</div>
+          <div class="sb-icon">&#9881;</div>
+          <div class="sb-icon">&#9826;</div>
+          <div class="sb-icon active">&#9673;</div>
+          <div class="sb-divider"></div>
+          <div class="sb-icon">&#8962;</div>
+          <div class="sb-icon">&#9744;</div>
+          <div class="sb-icon">&#9734;</div>
+          <div class="sb-icon">&#128279;</div>
+        </div>
+        <div class="wf-main">
+          <div class="wf-toolbar">
+            <h3>Export to GitHub Actions</h3>
+          </div>
+          <div style="padding:20px;display:flex;gap:20px;">
+            <!-- Left: file preview -->
+            <div style="flex:1;">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Files to generate:</div>
+              <div class="file-tree">
+                <div><span class="dir">test-suite/</span></div>
+                <div>&nbsp;&nbsp;<span class="highlight">playwright.config.ts</span> <span class="comment"># shared config</span></div>
+                <div>&nbsp;&nbsp;<span class="dir">scripts/</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">login-flow.spec.ts</span> <span class="comment"># existing</span></div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight">task-crud.spec.ts</span> <span class="comment"># new</span></div>
+                <div><span class="dir">.github/workflows/</span></div>
+                <div>&nbsp;&nbsp;<span class="highlight">test-suite.yml</span> <span class="comment"># generated</span></div>
+              </div>
+              <div style="margin-top:16px;display:flex;gap:8px;">
+                <div class="wf-btn primary">Export & Commit</div>
+                <div class="wf-btn">Preview YAML</div>
+              </div>
+            </div>
+            <!-- Right: config summary -->
+            <div style="width:280px;">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Workflow Config:</div>
+              <div class="wf-settings-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                <div class="label" style="font-size:12px;">Trigger</div>
+                <div class="desc">pull_request (src/**, test-suite/**)</div>
+              </div>
+              <div class="wf-settings-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                <div class="label" style="font-size:12px;">Runner</div>
+                <div class="desc">ubuntu-latest</div>
+              </div>
+              <div class="wf-settings-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                <div class="label" style="font-size:12px;">Node</div>
+                <div class="desc">22.x</div>
+              </div>
+              <div class="wf-settings-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                <div class="label" style="font-size:12px;">Artifacts</div>
+                <div class="desc">screenshots/ + playwright-report/</div>
+              </div>
+              <div class="wf-settings-row" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                <div class="label" style="font-size:12px;">Tests included</div>
+                <div class="desc">2 spec files (login-flow, task-crud)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ════════ ROADMAP ════════ -->
+<div class="section" id="roadmap">
+  <div class="section-label">Roadmap</div>
+  <h2>Implementation Milestones</h2>
+
+  <div class="milestone-track">
+    <div class="milestone">
+      <div class="dot done"></div>
+      <div class="ms-label">Research</div>
+      <div class="ms-desc">Architecture docs,<br>IPC contract, preload</div>
+    </div>
+    <div class="milestone">
+      <div class="dot done"></div>
+      <div class="ms-label">Sprint 3 MVP</div>
+      <div class="ms-desc">DB schema, service,<br>basic UI (current)</div>
+    </div>
+    <div class="milestone">
+      <div class="dot current"></div>
+      <div class="ms-label">QA & Fix</div>
+      <div class="ms-desc">Fix CI, layout,<br>setup flow, settings</div>
+    </div>
+    <div class="milestone">
+      <div class="dot"></div>
+      <div class="ms-label">Full Recorder</div>
+      <div class="ms-desc">BrowserView, URL bar,<br>fixed dimensions</div>
+    </div>
+    <div class="milestone">
+      <div class="dot"></div>
+      <div class="ms-label">Screenshots</div>
+      <div class="ms-desc">Capture system,<br>viewer, export</div>
+    </div>
+    <div class="milestone">
+      <div class="dot"></div>
+      <div class="ms-label">CI Export</div>
+      <div class="ms-desc">GitHub Actions<br>workflow generation</div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ════════ FEATURE BREAKDOWN ════════ -->
+<div class="section" id="overview">
+  <div class="section-label">Feature Breakdown</div>
+  <h2>Deliverables by phase</h2>
+
+  <table class="feature-table">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Phase</th>
+        <th>Description</th>
+        <th>Depends On</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Setup/Onboarding Flow</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>When no config exists, show a setup card instead of an error. Captures URL, dimensions, screenshot mode. Saves to settings_kv.</td>
+        <td>Settings integration</td>
+      </tr>
+      <tr>
+        <td><strong>Settings Tab (Testing)</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>New "Testing" tab in Settings page. Default URL, BrowserView dimensions, screenshot mode, saved configurations with active/switch/edit/delete.</td>
+        <td>&mdash;</td>
+      </tr>
+      <tr>
+        <td><strong>Layout Redesign</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>3-panel layout: step panel (left), BrowserView (right), output (bottom). URL bar in toolbar. Recording indicator.</td>
+        <td>Setup flow</td>
+      </tr>
+      <tr>
+        <td><strong>BrowserView (fixed dims)</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>Replace webview tag with Electron BrowserView at user-specified pixel dimensions. Nav controls (back/forward/reload). Dimension label.</td>
+        <td>Settings</td>
+      </tr>
+      <tr>
+        <td><strong>Recorder Preload (enhanced)</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>Capture clicks, fills, selects, keyboard, navigation. Selector priority with Chrome MCP fallback. Coordinate capture at fixed dimensions.</td>
+        <td>BrowserView</td>
+      </tr>
+      <tr>
+        <td><strong>Test Storage (test-suite/)</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>Save recordings as .spec.ts in project's test-suite/scripts/. Auto-generate playwright.config.ts and README.md.</td>
+        <td>Recorder</td>
+      </tr>
+      <tr>
+        <td><strong>Test Runner</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>Run saved tests via Playwright CLI (child_process.spawn). Stream output to UI. Show pass/fail per step with timing.</td>
+        <td>Test storage</td>
+      </tr>
+      <tr>
+        <td><strong>Screenshot Capture</strong></td>
+        <td><span class="status-badge mvp">MVP</span></td>
+        <td>Configurable triggers (smart/per-click/per-nav/manual). Save to test-suite/screenshots/ or temp dir. Named by step.</td>
+        <td>Test runner</td>
+      </tr>
+      <tr>
+        <td><strong>Screenshot Viewer</strong></td>
+        <td><span class="status-badge next">Next</span></td>
+        <td>In-app viewer: thumbnail strip + large preview. Copy to clipboard, export as ZIP. Browse by test run.</td>
+        <td>Screenshot capture</td>
+      </tr>
+      <tr>
+        <td><strong>GitHub CI Export</strong></td>
+        <td><span class="status-badge next">Next</span></td>
+        <td>Generate .github/workflows/test-suite.yml. Additive (doesn't replace existing). Preview YAML before commit.</td>
+        <td>Test storage</td>
+      </tr>
+      <tr>
+        <td><strong>Screenshot Sharing</strong></td>
+        <td><span class="status-badge future">Future</span></td>
+        <td>Attach screenshots to PR descriptions, Jira tickets, Slack posts. Share button in viewer with destination picker.</td>
+        <td>Screenshot viewer</td>
+      </tr>
+      <tr>
+        <td><strong>Auth Fixtures</strong></td>
+        <td><span class="status-badge future">Future</span></td>
+        <td>Record login flow separately as reusable fixture. Auto-replay before test execution for authenticated sites.</td>
+        <td>Recorder</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+
+<!-- ════════ STORAGE ════════ -->
+<div class="section" id="storage">
+  <div class="section-label">Storage System</div>
+  <h2>Test file structure</h2>
+  <p>Tests are stored in the project repo at <code>test-suite/</code>. Team-wide, version-controlled, CI-ready.</p>
+
+  <div style="display:flex;gap:24px;flex-wrap:wrap;">
+    <div class="file-tree" style="max-width:100%;flex:1;min-width:300px;">
+      <div><span class="dir">test-suite/</span></div>
+      <div>&nbsp;&nbsp;<span class="highlight">playwright.config.ts</span> <span class="comment"># auto-generated shared config</span></div>
+      <div>&nbsp;&nbsp;<span class="highlight">README.md</span> <span class="comment"># auto-generated test inventory</span></div>
+      <div>&nbsp;&nbsp;<span class="dir">scripts/</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">login-flow.spec.ts</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">task-crud.spec.ts</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">dashboard-widgets.spec.ts</span></div>
+      <div>&nbsp;&nbsp;<span class="dir">screenshots/</span> <span class="comment"># gitignored</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">login-flow/</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="dir">2026-04-10T154200/</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">01-navigate-login.png</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">02-fill-email.png</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">05-assert-dashboard.png</span></div>
+      <div>&nbsp;&nbsp;<span class="dir">fixtures/</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">auth.ts</span> <span class="comment"># reusable login flow</span></div>
+      <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="file">helpers.ts</span> <span class="comment"># shared utilities</span></div>
+    </div>
+
+    <div style="flex:1;min-width:280px;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Storage Rules</div>
+      <div class="card" style="padding:16px;margin-bottom:8px;">
+        <h3 style="font-size:13px;">Version controlled</h3>
+        <p>Spec files and config committed to repo. All team members get the same tests on pull.</p>
+      </div>
+      <div class="card" style="padding:16px;margin-bottom:8px;">
+        <h3 style="font-size:13px;">Screenshots gitignored</h3>
+        <p>Output is ephemeral per run. Temp folder mode available for PR/ticket use.</p>
+      </div>
+      <div class="card" style="padding:16px;margin-bottom:8px;">
+        <h3 style="font-size:13px;">Auto-documented</h3>
+        <p>README.md regenerated on every save with test names, descriptions, and last-run status.</p>
+      </div>
+      <div class="card" style="padding:16px;">
+        <h3 style="font-size:13px;">CI-ready</h3>
+        <p>Spec files run directly with <code>npx playwright test test-suite/scripts/</code>. No ADC dependency.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  ADC Test Suite &mdash; Feature Goal Document &mdash; April 10, 2026
+</div>
+
+<script>
+function showPanel(id) {
+  document.querySelectorAll('.wireframe-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.wireframe-tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Smooth scroll for nav
+document.querySelectorAll('.top-nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('.top-nav a').forEach(l => l.classList.remove('active'));
+    a.classList.add('active');
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>
