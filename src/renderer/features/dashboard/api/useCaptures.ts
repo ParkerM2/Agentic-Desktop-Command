@@ -8,8 +8,15 @@ import { DASHBOARD } from '@shared/ipc/dashboard/channels';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
+import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { dashboardKeys } from './queryKeys';
+
+interface Capture {
+  id: string;
+  text: string;
+  createdAt: string;
+}
 
 /** Fetch all persisted captures */
 export function useCaptures() {
@@ -23,22 +30,37 @@ export function useCaptures() {
 /** Mutations for creating and deleting captures */
 export function useCaptureMutations() {
   const queryClient = useQueryClient();
-  const { onError } = useMutationErrorToast();
+  const { onError: toastError } = useMutationErrorToast();
+
+  const capturesKey = dashboardKeys.captures();
+  const createOpts = optimisticCreate<string, Capture>(queryClient, capturesKey, (text) => ({
+    id: crypto.randomUUID(),
+    text,
+    createdAt: new Date().toISOString(),
+  }));
+  const deleteOpts = optimisticDelete<Capture>(queryClient, capturesKey);
 
   const createCapture = useMutation({
-    mutationFn: (text: string) => ipc(DASHBOARD.CREATE.CAPTURE, { text }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
+    mutationFn: (text: string) => {
+      const id = crypto.randomUUID();
+      return ipc(DASHBOARD.CREATE.CAPTURE, { id, text });
     },
-    onError: onError('create capture'),
+    onMutate: (input) => createOpts.onMutate(input),
+    onError(err, input, context) {
+      createOpts.onError(err, input, context);
+      toastError('create capture')(err);
+    },
+    onSettled: () => createOpts.onSettled(),
   });
 
   const deleteCapture = useMutation({
     mutationFn: (id: string) => ipc(DASHBOARD.DELETE.CAPTURE, { id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
+    onMutate: (id) => deleteOpts.onMutate(id),
+    onError(err, id, context) {
+      deleteOpts.onError(err, id, context);
+      toastError('delete capture')(err);
     },
-    onError: onError('delete capture'),
+    onSettled: () => deleteOpts.onSettled(),
   });
 
   return { createCapture, deleteCapture };
