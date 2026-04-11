@@ -16,7 +16,7 @@ import { serviceLogger } from '@main/lib/logger';
 import type { QaContext, QaRunner } from './qa-types';
 import type { QaRecorderService } from './recorder';
 import type { IpcRouter } from '../../ipc/router';
-import type { TaskRepository } from '../tasks/types';
+import type { ProgressService } from '../progress/progress-service';
 
 export interface QaTrigger {
   dispose: () => void;
@@ -69,11 +69,11 @@ function getTaskDescription(task: { title: string; description: string }): strin
 export function createQaTrigger(deps: {
   qaRunner: QaRunner;
   busSessionManager: BusSessionManager;
-  taskRepository: TaskRepository;
+  progressService: ProgressService;
   router: IpcRouter;
   qaRecorderService?: QaRecorderService;
 }): QaTrigger {
-  const { qaRunner, busSessionManager, taskRepository, qaRecorderService } = deps;
+  const { qaRunner, busSessionManager, progressService, qaRecorderService } = deps;
   const triggeredTasks = new Set<string>();
 
   function isQaAlreadyRunning(taskId: string): boolean {
@@ -96,10 +96,8 @@ export function createQaTrigger(deps: {
     triggeredTasks.add(taskId);
 
     try {
-      let task;
-      try {
-        task = await taskRepository.getTask(taskId);
-      } catch {
+      const task = await progressService.getTask(taskId);
+      if (!task) {
         serviceLogger.warn(`[QaTrigger] Task ${taskId} not found, skipping QA`);
         return;
       }
@@ -163,8 +161,8 @@ export function createQaTrigger(deps: {
     setTimeout(() => {
       void (async () => {
         try {
-          const task = await taskRepository.getTask(taskId);
-          if (task.status === 'review') {
+          const task = await progressService.getTask(taskId);
+          if (task?.status === 'review') {
             await handleTaskReview(taskId);
           }
         } catch {
