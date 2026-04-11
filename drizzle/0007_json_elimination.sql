@@ -8,8 +8,10 @@ CREATE TABLE IF NOT EXISTS `command_history` (
   `response_summary` text NOT NULL,
   `timestamp` text NOT NULL
 );
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS `idx_command_history_timestamp` ON `command_history` (`timestamp`);
+--> statement-breakpoint
 
 CREATE TABLE IF NOT EXISTS `assistant_watches` (
   `id` text PRIMARY KEY NOT NULL,
@@ -22,5 +24,6 @@ CREATE TABLE IF NOT EXISTS `assistant_watches` (
   `triggered` integer NOT NULL DEFAULT 0,
   `expires_at` text
 );
+--> statement-breakpoint
 
 CREATE INDEX IF NOT EXISTS `idx_assistant_watches_triggered` ON `assistant_watches` (`triggered`);
