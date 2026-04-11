@@ -28,10 +28,11 @@ const loginSchema = z.object({
 interface LoginPageProps {
   onNavigateToHubSetup: () => void;
   onNavigateToRegister: () => void;
+  onSkip?: () => void;
   onSuccess: () => void;
 }
 
-export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSuccess }: LoginPageProps) {
+export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSkip, onSuccess }: LoginPageProps) {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -241,6 +242,19 @@ export function LoginPage({ onNavigateToHubSetup, onNavigateToRegister, onSucces
               Change Hub server
             </Button>
           </p>
+
+          {onSkip ? (
+            <p className="text-center text-sm text-muted-foreground">
+              <Button
+                className="h-auto p-0 font-medium text-muted-foreground hover:text-foreground"
+                type="button"
+                variant="link"
+                onClick={onSkip}
+              >
+                Skip — use locally without Hub
+              </Button>
+            </p>
+          ) : null}
         </CardFooter>
       </Card>
     </div>

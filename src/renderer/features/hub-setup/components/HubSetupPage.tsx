@@ -197,14 +197,18 @@ function DockerSection({
 interface HubSetupPageProps {
   onSuccess: () => void;
   onNavigateToLogin: () => void;
+  onSkip?: () => void;
 }
 
-export function HubSetupPage({ onSuccess, onNavigateToLogin }: HubSetupPageProps) {
+// eslint-disable-next-line sonarjs/cognitive-complexity -- +1 from onSkip conditional render
+export function HubSetupPage({ onSuccess, onNavigateToLogin, onSkip }: HubSetupPageProps) {
   const [showManual, setShowManual] = useState(false);
   const [hubUrl, setHubUrl] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isValidating, setIsValidating] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [generateKeyError, setGenerateKeyError] = useState<string | null>(null);
 
   const dockerStatus = useDockerStatus();
   const setupMutation = useDockerSetupHub();
@@ -245,6 +249,30 @@ export function HubSetupPage({ onSuccess, onNavigateToLogin }: HubSetupPageProps
       { url: hubUrl, apiKey },
       { onSuccess },
     );
+  }
+
+  async function handleGenerateKey() {
+    if (hubUrl.length === 0) {
+      setGenerateKeyError('Enter the Hub URL first');
+      return;
+    }
+    setGenerateKeyError(null);
+    setIsGeneratingKey(true);
+    try {
+      const cleanUrl = hubUrl.replace(/\/+$/, '');
+      const response = await fetch(`${cleanUrl}/api/auth/generate-key`, { method: 'POST' });
+      if (!response.ok) {
+        const body = await response.text();
+        setGenerateKeyError(`Failed (${String(response.status)}): ${body}`);
+        return;
+      }
+      const data = (await response.json()) as { key: string };
+      setApiKey(data.key);
+    } catch (error) {
+      setGenerateKeyError(error instanceof Error ? error.message : 'Failed to reach Hub server');
+    } finally {
+      setIsGeneratingKey(false);
+    }
   }
 
   function getAutoSetupLabel(): string {
@@ -328,14 +356,36 @@ export function HubSetupPage({ onSuccess, onNavigateToLogin }: HubSetupPageProps
 
                 <div className="space-y-2">
                   <Label htmlFor="setup-api-key">API Key</Label>
-                  <Input
-                    autoComplete="off"
-                    id="setup-api-key"
-                    placeholder="Your Hub API key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => { setApiKey(e.target.value); }}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      autoComplete="off"
+                      className="flex-1"
+                      id="setup-api-key"
+                      placeholder="Your Hub API key"
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => { setApiKey(e.target.value); }}
+                    />
+                    <Button
+                      disabled={hubUrl.length === 0 || isGeneratingKey}
+                      size="sm"
+                      type="button"
+                      variant="outline"
+                      onClick={() => { void handleGenerateKey(); }}
+                    >
+                      {isGeneratingKey ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="size-4" />
+                      )}
+                      {isGeneratingKey ? 'Generating...' : 'Generate'}
+                    </Button>
+                  </div>
+                  {generateKeyError === null ? null : (
+                    <InlineAlert variant="error">
+                      {generateKeyError}
+                    </InlineAlert>
+                  )}
                 </div>
 
                 {validationError === null ? null : (
@@ -368,18 +418,32 @@ export function HubSetupPage({ onSuccess, onNavigateToLogin }: HubSetupPageProps
             ) : null}
           </div>
 
-          {/* Footer link */}
-          <p className="text-muted-foreground text-center text-sm">
-            Already connected?{' '}
-            <Button
-              className="h-auto p-0 font-medium underline-offset-4 hover:underline"
-              type="button"
-              variant="link"
-              onClick={onNavigateToLogin}
-            >
-              Sign in
-            </Button>
-          </p>
+          {/* Footer links */}
+          <div className="space-y-2 text-center">
+            <p className="text-muted-foreground text-sm">
+              Already connected?{' '}
+              <Button
+                className="h-auto p-0 font-medium underline-offset-4 hover:underline"
+                type="button"
+                variant="link"
+                onClick={onNavigateToLogin}
+              >
+                Sign in
+              </Button>
+            </p>
+            {onSkip ? (
+              <p className="text-muted-foreground text-sm">
+                <Button
+                  className="h-auto p-0 font-medium underline-offset-4 hover:underline"
+                  type="button"
+                  variant="link"
+                  onClick={onSkip}
+                >
+                  Skip — use locally without Hub
+                </Button>
+              </p>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
     </div>
