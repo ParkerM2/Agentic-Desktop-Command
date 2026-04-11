@@ -3,6 +3,7 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 // ── Settings ────────────────────────────────────────────────
 
 export const settingsKv = sqliteTable('settings_kv', {
+  id: text('id'),
   key: text('key').primaryKey(), // singleton 'default' per category
   category: text('category').notNull().default('settings'), // 'settings'|'email'|'hub'|'notification'|'briefing'
   settings: text('settings', { mode: 'json' }).$type<unknown>().notNull(),

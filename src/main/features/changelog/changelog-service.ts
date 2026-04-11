@@ -10,6 +10,7 @@ import { join } from 'node:path';
 
 import { desc } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { ChangeCategory, ChangelogEntry } from '@shared/types';
 
 import { changelogEntries } from '../../db/schema';
@@ -114,6 +115,7 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
 
       for (const item of items) {
         db.insert(changelogEntries).values({
+          id: generateId(),
           version: item.version,
           date: item.date,
           categories: item.categories,
@@ -130,6 +132,7 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
   // Neither JSON file nor table data — seed with defaults
   for (const entry of DEFAULT_ENTRIES) {
     db.insert(changelogEntries).values({
+      id: generateId(),
       version: entry.version,
       date: entry.date,
       categories: entry.categories,
@@ -169,6 +172,7 @@ export function createChangelogService(deps: {
       };
 
       db.insert(changelogEntries).values({
+        id: generateId(),
         version: entry.version,
         date: entry.date,
         categories: entry.categories,
@@ -182,6 +186,7 @@ export function createChangelogService(deps: {
       const entry = await generateChangelogEntry(repoPath, version, fromTag);
 
       db.insert(changelogEntries).values({
+        id: generateId(),
         version: entry.version,
         date: entry.date,
         categories: entry.categories,

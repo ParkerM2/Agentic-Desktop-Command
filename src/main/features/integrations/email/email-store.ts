@@ -10,6 +10,8 @@ import { join } from 'node:path';
 
 import { and, eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
+
 import { settingsKv } from '../../../db/schema';
 import { createScopedLogger } from '../../../lib/logger';
 
@@ -66,6 +68,7 @@ export function migrateEmailConfigFromJson(db: AdcDatabase, dataDir: string): bo
 
     db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
         category: CATEGORY,
         settings: config as unknown,
@@ -134,6 +137,7 @@ export function saveEmailConfig(db: AdcDatabase, config: StoredEmailConfig | nul
   } else {
     db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
         category: CATEGORY,
         settings: toSave as unknown,

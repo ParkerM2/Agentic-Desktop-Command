@@ -9,6 +9,7 @@ import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { DailyBriefing } from '@shared/types';
 
 import { briefings } from '../../db/schema';
@@ -45,6 +46,7 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
     for (const item of items) {
       db.insert(briefings)
         .values({
+          id: generateId(),
           date: item.date,
           content: item as unknown,
           generatedAt: item.generatedAt,
@@ -81,6 +83,7 @@ export function createBriefingCache(db: AdcDatabase, dataDir: string): BriefingC
       // Upsert: replace if same date exists
       db.insert(briefings)
         .values({
+          id: generateId(),
           date: briefing.date,
           content: briefing as unknown,
           generatedAt: briefing.generatedAt,

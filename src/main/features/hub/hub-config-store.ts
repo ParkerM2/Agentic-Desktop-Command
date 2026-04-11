@@ -15,6 +15,8 @@ import { safeStorage } from 'electron';
 
 import { and, eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
+
 import { settingsKv } from '../../db/schema';
 import { hubLogger } from '../../lib/logger';
 
@@ -81,6 +83,7 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
 
     db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
         category: CATEGORY,
         settings: config as unknown,
@@ -127,6 +130,7 @@ export function createHubConfigStore(db: AdcDatabase, dataDir: string): HubConfi
   function saveConfig(config: PersistedHubConfig): void {
     db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
         category: CATEGORY,
         settings: config as unknown,

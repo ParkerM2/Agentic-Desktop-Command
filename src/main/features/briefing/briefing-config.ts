@@ -10,6 +10,7 @@ import { join } from 'node:path';
 
 import { and, eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { BriefingConfig } from '@shared/types';
 
 import { settingsKv } from '../../db/schema';
@@ -57,6 +58,7 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
 
     db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
         category: CATEGORY,
         settings: config as unknown,
@@ -93,6 +95,7 @@ export function createBriefingConfigManager(db: AdcDatabase, dataDir: string): B
   function saveConfig(config: BriefingConfig): void {
     db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
         category: CATEGORY,
         settings: config as unknown,

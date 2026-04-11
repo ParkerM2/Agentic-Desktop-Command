@@ -9,6 +9,8 @@
 
 import { eq } from 'drizzle-orm';
 
+import { generateId as generateUuid } from '@shared/lib/id';
+
 import type { AdcDatabase } from '@main/db';
 import { settingsKv } from '@main/db/schema';
 import { hubLogger } from '@main/lib/logger';
@@ -62,7 +64,7 @@ function loadQueue(db: AdcDatabase): PendingMutation[] {
 function saveQueue(db: AdcDatabase, queue: PendingMutation[]): void {
   const now = new Date().toISOString();
   db.insert(settingsKv)
-    .values({ key: HUB_SYNC_KEY, settings: queue, updatedAt: now })
+    .values({ id: generateUuid(), key: HUB_SYNC_KEY, settings: queue, updatedAt: now })
     .onConflictDoUpdate({ target: settingsKv.key, set: { settings: queue, updatedAt: now } })
     .run();
 }

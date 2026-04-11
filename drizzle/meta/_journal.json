@@ -78,6 +78,13 @@
       "when": 1775843100000,
       "tag": "0010_uuid_progress_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1775843200000,
+      "tag": "0011_uuid_natural_key_tables",
+      "breakpoints": true
     }
   ]
 }

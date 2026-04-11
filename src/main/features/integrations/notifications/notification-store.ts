@@ -11,6 +11,7 @@ import { join } from 'node:path';
 
 import { and, asc, count, desc, eq, inArray } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { Notification, NotificationWatcherConfig } from '@shared/types';
 import {
   DEFAULT_GITHUB_WATCHER_CONFIG,
@@ -96,6 +97,7 @@ function migrateConfigFromJson(db: AdcDatabase, dataDir: string): void {
     if (typeof parsed === 'object' && parsed !== null) {
       db.insert(settingsKv)
         .values({
+          id: generateId(),
           key: CONFIG_KEY,
           category: CONFIG_CATEGORY,
           settings: parsed,
@@ -165,6 +167,7 @@ export function createNotificationStore(db: AdcDatabase, dataDir: string): Notif
     saveConfig(config: NotificationWatcherConfig): void {
       db.insert(settingsKv)
         .values({
+          id: generateId(),
           key: CONFIG_KEY,
           category: CONFIG_CATEGORY,
           settings: config as unknown,

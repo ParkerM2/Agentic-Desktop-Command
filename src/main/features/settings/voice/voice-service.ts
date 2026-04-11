@@ -10,6 +10,7 @@ import { systemPreferences } from 'electron';
 
 import { eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { VoiceConfig, VoiceInputMode } from '@shared/types';
 import { DEFAULT_VOICE_CONFIG } from '@shared/types';
 
@@ -43,7 +44,7 @@ export function createVoiceService(deps: { db: AdcDatabase }): VoiceService {
   function saveConfig(config: VoiceConfig): void {
     const now = new Date().toISOString();
     db.insert(settingsKv)
-      .values({ key: VOICE_CONFIG_KEY, settings: config, updatedAt: now })
+      .values({ id: generateId(), key: VOICE_CONFIG_KEY, settings: config, updatedAt: now })
       .onConflictDoUpdate({ target: settingsKv.key, set: { settings: config, updatedAt: now } })
       .run();
   }
