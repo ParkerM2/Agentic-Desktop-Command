@@ -46,6 +46,12 @@ let agentHostClientRef: AgentHostClient | null = null;
 let rendererCrashCount = 0;
 let lastRendererCrashTime = 0;
 
+// Agent host crash recovery
+const AGENT_HOST_MAX_RESTARTS = 5;
+const AGENT_HOST_RESTART_WINDOW_MS = 60_000; // 1 minute
+const AGENT_HOST_BASE_DELAY_MS = 1_000; // 1 second
+let agentHostRestartTimestamps: number[] = [];
+
 function getMainWindow(): BrowserWindow | null {
   return mainWindow;
 }
@@ -156,30 +162,72 @@ function createWindow(): void {
 
 // ─── Initialize & Start ──────────────────────────────────────────
 
-function initializeApp(): void {
-  // ── Fork agent host utility process ───────────────────────
+/**
+ * Fork the agent host utility process and wire up MessagePort channels.
+ * Returns the child process and client. Installs an exit handler that
+ * auto-restarts on crash with exponential backoff (up to MAX_RESTARTS
+ * within a sliding window).
+ */
+function forkAgentHost(): { child: Electron.UtilityProcess; client: AgentHostClient } {
   const agentHostModule = join(__dirname, 'agent-host/index.cjs');
-  const agentHost = utilityProcess.fork(agentHostModule, [], { stdio: 'pipe' });
+  const child = utilityProcess.fork(agentHostModule, [], { stdio: 'pipe' });
 
-  // Create MessagePort channels for control + event communication
   const controlChannel = new MessageChannelMain();
   const eventChannel = new MessageChannelMain();
 
-  // Send ports to the utility process — it will bootstrap on receipt
-  agentHost.postMessage({ type: 'init' }, [controlChannel.port2, eventChannel.port2]);
+  child.postMessage({ type: 'init' }, [controlChannel.port2, eventChannel.port2]);
+  const client = createAgentHostClient(controlChannel.port1, eventChannel.port1);
 
-  // Create the client that wraps the port pair
-  const agentHostClient = createAgentHostClient(controlChannel.port1, eventChannel.port1);
-  agentHostClientRef = agentHostClient;
+  child.on('exit', (code) => {
+    if (code === 0) {
+      appLogger.info('[AgentHost] Utility process exited gracefully');
+      return; // Graceful shutdown — don't restart
+    }
 
-  // Handle utility process crashes
-  agentHost.on('exit', (code) => {
-    appLogger.error(`[AgentHost] Utility process exited with code ${code}`);
-    // TODO(Task 11 follow-up): Auto-restart agent host on crash.
-    // Requires re-creating MessagePort channels, re-forking the utility process,
-    // and updating the service registry's agentHostClient reference.
-    // Add a brief delay (e.g. setTimeout 1000ms) to avoid crash loops.
+    appLogger.error(`[AgentHost] Utility process crashed with code ${code}`);
+
+    // Sliding-window restart throttle
+    const now = Date.now();
+    agentHostRestartTimestamps = agentHostRestartTimestamps.filter(
+      (t) => now - t < AGENT_HOST_RESTART_WINDOW_MS,
+    );
+
+    if (agentHostRestartTimestamps.length >= AGENT_HOST_MAX_RESTARTS) {
+      appLogger.error(
+        `[AgentHost] Crashed ${AGENT_HOST_MAX_RESTARTS} times within ${AGENT_HOST_RESTART_WINDOW_MS / 1000}s — giving up`,
+      );
+      return;
+    }
+
+    agentHostRestartTimestamps.push(now);
+    const delay = AGENT_HOST_BASE_DELAY_MS * Math.pow(2, agentHostRestartTimestamps.length - 1);
+    appLogger.warn(`[AgentHost] Restarting in ${delay}ms (attempt ${agentHostRestartTimestamps.length}/${AGENT_HOST_MAX_RESTARTS})...`);
+
+    setTimeout(() => {
+      const { child: newChild, client: newClient } = forkAgentHost();
+
+      // Update module-level references so new IPC calls use the fresh client
+      void newChild; // child ref kept alive by the exit handler closure
+      agentHostClientRef = newClient;
+
+      // Re-forward event port to renderer if the window is still alive
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const rendererEventChannel = new MessageChannelMain();
+        newClient.onEvent((event) => {
+          rendererEventChannel.port1.postMessage(event);
+        });
+        mainWindow.webContents.postMessage('agent-host-events', null, [rendererEventChannel.port2]);
+      }
+    }, delay);
   });
+
+  return { child, client };
+}
+
+function initializeApp(): void {
+  // ── Fork agent host utility process ───────────────────────
+  const { client: agentHostClient } = forkAgentHost();
+  agentHostClientRef = agentHostClient;
 
   // ── Initialize services ───────────────────────────────────
   const registry = createServiceRegistry(getMainWindow, agentHostClient);
