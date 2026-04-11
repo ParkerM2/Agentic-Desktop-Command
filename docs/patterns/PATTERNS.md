@@ -410,11 +410,11 @@ if (isEnabled) { ... }      // boolean — allowed
 
 ```typescript
 // CORRECT: Separate type imports
-import type { Task, TaskStatus } from '@shared/types';
-import { createTaskService } from './task-service';
+import type { ProgressTask, TaskStatus } from '@shared/types';
+import { createProgressService } from './progress-service';
 
 // WRONG: Mixed imports (eslint error)
-import { Task, createTaskService } from './task-service';
+import { ProgressTask, createProgressService } from './progress-service';
 ```
 
 ## Service Method Pattern

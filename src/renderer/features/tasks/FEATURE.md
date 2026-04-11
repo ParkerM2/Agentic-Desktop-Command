@@ -15,7 +15,7 @@ Task dashboard with TanStack Table + shadcn Table primitives, real-time agent/QA
 
 ## Components
 
-- **`components/grid/TaskDataGrid.tsx`** — TanStack Table with shadcn `Table`/`TableRow`/`TableCell` primitives, column defs with inline cell rendering, expandable detail rows
+- **`components/grid/ProgressTaskGrid.tsx`** — TanStack Table with shadcn `Table`/`TableRow`/`TableCell` primitives, column defs with inline cell rendering, expandable detail rows
 - **`components/TaskFiltersToolbar.tsx`** — Status filter chips and search; **`components/TaskStatusBadge.tsx`** — Status pill; **`components/CreateTaskDialog.tsx`** — New task modal
 - Detail panels (in `detail/`): **`TaskDetailRow`**, **`ExecutionLog`**, **`PlanViewer`**, **`PrStatusPanel`**, **`QaReportViewer`**, **`SubtaskList`**, **`TaskControls`**
 

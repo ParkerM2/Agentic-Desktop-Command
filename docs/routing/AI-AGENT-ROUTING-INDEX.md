@@ -50,7 +50,7 @@ Each row traces a domain from shared types through to the rendered route.
 | roadmap | `types/milestone.ts` (shared) | `ipc/misc/milestones.contract.ts` (shared) | `services/milestones/` (shared) | `handlers/milestones-handlers.ts` (shared) | `features/roadmap/` | `project.routes.ts` |
 | settings | `types/settings.ts` | `ipc/settings/` | `services/settings/` | `handlers/settings-handlers.ts`, `webhook-settings-handlers.ts` | `features/settings/` | `settings.routes.ts` |
 | spotify | -- | `ipc/spotify/` | `services/spotify/` | `handlers/spotify-handlers.ts` | `features/productivity/` | `productivity.routes.ts` |
-| tasks | `types/task.ts` | `ipc/tasks/` | `services/project/task-service.ts`, `services/tasks/` | `handlers/tasks/` (5 files) | `features/tasks/` | `project.routes.ts` |
+| tasks | `types/task.ts` | `ipc/progress/` | `features/progress/progress-service.ts` | `features/progress/progress-handlers.ts` | `features/tasks/` | `project.routes.ts` |
 | terminals | `types/terminal.ts` | `ipc/terminals/` | `services/terminal/` | `handlers/terminal-handlers.ts` | `features/terminals/` | `project.routes.ts` |
 | voice | `types/voice.ts` | `ipc/misc/voice.contract.ts` | `services/voice/` | `handlers/voice-handlers.ts` | `features/voice/` | -- |
 | workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspaces/` | -- |
@@ -631,7 +631,7 @@ Project management — CRUD, multi-repo, sub-projects, directory detection.
 | Types | `shared/types/project.ts` |
 | IPC Contract | `shared/ipc/projects/` (contract.ts + schemas.ts) |
 | Service | `main/services/project/` |
-| Service Sub-modules | `project-detector.ts`, `task-service.ts`, `task-slug.ts`, `task-spec-parser.ts`, `task-store.ts` |
+| Service Sub-modules | `project-detector.ts`, `codebase-analyzer.ts` |
 | Handler | `main/ipc/handlers/project-handlers.ts` |
 | Event Wiring | `event:project.*` |
 | Feature Module | `renderer/features/projects/` |
@@ -743,19 +743,17 @@ Task management — local + Hub tasks, TanStack Table dashboard, task execution.
 | Layer | Path |
 |-------|------|
 | Types | `shared/types/task.ts` |
-| Hub Types | `shared/types/hub/tasks.ts` |
-| IPC Contract | `shared/ipc/tasks/` (contract.ts + schemas.ts) |
-| Service | `main/services/project/task-service.ts`, `main/services/tasks/` |
-| Service Sub-modules | `task-decomposer.ts`, `github-importer.ts` |
-| Handler | `main/ipc/handlers/tasks/` (5 files) |
-| Handler Sub-modules | `hub-task-handlers.ts`, `legacy-task-handlers.ts`, `status-mapping.ts`, `task-transform.ts`, `index.ts` |
-| Event Wiring | `event:hub.*` (task-related), `event:bus.*` |
+| IPC Contract | `shared/ipc/progress/` (contract.ts + channels.ts) |
+| Service | `main/features/progress/progress-service.ts` |
+| Service Sub-modules | `task-file-io.ts`, `schema.ts` (Drizzle ORM, `progress_tasks` table) |
+| Handler | `main/features/progress/progress-handlers.ts` |
+| Event Wiring | `event:progress.*`, `event:bus.*` |
 | Feature Module | `renderer/features/tasks/` |
-| API Hooks | `renderer/features/tasks/api/useTasks.ts`, `useTaskMutations.ts`, `useAgentMutations.ts`, `useQaMutations.ts` |
+| API Hooks | `renderer/features/tasks/api/useProgress.ts`, `useProgressMutations.ts`, `useAgentMutations.ts`, `useQaMutations.ts` |
 | Query Keys | `renderer/features/tasks/api/queryKeys.ts` |
 | Event Hooks | `renderer/features/tasks/hooks/useTaskEvents.ts`, `useAgentEvents.ts` |
 | Store | `renderer/features/tasks/store.ts` |
-| Components | `TaskDataGrid`, `TaskFiltersToolbar`, `TaskDetailRow`, `TaskStatusBadge`, `CreateTaskDialog` |
+| Components | `ProgressTaskGrid`, `TaskFiltersToolbar`, `ProgressTaskDetailRow`, `TaskStatusBadge`, `CreateTaskDialog` |
 | Route | `renderer/app/routes/project.routes.ts` → `/projects/$projectId/tasks` |
 
 FEATURE.md: `main/ipc/handlers/tasks/FEATURE.md`

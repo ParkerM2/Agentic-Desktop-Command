@@ -104,7 +104,7 @@ This context is injected into the system prompt so Claude knows what view the us
 | `create_note` | `NotesService.createNote` | `notes.create` |
 | `create_idea` | `IdeasService.createIdea` | `ideas.create` |
 | `create_milestone` | `MilestonesService.createMilestone` | `milestones.create` |
-| `create_task` | `TaskService.createTask` | `tasks.create` |
+| `create_task` | `ProgressService.createTask` | `progress.create.task` |
 | `update_daily_plan` | `PlannerService.updateDay` | `planner.updateDay` |
 | `add_time_block` | `PlannerService.addTimeBlock` | `planner.addTimeBlock` |
 | `log_workout` | `FitnessService.logWorkout` | `fitness.logWorkout` |

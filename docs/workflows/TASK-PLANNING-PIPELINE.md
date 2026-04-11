@@ -6,10 +6,9 @@
 > the planning pipeline into a single reference so you don't need to cross-read
 > ARCHITECTURE.md, DATA-FLOW.md, and FEATURES-INDEX.md.
 >
-> **Local-first:** All pipeline stages work offline. Task creation, status transitions,
-> and plan completion go through `TaskRepository` which writes locally (`.adc/specs/`)
-> and mirrors to Hub when connected. Hub is optional for all operations except
-> `executeTask`/`cancelTask` (remote dispatch).
+> **SQLite-backed:** All pipeline stages work offline. Task creation, status transitions,
+> and plan completion go through `ProgressService` which reads/writes the `progress_tasks`
+> SQLite table.
 
 ---
 
@@ -117,16 +116,16 @@ Contract source: `src/shared/ipc/agents/contract.ts`
 
 | File | Role |
 |------|------|
-| `src/main/services/tasks/types.ts` | `TaskRepository` interface and `TaskRepositoryDeps` |
-| `src/main/services/tasks/task-repository.ts` | Local-first implementation — reads/writes via TaskService, mirrors to Hub when connected |
+| `src/main/features/progress/progress-service.ts` | SQLite-backed task CRUD via `progress_tasks` table |
+| `src/main/features/progress/progress-handlers.ts` | IPC handlers for progress/task operations |
+| `src/main/features/progress/schema.ts` | Drizzle ORM schema (`progress_tasks` table) |
 | `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Spawns/kills Claude CLI processes, manages sessions |
 | `src/main/services/agent-orchestrator/hooks-template.ts` | Merges progress-tracking hooks into `.claude/settings.local.json` |
 | `src/main/services/agent-orchestrator/types.ts` | `AgentSession` interface (includes `originalSettingsContent`) |
 | `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Watches JSONL files for progress entries |
-| `src/main/ipc/handlers/agent-orchestrator-handlers.ts` | 7 IPC handlers (planning, execution, replan, kill, restart, get, list) — uses `taskRepository` for status updates |
-| `src/main/ipc/handlers/tasks/hub-task-handlers.ts` | 8 `hub.tasks.*` IPC handlers — all proxy to `taskRepository` (local-first) |
-| `src/main/bootstrap/event-wiring.ts` | Forwards orchestrator events → IPC; plan detection uses `taskRepository` for status + metadata updates |
-| `src/main/bootstrap/service-registry.ts` | Creates and exposes all services including `taskRepository` |
+| `src/main/ipc/handlers/agent-orchestrator-handlers.ts` | 7 IPC handlers (planning, execution, replan, kill, restart, get, list) — uses `progressService` for status updates |
+| `src/main/bootstrap/event-wiring.ts` | Forwards orchestrator events → IPC; plan detection uses `progressService` for status + metadata updates |
+| `src/main/bootstrap/service-registry.ts` | Creates and exposes all services including `progressService` |
 
 ### Frontend (renderer)
 
@@ -137,8 +136,8 @@ Contract source: `src/shared/ipc/agents/contract.ts`
 | `src/renderer/features/tasks/components/detail/PlanViewer.tsx` | Renders plan content + Approve/Request Changes buttons |
 | `src/renderer/features/tasks/components/detail/PlanFeedbackDialog.tsx` | Textarea dialog for feedback when requesting plan changes |
 | `src/renderer/features/tasks/components/cells/ActionsCell.tsx` | Brain icon (Start Planning), play icon (Start Execution), feedback actions |
-| `src/renderer/features/tasks/components/detail/TaskDetailRow.tsx` | Expandable detail row — shows PlanViewer when plan exists |
-| `src/renderer/features/tasks/components/grid/TaskDataGrid.tsx` | Main grid — wires `handleStartExecution` with `planRef` from metadata |
+| `src/renderer/features/tasks/components/detail/ProgressTaskDetailRow.tsx` | Expandable detail row — shows PlanViewer when plan exists |
+| `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx` | Main grid — wires `handleStartExecution` with `planRef` from metadata |
 
 ### Shared
 

@@ -663,7 +663,7 @@ useTasks(projectId) fires query
 ipc('tasks.list', { projectId })
   |
   v
-TaskService.listTasks(projectId)
+ProgressService.listTasks(projectId)
   |
   v
 Tasks returned, TaskTable renders filterable/sortable rows
@@ -688,7 +688,7 @@ Routes are defined across 8 route group files in `src/renderer/app/routes/` and 
 ├── /productivity           -> ProductivityPage (8 tabs: Overview, Calendar, Spotify, Briefing, Notes, Planner, Alerts, Comms)
 ├── /projects               -> ProjectListPage
 ├── /projects/$projectId    -> redirect to /tasks
-│   ├── /tasks              -> TaskDataGrid
+│   ├── /tasks              -> ProgressTaskGrid
 │   ├── /terminals          -> TerminalGrid
 │   ├── /agents             -> AgentDashboard
 │   ├── /roadmap            -> RoadmapPage
@@ -797,9 +797,9 @@ ipc('auth.restore', {})
 
 ---
 
-## 12. Local-First Task CRUD Flow
+## 12. SQLite-Backed Task CRUD Flow
 
-All task operations go through `TaskRepository`, which always reads/writes locally first and mirrors mutations to Hub when connected.
+All task operations go through `ProgressService`, which reads/writes to the `progress_tasks` SQLite table.
 
 ### Read Flow (list/get)
 
@@ -807,22 +807,16 @@ All task operations go through `TaskRepository`, which always reads/writes local
 User views task dashboard
   |
   v
-useTasks(projectId) → ipc('hub.tasks.list', { projectId })
+useProgress(projectId) → ipc(PROGRESS.LIST.ALL, { projectId })
   |
   v
-                              hub-task-handlers.ts
+                              progress-handlers.ts
                                 |
                                 v
-                              taskRepository.listTasks({ projectId })
-                                |  src/main/services/tasks/task-repository.ts
+                              progressService.listTasks(projectId)
+                                |  queries progress_tasks table (SQLite)
                                 v
-                              taskService.listTasks(projectId)
-                                |  reads .adc/specs/ directories (always local)
-                                v
-                              localToHubTask() converts local → HubTask shape
-                                |
-                                v
-                              Return { tasks: HubTask[] }
+                              Return ProgressTask[]
 ```
 
 ### Write Flow (create/update/delete)
@@ -831,77 +825,43 @@ useTasks(projectId) → ipc('hub.tasks.list', { projectId })
 User creates a task (CreateTaskDialog)
   |
   v
-useCreateTask().mutate({ projectId, title, description, priority })
+useCreateProgress().mutate({ projectId, title, description, priority })
   |
   v
-ipc('hub.tasks.create', { ... })
+ipc(PROGRESS.CREATE.TASK, { ... })
   |
   v
-                              hub-task-handlers.ts
+                              progress-handlers.ts
                                 |
                                 v
-                              taskRepository.createTask(body)
-                                |
-                                +→ taskService.createTask(draft)    ← ALWAYS (local .adc/specs/)
-                                |    Creates UUID-based task dir
-                                |    Writes requirements.json + task_metadata.json
-                                |
-                                +→ mirrorToHub(() =>                ← OPTIONAL (fire-and-forget)
-                                |    hubApiClient.createTask(body))
-                                |    Only runs when Hub is connected
-                                |    Logs warnings on failure
-                                |
+                              progressService.createTask(draft)
+                                |  Inserts into progress_tasks table
                                 v
-                              Return HubTask (from local data, immediate)
+                              Return ProgressTask (from SQLite, immediate)
 ```
 
-### Hub-Only Operations (execute/cancel)
+### Event Flow (Updates → Renderer)
 
 ```
-User clicks "Execute" (remote dispatch)
+MAIN PROCESS                                        RENDERER
+============                                        ========
+
+progressService.updateTask()
+  |  Updates progress_tasks row
+  v
+router.emit('event:progress.task.updated', payload)
   |
   v
-ipc('hub.tasks.execute', { taskId })
-  |
-  v
-                              taskRepository.executeTask(taskId)
-                                |
-                                +-→ Hub not connected? → throw Error
-                                |
-                                +-→ hubApiClient.executeTask(taskId)
-                                     |
-                                     v
-                                   POST /api/tasks/:id/execute
-                                     → Hub dispatches to target device
-```
-
-### Reverse Flow (Hub WebSocket → Local Update)
-
-```
-HUB SERVER                      MAIN PROCESS                    RENDERER
-==========                      ============                    ========
-
-WebSocket broadcast
-  { type: 'task.updated', ... }
-                              hub-connection.ts receives
-                                |
-                                v
-                              event-wiring: taskRepository.updateTask()
-                                |  Updates local .adc/specs/ files
-                                v
-                              router.emit('event:hub.tasks.updated', payload)
-                                |
-                                v
-                              BrowserWindow.webContents.send(...)
-                                                                  |
-                                                                  v
-                                                              useHubEvent('event:hub.tasks.updated')
-                                                                  |
-                                                                  v
-                                                              queryClient.invalidateQueries()
-                                                                  |
-                                                                  v
-                                                              React Query refetches from TaskRepository (local)
+BrowserWindow.webContents.send(...)
+                                                      |
+                                                      v
+                                                  EventBridge registry
+                                                      |
+                                                      v
+                                                  queryClient.invalidateQueries()
+                                                      |
+                                                      v
+                                                  React Query refetches from ProgressService
 ```
 
 ---
@@ -1331,7 +1291,7 @@ Session state: 'spawned' → 'active'
 ### Renderer Event Subscription Chain
 
 ```
-TaskDataGrid mounts
+ProgressTaskGrid mounts
   → useTaskEvents()
     → useAgentEvents()    — subscribes to 6 orchestrator event channels
     → useQaEvents()       — subscribes to 3 QA event channels
@@ -1358,7 +1318,7 @@ TaskDataGrid mounts
 ## 19.5. Task Planning Pipeline Flow (Local-First)
 
 The complete planning pipeline: idea → plan → review → approve/reject/request changes → execute.
-All status transitions go through `TaskRepository` (local-first with Hub mirror).
+All status transitions go through `ProgressService` (SQLite-backed).
 
 ```
 User creates task (idea/backlog)
