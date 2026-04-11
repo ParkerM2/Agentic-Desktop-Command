@@ -157,9 +157,10 @@ interface StageCellProps {
   hasResearch: boolean;
   hasPlan: boolean;
   hasTeamTasks: boolean;
+  status: ProgressStatus;
 }
 
-function StageCell({ hasResearch, hasPlan, hasTeamTasks }: StageCellProps) {
+function StageCell({ hasResearch, hasPlan, hasTeamTasks, status }: StageCellProps) {
   return (
     <div className="flex items-center gap-2">
       <StepIndicator done={hasResearch} label="Research" />
@@ -167,6 +168,20 @@ function StageCell({ hasResearch, hasPlan, hasTeamTasks }: StageCellProps) {
       <StepIndicator done={hasPlan} label="Plan" />
       <div className="bg-muted-foreground/20 h-px w-2 flex-shrink-0" />
       <StepIndicator done={hasTeamTasks} label="Team" />
+      {status === 'done' ? (
+        <>
+          <div className="bg-muted-foreground/20 h-px w-2 flex-shrink-0" />
+          <div className="flex flex-col items-center gap-0.5">
+            <div
+              aria-label="Done: complete"
+              className="bg-success border-success h-3 w-3 rounded-full border-2 transition-colors"
+            />
+            <Text className="text-success text-[9px] font-medium uppercase leading-none">
+              D
+            </Text>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -423,6 +438,13 @@ function createProgressColumns(
       ),
       size: 90,
       cell: ({ row }) => {
+        if (row.original.status === 'done') {
+          return (
+            <Badge className="bg-success text-success-foreground border-success">
+              Completed
+            </Badge>
+          );
+        }
         const priority = row.getValue<ProgressPriority>('priority');
         return (
           <Badge variant={PRIORITY_VARIANTS[priority]}>
@@ -443,6 +465,7 @@ function createProgressColumns(
           hasPlan={row.original.hasPlan}
           hasResearch={row.original.hasResearch}
           hasTeamTasks={row.original.hasTeamTasks}
+          status={row.original.status}
         />
       ),
     },
