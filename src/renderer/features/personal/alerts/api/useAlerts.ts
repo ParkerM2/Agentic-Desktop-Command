@@ -5,11 +5,21 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ALERTS } from '@shared/ipc/misc/alerts.channels';
-import type { RecurringConfig, AlertLinkedTo } from '@shared/types';
+import type { Alert, RecurringConfig, AlertLinkedTo } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
+import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { alertKeys } from './queryKeys';
+
+/** Input type for creating an alert */
+interface CreateAlertInput {
+  type: 'reminder' | 'deadline' | 'notification' | 'recurring';
+  message: string;
+  triggerAt: string;
+  recurring?: RecurringConfig;
+  linkedTo?: AlertLinkedTo;
+}
 
 /** Fetch all alerts */
 export function useAlerts(includeExpired = false) {
@@ -23,17 +33,24 @@ export function useAlerts(includeExpired = false) {
 /** Create a new alert */
 export function useCreateAlert() {
   const queryClient = useQueryClient();
+
+  const toOptimistic = (data: CreateAlertInput): Alert => ({
+    id: crypto.randomUUID(),
+    ...data,
+    dismissed: false,
+    createdAt: new Date().toISOString(),
+  });
+
   return useMutation({
-    mutationFn: (data: {
-      type: 'reminder' | 'deadline' | 'notification' | 'recurring';
-      message: string;
-      triggerAt: string;
-      recurring?: RecurringConfig;
-      linkedTo?: AlertLinkedTo;
-    }) => ipc(ALERTS.CREATE.ALERT, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
+    mutationFn: (data: CreateAlertInput) => {
+      const id = crypto.randomUUID();
+      return ipc(ALERTS.CREATE.ALERT, { ...data, id });
     },
+    ...optimisticCreate<CreateAlertInput, Alert>(
+      queryClient,
+      alertKeys.lists(),
+      toOptimistic,
+    ),
   });
 }
 
@@ -53,8 +70,6 @@ export function useDeleteAlert() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(ALERTS.DELETE.ALERT, { id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
-    },
+    ...optimisticDelete<Alert>(queryClient, alertKeys.lists()),
   });
 }
