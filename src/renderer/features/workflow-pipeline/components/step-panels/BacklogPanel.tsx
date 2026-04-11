@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import { Edit3, FileText } from 'lucide-react';
 
-import type { Task } from '@shared/types';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { Button, SectionHeader } from '@ui';
 
@@ -16,7 +16,7 @@ import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 
 interface BacklogPanelProps {
   saving?: boolean;
-  task: Task;
+  task: ProgressTask;
   onSaveDescription: (text: string) => void;
 }
 

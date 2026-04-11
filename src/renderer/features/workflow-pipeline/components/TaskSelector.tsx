@@ -1,20 +1,20 @@
 /**
- * TaskSelector — Dropdown to pick a task from the current project.
+ * TaskSelector — Dropdown to pick a progress task.
  * Shows task title and status badge for each option.
  */
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from '@ui';
 
-import { useTasks } from '@features/tasks';
+import { useProgressTasks } from '@features/tasks/api/useProgress';
 
 interface TaskSelectorProps {
   projectId: string;
-  selectedTaskId: string | null;
-  onSelectTask: (taskId: string) => void;
+  selectedSlug: string | null;
+  onSelectTask: (slug: string) => void;
 }
 
-export function TaskSelector({ projectId, selectedTaskId, onSelectTask }: TaskSelectorProps) {
-  const { data: tasks, isLoading } = useTasks(projectId);
+export function TaskSelector({ selectedSlug, onSelectTask }: TaskSelectorProps) {
+  const { data: tasks, isLoading } = useProgressTasks();
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ export function TaskSelector({ projectId, selectedTaskId, onSelectTask }: TaskSe
 
   return (
     <Select
-      value={selectedTaskId ?? ''}
+      value={selectedSlug ?? ''}
       onValueChange={(value) => {
         if (value.length > 0) {
           onSelectTask(value);
@@ -43,7 +43,7 @@ export function TaskSelector({ projectId, selectedTaskId, onSelectTask }: TaskSe
       </SelectTrigger>
       <SelectContent>
         {tasks.map((task) => (
-          <SelectItem key={task.id} value={task.id}>
+          <SelectItem key={task.slug} value={task.slug}>
             {task.title} [{task.status}]
           </SelectItem>
         ))}

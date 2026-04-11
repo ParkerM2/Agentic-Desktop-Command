@@ -1,48 +1,35 @@
 /**
  * ErrorPanel — Displays error details with recovery actions.
- * Provides retry-from-checkpoint and requeue buttons.
+ * Provides requeue button to move the task back to backlog.
  */
 
-import { AlertTriangle, RefreshCw, RotateCcw } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-import type { Task } from '@shared/types';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { Button, Code } from '@ui';
 
-import { useRestartFromCheckpoint } from '@features/tasks/api/useAgentMutations';
-import { useUpdateTaskStatus } from '@features/tasks/api/useTaskMutations';
+import { useUpdateProgressTask } from '@features/tasks/api/useProgressMutations';
 
 interface ErrorPanelProps {
-  task: Task;
+  task: ProgressTask;
 }
 
-function getErrorMessage(task: Task): string {
-  const metadataError = task.metadata?.error;
-  if (typeof metadataError === 'string' && metadataError.length > 0) {
-    return metadataError;
-  }
-  const logs = task.logs ?? [];
-  if (logs.length > 0) {
-    return logs.at(-1) ?? 'Unknown error occurred';
+function getErrorMessage(task: ProgressTask): string {
+  // ProgressTask doesn't carry metadata.error or logs; show description as fallback
+  if (task.description.length > 0) {
+    return task.description;
   }
   return 'An unknown error occurred during task execution.';
 }
 
 export function ErrorPanel({ task }: ErrorPanelProps) {
-  const restartFromCheckpoint = useRestartFromCheckpoint();
-  const updateStatus = useUpdateTaskStatus();
+  const updateTask = useUpdateProgressTask();
 
   const errorMessage = getErrorMessage(task);
 
-  function handleRetry() {
-    restartFromCheckpoint.mutate({
-      taskId: task.id,
-      projectPath: (task.metadata?.worktreePath) ?? '',
-    });
-  }
-
   function handleRequeue() {
-    updateStatus.mutate({ taskId: task.id, status: 'queued' });
+    updateTask.mutate({ slug: task.slug, updates: { status: 'backlog' } });
   }
 
   return (
@@ -63,25 +50,14 @@ export function ErrorPanel({ task }: ErrorPanelProps) {
       {/* Recovery actions */}
       <div className="flex items-center gap-2">
         <Button
-          className="text-primary hover:bg-primary/10 hover:text-primary"
-          disabled={restartFromCheckpoint.isPending}
-          size="sm"
-          type="button"
-          variant="ghost"
-          onClick={handleRetry}
-        >
-          <RotateCcw className="h-3.5 w-3.5" />
-          {restartFromCheckpoint.isPending ? 'Retrying...' : 'Retry from Checkpoint'}
-        </Button>
-        <Button
-          disabled={updateStatus.isPending}
+          disabled={updateTask.isPending}
           size="sm"
           type="button"
           variant="secondary"
           onClick={handleRequeue}
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          {updateStatus.isPending ? 'Requeueing...' : 'Requeue'}
+          {updateTask.isPending ? 'Requeueing...' : 'Requeue'}
         </Button>
       </div>
     </div>

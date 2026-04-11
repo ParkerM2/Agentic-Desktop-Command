@@ -5,7 +5,7 @@
 
 import { Loader2, StopCircle } from 'lucide-react';
 
-import type { Task } from '@shared/types';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { Button, Progress } from '@ui';
 
@@ -13,13 +13,13 @@ import { useKillAgent } from '@features/tasks/api/useAgentMutations';
 import { ExecutionLog } from '@features/tasks/components/detail/ExecutionLog';
 
 interface PlanningPanelProps {
-  task: Task;
+  task: ProgressTask;
 }
 
 export function PlanningPanel({ task }: PlanningPanelProps) {
   const killAgent = useKillAgent();
 
-  const sessionId = task.metadata?.sessionId as string | undefined;
+  const sessionId = task.lastSessionId ?? undefined;
 
   function handleKill() {
     if (sessionId) {
@@ -54,7 +54,7 @@ export function PlanningPanel({ task }: PlanningPanelProps) {
       <Progress className="animate-pulse" size="sm" value={33} />
 
       {/* Execution logs */}
-      <ExecutionLog logs={task.logs ?? []} />
+      <ExecutionLog logs={[]} />
     </div>
   );
 }

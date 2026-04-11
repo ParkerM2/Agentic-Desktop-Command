@@ -5,16 +5,16 @@
 
 import { Clock } from 'lucide-react';
 
-import type { Task } from '@shared/types';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { truncate } from '@renderer/shared/lib/utils';
 
 interface QueuedPanelProps {
-  task: Task;
+  task: ProgressTask;
 }
 
 export function QueuedPanel({ task }: QueuedPanelProps) {
-  const planContent = task.metadata?.planContent as string | undefined;
+  const planContent = task.planContent ?? undefined;
 
   return (
     <div className="space-y-4">

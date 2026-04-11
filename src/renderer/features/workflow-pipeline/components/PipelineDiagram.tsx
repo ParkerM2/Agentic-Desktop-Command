@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react';
 
-import type { TaskStatus } from '@shared/types';
+import type { ProgressStatus } from '@shared/types/progress';
 
 import { PipelineConnector } from './PipelineConnector';
 import { PipelineStepNode } from './PipelineStepNode';
@@ -39,14 +39,18 @@ const PIPELINE_STEPS: readonly PipelineStep[] = [
 ] as const;
 
 /**
- * Maps a TaskStatus to the corresponding index in PIPELINE_STEPS.
- * Special cases: 'paused' maps to 'running', 'error' returns -1 (handled separately).
+ * Maps a ProgressStatus to the corresponding index in PIPELINE_STEPS.
+ * Special cases: 'researching'/'research_done' map to 'planning',
+ * 'executing' maps to 'running', 'error'/'archived' return -1.
  */
 function getStatusIndex(taskStatus: string): number {
-  if (taskStatus === 'paused') {
+  if (taskStatus === 'researching' || taskStatus === 'research_done') {
+    return PIPELINE_STEPS.findIndex((step) => step.key === 'planning');
+  }
+  if (taskStatus === 'executing') {
     return PIPELINE_STEPS.findIndex((step) => step.key === 'running');
   }
-  if (taskStatus === 'error') {
+  if (taskStatus === 'error' || taskStatus === 'archived') {
     return -1;
   }
   return PIPELINE_STEPS.findIndex((step) => step.key === taskStatus);
@@ -91,7 +95,7 @@ function getConnectorState(
 interface PipelineDiagramProps {
   onStepClick: (step: string) => void;
   selectedStep: string | null;
-  taskStatus: TaskStatus;
+  taskStatus: ProgressStatus;
 }
 
 export function PipelineDiagram({

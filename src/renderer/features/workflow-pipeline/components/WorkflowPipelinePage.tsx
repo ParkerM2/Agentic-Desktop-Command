@@ -5,13 +5,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import type { Task, TaskStatus } from '@shared/types';
+import type { ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
-import { useTask } from '@features/tasks';
+import { useProgressTask } from '@features/tasks/api/useProgress';
 
 import { useUpdateTaskDescription, useUpdateTaskPlan } from '../api/useUpdateTask';
 import { useWorkflowPipelineEvents } from '../hooks/useWorkflowPipelineEvents';
@@ -28,15 +28,16 @@ import { ReviewPanel } from './step-panels/ReviewPanel';
 import { RunningPanel } from './step-panels/RunningPanel';
 import { TaskSelector } from './TaskSelector';
 
-/** Maps a TaskStatus to the default pipeline step key for the diagram */
-function statusToStepKey(status: TaskStatus): string {
-  if (status === 'paused') return 'running';
+/** Maps a ProgressStatus to the default pipeline step key for the diagram */
+function statusToStepKey(status: ProgressStatus): string {
+  if (status === 'researching' || status === 'research_done') return 'planning';
+  if (status === 'executing') return 'running';
   return status;
 }
 
 function renderStepPanel(
   step: string,
-  task: Task,
+  task: ProgressTask,
   onSaveDescription: (text: string) => void,
   onSavePlan: (text: string) => void,
   savingDescription: boolean,
@@ -87,8 +88,8 @@ export function WorkflowPipelinePage() {
   const params = useLooseParams();
   const projectId = params.projectId ?? '';
 
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const { data: task } = useTask(selectedTaskId);
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const { data: task } = useProgressTask(selectedSlug);
 
   const { selectedStep, setSelectedStep } = useWorkflowPipelineStore();
 
@@ -114,20 +115,20 @@ export function WorkflowPipelinePage() {
 
   const handleSaveDescription = useCallback(
     (text: string) => {
-      if (selectedTaskId) {
-        updateDescription.mutate({ taskId: selectedTaskId, description: text });
+      if (selectedSlug) {
+        updateDescription.mutate({ slug: selectedSlug, description: text });
       }
     },
-    [selectedTaskId, updateDescription],
+    [selectedSlug, updateDescription],
   );
 
   const handleSavePlan = useCallback(
     (text: string) => {
-      if (selectedTaskId) {
-        updatePlan.mutate({ taskId: selectedTaskId, planContent: text });
+      if (selectedSlug) {
+        updatePlan.mutate({ slug: selectedSlug, planContent: text });
       }
     },
-    [selectedTaskId, updatePlan],
+    [selectedSlug, updatePlan],
   );
 
   return (
@@ -138,8 +139,8 @@ export function WorkflowPipelinePage() {
           <PageHeader.Actions>
             <TaskSelector
               projectId={projectId}
-              selectedTaskId={selectedTaskId}
-              onSelectTask={setSelectedTaskId}
+              selectedSlug={selectedSlug}
+              onSelectTask={setSelectedSlug}
             />
           </PageHeader.Actions>
         </PageHeader.Row>
