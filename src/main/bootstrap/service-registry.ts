@@ -381,7 +381,7 @@ export function createServiceRegistry(
     }),
   );
   const insightsService = lazyService(() =>
-    createInsightsService({ taskService, projectService, busSessionManager, qaRunner }),
+    createInsightsService({ progressService, projectService, busSessionManager, qaRunner }),
   );
 
   // ─── Tier 1: Alert + terminal ─────────────────────────────────

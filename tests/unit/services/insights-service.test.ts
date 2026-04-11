@@ -13,11 +13,18 @@ import { createInsightsService } from '@main/features/insights/insights-service'
 
 function makeTask(overrides: Record<string, unknown> = {}) {
   return {
-    id: 'task-1',
-    projectId: 'proj-1',
+    slug: 'task-1',
+    rootFile: 'task.md',
     title: 'Test Task',
-    status: 'todo',
+    description: 'A test task',
+    status: 'backlog',
+    priority: 'normal',
+    createdAt: '2026-04-05T12:00:00Z',
     updatedAt: '2026-04-05T12:00:00Z',
+    hasResearch: false,
+    hasPlan: false,
+    hasTeamTasks: false,
+    teamTaskCount: 0,
     ...overrides,
   };
 }
@@ -53,14 +60,14 @@ function makeMockDeps(options: {
   const qaReports = options.qaReports ?? {};
 
   return {
-    taskService: {
-      listTasks: vi.fn((_projectId: string) => tasks),
-      listAllTasks: vi.fn(() => tasks),
+    progressService: {
+      listTasks: vi.fn().mockResolvedValue(tasks),
       getTask: vi.fn(),
       createTask: vi.fn(),
       updateTask: vi.fn(),
-      updateTaskStatus: vi.fn(),
       deleteTask: vi.fn(),
+      syncFromDisk: vi.fn(),
+      dispose: vi.fn(),
     },
     projectService: {
       listProjects: vi.fn().mockResolvedValue(projects),
@@ -105,11 +112,11 @@ describe('InsightsService', () => {
   });
 
   describe('getMetrics()', () => {
-    it('returns zero metrics when no tasks exist', () => {
+    it('returns zero metrics when no tasks exist', async () => {
       const deps = makeMockDeps();
       const service = createInsightsService(deps as never);
 
-      const metrics = service.getMetrics();
+      const metrics = await service.getMetrics();
 
       expect(metrics.totalTasks).toBe(0);
       expect(metrics.completedTasks).toBe(0);
@@ -117,39 +124,39 @@ describe('InsightsService', () => {
       expect(metrics.totalTokenCost).toBe(0);
     });
 
-    it('calculates completion rate correctly', () => {
+    it('calculates completion rate correctly', async () => {
       const deps = makeMockDeps({
         tasks: [
-          makeTask({ id: 't1', status: 'done' }),
-          makeTask({ id: 't2', status: 'done' }),
-          makeTask({ id: 't3', status: 'todo' }),
-          makeTask({ id: 't4', status: 'in-progress' }),
+          makeTask({ slug: 't1', status: 'done' }),
+          makeTask({ slug: 't2', status: 'done' }),
+          makeTask({ slug: 't3', status: 'backlog' }),
+          makeTask({ slug: 't4', status: 'executing' }),
         ],
       });
       const service = createInsightsService(deps as never);
 
-      const metrics = service.getMetrics();
+      const metrics = await service.getMetrics();
 
       expect(metrics.totalTasks).toBe(4);
       expect(metrics.completedTasks).toBe(2);
       expect(metrics.completionRate).toBe(50);
     });
 
-    it('filters by projectId when provided', () => {
+    it('fetches all tasks globally (no projectId filter)', async () => {
       const deps = makeMockDeps({
         tasks: [
-          makeTask({ id: 't1', status: 'done' }),
+          makeTask({ slug: 't1', status: 'done' }),
         ],
       });
       const service = createInsightsService(deps as never);
 
-      service.getMetrics('proj-1');
+      await service.getMetrics();
 
-      // Should only call listTasks with the specific project
-      expect(deps.taskService.listTasks).toHaveBeenCalledWith('proj-1');
+      // progressService.listTasks takes no args
+      expect(deps.progressService.listTasks).toHaveBeenCalledWith();
     });
 
-    it('includes agent metrics from orchestrator', () => {
+    it('includes agent metrics from orchestrator', async () => {
       const today = new Date().toISOString().split('T')[0] ?? '';
       const deps = makeMockDeps({
         sessions: [
@@ -160,18 +167,18 @@ describe('InsightsService', () => {
       });
       const service = createInsightsService(deps as never);
 
-      const metrics = service.getMetrics();
+      const metrics = await service.getMetrics();
 
       expect(metrics.activeAgents).toBe(1); // 1 active
       expect(metrics.agentRunCount).toBe(3); // all 3 spawned today
       expect(metrics.agentSuccessRate).toBe(50); // 1/2 finished as completed
     });
 
-    it('includes QA pass rate when qaRunner is present', () => {
+    it('includes QA pass rate when qaRunner is present', async () => {
       const deps = makeMockDeps({
         tasks: [
-          makeTask({ id: 't1', status: 'done' }),
-          makeTask({ id: 't2', status: 'done' }),
+          makeTask({ slug: 't1', status: 'done' }),
+          makeTask({ slug: 't2', status: 'done' }),
         ],
         qaReports: {
           't1': { result: 'pass' },
@@ -180,18 +187,18 @@ describe('InsightsService', () => {
       });
       const service = createInsightsService(deps as never);
 
-      const metrics = service.getMetrics();
+      const metrics = await service.getMetrics();
 
       expect(metrics.qaPassRate).toBe(50);
     });
   });
 
   describe('getTimeSeries()', () => {
-    it('returns entries for specified number of days', () => {
+    it('returns entries for specified number of days', async () => {
       const deps = makeMockDeps();
       const service = createInsightsService(deps as never);
 
-      const series = service.getTimeSeries(undefined, 3);
+      const series = await service.getTimeSeries(3);
 
       expect(series).toHaveLength(3);
       for (const entry of series) {
@@ -201,69 +208,69 @@ describe('InsightsService', () => {
       }
     });
 
-    it('defaults to 7 days', () => {
+    it('defaults to 7 days', async () => {
       const deps = makeMockDeps();
       const service = createInsightsService(deps as never);
 
-      const series = service.getTimeSeries();
+      const series = await service.getTimeSeries();
 
       expect(series).toHaveLength(7);
     });
 
-    it('counts tasks completed on each day', () => {
+    it('counts tasks completed on each day', async () => {
       const today = new Date().toISOString().split('T')[0] ?? '';
       const deps = makeMockDeps({
         tasks: [
-          makeTask({ id: 't1', status: 'done', updatedAt: `${today}T12:00:00Z` }),
-          makeTask({ id: 't2', status: 'done', updatedAt: `${today}T14:00:00Z` }),
-          makeTask({ id: 't3', status: 'todo', updatedAt: `${today}T10:00:00Z` }),
+          makeTask({ slug: 't1', status: 'done', updatedAt: `${today}T12:00:00Z` }),
+          makeTask({ slug: 't2', status: 'done', updatedAt: `${today}T14:00:00Z` }),
+          makeTask({ slug: 't3', status: 'backlog', updatedAt: `${today}T10:00:00Z` }),
         ],
       });
       const service = createInsightsService(deps as never);
 
-      const series = service.getTimeSeries(undefined, 1);
+      const series = await service.getTimeSeries(1);
 
       expect(series[0]?.tasksCompleted).toBe(2);
     });
   });
 
   describe('getTaskDistribution()', () => {
-    it('returns status distribution counts', () => {
+    it('returns status distribution counts', async () => {
       const deps = makeMockDeps({
         tasks: [
-          makeTask({ status: 'todo' }),
-          makeTask({ status: 'todo' }),
+          makeTask({ status: 'backlog' }),
+          makeTask({ status: 'backlog' }),
           makeTask({ status: 'done' }),
-          makeTask({ status: 'in-progress' }),
+          makeTask({ status: 'executing' }),
         ],
       });
       const service = createInsightsService(deps as never);
 
-      const dist = service.getTaskDistribution();
+      const dist = await service.getTaskDistribution();
 
       expect(dist).toHaveLength(3);
 
-      const todoEntry = dist.find((d) => d.status === 'todo');
-      expect(todoEntry?.count).toBe(2);
-      expect(todoEntry?.percentage).toBe(50);
+      const backlogEntry = dist.find((d) => d.status === 'backlog');
+      expect(backlogEntry?.count).toBe(2);
+      expect(backlogEntry?.percentage).toBe(50);
 
       const doneEntry = dist.find((d) => d.status === 'done');
       expect(doneEntry?.count).toBe(1);
       expect(doneEntry?.percentage).toBe(25);
     });
 
-    it('returns empty array when no tasks', () => {
+    it('returns empty array when no tasks', async () => {
       const deps = makeMockDeps({ tasks: [] });
       const service = createInsightsService(deps as never);
 
-      const dist = service.getTaskDistribution();
+      const dist = await service.getTaskDistribution();
 
       expect(dist).toEqual([]);
     });
   });
 
   describe('getProjectBreakdown()', () => {
-    it('returns per-project metrics', () => {
+    it('returns per-project metrics', async () => {
       const deps = makeMockDeps({
         projects: [
           makeProject({ id: 'p1', name: 'Project A' }),
@@ -271,43 +278,43 @@ describe('InsightsService', () => {
         ],
         tasks: [
           makeTask({ status: 'done' }),
-          makeTask({ status: 'todo' }),
+          makeTask({ status: 'backlog' }),
         ],
       });
       const service = createInsightsService(deps as never);
 
-      const breakdown = service.getProjectBreakdown();
+      const breakdown = await service.getProjectBreakdown();
 
       expect(breakdown).toHaveLength(2);
       expect(breakdown[0]?.projectName).toBe('Project A');
       expect(breakdown[1]?.projectName).toBe('Project B');
     });
 
-    it('calculates completionRate per project', () => {
+    it('calculates completionRate for first project', async () => {
       const deps = makeMockDeps({
         projects: [makeProject({ id: 'p1', name: 'Solo' })],
         tasks: [
           makeTask({ status: 'done' }),
           makeTask({ status: 'done' }),
-          makeTask({ status: 'todo' }),
+          makeTask({ status: 'backlog' }),
         ],
       });
       const service = createInsightsService(deps as never);
 
-      const breakdown = service.getProjectBreakdown();
+      const breakdown = await service.getProjectBreakdown();
 
-      // 2 out of 3 tasks done for the single project
+      // 2 out of 3 tasks done
       expect(breakdown[0]?.completionRate).toBe(67);
     });
 
-    it('returns 0% completion for project with no tasks', () => {
+    it('returns 0% completion when no tasks', async () => {
       const deps = makeMockDeps({
         projects: [makeProject()],
         tasks: [],
       });
       const service = createInsightsService(deps as never);
 
-      const breakdown = service.getProjectBreakdown();
+      const breakdown = await service.getProjectBreakdown();
 
       expect(breakdown[0]?.completionRate).toBe(0);
       expect(breakdown[0]?.taskCount).toBe(0);
