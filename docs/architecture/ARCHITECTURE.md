@@ -10,10 +10,10 @@
 │  │ Components   │   │ hooks         │   │ (window.api.invoke) │  │
 │  └──────────────┘   └───────────────┘   └────────┬───────────┘  │
 │  ┌──────────────┐   ┌───────────────┐            │              │
-│  │ Zustand      │   │ useIpcEvent() │◁─ events ──┤              │
-│  │ stores       │   │ hooks         │            │              │
+│  │ Zustand      │   │ EventBridge   │◁─ events ──┤              │
+│  │ stores       │   │ (invalidation)│            │              │
 │  └──────────────┘   └───────────────┘            │              │
-│  ┌──────────────┐                                │              │
+│  ┌──────────────┐                    ◁─ MessagePort (streams) ──┤
 │  │ Route Groups │  (8 route group files)         │              │
 │  └──────────────┘                                │              │
 ├──────────────────────────────────────────────────┼──────────────┤
@@ -31,8 +31,9 @@
 │  │ lifecycle    │   │ Handlers      │   │ Each service has   │  │
 │  │ svc-registry │   │ (thin layer)  │   │ focused sub-modules│  │
 │  │ ipc-wiring   │   └───────────────┘   └────────────────────┘  │
-│  │ event-wiring │                        ├─ AgentService (5)    │
-│  └──────────────┘                        ├─ AssistantService    │
+│  │ event-wiring │                        ├─ AgentHostClient     │
+│  └──────────────┘                        │   (proxy to utility) │
+│                                          ├─ AssistantService    │
 │                                          │   ├─ tool-definitions│
 │                                          │   ├─ tool-executor   │
 │                                          │   └─ tool-handlers/  │
@@ -42,6 +43,16 @@
 │                                          ├─ CommandBus (3)      │
 │                                          ├─ Database (SQLite)    │
 │                                          └─ ... (35 total)      │
+│                                                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  AGENT HOST (Electron utilityProcess)                            │
+│  ┌──────────────┐   ┌───────────────┐   ┌────────────────────┐  │
+│  │ ProcessMgr   │──▷│ StreamJSON    │──▷│ AgentManagerSvc    │  │
+│  │ (spawn PTY)  │   │ Parser        │   │ (session lifecycle) │  │
+│  └──────────────┘   └───────────────┘   └────────────────────┘  │
+│  MessagePort RPC (correlation-ID request/response)               │
+│  Direct MessagePort to renderer for stream events                │
+│  Auto-restart with exponential backoff (5 retries / 60s)         │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
 │  │ IPC Contract: src/shared/ipc/ (28 domain folders)            ││
@@ -146,12 +157,27 @@ Key modules:
 | Data | Storage | Location |
 |------|---------|----------|
 | Projects | JSON file | `{appData}/adc/projects.json` |
-| Settings | JSON file | `{appData}/adc/settings.json` |
+| Settings | SQLite table | `settings_kv` in `adc.db` |
 | Tasks | SQLite table | `progress_tasks` in `adc.db` |
+| Briefings | SQLite table | `briefings` in `adc.db` |
+| Changelog | SQLite table | `changelog_entries` in `adc.db` |
+| Planner | SQLite table | `planner_entries` in `adc.db` |
+| OAuth Tokens | SQLite table | `oauth_tokens` in `adc.db` |
 | Notes | JSON file | `{appData}/adc/users/{userId}/notes.json` |
 | Captures | JSON file | `{appData}/adc/users/{userId}/captures.json` |
 | Terminals | In-memory only | PTY processes managed by TerminalService |
-| Agents | In-memory only | PTY processes managed by AgentService |
+| Agents | In-memory + utility process | Managed by AgentHostClient → AgentManagerService |
+
+### UUID / Client-Generated IDs
+
+Every persistable entity has a UUID `id` column. IDs can be generated on either side:
+
+- **Server-side**: `generateId()` (calls `randomUUID()` from `node:crypto`)
+- **Client-side**: `crypto.randomUUID()` in the renderer (valuable for future offline-first sync)
+- **Bus**: Uses `randomUUID()` for command and session IDs (replaced ULID)
+- All create methods accept an optional client-provided `id` parameter
+
+Tables with UUID `id` columns: `progress_tasks`, `briefings`, `changelog_entries`, `oauth_tokens`, `settings_kv`, `planner_entries`, `sessions`, `commands`.
 
 ## Service Architecture
 
@@ -224,7 +250,7 @@ export function useTasks(projectId: string | null) {
 Pattern:
 - `queryKeys.ts` defines a factory for cache keys (enables targeted invalidation by EventBridge)
 - `use<Feature>.ts` defines query hooks (read operations)
-- `useTaskMutations.ts` defines mutation hooks (write operations with optimistic updates)
+- `useTaskMutations.ts` defines mutation hooks (write operations with simple `onSuccess` invalidation)
 - EventBridge handles IPC event → query invalidation centrally (no per-feature event wiring needed)
 
 ## Mutation Error Handling
@@ -276,12 +302,20 @@ Key files:
 - Input flows: xterm.onData() → `terminals.sendInput` IPC call → PTY stdin
 - Resize syncs between xterm FitAddon and PTY process
 
-## Agent System (Legacy)
+## Agent Host Utility Process
 
-- **AgentService** spawns Claude CLI as PTY processes (legacy, still active for basic agent management)
-- Parses CLI output for status indicators (starting, completed, error)
-- Emits `event:agent.statusChanged` and `event:agent.log` events
-- Agents are linked to tasks via `taskId` and projects via `projectId`
+Agent session management runs in an Electron `utilityProcess` for process isolation:
+
+- **AgentManagerService** (`src/main/agent-host/index.ts`) — Runs inside the utility process. Manages `ProcessManager` (PTY spawning), `StreamJsonParser` (output parsing), and session lifecycle.
+- **AgentHostClient** (`src/main/agent-host/agent-host-client.ts`) — Main process proxy. Implements the shared `AgentManager` interface backed by MessagePort RPC (correlation-ID request/response).
+- **AgentManager interface** — Shared interface satisfied by both `AgentManagerService` (direct, sync spawn) and `AgentHostClient` (async spawn via RPC). Callers always `await` spawn methods.
+- **Direct MessagePort** — Stream events (agent output, status changes) flow directly from utility process to renderer, bypassing the main process for lower latency.
+- **Crash Recovery** — Auto-restart with exponential backoff (5 retries within a 60-second window). On utility process crash, `AgentHostClient` re-establishes MessagePort connections.
+
+Key files:
+- `src/main/agent-host/agent-host-client.ts` — Main process proxy + `AgentManager` interface definition
+- `src/main/agent-host/index.ts` — Utility process entry point
+- `src/main/agent-host/host-protocol.ts` — MessagePort protocol types (`ControlRequest`, `ControlReply`, `AgentManagerEvent`)
 
 ## Command Bus + SQLite Layer (Primary)
 
@@ -397,20 +431,29 @@ Operators: equals, changes, any
 When a watch triggers, the evaluator fires a callback that emits `event:assistant.proactive`
 with source 'watch', enabling the assistant widget to show proactive notifications.
 
-## Task System (SQLite-Backed)
+## Task System (SQLite-Backed — Sole Source of Truth)
 
-Tasks are stored in the `progress_tasks` SQLite table (Drizzle ORM), managed by `ProgressService`.
+Tasks are stored exclusively in the `progress_tasks` SQLite table (Drizzle ORM), managed by `ProgressService`. The old filesystem-based `.adc/specs/` task system has been completely removed. There is no `TaskService`, `TaskRepository`, `TaskDecomposer`, or `GithubImporter` — all task operations go through `ProgressService`.
 
 **Key files:**
-- `src/main/features/progress/progress-service.ts` — SQLite-backed task CRUD
-- `src/main/features/progress/schema.ts` — Drizzle schema (`progress_tasks` table)
+- `src/main/features/progress/progress-service.ts` — SQLite-backed task CRUD (sole task authority)
+- `src/main/features/progress/schema.ts` — Drizzle schema (`progress_tasks` table with UUID `id` column)
 - `src/main/features/progress/task-file-io.ts` — File I/O utilities
 - `src/main/features/progress/progress-handlers.ts` — IPC handlers
 - `src/shared/ipc/progress/channels.ts` — `PROGRESS` channel constants
 
+**Consumers (all read from `progress_tasks` via ProgressService):**
+- My Work page — cross-project task view
+- Workflow Pipeline — visual task journey diagram
+- Assistant tool-handlers — task CRUD via natural language
+- Briefing service — daily task summaries
+- QA trigger — auto-starts QA on task status change
+- Insights service — task analytics
+
 **Rules:**
 - All task CRUD (list, get, create, update, delete) goes through `ProgressService` backed by SQLite
 - `TaskStatus` values: `backlog`, `planning`, `plan_ready`, `queued`, `running`, `paused`, `review`, `done`, `error`
+- No filesystem task storage — SQLite is the single source of truth
 
 The Task Table displays tasks in a filterable, sortable TanStack Table view using shadcn Table primitives (`ProgressTaskGrid`).
 

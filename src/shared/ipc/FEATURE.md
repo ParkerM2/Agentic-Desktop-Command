@@ -4,7 +4,7 @@ Defines every IPC channel in the application using Zod schemas. This is the **si
 
 ## Structure
 
-Each of the 22 domain subfolders follows the same pattern:
+Each of the 28+ domain subfolders follows the same pattern:
 
 - `schemas.ts` — Zod schemas for domain-specific data shapes
 - `contract.ts` — Invoke (request/response) and event (push) channel definitions
@@ -17,7 +17,7 @@ Each of the 22 domain subfolders follows the same pattern:
 
 ## Domains
 
-agents, app, assistant, auth, briefing, claude, common, email, fitness, git, github, hub, misc, notifications, planner, projects, qa, settings, spotify, tasks, terminals, workflow
+agents, app, assistant, auth, briefing, bus, claude, common, data-management, email, fitness, git, github, health, hub, misc, notifications, oauth, planner, progress, projects, qa, relay, security, sessions, settings, spotify, tasks, terminals, tracker, window, workflow, workflow-engine, workflow-templates
 
 ## How It Connects
 

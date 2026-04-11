@@ -50,7 +50,7 @@ Each row traces a domain from shared types through to the rendered route.
 | roadmap | `types/milestone.ts` (shared) | `ipc/misc/milestones.contract.ts` (shared) | `services/milestones/` (shared) | `handlers/milestones-handlers.ts` (shared) | `features/roadmap/` | `project.routes.ts` |
 | settings | `types/settings.ts` | `ipc/settings/` | `services/settings/` | `handlers/settings-handlers.ts`, `webhook-settings-handlers.ts` | `features/settings/` | `settings.routes.ts` |
 | spotify | -- | `ipc/spotify/` | `services/spotify/` | `handlers/spotify-handlers.ts` | `features/productivity/` | `productivity.routes.ts` |
-| tasks | `types/task.ts` | `ipc/progress/` | `features/progress/progress-service.ts` | `features/progress/progress-handlers.ts` | `features/tasks/` | `project.routes.ts` |
+| tasks | `types/progress.ts` | `ipc/progress/` | `features/progress/progress-service.ts` (SQLite — sole source of truth, old TaskService/TaskRepository deleted) | `features/progress/progress-handlers.ts` | `features/tasks/` | `project.routes.ts` |
 | terminals | `types/terminal.ts` | `ipc/terminals/` | `services/terminal/` | `handlers/terminal-handlers.ts` | `features/terminals/` | `project.routes.ts` |
 | voice | `types/voice.ts` | `ipc/misc/voice.contract.ts` | `services/voice/` | `handlers/voice-handlers.ts` | `features/voice/` | -- |
 | workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspaces/` | -- |

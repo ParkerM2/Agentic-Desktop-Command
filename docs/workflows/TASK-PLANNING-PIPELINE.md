@@ -21,7 +21,7 @@ User creates task (backlog)
 "Start Planning" clicked (ActionsCell)
   │
   ▼
-ipc('agent.startPlanning') ──► taskRepository: backlog → planning (local + Hub mirror)
+ipc('agent.startPlanning') ──► progressService: backlog → planning (SQLite progress_tasks)
   │                              Orchestrator spawns: claude -p "/plan-feature ..."
   │                              Hooks merged into .claude/settings.local.json
   │                              JSONL progress: {dataDir}/progress/{taskId}.jsonl
@@ -35,8 +35,8 @@ event-wiring.ts detects plan file
   │  └── Fallback: scan docs/features/*/plan.md (most recent)
   │
   ▼
-taskRepository: planning → plan_ready (local + Hub mirror)
-  │  planContent + planFilePath stored in task metadata (local + Hub mirror)
+progressService: planning → plan_ready (SQLite progress_tasks)
+  │  planContent + planFilePath stored in task metadata (SQLite progress_tasks)
   │  emit('event:agent.orchestrator.planReady')
   │  Restore original .claude/settings.local.json
   │
@@ -44,15 +44,15 @@ taskRepository: planning → plan_ready (local + Hub mirror)
 PlanViewer renders plan content
   │
   ├── "Approve & Execute" ──► ipc('agent.startExecution', { planRef })
-  │                            taskRepository: plan_ready → running (local + Hub mirror)
+  │                            progressService: plan_ready → running (SQLite progress_tasks)
   │
   ├── "Request Changes"   ──► PlanFeedbackDialog opens
   │                            User enters feedback
   │                            ipc('agent.replanWithFeedback', { feedback })
-  │                            taskRepository: plan_ready → planning (local + Hub mirror)
+  │                            progressService: plan_ready → planning (SQLite progress_tasks)
   │                            (cycle repeats)
   │
-  └── "Reject"            ──► taskRepository: status → backlog (local + Hub mirror)
+  └── "Reject"            ──► progressService: status → backlog (SQLite progress_tasks)
 ```
 
 ---
@@ -119,11 +119,9 @@ Contract source: `src/shared/ipc/agents/contract.ts`
 | `src/main/features/progress/progress-service.ts` | SQLite-backed task CRUD via `progress_tasks` table |
 | `src/main/features/progress/progress-handlers.ts` | IPC handlers for progress/task operations |
 | `src/main/features/progress/schema.ts` | Drizzle ORM schema (`progress_tasks` table) |
-| `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Spawns/kills Claude CLI processes, manages sessions |
-| `src/main/services/agent-orchestrator/hooks-template.ts` | Merges progress-tracking hooks into `.claude/settings.local.json` |
-| `src/main/services/agent-orchestrator/types.ts` | `AgentSession` interface (includes `originalSettingsContent`) |
-| `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Watches JSONL files for progress entries |
-| `src/main/ipc/handlers/agent-orchestrator-handlers.ts` | 7 IPC handlers (planning, execution, replan, kill, restart, get, list) — uses `progressService` for status updates |
+| `src/main/agent-host/agent-host-client.ts` | Main process proxy to Agent Host utility process (shared `AgentManager` interface) |
+| `src/main/agent-host/index.ts` | Utility process: `ProcessManager`, `StreamJsonParser`, `AgentManagerService` |
+| `src/main/bus/session-manager.ts` | SQLite-backed session lifecycle (spawn, kill, list, crash recovery) |
 | `src/main/bootstrap/event-wiring.ts` | Forwards orchestrator events → IPC; plan detection uses `progressService` for status + metadata updates |
 | `src/main/bootstrap/service-registry.ts` | Creates and exposes all services including `progressService` |
 
@@ -167,8 +165,8 @@ When a planning-phase agent completes (exit code 0), `event-wiring.ts` runs `det
 
 If found:
 - Reads the plan file content
-- Calls `taskRepository.updateTaskStatus(taskId, 'plan_ready')` (local + Hub mirror)
-- Calls `taskRepository.updateTask(taskId, { metadata: { planContent, planFilePath } })` (local + Hub mirror)
+- Calls `progressService.updateTaskStatus(taskId, 'plan_ready')` (SQLite progress_tasks)
+- Calls `progressService.updateTask(taskId, { metadata: { planContent, planFilePath } })` (SQLite progress_tasks)
 - Emits `event:agent.orchestrator.planReady` IPC event
 
 ---

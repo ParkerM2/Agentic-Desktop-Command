@@ -124,23 +124,20 @@ BrowserWindow.webContents.send(ch, payload)
 ### Event Contract
 
 ```typescript
-// Defined in src/shared/ipc/tasks/contract.ts (merged into ipcEventContract by root barrel)
-tasksEvents['event:task.statusChanged'] = {
+// Defined in src/shared/ipc/progress/contract.ts (merged into ipcEventContract by root barrel)
+progressEvents['event:progress.task.updated'] = {
   payload: z.object({
     taskId: z.string(),
-    status: TaskStatusSchema,
     projectId: z.string(),
   }),
 };
 
-// Emitted from service
-router.emit('event:task.statusChanged', { taskId, status, projectId });
+// Emitted from ProgressService
+router.emit('event:progress.task.updated', { taskId, projectId });
 
-// Consumed in renderer
-useIpcEvent('event:task.statusChanged', ({ taskId, projectId }) => {
-  void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
-  void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-});
+// Consumed via EventBridge (centralized invalidation — no per-feature event hooks needed)
+// EventBridge registry entry:
+'event:progress.task.updated': { keys: [['progress', 'list'], ['progress', 'detail']] },
 ```
 
 ---
@@ -148,46 +145,50 @@ useIpcEvent('event:task.statusChanged', ({ taskId, projectId }) => {
 ## 3. Feature Module Data Flow
 
 ```
-Feature: tasks
-=============
+Feature: tasks (SQLite-backed via ProgressService)
+==================================================
 
 index.ts (barrel export)
-  exports: useTasks, useTaskMutations, useTaskEvents, TaskCard, ...
+  exports: useProgress, useProgressMutations, ProgressTaskGrid, ...
 
 api/queryKeys.ts
-  taskKeys = {
-    all:    ['tasks'] as const,
-    lists:  () => [...taskKeys.all, 'list'],
-    list:   (projectId) => [...taskKeys.lists(), projectId],
-    details: () => [...taskKeys.all, 'detail'],
-    detail: (taskId) => [...taskKeys.details(), taskId],
+  progressKeys = {
+    all:    ['progress'] as const,
+    lists:  () => [...progressKeys.all, 'list'],
+    list:   (projectId) => [...progressKeys.lists(), projectId],
+    details: () => [...progressKeys.all, 'detail'],
+    detail: (taskId) => [...progressKeys.details(), taskId],
   }
 
-api/useTasks.ts
-  useTasks(projectId)     -> useQuery  -> ipc('tasks.list', { projectId })
-  useTask(projectId, id)  -> useQuery  -> ipc('tasks.get', { projectId, taskId })
+api/useProgress.ts
+  useProgress(projectId)     -> useQuery  -> ipc(PROGRESS.LIST.TASKS, { projectId })
+  useProgressTask(taskId)    -> useQuery  -> ipc(PROGRESS.GET.TASK, { taskId })
 
-api/useTaskMutations.ts
-  useCreateTask()     -> useMutation -> ipc('tasks.create', draft)
-  useUpdateTask()     -> useMutation -> ipc('tasks.update', { taskId, updates })
-  useUpdateStatus()   -> useMutation -> ipc('tasks.updateStatus', { taskId, status })
-  useDeleteTask()     -> useMutation -> ipc('tasks.delete', { taskId, projectId })
+api/useProgressMutations.ts
+  useCreateTask()     -> useMutation -> ipc(PROGRESS.CREATE.TASK, draft)
+                         onSuccess: invalidateQueries (no optimistic updates)
+  useUpdateTask()     -> useMutation -> ipc(PROGRESS.UPDATE.TASK, { taskId, updates })
+  useDeleteTask()     -> useMutation -> ipc(PROGRESS.DELETE.TASK, { taskId })
+
+  Mutation pattern: simple onSuccess invalidation.
+  IPC is <1ms so optimistic updates are unnecessary overhead.
 
 hooks/useTaskEvents.ts
   useTaskEvents()
-    -> useIpcEvent('event:task.statusChanged', ...)
-    -> useIpcEvent('event:task.progressUpdated', ...)
-    -> useIpcEvent('event:task.logAppended', ...)
-    -> invalidates relevant query keys
+    -> orchestrates useAgentEvents + useQaEvents
+    -> EventBridge handles progress.task.* events → query invalidation
 
 store.ts (Zustand — UI state only)
   selectedTaskId: string | null
-  expandedSections: Set<string>
+  expandedRowIds: Set<string>
+  filterStatus: string | null
+  searchQuery: string
   // NO server data in Zustand — that's React Query's job
 
 components/
-  TaskCard.tsx        -> uses useTasks() for data
-  TaskStatusBadge.tsx -> pure presentational
+  ProgressTaskGrid.tsx  -> TanStack Table with @ui Table primitives
+  TaskStatusBadge.tsx   -> pure presentational
+  TaskDetailRow.tsx     -> expandable row with pipeline controls
 ```
 
 ---
@@ -316,7 +317,7 @@ Agent runs (writes JSONL progress to {dataDir}/progress/{taskId}.jsonl)
   |    router.emit('event:agent.orchestrator.heartbeat')   index.ts
   |      |
   |      v
-  |    useAgentEvents → optimistic cache update             useAgentEvents.ts
+  |    useAgentEvents → cache invalidation                  useAgentEvents.ts
   |
   +--> JSONL entries written by Claude hooks
   |      |
@@ -410,6 +411,43 @@ SessionJSONLReader — tail-follow session JSONL files for structured output
     |
     +--> handles: truncation (offset reset), partial writes (buffered), rapid appends
 ```
+
+### Agent Host Utility Process Data Flow
+
+```
+MAIN PROCESS                    UTILITY PROCESS                RENDERER
+============                    ===============                ========
+
+AgentHostClient                 AgentManagerService
+  |                               (ProcessManager +
+  | ControlRequest                 StreamJsonParser)
+  | (spawn/stop/list)
+  |--- MessagePort RPC --------->|
+  |    correlationId              |
+  |                               v
+  |                             Spawns Claude CLI process
+  |                               |
+  |                               v
+  |                             Parses stream-json output
+  |                               |
+  |    ControlReply               |
+  |<--- MessagePort RPC ---------|
+  |                               |
+  |                               |--- Direct MessagePort --->|
+  |                               |    (stream events:         |
+  |                               |     messages, status,      |
+  |                               |     tool calls)            |
+  |                               |                            v
+  |                               |                     EventBridge
+  |                               |                     invalidates
+  |                               |                     agent queries
+```
+
+Key points:
+- Control commands (spawn, stop, list) use correlation-ID RPC via MessagePort
+- Stream events bypass main process entirely (utility → renderer direct MessagePort)
+- AgentHostClient maintains a local session cache for sync reads
+- Auto-restart: 5 retries within 60s window with exponential backoff
 
 ### QA Auto-Trigger Flow
 
