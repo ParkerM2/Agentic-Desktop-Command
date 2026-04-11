@@ -34,8 +34,8 @@ export function registerProgressHandlers(
 
   router.handle(PROGRESS.GET.TASK, ({ slug }) => progressService.getTask(slug));
 
-  router.handle(PROGRESS.CREATE.TASK, ({ slug, title, description, priority }) =>
-    progressService.createTask(slug, title, description, priority),
+  router.handle(PROGRESS.CREATE.TASK, ({ slug, title, description, priority, id }) =>
+    progressService.createTask(slug, title, description, priority, id),
   );
 
   router.handle(PROGRESS.UPDATE.TASK, ({ slug, updates }) =>

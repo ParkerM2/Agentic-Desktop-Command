@@ -39,6 +39,7 @@ export interface ProgressService {
     title: string,
     description: string,
     priority?: ProgressPriority,
+    id?: string,
   ) => Promise<ProgressTask>;
   updateTask: (
     slug: string,
@@ -812,16 +813,17 @@ export function createProgressService(
       title: string,
       description: string,
       priority: ProgressPriority = 'normal',
+      id?: string,
     ): Promise<ProgressTask> {
       await init();
 
       const now = new Date().toISOString();
-      const id = generateId();
+      const resolvedId = id ?? generateId();
 
       // 1. Insert into SQLite
       db.insert(progressTasks).values({
         slug,
-        id,
+        id: resolvedId,
         title,
         status: 'backlog',
         priority,
@@ -849,7 +851,7 @@ export function createProgressService(
 
       // 3. Build task from SQLite row
       const task: ProgressTask = {
-        id,
+        id: resolvedId,
         slug,
         rootFile: 'task.md',
         title,
