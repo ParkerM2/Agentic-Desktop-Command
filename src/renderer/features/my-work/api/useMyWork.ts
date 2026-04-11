@@ -1,23 +1,25 @@
 /**
  * React Query hooks for My Work feature
+ *
+ * Reads from SQLite progress_tasks via PROGRESS IPC channels.
  */
 
 import { useQuery } from '@tanstack/react-query';
 
-import { HUB_TASKS } from '@shared/ipc/tasks/channels';
-import type { Task } from '@shared/types';
+import { PROGRESS } from '@shared/ipc/progress/channels';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { myWorkKeys } from './queryKeys';
 
-/** Fetch all tasks across all projects via Hub */
+/** Fetch all progress tasks via PROGRESS IPC */
 export function useAllTasks() {
   return useQuery({
     queryKey: myWorkKeys.tasks(),
     queryFn: async () => {
-      const result = await ipc(HUB_TASKS.LIST.ALL, {});
-      return result.tasks as Task[];
+      const result = await ipc(PROGRESS.LIST.TASKS, {});
+      return result as ProgressTask[];
     },
     staleTime: 30_000,
     retry: 1,
