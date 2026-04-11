@@ -1,13 +1,13 @@
 /**
  * Task CRUD tool handlers for the assistant tool executor.
  *
- * Each handler validates input, delegates to TaskRepository, and returns
+ * Each handler validates input, delegates to ProgressService, and returns
  * a standardised ToolResult with queryKeyRoots for cache invalidation.
  */
 
-import type { TaskPriority } from '@shared/types/hub/enums';
+import type { ProgressPriority } from '@shared/types/progress';
 
-import type { TaskRepository } from '../../tasks/types';
+import type { ProgressService } from '../../progress/progress-service';
 
 type ToolInput = Record<string, unknown>;
 
@@ -18,18 +18,18 @@ interface ToolResult {
   queryKeyRoots: string[];
 }
 
-/** Map tool-definition priority values to Hub TaskPriority. */
-const PRIORITY_MAP: Record<string, TaskPriority> = {
+/** Map tool-definition priority values to ProgressPriority. */
+const PRIORITY_MAP: Record<string, ProgressPriority> = {
   low: 'low',
   medium: 'normal',
   high: 'high',
   critical: 'urgent',
 };
 
-const QUERY_KEY_TASKS = 'tasks';
+const QUERY_KEY_PROGRESS = 'progress';
 
 function ok(data: unknown): ToolResult {
-  return { success: true, data, queryKeyRoots: [QUERY_KEY_TASKS] };
+  return { success: true, data, queryKeyRoots: [QUERY_KEY_PROGRESS] };
 }
 
 function okReadOnly(data: unknown): ToolResult {
@@ -45,22 +45,32 @@ function getString(input: ToolInput, key: string, fallback = ''): string {
   return typeof val === 'string' ? val : fallback;
 }
 
+/** Generate a slug from a title: lowercase, spaces to hyphens, strip non-alphanumeric. */
+function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .trim()
+    .replaceAll(/\s+/g, '-')
+    .replaceAll(/[^a-z0-9-]/g, '')
+    .replaceAll(/-+/g, '-')
+    .replaceAll(/^-|-$/g, '');
+}
+
 export async function executeTasksCreate(
   input: ToolInput,
-  taskRepository: TaskRepository,
+  progressService: ProgressService,
 ): Promise<ToolResult> {
-  const projectId = getString(input, 'projectId');
   const title = getString(input, 'title');
-  if (!projectId) return fail('projectId is required');
   if (!title) return fail('title is required');
 
+  const slug = getString(input, 'slug') || slugify(title);
+  if (!slug) return fail('Could not generate slug from title');
+
+  const description = getString(input, 'description');
+  const priority = PRIORITY_MAP[getString(input, 'priority')] as ProgressPriority | undefined;
+
   try {
-    const task = await taskRepository.createTask({
-      projectId,
-      title,
-      description: getString(input, 'description') || undefined,
-      priority: PRIORITY_MAP[getString(input, 'priority')]
-    });
+    const task = await progressService.createTask(slug, title, description || '', priority);
     return ok(task);
   } catch (err: unknown) {
     return fail(err instanceof Error ? err.message : 'Failed to create task');
@@ -68,15 +78,12 @@ export async function executeTasksCreate(
 }
 
 export async function executeTasksList(
-  input: ToolInput,
-  taskRepository: TaskRepository,
+  _input: ToolInput,
+  progressService: ProgressService,
 ): Promise<ToolResult> {
-  const projectId = getString(input, 'projectId');
-  if (!projectId) return fail('projectId is required');
-
   try {
-    const result = await taskRepository.listTasks({ projectId });
-    return okReadOnly(result.tasks);
+    const tasks = await progressService.listTasks();
+    return okReadOnly(tasks);
   } catch (err: unknown) {
     return fail(err instanceof Error ? err.message : 'Failed to list tasks');
   }
@@ -84,10 +91,10 @@ export async function executeTasksList(
 
 export async function executeTasksUpdate(
   input: ToolInput,
-  taskRepository: TaskRepository,
+  progressService: ProgressService,
 ): Promise<ToolResult> {
-  const taskId = getString(input, 'taskId');
-  if (!taskId) return fail('taskId is required');
+  const slug = getString(input, 'slug');
+  if (!slug) return fail('slug is required');
 
   const { updates } = input;
   if (updates === undefined || updates === null || typeof updates !== 'object') {
@@ -95,8 +102,8 @@ export async function executeTasksUpdate(
   }
 
   try {
-    const task = await taskRepository.updateTask(
-      taskId,
+    const task = await progressService.updateTask(
+      slug,
       updates as Record<string, unknown>,
     );
     return ok(task);
@@ -107,16 +114,14 @@ export async function executeTasksUpdate(
 
 export async function executeTasksDelete(
   input: ToolInput,
-  taskRepository: TaskRepository,
+  progressService: ProgressService,
 ): Promise<ToolResult> {
-  const taskId = getString(input, 'taskId');
-  const projectId = getString(input, 'projectId');
-  if (!taskId) return fail('taskId is required');
-  if (!projectId) return fail('projectId is required');
+  const slug = getString(input, 'slug');
+  if (!slug) return fail('slug is required');
 
   try {
-    await taskRepository.deleteTask(taskId);
-    return ok({ deleted: true, taskId });
+    await progressService.deleteTask(slug);
+    return ok({ deleted: true, slug });
   } catch (err: unknown) {
     return fail(err instanceof Error ? err.message : 'Failed to delete task');
   }

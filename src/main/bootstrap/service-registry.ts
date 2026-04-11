@@ -431,7 +431,7 @@ export function createServiceRegistry(
       ideasService,
       plannerService,
       projectService,
-      taskRepository,
+      progressService,
       briefingService,
       changelogService,
       gitToolDeps: { projectService, gitService, githubService },
