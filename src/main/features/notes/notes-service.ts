@@ -5,13 +5,13 @@
  * One-time migration from notes.json on first access.
  */
 
-import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { desc, eq, like, or } from 'drizzle-orm';
 
 import { NOTES_EVENTS } from '@shared/ipc/misc/notes.channels';
+import { generateId } from '@shared/lib/id';
 import type { Note } from '@shared/types';
 
 import { notes } from '../../db/schema';
@@ -25,6 +25,7 @@ const logger = createScopedLogger('notes-service');
 export interface NotesService {
   listNotes: (filters: { projectId?: string; tag?: string }) => Note[];
   createNote: (data: {
+    id?: string;
     title: string;
     content: string;
     tags?: string[];
@@ -113,7 +114,7 @@ export function createNotesService(deps: {
     createNote(data) {
       const now = new Date().toISOString();
       const record = {
-        id: randomUUID(),
+        id: data.id ?? generateId(),
         title: data.title,
         content: data.content,
         tags: data.tags ?? [],
