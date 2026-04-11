@@ -5,6 +5,13 @@
  * Each handler file is thin — it maps channels to service calls.
  */
 
+import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
+import { FITNESS } from '@shared/ipc/fitness/channels';
+import { CHANGELOG } from '@shared/ipc/misc/changelog.channels';
+import { IDEAS } from '@shared/ipc/misc/ideas.channels';
+import { MILESTONES } from '@shared/ipc/misc/milestones.channels';
+import { SCREEN } from '@shared/ipc/misc/screen.channels';
+import { VOICE } from '@shared/ipc/misc/voice.channels';
 import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
 
 import { registerAgentDashboardHandlers } from '../features/agent-dashboard/agent-dashboard-handlers';
@@ -177,6 +184,19 @@ export interface Services {
   tokenStore: TokenStore;
 }
 
+/** Creates a handler that throws a "service unavailable" error for mutation channels. */
+function unavailable(service: string) {
+  return () => { throw new Error(`${service} service unavailable`); };
+}
+
+/** Returns an empty array wrapped in a resolved promise (typed loosely for fallback stubs). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function emptyList(): Promise<any[]> { return Promise.resolve([]); }
+
+/** Returns a fallback value wrapped in a resolved promise (typed loosely for fallback stubs). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function fallback(value: unknown): () => Promise<any> { return () => Promise.resolve(value); }
+
 export function registerAllHandlers(router: IpcRouter, services: Services): void {
   registerProjectHandlers(
     router,
@@ -209,18 +229,46 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerClaudeHandlers(router, services.claudeClient);
   if (services.changelogService) {
     registerChangelogHandlers(router, services.changelogService);
+  } else {
+    router.handle(CHANGELOG.LIST.ENTRIES, emptyList);
+    router.handle(CHANGELOG.ADD.ENTRY, unavailable('Changelog'));
+    router.handle(CHANGELOG.GENERATE.ENTRY, unavailable('Changelog'));
   }
   registerErrorHandlers(router, services.errorCollector, services.healthRegistry);
   registerFilesHandlers(router, services.fileTreeService);
   if (services.fitnessService) {
     registerFitnessHandlers(router, services.fitnessService);
+  } else {
+    router.handle(FITNESS.LOG.WORKOUT, unavailable('Fitness'));
+    router.handle(FITNESS.LIST.WORKOUTS, emptyList);
+    router.handle(FITNESS.DELETE.WORKOUT, unavailable('Fitness'));
+    router.handle(FITNESS.LOG.MEASUREMENT, unavailable('Fitness'));
+    router.handle(FITNESS.GET.MEASUREMENTS, emptyList);
+    router.handle(FITNESS.GET.STATS, fallback({ totalWorkouts: 0, workoutsThisWeek: 0, totalVolume: 0, currentStreak: 0, longestStreak: 0, averageWorkoutDuration: 0 }));
+    router.handle(FITNESS.SET.GOAL, unavailable('Fitness'));
+    router.handle(FITNESS.LIST.GOALS, emptyList);
+    router.handle(FITNESS.UPDATE['GOAL-PROGRESS'], unavailable('Fitness'));
+    router.handle(FITNESS.DELETE.GOAL, unavailable('Fitness'));
   }
   if (services.ideasService) {
     registerIdeasHandlers(router, services.ideasService);
+  } else {
+    router.handle(IDEAS.LIST.ALL, emptyList);
+    router.handle(IDEAS.CREATE.IDEA, unavailable('Ideas'));
+    router.handle(IDEAS.UPDATE.IDEA, unavailable('Ideas'));
+    router.handle(IDEAS.DELETE.IDEA, unavailable('Ideas'));
+    router.handle(IDEAS.VOTE.IDEA, unavailable('Ideas'));
   }
   registerInsightsHandlers(router, services.insightsService);
   if (services.milestonesService) {
     registerMilestonesHandlers(router, services.milestonesService);
+  } else {
+    router.handle(MILESTONES.LIST.ALL, emptyList);
+    router.handle(MILESTONES.CREATE.MILESTONE, unavailable('Milestones'));
+    router.handle(MILESTONES.UPDATE.MILESTONE, unavailable('Milestones'));
+    router.handle(MILESTONES.DELETE.MILESTONE, unavailable('Milestones'));
+    router.handle(MILESTONES.ADD.TASK, unavailable('Milestones'));
+    router.handle(MILESTONES.TOGGLE.TASK, unavailable('Milestones'));
   }
   registerNotesHandlers(router, services.notesService);
   registerPlannerHandlers(router, services.plannerService);
@@ -237,10 +285,18 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerTimeHandlers(router, services.timeParserService);
   if (services.voiceService) {
     registerVoiceHandlers(router, services.voiceService);
+  } else {
+    router.handle(VOICE.GET.CONFIG, fallback({ enabled: false, language: 'en', inputMode: 'push_to_talk' as const }));
+    router.handle(VOICE.UPDATE.CONFIG, unavailable('Voice'));
+    router.handle(VOICE.CHECK.PERMISSION, fallback({ granted: false, canRequest: false }));
   }
   registerWebhookSettingsHandlers(router, services.settingsService);
   if (services.screenCaptureService) {
     registerScreenHandlers(router, services.screenCaptureService);
+  } else {
+    router.handle(SCREEN.LIST.SOURCES, emptyList);
+    router.handle(SCREEN.CAPTURE.SCREEN, unavailable('Screen capture'));
+    router.handle(SCREEN.CHECK.PERMISSION, fallback({ status: 'denied' as const, platform: process.platform }));
   }
   registerBriefingHandlers(router, services.briefingService);
   registerHotkeyHandlers(router, services.settingsService, services.hotkeyManager);
@@ -277,11 +333,19 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerProgressHandlers(router, services.progressService);
   registerBusHandlers(router, services.commandBus, services.busSessionManager);
 
-  // Stub: workspaces CRUD (Hub-backed, no local service yet)
+  // Workspaces CRUD — Hub-backed, no local service yet.
+  // Returns empty list for reads; throws descriptive error for mutations
+  // since the typed contract requires a full workspace object on success.
   router.handle(WORKSPACES.LIST.ALL, () => Promise.resolve([]));
-  router.handle(WORKSPACES.CREATE.WORKSPACE, () => { throw new Error('Hub not configured'); });
-  router.handle(WORKSPACES.UPDATE.WORKSPACE, () => { throw new Error('Hub not configured'); });
-  router.handle(WORKSPACES.DELETE.WORKSPACE, () => { throw new Error('Hub not configured'); });
+  router.handle(WORKSPACES.CREATE.WORKSPACE, () => {
+    throw new Error('Cannot create workspace: Hub connection required. Connect to a Hub first.');
+  });
+  router.handle(WORKSPACES.UPDATE.WORKSPACE, () => {
+    throw new Error('Cannot update workspace: Hub connection required. Connect to a Hub first.');
+  });
+  router.handle(WORKSPACES.DELETE.WORKSPACE, () => {
+    throw new Error('Cannot delete workspace: Hub connection required. Connect to a Hub first.');
+  });
 
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(
@@ -290,6 +354,22 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
       services.teamWatcherService,
       services.qaRunner,
       services.gitService,
+      services.busSessionManager,
     );
+  } else {
+    router.handle(AGENT_DASHBOARD.SPAWN['PROJECT-OWNER'], unavailable('Agent dashboard'));
+    router.handle(AGENT_DASHBOARD.SPAWN['TEAM-LEAD'], unavailable('Agent dashboard'));
+    router.handle(AGENT_DASHBOARD.LIST.SESSIONS, emptyList);
+    router.handle(AGENT_DASHBOARD.GET.SESSION, fallback(null));
+    router.handle(AGENT_DASHBOARD.SEND.MESSAGE, fallback({ success: false }));
+    router.handle(AGENT_DASHBOARD.STOP.SESSION, fallback({ success: false }));
+    router.handle(AGENT_DASHBOARD.GET['FILES-CHANGED'], emptyList);
+    router.handle(AGENT_DASHBOARD.GET['TASKS-FOR-FEATURE'], emptyList);
+    router.handle(AGENT_DASHBOARD.GET.TASK, fallback(null));
+    router.handle(AGENT_DASHBOARD.GET['QA-SESSION'], fallback(null));
+    router.handle(AGENT_DASHBOARD.LIST['QA-SESSIONS'], emptyList);
+    router.handle(AGENT_DASHBOARD.LIST['SESSIONS-FOR-TASK'], emptyList);
+    router.handle(AGENT_DASHBOARD.GET['SESSION-LOG'], emptyList);
+    router.handle(AGENT_DASHBOARD.GET['GIT-DIFF'], fallback({ diff: '' }));
   }
 }
