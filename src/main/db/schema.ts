@@ -17,7 +17,6 @@ export * from '../features/workflow/engine/workflow-agents-schema';
 export * from '../features/workflow/engine/schema';
 export * from '../features/auth/schema';
 export * from '../features/integrations/email/schema';
-// hub/schema.ts has no exports — hub_config consolidated into settings_kv
 export * from '../features/changelog/schema';
 export * from '../features/progress/session-logs-schema';
 export * from '../bus/schema';
