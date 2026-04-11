@@ -10,6 +10,8 @@ import { useState } from 'react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { useErrorStats, useHealthStatus } from '../../api/useHealth';
 
 import { HealthPanel } from './HealthPanel';
@@ -77,10 +79,12 @@ export function HealthIndicator() {
 
   return (
     <div className="relative flex h-full items-center">
-      <button
+      <Button
         aria-label={config.label}
+        size="sm"
         title={config.label}
         type="button"
+        variant="ghost"
         className={cn(
           'flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors',
           config.bgClass,
@@ -97,7 +101,7 @@ export function HealthIndicator() {
           )}
         />
         {config.label}
-      </button>
+      </Button>
 
       {isOpen ? (
         <HealthPanel isOpen={isOpen} onClose={handleClose} />

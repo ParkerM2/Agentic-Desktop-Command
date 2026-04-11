@@ -19,6 +19,8 @@ import type { CreateProjectInput } from '@shared/types/project-setup';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { StepDetails, StepGitHub, StepReview, StepTechStack } from './create-wizard-steps';
 
 interface CreateProjectWizardProps {
@@ -145,14 +147,16 @@ export function CreateProjectWizard({
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Create New Project</h2>
-          <button
+          <Button
             aria-label="Close"
             className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Step Indicator */}
@@ -228,9 +232,10 @@ export function CreateProjectWizard({
 
         {/* Footer */}
         <div className="border-border flex items-center justify-between border-t px-6 py-4">
-          <button
+          <Button
             disabled={isFirstStep}
             type="button"
+            variant="ghost"
             className={cn(
               'text-muted-foreground flex items-center gap-1 text-sm transition-colors',
               'hover:text-foreground disabled:invisible',
@@ -239,10 +244,10 @@ export function CreateProjectWizard({
           >
             <ChevronLeft className="h-4 w-4" />
             Back
-          </button>
+          </Button>
 
           {isLastStep ? (
-            <button
+            <Button
               disabled={createProject.isPending || !canProceed(0, state)}
               type="button"
               className={cn(
@@ -259,11 +264,12 @@ export function CreateProjectWizard({
               ) : (
                 'Create Project'
               )}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               disabled={!canProceed(step, state)}
               type="button"
+              variant="ghost"
               className={cn(
                 'text-primary flex items-center gap-1 text-sm font-medium transition-colors',
                 'hover:text-primary/80 disabled:opacity-50',
@@ -272,7 +278,7 @@ export function CreateProjectWizard({
             >
               Next
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

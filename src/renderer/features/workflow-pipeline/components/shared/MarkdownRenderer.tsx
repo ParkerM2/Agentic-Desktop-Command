@@ -8,6 +8,8 @@ import remarkGfm from 'remark-gfm';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Checkbox } from '@ui';
+
 import type { Components } from 'react-markdown';
 
 interface MarkdownRendererProps {
@@ -132,14 +134,11 @@ const components: Components = {
     </a>
   ),
   hr: (props) => <hr className="my-4 border-border" {...props} />,
-  input: ({ checked, ...props }) => (
-    <input
+  input: ({ checked }) => (
+    <Checkbox
       disabled
-      readOnly
-      checked={checked}
-      className="mr-2 accent-primary"
-      type="checkbox"
-      {...props}
+      checked={checked === true}
+      className="mr-2"
     />
   ),
 };

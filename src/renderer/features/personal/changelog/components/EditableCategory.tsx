@@ -2,6 +2,8 @@ import { X } from 'lucide-react';
 
 import type { ChangeCategory } from '@shared/types';
 
+import { Button } from '@ui';
+
 import { CATEGORY_CONFIG } from './category-config';
 
 interface EditableCategoryProps {
@@ -30,13 +32,14 @@ export function EditableCategory({ category, onRemoveItem }: EditableCategoryPro
           >
             <span className="text-muted-foreground">-</span>
             <span className="flex-1 text-sm">{item}</span>
-            <button
-              className="text-muted-foreground hover:text-destructive opacity-0 transition-all group-hover:opacity-100"
+            <Button
+              className="text-muted-foreground hover:text-destructive h-auto p-0 opacity-0 transition-all group-hover:opacity-100"
               type="button"
+              variant="ghost"
               onClick={() => onRemoveItem(idx)}
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </li>
         ))}
       </ul>

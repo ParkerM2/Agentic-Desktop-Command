@@ -11,6 +11,7 @@ import type { Exercise, ExerciseSet, WorkoutType } from '@shared/types';
 import {
   Button,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -136,12 +137,12 @@ export function WorkoutForm() {
         {/* Date + Type */}
         <div className="flex gap-3">
           <div className="flex-1">
-            <label
+            <Label
               className="text-muted-foreground mb-1 block text-xs font-medium"
               htmlFor="workout-date"
             >
               Date
-            </label>
+            </Label>
             <Input
               id="workout-date"
               type="date"
@@ -150,12 +151,12 @@ export function WorkoutForm() {
             />
           </div>
           <div className="flex-1">
-            <label
+            <Label
               className="text-muted-foreground mb-1 block text-xs font-medium"
               htmlFor="workout-type"
             >
               Type
-            </label>
+            </Label>
             <Select value={type} onValueChange={(v) => setType(v as WorkoutType)}>
               <SelectTrigger id="workout-type">
                 <SelectValue />
@@ -173,12 +174,12 @@ export function WorkoutForm() {
 
         {/* Duration */}
         <div>
-          <label
+          <Label
             className="text-muted-foreground mb-1 block text-xs font-medium"
             htmlFor="workout-duration"
           >
             Duration (minutes)
-          </label>
+          </Label>
           <Input
             id="workout-duration"
             min="1"
@@ -223,12 +224,12 @@ export function WorkoutForm() {
 
         {/* Notes */}
         <div>
-          <label
+          <Label
             className="text-muted-foreground mb-1 block text-xs font-medium"
             htmlFor="workout-notes"
           >
             Notes
-          </label>
+          </Label>
           <Textarea
             className="h-16"
             id="workout-notes"

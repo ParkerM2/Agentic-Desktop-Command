@@ -10,6 +10,8 @@ import type { Screenshot } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 interface ScreenshotViewerProps {
   screenshot: Screenshot | null;
   onClose?: () => void;
@@ -97,30 +99,33 @@ export function ScreenshotViewer({ screenshot, onClose, className }: ScreenshotV
   // Fullscreen overlay
   if (isFullscreen) {
     return (
-      <button
+      <Button
         aria-label="Screenshot fullscreen view - click to close"
-        className="bg-background/95 fixed inset-0 z-50 flex cursor-pointer items-center justify-center backdrop-blur-sm"
+        className="bg-background/95 fixed inset-0 z-50 flex h-auto cursor-pointer items-center justify-center rounded-none backdrop-blur-sm"
         type="button"
+        variant="ghost"
         onClick={handleFullscreenToggle}
         onKeyDown={handleKeyDown}
       >
-        <button
+        <Button
           aria-label="Close fullscreen"
           className="bg-background/80 text-foreground hover:bg-accent absolute top-4 right-4 rounded-lg p-2 transition-colors"
+          size="icon"
           type="button"
+          variant="ghost"
           onClick={(e) => {
             e.stopPropagation();
             handleFullscreenToggle();
           }}
         >
           <X className="h-5 w-5" />
-        </button>
+        </Button>
         <img
           alt={`Screenshot from ${screenshot.source.name}`}
           className="max-h-[90vh] max-w-[90vw] object-contain"
           src={screenshot.data}
         />
-      </button>
+      </Button>
     );
   }
 
@@ -137,9 +142,11 @@ export function ScreenshotViewer({ screenshot, onClose, className }: ScreenshotV
 
         {/* Actions */}
         <div className="flex items-center gap-1">
-          <button
+          <Button
             aria-label="Copy to clipboard"
+            size="icon"
             type="button"
+            variant="ghost"
             className={cn(
               'text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-2 transition-colors',
               copied && 'text-success',
@@ -147,45 +154,52 @@ export function ScreenshotViewer({ screenshot, onClose, className }: ScreenshotV
             onClick={() => void handleCopyToClipboard()}
           >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </button>
+          </Button>
 
-          <button
+          <Button
             aria-label="Download screenshot"
             className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-2 transition-colors"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={handleDownload}
           >
             <Download className="h-4 w-4" />
-          </button>
+          </Button>
 
-          <button
+          <Button
             aria-label="View fullscreen"
             className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-2 transition-colors"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={handleFullscreenToggle}
           >
             <Maximize2 className="h-4 w-4" />
-          </button>
+          </Button>
 
           {onClose ? (
-            <button
+            <Button
               aria-label="Close viewer"
               className="text-muted-foreground hover:bg-accent hover:text-foreground rounded-md p-2 transition-colors"
+              size="icon"
               type="button"
+              variant="ghost"
               onClick={onClose}
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           ) : null}
         </div>
       </div>
 
       {/* Image preview */}
       <div className="bg-muted/30 relative">
-        <button
+        <Button
           aria-label="View fullscreen"
-          className="w-full cursor-pointer"
+          className="h-auto w-full cursor-pointer rounded-none p-0"
           type="button"
+          variant="ghost"
           onClick={handleFullscreenToggle}
           onKeyDown={handleKeyDown}
         >
@@ -194,7 +208,7 @@ export function ScreenshotViewer({ screenshot, onClose, className }: ScreenshotV
             className="h-auto w-full object-contain"
             src={screenshot.data}
           />
-        </button>
+        </Button>
       </div>
     </div>
   );

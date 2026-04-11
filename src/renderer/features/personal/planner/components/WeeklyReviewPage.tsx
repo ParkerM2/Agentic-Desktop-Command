@@ -21,7 +21,7 @@ import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { PageHeader, PageLayout } from '@ui';
+import { Button, PageHeader, PageLayout } from '@ui';
 
 
 import { useWeeklyReview, useGenerateWeeklyReview } from '../api/useWeeklyReview';
@@ -89,37 +89,45 @@ export function WeeklyReviewPage() {
 
           <div className="flex items-center gap-2">
             {isThisWeek ? null : (
-              <button
+              <Button
                 className="text-primary hover:text-primary/80 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+                size="sm"
+                variant="ghost"
                 onClick={handleGoThisWeek}
               >
                 This Week
-              </button>
+              </Button>
             )}
 
             <div className="border-border flex items-center rounded-md border">
-              <button
+              <Button
                 aria-label="Previous week"
                 className="text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                size="icon"
+                variant="ghost"
                 onClick={handlePrevWeek}
               >
                 <ChevronLeft className="h-4 w-4" />
-              </button>
+              </Button>
               <span className="text-foreground min-w-[160px] px-2 text-center text-sm font-medium">
                 {review ? formatWeekRange(review.weekStartDate, review.weekEndDate) : ''}
               </span>
-              <button
+              <Button
                 aria-label="Next week"
                 className="text-muted-foreground hover:text-foreground p-1.5 transition-colors"
+                size="icon"
+                variant="ghost"
                 onClick={handleNextWeek}
               >
                 <ChevronRight className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
-            <button
+            <Button
               aria-label="Refresh summary"
               disabled={generateReview.isPending}
+              size="icon"
+              variant="ghost"
               className={cn(
                 'text-muted-foreground hover:text-foreground rounded-md p-1.5 transition-colors',
                 generateReview.isPending && 'animate-spin',
@@ -127,7 +135,7 @@ export function WeeklyReviewPage() {
               onClick={handleRefresh}
             >
               <RefreshCw className="h-4 w-4" />
-            </button>
+            </Button>
 
             <Link
               className="text-muted-foreground hover:text-primary ml-2 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors"

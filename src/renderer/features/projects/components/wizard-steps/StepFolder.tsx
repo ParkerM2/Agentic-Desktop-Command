@@ -6,6 +6,8 @@ import { FolderOpen, Loader2 } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 interface StepFolderProps {
   selectedPath: string | null;
   isPending: boolean;
@@ -19,12 +21,11 @@ export function StepFolder({ selectedPath, isPending, onSelect }: StepFolderProp
       <p className="text-muted-foreground mb-4 text-sm">
         Select a folder to initialize as a project
       </p>
-      <button
+      <Button
         disabled={isPending}
         type="button"
         className={cn(
-          'bg-primary text-primary-foreground rounded-lg px-6 py-2.5 text-sm font-medium transition-colors',
-          'hover:bg-primary/90 disabled:opacity-50',
+          'rounded-lg px-6 py-2.5 text-sm font-medium',
         )}
         onClick={onSelect}
       >
@@ -36,7 +37,7 @@ export function StepFolder({ selectedPath, isPending, onSelect }: StepFolderProp
         ) : (
           'Choose Folder'
         )}
-      </button>
+      </Button>
       {selectedPath ? (
         <p className="text-muted-foreground mt-3 text-xs">Selected: {selectedPath}</p>
       ) : null}

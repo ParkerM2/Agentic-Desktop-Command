@@ -10,6 +10,8 @@ import type { TimeBlock } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { usePlannerUI } from '../store';
 
 import { CalendarOverlay } from './CalendarOverlay';
@@ -74,10 +76,12 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
       <div className="flex items-center justify-between">
         <h3 className="text-foreground text-sm font-semibold">Schedule</h3>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             aria-label={showCalendarOverlay ? 'Hide calendar events' : 'Show calendar events'}
+            size="sm"
             title={showCalendarOverlay ? 'Hide calendar events' : 'Show calendar events'}
             type="button"
+            variant="ghost"
             className={cn(
               'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors',
               showCalendarOverlay
@@ -88,16 +92,18 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
           >
             <Calendar className="h-3.5 w-3.5" />
             Calendar
-          </button>
+          </Button>
           {showEditor ? null : (
-            <button
+            <Button
               className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-xs transition-colors"
+              size="sm"
               type="button"
+              variant="ghost"
               onClick={() => setShowEditor(true)}
             >
               <Plus className="h-3.5 w-3.5" />
               Add Block
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -136,20 +142,24 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
                   </div>
                 </div>
                 <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button
+                  <Button
                     aria-label="Edit block"
                     className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
+                    size="icon"
+                    variant="ghost"
                     onClick={() => handleEdit(block)}
                   >
                     <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     aria-label="Remove block"
                     className="text-muted-foreground hover:text-destructive rounded p-1 transition-colors"
+                    size="icon"
+                    variant="ghost"
                     onClick={() => onRemove(block.id)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

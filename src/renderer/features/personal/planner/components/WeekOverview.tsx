@@ -8,6 +8,8 @@ import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 interface WeekDay {
   date: string;
   dayLabel: string;
@@ -84,29 +86,34 @@ export function WeekOverview({ selectedDate, onSelectDate }: WeekOverviewProps) 
           <span className="text-foreground text-sm font-medium">{weekLabel}</span>
         </div>
         <div className="flex items-center gap-1">
-          <button
+          <Button
             aria-label="Previous week"
             className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
+            size="icon"
+            variant="ghost"
             onClick={handlePrevWeek}
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             aria-label="Next week"
             className="text-muted-foreground hover:text-foreground rounded p-1 transition-colors"
+            size="icon"
+            variant="ghost"
             onClick={handleNextWeek}
           >
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 gap-1.5">
         {days.map((day) => (
-          <button
+          <Button
             key={day.date}
+            variant="ghost"
             className={cn(
-              'flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-center transition-colors',
+              'flex h-auto flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-center transition-colors',
               day.date === selectedDate ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
               day.isToday && day.date !== selectedDate && 'ring-primary ring-1',
             )}
@@ -114,7 +121,7 @@ export function WeekOverview({ selectedDate, onSelectDate }: WeekOverviewProps) 
           >
             <span className="text-[10px] font-medium uppercase">{day.dayLabel}</span>
             <span className="text-sm font-semibold">{day.dayNumber}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>

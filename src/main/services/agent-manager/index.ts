@@ -13,8 +13,6 @@ export type {
   AgentSpawnResult,
 } from './agent-connection-strategy';
 export { SubprocessStrategy } from './subprocess-strategy';
-export { UdsInboxStrategy } from './uds-inbox-strategy';
-export { McpChannelStrategy } from './mcp-channel-strategy';
 export { createStreamJsonParser, extractToolCalls } from './stream-json-parser';
 export type { StreamJsonParser } from './stream-json-parser';
 export { createProcessManager } from './process-manager';

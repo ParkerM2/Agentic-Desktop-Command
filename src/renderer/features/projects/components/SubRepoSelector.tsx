@@ -9,7 +9,7 @@ import type { InvokeOutput } from '@shared/ipc-contract';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Checkbox } from '@ui';
+import { Button, Checkbox, Label } from '@ui';
 
 type ChildRepo = InvokeOutput<typeof PROJECTS.DETECT.REPO>['childRepos'][number];
 
@@ -56,7 +56,7 @@ export function SubRepoSelector({ repos, selected, onSelectionChange }: SubRepoS
 
       <div className="space-y-1">
         {repos.map((repo) => (
-          <label
+          <Label
             key={repo.path}
             className={cn(
               'border-border flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors',
@@ -76,7 +76,7 @@ export function SubRepoSelector({ repos, selected, onSelectionChange }: SubRepoS
                 <p className="text-muted-foreground truncate text-xs">{repo.gitUrl}</p>
               ) : null}
             </div>
-          </label>
+          </Label>
         ))}
       </div>
     </div>

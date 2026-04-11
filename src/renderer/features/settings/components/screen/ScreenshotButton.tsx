@@ -10,6 +10,8 @@ import type { ScreenSource, Screenshot } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import {
   useAvailableSources,
   useCaptureScreen,
@@ -83,12 +85,12 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
   return (
     <div className={cn('relative inline-flex', className)}>
       {/* Main capture button */}
-      <button
+      <Button
         aria-label="Capture screenshot"
         disabled={!selectedSource || captureScreen.isPending || permissionDenied}
         type="button"
         className={cn(
-          'bg-primary text-primary-foreground flex items-center gap-2 rounded-l-md px-4 py-2 text-sm font-medium transition-colors',
+          'bg-primary text-primary-foreground flex items-center gap-2 rounded-l-md rounded-r-none px-4 py-2 text-sm font-medium transition-colors',
           'hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50',
         )}
         onClick={handleCapture}
@@ -99,16 +101,16 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
           <Camera className="h-4 w-4" />
         )}
         {selectedSource ? `Capture ${selectedSource.name}` : 'Select Source'}
-      </button>
+      </Button>
 
       {/* Dropdown toggle */}
-      <button
+      <Button
         aria-expanded={isDropdownOpen}
         aria-haspopup="listbox"
         aria-label="Select capture source"
         type="button"
         className={cn(
-          'bg-primary text-primary-foreground border-primary-foreground/20 rounded-r-md border-l px-2 py-2 transition-colors',
+          'bg-primary text-primary-foreground border-primary-foreground/20 rounded-l-none rounded-r-md border-l px-2 py-2 transition-colors',
           'hover:bg-primary/90',
         )}
         onClick={handleDropdownToggle}
@@ -117,7 +119,7 @@ export function ScreenshotButton({ onCapture, className }: ScreenshotButtonProps
         <ChevronDown
           className={cn('h-4 w-4 transition-transform', isDropdownOpen && 'rotate-180')}
         />
-      </button>
+      </Button>
 
       {/* Dropdown menu */}
       {isDropdownOpen ? (
@@ -205,12 +207,13 @@ interface SourceOptionProps {
 
 function SourceOption({ source, icon, selected, onClick }: SourceOptionProps) {
   return (
-    <button
+    <Button
       aria-selected={selected}
       role="option"
       type="button"
+      variant="ghost"
       className={cn(
-        'hover:bg-accent flex w-full items-center gap-3 px-3 py-2 text-left transition-colors',
+        'hover:bg-accent flex h-auto w-full items-center gap-3 rounded-none px-3 py-2 text-left transition-colors',
         selected && 'bg-accent',
       )}
       onClick={onClick}
@@ -227,6 +230,6 @@ function SourceOption({ source, icon, selected, onClick }: SourceOptionProps) {
           <span className="truncate">{source.name}</span>
         </div>
       </div>
-    </button>
+    </Button>
   );
 }

@@ -107,12 +107,13 @@ export function DiscordPanel() {
 
         <div className="grid grid-cols-2 gap-2">
           {discordActions.map((action) => (
-            <button
+            <Button
               key={action.label}
               disabled={discordStatus === 'error'}
               type="button"
+              variant="ghost"
               className={cn(
-                'border-border flex items-start gap-2 rounded-md border p-3 text-left',
+                'border-border flex h-auto items-start gap-2 rounded-md border p-3 text-left',
                 'hover:bg-accent transition-colors',
                 'disabled:pointer-events-none disabled:opacity-40',
               )}
@@ -125,7 +126,7 @@ export function DiscordPanel() {
                 <p className="text-foreground text-xs font-medium">{action.label}</p>
                 <p className="text-muted-foreground text-xs">{action.description}</p>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>
