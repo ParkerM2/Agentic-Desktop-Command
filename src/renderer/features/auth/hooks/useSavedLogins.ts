@@ -5,6 +5,8 @@
  * Passwords are intentionally NOT stored.
  */
 
+import { useCallback, useState } from 'react';
+
 const STORAGE_KEY = 'adc:saved-logins';
 
 export interface SavedLogin {
@@ -33,16 +35,19 @@ function writeToStorage(logins: SavedLogin[]): void {
 }
 
 export function useSavedLogins() {
-  const logins = readFromStorage();
+  const [logins, setLogins] = useState<SavedLogin[]>(readFromStorage);
 
-  function saveLogin(email: string): void {
-    const existing = readFromStorage().filter((l) => l.email !== email);
-    writeToStorage([{ email }, ...existing]);
-  }
+  const saveLogin = useCallback((email: string): void => {
+    const updated = [{ email }, ...readFromStorage().filter((l) => l.email !== email)];
+    writeToStorage(updated);
+    setLogins(updated);
+  }, []);
 
-  function removeLogin(email: string): void {
-    writeToStorage(readFromStorage().filter((l) => l.email !== email));
-  }
+  const removeLogin = useCallback((email: string): void => {
+    const updated = readFromStorage().filter((l) => l.email !== email);
+    writeToStorage(updated);
+    setLogins(updated);
+  }, []);
 
   return { logins, saveLogin, removeLogin };
 }
