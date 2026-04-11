@@ -16,6 +16,7 @@ import { join } from 'node:path';
 
 import { eq, ne } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import type { AdcDatabase } from '@main/db';
@@ -249,6 +250,7 @@ async function migrateFromFilesystem(db: AdcDatabase, projectPath: string): Prom
     const now = new Date().toISOString();
     db.insert(progressTasks).values({
       slug: task.slug,
+      id: task.id,
       title: task.title,
       status: task.status,
       priority: task.priority,
@@ -312,6 +314,7 @@ async function buildTask(
   const status = reconcileStatus(frontmatter.status, hasResearch, hasPlan, hasTeamTasks);
 
   const task: ProgressTask = {
+    id: asOptionalString(frontmatter.id) ?? generateId(),
     slug,
     rootFile: rootFileName,
     title: asString(frontmatter.title) || slug,
@@ -379,6 +382,7 @@ function rowToTask(
   },
 ): ProgressTask {
   return {
+    id: row.id ?? row.slug,
     slug: row.slug,
     rootFile: derived.rootFile,
     title: row.title,
@@ -812,10 +816,12 @@ export function createProgressService(
       await init();
 
       const now = new Date().toISOString();
+      const id = generateId();
 
       // 1. Insert into SQLite
       db.insert(progressTasks).values({
         slug,
+        id,
         title,
         status: 'backlog',
         priority,
@@ -843,6 +849,7 @@ export function createProgressService(
 
       // 3. Build task from SQLite row
       const task: ProgressTask = {
+        id,
         slug,
         rootFile: 'task.md',
         title,

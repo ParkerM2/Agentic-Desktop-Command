@@ -21,6 +21,7 @@ export type ProgressStatus =
 export type ProgressPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export interface ProgressTask {
+  id: string;
   slug: string;
   rootFile: string;
   title: string;
