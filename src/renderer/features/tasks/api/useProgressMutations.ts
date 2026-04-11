@@ -9,11 +9,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { PROGRESS } from '@shared/ipc/progress/channels';
-import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
+import type { ProgressPriority, ProgressStatus } from '@shared/types/progress';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
-import { optimisticCreate } from '@renderer/shared/lib/optimistic';
 
 import { progressKeys } from './progressKeys';
 
@@ -40,41 +39,17 @@ export function useCreateProgressTask() {
   const queryClient = useQueryClient();
   const { onError: toastOnError } = useMutationErrorToast();
 
-  const optimistic = optimisticCreate<CreateProgressTaskInput, ProgressTask>(
-    queryClient,
-    progressKeys.list(),
-    (input) => {
-      const now = new Date().toISOString();
-      const id = input.id ?? crypto.randomUUID();
-      const slug = input.slug ?? slugify(input.title);
-      return {
-        id,
-        slug,
-        rootFile: '',
-        title: input.title,
-        description: input.description,
-        status: 'backlog',
-        priority: input.priority ?? 'normal',
-        createdAt: now,
-        updatedAt: now,
-        hasResearch: false,
-        hasPlan: false,
-        hasTeamTasks: false,
-        teamTaskCount: 0,
-      };
-    },
-  );
-
   return useMutation({
     mutationFn: (data: CreateProgressTaskInput) => {
       const id = data.id ?? crypto.randomUUID();
       const slug = data.slug ?? slugify(data.title);
       return ipc(PROGRESS.CREATE.TASK, { ...data, id, slug });
     },
-    ...optimistic,
-    onError: (...args: Parameters<NonNullable<typeof optimistic.onError>>) => {
-      optimistic.onError(...args);
-      toastOnError('create progress task')(args[0]);
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+    },
+    onError(err) {
+      toastOnError('create progress task')(err);
     },
   });
 }
@@ -121,24 +96,11 @@ export function useArchiveProgressTask() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (data: { slug: string }) => ipc(PROGRESS.ARCHIVE.TASK, data),
-    async onMutate(input: { slug: string }) {
-      await queryClient.cancelQueries({ queryKey: progressKeys.list() });
-      const previous = queryClient.getQueryData<ProgressTask[]>(progressKeys.list());
-      queryClient.setQueryData<ProgressTask[]>(progressKeys.list(), (old = []) =>
-        old.filter((task) => task.slug !== input.slug),
-      );
-      return { previous };
-    },
-    onError: (err: unknown, _input: { slug: string }, context: { previous?: ProgressTask[] } | undefined) => {
-      if (context?.previous) {
-        queryClient.setQueryData<ProgressTask[]>(progressKeys.list(), context.previous);
-      }
-      onError('archive progress task')(err);
-    },
-    onSettled: () => {
+    onSuccess() {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.archived() });
     },
+    onError: onError('archive progress task'),
   });
 }
 
@@ -148,23 +110,10 @@ export function useDeleteProgressTask() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (data: { slug: string }) => ipc(PROGRESS.DELETE.TASK, data),
-    async onMutate(input: { slug: string }) {
-      await queryClient.cancelQueries({ queryKey: progressKeys.list() });
-      const previous = queryClient.getQueryData<ProgressTask[]>(progressKeys.list());
-      queryClient.setQueryData<ProgressTask[]>(progressKeys.list(), (old = []) =>
-        old.filter((task) => task.slug !== input.slug),
-      );
-      return { previous };
-    },
-    onError: (err: unknown, _input: { slug: string }, context: { previous?: ProgressTask[] } | undefined) => {
-      if (context?.previous) {
-        queryClient.setQueryData<ProgressTask[]>(progressKeys.list(), context.previous);
-      }
-      onError('delete progress task')(err);
-    },
-    onSettled: () => {
+    onSuccess() {
       void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
     },
+    onError: onError('delete progress task'),
   });
 }
 

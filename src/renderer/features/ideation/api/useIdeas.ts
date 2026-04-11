@@ -5,10 +5,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { IDEAS } from '@shared/ipc/misc/ideas.channels';
-import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
+import type { IdeaCategory, IdeaStatus } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { ideaKeys } from './queryKeys';
 
@@ -35,28 +34,9 @@ export function useCreateIdea() {
       const id = data.id ?? crypto.randomUUID();
       return ipc(IDEAS.CREATE.IDEA, { ...data, id });
     },
-    ...optimisticCreate<
-      {
-        id?: string;
-        title: string;
-        description: string;
-        category: IdeaCategory;
-        tags?: string[];
-        projectId?: string;
-      },
-      Idea
-    >(queryClient, ideaKeys.lists(), (input) => ({
-      id: input.id ?? crypto.randomUUID(),
-      title: input.title,
-      description: input.description,
-      status: 'new' as const,
-      category: input.category,
-      tags: input.tags ?? [],
-      projectId: input.projectId,
-      votes: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
+    },
   });
 }
 
@@ -83,7 +63,9 @@ export function useDeleteIdea() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(IDEAS.DELETE.IDEA, { id }),
-    ...optimisticDelete<Idea>(queryClient, ideaKeys.lists()),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
+    },
   });
 }
 

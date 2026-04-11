@@ -8,15 +8,8 @@ import { DASHBOARD } from '@shared/ipc/dashboard/channels';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
-import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { dashboardKeys } from './queryKeys';
-
-interface Capture {
-  id: string;
-  text: string;
-  createdAt: string;
-}
 
 /** Fetch all persisted captures */
 export function useCaptures() {
@@ -33,34 +26,28 @@ export function useCaptureMutations() {
   const { onError: toastError } = useMutationErrorToast();
 
   const capturesKey = dashboardKeys.captures();
-  const createOpts = optimisticCreate<string, Capture>(queryClient, capturesKey, (text) => ({
-    id: crypto.randomUUID(),
-    text,
-    createdAt: new Date().toISOString(),
-  }));
-  const deleteOpts = optimisticDelete<Capture>(queryClient, capturesKey);
 
   const createCapture = useMutation({
     mutationFn: (text: string) => {
       const id = crypto.randomUUID();
       return ipc(DASHBOARD.CREATE.CAPTURE, { id, text });
     },
-    onMutate: (input) => createOpts.onMutate(input),
-    onError(err, input, context) {
-      createOpts.onError(err, input, context);
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: capturesKey });
+    },
+    onError(err) {
       toastError('create capture')(err);
     },
-    onSettled: () => createOpts.onSettled(),
   });
 
   const deleteCapture = useMutation({
     mutationFn: (id: string) => ipc(DASHBOARD.DELETE.CAPTURE, { id }),
-    onMutate: (id) => deleteOpts.onMutate(id),
-    onError(err, id, context) {
-      deleteOpts.onError(err, id, context);
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: capturesKey });
+    },
+    onError(err) {
       toastError('delete capture')(err);
     },
-    onSettled: () => deleteOpts.onSettled(),
   });
 
   return { createCapture, deleteCapture };

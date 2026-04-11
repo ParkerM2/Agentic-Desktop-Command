@@ -5,10 +5,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ALERTS } from '@shared/ipc/misc/alerts.channels';
-import type { Alert, RecurringConfig, AlertLinkedTo } from '@shared/types';
+import type { RecurringConfig, AlertLinkedTo } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { alertKeys } from './queryKeys';
 
@@ -34,23 +33,14 @@ export function useAlerts(includeExpired = false) {
 export function useCreateAlert() {
   const queryClient = useQueryClient();
 
-  const toOptimistic = (data: CreateAlertInput): Alert => ({
-    id: crypto.randomUUID(),
-    ...data,
-    dismissed: false,
-    createdAt: new Date().toISOString(),
-  });
-
   return useMutation({
     mutationFn: (data: CreateAlertInput) => {
       const id = crypto.randomUUID();
       return ipc(ALERTS.CREATE.ALERT, { ...data, id });
     },
-    ...optimisticCreate<CreateAlertInput, Alert>(
-      queryClient,
-      alertKeys.lists(),
-      toOptimistic,
-    ),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
+    },
   });
 }
 
@@ -70,6 +60,8 @@ export function useDeleteAlert() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(ALERTS.DELETE.ALERT, { id }),
-    ...optimisticDelete<Alert>(queryClient, alertKeys.lists()),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: alertKeys.lists() });
+    },
   });
 }

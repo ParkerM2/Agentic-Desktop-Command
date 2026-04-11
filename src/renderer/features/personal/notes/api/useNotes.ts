@@ -5,10 +5,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { NOTES } from '@shared/ipc/misc/notes.channels';
-import type { Note } from '@shared/types/note';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { optimisticCreate, optimisticDelete, optimisticUpdate } from '@renderer/shared/lib/optimistic';
 
 import { noteKeys } from './queryKeys';
 
@@ -35,27 +33,9 @@ export function useCreateNote() {
       const id = data.id ?? crypto.randomUUID();
       return ipc(NOTES.CREATE.NOTE, { ...data, id });
     },
-    ...optimisticCreate<
-      {
-        title: string;
-        content: string;
-        tags?: string[];
-        projectId?: string;
-        taskId?: string;
-        id?: string;
-      },
-      Note
-    >(queryClient, noteKeys.lists(), (input) => ({
-      id: input.id ?? '',
-      title: input.title,
-      content: input.content,
-      tags: input.tags ?? [],
-      projectId: input.projectId,
-      taskId: input.taskId,
-      pinned: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+    },
   });
 }
 
@@ -70,17 +50,9 @@ export function useUpdateNote() {
       tags?: string[];
       pinned?: boolean;
     }) => ipc(NOTES.UPDATE.NOTE, data),
-    ...optimisticUpdate<
-      { id: string; title?: string; content?: string; tags?: string[]; pinned?: boolean },
-      Note
-    >(queryClient, noteKeys.lists(), (existing, input) => ({
-      ...existing,
-      ...(input.title !== undefined && { title: input.title }),
-      ...(input.content !== undefined && { content: input.content }),
-      ...(input.tags !== undefined && { tags: input.tags }),
-      ...(input.pinned !== undefined && { pinned: input.pinned }),
-      updatedAt: new Date().toISOString(),
-    })),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+    },
   });
 }
 
@@ -89,7 +61,9 @@ export function useDeleteNote() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(NOTES.DELETE.NOTE, { id }),
-    ...optimisticDelete<Note>(queryClient, noteKeys.lists()),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: noteKeys.lists() });
+    },
   });
 }
 

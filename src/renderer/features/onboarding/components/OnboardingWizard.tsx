@@ -7,6 +7,10 @@
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
+import { useUpdateSettings } from '@features/settings';
+
 import { getStepIndex, getTotalSteps, useOnboardingStore } from '../store';
 
 import { ClaudeCliStep } from './ClaudeCliStep';
@@ -58,6 +62,14 @@ function ProgressIndicator() {
 
 export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const { currentStep, nextStep, previousStep, skipIntegrations } = useOnboardingStore();
+  const updateSettings = useUpdateSettings();
+
+  function handleSkipOnboarding() {
+    updateSettings.mutate(
+      { onboardingCompleted: true },
+      { onSuccess() { onComplete(); } },
+    );
+  }
 
   function renderStep() {
     switch (currentStep) {
@@ -78,10 +90,20 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
   return (
     <div className="bg-background flex min-h-screen flex-col">
-      {/* Header with progress */}
+      {/* Header with progress and skip */}
       <header className="border-border flex items-center justify-between border-b px-6 py-4">
         <span className="text-foreground text-lg font-semibold">Setup</span>
-        <ProgressIndicator />
+        <div className="flex items-center gap-4">
+          <ProgressIndicator />
+          <Button
+            disabled={updateSettings.isPending}
+            size="sm"
+            variant="ghost"
+            onClick={handleSkipOnboarding}
+          >
+            Skip
+          </Button>
+        </div>
       </header>
 
       {/* Main content area */}

@@ -15,6 +15,7 @@ import {
 
 import { ROUTES } from '@shared/constants';
 import { HUB } from '@shared/ipc/hub/channels';
+import { SETTINGS } from '@shared/ipc/settings/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -133,10 +134,16 @@ function LoginRouteComponent() {
             { accessToken: LOCAL_SESSION_TOKEN, refreshToken: LOCAL_SESSION_TOKEN, expiresIn: 0 },
           );
           useAuthStore.getState().setInitializing(false);
-          void navigate({ to: ROUTES.DASHBOARD });
+          // Skip onboarding for local-skip users (returning / non-new users)
+          void ipc(SETTINGS.UPDATE.ALL, { onboardingCompleted: true }).then(() =>
+            navigate({ to: ROUTES.DASHBOARD }),
+          );
         }}
         onSuccess={() => {
-          void navigate({ to: ROUTES.DASHBOARD });
+          // Skip onboarding for returning users who log in
+          void ipc(SETTINGS.UPDATE.ALL, { onboardingCompleted: true }).then(() =>
+            navigate({ to: ROUTES.DASHBOARD }),
+          );
         }}
       />
     </Suspense>
@@ -179,7 +186,10 @@ function HubSetupRouteComponent() {
             { accessToken: LOCAL_SESSION_TOKEN, refreshToken: LOCAL_SESSION_TOKEN, expiresIn: 0 },
           );
           useAuthStore.getState().setInitializing(false);
-          void navigate({ to: ROUTES.DASHBOARD });
+          // Skip onboarding for local-skip users
+          void ipc(SETTINGS.UPDATE.ALL, { onboardingCompleted: true }).then(() =>
+            navigate({ to: ROUTES.DASHBOARD }),
+          );
         }}
         onSuccess={() => {
           void navigate({ to: ROUTES.LOGIN });

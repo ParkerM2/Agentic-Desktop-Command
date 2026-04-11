@@ -5,10 +5,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { MILESTONES } from '@shared/ipc/misc/milestones.channels';
-import type { Milestone, MilestoneStatus } from '@shared/types';
+import type { MilestoneStatus } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';
-import { optimisticCreate, optimisticDelete } from '@renderer/shared/lib/optimistic';
 
 import { milestoneKeys } from './queryKeys';
 
@@ -34,26 +33,9 @@ export function useCreateMilestone() {
       const id = data.id ?? crypto.randomUUID();
       return ipc(MILESTONES.CREATE.MILESTONE, { ...data, id });
     },
-    ...optimisticCreate<
-      {
-        title: string;
-        description: string;
-        targetDate: string;
-        projectId?: string;
-        id?: string;
-      },
-      Milestone
-    >(queryClient, milestoneKeys.lists(), (input) => ({
-      id: input.id ?? '',
-      title: input.title,
-      description: input.description,
-      targetDate: input.targetDate,
-      status: 'planned' as const,
-      tasks: [],
-      projectId: input.projectId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
+    },
   });
 }
 
@@ -79,7 +61,9 @@ export function useDeleteMilestone() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(MILESTONES.DELETE.MILESTONE, { id }),
-    ...optimisticDelete<Milestone>(queryClient, milestoneKeys.lists()),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
+    },
   });
 }
 
