@@ -102,6 +102,7 @@ import { createWorktreeProvisioner } from '../services/worktree-provisioner';
 import { createHotkeyManager } from '../tray/hotkey-manager';
 import { createQuickInputWindow } from '../tray/quick-input';
 
+import type { AgentHostClient } from '../agent-host/agent-host-client';
 import type { OAuthConfig } from '../auth/types';
 import type { CommandBus } from '../bus';
 import type { BusSessionManager } from '../bus/session-manager';
@@ -110,7 +111,6 @@ import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { NotificationManager } from '../features/integrations/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import type { AgentHostClient } from '../agent-host/agent-host-client';
 import type { Services } from '../ipc';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
 import type { TeamWatcherService } from '../services/team-watcher/team-watcher-service';
