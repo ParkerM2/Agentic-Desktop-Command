@@ -26,7 +26,6 @@ export type * from './project-setup';
 export type * from './session-config';
 export type * from './settings';
 export type * from './task';
-export { LEGACY_STATUS_MAP } from './task';
 export type * from './terminal';
 export type * from './voice';
 export type * from './screen';

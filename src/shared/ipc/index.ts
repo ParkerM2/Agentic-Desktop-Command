@@ -65,7 +65,7 @@ import {
   voiceInvoke,
 } from './settings';
 import { spotifyInvoke } from './spotify';
-import { hubTasksEvents, hubTasksInvoke, tasksEvents, tasksInvoke } from './tasks';
+import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
@@ -76,7 +76,6 @@ import { workspaceEvents, workspaceInvoke } from './workspace';
 
 export const ipcInvokeContract = {
   ...projectsInvoke,
-  ...tasksInvoke,
   ...hubTasksInvoke,
   ...terminalsInvoke,
   ...settingsInvoke,
@@ -361,21 +360,13 @@ export {
 export { AppSettingsSchema, ProfileSchema, WebhookConfigSchema } from './settings';
 
 export {
-  EstimatedEffortSchema,
   ExecutionPhaseSchema,
   ExecutionProgressSchema,
-  GithubIssueImportSchema,
   HubTaskPrioritySchema,
   HubTaskProgressSchema,
   HubTaskSchema,
   HubTaskStatusSchema,
-  SubtaskSchema,
-  SuggestedPrioritySchema,
-  TaskDecompositionResultSchema,
-  TaskDraftSchema,
-  TaskSchema,
   TaskStatusSchema,
-  TaskSuggestionSchema,
 } from './tasks';
 
 export { TerminalSessionSchema } from './terminals';

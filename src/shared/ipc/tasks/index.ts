@@ -1,25 +1,18 @@
 /**
  * Tasks IPC — Barrel Export
  *
- * Re-exports all task-related schemas, contracts, and Hub task definitions.
+ * Re-exports Hub task schemas, contracts, and event definitions.
+ * Local task invoke contract removed (no remaining handlers).
  */
 
 export {
-  EstimatedEffortSchema,
   ExecutionPhaseSchema,
   ExecutionProgressSchema,
-  GithubIssueImportSchema,
   HubTaskPrioritySchema,
   HubTaskProgressSchema,
   HubTaskSchema,
   HubTaskStatusSchema,
-  SubtaskSchema,
-  SuggestedPrioritySchema,
-  TaskDecompositionResultSchema,
-  TaskDraftSchema,
-  TaskSchema,
   TaskStatusSchema,
-  TaskSuggestionSchema,
 } from './schemas';
 
-export { hubTasksEvents, hubTasksInvoke, tasksEvents, tasksInvoke } from './contract';
+export { hubTasksEvents, hubTasksInvoke, tasksEvents } from './contract';
