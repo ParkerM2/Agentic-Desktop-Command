@@ -9,6 +9,7 @@ import { Pencil, Plus, Target, Trash2 } from 'lucide-react';
 import type { FitnessGoal, FitnessGoalType } from '@shared/types';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useDebounce } from '@renderer/shared/hooks/useDebounce';
 
 import {
   AlertDialog,
@@ -26,11 +27,13 @@ import {
   Input,
   Label,
   Progress,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import { useDeleteGoal, useFitnessGoals, useSetGoal } from '../api/useFitness';
@@ -62,8 +65,14 @@ export function GoalsPanel() {
   const [goalType, setGoalType] = useState<FitnessGoalType>('weight');
   const [target, setTarget] = useState('');
   const [unit, setUnit] = useState('kg');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery);
 
-  const displayGoals = goals ?? [];
+  const allGoals = goals ?? [];
+
+  const displayGoals = debouncedQuery.trim()
+    ? allGoals.filter((g) => g.type.toLowerCase().includes(debouncedQuery.toLowerCase()))
+    : allGoals;
 
   function handleSubmit() {
     const targetNum = Number(target);
@@ -82,6 +91,16 @@ export function GoalsPanel() {
 
   return (
     <div className="space-y-4">
+      {/* Search */}
+      <SearchInput
+        placeholder="Search goals by type..."
+        showClear={searchQuery.length > 0}
+        size="sm"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onClear={() => setSearchQuery('')}
+      />
+
       {/* Goals list */}
       {(displayGoals.length > 0) ? (
         <div className="space-y-3">
@@ -91,7 +110,7 @@ export function GoalsPanel() {
         </div>
       ) : (
         <EmptyState
-          description="No goals set yet"
+          description={searchQuery ? 'No goals match your search' : 'No goals set yet'}
           icon={Target}
           size="sm"
           title=""
@@ -211,9 +230,9 @@ function GoalCard({ goal }: GoalCardProps) {
               <span className="text-muted-foreground text-xs font-medium">
                 {GOAL_TYPE_LABELS[goal.type]}
               </span>
-              <p className="text-foreground text-sm font-semibold">
+              <Text className="font-semibold" size="sm">
                 {String(goal.current)} / {String(goal.target)} {goal.unit}
-              </p>
+              </Text>
             </div>
             <div className="flex items-center gap-1">
               <Button
@@ -239,10 +258,10 @@ function GoalCard({ goal }: GoalCardProps) {
             </div>
           </div>
           <Progress className="mt-2" size="sm" value={Math.round(progress)} />
-          <p className="text-muted-foreground mt-1 text-xs">
+          <Text className="mt-1 text-xs" variant="muted">
             {String(Math.round(progress))}% complete
             {goal.deadline ? ` \u00B7 Due ${goal.deadline}` : ''}
-          </p>
+          </Text>
           <div className="mt-1">
             <RelativeTime value={goal.createdAt} />
           </div>

@@ -40,8 +40,17 @@ export function BodyComposition() {
   const [showForm, setShowForm] = useState(false);
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  const displayMeasurements = measurements ?? [];
+  const allMeasurements = measurements ?? [];
+
+  const displayMeasurements = allMeasurements.filter((m) => {
+    if (dateFrom && m.date < dateFrom) return false;
+    if (dateTo && m.date > dateTo) return false;
+    return true;
+  });
+
   const latest = displayMeasurements.length > 0 ? displayMeasurements[0] : null;
 
   function handleSubmit() {
@@ -67,8 +76,46 @@ export function BodyComposition() {
     );
   }
 
+  const isFiltered = dateFrom !== '' || dateTo !== '';
+
   return (
     <div className="space-y-4">
+      {/* Date-range filter */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
+        <div className="flex-1">
+          <Label className="mb-1" htmlFor="measure-date-from">
+            From
+          </Label>
+          <Input
+            id="measure-date-from"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <Label className="mb-1" htmlFor="measure-date-to">
+            To
+          </Label>
+          <Input
+            id="measure-date-to"
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
+        {isFiltered ? (
+          <Button
+            size="sm"
+            type="button"
+            variant="ghost"
+            onClick={() => { setDateFrom(''); setDateTo(''); }}
+          >
+            Clear
+          </Button>
+        ) : null}
+      </div>
+
       {/* Latest measurements */}
       {latest ? (
         <Card>
@@ -123,7 +170,7 @@ export function BodyComposition() {
         </Card>
       ) : (
         <EmptyState
-          description="No measurements recorded yet"
+          description={isFiltered ? 'No measurements in this date range' : 'No measurements recorded yet'}
           icon={Scale}
           size="sm"
           title=""
