@@ -2,6 +2,7 @@
  * Briefing feature — daily briefings with proactive suggestions
  */
 
+export { BriefingConfigPanel } from './components/BriefingConfigPanel';
 export { BriefingPage } from './components/BriefingPage';
 export { SuggestionCard } from './components/SuggestionCard';
 export {
