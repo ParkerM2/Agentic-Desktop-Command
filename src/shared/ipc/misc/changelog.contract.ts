@@ -41,6 +41,23 @@ export const changelogInvoke = {
     }),
     output: ChangelogEntrySchema,
   },
+  [CHANGELOG.UPDATE.ENTRY]: {
+    input: z.object({
+      version: z.string(),
+      updates: z.object({
+        version: z.string().optional(),
+        date: z.string().optional(),
+        categories: z.array(ChangeCategorySchema).optional(),
+      }),
+    }),
+    output: ChangelogEntrySchema,
+  },
+  [CHANGELOG.DELETE.ENTRY]: {
+    input: z.object({
+      version: z.string(),
+    }),
+    output: z.object({ success: z.boolean() }),
+  },
   [CHANGELOG.GENERATE.ENTRY]: {
     input: z.object({
       repoPath: z.string(),

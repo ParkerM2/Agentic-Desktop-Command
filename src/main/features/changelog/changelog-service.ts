@@ -8,7 +8,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 
 import { generateId } from '@shared/lib/id';
 import type { ChangeCategory, ChangelogEntry } from '@shared/types';
@@ -30,6 +30,11 @@ export interface ChangelogService {
     date: string;
     categories: ChangeCategory[];
   }) => ChangelogEntry;
+  updateEntry: (
+    version: string,
+    updates: { version?: string; date?: string; categories?: ChangeCategory[] },
+  ) => ChangelogEntry;
+  deleteEntry: (version: string) => { success: boolean };
   generateFromGit: (repoPath: string, version: string, fromTag?: string) => Promise<ChangelogEntry>;
 }
 
@@ -180,6 +185,56 @@ export function createChangelogService(deps: {
       }).run();
 
       return entry;
+    },
+
+    updateEntry(version, updates) {
+      const existing = db
+        .select()
+        .from(changelogEntries)
+        .where(eq(changelogEntries.version, version))
+        .get();
+
+      if (!existing) {
+        throw new Error(`Changelog entry not found: ${version}`);
+      }
+
+      const newVersion = updates.version ?? existing.version;
+      const newDate = updates.date ?? existing.date;
+      const newCategories = updates.categories ?? (existing.categories as ChangeCategory[]);
+
+      if (updates.version !== undefined && updates.version !== version) {
+        // Version (PK) is changing — delete old row and insert new one
+        db.delete(changelogEntries).where(eq(changelogEntries.version, version)).run();
+        db.insert(changelogEntries).values({
+          id: existing.id ?? generateId(),
+          version: newVersion,
+          date: newDate,
+          categories: newCategories,
+          createdAt: existing.createdAt,
+        }).run();
+      } else {
+        db.update(changelogEntries)
+          .set({ date: newDate, categories: newCategories })
+          .where(eq(changelogEntries.version, version))
+          .run();
+      }
+
+      return { version: newVersion, date: newDate, categories: newCategories };
+    },
+
+    deleteEntry(version) {
+      const existing = db
+        .select()
+        .from(changelogEntries)
+        .where(eq(changelogEntries.version, version))
+        .get();
+
+      if (!existing) {
+        throw new Error(`Changelog entry not found: ${version}`);
+      }
+
+      db.delete(changelogEntries).where(eq(changelogEntries.version, version)).run();
+      return { success: true };
     },
 
     async generateFromGit(repoPath, version, fromTag) {
