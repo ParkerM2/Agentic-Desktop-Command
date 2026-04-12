@@ -34,6 +34,15 @@ export const AlertSchema = z.object({
   createdAt: z.string(),
 });
 
+export type UpdateAlertInput = z.infer<typeof UpdateAlertInputSchema>;
+export const UpdateAlertInputSchema = z.object({
+  id: z.string(),
+  message: z.string().optional(),
+  triggerAt: z.string().optional(),
+  recurring: RecurringConfigSchema.nullable().optional(),
+  linkedTo: AlertLinkedToSchema.optional(),
+});
+
 export const alertsInvoke = {
   [ALERTS.LIST.ALL]: {
     input: z.object({ includeExpired: z.boolean().optional() }),
@@ -48,6 +57,10 @@ export const alertsInvoke = {
       recurring: RecurringConfigSchema.optional(),
       linkedTo: AlertLinkedToSchema.optional(),
     }),
+    output: AlertSchema,
+  },
+  [ALERTS.UPDATE.ALERT]: {
+    input: UpdateAlertInputSchema,
     output: AlertSchema,
   },
   [ALERTS.DISMISS.ALERT]: {

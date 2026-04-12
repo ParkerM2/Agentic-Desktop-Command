@@ -27,6 +27,7 @@ const logger = createScopedLogger('alert-service');
 export interface AlertService {
   createAlert: (data: CreateAlertInput) => Alert;
   listAlerts: (includeExpired?: boolean) => Alert[];
+  updateAlert: (data: UpdateAlertInput) => Alert;
   dismissAlert: (id: string) => Alert;
   deleteAlert: (id: string) => { success: boolean };
   checkAlerts: () => void;
@@ -40,6 +41,14 @@ interface CreateAlertInput {
   message: string;
   triggerAt: string;
   recurring?: RecurringConfig;
+  linkedTo?: AlertLinkedTo;
+}
+
+interface UpdateAlertInput {
+  id: string;
+  message?: string;
+  triggerAt?: string;
+  recurring?: RecurringConfig | null;
   linkedTo?: AlertLinkedTo;
 }
 
@@ -208,6 +217,20 @@ export function createAlertService(deps: {
       }
       const now = new Date();
       return allAlerts.filter((a) => !a.dismissed || new Date(a.triggerAt) > now);
+    },
+
+    updateAlert(data) {
+      const { id, ...fields } = data;
+      const updates: Partial<typeof alerts.$inferInsert> = {};
+      if (fields.message !== undefined) updates.message = fields.message;
+      if (fields.triggerAt !== undefined) updates.triggerAt = fields.triggerAt;
+      if ('recurring' in fields) updates.recurring = fields.recurring ?? null;
+      if (fields.linkedTo !== undefined) updates.linkedTo = fields.linkedTo ?? null;
+
+      db.update(alerts).set(updates).where(eq(alerts.id, id)).run();
+      const updated = findAlert(id);
+      router.emit(ALERTS_EVENTS.ALERT.CHANGED, { alertId: id });
+      return updated;
     },
 
     dismissAlert(id) {
