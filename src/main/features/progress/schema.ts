@@ -1,4 +1,4 @@
-import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const progressTasks = sqliteTable('progress_tasks', {
   slug: text('slug').primaryKey(),
@@ -6,10 +6,11 @@ export const progressTasks = sqliteTable('progress_tasks', {
   title: text('title').notNull(),
   status: text('status').notNull(),
   priority: text('priority').notNull().default('medium'),
-  tags: text('tags', { mode: 'json' }).$type<string[]>().notNull().default([]),
   jiraKey: text('jira_key'),
+  jiraUrl: text('jira_url'),
   prUrl: text('pr_url'),
-  branch: text('branch'),
+  prNumber: integer('pr_number'),
+  prStatus: text('pr_status'),
   lastSessionId: text('last_session_id'),
   lastAgentName: text('last_agent_name'),
   completedAt: text('completed_at'),
