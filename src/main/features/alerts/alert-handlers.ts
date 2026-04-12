@@ -14,6 +14,8 @@ export function registerAlertHandlers(router: IpcRouter, service: AlertService):
 
   router.handle(ALERTS.CREATE.ALERT, (data) => Promise.resolve(service.createAlert(data)));
 
+  router.handle(ALERTS.UPDATE.ALERT, (data) => Promise.resolve(service.updateAlert(data)));
+
   router.handle(ALERTS.DISMISS.ALERT, ({ id }) => Promise.resolve(service.dismissAlert(id)));
 
   router.handle(ALERTS.DELETE.ALERT, ({ id }) => Promise.resolve(service.deleteAlert(id)));

@@ -3,6 +3,7 @@ import { domain, events } from '../channel-builder';
 export const ALERTS = domain('alerts', {
   LIST: ['all'],
   CREATE: ['alert'],
+  UPDATE: ['alert'],
   DISMISS: ['alert'],
   DELETE: ['alert'],
 });
