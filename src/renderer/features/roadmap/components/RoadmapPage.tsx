@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { CheckCircle2, Circle, Clock, Map, Pencil, Plus, Sparkles, Square, SquareCheck, Trash2 } from 'lucide-react';
 
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useDebounce } from '@renderer/shared/hooks/useDebounce';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
 import {
   Button,
+  EmptyState,
   Input,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
@@ -229,6 +232,11 @@ export function RoadmapPage() {
   const [showGenerate, setShowGenerate] = useState(false);
   const [generatePrompt, setGeneratePrompt] = useState(DEFAULT_GENERATE_PROMPT);
   const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | MilestoneStatus>('all');
+  const [sortBy, setSortBy] = useState<'targetDate' | 'progress' | 'createdAt'>('targetDate');
+
+  const debouncedSearch = useDebounce(searchInput, 250);
 
   const sendCommand = useSendCommand();
   const openWidget = useAssistantWidgetStore((s) => s.open);
@@ -265,10 +273,73 @@ export function RoadmapPage() {
       ? Math.round(items.reduce((sum, m) => sum + computeProgress(m), 0) / items.length)
       : 0;
 
+  const filteredItems = useMemo(() => {
+    const source = milestones ?? [];
+    const query = debouncedSearch.toLowerCase();
+
+    let result = source.filter((m) => {
+      const matchesSearch =
+        query === '' ||
+        m.title.toLowerCase().includes(query) ||
+        m.description.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === 'all' || m.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    result = [...result].sort((a, b) => {
+      if (sortBy === 'targetDate') {
+        return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
+      }
+      if (sortBy === 'progress') {
+        return computeProgress(b) - computeProgress(a);
+      }
+      // createdAt desc
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return result;
+  }, [milestones, debouncedSearch, statusFilter, sortBy]);
+
   return (
     <div className="space-y-6 p-6">
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <SearchInput
+          className="w-56"
+          placeholder="Search milestones..."
+          size="sm"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onClear={() => setSearchInput('')}
+        />
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as 'all' | MilestoneStatus)}
+        >
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="planned">Planned</SelectItem>
+            <SelectItem value="in-progress">In Progress</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sortBy}
+          onValueChange={(v) => setSortBy(v as 'targetDate' | 'progress' | 'createdAt')}
+        >
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="targetDate">Target date</SelectItem>
+            <SelectItem value="progress">Progress</SelectItem>
+            <SelectItem value="createdAt">Created at</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex-1" />
         <Button
           type="button"
           variant="outline"
@@ -398,13 +469,13 @@ export function RoadmapPage() {
           </div>
         ) : null}
 
-        {!isLoading && items.length > 0 ? (
+        {!isLoading && items.length > 0 && filteredItems.length > 0 ? (
           <section>
             <h2 className="text-muted-foreground mb-4 text-sm font-medium tracking-wider uppercase">
               Timeline
             </h2>
             <div className="space-y-4">
-              {items.map((milestone) => (
+              {filteredItems.map((milestone) => (
                 <MilestoneCard
                   key={milestone.id}
                   milestone={milestone}
@@ -415,6 +486,15 @@ export function RoadmapPage() {
               ))}
             </div>
           </section>
+        ) : null}
+
+        {!isLoading && items.length > 0 && filteredItems.length === 0 ? (
+          <EmptyState
+            description="Try adjusting your search or filters"
+            icon={Map}
+            size="md"
+            title="No milestones match"
+          />
         ) : null}
 
         {!isLoading && items.length === 0 ? (
