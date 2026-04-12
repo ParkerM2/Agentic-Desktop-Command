@@ -139,7 +139,7 @@ export function QuickCapture() {
   return (
     <Card>
       <CardContent className="p-4">
-        <p className="text-foreground mb-3 text-sm font-semibold">Quick Capture</p>
+        <Text className="mb-3 font-semibold">Quick Capture</Text>
 
         <div className="flex gap-2">
           <Input
