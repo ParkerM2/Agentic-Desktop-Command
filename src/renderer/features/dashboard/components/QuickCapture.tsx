@@ -33,10 +33,11 @@ import {
   DropdownMenuTrigger,
   Input,
   SearchInput,
+  Text,
 } from '@ui';
 
-import { useCreateNote } from '@features/personal/notes/api/useNotes';
-import { useCreateProgressTask } from '@features/tasks/api/useProgressMutations';
+import { useCreateNote } from '@features/personal/notes';
+import { useCreateProgressTask } from '@features/tasks';
 
 import { useCaptureMutations, useCaptures, useUpdateCapture } from '../api/useCaptures';
 
@@ -187,13 +188,14 @@ export function QuickCapture() {
                         }
                       />
                     ) : (
-                      <button
-                        className="text-foreground min-w-0 flex-1 cursor-text text-left text-xs"
+                      <Button
+                        className="text-foreground min-w-0 h-auto flex-1 cursor-text justify-start px-0 py-0 text-left text-xs font-normal"
                         type="button"
+                        variant="ghost"
                         onClick={() => handleEditStart(capture.id, capture.text)}
                       >
                         {capture.text}
-                      </button>
+                      </Button>
                     )}
                     <span className="text-muted-foreground shrink-0 text-xs">
                       {formatRelativeTime(capture.createdAt)}
@@ -261,7 +263,7 @@ export function QuickCapture() {
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground text-xs">No captures match your search.</p>
+              <Text size="sm" variant="muted">No captures match your search.</Text>
             )}
 
             {hasMore ? (
