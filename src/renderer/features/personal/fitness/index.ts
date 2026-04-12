@@ -5,6 +5,7 @@
 // API hooks
 export {
   useDeleteGoal,
+  useDeleteMeasurement,
   useDeleteWorkout,
   useFitnessGoals,
   useFitnessStats,
@@ -13,6 +14,7 @@ export {
   useMeasurements,
   useSetGoal,
   useUpdateGoalProgress,
+  useUpdateMeasurement,
   useUpdateWorkout,
   useWorkouts,
 } from './api/useFitness';

@@ -20,6 +20,14 @@ export function registerFitnessHandlers(router: IpcRouter, service: FitnessServi
 
   router.handle(FITNESS.LOG.MEASUREMENT, (data) => Promise.resolve(service.logMeasurement(data)));
 
+  router.handle(FITNESS.UPDATE.MEASUREMENT, (data) =>
+    Promise.resolve(service.updateMeasurement(data)),
+  );
+
+  router.handle(FITNESS.DELETE.MEASUREMENT, ({ id }) =>
+    Promise.resolve(service.deleteMeasurement(id)),
+  );
+
   router.handle(FITNESS.GET.MEASUREMENTS, ({ limit }) =>
     Promise.resolve(service.getMeasurements(limit)),
   );

@@ -78,6 +78,38 @@ export function useDeleteWorkout() {
   });
 }
 
+/** Update an existing measurement */
+export function useUpdateMeasurement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      date?: string;
+      weight?: number;
+      bodyFat?: number;
+      muscleMass?: number;
+      boneMass?: number;
+      waterPercentage?: number;
+      visceralFat?: number;
+      source?: MeasurementSource;
+    }) => ipc(FITNESS.UPDATE.MEASUREMENT, data),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: fitnessKeys.measurements() });
+    },
+  });
+}
+
+/** Delete a measurement */
+export function useDeleteMeasurement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ipc(FITNESS.DELETE.MEASUREMENT, { id }),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: fitnessKeys.measurements() });
+    },
+  });
+}
+
 /** Get body measurements */
 export function useMeasurements(limit?: number) {
   return useQuery({
