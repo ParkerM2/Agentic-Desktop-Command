@@ -23,6 +23,7 @@ import {
   Card,
   CardContent,
   EmptyState,
+  Heading,
   Input,
   Label,
   Text,
@@ -120,9 +121,9 @@ export function BodyComposition() {
       {latest ? (
         <Card>
           <CardContent className="p-4">
-            <h4 className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
+            <Heading as="h4" className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
               Latest Measurements
-            </h4>
+            </Heading>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {latest.weight === undefined ? null : (
                 <div>
@@ -181,7 +182,7 @@ export function BodyComposition() {
       {showForm ? (
         <Card>
           <CardContent className="p-4">
-            <h4 className="text-foreground mb-3 text-sm font-medium">Log Measurement</h4>
+            <Heading as="h4" className="text-foreground mb-3 text-sm font-medium">Log Measurement</Heading>
             <div className="flex gap-3">
               <div className="flex-1">
                 <Label className="mb-1" htmlFor="measure-weight">
@@ -242,9 +243,9 @@ export function BodyComposition() {
       {/* History */}
       {(displayMeasurements.length > 1) ? (
         <Card>
-          <h4 className="text-muted-foreground border-border border-b px-4 py-2 text-xs font-medium tracking-wider uppercase">
+          <Heading as="h4" className="text-muted-foreground border-border border-b px-4 py-2 text-xs font-medium tracking-wider uppercase">
             History
-          </h4>
+          </Heading>
           <div className="divide-border divide-y">
             {displayMeasurements.slice(0, 10).map((m) => (
               <MeasurementHistoryRow key={m.id} measurement={m} />

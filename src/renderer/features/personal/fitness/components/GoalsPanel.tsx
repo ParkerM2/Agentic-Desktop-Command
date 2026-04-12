@@ -24,6 +24,7 @@ import {
   Card,
   CardContent,
   EmptyState,
+  Heading,
   Input,
   Label,
   Progress,
@@ -121,7 +122,7 @@ export function GoalsPanel() {
       {showForm ? (
         <Card>
           <CardContent className="p-4">
-            <h4 className="text-foreground mb-3 text-sm font-medium">Set Goal</h4>
+            <Heading as="h4" className="text-foreground mb-3 text-sm font-medium">Set Goal</Heading>
             <div className="space-y-3">
               <div>
                 <Label className="mb-1" htmlFor="goal-type">
