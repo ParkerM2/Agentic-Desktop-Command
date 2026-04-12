@@ -1,12 +1,12 @@
 /**
- * IdeationFilterRow — Category and tag filter controls for the Ideation page.
+ * IdeationFilterRow — Search, category, and tag filter controls for the Ideation page.
  */
 
 import { X } from 'lucide-react';
 
 import type { IdeaCategory } from '@shared/types';
 
-import { Badge, Button } from '@ui';
+import { Badge, Button, SearchInput } from '@ui';
 
 const FILTER_OPTIONS: Array<{ value: IdeaCategory | 'all'; label: string }> = [
   { value: 'all', label: 'All' },
@@ -23,6 +23,8 @@ interface IdeationFilterRowProps {
   selectedTags: string[];
   onTagToggle: (tag: string) => void;
   onClearTags: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 export function IdeationFilterRow({
@@ -30,7 +32,9 @@ export function IdeationFilterRow({
   allTags,
   onClearTags,
   onFilterChange,
+  onSearchChange,
   onTagToggle,
+  searchQuery,
   selectedTags,
 }: IdeationFilterRowProps) {
   const hasTagFilters = selectedTags.length > 0;
@@ -38,6 +42,15 @@ export function IdeationFilterRow({
 
   return (
     <div className="space-y-2">
+      {/* Search */}
+      <SearchInput
+        className="max-w-sm"
+        placeholder="Search ideas…"
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        onClear={() => onSearchChange('')}
+      />
+
       {/* Category filters */}
       <div className="flex flex-wrap gap-2">
         {FILTER_OPTIONS.map((option) => (
