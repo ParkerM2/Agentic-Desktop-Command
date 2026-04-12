@@ -237,23 +237,25 @@ export function IdeaEditForm({ idea, onClose }: IdeaEditFormProps) {
               {tags.map((tag) => (
                 <span key={tag} className="flex items-center gap-0.5">
                   <Badge variant="secondary">{tag}</Badge>
-                  <button
+                  <Button
                     aria-label={`Remove tag ${tag}`}
-                    className="text-muted-foreground hover:text-foreground ml-0.5 rounded-full p-0.5"
+                    className="text-muted-foreground hover:text-foreground ml-0.5 h-auto rounded-full p-0.5"
+                    size="icon"
                     type="button"
+                    variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeTag(tag);
                     }}
                   >
                     <X className="h-2.5 w-2.5" />
-                  </button>
+                  </Button>
                 </span>
               ))}
-              <input
+              <Input
                 ref={tagInputRef}
                 aria-label="Add a tag"
-                className="text-foreground placeholder:text-muted-foreground min-w-20 flex-1 bg-transparent text-sm outline-none"
+                className="min-w-20 flex-1 border-0 bg-transparent p-0 shadow-none outline-none focus-visible:ring-0"
                 id="edit-idea-tags"
                 placeholder={(tags.length > 0) ? '' : 'Add tags (Enter or comma to confirm)'}
                 type="text"

@@ -61,18 +61,19 @@ export function IdeationFilterRow({
           {allTags.map((tag) => {
             const isActive = selectedTags.includes(tag);
             return (
-              <button
+              <Button
                 key={tag}
                 aria-label={isActive ? `Remove tag filter ${tag}` : `Filter by tag ${tag}`}
                 aria-pressed={isActive}
-                className="cursor-pointer rounded-full border-0 bg-transparent p-0"
+                className="h-auto rounded-full p-0"
                 type="button"
+                variant="ghost"
                 onClick={() => onTagToggle(tag)}
               >
                 <Badge variant={isActive ? 'default' : 'outline'}>
                   {tag}
                 </Badge>
-              </button>
+              </Button>
             );
           })}
           {hasTagFilters ? (
