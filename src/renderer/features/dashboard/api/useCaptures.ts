@@ -52,3 +52,20 @@ export function useCaptureMutations() {
 
   return { createCapture, deleteCapture };
 }
+
+/** Update an existing capture's text */
+export function useUpdateCapture() {
+  const queryClient = useQueryClient();
+  const { onError: toastError } = useMutationErrorToast();
+
+  return useMutation({
+    mutationFn: (data: { id: string; text: string }) =>
+      ipc(DASHBOARD.UPDATE.CAPTURE, data),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
+    },
+    onError(err) {
+      toastError('update capture')(err);
+    },
+  });
+}
