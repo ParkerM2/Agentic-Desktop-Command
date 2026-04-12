@@ -13,6 +13,7 @@ export {
   useLogWorkout,
   useMeasurements,
   useSetGoal,
+  useUpdateGoal,
   useUpdateGoalProgress,
   useUpdateMeasurement,
   useUpdateWorkout,

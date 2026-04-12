@@ -8,6 +8,7 @@ import { FITNESS } from '@shared/ipc/fitness/channels';
 import type {
   BodyMeasurement,
   Exercise,
+  FitnessGoal,
   FitnessGoalType,
   MeasurementSource,
   WorkoutType,
@@ -198,6 +199,25 @@ export function useDeleteGoal() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(FITNESS.DELETE.GOAL, { id }),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
+    },
+  });
+}
+
+interface UpdateGoalInput {
+  id: string;
+  type?: FitnessGoalType;
+  target?: number;
+  unit?: string;
+  deadline?: string | null;
+}
+
+/** Update an existing goal's definition (type, target, unit, deadline) */
+export function useUpdateGoal(): UseMutationResult<FitnessGoal, Error, UpdateGoalInput> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateGoalInput) => ipc(FITNESS.UPDATE.GOAL, data),
     onSuccess() {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.goals() });
     },

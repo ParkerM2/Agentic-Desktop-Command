@@ -80,6 +80,16 @@ export const fitnessInvoke = {
     input: z.object({ goalId: z.string(), current: z.number() }),
     output: FitnessGoalSchema,
   },
+  [FITNESS.UPDATE.GOAL]: {
+    input: z.object({
+      id: z.string(),
+      type: FitnessGoalTypeSchema.optional(),
+      target: z.number().optional(),
+      unit: z.string().optional(),
+      deadline: z.string().optional().nullable(),
+    }),
+    output: FitnessGoalSchema,
+  },
   [FITNESS.UPDATE.WORKOUT]: {
     input: z.object({
       id: z.string(),
