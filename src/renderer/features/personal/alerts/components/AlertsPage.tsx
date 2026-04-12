@@ -2,18 +2,21 @@
  * AlertsPage — List of all alerts with management controls
  */
 
-import { Bell, Check, Clock, Plus, Repeat, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Bell, Check, Clock, Pencil, Plus, Repeat, Trash2 } from 'lucide-react';
 
 import type { Alert } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, EmptyState, PageContent, PageHeader, PageLayout } from '@ui';
+import { Badge, Button, EmptyState, PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useAlerts, useDeleteAlert, useDismissAlert } from '../api/useAlerts';
 import { useAlertEvents } from '../hooks/useAlertEvents';
 import { useAlertStore } from '../store';
 
+import { AlertEditDialog } from './AlertEditDialog';
 import { CreateAlertModal } from './CreateAlertModal';
 import { RecurringAlerts } from './RecurringAlerts';
 
@@ -59,6 +62,8 @@ export function AlertsPage() {
   const dismissAlert = useDismissAlert();
   const deleteAlert = useDeleteAlert();
   const openCreateModal = useAlertStore((s) => s.openCreateModal);
+
+  const [editingAlert, setEditingAlert] = useState<Alert | null>(null);
 
   const activeAlerts = alerts.filter((a) => !a.dismissed);
   const dismissedAlerts = alerts.filter((a) => a.dismissed);
@@ -117,14 +122,28 @@ export function AlertsPage() {
                   {formatTriggerTime(alert.triggerAt)}
                   {alert.recurring === undefined ? '' : ' (recurring)'}
                 </p>
+                {alert.linkedTo === undefined ? null : (
+                  <Badge className="mt-1 text-xs" variant="outline">
+                    {alert.linkedTo.type}
+                  </Badge>
+                )}
               </div>
 
               <div className="flex shrink-0 gap-1">
+                <Button
+                  aria-label="Edit alert"
+                  className="h-7 w-7 p-1 text-muted-foreground hover:text-foreground"
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setEditingAlert(alert)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 {alert.dismissed ? null : (
                   <Button
+                    aria-label="Dismiss alert"
                     className="h-7 w-7 p-1 text-muted-foreground hover:text-success"
                     size="icon"
-                    title="Dismiss"
                     variant="ghost"
                     onClick={() => dismissAlert.mutate(alert.id)}
                   >
@@ -132,9 +151,9 @@ export function AlertsPage() {
                   </Button>
                 )}
                 <Button
+                  aria-label="Delete alert"
                   className="h-7 w-7 p-1 text-muted-foreground hover:text-destructive"
                   size="icon"
-                  title="Delete"
                   variant="ghost"
                   onClick={() => deleteAlert.mutate(alert.id)}
                 >
@@ -194,6 +213,10 @@ export function AlertsPage() {
       </PageHeader.Tabs>
 
       <CreateAlertModal />
+      <AlertEditDialog
+        alert={editingAlert}
+        onClose={() => setEditingAlert(null)}
+      />
     </PageLayout>
   );
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { CheckCircle2, Circle, Clock, Map, Plus, Sparkles, Square, SquareCheck, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Map, Pencil, Plus, Sparkles, Square, SquareCheck, Trash2 } from 'lucide-react';
 
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
@@ -21,7 +21,6 @@ import {
 
 import { useSendCommand } from '@features/assistant';
 
-
 import {
   useAddMilestoneTask,
   useCreateMilestone,
@@ -31,6 +30,8 @@ import {
   useUpdateMilestone,
 } from '../api/useMilestones';
 import { useMilestoneEvents } from '../hooks/useMilestoneEvents';
+
+import { MilestoneEditDialog } from './MilestoneEditDialog';
 
 const STATUS_CONFIG: Record<
   MilestoneStatus,
@@ -74,10 +75,12 @@ function computeProgress(milestone: Milestone): number {
 function MilestoneCard({
   milestone,
   onDelete,
+  onEdit,
   onStatusChange,
 }: {
   milestone: Milestone;
   onDelete: (id: string) => void;
+  onEdit: (milestone: Milestone) => void;
   onStatusChange: (id: string, status: MilestoneStatus) => void;
 }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -115,6 +118,17 @@ function MilestoneCard({
             </SelectContent>
           </Select>
           <Button
+            aria-label="Edit milestone"
+            className="text-muted-foreground hover:text-foreground"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={() => onEdit(milestone)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            aria-label="Delete milestone"
             className="text-muted-foreground hover:text-destructive"
             size="icon"
             type="button"
@@ -210,6 +224,7 @@ export function RoadmapPage() {
   const [formDate, setFormDate] = useState('');
   const [showGenerate, setShowGenerate] = useState(false);
   const [generatePrompt, setGeneratePrompt] = useState(DEFAULT_GENERATE_PROMPT);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
 
   const sendCommand = useSendCommand();
   const openWidget = useAssistantWidgetStore((s) => s.open);
@@ -390,6 +405,7 @@ export function RoadmapPage() {
                   key={milestone.id}
                   milestone={milestone}
                   onDelete={(id) => deleteMilestone.mutate(id)}
+                  onEdit={(m) => setEditingMilestone(m)}
                   onStatusChange={(id, status) => updateMilestone.mutate({ id, status })}
                 />
               ))}
@@ -406,6 +422,12 @@ export function RoadmapPage() {
             </p>
           </div>
         ) : null}
+
+      {/* Edit dialog */}
+      <MilestoneEditDialog
+        milestone={editingMilestone}
+        onClose={() => setEditingMilestone(null)}
+      />
     </div>
   );
 }

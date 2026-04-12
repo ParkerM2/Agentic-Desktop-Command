@@ -255,10 +255,11 @@ async function migrateFromFilesystem(db: AdcDatabase, projectPath: string): Prom
       title: task.title,
       status: task.status,
       priority: task.priority,
-      tags: [],
       jiraKey: task.jiraTicket ?? null,
+      jiraUrl: task.jiraUrl ?? null,
       prUrl: task.prUrl ?? null,
-      branch: null,
+      prNumber: task.prNumber ?? null,
+      prStatus: task.prStatus ?? null,
       lastSessionId: task.lastSessionId ?? null,
       lastAgentName: task.lastAgentName ?? null,
       completedAt: task.completedAt ?? null,
@@ -391,7 +392,10 @@ function rowToTask(
     status: row.status as ProgressStatus,
     priority: row.priority as ProgressPriority,
     jiraTicket: row.jiraKey ?? undefined,
+    jiraUrl: row.jiraUrl ?? undefined,
     prUrl: row.prUrl ?? undefined,
+    prNumber: row.prNumber ?? undefined,
+    prStatus: row.prStatus ?? undefined,
     lastSessionId: row.lastSessionId ?? undefined,
     lastAgentName: row.lastAgentName ?? undefined,
     completedAt: row.completedAt ?? undefined,
@@ -827,7 +831,6 @@ export function createProgressService(
         title,
         status: 'backlog',
         priority,
-        tags: [],
         description: description || null,
         createdAt: now,
         updatedAt: now,
@@ -905,7 +908,10 @@ export function createProgressService(
       if (updates.status !== undefined) dbUpdates.status = updates.status;
       if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
       if (updates.jiraTicket !== undefined) dbUpdates.jiraKey = updates.jiraTicket;
+      if (updates.jiraUrl !== undefined) dbUpdates.jiraUrl = updates.jiraUrl;
       if (updates.prUrl !== undefined) dbUpdates.prUrl = updates.prUrl;
+      if (updates.prNumber !== undefined) dbUpdates.prNumber = updates.prNumber;
+      if (updates.prStatus !== undefined) dbUpdates.prStatus = updates.prStatus;
       if (updates.lastSessionId !== undefined) dbUpdates.lastSessionId = updates.lastSessionId;
       if (updates.lastAgentName !== undefined) dbUpdates.lastAgentName = updates.lastAgentName;
       if (updates.completedAt !== undefined) dbUpdates.completedAt = updates.completedAt;

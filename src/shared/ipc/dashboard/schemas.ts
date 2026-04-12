@@ -11,3 +11,8 @@ export const CaptureSchema = z.object({
   text: z.string(),
   createdAt: z.string(),
 });
+
+export const UpdateCaptureInputSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+});
