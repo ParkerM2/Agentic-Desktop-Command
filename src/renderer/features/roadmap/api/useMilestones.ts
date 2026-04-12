@@ -49,6 +49,7 @@ export function useUpdateMilestone() {
       description?: string;
       targetDate?: string;
       status?: MilestoneStatus;
+      tasks?: Array<{ id: string; title: string; completed: boolean }>;
     }) => ipc(MILESTONES.UPDATE.MILESTONE, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });

@@ -38,6 +38,7 @@ export interface MilestonesService {
       description?: string;
       targetDate?: string;
       status?: MilestoneStatus;
+      tasks?: Array<{ id: string; title: string; completed: boolean }>;
     },
   ) => Milestone;
   deleteMilestone: (id: string) => { success: boolean };
@@ -151,6 +152,7 @@ export function createMilestonesService(deps: {
         ...(updates.description === undefined ? {} : { description: updates.description }),
         ...(updates.targetDate === undefined ? {} : { targetDate: updates.targetDate }),
         ...(updates.status === undefined ? {} : { status: updates.status }),
+        ...(updates.tasks === undefined ? {} : { tasks: updates.tasks }),
         updatedAt: new Date().toISOString(),
       };
       db.update(milestones).set(updated).where(eq(milestones.id, id)).run();
