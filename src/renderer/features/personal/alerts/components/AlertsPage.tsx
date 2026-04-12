@@ -25,6 +25,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import { useAlerts, useDeleteAlert, useDismissAlert } from '../api/useAlerts';
@@ -161,8 +162,8 @@ export function AlertsPage() {
               />
 
               <div className="min-w-0 flex-1">
-                <p className="text-foreground text-sm font-medium">{alert.message}</p>
-                <p
+                <Text size="sm" className="text-foreground font-medium">{alert.message}</Text>
+                <Text
                   className={cn(
                     'text-xs',
                     isOverdue ? 'text-destructive' : 'text-muted-foreground',
@@ -170,7 +171,7 @@ export function AlertsPage() {
                 >
                   {formatTriggerTime(alert.triggerAt)}
                   {alert.recurring === undefined ? '' : ' (recurring)'}
-                </p>
+                </Text>
                 <RelativeTime value={alert.createdAt} />
                 {alert.linkedTo === undefined ? null : (
                   <Badge className="mt-1 text-xs" variant="outline">

@@ -12,6 +12,7 @@ import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores
 import {
   Button,
   EmptyState,
+  Heading,
   Input,
   SearchInput,
   Select,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Text,
   Textarea,
 } from '@ui';
 
@@ -105,7 +107,7 @@ function MilestoneCard({
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <StatusIcon className={cn('h-5 w-5', config.iconClass)} />
-          <h3 className="font-medium">{milestone.title}</h3>
+          <Heading as="h3" className="font-medium">{milestone.title}</Heading>
         </div>
         <div className="flex items-center gap-2">
           <Select
@@ -144,10 +146,10 @@ function MilestoneCard({
         </div>
       </div>
 
-      <p className="text-muted-foreground mb-2 text-sm">{milestone.description}</p>
-      <p className="text-muted-foreground mb-3 text-xs">
+      <Text size="sm" className="text-muted-foreground mb-2">{milestone.description}</Text>
+      <Text className="text-muted-foreground mb-3 text-xs">
         Target: {new Date(milestone.targetDate).toLocaleDateString()}
-      </p>
+      </Text>
       <div className="mb-3">
         <RelativeTime value={milestone.createdAt} />
       </div>
@@ -365,9 +367,9 @@ export function RoadmapPage() {
         {/* Generate with AI Panel */}
         {showGenerate ? (
           <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm">
+            <Text size="sm" className="text-muted-foreground">
               Describe what milestones you want the assistant to generate. It will create them directly on your roadmap.
-            </p>
+            </Text>
             <Textarea
               resize="none"
               rows={3}
@@ -444,21 +446,21 @@ export function RoadmapPage() {
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Total Milestones
             </div>
-            <p className="text-lg font-semibold">{items.length}</p>
+            <Text size="lg" className="font-semibold">{items.length}</Text>
           </div>
           <div className="border-border bg-card rounded-lg border p-4">
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Completed
             </div>
-            <p className="text-lg font-semibold">
+            <Text size="lg" className="font-semibold">
               {completedCount} / {items.length}
-            </p>
+            </Text>
           </div>
           <div className="border-border bg-card rounded-lg border p-4">
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Overall Progress
             </div>
-            <p className="text-lg font-semibold">{totalProgress}%</p>
+            <Text size="lg" className="font-semibold">{totalProgress}%</Text>
           </div>
         </div>
 
@@ -471,9 +473,9 @@ export function RoadmapPage() {
 
         {!isLoading && items.length > 0 && filteredItems.length > 0 ? (
           <section>
-            <h2 className="text-muted-foreground mb-4 text-sm font-medium tracking-wider uppercase">
+            <Heading as="h2" className="text-muted-foreground mb-4 text-sm font-medium tracking-wider uppercase">
               Timeline
-            </h2>
+            </Heading>
             <div className="space-y-4">
               {filteredItems.map((milestone) => (
                 <MilestoneCard
@@ -500,10 +502,10 @@ export function RoadmapPage() {
         {!isLoading && items.length === 0 ? (
           <div className="border-border rounded-lg border border-dashed p-12 text-center">
             <Map className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-lg font-medium">No milestones yet</p>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <Text size="lg" className="font-medium">No milestones yet</Text>
+            <Text size="sm" className="text-muted-foreground mt-1">
               Create your first milestone to start planning
-            </p>
+            </Text>
           </div>
         ) : null}
 
