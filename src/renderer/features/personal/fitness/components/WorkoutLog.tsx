@@ -86,15 +86,15 @@ function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
             </Badge>
             <span className="text-muted-foreground text-xs">{workout.date}</span>
           </div>
-          <p className="text-foreground mt-1 text-sm">
+          <Text className="mt-1" size="sm">
             {String(exerciseCount)} exercise{exerciseCount === 1 ? '' : 's'} &middot;{' '}
             {String(totalSets)} set{totalSets === 1 ? '' : 's'} &middot; {String(workout.duration)}{' '}
             min
-          </p>
+          </Text>
           {(workout.exercises.length > 0) ? (
-            <p className="text-muted-foreground mt-0.5 text-xs">
+            <Text className="mt-0.5" size="xs" variant="muted">
               {workout.exercises.map((e) => e.name).join(', ')}
-            </p>
+            </Text>
           ) : null}
           {workout.notes ? (
             <Text className="mt-1 italic" size="sm" variant="muted">{workout.notes}</Text>
