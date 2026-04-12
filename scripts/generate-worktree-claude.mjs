@@ -211,17 +211,17 @@ const allDocs = [...new Set([...alwaysDocs, ...roleDocs])];
 // ---------------------------------------------------------------------------
 
 const ESSENTIAL_SECTIONS = [
-  'ADC v2 Refactor — Active (P0)',
-  'Verification Requirements — MANDATORY (Non-Skippable)',
-  'ESLint Rules — What You MUST Know',
-  'Import Order (Enforced)',
-  'Design System — Critical Rules',
-  'Critical Pattern: IPC Contract',
-  'Service Pattern',
-  'Feature Module Pattern',
-  'React Component Pattern',
-  'Path Aliases',
-  'State Management',
+  // Updated 2026-04-12 to match post-rewrite CLAUDE.md headings.
+  // The extractor matches from `## <heading>` to the next `## ` or EOF, so
+  // capturing top-level sections also picks up their subsections.
+  'Architecture',
+  'Data Layer',
+  'Feature Slice Design',
+  'Design System Rules',
+  'IPC Conventions',
+  'Key Paths',
+  'Testing',
+  'Communication Standards',
 ];
 
 const extractedSections = ESSENTIAL_SECTIONS
