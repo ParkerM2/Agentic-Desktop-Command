@@ -28,8 +28,12 @@ export function useCreateMilestone() {
       description: string;
       targetDate: string;
       projectId?: string;
-    }) => ipc(MILESTONES.CREATE.MILESTONE, data),
-    onSuccess: () => {
+      id?: string;
+    }) => {
+      const id = data.id ?? crypto.randomUUID();
+      return ipc(MILESTONES.CREATE.MILESTONE, { ...data, id });
+    },
+    onSuccess() {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },
   });
@@ -57,7 +61,7 @@ export function useDeleteMilestone() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(MILESTONES.DELETE.MILESTONE, { id }),
-    onSuccess: () => {
+    onSuccess() {
       void queryClient.invalidateQueries({ queryKey: milestoneKeys.lists() });
     },
   });

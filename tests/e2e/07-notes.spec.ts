@@ -17,14 +17,21 @@ test.describe('Notes Page', () => {
 
   test.beforeEach(async ({ authenticatedWindow }) => {
     collector = createConsoleCollector(authenticatedWindow);
-    await navigateToSidebarItem(authenticatedWindow, 'Notes');
-    await waitForRoute(authenticatedWindow, '/notes');
+    // Notes is now a tab under /personal — navigate there directly
+    await navigateToSidebarItem(authenticatedWindow, 'Personal');
+    await waitForRoute(authenticatedWindow, '/personal');
+    // Notes tab is active by default (first tab), so no extra click needed
     await waitForPageContent(authenticatedWindow);
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('notes page loads', async ({ authenticatedWindow }) => {
-    // Verify we navigated to the notes route
-    await expect(authenticatedWindow).toHaveURL(/\/notes/);
+    // Verify we navigated to the personal route (notes tab is default)
+    await expect(authenticatedWindow).toHaveURL(/\/personal/);
 
     // Page should not be blank
     const bodyText = await authenticatedWindow.locator('body').innerText();

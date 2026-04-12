@@ -5,13 +5,13 @@
  * One-time migration from milestones.json on first access.
  */
 
-import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { asc, eq } from 'drizzle-orm';
 
 import { MILESTONES_EVENTS } from '@shared/ipc/misc/milestones.channels';
+import { generateId } from '@shared/lib/id';
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
 import { milestones } from '../../db/schema';
@@ -25,6 +25,7 @@ const logger = createScopedLogger('milestones-service');
 export interface MilestonesService {
   listMilestones: (filters: { projectId?: string }) => Milestone[];
   createMilestone: (data: {
+    id?: string;
     title: string;
     description: string;
     targetDate: string;
@@ -127,7 +128,7 @@ export function createMilestonesService(deps: {
     createMilestone(data) {
       const now = new Date().toISOString();
       const record = {
-        id: randomUUID(),
+        id: data.id ?? generateId(),
         title: data.title,
         description: data.description,
         targetDate: data.targetDate,
@@ -168,7 +169,7 @@ export function createMilestonesService(deps: {
 
     addTask(milestoneId, title) {
       const existing = findMilestone(milestoneId);
-      const task = { id: randomUUID(), title, completed: false };
+      const task = { id: generateId(), title, completed: false };
       const updatedTasks = [...existing.tasks, task];
       const now = new Date().toISOString();
       db.update(milestones)

@@ -11,7 +11,7 @@ import type {
   SessionRecord,
   SessionSpawnRequest,
 } from './types';
-import type { AgentManagerService } from '../services/agent-manager';
+import type { AgentManager } from '../agent-host/agent-host-client';
 
 const logger = createScopedLogger('bus-sessions');
 
@@ -27,7 +27,7 @@ export interface BusSessionManager {
 
 export function createBusSessionManager(
   db: AdcDatabase,
-  agentManager: AgentManagerService,
+  agentManager: AgentManager,
 ): BusSessionManager {
   const eventHandlers = new Set<SessionEventHandler>();
   const cleanups: Array<() => void> = [];
@@ -78,17 +78,17 @@ export function createBusSessionManager(
   });
   cleanups.push(unsubAgentManager);
 
-  function spawn(config: SessionSpawnRequest): Promise<SessionRecord> {
+  async function spawn(config: SessionSpawnRequest): Promise<SessionRecord> {
     const isTeamLead = config.type === 'team-lead';
 
     const spawnResult = isTeamLead
-      ? agentManager.spawnTeamLead({
+      ? await agentManager.spawnTeamLead({
           projectPath: config.projectPath ?? process.cwd(),
           prompt: config.prompt,
           model: config.model,
           teamName: config.teamName ?? config.name,
         })
-      : agentManager.spawnProjectOwner({
+      : await agentManager.spawnProjectOwner({
           projectPath: config.projectPath ?? process.cwd(),
           prompt: config.prompt,
           name: config.name,
@@ -97,7 +97,7 @@ export function createBusSessionManager(
 
     // SpawnTeamLeadResult is AgentSession | SpawnTeamLeadError
     if ('error' in spawnResult) {
-      return Promise.reject(new Error('Failed to spawn session'));
+      throw new Error('Failed to spawn session');
     }
     const session = spawnResult as { id: string; pid?: number };
 
@@ -128,10 +128,10 @@ export function createBusSessionManager(
 
     const result = getSession(session.id);
     if (!result) {
-      return Promise.reject(new Error(`Session ${session.id} not found after insert`));
+      throw new Error(`Session ${session.id} not found after insert`);
     }
     emitSessionEvent('spawned', result);
-    return Promise.resolve(result);
+    return result;
   }
 
   function kill(sessionId: string): Promise<void> {

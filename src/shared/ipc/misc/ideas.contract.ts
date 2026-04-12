@@ -43,6 +43,7 @@ export const ideasInvoke = {
   },
   [IDEAS.CREATE.IDEA]: {
     input: z.object({
+      id: z.uuid().optional(),
       title: z.string(),
       description: z.string(),
       category: IdeaCategorySchema,

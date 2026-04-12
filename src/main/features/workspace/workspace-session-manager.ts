@@ -26,8 +26,8 @@ import type { SessionKey, WorkspaceSession } from '@shared/ipc/workspace';
 
 import { agentLogger } from '@main/lib/logger';
 
+import type { AgentManager } from '../../agent-host/agent-host-client';
 import type { BusSessionManager } from '../../bus/session-manager';
-import type { AgentManagerService } from '../../services/agent-manager';
 import type { WorktreeProvisioner } from '../../services/worktree-provisioner';
 
 const PRIMARY_MODEL = 'claude-sonnet-4-6';
@@ -104,7 +104,7 @@ export interface WorkspaceSessionManager {
 // ─── Factory ────────────────────────────────────────────────
 
 export function createWorkspaceSessionManager(
-  agentManager: AgentManagerService,
+  agentManager: AgentManager,
   provisioner: WorktreeProvisioner,
   getWindow: () => BrowserWindow | null,
   busSessionManager: BusSessionManager,

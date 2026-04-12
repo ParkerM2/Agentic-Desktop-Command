@@ -6,6 +6,8 @@ import { FolderOpen, GitBranch, Layers } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 interface RepoTypeSelectorProps {
   detectedType: string;
   selectedType: string;
@@ -48,11 +50,12 @@ export function RepoTypeSelector({
       </p>
       <div className="grid grid-cols-3 gap-3">
         {REPO_TYPES.map((repo) => (
-          <button
+          <Button
             key={repo.type}
             type="button"
+            variant="outline"
             className={cn(
-              'border-border flex flex-col items-center gap-2 rounded-lg border p-4 text-center transition-colors',
+              'border-border flex h-auto flex-col items-center gap-2 rounded-lg border p-4 text-center transition-colors',
               'hover:bg-accent',
               selectedType === repo.type && 'border-primary bg-accent',
             )}
@@ -61,7 +64,7 @@ export function RepoTypeSelector({
             <repo.icon className="h-6 w-6" />
             <span className="text-sm font-medium">{repo.label}</span>
             <span className="text-muted-foreground text-xs">{repo.description}</span>
-          </button>
+          </Button>
         ))}
       </div>
     </div>

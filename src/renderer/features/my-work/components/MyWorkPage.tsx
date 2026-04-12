@@ -1,22 +1,19 @@
 /**
  * MyWorkPage -- Cross-project task view
  *
- * Displays all tasks from all projects grouped by project name.
+ * Displays all progress tasks from SQLite, optionally grouped by team name.
  * Includes status filter for quick access to tasks by state.
- * Shows Hub-disconnected error state when Hub is unreachable.
  */
 
 import { useMemo, useState } from 'react';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from '@tanstack/react-router';
-import { AlertTriangle, Briefcase, Filter, FolderOpen, RefreshCw } from 'lucide-react';
+import { Briefcase, Filter, RefreshCw, Users } from 'lucide-react';
 
-import { PROJECT_VIEWS, projectViewPath } from '@shared/constants';
-import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
-import type { Task, TaskStatus } from '@shared/types';
+import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
+import type { ProgressStatus, ProgressTask } from '@shared/types/progress';
 
-import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
+import { useIpcEvent } from '@renderer/shared/hooks';
 
 import {
   Button,
@@ -33,75 +30,122 @@ import {
   SelectTrigger,
   SelectValue,
   Separator,
+  StatusBadge,
 } from '@ui';
 
-import { useProjects } from '@features/projects';
-import { TaskStatusBadge } from '@features/tasks';
 
 import { myWorkKeys } from '../api/queryKeys';
 import { useAllTasks } from '../api/useMyWork';
 
-type StatusFilter = 'all' | TaskStatus;
+import type { StatusBadgeProps } from '@ui';
+
+/* ------------------------------------------------------------------ */
+/*  Status filter                                                      */
+/* ------------------------------------------------------------------ */
+
+type StatusFilter = 'all' | ProgressStatus;
 
 const STATUS_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'all', label: 'All Tasks' },
   { value: 'backlog', label: 'Backlog' },
+  { value: 'researching', label: 'Researching' },
+  { value: 'research_done', label: 'Research Done' },
   { value: 'planning', label: 'Planning' },
   { value: 'plan_ready', label: 'Plan Ready' },
-  { value: 'queued', label: 'Queued' },
-  { value: 'running', label: 'Running' },
-  { value: 'paused', label: 'Paused' },
+  { value: 'executing', label: 'Executing' },
   { value: 'review', label: 'Review' },
   { value: 'done', label: 'Done' },
+  { value: 'archived', label: 'Archived' },
   { value: 'error', label: 'Error' },
 ];
 
-interface TasksByProject {
-  projectId: string;
-  projectName: string;
-  tasks: Task[];
+/* ------------------------------------------------------------------ */
+/*  ProgressStatus badge config                                        */
+/* ------------------------------------------------------------------ */
+
+const ACTIVE_STATUSES = new Set<ProgressStatus>(['researching', 'executing', 'planning']);
+
+const progressStatusConfig: Record<
+  ProgressStatus,
+  { label: string; tone: StatusBadgeProps['tone'] }
+> = {
+  backlog: { label: 'Backlog', tone: 'muted' },
+  researching: { label: 'Researching', tone: 'info' },
+  research_done: { label: 'Research Done', tone: 'info' },
+  planning: { label: 'Planning', tone: 'info' },
+  plan_ready: { label: 'Plan Ready', tone: 'purple' },
+  executing: { label: 'Executing', tone: 'primary' },
+  review: { label: 'Review', tone: 'amber' },
+  done: { label: 'Done', tone: 'success' },
+  archived: { label: 'Archived', tone: 'muted' },
+  error: { label: 'Error', tone: 'destructive' },
+};
+
+function ProgressStatusBadge({
+  status,
+  className,
+}: {
+  status: ProgressStatus;
+  className?: string;
+}) {
+  const config = progressStatusConfig[status];
+  return (
+    <StatusBadge
+      className={className}
+      pulsing={ACTIVE_STATUSES.has(status)}
+      tone={config.tone}
+    >
+      {config.label}
+    </StatusBadge>
+  );
 }
 
-function groupTasksByProject(tasks: Task[], projectsMap: Map<string, string>): TasksByProject[] {
-  const grouped = new Map<string, Task[]>();
+/* ------------------------------------------------------------------ */
+/*  Grouping by team name                                              */
+/* ------------------------------------------------------------------ */
+
+interface TasksByTeam {
+  teamName: string;
+  tasks: ProgressTask[];
+}
+
+function groupTasksByTeam(tasks: ProgressTask[]): TasksByTeam[] {
+  const grouped = new Map<string, ProgressTask[]>();
 
   for (const task of tasks) {
-    const projectId = (task.metadata?.projectId as string | undefined) ?? 'unknown';
-    const existing = grouped.get(projectId) ?? [];
+    const team = task.teamName ?? 'Ungrouped';
+    const existing = grouped.get(team) ?? [];
     existing.push(task);
-    grouped.set(projectId, existing);
+    grouped.set(team, existing);
   }
 
-  const result: TasksByProject[] = [];
-  for (const [projectId, projectTasks] of grouped.entries()) {
-    result.push({
-      projectId,
-      projectName: projectsMap.get(projectId) ?? 'Unknown Project',
-      tasks: projectTasks,
-    });
+  const result: TasksByTeam[] = [];
+  for (const [teamName, teamTasks] of grouped.entries()) {
+    result.push({ teamName, tasks: teamTasks });
   }
 
-  // Sort by project name
-  result.sort((a, b) => a.projectName.localeCompare(b.projectName));
-
+  result.sort((a, b) => a.teamName.localeCompare(b.teamName));
   return result;
 }
 
-function filterTasks(tasks: Task[], status: StatusFilter): Task[] {
+function filterTasks(tasks: ProgressTask[], status: StatusFilter): ProgressTask[] {
   if (status === 'all') return tasks;
   return tasks.filter((t) => t.status === status);
 }
 
 function getTaskCountLabel(count: number): string {
-  if (count === 1) return 'task';
-  return 'tasks';
+  return count === 1 ? 'task' : 'tasks';
 }
+
+/* ------------------------------------------------------------------ */
+/*  Sub-components                                                     */
+/* ------------------------------------------------------------------ */
 
 function MyWorkEmptyState({ hasFilter }: { hasFilter: boolean }) {
   const title = hasFilter ? 'No tasks match filter' : 'No tasks yet';
   const description = hasFilter
     ? 'Try selecting a different status filter to see more tasks.'
-    : 'Tasks from all your projects will appear here. Add projects and create tasks to get started.';
+    : 'Tasks will appear here once you create them. Add a project and create tasks to get started.';
 
   return (
     <EmptyState
@@ -113,40 +157,30 @@ function MyWorkEmptyState({ hasFilter }: { hasFilter: boolean }) {
   );
 }
 
-function ProjectGroup({
-  group,
-  onNavigateToProject,
-}: {
-  group: TasksByProject;
-  onNavigateToProject: (projectId: string) => void;
-}) {
+function TeamGroup({ group }: { group: TasksByTeam }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center gap-2 py-3">
-        <FolderOpen className="text-muted-foreground h-4 w-4" />
-        <span className="text-foreground text-sm font-semibold">{group.projectName}</span>
+        <Users className="text-muted-foreground h-4 w-4" />
+        <span className="text-foreground text-sm font-semibold">{group.teamName}</span>
         <span className="text-muted-foreground text-xs">({group.tasks.length})</span>
       </CardHeader>
       <Separator />
       <CardContent className="p-0">
         <div className="divide-border divide-y">
           {group.tasks.map((task) => (
-            <Button
-              key={task.id}
-              className="h-auto w-full justify-start px-4 py-3 text-left"
-              variant="ghost"
-              onClick={() => onNavigateToProject(group.projectId)}
+            <div
+              key={task.slug}
+              className="px-4 py-3"
             >
-              <div className="w-full">
-                <div className="mb-1 flex items-start justify-between gap-2">
-                  <span className="text-foreground text-sm font-medium">{task.title}</span>
-                  <TaskStatusBadge status={task.status} />
-                </div>
-                {task.description ? (
-                  <p className="text-muted-foreground line-clamp-2 text-xs">{task.description}</p>
-                ) : null}
+              <div className="mb-1 flex items-start justify-between gap-2">
+                <span className="text-foreground text-sm font-medium">{task.title}</span>
+                <ProgressStatusBadge status={task.status} />
               </div>
-            </Button>
+              {task.description ? (
+                <p className="text-muted-foreground line-clamp-2 text-xs">{task.description}</p>
+              ) : null}
+            </div>
           ))}
         </div>
       </CardContent>
@@ -154,13 +188,13 @@ function ProjectGroup({
   );
 }
 
-function HubDisconnectedState({ onRetry }: { onRetry: () => void }) {
+function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <EmptyState
-      description="Unable to reach the Hub server. Tasks cannot be loaded while the Hub is unreachable."
-      icon={AlertTriangle}
+      description="Unable to load tasks. The progress database may be unavailable."
+      icon={RefreshCw}
       size="lg"
-      title="Hub disconnected"
+      title="Failed to load tasks"
       action={
         <Button onClick={onRetry}>
           <RefreshCw className="h-4 w-4" />
@@ -177,17 +211,15 @@ function TaskListContent({
   taskGroups,
   hasFilter,
   onRetry,
-  onNavigateToProject,
 }: {
   isLoading: boolean;
   isError: boolean;
-  taskGroups: TasksByProject[];
+  taskGroups: TasksByTeam[];
   hasFilter: boolean;
   onRetry: () => void;
-  onNavigateToProject: (projectId: string) => void;
 }) {
   if (isError) {
-    return <HubDisconnectedState onRetry={onRetry} />;
+    return <ErrorState onRetry={onRetry} />;
   }
 
   if (isLoading) {
@@ -205,39 +237,32 @@ function TaskListContent({
   return (
     <div className="space-y-4">
       {taskGroups.map((group) => (
-        <ProjectGroup
-          key={group.projectId}
+        <TeamGroup
+          key={group.teamName}
           group={group}
-          onNavigateToProject={onNavigateToProject}
         />
       ))}
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
+
 export function MyWorkPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useAllTasks();
-  const { data: projects } = useProjects();
 
-  // Invalidate task list when Hub task events arrive
-  useHubEvent(HUB_TASKS_EVENTS.TASK.CREATED, () => {
+  // Invalidate task list on progress events
+  useIpcEvent(PROGRESS_EVENTS.TASK.CREATED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
-  useHubEvent(HUB_TASKS_EVENTS.TASK.UPDATED, () => {
+  useIpcEvent(PROGRESS_EVENTS.TASK.UPDATED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
-  useHubEvent(HUB_TASKS_EVENTS.TASK.DELETED, () => {
-    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
-  });
-  useHubEvent(HUB_TASKS_EVENTS.TASK_RUN.COMPLETED, () => {
-    void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
-  });
-
-  // Refresh on local task status changes
-  useIpcEvent(TASKS_EVENTS.STATUS.CHANGED, () => {
+  useIpcEvent(PROGRESS_EVENTS.TASK.ARCHIVED, () => {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   });
 
@@ -245,29 +270,14 @@ export function MyWorkPage() {
     void queryClient.invalidateQueries({ queryKey: myWorkKeys.tasks() });
   }
 
-  function handleNavigateToProject(projectId: string) {
-    void navigate({ to: projectViewPath(projectId, PROJECT_VIEWS.TASKS) });
-  }
-
-  // Build a map of projectId -> projectName
-  const projectsMap = useMemo(() => {
-    const map = new Map<string, string>();
-    if (projects) {
-      for (const p of projects) {
-        map.set(p.id, p.name);
-      }
-    }
-    return map;
-  }, [projects]);
-
   // Filter and group tasks
   const filteredTasks = useMemo(() => {
     return filterTasks(tasks ?? [], statusFilter);
   }, [tasks, statusFilter]);
 
   const taskGroups = useMemo(() => {
-    return groupTasksByProject(filteredTasks, projectsMap);
-  }, [filteredTasks, projectsMap]);
+    return groupTasksByTeam(filteredTasks);
+  }, [filteredTasks]);
 
   const totalTasks = filteredTasks.length;
   const hasFilter = statusFilter !== 'all';
@@ -305,7 +315,6 @@ export function MyWorkPage() {
           isError={tasksError}
           isLoading={tasksLoading}
           taskGroups={taskGroups}
-          onNavigateToProject={handleNavigateToProject}
           onRetry={handleRetry}
         />
       </PageContent>

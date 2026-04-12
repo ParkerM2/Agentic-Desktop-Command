@@ -51,13 +51,13 @@ const mockEncryptSecret = vi.fn((value: string) => ({
   useSafeStorage: false,
 }));
 
-vi.mock('@main/features/email/email-encryption', () => ({
+vi.mock('@main/features/integrations/email/email-encryption', () => ({
   encryptSecret: mockEncryptSecret,
 }));
 
 // Import after mocks are set up
 const { loadEmailConfig, saveEmailConfig, migrateEmailConfigFromJson } = await import(
-  '@main/features/email/email-store'
+  '@main/features/integrations/email/email-store'
 );
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -82,11 +82,13 @@ function resetFs(files: Record<string, string> = {}): void {
 function createTestDb(): AdcDatabase {
   const sqlite = new Database(':memory:');
   const db = drizzle(sqlite, { schema });
-  // Create the emailConfig table
+  // Create the settings_kv table (email config now stored here with category='email')
   sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS email_config (
+    CREATE TABLE IF NOT EXISTS settings_kv (
+      id TEXT,
       key TEXT PRIMARY KEY,
-      config TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'settings',
+      settings TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
   `);
@@ -149,10 +151,11 @@ describe('EmailStore (SQLite)', () => {
       // Directly insert a row with plaintext password
       const config = makeConfig({ pass: 'plaintextpassword' });
       // Use raw insert to bypass encryption in saveEmailConfig
-      db.insert(schema.emailConfig)
+      db.insert(schema.settingsKv)
         .values({
           key: 'default',
-          config: config as unknown,
+          category: 'email',
+          settings: config as unknown,
           updatedAt: new Date().toISOString(),
         })
         .run();

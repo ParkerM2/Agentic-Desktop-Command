@@ -14,7 +14,7 @@ import type {
   CodebaseGraph,
   SessionLogPage,
 } from './types';
-import type { AgentManagerService } from '../../services/agent-manager/agent-manager-service';
+import type { AgentManager } from '../../agent-host/agent-host-client';
 
 // ─── Service Interface ────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export interface VisualizationService {
  * @param agentManagerService - Used to query live session status for agent teams.
  */
 export function createVisualizationService(
-  agentManagerService: AgentManagerService,
+  agentManagerService: AgentManager,
 ): VisualizationService {
   return {
     getCodebaseGraph(projectPath: string): CodebaseGraph {

@@ -16,6 +16,11 @@ import {
 } from './helpers/navigation';
 
 test.describe('Navigation Sweep', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('click Dashboard navigates to /dashboard', async ({ authenticatedWindow: page }) => {
     await navigateToSidebarItem(page, 'Dashboard');
     await expect(page).toHaveURL(/\/dashboard/);
@@ -28,15 +33,15 @@ test.describe('Navigation Sweep', () => {
     await assertPageLoaded(page);
   });
 
-  test('click Fitness navigates to /fitness', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Fitness');
-    await expect(page).toHaveURL(/\/fitness/);
+  test('click Personal navigates to /personal', async ({ authenticatedWindow: page }) => {
+    await navigateToSidebarItem(page, 'Personal');
+    await expect(page).toHaveURL(/\/personal/);
     await assertPageLoaded(page);
   });
 
-  test('click Productivity navigates to /productivity', async ({ authenticatedWindow: page }) => {
-    await navigateToSidebarItem(page, 'Productivity');
-    await expect(page).toHaveURL(/\/productivity/);
+  test('click Integrations navigates to /integrations', async ({ authenticatedWindow: page }) => {
+    await navigateToSidebarItem(page, 'Integrations');
+    await expect(page).toHaveURL(/\/integrations/);
     await assertPageLoaded(page);
   });
 

@@ -2,8 +2,7 @@
  * Agent Connection Strategy — Strategy pattern for agent connection methods
  *
  * Abstracts the transport layer between ADC and headless Claude processes.
- * Implementations: SubprocessStrategy (current), UdsInboxStrategy (future),
- * McpChannelStrategy (research preview).
+ * Current implementation: SubprocessStrategy (child_process.spawn).
  */
 
 // ── Strategy Types ──────────────────────────────────────────
@@ -55,8 +54,6 @@ export interface AgentSpawnResult {
  *
  * Each implementation handles a different transport mechanism:
  * - SubprocessStrategy: child_process.spawn with stream-json (current)
- * - UdsInboxStrategy: Unix domain socket (future KAIROS GA)
- * - McpChannelStrategy: --channels flag (research preview)
  */
 export interface AgentConnectionStrategy {
   /** Spawn a new agent connection, returning process-level handles */

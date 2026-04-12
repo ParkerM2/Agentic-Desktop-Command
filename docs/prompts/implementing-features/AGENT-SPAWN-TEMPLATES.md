@@ -325,20 +325,17 @@ When starting a new feature, the Team Lead follows this sequence:
 4. CREATE team: TeamCreate with team_name
 5. CREATE tasks: TaskCreate for each task with descriptions + acceptance criteria
 6. SET dependencies: TaskUpdate with addBlockedBy for each task
-7. UPDATE progress file with task list + dependency graph
-8. SPAWN Wave 1 agents (tasks with no blockers)
-9. UPDATE progress file with agent registry (names, worktrees, task IDs)
-10. MONITOR agent completion messages
-11. On agent complete:
-    a. UPDATE progress file
-    b. If QA passed: shut down agent, check if new tasks are unblocked
-    c. If QA failed: agent handles re-work (up to 3 rounds)
-    d. SPAWN next wave of unblocked agents
-12. When ALL tasks + QA complete:
+7. SPAWN Wave 1 agents (tasks with no blockers)
+8. MONITOR agent completion messages
+9. On agent complete:
+    a. If QA passed: shut down agent, check if new tasks are unblocked
+    b. If QA failed: agent handles re-work (up to 3 rounds)
+    c. SPAWN next wave of unblocked agents
+10. When ALL tasks + QA complete:
     a. VERIFY all doc updates via `npm run check:docs`
     b. RUN final verification: npm run lint && typecheck && test && build && check:docs
-    c. UPDATE progress file status to COMPLETE
-    d. UPDATE design doc status to IMPLEMENTED
+    c. UPDATE design doc status to IMPLEMENTED
+    d. UPDATE `progress.updateTask` via IPC with status `done`
     e. SHUT DOWN all agents
     f. DELETE team
     g. COMMIT + PUSH + PR (if requested)

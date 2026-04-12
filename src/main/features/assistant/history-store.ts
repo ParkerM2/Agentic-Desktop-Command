@@ -1,23 +1,22 @@
 /**
  * Command History Store
  *
- * Persists the last 1000 assistant command entries to a JSON file
- * in the app's user data directory. Entries include input, intent,
- * response summary, and timestamp — never raw API keys or tokens.
+ * Persists the last 1000 assistant command entries to the command_history
+ * SQLite table. Entries include input, response summary, and timestamp —
+ * never raw API keys or tokens.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { app } from 'electron';
+import { asc, desc, sql } from 'drizzle-orm';
 
 import type { CommandHistoryEntry } from '@shared/types';
 
-import type { ReinitializableService } from '@main/features/data-management';
+import type { AdcDatabase } from '@main/db';
+import type { ReinitializableService } from '@main/features/settings/data-management';
 import { serviceLogger } from '@main/lib/logger';
 
+import { commandHistory } from './schema';
+
 const MAX_HISTORY_ENTRIES = 1000;
-const HISTORY_FILE = 'assistant-history.json';
 
 export interface HistoryStore extends ReinitializableService {
   /** Get the most recent entries, newest first. */
@@ -28,71 +27,69 @@ export interface HistoryStore extends ReinitializableService {
   clear: () => void;
 }
 
-function loadHistoryFromPath(filePath: string): CommandHistoryEntry[] {
-  if (!existsSync(filePath)) {
-    return [];
-  }
-
-  try {
-    const raw = readFileSync(filePath, 'utf-8');
-    const parsed = JSON.parse(raw) as unknown;
-    if (Array.isArray(parsed)) {
-      return parsed as CommandHistoryEntry[];
-    }
-    return [];
-  } catch {
-    serviceLogger.error('[HistoryStore] Failed to load history, starting fresh');
-    return [];
-  }
-}
-
-function saveHistoryToPath(filePath: string, entries: CommandHistoryEntry[]): void {
-  const dir = join(filePath, '..');
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  writeFileSync(filePath, JSON.stringify(entries, null, 2), 'utf-8');
-}
-
-export function createHistoryStore(): HistoryStore {
-  let currentFilePath = join(app.getPath('userData'), HISTORY_FILE);
-  let entries: CommandHistoryEntry[] = loadHistoryFromPath(currentFilePath);
+export function createHistoryStore(deps: { db: AdcDatabase }): HistoryStore {
+  const { db } = deps;
 
   return {
     getEntries(limit) {
-      const sorted = [...entries].sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      );
-      if (limit !== undefined && limit > 0) {
-        return sorted.slice(0, limit);
-      }
-      return sorted;
+      const query = db
+        .select()
+        .from(commandHistory)
+        .orderBy(desc(commandHistory.timestamp));
+
+      const rows = (limit !== undefined && limit > 0 ? query.limit(limit) : query).all();
+
+      return rows.map((row) => ({
+        id: row.id,
+        input: row.input,
+        responseSummary: row.responseSummary,
+        timestamp: row.timestamp,
+      }));
     },
 
     addEntry(entry) {
-      entries.push(entry);
+      const { id } = entry;
+      db.insert(commandHistory)
+        .values({
+          id,
+          input: entry.input,
+          responseSummary: entry.responseSummary,
+          timestamp: entry.timestamp,
+        })
+        .run();
 
-      // Trim to max entries, keeping the newest
-      if (entries.length > MAX_HISTORY_ENTRIES) {
-        entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        entries = entries.slice(0, MAX_HISTORY_ENTRIES);
+      // Trim to max entries
+      const countRow = db
+        .select({ count: sql<number>`count(*)` })
+        .from(commandHistory)
+        .get();
+
+      if (countRow && countRow.count > MAX_HISTORY_ENTRIES) {
+        const oldest = db
+          .select({ id: commandHistory.id })
+          .from(commandHistory)
+          .orderBy(asc(commandHistory.timestamp))
+          .limit(countRow.count - MAX_HISTORY_ENTRIES)
+          .all();
+
+        for (const row of oldest) {
+          db.delete(commandHistory)
+            .where(sql`${commandHistory.id} = ${row.id}`)
+            .run();
+        }
       }
-
-      saveHistoryToPath(currentFilePath, entries);
     },
 
     clear() {
-      entries = [];
-      saveHistoryToPath(currentFilePath, entries);
+      db.delete(commandHistory).run();
     },
 
-    reinitialize(dataDir: string) {
-      currentFilePath = join(dataDir, HISTORY_FILE);
-      entries = loadHistoryFromPath(currentFilePath);
+    reinitialize(_dataDir: string) {
+      serviceLogger.info('[HistoryStore] reinitialize called — SQLite store, no action needed');
     },
 
     clearState() {
-      entries = [];
+      db.delete(commandHistory).run();
     },
   };
 }

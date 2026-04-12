@@ -1,8 +1,8 @@
 /**
  * Planner Service — SQLite-backed daily plans via Drizzle ORM
  *
- * Each day is stored as a row in the `daily_plans` table.
- * Weekly reviews are stored in the `weekly_reviews` table.
+ * Each day is stored as a row in the `planner_entries` table (entry_type='daily').
+ * Weekly reviews are stored as rows with entry_type='weekly'.
  * One-time migration from per-day JSON files on first access.
  */
 
@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { PLANNER_EVENTS } from '@shared/ipc/planner/channels';
 import type {
@@ -21,7 +21,7 @@ import type {
   WeeklyReviewSummary,
 } from '@shared/types';
 
-import { dailyPlans, weeklyReviews } from '../../db/schema';
+import { plannerEntries } from '../../db/schema';
 import { createScopedLogger } from '../../lib/logger';
 
 import type { AdcDatabase } from '../../db';
@@ -149,19 +149,23 @@ function generateSummary(days: DailyPlan[]): WeeklyReviewSummary {
   };
 }
 
-/** Convert a DB row to a DailyPlan. */
-function rowToPlan(row: typeof dailyPlans.$inferSelect): DailyPlan {
+/** Convert a daily planner_entries row to a DailyPlan. */
+function rowToPlan(row: typeof plannerEntries.$inferSelect): DailyPlan {
+  // goals/scheduledTasks/timeBlocks are nullable in the unified table (daily rows always set them)
+  const goals = row.goals ?? [];
+  const scheduledTasks = (row.scheduledTasks as unknown as ScheduledTask[] | null) ?? [];
+  const timeBlocks = (row.timeBlocks as unknown as TimeBlock[] | null) ?? [];
   return {
-    date: row.date,
-    goals: row.goals,
-    scheduledTasks: row.scheduledTasks as unknown as ScheduledTask[],
-    timeBlocks: row.timeBlocks as unknown as TimeBlock[],
+    date: row.date ?? '',
+    goals,
+    scheduledTasks,
+    timeBlocks,
     reflection: row.reflection ?? undefined,
   };
 }
 
 /**
- * Migrate existing JSON files from `{dataDir}/planner/` into SQLite tables.
+ * Migrate existing JSON files from `{dataDir}/planner/` into planner_entries table.
  * Runs once — skips if rows already exist.
  */
 export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
@@ -169,7 +173,12 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
   if (!existsSync(plannerDir)) return;
 
   // Check if we already have data
-  const existing = db.select().from(dailyPlans).limit(1).all();
+  const existing = db
+    .select()
+    .from(plannerEntries)
+    .where(eq(plannerEntries.entryType, 'daily'))
+    .limit(1)
+    .all();
   if (existing.length > 0) return;
 
   try {
@@ -185,8 +194,10 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
         try {
           const raw = readFileSync(filePath, 'utf-8');
           const plan = JSON.parse(raw) as DailyPlan;
-          db.insert(dailyPlans)
+          db.insert(plannerEntries)
             .values({
+              id: plan.date,
+              entryType: 'daily',
               date: plan.date,
               goals: plan.goals,
               scheduledTasks: plan.scheduledTasks as unknown as string[],
@@ -214,8 +225,10 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
           const data = JSON.parse(raw) as { reflection?: string };
           const mondayStr = file.replace('week-', '').replace('.json', '');
           const sunday = getWeekSunday(mondayStr);
-          db.insert(weeklyReviews)
+          db.insert(plannerEntries)
             .values({
+              id: mondayStr,
+              entryType: 'weekly',
               weekStartDate: mondayStr,
               weekEndDate: sunday,
               days: [],
@@ -251,7 +264,11 @@ export function createPlannerService(deps: {
   migrateFromJson(db, dataDir);
 
   function loadPlan(date: string): DailyPlan {
-    const row = db.select().from(dailyPlans).where(eq(dailyPlans.date, date)).get();
+    const row = db
+      .select()
+      .from(plannerEntries)
+      .where(and(eq(plannerEntries.entryType, 'daily'), eq(plannerEntries.date, date)))
+      .get();
     if (row) {
       return rowToPlan(row);
     }
@@ -259,8 +276,10 @@ export function createPlannerService(deps: {
   }
 
   function savePlan(plan: DailyPlan): void {
-    db.insert(dailyPlans)
+    db.insert(plannerEntries)
       .values({
+        id: plan.date,
+        entryType: 'daily',
         date: plan.date,
         goals: plan.goals,
         scheduledTasks: plan.scheduledTasks as unknown as string[],
@@ -275,7 +294,7 @@ export function createPlannerService(deps: {
         updatedAt: new Date().toISOString(),
       })
       .onConflictDoUpdate({
-        target: dailyPlans.date,
+        target: plannerEntries.id,
         set: {
           goals: plan.goals,
           scheduledTasks: plan.scheduledTasks as unknown as string[],
@@ -296,16 +315,23 @@ export function createPlannerService(deps: {
   function loadWeeklyReflection(mondayStr: string): string | undefined {
     const row = db
       .select()
-      .from(weeklyReviews)
-      .where(eq(weeklyReviews.weekStartDate, mondayStr))
+      .from(plannerEntries)
+      .where(
+        and(
+          eq(plannerEntries.entryType, 'weekly'),
+          eq(plannerEntries.weekStartDate, mondayStr),
+        ),
+      )
       .get();
     return row?.reflection ?? undefined;
   }
 
   function saveWeeklyReflection(mondayStr: string, reflection: string): void {
     const sunday = getWeekSunday(mondayStr);
-    db.insert(weeklyReviews)
+    db.insert(plannerEntries)
       .values({
+        id: mondayStr,
+        entryType: 'weekly',
         weekStartDate: mondayStr,
         weekEndDate: sunday,
         days: [],
@@ -313,7 +339,7 @@ export function createPlannerService(deps: {
         updatedAt: new Date().toISOString(),
       })
       .onConflictDoUpdate({
-        target: weeklyReviews.weekStartDate,
+        target: plannerEntries.id,
         set: {
           reflection,
           updatedAt: new Date().toISOString(),

@@ -10,7 +10,7 @@ import { useMemo } from 'react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Badge, EmptyState, ScrollArea } from '@ui';
+import { Badge, Button, EmptyState, ScrollArea } from '@ui';
 
 import type { DiffFileEntry, FileChangeStatus } from '../api/useDiff';
 
@@ -163,10 +163,11 @@ function FileRow({ file, isSelected, showDir, onSelect }: FileRowProps) {
   const hasDir = showDir && dir.length > 0;
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       className={cn(
-        'flex w-full items-center justify-between px-3 py-1.5 text-left text-xs',
+        'flex h-auto w-full items-center justify-between rounded-none px-3 py-1.5 text-left text-xs',
         'transition-colors',
         isSelected
           ? 'bg-accent text-accent-foreground'
@@ -201,6 +202,6 @@ function FileRow({ file, isSelected, showDir, onSelect }: FileRowProps) {
           </>
         )}
       </div>
-    </button>
+    </Button>
   );
 }

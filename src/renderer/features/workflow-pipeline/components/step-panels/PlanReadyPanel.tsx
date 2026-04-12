@@ -5,35 +5,30 @@
 
 import { useState } from 'react';
 
-import { Edit3, FileText, MessageSquare, Play, X } from 'lucide-react';
+import { Edit3, FileText, Play, X } from 'lucide-react';
 
-import type { Task } from '@shared/types';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { Button, SectionHeader } from '@ui';
 
-import { useReplanWithFeedback, useStartExecution } from '@features/tasks/api/useAgentMutations';
-import { useUpdateTaskStatus } from '@features/tasks/api/useTaskMutations';
-import { PlanFeedbackDialog } from '@features/tasks/components/detail/PlanFeedbackDialog';
+import { useUpdateProgressTask } from '@features/tasks/api/useProgressMutations';
 
 import { MarkdownEditor } from '../shared/MarkdownEditor';
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 
 interface PlanReadyPanelProps {
   saving?: boolean;
-  task: Task;
+  task: ProgressTask;
   onSavePlan: (text: string) => void;
 }
 
 export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
-  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
-  const startExecution = useStartExecution();
-  const updateStatus = useUpdateTaskStatus();
-  const replanWithFeedback = useReplanWithFeedback();
+  const updateTask = useUpdateProgressTask();
 
-  const planContent = (task.metadata?.planContent as string | undefined) ?? '';
+  const planContent = task.planContent ?? '';
 
   function handleStartEditing() {
     setEditValue(planContent);
@@ -50,27 +45,11 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
   }
 
   function handleApprove() {
-    startExecution.mutate({
-      taskId: task.id,
-      projectPath: task.metadata?.worktreePath ?? '',
-      taskDescription: task.description,
-      planRef: task.metadata?.planPath as string | undefined,
-    });
+    updateTask.mutate({ slug: task.slug, updates: { status: 'executing' } });
   }
 
   function handleReject() {
-    updateStatus.mutate({ taskId: task.id, status: 'backlog' });
-  }
-
-  function handleFeedbackSubmit(feedback: string) {
-    setFeedbackDialogOpen(false);
-    replanWithFeedback.mutate({
-      taskId: task.id,
-      projectPath: typeof task.metadata?.worktreePath === 'string' ? task.metadata.worktreePath : '',
-      taskDescription: task.description,
-      feedback,
-      previousPlanPath: typeof task.metadata?.planPath === 'string' ? task.metadata.planPath : undefined,
-    });
+    updateTask.mutate({ slug: task.slug, updates: { status: 'backlog' } });
   }
 
   if (isEditing) {
@@ -101,7 +80,7 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
           </Button>
           <Button
             className="text-success hover:bg-success/10 hover:text-success"
-            disabled={startExecution.isPending}
+            disabled={updateTask.isPending}
             size="sm"
             type="button"
             variant="ghost"
@@ -111,21 +90,8 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
             Approve &amp; Execute
           </Button>
           <Button
-            className="text-warning hover:bg-warning/10 hover:text-warning"
-            disabled={replanWithFeedback.isPending}
-            size="sm"
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setFeedbackDialogOpen(true);
-            }}
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            {replanWithFeedback.isPending ? 'Requesting...' : 'Request Changes'}
-          </Button>
-          <Button
             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={updateStatus.isPending}
+            disabled={updateTask.isPending}
             size="sm"
             type="button"
             variant="ghost"
@@ -145,13 +111,6 @@ export function PlanReadyPanel({ saving, task, onSavePlan }: PlanReadyPanelProps
       ) : (
         <p className="text-muted-foreground text-sm italic">No plan content available.</p>
       )}
-
-      {/* Feedback dialog */}
-      <PlanFeedbackDialog
-        open={feedbackDialogOpen}
-        onOpenChange={setFeedbackDialogOpen}
-        onSubmit={handleFeedbackSubmit}
-      />
     </div>
   );
 }

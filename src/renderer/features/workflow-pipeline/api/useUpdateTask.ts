@@ -1,44 +1,44 @@
 /**
  * Task update mutation hooks for the workflow pipeline
  *
- * Provides mutations for updating task description and plan content
- * via the Hub API.
+ * Provides mutations for updating progress task description and plan content
+ * via the local ProgressService IPC channels.
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { HUB_TASKS } from '@shared/ipc/tasks/channels';
+import { PROGRESS } from '@shared/ipc/progress/channels';
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { taskKeys } from '@features/tasks/api/queryKeys';
+import { progressKeys } from '@features/tasks/api/progressKeys';
 
-/** Update a task's description via Hub */
+/** Update a progress task's description */
 export function useUpdateTaskDescription() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: ({ taskId, description }: { taskId: string; description: string }) =>
-      ipc(HUB_TASKS.UPDATE.TASK, { taskId, description }),
+    mutationFn: ({ slug, description }: { slug: string; description: string }) =>
+      ipc(PROGRESS.UPDATE.TASK, { slug, updates: { description } }),
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.taskId) });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.detail(variables.slug) });
     },
     onError: onError('update task description'),
   });
 }
 
-/** Update a task's plan content via Hub metadata */
+/** Update a progress task's plan content (stored as planContent in frontmatter) */
 export function useUpdateTaskPlan() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: ({ taskId, planContent }: { taskId: string; planContent: string }) =>
-      ipc(HUB_TASKS.UPDATE.TASK, { taskId, metadata: { planContent } }),
+    mutationFn: ({ slug, planContent }: { slug: string; planContent: string }) =>
+      ipc(PROGRESS.UPDATE.TASK, { slug, updates: { description: planContent } }),
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: taskKeys.detail(variables.taskId) });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.detail(variables.slug) });
     },
     onError: onError('update task plan'),
   });

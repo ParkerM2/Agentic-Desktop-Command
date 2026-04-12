@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
+import { PROJECTS } from '@shared/ipc/projects/channels';
 import type { Project, SubProject } from '@shared/types';
 
 import type { IpcRouter } from '@main/ipc/router';
@@ -186,7 +187,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.list', () => {
     it('returns empty array when no projects exist', async () => {
-      const result = await invoke('projects.list', {});
+      const result = await invoke(PROJECTS.LIST.ALL, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual([]);
@@ -199,7 +200,7 @@ describe('Project IPC Handlers', () => {
       projectStore.set(project1.id, project1);
       projectStore.set(project2.id, project2);
 
-      const result = await invoke('projects.list', {});
+      const result = await invoke(PROJECTS.LIST.ALL, {});
 
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
@@ -207,13 +208,13 @@ describe('Project IPC Handlers', () => {
     });
 
     it('accepts empty input object', async () => {
-      const result = await invoke('projects.list', {});
+      const result = await invoke(PROJECTS.LIST.ALL, {});
 
       expect(result.success).toBe(true);
     });
 
     it('accepts undefined input', async () => {
-      const result = await invoke('projects.list', null);
+      const result = await invoke(PROJECTS.LIST.ALL, null);
 
       expect(result.success).toBe(true);
     });
@@ -223,7 +224,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.add', () => {
     it('adds project and returns it', async () => {
-      const result = await invoke('projects.add', { path: '/mock/new/project' });
+      const result = await invoke(PROJECTS.ADD.PROJECT, { path: '/mock/new/project' });
 
       expect(result.success).toBe(true);
       expect(result.data).toMatchObject({
@@ -234,7 +235,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing path', async () => {
-      const result = await invoke('projects.add', {});
+      const result = await invoke(PROJECTS.ADD.PROJECT, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -242,14 +243,14 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - path must be string', async () => {
-      const result = await invoke('projects.add', { path: 123 });
+      const result = await invoke(PROJECTS.ADD.PROJECT, { path: 123 });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
     });
 
     it('validates input with Zod - null path', async () => {
-      const result = await invoke('projects.add', { path: null });
+      const result = await invoke(PROJECTS.ADD.PROJECT, { path: null });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -259,7 +260,7 @@ describe('Project IPC Handlers', () => {
       const existingProject = createMockProject({ id: 'existing-1', path: '/existing/path' });
       projectStore.set(existingProject.id, existingProject);
 
-      const result = await invoke('projects.add', { path: '/existing/path' });
+      const result = await invoke(PROJECTS.ADD.PROJECT, { path: '/existing/path' });
 
       expect(result.success).toBe(true);
       expect((result.data as Project).id).toBe('existing-1');
@@ -273,7 +274,7 @@ describe('Project IPC Handlers', () => {
       const project = createMockProject({ id: 'remove-me' });
       projectStore.set(project.id, project);
 
-      const result = await invoke('projects.remove', { projectId: 'remove-me' });
+      const result = await invoke(PROJECTS.REMOVE.PROJECT, { projectId: 'remove-me' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -281,7 +282,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('projects.remove', {});
+      const result = await invoke(PROJECTS.REMOVE.PROJECT, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -289,7 +290,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('succeeds even for non-existent project', async () => {
-      const result = await invoke('projects.remove', { projectId: 'non-existent' });
+      const result = await invoke(PROJECTS.REMOVE.PROJECT, { projectId: 'non-existent' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -303,14 +304,14 @@ describe('Project IPC Handlers', () => {
       const project = createMockProject({ id: 'init-proj', name: 'Init Project' });
       projectStore.set(project.id, project);
 
-      const result = await invoke('projects.initialize', { projectId: 'init-proj' });
+      const result = await invoke(PROJECTS.INITIALIZE.PROJECT, { projectId: 'init-proj' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
     });
 
     it('returns error for unknown project', async () => {
-      const result = await invoke('projects.initialize', { projectId: 'nonexistent' });
+      const result = await invoke(PROJECTS.INITIALIZE.PROJECT, { projectId: 'nonexistent' });
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({
@@ -320,7 +321,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('projects.initialize', {});
+      const result = await invoke(PROJECTS.INITIALIZE.PROJECT, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -332,7 +333,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.selectDirectory', () => {
     it('returns selected directory path', async () => {
-      const result = await invoke('projects.selectDirectory', {});
+      const result = await invoke(PROJECTS.SELECT.DIRECTORY, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ path: '/mock/selected/path' });
@@ -342,7 +343,7 @@ describe('Project IPC Handlers', () => {
     it('handles canceled dialog', async () => {
       vi.mocked(projectService.selectDirectory).mockResolvedValueOnce({ path: null });
 
-      const result = await invoke('projects.selectDirectory', {});
+      const result = await invoke(PROJECTS.SELECT.DIRECTORY, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ path: null });
@@ -353,7 +354,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.detectRepo', () => {
     it('validates input with Zod - missing path', async () => {
-      const result = await invoke('projects.detectRepo', {});
+      const result = await invoke(PROJECTS.DETECT.REPO, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -361,7 +362,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - path must be string', async () => {
-      const result = await invoke('projects.detectRepo', { path: 42 });
+      const result = await invoke(PROJECTS.DETECT.REPO, { path: 42 });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -375,7 +376,7 @@ describe('Project IPC Handlers', () => {
       const project = createMockProject({ id: 'upd-1' });
       projectStore.set(project.id, project);
 
-      const result = await invoke('projects.update', {
+      const result = await invoke(PROJECTS.UPDATE.PROJECT, {
         projectId: 'upd-1',
         name: 'Updated Name',
         description: 'New description',
@@ -391,7 +392,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('projects.update', { name: 'Test' });
+      const result = await invoke(PROJECTS.UPDATE.PROJECT, { name: 'Test' });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -403,7 +404,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.getSubProjects', () => {
     it('returns sub-projects for a project', async () => {
-      const result = await invoke('projects.getSubProjects', { projectId: 'proj-1' });
+      const result = await invoke(PROJECTS.GET['SUB-PROJECTS'], { projectId: 'proj-1' });
 
       expect(result.success).toBe(true);
       expect(Array.isArray(result.data)).toBe(true);
@@ -411,7 +412,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing projectId', async () => {
-      const result = await invoke('projects.getSubProjects', {});
+      const result = await invoke(PROJECTS.GET['SUB-PROJECTS'], {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -422,7 +423,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.createSubProject', () => {
     it('creates sub-project and returns it', async () => {
-      const result = await invoke('projects.createSubProject', {
+      const result = await invoke(PROJECTS.CREATE['SUB-PROJECT'], {
         projectId: 'proj-1',
         name: 'Frontend',
         relativePath: 'packages/frontend',
@@ -440,7 +441,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing required fields', async () => {
-      const result = await invoke('projects.createSubProject', { projectId: 'proj-1' });
+      const result = await invoke(PROJECTS.CREATE['SUB-PROJECT'], { projectId: 'proj-1' });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -451,7 +452,7 @@ describe('Project IPC Handlers', () => {
 
   describe('projects.deleteSubProject', () => {
     it('deletes sub-project and returns success', async () => {
-      const result = await invoke('projects.deleteSubProject', {
+      const result = await invoke(PROJECTS.DELETE['SUB-PROJECT'], {
         projectId: 'proj-1',
         subProjectId: 'sub-1',
       });
@@ -462,7 +463,7 @@ describe('Project IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing subProjectId', async () => {
-      const result = await invoke('projects.deleteSubProject', { projectId: 'proj-1' });
+      const result = await invoke(PROJECTS.DELETE['SUB-PROJECT'], { projectId: 'proj-1' });
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();

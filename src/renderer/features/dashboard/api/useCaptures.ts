@@ -23,22 +23,31 @@ export function useCaptures() {
 /** Mutations for creating and deleting captures */
 export function useCaptureMutations() {
   const queryClient = useQueryClient();
-  const { onError } = useMutationErrorToast();
+  const { onError: toastError } = useMutationErrorToast();
+
+  const capturesKey = dashboardKeys.captures();
 
   const createCapture = useMutation({
-    mutationFn: (text: string) => ipc(DASHBOARD.CREATE.CAPTURE, { text }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
+    mutationFn: (text: string) => {
+      const id = crypto.randomUUID();
+      return ipc(DASHBOARD.CREATE.CAPTURE, { id, text });
     },
-    onError: onError('create capture'),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: capturesKey });
+    },
+    onError(err) {
+      toastError('create capture')(err);
+    },
   });
 
   const deleteCapture = useMutation({
     mutationFn: (id: string) => ipc(DASHBOARD.DELETE.CAPTURE, { id }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: dashboardKeys.captures() });
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: capturesKey });
     },
-    onError: onError('delete capture'),
+    onError(err) {
+      toastError('delete capture')(err);
+    },
   });
 
   return { createCapture, deleteCapture };

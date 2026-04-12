@@ -5,13 +5,13 @@
  * One-time migration from legacy JSON files on first access.
  */
 
-import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { and, desc, eq, gte, lte } from 'drizzle-orm';
 
 import { FITNESS_EVENTS } from '@shared/ipc/fitness/channels';
+import { generateId } from '@shared/lib/id';
 import type {
   BodyMeasurement,
   Exercise,
@@ -37,6 +37,7 @@ const logger = createScopedLogger('fitness-service');
 
 export interface FitnessService {
   logWorkout: (data: {
+    id?: string;
     date: string;
     type: WorkoutType;
     duration: number;
@@ -50,6 +51,7 @@ export interface FitnessService {
   }) => Workout[];
   deleteWorkout: (id: string) => { success: boolean };
   logMeasurement: (data: {
+    id?: string;
     date: string;
     weight?: number;
     bodyFat?: number;
@@ -62,6 +64,7 @@ export interface FitnessService {
   getMeasurements: (limit?: number) => BodyMeasurement[];
   getStats: () => FitnessStats;
   setGoal: (data: {
+    id?: string;
     type: FitnessGoalType;
     target: number;
     unit: string;
@@ -235,7 +238,7 @@ export function createFitnessService(deps: {
 
   return {
     logWorkout(data) {
-      const id = randomUUID();
+      const id = data.id ?? generateId();
       const createdAt = new Date().toISOString();
 
       db.insert(workouts).values({
@@ -296,7 +299,7 @@ export function createFitnessService(deps: {
       // Deduplicate by date — delete existing entry for same date
       db.delete(bodyMeasurements).where(eq(bodyMeasurements.date, data.date)).run();
 
-      const id = randomUUID();
+      const id = data.id ?? generateId();
       const createdAt = new Date().toISOString();
 
       db.insert(bodyMeasurements).values({
@@ -346,7 +349,7 @@ export function createFitnessService(deps: {
     },
 
     setGoal(data) {
-      const id = randomUUID();
+      const id = data.id ?? generateId();
       const createdAt = new Date().toISOString();
 
       db.insert(fitnessGoals).values({

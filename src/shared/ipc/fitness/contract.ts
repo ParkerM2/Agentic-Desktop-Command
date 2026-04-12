@@ -23,6 +23,7 @@ import {
 export const fitnessInvoke = {
   [FITNESS.LOG.WORKOUT]: {
     input: z.object({
+      id: z.string().optional(),
       date: z.string(),
       type: WorkoutTypeSchema,
       duration: z.number(),
@@ -41,6 +42,7 @@ export const fitnessInvoke = {
   },
   [FITNESS.LOG.MEASUREMENT]: {
     input: z.object({
+      id: z.string().optional(),
       date: z.string(),
       weight: z.number().optional(),
       bodyFat: z.number().optional(),
@@ -62,6 +64,7 @@ export const fitnessInvoke = {
   },
   [FITNESS.SET.GOAL]: {
     input: z.object({
+      id: z.string().optional(),
       type: FitnessGoalTypeSchema,
       target: z.number(),
       unit: z.string(),

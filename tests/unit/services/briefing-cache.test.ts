@@ -28,6 +28,7 @@ function createTestDb(): { db: AdcDatabase; close: () => void } {
   // Create the briefings table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS briefings (
+      id TEXT,
       date TEXT PRIMARY KEY,
       content TEXT NOT NULL,
       generated_at TEXT NOT NULL

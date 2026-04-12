@@ -12,13 +12,12 @@ import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores'
 
 import { PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
 
-import { VoiceSettings } from '@features/voice';
-
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
 import { AppearanceModeSection } from './AppearanceModeSection';
 import { BackgroundSettings } from './BackgroundSettings';
 import { ClaudeAuthSettings } from './ClaudeAuthSettings';
+import { DataLocationSection } from './DataLocationSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
 import { HubSettings } from './HubSettings';
@@ -28,6 +27,7 @@ import { ProfileSection } from './ProfileSection';
 import { StorageManagementSection } from './StorageManagementSection';
 import { TypographySection } from './TypographySection';
 import { UiScaleSection } from './UiScaleSection';
+import { VoiceSettings } from './voice/VoiceSettings';
 import { WebhookSettings } from './WebhookSettings';
 import { WorkspacesTab } from './WorkspacesTab';
 
@@ -158,6 +158,7 @@ export function SettingsPage() {
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="storage">
+            <DataLocationSection />
             <section className="mb-8">
               <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Storage Management

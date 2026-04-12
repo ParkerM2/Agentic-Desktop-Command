@@ -22,7 +22,7 @@ vi.mock('@main/mcp-servers/calendar/calendar-client', () => ({
 }));
 
 const { createCalendarService } = await import(
-  '@main/features/calendar/calendar-service'
+  '@main/features/integrations/calendar'
 );
 
 // ── Helpers ───────────────────────────────────────────────────

@@ -2,7 +2,7 @@
  * Hub Config Store
  *
  * Encrypted persistence for hub connection configuration backed by SQLite.
- * Uses the `hubConfig` table with a singleton row (key='default').
+ * Uses the `settings_kv` table with category='hub' and key='default'.
  * API keys are encrypted via Electron safeStorage (OS credential store).
  *
  * One-time migration from hub-config.json on first access.
@@ -13,9 +13,11 @@ import { join } from 'node:path';
 
 import { safeStorage } from 'electron';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
-import { hubConfig } from '../../db/schema';
+import { generateId } from '@shared/lib/id';
+
+import { settingsKv } from '../../db/schema';
 import { hubLogger } from '../../lib/logger';
 
 import type { AdcDatabase } from '../../db';
@@ -29,6 +31,7 @@ export interface PersistedHubConfig {
 }
 
 const SINGLETON_KEY = 'default';
+const CATEGORY = 'hub';
 
 // ── Encryption helpers (unchanged — still use safeStorage) ─────────
 
@@ -54,8 +57,8 @@ export function decryptApiKey(encoded: string): string {
 function migrateFromJson(db: AdcDatabase, dataDir: string): void {
   const existing = db
     .select()
-    .from(hubConfig)
-    .where(eq(hubConfig.key, SINGLETON_KEY))
+    .from(settingsKv)
+    .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
     .get();
   if (existing) return;
 
@@ -71,13 +74,19 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
       return;
     }
 
-    db.insert(hubConfig)
+    const config: PersistedHubConfig = {
+      hubUrl: parsed.hubUrl,
+      encryptedApiKey: parsed.encryptedApiKey,
+      enabled: parsed.enabled ?? true,
+      lastConnected: parsed.lastConnected,
+    };
+
+    db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
-        hubUrl: parsed.hubUrl,
-        encryptedApiKey: parsed.encryptedApiKey,
-        enabled: parsed.enabled ?? true,
-        lastConnected: parsed.lastConnected ?? null,
+        category: CATEGORY,
+        settings: config as unknown,
         updatedAt: new Date().toISOString(),
       })
       .run();
@@ -103,37 +112,34 @@ export function createHubConfigStore(db: AdcDatabase, dataDir: string): HubConfi
   function loadConfig(): PersistedHubConfig | null {
     const row = db
       .select()
-      .from(hubConfig)
-      .where(eq(hubConfig.key, SINGLETON_KEY))
+      .from(settingsKv)
+      .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
       .get();
 
     if (!row) return null;
 
+    const data = row.settings as PersistedHubConfig;
     return {
-      hubUrl: row.hubUrl,
-      encryptedApiKey: row.encryptedApiKey,
-      enabled: row.enabled,
-      lastConnected: row.lastConnected ?? undefined,
+      hubUrl: data.hubUrl,
+      encryptedApiKey: data.encryptedApiKey,
+      enabled: data.enabled,
+      lastConnected: data.lastConnected,
     };
   }
 
   function saveConfig(config: PersistedHubConfig): void {
-    db.insert(hubConfig)
+    db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
-        hubUrl: config.hubUrl,
-        encryptedApiKey: config.encryptedApiKey,
-        enabled: config.enabled,
-        lastConnected: config.lastConnected ?? null,
+        category: CATEGORY,
+        settings: config as unknown,
         updatedAt: new Date().toISOString(),
       })
       .onConflictDoUpdate({
-        target: hubConfig.key,
+        target: settingsKv.key,
         set: {
-          hubUrl: config.hubUrl,
-          encryptedApiKey: config.encryptedApiKey,
-          enabled: config.enabled,
-          lastConnected: config.lastConnected ?? null,
+          settings: config as unknown,
           updatedAt: new Date().toISOString(),
         },
       })
@@ -141,8 +147,8 @@ export function createHubConfigStore(db: AdcDatabase, dataDir: string): HubConfi
   }
 
   function deleteConfig(): void {
-    db.delete(hubConfig)
-      .where(eq(hubConfig.key, SINGLETON_KEY))
+    db.delete(settingsKv)
+      .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
       .run();
   }
 

@@ -1,14 +1,15 @@
 /**
  * Tasks IPC Schemas
  *
- * Zod schemas for task-related IPC channels including task CRUD,
- * execution progress, smart task creation (decomposition), Hub tasks,
- * and GitHub issue imports.
+ * Zod schemas for task-related IPC channels including Hub tasks
+ * and task event payloads (status changes, progress, logs).
+ *
+ * Local task CRUD schemas removed — no remaining handlers.
  */
 
 import { z } from 'zod';
 
-// ── Local Task Schemas ──────────────────────────────────────────
+// ── Shared Schemas (used by events) ────────────────────────────
 
 export const TaskStatusSchema = z.enum([
   'backlog',
@@ -21,14 +22,6 @@ export const TaskStatusSchema = z.enum([
   'done',
   'error',
 ]);
-
-export const SubtaskSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  status: z.enum(['pending', 'in_progress', 'completed', 'failed']),
-  files: z.array(z.string()),
-});
 
 export const ExecutionPhaseSchema = z.enum([
   'idle',
@@ -51,58 +44,7 @@ export const ExecutionProgressSchema = z.object({
   completedPhases: z.array(ExecutionPhaseSchema).optional(),
 });
 
-export const TaskSchema = z.object({
-  id: z.string(),
-  specId: z.string().optional(),
-  title: z.string(),
-  description: z.string(),
-  status: TaskStatusSchema,
-  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
-  projectId: z.string().optional(),
-  workspaceId: z.string().optional(),
-  subtasks: z.array(SubtaskSchema),
-  executionProgress: ExecutionProgressSchema.optional(),
-  reviewReason: z.enum(['completed', 'errors', 'qa_rejected', 'plan_review']).optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  logs: z.array(z.string()).optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-
-export const TaskDraftSchema = z.object({
-  title: z.string().min(1),
-  description: z.string(),
-  projectId: z.string(),
-  complexity: z.enum(['simple', 'standard', 'complex']).optional(),
-});
-
-// ── Smart Task Creation Schemas ─────────────────────────────────
-
-export const EstimatedEffortSchema = z.enum(['small', 'medium', 'large']);
-export const SuggestedPrioritySchema = z.enum(['low', 'medium', 'high']);
-
-export const TaskSuggestionSchema = z.object({
-  title: z.string(),
-  description: z.string(),
-  estimatedEffort: EstimatedEffortSchema,
-  suggestedPriority: SuggestedPrioritySchema,
-});
-
-export const TaskDecompositionResultSchema = z.object({
-  originalDescription: z.string(),
-  suggestions: z.array(TaskSuggestionSchema),
-});
-
-export const GithubIssueImportSchema = z.object({
-  issueNumber: z.number(),
-  issueUrl: z.string(),
-  title: z.string(),
-  body: z.string(),
-  labels: z.array(z.string()),
-  assignees: z.array(z.string()),
-});
-
-// ── Hub Task Schemas (Hub API shape — distinct from local TaskSchema) ──
+// ── Hub Task Schemas (Hub API shape) ───────────────────────────
 
 export const HubTaskStatusSchema = z.enum([
   'backlog',

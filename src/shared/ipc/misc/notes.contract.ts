@@ -29,6 +29,7 @@ export const notesInvoke = {
   },
   [NOTES.CREATE.NOTE]: {
     input: z.object({
+      id: z.string().optional(),
       title: z.string(),
       content: z.string(),
       tags: z.array(z.string()).optional(),

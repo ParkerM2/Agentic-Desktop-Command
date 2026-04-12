@@ -473,7 +473,7 @@ Available globally via `useProgressContext()` — any component, any page, assis
 
 ## 5. Task List Grid
 
-Rewire `TaskDataGrid` to read from `useProgressContext` instead of Hub tasks.
+Rewire `ProgressTaskGrid` to read from `useProgressContext` instead of Hub tasks.
 
 ### Columns
 

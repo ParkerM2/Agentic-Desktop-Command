@@ -92,19 +92,23 @@ function NowPlaying({
 
       {/* Controls */}
       <div className="flex items-center justify-center gap-2">
-        <button
+        <Button
           className={CONTROL_BUTTON}
+          size="icon"
           title="Previous"
           type="button"
+          variant="ghost"
           onClick={() => {
             previousMutation.mutate();
           }}
         >
           <SkipBack className="h-4 w-4" />
-        </button>
-        <button
+        </Button>
+        <Button
+          size="icon"
           title={isPlaying ? 'Pause' : 'Play'}
           type="button"
+          variant="ghost"
           className={cn(
             CONTROL_BUTTON,
             'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground',
@@ -118,17 +122,19 @@ function NowPlaying({
           }}
         >
           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-        </button>
-        <button
+        </Button>
+        <Button
           className={CONTROL_BUTTON}
+          size="icon"
           title="Next"
           type="button"
+          variant="ghost"
           onClick={() => {
             nextMutation.mutate();
           }}
         >
           <SkipForward className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Volume */}

@@ -8,6 +8,8 @@ import { FolderGit2, FolderTree, Loader2, Plus, Trash2 } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button, Input } from '@ui';
+
 import { useRepoStructure } from '../api/useGit';
 import { useSubProjects, useCreateSubProject, useDeleteSubProject } from '../api/useProjects';
 
@@ -93,15 +95,17 @@ export function SubprojectSelector({ projectId, repoPath }: SubprojectSelectorPr
                 <span className="font-medium">{sub.name}</span>
                 <span className="text-muted-foreground ml-2 text-xs">{sub.relativePath}</span>
               </div>
-              <button
+              <Button
                 aria-label={`Remove ${sub.name}`}
                 className="text-muted-foreground hover:text-destructive rounded p-1 transition-colors"
                 disabled={deleteSubProject.isPending}
+                size="icon"
                 type="button"
+                variant="ghost"
                 onClick={() => handleRemove(sub.id)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              </Button>
             </div>
           ))}
         </div>
@@ -113,31 +117,24 @@ export function SubprojectSelector({ projectId, repoPath }: SubprojectSelectorPr
       <div className="border-border space-y-2 rounded-lg border p-3">
         <p className="text-xs font-medium">Add Sub-project</p>
         <div className="flex gap-2">
-          <input
+          <Input
+            className="flex-1"
             placeholder="Name"
             type="text"
             value={newName}
-            className={cn(
-              'border-border bg-background flex-1 rounded-md border px-2 py-1.5 text-sm',
-              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-            )}
             onChange={(e) => setNewName(e.target.value)}
           />
-          <input
+          <Input
+            className="flex-1"
             placeholder="Relative path"
             type="text"
             value={newPath}
-            className={cn(
-              'border-border bg-background flex-1 rounded-md border px-2 py-1.5 text-sm',
-              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-            )}
             onChange={(e) => setNewPath(e.target.value)}
           />
-          <button
+          <Button
             type="button"
             className={cn(
-              'bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-              'hover:bg-primary/90 disabled:opacity-50',
+              'rounded-md px-3 py-1.5 text-sm font-medium',
             )}
             disabled={
               createSubProject.isPending ||
@@ -151,7 +148,7 @@ export function SubprojectSelector({ projectId, repoPath }: SubprojectSelectorPr
             ) : (
               <Plus className="h-4 w-4" />
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -124,23 +124,20 @@ BrowserWindow.webContents.send(ch, payload)
 ### Event Contract
 
 ```typescript
-// Defined in src/shared/ipc/tasks/contract.ts (merged into ipcEventContract by root barrel)
-tasksEvents['event:task.statusChanged'] = {
+// Defined in src/shared/ipc/progress/contract.ts (merged into ipcEventContract by root barrel)
+progressEvents['event:progress.task.updated'] = {
   payload: z.object({
     taskId: z.string(),
-    status: TaskStatusSchema,
     projectId: z.string(),
   }),
 };
 
-// Emitted from service
-router.emit('event:task.statusChanged', { taskId, status, projectId });
+// Emitted from ProgressService
+router.emit('event:progress.task.updated', { taskId, projectId });
 
-// Consumed in renderer
-useIpcEvent('event:task.statusChanged', ({ taskId, projectId }) => {
-  void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
-  void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-});
+// Consumed via EventBridge (centralized invalidation — no per-feature event hooks needed)
+// EventBridge registry entry:
+'event:progress.task.updated': { keys: [['progress', 'list'], ['progress', 'detail']] },
 ```
 
 ---
@@ -148,46 +145,50 @@ useIpcEvent('event:task.statusChanged', ({ taskId, projectId }) => {
 ## 3. Feature Module Data Flow
 
 ```
-Feature: tasks
-=============
+Feature: tasks (SQLite-backed via ProgressService)
+==================================================
 
 index.ts (barrel export)
-  exports: useTasks, useTaskMutations, useTaskEvents, TaskCard, ...
+  exports: useProgress, useProgressMutations, ProgressTaskGrid, ...
 
 api/queryKeys.ts
-  taskKeys = {
-    all:    ['tasks'] as const,
-    lists:  () => [...taskKeys.all, 'list'],
-    list:   (projectId) => [...taskKeys.lists(), projectId],
-    details: () => [...taskKeys.all, 'detail'],
-    detail: (taskId) => [...taskKeys.details(), taskId],
+  progressKeys = {
+    all:    ['progress'] as const,
+    lists:  () => [...progressKeys.all, 'list'],
+    list:   (projectId) => [...progressKeys.lists(), projectId],
+    details: () => [...progressKeys.all, 'detail'],
+    detail: (taskId) => [...progressKeys.details(), taskId],
   }
 
-api/useTasks.ts
-  useTasks(projectId)     -> useQuery  -> ipc('tasks.list', { projectId })
-  useTask(projectId, id)  -> useQuery  -> ipc('tasks.get', { projectId, taskId })
+api/useProgress.ts
+  useProgress(projectId)     -> useQuery  -> ipc(PROGRESS.LIST.TASKS, { projectId })
+  useProgressTask(taskId)    -> useQuery  -> ipc(PROGRESS.GET.TASK, { taskId })
 
-api/useTaskMutations.ts
-  useCreateTask()     -> useMutation -> ipc('tasks.create', draft)
-  useUpdateTask()     -> useMutation -> ipc('tasks.update', { taskId, updates })
-  useUpdateStatus()   -> useMutation -> ipc('tasks.updateStatus', { taskId, status })
-  useDeleteTask()     -> useMutation -> ipc('tasks.delete', { taskId, projectId })
+api/useProgressMutations.ts
+  useCreateTask()     -> useMutation -> ipc(PROGRESS.CREATE.TASK, draft)
+                         onSuccess: invalidateQueries (no optimistic updates)
+  useUpdateTask()     -> useMutation -> ipc(PROGRESS.UPDATE.TASK, { taskId, updates })
+  useDeleteTask()     -> useMutation -> ipc(PROGRESS.DELETE.TASK, { taskId })
+
+  Mutation pattern: simple onSuccess invalidation.
+  IPC is <1ms so optimistic updates are unnecessary overhead.
 
 hooks/useTaskEvents.ts
   useTaskEvents()
-    -> useIpcEvent('event:task.statusChanged', ...)
-    -> useIpcEvent('event:task.progressUpdated', ...)
-    -> useIpcEvent('event:task.logAppended', ...)
-    -> invalidates relevant query keys
+    -> orchestrates useAgentEvents + useQaEvents
+    -> EventBridge handles progress.task.* events → query invalidation
 
 store.ts (Zustand — UI state only)
   selectedTaskId: string | null
-  expandedSections: Set<string>
+  expandedRowIds: Set<string>
+  filterStatus: string | null
+  searchQuery: string
   // NO server data in Zustand — that's React Query's job
 
 components/
-  TaskCard.tsx        -> uses useTasks() for data
-  TaskStatusBadge.tsx -> pure presentational
+  ProgressTaskGrid.tsx  -> TanStack Table with @ui Table primitives
+  TaskStatusBadge.tsx   -> pure presentational
+  TaskDetailRow.tsx     -> expandable row with pipeline controls
 ```
 
 ---
@@ -316,7 +317,7 @@ Agent runs (writes JSONL progress to {dataDir}/progress/{taskId}.jsonl)
   |    router.emit('event:agent.orchestrator.heartbeat')   index.ts
   |      |
   |      v
-  |    useAgentEvents → optimistic cache update             useAgentEvents.ts
+  |    useAgentEvents → cache invalidation                  useAgentEvents.ts
   |
   +--> JSONL entries written by Claude hooks
   |      |
@@ -410,6 +411,43 @@ SessionJSONLReader — tail-follow session JSONL files for structured output
     |
     +--> handles: truncation (offset reset), partial writes (buffered), rapid appends
 ```
+
+### Agent Host Utility Process Data Flow
+
+```
+MAIN PROCESS                    UTILITY PROCESS                RENDERER
+============                    ===============                ========
+
+AgentHostClient                 AgentManagerService
+  |                               (ProcessManager +
+  | ControlRequest                 StreamJsonParser)
+  | (spawn/stop/list)
+  |--- MessagePort RPC --------->|
+  |    correlationId              |
+  |                               v
+  |                             Spawns Claude CLI process
+  |                               |
+  |                               v
+  |                             Parses stream-json output
+  |                               |
+  |    ControlReply               |
+  |<--- MessagePort RPC ---------|
+  |                               |
+  |                               |--- Direct MessagePort --->|
+  |                               |    (stream events:         |
+  |                               |     messages, status,      |
+  |                               |     tool calls)            |
+  |                               |                            v
+  |                               |                     EventBridge
+  |                               |                     invalidates
+  |                               |                     agent queries
+```
+
+Key points:
+- Control commands (spawn, stop, list) use correlation-ID RPC via MessagePort
+- Stream events bypass main process entirely (utility → renderer direct MessagePort)
+- AgentHostClient maintains a local session cache for sync reads
+- Auto-restart: 5 retries within 60s window with exponential backoff
 
 ### QA Auto-Trigger Flow
 
@@ -663,7 +701,7 @@ useTasks(projectId) fires query
 ipc('tasks.list', { projectId })
   |
   v
-TaskService.listTasks(projectId)
+ProgressService.listTasks(projectId)
   |
   v
 Tasks returned, TaskTable renders filterable/sortable rows
@@ -688,7 +726,7 @@ Routes are defined across 8 route group files in `src/renderer/app/routes/` and 
 ├── /productivity           -> ProductivityPage (8 tabs: Overview, Calendar, Spotify, Briefing, Notes, Planner, Alerts, Comms)
 ├── /projects               -> ProjectListPage
 ├── /projects/$projectId    -> redirect to /tasks
-│   ├── /tasks              -> TaskDataGrid
+│   ├── /tasks              -> ProgressTaskGrid
 │   ├── /terminals          -> TerminalGrid
 │   ├── /agents             -> AgentDashboard
 │   ├── /roadmap            -> RoadmapPage
@@ -797,9 +835,9 @@ ipc('auth.restore', {})
 
 ---
 
-## 12. Local-First Task CRUD Flow
+## 12. SQLite-Backed Task CRUD Flow
 
-All task operations go through `TaskRepository`, which always reads/writes locally first and mirrors mutations to Hub when connected.
+All task operations go through `ProgressService`, which reads/writes to the `progress_tasks` SQLite table.
 
 ### Read Flow (list/get)
 
@@ -807,22 +845,16 @@ All task operations go through `TaskRepository`, which always reads/writes local
 User views task dashboard
   |
   v
-useTasks(projectId) → ipc('hub.tasks.list', { projectId })
+useProgress(projectId) → ipc(PROGRESS.LIST.ALL, { projectId })
   |
   v
-                              hub-task-handlers.ts
+                              progress-handlers.ts
                                 |
                                 v
-                              taskRepository.listTasks({ projectId })
-                                |  src/main/services/tasks/task-repository.ts
+                              progressService.listTasks(projectId)
+                                |  queries progress_tasks table (SQLite)
                                 v
-                              taskService.listTasks(projectId)
-                                |  reads .adc/specs/ directories (always local)
-                                v
-                              localToHubTask() converts local → HubTask shape
-                                |
-                                v
-                              Return { tasks: HubTask[] }
+                              Return ProgressTask[]
 ```
 
 ### Write Flow (create/update/delete)
@@ -831,77 +863,43 @@ useTasks(projectId) → ipc('hub.tasks.list', { projectId })
 User creates a task (CreateTaskDialog)
   |
   v
-useCreateTask().mutate({ projectId, title, description, priority })
+useCreateProgress().mutate({ projectId, title, description, priority })
   |
   v
-ipc('hub.tasks.create', { ... })
+ipc(PROGRESS.CREATE.TASK, { ... })
   |
   v
-                              hub-task-handlers.ts
+                              progress-handlers.ts
                                 |
                                 v
-                              taskRepository.createTask(body)
-                                |
-                                +→ taskService.createTask(draft)    ← ALWAYS (local .adc/specs/)
-                                |    Creates UUID-based task dir
-                                |    Writes requirements.json + task_metadata.json
-                                |
-                                +→ mirrorToHub(() =>                ← OPTIONAL (fire-and-forget)
-                                |    hubApiClient.createTask(body))
-                                |    Only runs when Hub is connected
-                                |    Logs warnings on failure
-                                |
+                              progressService.createTask(draft)
+                                |  Inserts into progress_tasks table
                                 v
-                              Return HubTask (from local data, immediate)
+                              Return ProgressTask (from SQLite, immediate)
 ```
 
-### Hub-Only Operations (execute/cancel)
+### Event Flow (Updates → Renderer)
 
 ```
-User clicks "Execute" (remote dispatch)
+MAIN PROCESS                                        RENDERER
+============                                        ========
+
+progressService.updateTask()
+  |  Updates progress_tasks row
+  v
+router.emit('event:progress.task.updated', payload)
   |
   v
-ipc('hub.tasks.execute', { taskId })
-  |
-  v
-                              taskRepository.executeTask(taskId)
-                                |
-                                +-→ Hub not connected? → throw Error
-                                |
-                                +-→ hubApiClient.executeTask(taskId)
-                                     |
-                                     v
-                                   POST /api/tasks/:id/execute
-                                     → Hub dispatches to target device
-```
-
-### Reverse Flow (Hub WebSocket → Local Update)
-
-```
-HUB SERVER                      MAIN PROCESS                    RENDERER
-==========                      ============                    ========
-
-WebSocket broadcast
-  { type: 'task.updated', ... }
-                              hub-connection.ts receives
-                                |
-                                v
-                              event-wiring: taskRepository.updateTask()
-                                |  Updates local .adc/specs/ files
-                                v
-                              router.emit('event:hub.tasks.updated', payload)
-                                |
-                                v
-                              BrowserWindow.webContents.send(...)
-                                                                  |
-                                                                  v
-                                                              useHubEvent('event:hub.tasks.updated')
-                                                                  |
-                                                                  v
-                                                              queryClient.invalidateQueries()
-                                                                  |
-                                                                  v
-                                                              React Query refetches from TaskRepository (local)
+BrowserWindow.webContents.send(...)
+                                                      |
+                                                      v
+                                                  EventBridge registry
+                                                      |
+                                                      v
+                                                  queryClient.invalidateQueries()
+                                                      |
+                                                      v
+                                                  React Query refetches from ProgressService
 ```
 
 ---
@@ -1331,7 +1329,7 @@ Session state: 'spawned' → 'active'
 ### Renderer Event Subscription Chain
 
 ```
-TaskDataGrid mounts
+ProgressTaskGrid mounts
   → useTaskEvents()
     → useAgentEvents()    — subscribes to 6 orchestrator event channels
     → useQaEvents()       — subscribes to 3 QA event channels
@@ -1358,7 +1356,7 @@ TaskDataGrid mounts
 ## 19.5. Task Planning Pipeline Flow (Local-First)
 
 The complete planning pipeline: idea → plan → review → approve/reject/request changes → execute.
-All status transitions go through `TaskRepository` (local-first with Hub mirror).
+All status transitions go through `ProgressService` (SQLite-backed).
 
 ```
 User creates task (idea/backlog)

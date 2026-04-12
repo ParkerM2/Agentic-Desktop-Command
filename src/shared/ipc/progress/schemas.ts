@@ -81,6 +81,7 @@ export const progressCreateTaskInputSchema = z.object({
   title: z.string().min(1),
   description: z.string(),
   priority: progressPrioritySchema.optional(),
+  id: z.string().optional(),
 });
 
 export const progressUpdateTaskInputSchema = z.object({

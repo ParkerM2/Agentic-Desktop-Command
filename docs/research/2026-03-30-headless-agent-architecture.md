@@ -298,7 +298,7 @@ fs.watch(teamConfigPath, () => {
 | `git-service` | `src/main/services/git/` | Reuse as-is for diffs, worktrees |
 | `worktree-service` | `src/main/services/git/` | Reuse for parallel dev |
 | `merge-service` | `src/main/services/merge/` | Reuse for visual merge |
-| `task-service` | `src/main/services/project/` | Adapt for claude-workflow task files |
+| `progress-service` | `src/main/features/progress/` | SQLite-backed task management (replaced old file-based task-service) |
 | `qa-runner` | `src/main/services/qa/` | Reuse QA pipeline |
 | `progress-watcher` | `src/main/services/workflow/` | Reuse for progress/ sync |
 | `terminal-service` | `src/main/services/terminal/` | Replace with AgentManager (stream-json) |

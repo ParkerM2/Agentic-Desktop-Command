@@ -3,8 +3,8 @@
 <src-map>
 <main desc="Electron main process">
 <bootstrap files="index.ts service-registry.ts lifecycle.ts ipc-wiring.ts event-wiring.ts" />
-<services dirs="agent-manager agent-orchestrator alerts app assistant auth briefing calendar changelog claude dashboard data-management device docker email file-tree fitness git github health hub ideas insights merge milestones notes notifications planner progress-watcher-v2 project qa screen session-jsonl settings spotify tasks team-watcher terminal time-parser tracker visualization voice workflow workspace" />
-<ipc-handlers files="agent-dashboard agent-orchestrator alert app app-update assistant auth briefing calendar changelog claude dashboard data-management device docker email error files fitness git github hotkey hub ideas insights mcp merge milestones notes notification oauth planner project qa screen security settings spotify task terminal time tracker visualization voice webhook-settings window workflow workspace" suffix="-handlers.ts" />
+<services dirs="agent-manager alerts app assistant auth briefing calendar changelog claude dashboard data-management device docker email file-tree fitness git github health hub ideas insights merge milestones notes notifications planner progress project qa screen session-jsonl settings spotify team-watcher terminal time-parser tracker visualization voice workflow workspace" note="agent-host/ runs in utilityProcess; old tasks/ dir deleted; progress is sole task authority" />
+<ipc-handlers files="agent-dashboard alert app app-update assistant auth briefing calendar changelog claude dashboard data-management device docker email error files fitness git github hotkey hub ideas insights mcp merge milestones notes notification oauth planner progress project qa screen security settings spotify task terminal time tracker visualization voice webhook-settings window workflow workspace" suffix="-handlers.ts" />
 <tray files="hotkey-manager.ts quick-input.ts tray-manager.ts" />
 <lib files="logger.ts safe-write-json.ts" />
 </main>

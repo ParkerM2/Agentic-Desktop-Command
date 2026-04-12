@@ -444,7 +444,7 @@ This spec should test the GitHub feature beyond heading and tab renders: clickin
 
 **Gap addressed:** merge (NONE → target SHALLOW)
 
-This spec should trigger the merge workflow from a task context where a PR-ready task exists: opening a completed task in the TaskDataGrid, clicking the "Merge" action to open MergeConfirmModal, asserting that the modal contains MergePreviewPanel with the expected diff summary, exercising ConflictResolver by asserting it renders when conflicts are present or is hidden when the merge is clean, verifying FileDiffViewer (`@git-diff-view/react`) renders file diff content, and clicking Confirm to exercise the `merge.*` IPC channel. The spec should also verify the close and cancel paths to ensure the modal dismisses cleanly without leaving state behind.
+This spec should trigger the merge workflow from a task context where a PR-ready task exists: opening a completed task in the ProgressTaskGrid, clicking the "Merge" action to open MergeConfirmModal, asserting that the modal contains MergePreviewPanel with the expected diff summary, exercising ConflictResolver by asserting it renders when conflicts are present or is hidden when the merge is clean, verifying FileDiffViewer (`@git-diff-view/react`) renders file diff content, and clicking Confirm to exercise the `merge.*` IPC channel. The spec should also verify the close and cancel paths to ensure the modal dismisses cleanly without leaving state behind.
 
 ---
 

@@ -170,21 +170,13 @@ export {
   ProfileSchema,
   WebhookConfigSchema,
   // tasks
-  EstimatedEffortSchema,
   ExecutionPhaseSchema,
   ExecutionProgressSchema,
-  GithubIssueImportSchema,
   HubTaskPrioritySchema,
   HubTaskProgressSchema,
   HubTaskSchema,
   HubTaskStatusSchema,
-  SubtaskSchema,
-  SuggestedPrioritySchema,
-  TaskDecompositionResultSchema,
-  TaskDraftSchema,
-  TaskSchema,
   TaskStatusSchema,
-  TaskSuggestionSchema,
   // terminals
   TerminalSessionSchema,
   // agent-dashboard

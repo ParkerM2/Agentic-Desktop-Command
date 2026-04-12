@@ -11,21 +11,24 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   HUB_SETUP: '/hub-setup',
-  ALERTS: '/alerts',
   ASSISTANT: '/assistant',
-  BRIEFING: '/briefing',
-  COMMUNICATIONS: '/communications',
+  INTEGRATIONS: '/integrations',
   DASHBOARD: '/dashboard',
-  FITNESS: '/fitness',
   MY_WORK: '/my-work',
-  NOTES: '/notes',
-  PLANNER: '/planner',
-  PLANNER_WEEKLY: '/planner/weekly',
-  PRODUCTIVITY: '/productivity',
+  PERSONAL: '/personal',
   PROJECTS: '/projects',
   SETTINGS: '/settings',
   AGENTS: '/agents',
   THEMES: '/settings/themes',
+  // Legacy routes — kept for redirect route definitions
+  ALERTS: '/alerts',
+  BRIEFING: '/briefing',
+  COMMUNICATIONS: '/communications',
+  FITNESS: '/fitness',
+  NOTES: '/notes',
+  PLANNER: '/planner',
+  PLANNER_WEEKLY: '/planner/weekly',
+  PRODUCTIVITY: '/productivity',
 } as const;
 
 /** Project sub-view path segments (appended to /projects/$projectId/) */
@@ -39,6 +42,7 @@ export const PROJECT_VIEWS = {
   TOOLS: 'tools',
   WORKFLOW: 'workflow',
   VISUALIZATION: 'visualization',
+  QA_RECORDER: 'qa-recorder',
 } as const;
 
 /** TanStack Router path patterns (use $projectId param syntax) */
@@ -53,6 +57,7 @@ export const ROUTE_PATTERNS = {
   PROJECT_TOOLS: '/projects/$projectId/tools',
   PROJECT_WORKFLOW: '/projects/$projectId/workflow',
   PROJECT_VISUALIZATION: '/projects/$projectId/visualization',
+  PROJECT_QA_RECORDER: '/projects/$projectId/qa-recorder',
   // Legacy patterns kept for redirect routes
   PROJECT_ROADMAP: '/projects/$projectId/roadmap',
   PROJECT_IDEATION: '/projects/$projectId/ideation',

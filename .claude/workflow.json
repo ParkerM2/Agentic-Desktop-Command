@@ -1,7 +1,7 @@
 {
   "projectRulesFile": "CLAUDE.md",
   "architectureFile": "docs/architecture/ARCHITECTURE.md",
-  "progressDir": "progress",
+  "progressDir": "tracking",
   "branching": {
     "baseBranch": "auto",
     "featurePrefix": "feature",

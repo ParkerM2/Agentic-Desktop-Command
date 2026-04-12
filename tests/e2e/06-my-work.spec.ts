@@ -23,6 +23,11 @@ test.describe('My Work Page', () => {
     await waitForPageContent(authenticatedWindow);
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('my work page loads with header', async ({ authenticatedWindow }) => {
     // Verify we navigated to the my-work route
     await expect(authenticatedWindow).toHaveURL(/\/my-work/);

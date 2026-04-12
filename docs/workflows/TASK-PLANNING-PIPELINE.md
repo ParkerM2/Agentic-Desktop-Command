@@ -6,10 +6,9 @@
 > the planning pipeline into a single reference so you don't need to cross-read
 > ARCHITECTURE.md, DATA-FLOW.md, and FEATURES-INDEX.md.
 >
-> **Local-first:** All pipeline stages work offline. Task creation, status transitions,
-> and plan completion go through `TaskRepository` which writes locally (`.adc/specs/`)
-> and mirrors to Hub when connected. Hub is optional for all operations except
-> `executeTask`/`cancelTask` (remote dispatch).
+> **SQLite-backed:** All pipeline stages work offline. Task creation, status transitions,
+> and plan completion go through `ProgressService` which reads/writes the `progress_tasks`
+> SQLite table.
 
 ---
 
@@ -22,7 +21,7 @@ User creates task (backlog)
 "Start Planning" clicked (ActionsCell)
   │
   ▼
-ipc('agent.startPlanning') ──► taskRepository: backlog → planning (local + Hub mirror)
+ipc('agent.startPlanning') ──► progressService: backlog → planning (SQLite progress_tasks)
   │                              Orchestrator spawns: claude -p "/plan-feature ..."
   │                              Hooks merged into .claude/settings.local.json
   │                              JSONL progress: {dataDir}/progress/{taskId}.jsonl
@@ -36,8 +35,8 @@ event-wiring.ts detects plan file
   │  └── Fallback: scan docs/features/*/plan.md (most recent)
   │
   ▼
-taskRepository: planning → plan_ready (local + Hub mirror)
-  │  planContent + planFilePath stored in task metadata (local + Hub mirror)
+progressService: planning → plan_ready (SQLite progress_tasks)
+  │  planContent + planFilePath stored in task metadata (SQLite progress_tasks)
   │  emit('event:agent.orchestrator.planReady')
   │  Restore original .claude/settings.local.json
   │
@@ -45,15 +44,15 @@ taskRepository: planning → plan_ready (local + Hub mirror)
 PlanViewer renders plan content
   │
   ├── "Approve & Execute" ──► ipc('agent.startExecution', { planRef })
-  │                            taskRepository: plan_ready → running (local + Hub mirror)
+  │                            progressService: plan_ready → running (SQLite progress_tasks)
   │
   ├── "Request Changes"   ──► PlanFeedbackDialog opens
   │                            User enters feedback
   │                            ipc('agent.replanWithFeedback', { feedback })
-  │                            taskRepository: plan_ready → planning (local + Hub mirror)
+  │                            progressService: plan_ready → planning (SQLite progress_tasks)
   │                            (cycle repeats)
   │
-  └── "Reject"            ──► taskRepository: status → backlog (local + Hub mirror)
+  └── "Reject"            ──► progressService: status → backlog (SQLite progress_tasks)
 ```
 
 ---
@@ -117,16 +116,14 @@ Contract source: `src/shared/ipc/agents/contract.ts`
 
 | File | Role |
 |------|------|
-| `src/main/services/tasks/types.ts` | `TaskRepository` interface and `TaskRepositoryDeps` |
-| `src/main/services/tasks/task-repository.ts` | Local-first implementation — reads/writes via TaskService, mirrors to Hub when connected |
-| `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Spawns/kills Claude CLI processes, manages sessions |
-| `src/main/services/agent-orchestrator/hooks-template.ts` | Merges progress-tracking hooks into `.claude/settings.local.json` |
-| `src/main/services/agent-orchestrator/types.ts` | `AgentSession` interface (includes `originalSettingsContent`) |
-| `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Watches JSONL files for progress entries |
-| `src/main/ipc/handlers/agent-orchestrator-handlers.ts` | 7 IPC handlers (planning, execution, replan, kill, restart, get, list) — uses `taskRepository` for status updates |
-| `src/main/ipc/handlers/tasks/hub-task-handlers.ts` | 8 `hub.tasks.*` IPC handlers — all proxy to `taskRepository` (local-first) |
-| `src/main/bootstrap/event-wiring.ts` | Forwards orchestrator events → IPC; plan detection uses `taskRepository` for status + metadata updates |
-| `src/main/bootstrap/service-registry.ts` | Creates and exposes all services including `taskRepository` |
+| `src/main/features/progress/progress-service.ts` | SQLite-backed task CRUD via `progress_tasks` table |
+| `src/main/features/progress/progress-handlers.ts` | IPC handlers for progress/task operations |
+| `src/main/features/progress/schema.ts` | Drizzle ORM schema (`progress_tasks` table) |
+| `src/main/agent-host/agent-host-client.ts` | Main process proxy to Agent Host utility process (shared `AgentManager` interface) |
+| `src/main/agent-host/index.ts` | Utility process: `ProcessManager`, `StreamJsonParser`, `AgentManagerService` |
+| `src/main/bus/session-manager.ts` | SQLite-backed session lifecycle (spawn, kill, list, crash recovery) |
+| `src/main/bootstrap/event-wiring.ts` | Forwards orchestrator events → IPC; plan detection uses `progressService` for status + metadata updates |
+| `src/main/bootstrap/service-registry.ts` | Creates and exposes all services including `progressService` |
 
 ### Frontend (renderer)
 
@@ -137,8 +134,8 @@ Contract source: `src/shared/ipc/agents/contract.ts`
 | `src/renderer/features/tasks/components/detail/PlanViewer.tsx` | Renders plan content + Approve/Request Changes buttons |
 | `src/renderer/features/tasks/components/detail/PlanFeedbackDialog.tsx` | Textarea dialog for feedback when requesting plan changes |
 | `src/renderer/features/tasks/components/cells/ActionsCell.tsx` | Brain icon (Start Planning), play icon (Start Execution), feedback actions |
-| `src/renderer/features/tasks/components/detail/TaskDetailRow.tsx` | Expandable detail row — shows PlanViewer when plan exists |
-| `src/renderer/features/tasks/components/grid/TaskDataGrid.tsx` | Main grid — wires `handleStartExecution` with `planRef` from metadata |
+| `src/renderer/features/tasks/components/detail/ProgressTaskDetailRow.tsx` | Expandable detail row — shows PlanViewer when plan exists |
+| `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx` | Main grid — wires `handleStartExecution` with `planRef` from metadata |
 
 ### Shared
 
@@ -168,8 +165,8 @@ When a planning-phase agent completes (exit code 0), `event-wiring.ts` runs `det
 
 If found:
 - Reads the plan file content
-- Calls `taskRepository.updateTaskStatus(taskId, 'plan_ready')` (local + Hub mirror)
-- Calls `taskRepository.updateTask(taskId, { metadata: { planContent, planFilePath } })` (local + Hub mirror)
+- Calls `progressService.updateTaskStatus(taskId, 'plan_ready')` (SQLite progress_tasks)
+- Calls `progressService.updateTask(taskId, { metadata: { planContent, planFilePath } })` (SQLite progress_tasks)
 - Emits `event:agent.orchestrator.planReady` IPC event
 
 ---

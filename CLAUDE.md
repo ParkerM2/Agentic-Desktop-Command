@@ -1,1009 +1,169 @@
-# ADC — Project Rules
+# Agent Desktop Command (ADC)
 
-> Electron 39 + React 19 + TypeScript strict + Zustand 5 + Tailwind v4. Solo project, AI is primary code writer.
+## Project Overview
+
+ADC is an Electron desktop app for multi-project management with agent team orchestration. It manages software projects, spawns Claude CLI agent sessions, tracks tasks in SQLite, and provides a rich dashboard UI.
+
+**Tech stack:** Electron 39, React 19, TypeScript, SQLite (Drizzle ORM), TanStack (Router/Query/Table/Form), Tailwind v4, Radix UI (via shadcn/ui primitives)
+
+**Three-process architecture:**
+- **Main process** — Node.js: SQLite, IPC router, services, settings, auth, file watchers
+- **Agent Host** (Electron utility process) — ProcessManager, StreamJsonParser, AgentManagerService: spawns Claude CLI sessions, communicates via MessagePort
+- **Renderer** — React app with Feature Slice Design, @ui design system, TanStack Query for data fetching
 
 ## Architecture
 
-- **Main**: `src/main/features/<domain>/` — co-located service + handler + schema per domain. Infrastructure in `src/main/bus/`, `src/main/db/`, `src/main/services/` (agent-manager only)
-- **Renderer**: `src/renderer/features/<domain>/` — React + TanStack Router + Zustand
-- **Shared**: `src/shared/ipc/<domain>/` — Zod IPC contracts, channel constants, types
-- **Aliases**: `@ui` `@features` `@shared` `@main` `@renderer`
+### Communication
 
-## Rules That Prevent Mistakes
+- **IPC** (main <-> renderer): `ipcRenderer.invoke` / `ipcMain.handle` via typed router with Zod validation
+- **MessagePort** (agent host <-> renderer): direct streaming for agent output, bypasses main process
+- **Correlation-ID RPC** (main <-> agent host): request/response over MessagePort with unique IDs
 
-1. **IPC**: Zod schema in `src/shared/ipc/<domain>/contract.ts` → thin handler co-located in `src/main/features/<domain>/` → barrel in `src/shared/ipc/index.ts`. No business logic in handlers.
-2. **Features (main)**: Each domain lives in `src/main/features/<domain>/` with service, handler, and schema co-located. Factory `createXService()` returning interface. `import type` for all interfaces.
-3. **UI**: Use `@ui` primitives — never raw `<button>` `<input>` `<label>`. Use `Heading`/`Text` from `@ui` instead of raw `<h1>`/`<p>`/`<span>` for content text. Import from `@ui`.
-4. **Features**: `index.ts` barrel + `api/` + `components/` + `hooks/` + `store.ts`. Zustand = UI state only. Run `node scripts/scaffold-features.mjs` to audit compliance.
-4a. **Page Layout**: ALL pages use `PageHeader` compound component (`.Row`, `.Title`, `.Actions`, `.Tabs`, `.TabList`, `.Tab`, `.TabContent`). No legacy `title` prop. See `docs/patterns/PATTERNS.md`.
-5. **v2**: Do NOT build on `terminal-service` or xterm.js — deprecated. Use stream-json / JSONL.
-6. **Docs**: EVERY code change MUST update relevant docs. Non-negotiable.
-7. **Verify**: `npm run lint` + `npm run typecheck` + `npm run build` before marking done.
-8. **Worktrees**: Every agent works in an isolated git worktree. `scripts/worktree-setup.sh` runs automatically (WorktreeCreate hook in `.claude/settings.json`) to copy `.claude/settings.json` and install `node_modules/`. `.worktreeinclude` lists gitignored files to copy. Multiple teams can run in parallel on separate worktrees/branches. The WorktreeCreate hook is local-only (settings.json is gitignored) -- recreate it if missing.
+### Main Process
 
-## Caching Layer Rules
+Bootstrap sequence: lifecycle -> svc-registry -> ipc-wiring -> event-wiring. Services are co-located in `src/main/features/<domain>/`. Each service is a factory function receiving `{ db, router, ... }` deps.
 
-1. `store.ts` MUST NOT contain `useQuery`, `useMutation`, `ipc()`, or domain data types — stores hold UI state only
-2. `api/` files MUST NOT import from Zustand stores
-3. No `useIpcEvent` in feature code for data freshness — EventBridge owns all invalidation
-4. No `refetchInterval` on any query — events drive freshness
-5. Every feature with IPC data MUST have `api/queryKeys.ts` with factory pattern
-6. Query keys MUST use factory pattern, not inline arrays
-7. Mutations MUST invalidate via `onSuccess`/`onSettled`, not external event listeners
+### Agent Host (Utility Process)
 
-## Command Bus
+Spawns Claude CLI as child processes via PTY. Streams JSON output through `StreamJsonParser`. Auto-restarts with exponential backoff (5 retries / 60s). Agents are headless CLI sessions via `child_process.spawn` — not SDK API calls.
 
-All IPC channels are tracked by a central command bus backed by SQLite (`adc.db`).
+### Renderer
 
-1. **Channel constants** — use `DOMAIN.VERB.NOUN` constants from `src/shared/ipc/<domain>/channels.ts`. Never use string literals for channel names.
-2. **Bus dispatch** — the IPC router dispatches through the bus. Every command is logged with source attribution.
-3. **Sessions** — all Claude sessions are tracked in the `sessions` SQLite table via `BusSessionManager`. No in-memory-only session tracking.
-4. **Queries** — use `bus.queryCommands()` and `bus.queryEvents()` for analytics. Use `busSessionManager.list()` for session queries.
+Feature Slice Design with React Query for server state, Zustand for UI-only state (selections, filters, layout). EventBridge maps IPC events to query key invalidation.
 
-### Channel Constant Pattern
-```typescript
-// Import constants from the domain's channels.ts
-import { PROGRESS } from '@shared/ipc/progress/channels';
+## Data Layer
 
-// Use in contracts, handlers, and renderer calls
-router.handle(PROGRESS.CREATE.TASK, async (input) => { ... });
-const result = await ipc(PROGRESS.CREATE.TASK, { slug, title });
-```
+- **SQLite is the SINGLE source of truth** for all data — no filesystem task system
+- All entities have UUID primary keys generated via `crypto.randomUUID()`
+- Client generates UUIDs for future optimistic updates; services accept optional `id` parameter, fall back to `generateId()`
+- React Query mutations use simple `onSuccess` invalidation — NOT optimistic updates (IPC is <1ms)
+- `ProgressService` replaced old `.adc/specs/` filesystem task system
 
-## Finding Things
+## Feature Slice Design
 
-- Features/services/IPC lookup: `docs/routing/FEATURES-INDEX.md`
-- Domain end-to-end trace: `docs/routing/AI-AGENT-ROUTING-INDEX.md`
-- Full codebase map: `docs/INDEX.md`
-- Feature plans: `docs/features/<name>/plan.md`
-- Code patterns: `docs/patterns/PATTERNS.md`
-- Caching layer guide: `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`
-- File placement rules: `docs/patterns/CODEBASE-GUARDIAN.md`
-- Plan status: `docs/tracker.json`
-- Command bus: `src/main/bus/`
-- Database schema: `src/main/db/schema.ts`
-- Channel constants: `src/shared/ipc/<domain>/channels.ts`
-- Worktree setup script: `scripts/worktree-setup.sh`
-- Worktree include list: `.worktreeinclude`
-
-## Progress Task Pipeline
-
-Local-first task management backed by the `progress/` filesystem. **The task list grid reads from `progress.*` IPC channels — NOT `hub.tasks.*`.**
-
-**IPC domain:** `progress`
-**Contract:** `src/shared/ipc/progress/contract.ts`
-**Types:** `src/shared/types/progress.ts` — `ProgressTask`, `ProgressStatus`, `ProgressPriority`
-
-**Additional ProgressTask fields:**
-- `lastSessionId?: string` — ID of last agent session that worked on this task
-- `lastAgentName?: string` — Name of last agent
-- `completedAt?: string` — When task was last successfully completed
-- `archivedAt?: string` — When task was archived
-- `teamName?: string` — Team that worked on this task
-- `sessionHistory?: Array<{sessionId, agentName, action, exitCode, timestamp}>` — Rolling history (last 20)
-**Service:** `src/main/features/progress/progress-service.ts` — `createProgressService(projectPath, agentManagerService, db)`
-**Handler:** `src/main/features/progress/progress-handlers.ts`
-**Renderer store:** `src/renderer/shared/stores/progress-context-store.ts` — `useProgressContext()`
-**Hydrator:** `src/renderer/shared/stores/ProgressContextHydrator.tsx` (mounted in RootLayout)
-
-### `progress/` Directory Structure
+Every domain follows this layer order:
 
 ```
-progress/
-├── <slug>/
-│   ├── task.md              ← root file (or description.md / ticket.md) — YAML frontmatter
-│   ├── research/
-│   │   └── research.md
-│   ├── plans/
-│   │   └── plan.md
-│   └── tasks/
-│       └── task-1.md        ← team subtask files
-└── archived/
-    └── <slug>/
+channels.ts -> contract.ts -> schema.ts -> service.ts -> handlers.ts -> hooks.ts -> components/ -> index.ts
 ```
 
-### Invoke Channels (12 total)
+- `src/shared/ipc/<domain>/channels.ts` — channel constants via `domain()` builder
+- `src/shared/ipc/<domain>/contract.ts` — Zod input/output schemas
+- `src/main/features/<domain>/schema.ts` — Drizzle SQLite table
+- `src/main/features/<domain>/<domain>-service.ts` — business logic
+- `src/main/features/<domain>/<domain>-handlers.ts` — thin IPC bridge
+- `src/renderer/features/<domain>/api/use<Domain>.ts` — React Query hooks
+- `src/renderer/features/<domain>/components/` — UI components
+- `src/renderer/features/<domain>/index.ts` — barrel export
 
-| Channel | Input | Output | Description |
-|---------|-------|--------|-------------|
-| `progress.listTasks` | `{}` | `ProgressTask[]` | List all non-archived tasks |
-| `progress.getTask` | `{ slug }` | `ProgressTask \| null` | Get single task with full content |
-| `progress.createTask` | `{ slug, title, description, priority? }` | `ProgressTask` | Create `progress/<slug>/task.md` |
-| `progress.updateTask` | `{ slug, updates }` | `ProgressTask` | Rewrite frontmatter fields |
-| `progress.archiveTask` | `{ slug }` | `{ success }` | Move to `progress/archived/<slug>/` |
-| `progress.deleteTask` | `{ slug }` | `{ success }` | Remove directory entirely |
-| `progress.listArchived` | `{}` | `ProgressTask[]` | List archived tasks |
-| `progress.startResearch` | `{ slug }` | `{ sessionId }` | Spawn research agent session |
-| `progress.createPlan` | `{ slug }` | `{ sessionId }` | Spawn planning agent session |
-| `progress.spinUpTeam` | `{ slug }` | `{ sessionId, action }` | Spawn team-lead to decompose plan |
-| `progress.runWorkflow` | `{ slug }` | `{ started: true }` | Run full Research→Plan→Team pipeline |
-| `progress.cancelAction` | `{ slug }` | `{ success }` | Stop active agent session for task |
-| `progress.runLogCleanup` | `{ maxAgeDays? }` | `{ deleted }` | Clean old JSONL session logs |
+Use `codebase-nav` skill to locate any domain across layers.
 
-### Event Channels (7 total)
+## Design System Rules
 
-| Channel | Payload | When |
-|---------|---------|------|
-| `event:progress.taskUpdated` | `{ slug, task }` | Any frontmatter or directory change |
-| `event:progress.taskCreated` | `{ slug, task }` | Task directory created |
-| `event:progress.taskArchived` | `{ slug }` | Task moved to archived/ |
-| `event:progress.actionStarted` | `{ slug, action, sessionId }` | Research/plan/team session spawned |
-| `event:progress.actionCompleted` | `{ slug, action }` | Session exited with code 0 |
-| `event:progress.actionFailed` | `{ slug, action, error }` | Session exited non-zero |
-| `event:progress.workflowStep` | `{ slug, step, status }` | Step progress during runWorkflow |
+- ALL UI uses `@ui` primitives — **NEVER** raw HTML `<button>`, `<input>`, `<label>`, `<select>`, `<textarea>`
+- Import from `@ui` barrel: `import { Button, Input, Label } from '@ui'`
+- Check `src/renderer/shared/components/ui/index.ts` for available exports
+- Use `PageLayout`, `PageHeader`, `PageContent` for page structure
+- Use `TransitionOutlet` for route animations
 
-### Workflow Template Event Channels
+## IPC Conventions
 
-| Channel | Payload | When |
-|---------|---------|------|
-| `event:workflowTemplates.created` | `{ templateId }` | Template created |
-| `event:workflowTemplates.updated` | `{ templateId }` | Template updated |
-| `event:workflowTemplates.deleted` | `{ templateId }` | Template deleted |
+- Channel constants via `domain()` builder: `DOMAIN.VERB.NOUN` format
+- Event channels via `events()` builder: `event:domain.verb.noun` format
+- Zod validation on all IPC inputs (contract files)
+- Typed channel constants — never hardcoded strings
+- Handlers are thin: validate input, call service, return result
 
-### Additional IPC Channels
-
-| Channel | Input | Output | Description |
-|---------|-------|--------|-------------|
-| `workflowTemplates.scanArtifacts` | `{}` | artifact list | Scans `.claude/skills/`, `.claude/commands/`, `.claude/agents/` |
-| `workflowTemplates.writeArtifact` | `{ type, name, content }` | `{ success }` | Writes generated artifact to correct `.claude/` location |
-| `workflow-engine.listArchived` | `{}` | archived run states | Returns archived workflow run state files |
-
-### Status Flow
+## Key Paths
 
 ```
-backlog → researching → research_done → planning → plan_ready → executing → review → done → archived
-                                                                                    ↘ error
+@shared    -> src/shared
+@main      -> src/main
+@renderer  -> src/renderer
+@features  -> src/renderer/features
+@ui        -> src/renderer/shared/components/ui
 ```
 
-Status is stored in frontmatter AND reconciled from directory contents on every read:
-- `research/research.md` exists → bumped to at least `research_done`
-- `plans/plan.md` exists → bumped to at least `plan_ready`
-- `tasks/task-*.md` exist → bumped to at least `executing`
-
-Frontmatter wins only if it represents higher progress than the directory state.
-
-### Agent Naming Convention
-
-Agents MUST use descriptive names: `{role}-{slug}` (e.g., `research-auth-refactor`, `team-lead-auth-refactor`, `service-engineer-auth-service`).
-
-## Workspace Agent Commands
-
-IPC channels for plan handoff and team-lead orchestration. Accessible from any session (primary, assistant, UI):
-
-| Channel | Purpose |
-|---------|---------|
-| `workspace.handOffPlan` | Send a plan file to an idle team-lead (or spawn a new one). Input: `{ projectId, planPath, instructions? }` |
-| `workspace.executeTask` | Send an ad-hoc task to a team-lead. Input: `{ projectId, taskDescription, planPath? }` |
-| `workspace.provisionTeammate` | Provision an isolated worktree for a teammate agent. Input: `{ projectId, agentRole, slug, teamName, taskInstructions? }` |
-| `workspace.teardownTeammate` | Tear down a teammate's worktree after completion. Input: `{ projectId, slug }` |
-| `workspace.spawnTeamLead` | Spawn a new mortal team-lead (with optional planPath). |
-| `workspace.sendMessage` | Send a message to any active session by sessionId. |
-
-### Renderer Hooks
-
-```typescript
-import { useHandOffPlan, useExecuteTask, useProvisionTeammate, useTeardownTeammate } from '@features/workspace/api/useWorkspace';
-```
-
-### Team-Lead Isolation
-
-Every team-lead runs in its own git worktree (`.worktrees/team-lead-{projectId}-{index}/`) with:
-- Custom CLAUDE.md generated from `.claude/agents/team-leader.md` + project rules
-- Enforcement hooks in `.claude/settings.local.json` that block Edit/Write/NotebookEdit
-- Full `.claude/` context (agents, skills, commands, settings)
-
-This prevents hook bleed-through between sessions. The team-lead physically cannot write code.
-
-### Teammate Isolation
-
-Team-leads call `workspace.provisionTeammate` before spawning a teammate agent. This creates:
-- Isolated worktree at `.worktrees/{slug}/`
-- Role-specific CLAUDE.md from `.claude/agents/{agentRole}.md`
-- No enforcement hooks (teammates need Edit/Write)
-
-After the teammate completes, the team-lead calls `workspace.teardownTeammate` to clean up.
-
-## Skills Available
-
-Use installed skills proactively — invoke before doing work manually:
-- `adc-design-system` — theme tokens, UI primitives, color-mix() rules
-- `electron-ipc` — adding IPC channels end-to-end with examples
-- `tailwind-css` — layout, alignment, responsive patterns
-- `create-frontend-ui` — building UI components
-- `frontend-developer` — React architecture, state, performance
-- `tanstack-router` / `tanstack-query` / `tanstack-form` / `tanstack-table` — TanStack patterns
-- `shadcn-ui` — component patterns
-- Run `node scripts/codebase-lookup.mjs <domain>` for instant file resolution
-
-
----
-
-<!-- AUTO-GENERATED BY ADC PROJECT SETUP -->
-<!-- Review and merge the sections below into your existing CLAUDE.md -->
-
-# ADC — Guidelines
-
-> Auto-generated by ADC Project Setup. Review and customize for your project.
-
-## Quick Reference
-
-```bash
-npm run dev
-npm run start
-npm run build
-npm run lint
-npm run lint:fix
-npm run test
-npm run format
-npm run typecheck
-```
-
-## Tech Stack
-
-| Layer | Tech | Version |
-|-------|------|---------|
-| Language | TypeScript | 64.3% |
-| Language | HTML | 16.7% |
-| Language | JavaScript | 14.3% |
-| Language | CSS | 4.8% |
-| Framework | react | - |
-| Framework | electron | - |
-| Framework | tailwind | - |
-| Package Manager | npm | - |
-| Test Framework | vitest | - |
-| Linter | eslint | - |
-| Types | TypeScript | - |
-| Styling | Tailwind CSS | - |
-| Runtime | Node.js | 24 |
-
-## Architecture Skeleton
-
-```
-├── .claude/
-│   ├── agents/
-│   ├── commands/
-│   ├── progress/
-│   │   ├── .claude/
-│   │   ├── adc-brand-suite/
-│   │   ├── adc-fix-first/
-│   │   ├── agent-dashboard-view/
-│   │   ├── archived/
-│   │   ├── BRAND-001/
-│   │   ├── claude-plugin-improvements/
-│   │   ├── doc-cleanup/
-│   │   ├── operation-cleanup/
-│   │   ├── tmux-replacement/
-│   │   ├── todos/
-│   │   ├── visualization-canvas/
-│   │   ├── workflow-standardization/
-│   │   └── workspace-and-assistant-redesign/
-│   ├── refs/
-│   ├── skills/
-│   │   ├── adc-design-system/
-│   │   ├── adc-design-system-workspace/
-│   │   ├── codebase-nav/
-│   │   ├── codebase-nav-workspace/
-│   │   ├── create-frontend-ui/
-│   │   ├── electron-ipc/
-│   │   ├── electron-ipc-workspace/
-│   │   ├── frontend-developer/
-│   │   ├── shadcn-ui/
-│   │   ├── svg-logo-designer/
-│   │   ├── svg-precision/
-│   │   ├── tailwind-css/
-│   │   ├── tanstack-form/
-│   │   ├── tanstack-query/
-│   │   ├── tanstack-router/
-│   │   ├── tanstack-table/
-│   │   └── tanstack-virtual/
-│   ├── tracking/
-│   │   ├── adc-brand-suite/
-│   │   ├── agent-dashboard-view/
-│   │   ├── customizable-sidebar-layouts/
-│   │   ├── doc-cleanup/
-│   │   ├── event-wiring-and-dead-code-cleanup/
-│   │   ├── p0-critical-fixes/
-│   │   ├── system-b-jsonl-progress-tracking/
-│   │   ├── tmux-replacement/
-│   │   ├── visualization-canvas/
-│   │   └── workspace-and-assistant-redesign/
-│   └── worktrees/
-│       ├── brand-tasks/
-│       └── work+visualization-canvas+page-route-nav/
-├── .dev_diary/
-│   └── adr/
-├── .e2e-test-tmp/
-│   ├── blob_storage/
-│   │   └── 3d0933ce-0d94-4528-a16a-24206da0ace0/
-│   ├── Cache/
-│   │   ├── Cache_Data/
-│   │   └── No_Vary_Search/
-│   ├── Code Cache/
-│   │   ├── js/
-│   │   └── wasm/
-│   ├── DawnGraphiteCache/
-│   ├── DawnWebGPUCache/
-│   ├── GPUCache/
-│   ├── Local Storage/
-│   │   └── leveldb/
-│   ├── logs/
-│   ├── Network/
-│   ├── Session Storage/
-│   └── Shared Dictionary/
-│       └── cache/
-├── .e2e-user-data/
-│   ├── blob_storage/
-│   │   └── 4a0d53a3-ebae-4458-a104-18b0677550cf/
-│   ├── Cache/
-│   │   ├── Cache_Data/
-│   │   └── No_Vary_Search/
-│   ├── Code Cache/
-│   │   ├── js/
-│   │   └── wasm/
-│   ├── DawnGraphiteCache/
-│   ├── DawnWebGPUCache/
-│   ├── GPUCache/
-│   ├── Local Storage/
-│   │   └── leveldb/
-│   ├── logs/
-│   ├── Network/
-│   ├── Session Storage/
-│   └── Shared Dictionary/
-│       └── cache/
-├── .e2e-user-data-fresh/
-│   ├── blob_storage/
-│   │   └── 536d360f-feb2-4ac6-963d-56f30823b5c5/
-│   ├── Cache/
-│   │   ├── Cache_Data/
-│   │   └── No_Vary_Search/
-│   ├── Code Cache/
-│   │   ├── js/
-│   │   └── wasm/
-│   ├── DawnGraphiteCache/
-│   ├── DawnWebGPUCache/
-│   ├── GPUCache/
-│   ├── Local Storage/
-│   │   └── leveldb/
-│   ├── logs/
-│   ├── Network/
-│   ├── Session Storage/
-│   └── Shared Dictionary/
-│       └── cache/
-├── .github/
-│   └── workflows/
-├── .playwright-mcp/
-├── .remember/
-│   ├── logs/
-│   │   └── autonomous/
-│   └── tmp/
-├── .worktrees/
-│   ├── adc-brand-suite/
-│   ├── BRAND-001/
-│   ├── custom-theme-editor/
-│   ├── e2e-testing-suite/
-│   ├── event-wiring-and-dead-code-cleanup/
-│   ├── sprint-2-feature-hardening/
-│   ├── sprint-3-ux-ui/
-│   ├── sprint-4-touch-up/
-│   ├── ui-fixes-r2/
-│   └── ui-layout-refactor/
-├── agents/
-├── assets/
-├── autoresearch/
-├── brand/
-├── certs/
-├── docs/
-│   ├── architecture/
-│   ├── contracts/
-│   ├── diagrams/
-│   ├── features/
-│   │   ├── agent-dashboard-view/
-│   │   ├── command-palette/
-│   │   ├── devices-ui/
-│   │   ├── docs-sync/
-│   │   ├── future-roadmap/
-│   │   ├── productivity-hub-restructure/
-│   │   ├── sidebar-architecture-refactor/
-│   │   ├── user-scoped-storage/
-│   │   ├── visualization/
-│   │   └── workspace-ui/
-│   ├── images/
-│   ├── patterns/
-│   ├── plans/
-│   ├── prompts/
-│   │   └── implementing-features/
-│   ├── research/
-│   ├── routing/
-│   ├── screenshots/
-│   │   └── homepage/
-│   ├── specs/
-│   ├── ui/
-│   └── workflows/
-├── hub/
-│   ├── data/
-│   └── src/
-│       ├── db/
-│       ├── lib/
-│       ├── middleware/
-│       ├── routes/
-│       ├── services/
-│       └── ws/
-├── logs/
-│   └── security/
-├── nginx/
-│   └── conf.d/
-├── out/
-│   ├── main/
-│   ├── preload/
-│   └── renderer/
-│       └── assets/
-├── progress/
-│   ├── operation-cleanup/
-│   │   └── research/
-│   ├── visualization/
-│   └── visualization-canvas/
-├── resources/
-│   └── social-media/
-├── scripts/
-│   ├── fonts/
-│   └── hooks/
-├── src/
-│   ├── main/
-│   │   ├── auth/
-│   │   ├── bootstrap/
-│   │   ├── ipc/
-│   │   ├── lib/
-│   │   ├── mcp/
-│   │   ├── mcp-servers/
-│   │   ├── services/
-│   │   └── tray/
-│   ├── preload/
-│   ├── renderer/
-│   │   ├── app/
-│   │   ├── features/
-│   │   ├── shared/
-│   │   └── styles/
-│   └── shared/
-│       ├── constants/
-│       ├── ipc/
-│       └── types/
-├── test-artifacts/
-│   ├── coverage/
-│   │   ├── main/
-│   │   └── shared/
-│   ├── playwright-reports/
-│   │   ├── data/
-│   │   └── trace/
-│   └── test-results/
-│       ├── .playwright-artifacts-125/
-│       ├── 01-auth-Auth-—-Login-Page--3a008--navigates-to-register-page/
-│       ├── 01-auth-Auth-—-Login-Page--3a008--navigates-to-register-page-retry1/
-│       ├── 01-auth-Auth-—-Login-Page--3a008--navigates-to-register-page-retry2/
-│       ├── 01-auth-Auth-—-Login-Page--5ef53-p-link-exists-on-login-page/
-│       ├── 01-auth-Auth-—-Login-Page--5ef53-p-link-exists-on-login-page-retry1/
-│       ├── 01-auth-Auth-—-Login-Page--5ef53-p-link-exists-on-login-page-retry2/
-│       ├── 01-auth-Auth-—-Login-Page--66488-d-inputs-and-Sign-In-button/
-│       ├── 01-auth-Auth-—-Login-Page--66488-d-inputs-and-Sign-In-button-retry1/
-│       ├── 01-auth-Auth-—-Login-Page--66488-d-inputs-and-Sign-In-button-retry2/
-│       ├── 01-auth-Auth-—-Login-Page--89669-n-shows-validation-or-error/
-│       ├── 01-auth-Auth-—-Login-Page--89669-n-shows-validation-or-error-retry1/
-│       ├── 01-auth-Auth-—-Login-Page--89669-n-shows-validation-or-error-retry2/
-│       ├── 01-auth-Auth-—-Login-Page--c7799-age-has-all-required-fields/
-│       ├── 01-auth-Auth-—-Login-Page--c7799-age-has-all-required-fields-retry1/
-│       ├── 01-auth-Auth-—-Login-Page--c7799-age-has-all-required-fields-retry2/
-│       ├── 01-auth-Auth-—-Login-Page-back-to-login-from-register-page/
-│       ├── 01-auth-Auth-—-Login-Page-back-to-login-from-register-page-retry1/
-│       ├── 01-auth-Auth-—-Login-Page-back-to-login-from-register-page-retry2/
-│       ├── 01-auth-Auth-—-Successful--be1f8-hboard-with-sidebar-visible/
-│       ├── 01-auth-Auth-—-Successful--be1f8-hboard-with-sidebar-visible-retry1/
-│       ├── 01-auth-Auth-—-Successful--be1f8-hboard-with-sidebar-visible-retry2/
-│       ├── 02-navigation-sweep-Naviga-00e2a-oard-navigates-to-dashboard/
-│       ├── 02-navigation-sweep-Naviga-00e2a-oard-navigates-to-dashboard-retry1/
-│       ├── 02-navigation-sweep-Naviga-00e2a-oard-navigates-to-dashboard-retry2/
-│       ├── 02-navigation-sweep-Naviga-548fb-oundaries-no-console-errors/
-│       ├── 02-navigation-sweep-Naviga-548fb-oundaries-no-console-errors-retry1/
-│       ├── 02-navigation-sweep-Naviga-548fb-oundaries-no-console-errors-retry2/
-│       ├── 02-navigation-sweep-Naviga-ad09e-itness-navigates-to-fitness/
-│       ├── 02-navigation-sweep-Naviga-ad09e-itness-navigates-to-fitness-retry1/
-│       ├── 02-navigation-sweep-Naviga-ad09e-itness-navigates-to-fitness-retry2/
-│       ├── 02-navigation-sweep-Naviga-e2f12-y-navigates-to-productivity/
-│       ├── 02-navigation-sweep-Naviga-e2f12-y-navigates-to-productivity-retry1/
-│       ├── 02-navigation-sweep-Naviga-e2f12-y-navigates-to-productivity-retry2/
-│       ├── 02-navigation-sweep-Naviga-ec419-tings-navigates-to-settings/
-│       ├── 02-navigation-sweep-Naviga-ec419-tings-navigates-to-settings-retry1/
-│       ├── 02-navigation-sweep-Naviga-ec419-tings-navigates-to-settings-retry2/
-│       ├── 02-navigation-sweep-Naviga-ec4e9-y-Work-navigates-to-my-work/
-│       ├── 02-navigation-sweep-Naviga-ec4e9-y-Work-navigates-to-my-work-retry1/
-│       ├── 02-navigation-sweep-Naviga-ec4e9-y-Work-navigates-to-my-work-retry2/
-│       ├── 02-navigation-sweep-Navigation-Sweep-every-page-has-content/
-│       ├── 02-navigation-sweep-Navigation-Sweep-every-page-has-content-retry1/
-│       ├── 02-navigation-sweep-Navigation-Sweep-every-page-has-content-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-00b60-em-highlighted-on-Dashboard/
-│       ├── 03-sidebar-mechanics-Sideb-00b60-em-highlighted-on-Dashboard-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-00b60-em-highlighted-on-Dashboard-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-22c10-ughout-sidebar-interactions/
-│       ├── 03-sidebar-mechanics-Sideb-22c10-ughout-sidebar-interactions-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-22c10-ughout-sidebar-interactions-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-2d0bb-nd-toggle-restores-ADC-text/
-│       ├── 03-sidebar-mechanics-Sideb-2d0bb-nd-toggle-restores-ADC-text-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-2d0bb-nd-toggle-restores-ADC-text-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-47b07-state-changes-on-navigation/
-│       ├── 03-sidebar-mechanics-Sideb-47b07-state-changes-on-navigation-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-47b07-state-changes-on-navigation-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-6e68c-sidebar-visible-after-login/
-│       ├── 03-sidebar-mechanics-Sideb-6e68c-sidebar-visible-after-login-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-6e68c-sidebar-visible-after-login-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-8bc95-bled-without-active-project/
-│       ├── 03-sidebar-mechanics-Sideb-8bc95-bled-without-active-project-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-8bc95-bled-without-active-project-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-b9bb3-ide-nav-and-still-clickable/
-│       ├── 03-sidebar-mechanics-Sideb-b9bb3-ide-nav-and-still-clickable-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-b9bb3-ide-nav-and-still-clickable-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-d2ab4-DC-text-and-narrows-sidebar/
-│       ├── 03-sidebar-mechanics-Sideb-d2ab4-DC-text-and-narrows-sidebar-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-d2ab4-DC-text-and-narrows-sidebar-retry2/
-│       ├── 03-sidebar-mechanics-Sideb-fb17f--persists-across-navigation/
-│       ├── 03-sidebar-mechanics-Sideb-fb17f--persists-across-navigation-retry1/
-│       ├── 03-sidebar-mechanics-Sideb-fb17f--persists-across-navigation-retry2/
-│       ├── 04-dashboard-Dashboard-Active-agents-section-visible/
-│       ├── 04-dashboard-Dashboard-Active-agents-section-visible-retry1/
-│       ├── 04-dashboard-Dashboard-Daily-stats-visible/
-│       ├── 04-dashboard-Dashboard-Daily-stats-visible-retry1/
-│       ├── 04-dashboard-Dashboard-Daily-stats-visible-retry2/
-│       ├── 04-dashboard-Dashboard-gre-8247b-r-shows-time-aware-greeting-retry1/
-│       ├── 04-dashboard-Dashboard-gre-8247b-r-shows-time-aware-greeting-retry2/
-│       ├── 04-dashboard-Dashboard-loads-after-login/
-│       ├── 04-dashboard-Dashboard-loads-after-login-retry1/
-│       ├── 04-dashboard-Dashboard-no-console-errors/
-│       ├── 04-dashboard-Dashboard-no-console-errors-retry1/
-│       ├── 04-dashboard-Dashboard-no-console-errors-retry2/
-│       ├── 04-dashboard-Dashboard-no-error-boundaries/
-│       ├── 04-dashboard-Dashboard-no-error-boundaries-retry1/
-│       ├── 04-dashboard-Dashboard-no-error-boundaries-retry2/
-│       ├── 04-dashboard-Dashboard-Qui-b23dc-nput-and-add-button-visible/
-│       ├── 04-dashboard-Dashboard-Qui-b23dc-nput-and-add-button-visible-retry1/
-│       ├── 04-dashboard-Dashboard-Qui-b23dc-nput-and-add-button-visible-retry2/
-│       ├── 04-dashboard-Dashboard-QuickCapture-add-a-capture/
-│       ├── 04-dashboard-Dashboard-QuickCapture-add-a-capture-retry1/
-│       ├── 04-dashboard-Dashboard-QuickCapture-add-a-capture-retry2/
-│       ├── 04-dashboard-Dashboard-QuickCapture-delete-a-capture/
-│       ├── 04-dashboard-Dashboard-QuickCapture-delete-a-capture-retry1/
-│       ├── 04-dashboard-Dashboard-Recent-Projects-section-visible-retry1/
-│       ├── 05-briefing-Briefing-Page--0c80c-n-is-clickable-and-responds/
-│       ├── 05-briefing-Briefing-Page--0c80c-n-is-clickable-and-responds-retry1/
-│       ├── 05-briefing-Briefing-Page--0c80c-n-is-clickable-and-responds-retry2/
-│       ├── 05-briefing-Briefing-Page--9877a-ads-with-header-and-content/
-│       ├── 05-briefing-Briefing-Page--9877a-ads-with-header-and-content-retry1/
-│       ├── 05-briefing-Briefing-Page--9877a-ads-with-header-and-content-retry2/
-│       ├── 05-briefing-Briefing-Page-generate-button-is-visible/
-│       ├── 05-briefing-Briefing-Page-generate-button-is-visible-retry1/
-│       ├── 05-briefing-Briefing-Page-generate-button-is-visible-retry2/
-│       ├── 05-briefing-Briefing-Page-no-unexpected-console-errors/
-│       ├── 05-briefing-Briefing-Page-no-unexpected-console-errors-retry1/
-│       ├── 05-briefing-Briefing-Page-no-unexpected-console-errors-retry2/
-│       ├── 05-briefing-Briefing-Page-shows-stats-cards-or-empty-state/
-│       ├── 05-briefing-Briefing-Page-shows-stats-cards-or-empty-state-retry1/
-│       ├── 05-briefing-Briefing-Page-shows-stats-cards-or-empty-state-retry2/
-│       ├── 06-my-work-My-Work-Page-filter-interaction-changes-selection/
-│       ├── 06-my-work-My-Work-Page-filter-interaction-changes-selection-retry1/
-│       ├── 06-my-work-My-Work-Page-filter-interaction-changes-selection-retry2/
-│       ├── 06-my-work-My-Work-Page-my-work-page-loads-with-header/
-│       ├── 06-my-work-My-Work-Page-my-work-page-loads-with-header-retry1/
-│       ├── 06-my-work-My-Work-Page-my-work-page-loads-with-header-retry2/
-│       ├── 06-my-work-My-Work-Page-shows-task-list-or-empty-state/
-│       ├── 06-my-work-My-Work-Page-shows-task-list-or-empty-state-retry1/
-│       ├── 06-my-work-My-Work-Page-status-filter-dropdown-is-present/
-│       ├── 06-my-work-My-Work-Page-status-filter-dropdown-is-present-retry1/
-│       └── 06-my-work-My-Work-Page-status-filter-dropdown-is-present-retry2/
-└── tests/
-    ├── e2e/
-    │   ├── helpers/
-    │   └── screenshots/
-    ├── integration/
-    │   └── ipc-handlers/
-    ├── qa-scenarios/
-    ├── setup/
-    │   └── mocks/
-    └── unit/
-        └── services/
-```
-
-## Key Patterns
-
-### React
-
-- Use named function declarations for components (not arrow functions)
-- Hooks first, then derived state, then handlers, then render
-- Self-closing tags for empty elements: `<Component />`
-- Ternary for conditional rendering (not `&&`)
-
-### TypeScript
-
-- Use `import type { T }` for type-only imports
-- Avoid `any` — use `unknown` with type narrowing
-- No non-null assertions (`!`) — use `?? fallback` or proper null checks
-- Use `node:` protocol for Node.js builtins (`import { join } from 'node:path'`)
-
-### ESLint
-
-- Zero-tolerance policy — all violations must be fixed
-- Run `npm run lint` before committing
-
-### Tailwind CSS
-
-- Use CSS custom properties with Tailwind utility classes for theming
-- Avoid hardcoded color values in utility classes — use theme tokens
-
-## Import Order
-
-```typescript
-// 1. Node builtins
-import { join } from 'node:path';
-
-// 2. External packages
-import { useState } from 'react';
-
-// 3. Internal aliases
-import type { MyType } from '@shared/types';
-
-// 4. Relative imports
-import { MyComponent } from './MyComponent';
-```
-
-Blank line between each group. Alphabetical within groups.
-
-
----
-
-<!-- AUTO-GENERATED BY ADC PROJECT SETUP -->
-<!-- Review and merge the sections below into your existing CLAUDE.md -->
-
-# Agent-Desktop-Command — Guidelines
-
-> Auto-generated by ADC Project Setup. Review and customize for your project.
-
-## Quick Reference
-
-```bash
-npm run dev
-npm run start
-npm run build
-npm run lint
-npm run lint:fix
-npm run test
-npm run format
-npm run typecheck
-```
-
-## Tech Stack
-
-| Layer | Tech | Version |
-|-------|------|---------|
-| Language | TypeScript | 78.3% |
-| Language | JavaScript | 10.9% |
-| Language | HTML | 10.9% |
-| Framework | react | - |
-| Framework | electron | - |
-| Framework | tailwind | - |
-| Package Manager | npm | - |
-| Test Framework | vitest | - |
-| Linter | eslint | - |
-| Types | TypeScript | - |
-| Styling | Tailwind CSS | - |
-| Runtime | Node.js | 24 |
-
-## Architecture Skeleton
-
-```
-├── .claude/
-│   ├── .workflow-state/
-│   ├── agents/
-│   ├── progress/
-│   │   ├── .claude/
-│   │   ├── adc-brand-suite/
-│   │   ├── adc-fix-first/
-│   │   ├── agent-dashboard-view/
-│   │   ├── archived/
-│   │   ├── BRAND-001/
-│   │   ├── claude-plugin-improvements/
-│   │   ├── doc-cleanup/
-│   │   ├── E2E-DOC-001/
-│   │   ├── e2e-documentation/
-│   │   ├── hub-relay/
-│   │   ├── operation-cleanup/
-│   │   ├── sqlite-wave1-captures-notes/
-│   │   ├── tmux-replacement/
-│   │   ├── todos/
-│   │   ├── visualization-canvas/
-│   │   ├── workflow-standardization/
-│   │   └── workspace-and-assistant-redesign/
-│   ├── refs/
-│   ├── skills/
-│   │   ├── adc-design-system/
-│   │   ├── adc-design-system-workspace/
-│   │   ├── codebase-nav/
-│   │   ├── codebase-nav-workspace/
-│   │   ├── create-frontend-ui/
-│   │   ├── electron-ipc/
-│   │   ├── electron-ipc-workspace/
-│   │   ├── frontend-developer/
-│   │   ├── shadcn-ui/
-│   │   ├── svg-logo-designer/
-│   │   ├── svg-precision/
-│   │   ├── tailwind-css/
-│   │   ├── tanstack-form/
-│   │   ├── tanstack-query/
-│   │   ├── tanstack-router/
-│   │   ├── tanstack-table/
-│   │   └── tanstack-virtual/
-│   ├── tracking/
-│   │   ├── adc-brand-suite/
-│   │   ├── agent-dashboard-view/
-│   │   ├── customizable-sidebar-layouts/
-│   │   ├── doc-cleanup/
-│   │   ├── event-wiring-and-dead-code-cleanup/
-│   │   ├── p0-critical-fixes/
-│   │   ├── system-b-jsonl-progress-tracking/
-│   │   ├── tmux-replacement/
-│   │   ├── visualization-canvas/
-│   │   └── workspace-and-assistant-redesign/
-│   └── worktrees/
-│       ├── brand-tasks/
-│       ├── task-ui-and-workflow-editor/
-│       └── work+visualization-canvas+page-route-nav/
-├── .dev_diary/
-│   └── adr/
-├── .github/
-│   └── workflows/
-├── .playwright-mcp/
-├── .remember/
-│   ├── logs/
-│   │   └── autonomous/
-│   └── tmp/
-├── .worktrees/
-│   ├── adc-brand-suite/
-│   ├── assistant-progress-tools/
-│   │   ├── .claude/
-│   │   ├── .dev_diary/
-│   │   ├── .github/
-│   │   ├── agents/
-│   │   ├── ai-docs/
-│   │   ├── assets/
-│   │   ├── autoresearch/
-│   │   ├── brand/
-│   │   ├── docs/
-│   │   ├── hub/
-│   │   ├── nginx/
-│   │   ├── progress/
-│   │   ├── resources/
-│   │   ├── scripts/
-│   │   ├── src/
-│   │   └── tests/
-│   ├── BRAND-001/
-│   ├── custom-theme-editor/
-│   ├── e2e-documentation/
-│   ├── e2e-testing-suite/
-│   ├── event-wiring-and-dead-code-cleanup/
-│   ├── hub-relay/
-│   ├── hub-relay-gaps/
-│   │   ├── .claude/
-│   │   ├── .dev_diary/
-│   │   ├── .github/
-│   │   ├── agents/
-│   │   ├── ai-docs/
-│   │   ├── assets/
-│   │   ├── autoresearch/
-│   │   ├── brand/
-│   │   ├── docs/
-│   │   ├── hub/
-│   │   ├── nginx/
-│   │   ├── out/
-│   │   ├── progress/
-│   │   ├── resources/
-│   │   ├── scripts/
-│   │   ├── src/
-│   │   └── tests/
-│   ├── sprint-2-feature-hardening/
-│   ├── sprint-3-ux-ui/
-│   ├── sprint-4-touch-up/
-│   ├── task-pipeline/
-│   ├── team-lead-jiJ5qeQpjcjVTkNEL5GX_-0/
-│   ├── ui-composition-audit/
-│   ├── ui-fixes-r2/
-│   ├── ui-layout-refactor/
-│   └── workflow-standardization/
-│       ├── template-schema/
-│       └── workflow-engine/
-├── agents/
-├── ai-docs/
-├── assets/
-├── autoresearch/
-├── brand/
-├── certs/
-├── docs/
-│   ├── architecture/
-│   ├── contracts/
-│   ├── diagrams/
-│   ├── features/
-│   │   ├── agent-dashboard-view/
-│   │   ├── assistant-popover-refactor/
-│   │   ├── command-palette/
-│   │   ├── devices-ui/
-│   │   ├── docs-sync/
-│   │   ├── future-roadmap/
-│   │   ├── productivity-hub-restructure/
-│   │   ├── session-persistence/
-│   │   ├── sidebar-architecture-refactor/
-│   │   ├── sidenav-restructure/
-│   │   ├── task-pipeline/
-│   │   ├── user-scoped-storage/
-│   │   ├── visualization/
-│   │   └── workspace-ui/
-│   ├── images/
-│   ├── patterns/
-│   ├── plans/
-│   ├── prompts/
-│   │   └── implementing-features/
-│   ├── research/
-│   ├── routing/
-│   ├── screenshots/
-│   │   └── homepage/
-│   ├── specs/
-│   ├── superpowers/
-│   │   ├── plans/
-│   │   └── specs/
-│   ├── testing/
-│   ├── ui/
-│   └── workflows/
-├── drizzle/
-│   └── meta/
-├── hub/
-│   ├── data/
-│   └── src/
-│       ├── db/
-│       ├── lib/
-│       ├── middleware/
-│       ├── routes/
-│       ├── services/
-│       └── ws/
-├── logs/
-│   └── security/
-├── nginx/
-│   └── conf.d/
-├── out/
-│   ├── main/
-│   ├── preload/
-│   └── renderer/
-│       └── assets/
-├── progress/
-│   ├── archived/
-│   │   ├── assistant-fix/
-│   │   ├── assistant-ipc-skills/
-│   │   ├── caching-layer-consolidation/
-│   │   ├── session-persistence/
-│   │   ├── system-history-groundwork/
-│   │   └── task-ui-and-workflow-editor/
-│   ├── assistant-auto-tools/
-│   │   └── plans/
-│   ├── command-bus-phase2/
-│   │   └── tasks/
-│   ├── dashboard-redesign/
-│   ├── e2e-documentation/
-│   │   └── tasks/
-│   ├── feature-consolidation-audit/
-│   ├── hub-relay/
-│   │   ├── plans/
-│   │   ├── research/
-│   │   └── tasks/
-│   ├── hub-relay-gaps/
-│   ├── operation-cleanup/
-│   │   └── research/
-│   ├── plugin-tracking-integration/
-│   │   └── research/
-│   ├── relay-session-lifecycle/
-│   │   ├── plans/
-│   │   └── research/
-│   ├── storybook-feature/
-│   ├── tanstack-table-migration/
-│   ├── task-pipeline/
-│   │   ├── .workflow-state/
-│   │   └── tasks/
-│   ├── terminals-rework/
-│   ├── tools-screen-claude-config/
-│   ├── ui-composition-audit/
-│   │   ├── plans/
-│   │   └── tasks/
-│   ├── update-docs/
-│   │   ├── plans/
-│   │   └── research/
-│   ├── update-plan-card/
-│   ├── visualization/
-│   ├── visualization-canvas/
-│   └── workflow-standardization/
-├── resources/
-│   └── social-media/
-├── scripts/
-│   ├── fonts/
-│   └── hooks/
-├── src/
-│   ├── main/
-│   │   ├── auth/
-│   │   ├── bootstrap/
-│   │   ├── bus/
-│   │   ├── db/
-│   │   ├── features/
-│   │   ├── ipc/
-│   │   ├── lib/
-│   │   ├── mcp/
-│   │   ├── mcp-servers/
-│   │   ├── services/
-│   │   └── tray/
-│   ├── preload/
-│   ├── renderer/
-│   │   ├── app/
-│   │   ├── features/
-│   │   ├── shared/
-│   │   └── styles/
-│   └── shared/
-│       ├── constants/
-│       ├── ipc/
-│       └── types/
-└── tests/
-    ├── .test-tmp/
-    ├── e2e/
-    │   ├── helpers/
-    │   └── screenshots/
-    ├── integration/
-    │   └── ipc-handlers/
-    ├── qa-scenarios/
-    ├── setup/
-    │   └── mocks/
-    └── unit/
-        ├── renderer/
-        ├── services/
-        └── shared/
-```
-
-## Key Patterns
-
-### React
-
-- Use named function declarations for components (not arrow functions)
-- Hooks first, then derived state, then handlers, then render
-- Self-closing tags for empty elements: `<Component />`
-- Ternary for conditional rendering (not `&&`)
-
-### TypeScript
-
-- Use `import type { T }` for type-only imports
-- Avoid `any` — use `unknown` with type narrowing
-- No non-null assertions (`!`) — use `?? fallback` or proper null checks
-- Use `node:` protocol for Node.js builtins (`import { join } from 'node:path'`)
-
-### ESLint
-
-- Zero-tolerance policy — all violations must be fixed
-- Run `npm run lint` before committing
-
-### Tailwind CSS
-
-- Use CSS custom properties with Tailwind utility classes for theming
-- Avoid hardcoded color values in utility classes — use theme tokens
-
-## Import Order
-
-```typescript
-// 1. Node builtins
-import { join } from 'node:path';
-
-// 2. External packages
-import { useState } from 'react';
-
-// 3. Internal aliases
-import type { MyType } from '@shared/types';
-
-// 4. Relative imports
-import { MyComponent } from './MyComponent';
-```
-
-Blank line between each group. Alphabetical within groups.
+## Available Tools
+
+- **30 agent definitions** in `.claude/agents/` — specialist agents for each engineering role
+- **17 skills** in `.claude/skills/` — `codebase-nav` for file lookup, `scaffold-feature` for new domains
+- **context7 plugin** — live documentation for all libraries
+- **Playwright MCP** — browser automation for E2E testing
+- **Chrome DevTools MCP** — debugging running Electron app
+- **Electron MCP** — screenshot and interact with running app
+
+### MCP Server Discipline
+
+Each connected MCP server costs ~18K tokens per turn in tool definitions. Only connect what you need:
+
+| Task Type | Servers Needed |
+|-----------|---------------|
+| General coding | context7 only |
+| UI development | context7, Chrome DevTools |
+| E2E testing | Playwright, Chrome DevTools |
+| Debugging running app | Electron, Chrome DevTools |
+| Design implementation | Figma, context7 |
+
+Disconnect unused servers between task types. Never connect all servers simultaneously.
+
+## Testing
+
+- Unit tests: `npm run test:unit` (Vitest)
+- Integration tests: `npm run test:integration` (Vitest)
+- E2E tests: `npm run test:e2e` (Playwright)
+- Lint only changed files for agents: `npx eslint <file1> <file2>`
+- Typecheck: `npx tsc --noEmit`
+- Full check: `npm run lint && npm run typecheck && npm run build`
+
+## Context Management
+
+### Compaction Preservation
+When context compresses (auto or via `/compact`), always preserve:
+- Current task number and wave progress
+- Full list of modified files in this session
+- Any unresolved errors or blockers
+- Branch name and last commit hash
+
+### Session Hygiene
+- Target 15-20 messages per session for optimal cache utilization
+- Run `/compact` after completing each wave, not when context is nearly full
+- Subagents should write output to disk and return only a confirmation line
+- Use `/clear` when switching between unrelated tasks
+
+### Model Routing
+- **Haiku** — file lookups, grep tasks, simple renames, boilerplate generation
+- **Sonnet** — standard implementation, bug fixes, hook/skill authoring
+- **Opus** — architecture decisions, multi-file refactors, complex debugging
+
+## Current Sprint Plan
+
+Reference: `docs/superpowers/plans/2026-04-11-gap-closure-multi-sprint.md`
+44 tasks across 7 sprints closing feature gaps identified by full-system data flow audit.
+
+## Communication Standards
+
+### Facts Only
+- State ONLY what you can verify from code, docs, or tool output
+- If you don't know something, say "I don't know — let me check" and use Grep/Read/WebSearch
+- NEVER guess at file paths, function names, or behavior — look it up
+- NEVER claim code works without running typecheck/lint/tests
+- If a user asks about something not in your context, research it before answering
+
+### No Filler
+- No compliments ("Great question!", "That's a great idea!")
+- No hedging ("I think", "It seems like", "I believe") — verify and state facts
+- No summaries of what you're about to do — just do it
+- No apologies unless you actually broke something
+- No emoji unless the user uses them first
+
+### When Wrong
+- If caught in an error, state what was wrong, what the correct answer is, and move on
+- Don't over-explain or justify mistakes
+- Don't blame tools, context, or "complexity"
+
+### Verification Before Claims
+- Run `npx tsc --noEmit` before claiming typecheck passes
+- Run `npx eslint <files>` before claiming lint passes
+- Read a file before claiming what's in it
+- Grep before claiming something doesn't exist

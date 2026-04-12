@@ -169,6 +169,17 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
+  const qaRecorderRoute = createRoute({
+    getParentRoute: () => appLayoutRoute,
+    path: ROUTE_PATTERNS.PROJECT_QA_RECORDER,
+    staticData: { breadcrumbLabel: 'QA Recorder' },
+    pendingComponent: ProjectSkeleton,
+    component: lazyRouteComponent(
+      () => import('@features/qa-recorder'),
+      'QaRecorderPage',
+    ),
+  });
+
   return [
     projectsRoute,
     projectRoute,
@@ -180,6 +191,7 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     toolsRoute,
     workflowRoute,
     visualizationRoute,
+    qaRecorderRoute,
     // Legacy redirects
     roadmapRedirect,
     ideationRedirect,

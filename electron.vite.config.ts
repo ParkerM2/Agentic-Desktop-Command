@@ -14,6 +14,13 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
+          'agent-host/index': resolve(__dirname, 'src/main/agent-host/index.ts'),
+        },
+        output: {
+          entryFileNames: (chunkInfo) => {
+            if (chunkInfo.name === 'agent-host/index') return 'agent-host/index.cjs';
+            return '[name].cjs';
+          },
         },
       },
     },

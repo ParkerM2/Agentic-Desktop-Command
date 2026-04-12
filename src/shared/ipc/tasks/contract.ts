@@ -7,66 +7,14 @@
 
 import { z } from 'zod';
 
-import { HUB_TASKS, HUB_TASKS_EVENTS, TASKS, TASKS_EVENTS } from './channels';
+import { HUB_TASKS, HUB_TASKS_EVENTS, TASKS_EVENTS } from './channels';
 import {
   ExecutionProgressSchema,
-  GithubIssueImportSchema,
   HubTaskPrioritySchema,
   HubTaskSchema,
   HubTaskStatusSchema,
-  TaskDecompositionResultSchema,
-  TaskDraftSchema,
-  TaskSchema,
   TaskStatusSchema,
 } from './schemas';
-
-/** Invoke channels for local task operations */
-export const tasksInvoke = {
-  [TASKS.LIST.ALL]: {
-    input: z.object({ projectId: z.string() }),
-    output: z.array(TaskSchema),
-  },
-  [TASKS.GET.TASK]: {
-    input: z.object({ projectId: z.string(), taskId: z.string() }),
-    output: TaskSchema,
-  },
-  [TASKS.CREATE.TASK]: {
-    input: TaskDraftSchema,
-    output: TaskSchema,
-  },
-  [TASKS.UPDATE.TASK]: {
-    input: z.object({ taskId: z.string(), updates: z.record(z.string(), z.unknown()) }),
-    output: TaskSchema,
-  },
-  [TASKS.UPDATE.STATUS]: {
-    input: z.object({ taskId: z.string(), status: TaskStatusSchema }),
-    output: TaskSchema,
-  },
-  [TASKS.DELETE.TASK]: {
-    input: z.object({ taskId: z.string(), projectId: z.string() }),
-    output: z.object({ success: z.boolean() }),
-  },
-  [TASKS.EXECUTE.TASK]: {
-    input: z.object({ taskId: z.string(), projectId: z.string() }),
-    output: z.object({ agentId: z.string() }),
-  },
-  [TASKS.LIST.EVERY]: {
-    input: z.object({}),
-    output: z.array(TaskSchema),
-  },
-  [TASKS.DECOMPOSE.TASK]: {
-    input: z.object({ description: z.string().min(1) }),
-    output: TaskDecompositionResultSchema,
-  },
-  [TASKS.IMPORT['GITHUB-ISSUES']]: {
-    input: z.object({ url: z.string(), projectId: z.string() }),
-    output: TaskSchema,
-  },
-  [TASKS.LIST_GITHUB.ISSUES]: {
-    input: z.object({ owner: z.string(), repo: z.string() }),
-    output: z.array(GithubIssueImportSchema),
-  },
-} as const;
 
 /** Invoke channels for Hub task operations */
 export const hubTasksInvoke = {

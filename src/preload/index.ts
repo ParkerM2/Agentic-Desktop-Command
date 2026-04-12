@@ -11,6 +11,7 @@
 
 import { contextBridge, ipcRenderer } from 'electron';
 
+import { ENV_VARS, APP_INFO_BRIDGE } from '@shared/constants/env';
 import type {
   InvokeChannel,
   InvokeInput,
@@ -61,9 +62,72 @@ const api: IpcBridge = {
 
 contextBridge.exposeInMainWorld('api', api);
 
+// ─── Agent Host Event Port ─────────────────────────────────
+// The main process sends a MessagePort via 'agent-host-events' channel
+// which the renderer uses for direct agent event subscriptions.
+
+/** Mutable holder so static analysis doesn't narrow the port to `null`. */
+const agentHostState: { port: MessagePort | null; pending: Array<(event: unknown) => void> } = {
+  port: null,
+  pending: [],
+};
+
+ipcRenderer.on('agent-host-events', (event) => {
+  const { ports } = event;
+  if (ports.length === 0) return;
+  const port = ports[0];
+
+  agentHostState.port = port;
+  port.start();
+
+  // Flush any callbacks that were registered before the port arrived
+  for (const cb of agentHostState.pending) {
+    const handler = (e: MessageEvent) => cb(e.data);
+    port.addEventListener('message', handler);
+  }
+  agentHostState.pending.length = 0;
+});
+
+const agentHostBridge = {
+  onEvent(callback: (event: unknown) => void): () => void {
+    const { port } = agentHostState;
+    if (port === null) {
+      // Queue callback for when port arrives
+      agentHostState.pending.push(callback);
+      return () => {
+        const idx = agentHostState.pending.indexOf(callback);
+        if (idx >= 0) agentHostState.pending.splice(idx, 1);
+      };
+    }
+    const handler = (e: MessageEvent) => callback(e.data);
+    port.addEventListener('message', handler);
+    return () => port.removeEventListener('message', handler);
+  },
+};
+
+contextBridge.exposeInMainWorld('agentHost', agentHostBridge);
+
+const appInfo = {
+  devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
+  version: process.env.npm_package_version ?? 'unknown',
+  devEmail: process.env[ENV_VARS.ADC_DEV_EMAIL] ?? '',
+  devPassword: process.env[ENV_VARS.ADC_DEV_PASSWORD] ?? '',
+} as const;
+
+contextBridge.exposeInMainWorld(APP_INFO_BRIDGE, appInfo);
+
 // Type declaration for the renderer process
 declare global {
   interface Window {
     api: IpcBridge;
+    agentHost: {
+      onEvent: (callback: (event: unknown) => void) => () => void;
+    };
+    appInfo: {
+      devMode: boolean;
+      version: string;
+      devEmail: string;
+      devPassword: string;
+    };
   }
 }

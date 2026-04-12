@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef } from 'react';
 
 import type { VoiceInputMode } from '@shared/types';
 
-import { useSpeechRecognition, useVoiceConfig } from '@features/voice';
+import { useSpeechRecognition, useVoiceConfig } from '@features/settings';
 
 // ─── Types ──────────────────────────────────────────────────
 

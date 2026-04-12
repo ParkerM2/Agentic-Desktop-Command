@@ -1,5 +1,7 @@
 # Command Bus Implementation Plan
 
+> **Note (2026-04):** This plan is historical. References to `HUB_TASKS` channels, `TaskRepository`, `TaskService`, and `.adc/specs/` describe the old file-based task system. The task system has since been replaced by `ProgressService` backed by a SQLite `progress_tasks` table, with `PROGRESS` channel constants.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace scattered JSON stores, in-memory session maps, and dual agent spawn paths with a unified command bus backed by SQLite.

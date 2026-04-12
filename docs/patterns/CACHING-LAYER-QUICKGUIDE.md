@@ -8,8 +8,12 @@
 ```
 IPC Events -> EventBridge -> React Query Cache -> Components
                                   ^
-                            Mutations (onSettled invalidation)
+                            Mutations (onSuccess invalidation)
 ```
+
+> **No optimistic updates.** IPC round-trips are <1ms, so optimistic updates add complexity
+> without perceptible UX benefit. All mutations use simple `onSuccess` invalidation.
+> The old `src/renderer/shared/lib/optimistic.ts` has been deleted.
 
 - **Layer 1: EventBridge** (`src/renderer/shared/components/EventBridge.tsx`) -- maps IPC events to query key invalidation
 - **Layer 2: Feature Queries** (`features/<name>/api/`) -- useQuery for reads, useMutation for writes
@@ -119,6 +123,7 @@ Then add the append logic in EventBridge's `handleAppend` function.
 5. Every feature with IPC data MUST have `api/queryKeys.ts` with factory pattern
 6. Query keys MUST use factory pattern, not inline arrays
 7. Mutations MUST invalidate via `onSuccess`/`onSettled`, not external event listeners
+8. No optimistic updates — IPC is <1ms; use simple `onSuccess` invalidation
 
 ## Anti-Patterns (Never Do These)
 

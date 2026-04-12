@@ -24,13 +24,17 @@ export function useCreateIdea() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: {
+      id?: string;
       title: string;
       description: string;
       category: IdeaCategory;
       tags?: string[];
       projectId?: string;
-    }) => ipc(IDEAS.CREATE.IDEA, data),
-    onSuccess: () => {
+    }) => {
+      const id = data.id ?? crypto.randomUUID();
+      return ipc(IDEAS.CREATE.IDEA, { ...data, id });
+    },
+    onSuccess() {
       void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },
   });
@@ -59,7 +63,7 @@ export function useDeleteIdea() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ipc(IDEAS.DELETE.IDEA, { id }),
-    onSuccess: () => {
+    onSuccess() {
       void queryClient.invalidateQueries({ queryKey: ideaKeys.lists() });
     },
   });

@@ -7,13 +7,13 @@
  * Emits 'event:alert.triggered' when an alert is due.
  */
 
-import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
 import { ALERTS_EVENTS } from '@shared/ipc/misc/alerts.channels';
+import { generateId } from '@shared/lib/id';
 import type { Alert, AlertLinkedTo, RecurringConfig } from '@shared/types';
 
 import { alerts } from '../../db/schema';
@@ -35,6 +35,7 @@ export interface AlertService {
 }
 
 interface CreateAlertInput {
+  id?: string;
   type: Alert['type'];
   message: string;
   triggerAt: string;
@@ -111,7 +112,7 @@ export function createAlertService(deps: {
     if (!nextDate) return;
 
     const nextAlert = {
-      id: randomUUID(),
+      id: generateId(),
       type: alert.type,
       message: alert.message,
       triggerAt: nextDate.toISOString(),
@@ -182,7 +183,7 @@ export function createAlertService(deps: {
     createAlert(data) {
       const now = new Date().toISOString();
       const alert = {
-        id: randomUUID(),
+        id: data.id ?? generateId(),
         type: data.type,
         message: data.message,
         triggerAt: data.triggerAt,

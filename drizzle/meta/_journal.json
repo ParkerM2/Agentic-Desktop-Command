@@ -50,6 +50,41 @@
       "when": 1775720146966,
       "tag": "0006_perpetual_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1775800000000,
+      "tag": "0007_json_elimination",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1775800100000,
+      "tag": "0008_table_consolidation",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1775843000000,
+      "tag": "0009_qa_recorder",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1775843100000,
+      "tag": "0010_uuid_progress_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1775843200000,
+      "tag": "0011_uuid_natural_key_tables",
+      "breakpoints": true
     }
   ]
 }

@@ -100,7 +100,7 @@ export function AppSidebar() {
           groupStyle={config.groupStyle}
           isActive={isPersonalActive}
           items={personalItems}
-          label="Personal"
+          label="Navigation"
           showTooltips={config.showTooltips}
           onNavigate={handlePersonalNav}
         />

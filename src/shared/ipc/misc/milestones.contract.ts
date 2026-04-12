@@ -37,6 +37,7 @@ export const milestonesInvoke = {
   },
   [MILESTONES.CREATE.MILESTONE]: {
     input: z.object({
+      id: z.string().optional(),
       title: z.string(),
       description: z.string(),
       targetDate: z.string(),

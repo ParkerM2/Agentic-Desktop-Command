@@ -13,6 +13,11 @@ import { navigateToSettings } from './helpers/navigation';
 import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Settings Page', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('Settings loads via sidebar footer click', async ({ authenticatedWindow: page }) => {
     await navigateToSettings(page);
     await expect(page).toHaveURL(/\/settings/);

@@ -1,22 +1,21 @@
 /**
  * DonePanel — Full summary card for completed tasks.
- * Shows plan, QA report, PR status, subtasks, and timing stats.
+ * Shows plan, QA report, PR status, and timing stats.
  */
 
 import { Calendar, CheckCircle2, Clock } from 'lucide-react';
 
-import type { Task } from '@shared/types';
+import type { ProgressTask } from '@shared/types/progress';
 
 import { formatDuration, formatRelativeTime } from '@renderer/shared/lib/utils';
 
 import { PRStatusPanel } from '@features/tasks/components/detail/PrStatusPanel';
 import { QaReportViewer } from '@features/tasks/components/detail/QaReportViewer';
-import { SubtaskList } from '@features/tasks/components/detail/SubtaskList';
 
 import { MarkdownRenderer } from '../shared/MarkdownRenderer';
 
 interface DonePanelProps {
-  task: Task;
+  task: ProgressTask;
 }
 
 function computeDuration(createdAt: string, updatedAt: string): string {
@@ -28,7 +27,7 @@ function computeDuration(createdAt: string, updatedAt: string): string {
 }
 
 export function DonePanel({ task }: DonePanelProps) {
-  const planContent = task.metadata?.planContent as string | undefined;
+  const planContent = task.planContent ?? undefined;
 
   return (
     <div className="space-y-4">
@@ -49,13 +48,13 @@ export function DonePanel({ task }: DonePanelProps) {
         <div className="flex items-center gap-1.5">
           <Calendar className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
           <span className="text-muted-foreground text-xs">
-            Completed {formatRelativeTime(task.updatedAt)}
+            Completed {formatRelativeTime(task.completedAt ?? task.updatedAt)}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
           <Clock className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
           <span className="text-muted-foreground text-xs">
-            Duration: {computeDuration(task.createdAt, task.updatedAt)}
+            Duration: {computeDuration(task.createdAt, task.completedAt ?? task.updatedAt)}
           </span>
         </div>
       </div>
@@ -71,13 +70,10 @@ export function DonePanel({ task }: DonePanelProps) {
       ) : null}
 
       {/* QA Report */}
-      <QaReportViewer taskId={task.id} />
+      <QaReportViewer taskId={task.slug} />
 
       {/* PR Status */}
-      <PRStatusPanel prStatus={task.prStatus} prUrl={task.metadata?.prUrl} />
-
-      {/* Subtask list */}
-      {task.subtasks.length > 0 ? <SubtaskList subtasks={task.subtasks} /> : null}
+      <PRStatusPanel prStatus={undefined} prUrl={task.prUrl} />
     </div>
   );
 }

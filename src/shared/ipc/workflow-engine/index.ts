@@ -1,5 +1,9 @@
 /**
  * WorkflowEngine IPC — Barrel Export
+ *
+ * @deprecated All workflow-engine channels and schemas have been absorbed
+ * into src/shared/ipc/workflow/. Import from there instead.
+ * These re-exports exist for backwards compatibility only.
  */
 
 export {

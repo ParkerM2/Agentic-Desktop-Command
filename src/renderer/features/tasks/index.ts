@@ -2,27 +2,8 @@
  * Tasks feature -- public API
  */
 
-// API hooks
-export { useTasks, useTask, useAllTasks, useCreateTask } from './api/useTasks';
-export {
-  useUpdateTaskStatus,
-  useDeleteTask,
-  useExecuteTask,
-  useCancelTask,
-} from './api/useTaskMutations';
-export {
-  useStartPlanning,
-  useStartExecution,
-  useKillAgent,
-  useRestartFromCheckpoint,
-} from './api/useAgentMutations';
-export {
-  useQaReport,
-  useQaSession,
-  useStartQuietQa,
-  useStartFullQa,
-  useCancelQa,
-} from './api/useQaMutations';
+// API hooks (only barrel-export hooks with external consumers)
+export { useAllTasks } from './api/useTasks';
 export { taskKeys } from './api/queryKeys';
 
 // Events
@@ -36,7 +17,6 @@ export { useTaskUI } from './store';
 // Components
 export { CreatePrDialog } from './components/CreatePrDialog';
 export { ProgressTaskGrid } from './components/grid/ProgressTaskGrid';
-export { TaskDataGrid } from './components/grid/TaskDataGrid';
 export { TaskFiltersToolbar } from './components/TaskFiltersToolbar';
 export { TaskResultView } from './components/detail/TaskResultView';
 export { TaskStatusBadge } from './components/TaskStatusBadge';

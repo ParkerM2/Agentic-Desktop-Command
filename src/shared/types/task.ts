@@ -6,18 +6,6 @@ import type { TaskPriority, TaskStatus } from './hub/enums';
 
 export type { TaskPriority, TaskStatus } from './hub/enums';
 
-/**
- * Maps legacy on-disk status values to unified Hub status values.
- * Used when reading old spec files that may contain pre-unification statuses.
- */
-export const LEGACY_STATUS_MAP: Record<string, TaskStatus> = {
-  queue: 'queued',
-  in_progress: 'running',
-  ai_review: 'review',
-  human_review: 'review',
-  pr_created: 'done',
-};
-
 export type SubtaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 
 export type ReviewReason = 'completed' | 'errors' | 'qa_rejected' | 'plan_review';
@@ -121,43 +109,3 @@ export interface Task {
   updatedAt: string;
 }
 
-export interface TaskDraft {
-  title: string;
-  description: string;
-  projectId: string;
-  complexity?: 'simple' | 'standard' | 'complex';
-}
-
-export type TaskOrderState = Record<TaskStatus, string[]>;
-
-// ── Smart Task Creation Types ─────────────────────────────────
-
-/** Effort estimate for a suggested subtask. */
-export type EstimatedEffort = 'small' | 'medium' | 'large';
-
-/** Priority suggestion for a decomposed subtask. */
-export type SuggestedPriority = 'low' | 'medium' | 'high';
-
-/** A suggested subtask from LLM task decomposition. */
-export interface TaskSuggestion {
-  title: string;
-  description: string;
-  estimatedEffort: EstimatedEffort;
-  suggestedPriority: SuggestedPriority;
-}
-
-/** Result of decomposing a task description into subtasks. */
-export interface TaskDecompositionResult {
-  originalDescription: string;
-  suggestions: TaskSuggestion[];
-}
-
-/** Import data extracted from a GitHub issue. */
-export interface GithubIssueImport {
-  issueNumber: number;
-  issueUrl: string;
-  title: string;
-  body: string;
-  labels: string[];
-  assignees: string[];
-}

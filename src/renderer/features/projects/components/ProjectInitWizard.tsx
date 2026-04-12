@@ -19,6 +19,8 @@ import { PROJECTS } from '@shared/ipc/projects/channels';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 import { useWorkspaces } from '@features/workspaces';
 
 import { useAddProject, useCreateSubProject, useSetupExisting } from '../api/useProjects';
@@ -155,14 +157,16 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold">Initialize Project</h2>
-          <button
+          <Button
             aria-label="Close"
             className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
+            size="icon"
             type="button"
+            variant="ghost"
             onClick={onClose}
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Step Indicator */}
@@ -258,9 +262,10 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
 
         {/* Footer */}
         <div className="border-border flex items-center justify-between border-t px-6 py-4">
-          <button
+          <Button
             disabled={currentVisibleIndex <= 0}
             type="button"
+            variant="ghost"
             className={cn(
               'text-muted-foreground flex items-center gap-1 text-sm transition-colors',
               'hover:text-foreground disabled:invisible',
@@ -269,10 +274,10 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
           >
             <ChevronLeft className="h-4 w-4" />
             Back
-          </button>
+          </Button>
 
           {isLastStep ? (
-            <button
+            <Button
               type="button"
               className={cn(
                 'bg-primary text-primary-foreground rounded-lg px-5 py-2 text-sm font-medium transition-colors',
@@ -293,11 +298,12 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
               ) : (
                 'Create Project'
               )}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               disabled={step === 0 && selectedPath === null}
               type="button"
+              variant="ghost"
               className={cn(
                 'text-primary flex items-center gap-1 text-sm font-medium transition-colors',
                 'hover:text-primary/80 disabled:opacity-50',
@@ -306,7 +312,7 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
             >
               Next
               <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>

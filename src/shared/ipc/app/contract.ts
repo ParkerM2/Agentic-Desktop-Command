@@ -3,14 +3,27 @@
  *
  * Defines invoke channels for application-level operations:
  * version info, Claude auth checks, OAuth status, auto-updater,
- * and open-at-login settings.
+ * open-at-login settings, error/health monitoring, Docker setup,
+ * and window control.
  */
 
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { APP, APP_EVENTS } from './channels';
+import { APP, APP_EVENTS, DOCKER, WINDOW } from './channels';
+import {
+  DockerHubSetupResultSchema,
+  DockerStatusSchema,
+  ErrorCategorySchema,
+  ErrorEntrySchema,
+  ErrorSeveritySchema,
+  ErrorStatsSchema,
+  ErrorTierSchema,
+  HealthStatusSchema,
+  WindowEmptyInputSchema,
+  WindowIsMaximizedOutputSchema,
+} from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
@@ -94,5 +107,90 @@ export const appEvents = {
   },
   [APP_EVENTS.UPDATE.DOWNLOADED]: {
     payload: z.object({ version: z.string() }),
+  },
+} as const;
+
+// ─── Health Invoke Channels (absorbed from health/) ───────────
+
+export const healthInvoke = {
+  [APP.GET['ERROR-LOG']]: {
+    input: z.object({ since: z.string().optional() }),
+    output: z.object({ entries: z.array(ErrorEntrySchema) }),
+  },
+  [APP.GET['ERROR-STATS']]: {
+    input: z.object({}),
+    output: ErrorStatsSchema,
+  },
+  [APP.CLEAR['ERROR-LOG']]: {
+    input: z.object({}),
+    output: SuccessResponseSchema,
+  },
+  [APP.REPORT['RENDERER-ERROR']]: {
+    input: z.object({
+      severity: ErrorSeveritySchema,
+      tier: ErrorTierSchema,
+      category: ErrorCategorySchema,
+      message: z.string(),
+      stack: z.string().optional(),
+      route: z.string().optional(),
+      routeHistory: z.array(z.string()).optional(),
+      projectId: z.string().optional(),
+    }),
+    output: SuccessResponseSchema,
+  },
+  [APP.GET['HEALTH-STATUS']]: {
+    input: z.object({}),
+    output: HealthStatusSchema,
+  },
+} as const;
+
+// ─── Health Event Channels (absorbed from health/) ────────────
+
+export const healthEvents = {
+  [APP_EVENTS.ERROR.OCCURRED]: {
+    payload: ErrorEntrySchema,
+  },
+  [APP_EVENTS.CAPACITY.ALERT]: {
+    payload: z.object({ count: z.number(), message: z.string() }),
+  },
+  [APP_EVENTS.DATA.RECOVERY]: {
+    payload: z.object({ store: z.string(), message: z.string() }),
+  },
+  [APP_EVENTS.SERVICE.UNHEALTHY]: {
+    payload: z.object({ serviceName: z.string(), missedCount: z.number() }),
+  },
+} as const;
+
+// ─── Docker Invoke Channels (absorbed from docker/) ───────────
+
+export const dockerInvoke = {
+  [DOCKER.GET.STATUS]: {
+    input: z.object({}),
+    output: DockerStatusSchema,
+  },
+  [DOCKER.SETUP.HUB]: {
+    input: z.object({}),
+    output: DockerHubSetupResultSchema,
+  },
+} as const;
+
+// ─── Window Invoke Channels (absorbed from window/) ───────────
+
+export const windowInvoke = {
+  [WINDOW.MINIMIZE.APP]: {
+    input: WindowEmptyInputSchema,
+    output: z.object({ success: z.boolean() }),
+  },
+  [WINDOW.MAXIMIZE.APP]: {
+    input: WindowEmptyInputSchema,
+    output: z.object({ success: z.boolean() }),
+  },
+  [WINDOW.CLOSE.APP]: {
+    input: WindowEmptyInputSchema,
+    output: z.object({ success: z.boolean() }),
+  },
+  [WINDOW.CHECK.MAXIMIZED]: {
+    input: WindowEmptyInputSchema,
+    output: WindowIsMaximizedOutputSchema,
   },
 } as const;

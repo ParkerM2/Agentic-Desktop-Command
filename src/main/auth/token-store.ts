@@ -15,6 +15,8 @@ import { safeStorage } from 'electron';
 
 import { eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
+
 import { authLogger } from '@main/lib/logger';
 
 import { oauthTokens } from '../db/schema';
@@ -83,6 +85,7 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
       if (!provider || !entry) continue;
       db.insert(oauthTokens)
         .values({
+          id: generateId(),
           provider,
           encrypted: entry.encrypted,
           useSafeStorage: entry.useSafeStorage,
@@ -111,6 +114,7 @@ export function createTokenStore(deps: { db: AdcDatabase; dataDir: string }): To
 
       db.insert(oauthTokens)
         .values({
+          id: generateId(),
           provider,
           encrypted: entry.encrypted,
           useSafeStorage: entry.useSafeStorage,

@@ -406,15 +406,44 @@ if (user) { ... }           // nullable object — allowed
 if (isEnabled) { ... }      // boolean — allowed
 ```
 
+## UUID Generation Pattern
+
+All persistable entities use UUIDs. Both client and server can generate IDs:
+
+```typescript
+// Server-side (main process)
+import { randomUUID } from 'node:crypto';
+
+function generateId(): string {
+  return randomUUID();
+}
+
+// Create methods accept optional client-provided ID
+function createTask(draft: TaskDraft): ProgressTask {
+  const id = draft.id ?? generateId();
+  // ... insert with id
+}
+
+// Client-side (renderer)
+const id = crypto.randomUUID();
+createTask.mutate({ id, title: 'My task' });
+```
+
+Key rules:
+- **Server**: Use `randomUUID()` from `node:crypto` (via `generateId()` helper)
+- **Client**: Use `crypto.randomUUID()` in the renderer
+- **Bus**: Uses `randomUUID()` for command and session IDs (not ULID)
+- **All create methods** accept optional `id` parameter — if omitted, server generates one
+
 ## Type Imports
 
 ```typescript
 // CORRECT: Separate type imports
-import type { Task, TaskStatus } from '@shared/types';
-import { createTaskService } from './task-service';
+import type { ProgressTask, TaskStatus } from '@shared/types';
+import { createProgressService } from './progress-service';
 
 // WRONG: Mixed imports (eslint error)
-import { Task, createTaskService } from './task-service';
+import { ProgressTask, createProgressService } from './progress-service';
 ```
 
 ## Service Method Pattern

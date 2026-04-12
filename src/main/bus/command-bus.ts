@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
+
 import { and, desc, eq, gte } from 'drizzle-orm';
-import { ulid } from 'ulid';
 
 import { busEvents, commands } from '../db/schema';
 import { createScopedLogger } from '../lib/logger';
@@ -44,7 +45,7 @@ export function createCommandBus(db: AdcDatabase): CommandBus {
   let activeCommandId: string | null = null;
 
   function dispatch(channel: string, input: unknown, source: CommandSource): Promise<BusResult> {
-    const id = ulid();
+    const id = randomUUID();
     const { domain, verb, noun } = parseChannel(channel);
     const mutation = isMutationVerb(verb);
     const startTime = Date.now();
@@ -109,7 +110,7 @@ export function createCommandBus(db: AdcDatabase): CommandBus {
     payload: unknown,
     context?: { commandId?: string; sessionId?: string; projectId?: string },
   ): void {
-    const id = ulid();
+    const id = randomUUID();
     db.insert(busEvents).values({
       id,
       channel,

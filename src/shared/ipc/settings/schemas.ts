@@ -166,3 +166,41 @@ export const ScreenPermissionStatusSchema = z.enum([
   'not-determined',
   'restricted',
 ]);
+
+// ── Data Directory Schemas ─────────────────────────────────────
+
+export const ValidationCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  status: z.enum(['pass', 'warn', 'fail']),
+  message: z.string(),
+});
+
+export const DataDirInfoSchema = z.object({
+  current: z.string(),
+  isCustom: z.boolean(),
+});
+
+// ── Security Schemas (absorbed from security/) ─────────────────
+
+export const SecurityModeSchema = z.enum(['sandboxed', 'unrestricted']);
+
+export const CspModeSchema = z.enum(['strict', 'relaxed']);
+
+export const SecuritySettingsSchema = z.object({
+  envMode: SecurityModeSchema,
+  envBlocklist: z.array(z.string()),
+  envAlwaysPass: z.array(z.string()),
+  cspMode: CspModeSchema,
+  ipcAllowlistEnabled: z.boolean(),
+  ipcThrottlingEnabled: z.boolean(),
+  workdirRestricted: z.boolean(),
+  defaultSpawnFlags: z.string(),
+});
+
+export const SecurityAuditExportSchema = z.object({
+  exportedAt: z.string(),
+  settings: SecuritySettingsSchema,
+  ipcChannelCount: z.number(),
+  activeAgentCount: z.number(),
+});

@@ -426,7 +426,7 @@ Once a project is active, these routes become available:
 
 | Route | Component | File |
 |-------|-----------|------|
-| `/projects/$projectId/tasks` | `TaskDataGrid` | `src/renderer/features/tasks/components/grid/TaskDataGrid.tsx` |
+| `/projects/$projectId/tasks` | `ProgressTaskGrid` | `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx` |
 | `/projects/$projectId/terminals` | `TerminalGrid` | `src/renderer/features/terminals/` |
 | `/projects/$projectId/agents` | `AgentDashboard` | `src/renderer/features/agents/` |
 | `/projects/$projectId/github` | `GitHubPage` | `src/renderer/features/github/` |
@@ -462,8 +462,8 @@ User clicks pencil icon on project card
 ## 7. Task Management (TanStack Table)
 
 **Route**: `/projects/$projectId/tasks`
-**Component**: `TaskDataGrid`
-**File**: `src/renderer/features/tasks/components/grid/TaskDataGrid.tsx`
+**Component**: `ProgressTaskGrid`
+**File**: `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx`
 
 ### 7.1 Grid Columns (12 Cell Renderers)
 
@@ -569,8 +569,8 @@ Hub broadcasts WebSocket event
 - `src/renderer/features/tasks/api/useTaskMutations.ts` — mutation hooks
 - `src/renderer/features/tasks/hooks/useTaskEvents.ts` — WebSocket event handling
 - `src/renderer/features/tasks/store.ts` — UI state (expanded rows, filters)
-- `src/main/ipc/handlers/task-handlers.ts` — all task IPC handlers + transforms
-- `src/renderer/features/tasks/components/grid/TaskDataGrid.tsx` — TanStack Table grid + column definitions
+- `src/main/features/progress/progress-handlers.ts` — all task IPC handlers
+- `src/renderer/features/tasks/components/grid/ProgressTaskGrid.tsx` — TanStack Table grid + column definitions
 
 ---
 
@@ -1312,7 +1312,7 @@ Complete list of all registered IPC channels by domain:
 | G-14 | ~~`/briefing` not in sidebar~~ | Low | Navigation | **RESOLVED** (2026-02-18) — Briefing added to Sidebar `topLevelItems` array (second item, with Newspaper icon). |
 | G-15 | ~~No project edit/settings page~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ProjectEditDialog with edit buttons on project cards |
 | G-16 | ~~No delete confirmation dialogs~~ | Medium | Projects | **RESOLVED** (2026-02-15) — ConfirmDialog component + wired to task/project deletes |
-| G-17 | ~~`projects.initialize` is a skeleton~~ | Low | Projects | **RESOLVED** (2026-02-18) — `project-service.ts` creates `.adc/` + `.adc/specs/` directories under the project path. Minimal but functional directory scaffolding. |
+| G-17 | ~~`projects.initialize` is a skeleton~~ | Low | Projects | **RESOLVED** (2026-02-18) — Project initialization creates `.adc/` directory under the project path. Task data now stored in SQLite `progress_tasks` table. |
 | G-18 | ~~No project description field in wizard~~ | Low | Projects | **RESOLVED** (2026-02-18) — `StepConfigure.tsx` renders description `<textarea>`, `ProjectInitWizard.tsx` includes it in `handleConfirm()`, `StepConfirm.tsx` displays it in summary. |
 | G-19 | ~~Workspace assignment not editable~~ | Low | Projects | **RESOLVED** (2026-02-18) — `ProjectEditDialog.tsx` renders workspace `<select>` from `useWorkspaces()`, tracks changes, sends update via `projects.update` IPC. |
 | G-20 | ~~Profile API keys stored in plaintext~~ | Medium | Settings/Security | **RESOLVED** (2026-02-18) — `settings-encryption.ts` defines `PROFILE_SECRET_KEYS = ['apiKey', 'oauthToken']`. `settings-store.ts` encrypts all profile secrets via `safeStorage` on save, decrypts on load, auto-migrates plaintext → encrypted. |

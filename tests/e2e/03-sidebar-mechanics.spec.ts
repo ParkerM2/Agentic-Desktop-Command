@@ -16,6 +16,11 @@ import {
 import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Sidebar Mechanics', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('sidebar visible after login', async ({ authenticatedWindow: page }) => {
     const sidebar = page.locator('aside');
     await expect(sidebar).toBeVisible();
@@ -88,20 +93,20 @@ test.describe('Sidebar Mechanics', () => {
     await expect(page).toHaveURL(/\/dashboard/);
 
     const dashboardButton = page.locator('aside nav button', { hasText: 'Dashboard' });
-    const notesButton = page.locator('aside nav button', { hasText: 'Notes' });
+    const personalButton = page.locator('aside nav button', { hasText: 'Personal' });
 
     // Dashboard should be active
     const dashboardClassesBefore = await dashboardButton.getAttribute('class');
     expect(dashboardClassesBefore).toContain('bg-accent');
 
-    // Navigate to Notes
-    await navigateToSidebarItem(page, 'Notes');
-    await expect(page).toHaveURL(/\/notes/);
+    // Navigate to Personal
+    await navigateToSidebarItem(page, 'Personal');
+    await expect(page).toHaveURL(/\/personal/);
 
-    // Notes should now be active
-    const notesClasses = await notesButton.getAttribute('class');
-    expect(notesClasses).toContain('bg-accent');
-    expect(notesClasses).toContain('font-medium');
+    // Personal should now be active
+    const personalClasses = await personalButton.getAttribute('class');
+    expect(personalClasses).toContain('bg-accent');
+    expect(personalClasses).toContain('font-medium');
 
     // Dashboard should no longer be active
     const dashboardClassesAfter = await dashboardButton.getAttribute('class');
@@ -128,7 +133,7 @@ test.describe('Sidebar Mechanics', () => {
     const sidebar = page.locator('aside');
 
     // Navigate to several pages, verify sidebar stays visible each time
-    const pages = ['Dashboard', 'Briefing', 'Notes', 'Fitness', 'Alerts'];
+    const pages = ['Dashboard', 'My Work', 'Personal', 'Integrations'];
 
     for (const label of pages) {
       await navigateToSidebarItem(page, label);
@@ -160,8 +165,8 @@ test.describe('Sidebar Mechanics', () => {
 
     // Perform various sidebar interactions
     await navigateToSidebarItem(page, 'Dashboard');
-    await navigateToSidebarItem(page, 'Notes');
-    await navigateToSidebarItem(page, 'Fitness');
+    await navigateToSidebarItem(page, 'Personal');
+    await navigateToSidebarItem(page, 'Integrations');
 
     // Collapse and expand
     await toggleSidebarCollapse(page);

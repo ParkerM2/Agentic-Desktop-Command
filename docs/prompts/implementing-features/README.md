@@ -15,7 +15,6 @@
 7. [File & Folder Structure Reference](#7-file--folder-structure-reference)
 
 For the QA Checklist Template, see: [`QA-CHECKLIST-TEMPLATE.md`](./QA-CHECKLIST-TEMPLATE.md)
-For the Progress File Template, see: [`PROGRESS-FILE-TEMPLATE.md`](./PROGRESS-FILE-TEMPLATE.md)
 For Agent Spawn Templates, see: [`AGENT-SPAWN-TEMPLATES.md`](./AGENT-SPAWN-TEMPLATES.md)
 
 ---
@@ -83,98 +82,52 @@ Always update `statusChangedAt` when changing status. Run `npm run validate:trac
 
 ---
 
-## 2. Progress Tracking (Crash-Safe)
+## 2. Progress Tracking (SQLite-backed)
 
-### Why This Exists
+### System Architecture
 
-Claude Code sessions can terminate unexpectedly (terminal close, timeout, process kill). The progress file is a **crash-recovery artifact** — when a new session picks up the work, it reads this file to understand exactly where things left off.
+Task metadata is stored in the **`progress_tasks` SQLite table** (in `adc.db`). The `progress/` filesystem directory holds content files (research, plans, team tasks) while SQLite is the primary metadata index.
 
-### The Progress File
+**All task operations go through IPC channels — never write to the filesystem directly.**
 
-Progress is tracked via the team's TaskList and the `progress/` runtime directory (auto-managed by the workflow plugin). The Team Lead updates tracker.json status after each phase transition.
+### IPC Channels for Progress
 
-**When to update the progress file:**
-- After creating the team and tasks
-- After each agent is spawned (record worktree branch)
-- After each agent completes or fails
-- After each QA cycle (pass/fail)
-- After integration (merge, commit)
-- After documentation updates
+| Channel | Purpose |
+|---------|---------|
+| `progress.createTask` | Create a new task (creates SQLite row + `progress/<slug>/task.md`) |
+| `progress.updateTask` | Update task metadata (status, priority, PR info, etc.) |
+| `progress.listTasks` | List all non-archived tasks |
+| `progress.getTask` | Get single task with full content |
+| `progress.archiveTask` | Move task to archived state |
+| `progress.startResearch` | Spawn research agent session |
+| `progress.createPlan` | Spawn planning agent session |
+| `progress.spinUpTeam` | Spawn team-lead to decompose plan |
 
-**What goes in the progress file:**
+### Status Flow
 
-```markdown
-# Feature: <Feature Name>
-**Status**: IN_PROGRESS | BLOCKED | QA_REVIEW | INTEGRATING | COMPLETE
-**Team**: <team-name>
-**Branch**: feature/<feature-name>
-**Design Doc**: docs/features/<slug>/plan.md
-**Started**: <ISO timestamp>
-**Last Updated**: <ISO timestamp>
-
-## Agent Registry
-| Agent Name | Role | Worktree Branch | Task ID | Status | Notes |
-|------------|------|-----------------|---------|--------|-------|
-| schema-designer | Schema Designer | feature/<name>/schema | #1 | COMPLETE | Types + IPC done |
-| service-eng | Service Engineer | feature/<name>/service | #2 | IN_PROGRESS | Working on auth handler |
-| component-eng | Component Engineer | feature/<name>/ui | #3 | PENDING | Blocked by #2 |
-| qa-review-svc | QA Reviewer | feature/<name>/service | - | PENDING | Will review #2 output |
-
-## Task Progress
-### Task #1: Define types and IPC contract [COMPLETE]
-- Agent: schema-designer
-- Files created: src/shared/types/foo.ts, src/shared/ipc-contract.ts (modified)
-- QA: PASSED (report: <link or inline>)
-- Merged to: feature/<feature-name>
-
-### Task #2: Implement foo service [IN_PROGRESS]
-- Agent: service-eng
-- Files: src/main/services/foo/foo-service.ts (creating)
-- Step 1/4: Service factory ✅
-- Step 2/4: CRUD methods ✅
-- Step 3/4: IPC handlers 🔄 (in progress)
-- Step 4/4: Event emissions ⬜
-
-### Task #3: Build FooPage component [PENDING]
-- Blocked by: Task #2 (needs IPC handlers to exist)
-
-## Blockers
-- None currently
-
-## QA Results
-### Round 1 — Task #1 (schema-designer)
-- Automated: lint ✅ typecheck ✅ build ✅
-- Manual: All checks pass
-- Verdict: APPROVED
-
-## Recovery Notes
-If resuming from crash:
-1. Read this file for current state
-2. Check `git worktree list` for active worktrees
-3. Check TaskList for team task status
-4. Resume from the first non-COMPLETE task
 ```
+backlog → researching → research_done → planning → plan_ready → executing → review → done → archived
+```
+
+Status is reconciled from both SQLite and directory contents on every read.
 
 ### Tracker.json Integration
 
 The Team Lead must update `docs/tracker.json` at these lifecycle points:
 - **New feature**: Add entry with status `IN_PROGRESS`
 - **Feature complete**: Set status to `IMPLEMENTED`
-- **Feature archived**: Delete plan file, remove tracker entry or set status to `ARCHIVED`
+- **Feature archived**: Remove tracker entry or set status to `ARCHIVED`
 - **Feature superseded**: Set status to `SUPERSEDED`, set `supersededBy` field
-
-Run `npm run validate:tracker` to verify tracker integrity after any changes.
 
 ### Recovery Protocol (For New Sessions)
 
 When a Team Lead agent starts and detects existing progress:
 
-1. Check `docs/tracker.json` for feature status
-2. Run `git worktree list` to verify worktree state
-3. Check if the team still exists (read `~/.claude/teams/<team-name>/config.json`)
+1. Query `progress.listTasks` via IPC to see current task states
+2. Check `docs/tracker.json` for feature status
+3. Run `git worktree list` to verify worktree state
 4. If team exists: use `TaskList` to get current state, resume from first pending task
 5. If team doesn't exist: recreate team, create remaining tasks, spawn agents for pending work
-6. Update progress file with recovery timestamp
 
 ---
 
@@ -196,7 +149,7 @@ When a Team Lead agent starts and detects existing progress:
 | `docs/ui/user-interface-flow.md` | UX flow map, component wiring | New user-facing feature, UI layout change, gap resolution |
 | `docs/patterns/CODEBASE-GUARDIAN.md` | File placement and naming rules | New directory, new structural pattern |
 | `CLAUDE.md` | AI agent guidelines | New path alias, new tech stack entry, new convention |
-| `PROGRESS.md` | Build progress tracker | Feature completed or milestone reached |
+| Progress IPC (`progress.updateTask`) | SQLite task metadata | Task status changes, PR links, agent sessions |
 
 ### How Documentation Updates Work
 
@@ -213,7 +166,6 @@ Each coding agent is responsible for updating docs alongside their own code chan
 ```
 Claude-UI/
 ├── CLAUDE.md                          # AI agent guidelines (update for new conventions)
-├── PROGRESS.md                        # Build tracker (update on milestones)
 ├── docs/
 │   ├── architecture/ARCHITECTURE.md   # System architecture (update for new services/features)
 │   ├── patterns/CODEBASE-GUARDIAN.md  # File placement + naming rules
@@ -327,8 +279,6 @@ git worktree add ../claude-ui-ui feature/<name>/ui
 ```
 
 **Exception**: If the feature is small (< 5 files), agents can share the main worktree with strict file-scope rules (no two agents edit the same file).
-
-Record each agent's worktree in the progress file.
 
 ---
 
@@ -652,15 +602,14 @@ Use this checklist when starting any new feature implementation:
 1. READ design doc / plan
 2. DECOMPOSE into tasks with dependencies
 3. UPDATE `docs/tracker.json`: add entry with status `IN_PROGRESS`
-3b. UPDATE tracker: Add entry to `docs/tracker.json` with status `IN_PROGRESS`
 4. CREATE team via TeamCreate
 5. CREATE tasks via TaskCreate with proper `blockedBy` relationships
 6. CREATE worktrees (if needed)
 7. SPAWN agents with full initialization protocol (see section 5)
-8. MONITOR progress, update progress file after each state change
+8. MONITOR progress via TaskList and `progress.listTasks` IPC
 9. RUN QA verification for each completed task (see section 6)
 10. MERGE worktrees to feature branch
 11. RUN full verification suite: `npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs`
 12. COMMIT and push, create PR if requested
 13. UPDATE tracker: Set status to `IMPLEMENTED` in `docs/tracker.json`
-14. RUN `npm run validate:tracker` to verify tracker integrity
+14. UPDATE `progress.updateTask` via IPC with status `done`

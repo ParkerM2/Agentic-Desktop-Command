@@ -15,6 +15,7 @@ import {
 
 import { ROUTES } from '@shared/constants';
 import { HUB } from '@shared/ipc/hub/channels';
+import { SETTINGS } from '@shared/ipc/settings/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -30,25 +31,7 @@ function redirectIfAuthenticated() {
   }
 }
 
-async function redirectIfHubNotConfigured(): Promise<void> {
-  try {
-    const config = await ipc(HUB.GET.CONFIG, {});
-    if (!config.hubUrl) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
-      throw redirect({ to: ROUTES.HUB_SETUP });
-    }
-  } catch (error: unknown) {
-    // Re-throw redirects
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      'to' in error
-    ) {
-      throw error;
-    }
-    // IPC failure — don't block, let user proceed to login
-  }
-}
+const LOCAL_SESSION_TOKEN = 'local-session';
 
 async function redirectIfHubAlreadyConfigured(): Promise<void> {
   try {
@@ -101,9 +84,9 @@ export function createAuthRoutes(rootRoute: AnyRoute) {
   const loginRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: ROUTES.LOGIN,
-    beforeLoad: async () => {
+    beforeLoad: () => {
       redirectIfAuthenticated();
-      await redirectIfHubNotConfigured();
+      // Hub is optional — don't redirect to hub-setup
     },
     component: LoginRouteComponent,
   });
@@ -111,9 +94,9 @@ export function createAuthRoutes(rootRoute: AnyRoute) {
   const registerRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: ROUTES.REGISTER,
-    beforeLoad: async () => {
+    beforeLoad: () => {
       redirectIfAuthenticated();
-      await redirectIfHubNotConfigured();
+      // Hub is optional — don't redirect to hub-setup
     },
     component: RegisterRouteComponent,
   });
@@ -145,8 +128,22 @@ function LoginRouteComponent() {
         onNavigateToRegister={() => {
           void navigate({ to: ROUTES.REGISTER });
         }}
+        onSkip={() => {
+          useAuthStore.getState().setAuth(
+            { id: 'local', email: 'local@localhost', displayName: 'Local User', avatarUrl: null, createdAt: new Date().toISOString(), lastLoginAt: new Date().toISOString() },
+            { accessToken: LOCAL_SESSION_TOKEN, refreshToken: LOCAL_SESSION_TOKEN, expiresIn: 0 },
+          );
+          useAuthStore.getState().setInitializing(false);
+          // Skip onboarding for local-skip users (returning / non-new users)
+          void ipc(SETTINGS.UPDATE.ALL, { onboardingCompleted: true }).then(() =>
+            navigate({ to: ROUTES.DASHBOARD }),
+          );
+        }}
         onSuccess={() => {
-          void navigate({ to: ROUTES.DASHBOARD });
+          // Skip onboarding for returning users who log in
+          void ipc(SETTINGS.UPDATE.ALL, { onboardingCompleted: true }).then(() =>
+            navigate({ to: ROUTES.DASHBOARD }),
+          );
         }}
       />
     </Suspense>
@@ -181,6 +178,18 @@ function HubSetupRouteComponent() {
       <LazyHubSetupPage
         onNavigateToLogin={() => {
           void navigate({ to: ROUTES.LOGIN });
+        }}
+        onSkip={() => {
+          // Local-only mode: skip Hub, create a local session and go to dashboard
+          useAuthStore.getState().setAuth(
+            { id: 'local', email: 'local@localhost', displayName: 'Local User', avatarUrl: null, createdAt: new Date().toISOString(), lastLoginAt: new Date().toISOString() },
+            { accessToken: LOCAL_SESSION_TOKEN, refreshToken: LOCAL_SESSION_TOKEN, expiresIn: 0 },
+          );
+          useAuthStore.getState().setInitializing(false);
+          // Skip onboarding for local-skip users
+          void ipc(SETTINGS.UPDATE.ALL, { onboardingCompleted: true }).then(() =>
+            navigate({ to: ROUTES.DASHBOARD }),
+          );
         }}
         onSuccess={() => {
           void navigate({ to: ROUTES.LOGIN });

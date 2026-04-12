@@ -8,11 +8,11 @@
 import { Bot, Cog, Puzzle, Settings2, Sparkles, Terminal, Workflow } from 'lucide-react';
 
 import {
-  Badge,
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
+  EmptyState,
   PageContent,
   PageHeader,
   PageLayout,
@@ -88,17 +88,20 @@ export function ToolsPage() {
           <PageHeader.TabContent value="config">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {TOOL_CARDS.map((card) => (
-                <Card key={card.name} className="opacity-70">
+                <Card key={card.name}>
                   <CardHeader>
                     <div className="mb-2 flex items-center gap-2">
                       <card.icon className="text-muted-foreground h-5 w-5" />
                       <CardTitle>{card.name}</CardTitle>
-                      <Badge className="ml-auto text-xs" variant="outline">
-                        Coming soon
-                      </Badge>
                     </div>
                     <CardDescription>{card.description}</CardDescription>
                   </CardHeader>
+                  <EmptyState
+                    description={`Add ${card.name.toLowerCase()} to get started`}
+                    icon={card.icon}
+                    size="sm"
+                    title="No items configured"
+                  />
                 </Card>
               ))}
             </div>

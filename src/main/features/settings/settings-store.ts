@@ -5,6 +5,7 @@ import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { AppSettings, Profile } from '@shared/types';
 
 import { profiles, settingsKv } from '../../db/schema';
@@ -95,7 +96,7 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
 
     // Insert settings blob as-is (webhook secrets stay encrypted in JSON)
     db.insert(settingsKv)
-      .values({ key: 'default', settings: settingsRaw, updatedAt: now })
+      .values({ id: generateId(), key: 'default', settings: settingsRaw, updatedAt: now })
       .run();
 
     // Insert profiles
@@ -212,7 +213,7 @@ export function saveSettingsFile(db: AdcDatabase, data: SettingsFile): void {
 
   // Upsert settings blob
   db.insert(settingsKv)
-    .values({ key: 'default', settings: encryptedSettings, updatedAt: now })
+    .values({ id: generateId(), key: 'default', settings: encryptedSettings, updatedAt: now })
     .onConflictDoUpdate({
       target: settingsKv.key,
       set: { settings: encryptedSettings, updatedAt: now },

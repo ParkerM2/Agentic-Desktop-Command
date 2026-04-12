@@ -7,10 +7,12 @@
 
 import { join } from 'node:path';
 
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, MessageChannelMain, shell, session, utilityProcess } from 'electron';
 
+import { ENV_VARS } from '@shared/constants/env';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 
+import { createAgentHostClient } from './agent-host/agent-host-client';
 import {
   createServiceRegistry,
   setupLifecycle,
@@ -20,8 +22,16 @@ import {
 import { appLogger } from './lib/logger';
 import { createTrayManager } from './tray/tray-manager';
 
-import type { ErrorCollector } from './features/health/error-collector';
+import type { AgentHostClient } from './agent-host/agent-host-client';
+import type { ErrorCollector } from './features/app/health';
 import type { SettingsService } from './features/settings/settings-service';
+
+// Dev mode: rename app before any app.getPath('userData') calls so data isolates to %APPDATA%/ADC-Dev/
+const isDevMode = process.env[ENV_VARS.ADC_DEV_MODE] === 'true' || !app.isPackaged;
+
+if (isDevMode) {
+  app.setName('ADC-Dev');
+}
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
@@ -30,10 +40,17 @@ let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
 let errorCollectorRef: ErrorCollector | null = null;
 let registryRef: ReturnType<typeof createServiceRegistry> | null = null;
+let agentHostClientRef: AgentHostClient | null = null;
 
 // Renderer crash tracking
 let rendererCrashCount = 0;
 let lastRendererCrashTime = 0;
+
+// Agent host crash recovery
+const AGENT_HOST_MAX_RESTARTS = 5;
+const AGENT_HOST_RESTART_WINDOW_MS = 60_000; // 1 minute
+const AGENT_HOST_BASE_DELAY_MS = 1_000; // 1 second
+let agentHostRestartTimestamps: number[] = [];
 
 function getMainWindow(): BrowserWindow | null {
   return mainWindow;
@@ -52,6 +69,7 @@ function createWindow(): void {
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
+      webviewTag: true,
     },
   });
 
@@ -71,8 +89,17 @@ function createWindow(): void {
     }
   });
 
-  // Emit assistant autostart after renderer finishes loading
+  // Forward agent host event port to the renderer
   mainWindow.webContents.once('did-finish-load', () => {
+    if (agentHostClientRef && mainWindow) {
+      const rendererEventChannel = new MessageChannelMain();
+      mainWindow.webContents.postMessage('agent-host-events', null, [rendererEventChannel.port2]);
+      agentHostClientRef.onEvent((event) => {
+        rendererEventChannel.port1.postMessage(event);
+      });
+    }
+
+    // Emit assistant autostart after renderer finishes loading
     if (settingsServiceRef?.getSettings().assistantAutoStart !== false) {
       setTimeout(() => {
         registryRef?.router.emit(ASSISTANT_EVENTS.SESSION.AUTOSTART, { autoStarted: true });
@@ -135,8 +162,75 @@ function createWindow(): void {
 
 // ─── Initialize & Start ──────────────────────────────────────────
 
+/**
+ * Fork the agent host utility process and wire up MessagePort channels.
+ * Returns the child process and client. Installs an exit handler that
+ * auto-restarts on crash with exponential backoff (up to MAX_RESTARTS
+ * within a sliding window).
+ */
+function forkAgentHost(): { child: Electron.UtilityProcess; client: AgentHostClient } {
+  const agentHostModule = join(__dirname, 'agent-host/index.cjs');
+  const child = utilityProcess.fork(agentHostModule, [], { stdio: 'pipe' });
+
+  const controlChannel = new MessageChannelMain();
+  const eventChannel = new MessageChannelMain();
+
+  child.postMessage({ type: 'init' }, [controlChannel.port2, eventChannel.port2]);
+  const client = createAgentHostClient(controlChannel.port1, eventChannel.port1);
+
+  child.on('exit', (code) => {
+    if (code === 0) {
+      appLogger.info('[AgentHost] Utility process exited gracefully');
+      return; // Graceful shutdown — don't restart
+    }
+
+    appLogger.error(`[AgentHost] Utility process crashed with code ${code}`);
+
+    // Sliding-window restart throttle
+    const now = Date.now();
+    agentHostRestartTimestamps = agentHostRestartTimestamps.filter(
+      (t) => now - t < AGENT_HOST_RESTART_WINDOW_MS,
+    );
+
+    if (agentHostRestartTimestamps.length >= AGENT_HOST_MAX_RESTARTS) {
+      appLogger.error(
+        `[AgentHost] Crashed ${AGENT_HOST_MAX_RESTARTS} times within ${AGENT_HOST_RESTART_WINDOW_MS / 1000}s — giving up`,
+      );
+      return;
+    }
+
+    agentHostRestartTimestamps.push(now);
+    const delay = AGENT_HOST_BASE_DELAY_MS * Math.pow(2, agentHostRestartTimestamps.length - 1);
+    appLogger.warn(`[AgentHost] Restarting in ${delay}ms (attempt ${agentHostRestartTimestamps.length}/${AGENT_HOST_MAX_RESTARTS})...`);
+
+    setTimeout(() => {
+      const { child: newChild, client: newClient } = forkAgentHost();
+
+      // Update module-level references so new IPC calls use the fresh client
+      void newChild; // child ref kept alive by the exit handler closure
+      agentHostClientRef = newClient;
+
+      // Re-forward event port to renderer if the window is still alive
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const rendererEventChannel = new MessageChannelMain();
+        newClient.onEvent((event) => {
+          rendererEventChannel.port1.postMessage(event);
+        });
+        mainWindow.webContents.postMessage('agent-host-events', null, [rendererEventChannel.port2]);
+      }
+    }, delay);
+  });
+
+  return { child, client };
+}
+
 function initializeApp(): void {
-  const registry = createServiceRegistry(getMainWindow);
+  // ── Fork agent host utility process ───────────────────────
+  const { client: agentHostClient } = forkAgentHost();
+  agentHostClientRef = agentHostClient;
+
+  // ── Initialize services ───────────────────────────────────
+  const registry = createServiceRegistry(getMainWindow, agentHostClient);
 
   // Store refs for createWindow() settings checks and global error reporting
   settingsServiceRef = registry.settingsService;
@@ -160,6 +254,7 @@ function initializeApp(): void {
     terminalService: registry.terminalService,
     errorCollector: registry.errorCollector,
     healthRegistry: registry.healthRegistry,
+    healthService: registry.healthService,
     qaTrigger: registry.qaTrigger,
     alertService: registry.alertService,
     hubConnectionManager: registry.hubConnectionManager,
@@ -208,6 +303,17 @@ void (async () => {
   });
 
   await app.whenReady();
+
+  // Bypass certificate errors for localhost webview content only
+  session.defaultSession.setCertificateVerifyProc((request, callback) => {
+    const { hostname } = request;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      callback(0); // 0 = success (bypass)
+    } else {
+      callback(-3); // -3 = use default verification
+    }
+  });
+
   initializeApp();
   createWindow();
 

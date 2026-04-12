@@ -53,6 +53,7 @@ function createTestDb(): AdcDatabase {
   // Create the oauth_tokens table
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS oauth_tokens (
+      id TEXT,
       provider TEXT PRIMARY KEY,
       encrypted TEXT NOT NULL,
       use_safe_storage INTEGER NOT NULL DEFAULT 1,

@@ -25,8 +25,8 @@ import type { IdeasService } from '../ideas/ideas-service';
 import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
 import type { PlannerService } from '../planner/planner-service';
+import type { ProgressService } from '../progress/progress-service';
 import type { ProjectService } from '../project/project-service';
-import type { TaskRepository } from '../tasks/types';
 import type { GitToolDeps } from './tool-handlers/git-tools';
 import type { WorkspaceSessionManager } from '../workspace/workspace-session-manager';
 
@@ -35,7 +35,7 @@ const QUERY_KEY_MILESTONES = 'milestones';
 const QUERY_KEY_IDEAS = 'ideas';
 const QUERY_KEY_PLANNER = 'planner';
 const QUERY_KEY_WORKSPACE = 'workspace';
-const ERR_TASK_UNAVAILABLE = 'Task service unavailable';
+const ERR_PROGRESS_UNAVAILABLE = 'Progress service unavailable';
 
 export interface ToolExecutorDeps {
   notesService: NotesService | null;
@@ -43,7 +43,7 @@ export interface ToolExecutorDeps {
   ideasService: IdeasService | null;
   plannerService: PlannerService | null;
   projectService: Pick<ProjectService, 'listProjectsSync' | 'getProjectPath'> | null;
-  taskRepository: TaskRepository | null;
+  progressService: ProgressService | null;
   briefingService: BriefingService | null;
   changelogService: ChangelogService | null;
   gitToolDeps: GitToolDeps;
@@ -154,7 +154,7 @@ function executeReadProgressFile(input: ToolInput): ToolResult {
 }
 
 export function createToolExecutor(deps: ToolExecutorDeps) {
-  const { notesService, milestonesService, ideasService, plannerService, projectService, taskRepository, briefingService, changelogService, gitToolDeps, workspaceSessionManager, sendEvent } = deps;
+  const { notesService, milestonesService, ideasService, plannerService, projectService, progressService, briefingService, changelogService, gitToolDeps, workspaceSessionManager, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
     sendEvent(ASSISTANT_EVENTS.TOOL.EXECUTED, {
@@ -238,11 +238,11 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
   }
 
   async function executeTaskTool(name: string, input: ToolInput): Promise<ToolResult> {
-    if (!taskRepository) return fail(ERR_TASK_UNAVAILABLE);
-    if (name === 'tasks_create') return await executeTasksCreate(input, taskRepository);
-    if (name === 'tasks_list') return await executeTasksList(input, taskRepository);
-    if (name === 'tasks_update') return await executeTasksUpdate(input, taskRepository);
-    if (name === 'tasks_delete') return await executeTasksDelete(input, taskRepository);
+    if (!progressService) return fail(ERR_PROGRESS_UNAVAILABLE);
+    if (name === 'tasks_create') return await executeTasksCreate(input, progressService);
+    if (name === 'tasks_list') return await executeTasksList(input, progressService);
+    if (name === 'tasks_update') return await executeTasksUpdate(input, progressService);
+    if (name === 'tasks_delete') return await executeTasksDelete(input, progressService);
     return fail(`Unknown task tool: ${name}`);
   }
 

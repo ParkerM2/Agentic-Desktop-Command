@@ -16,6 +16,7 @@ import { join } from 'node:path';
 
 import { eq, ne } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import type { AdcDatabase } from '@main/db';
@@ -25,7 +26,7 @@ import { serviceLogger } from '@main/lib/logger';
 import { runLogCleanup as runLogCleanupFn } from './log-cleanup';
 import { detectRootFile, readFrontmatter, writeFrontmatter } from './task-file-io';
 
-import type { AgentManagerService } from '../../services/agent-manager/agent-manager-service';
+import type { AgentManager } from '../../agent-host/agent-host-client';
 import type { FSWatcher } from 'node:fs';
 
 // ─── Service Interface ────────────────────────────────────────
@@ -38,6 +39,7 @@ export interface ProgressService {
     title: string,
     description: string,
     priority?: ProgressPriority,
+    id?: string,
   ) => Promise<ProgressTask>;
   updateTask: (
     slug: string,
@@ -249,6 +251,7 @@ async function migrateFromFilesystem(db: AdcDatabase, projectPath: string): Prom
     const now = new Date().toISOString();
     db.insert(progressTasks).values({
       slug: task.slug,
+      id: task.id,
       title: task.title,
       status: task.status,
       priority: task.priority,
@@ -312,6 +315,7 @@ async function buildTask(
   const status = reconcileStatus(frontmatter.status, hasResearch, hasPlan, hasTeamTasks);
 
   const task: ProgressTask = {
+    id: asOptionalString(frontmatter.id) ?? generateId(),
     slug,
     rootFile: rootFileName,
     title: asString(frontmatter.title) || slug,
@@ -379,6 +383,7 @@ function rowToTask(
   },
 ): ProgressTask {
   return {
+    id: row.id ?? row.slug,
     slug: row.slug,
     rootFile: derived.rootFile,
     title: row.title,
@@ -451,7 +456,7 @@ function buildSummaryInstruction(summarySpec: { maxChars: number; tableFields: s
 
 export function createProgressService(
   projectPath: string,
-  agentManagerService: AgentManagerService,
+  agentManagerService: AgentManager,
   db: AdcDatabase,
 ): ProgressService {
   const progressDir = join(projectPath, 'progress');
@@ -650,11 +655,11 @@ export function createProgressService(
     }
   }
 
-  function spawnAndTrack(
+  async function spawnAndTrack(
     slug: string,
     action: string,
     prompt: string,
-  ): { sessionId: string } {
+  ): Promise<{ sessionId: string }> {
     // Subscribe to events BEFORE spawning to avoid race condition where
     // a fast session ends before the listener is registered.
     let targetSessionId: string | null = null;
@@ -673,7 +678,7 @@ export function createProgressService(
       handleSessionEnd(slug, action, exitCode);
     });
 
-    const session = agentManagerService.spawnProjectOwner({
+    const session = await agentManagerService.spawnProjectOwner({
       projectPath,
       prompt,
       name: `progress-${action}-${slug}`,
@@ -808,14 +813,17 @@ export function createProgressService(
       title: string,
       description: string,
       priority: ProgressPriority = 'normal',
+      id?: string,
     ): Promise<ProgressTask> {
       await init();
 
       const now = new Date().toISOString();
+      const resolvedId = id ?? generateId();
 
       // 1. Insert into SQLite
       db.insert(progressTasks).values({
         slug,
+        id: resolvedId,
         title,
         status: 'backlog',
         priority,
@@ -843,6 +851,7 @@ export function createProgressService(
 
       // 3. Build task from SQLite row
       const task: ProgressTask = {
+        id: resolvedId,
         slug,
         rootFile: 'task.md',
         title,
@@ -1027,6 +1036,9 @@ export function createProgressService(
 
       await service.updateTask(slug, { status: 'researching' });
 
+      // Ensure research subdirectory exists before spawning agent
+      await mkdir(join(progressDir, slug, 'research'), { recursive: true });
+
       const researchOutPath = `progress/${slug}/research/research.md`;
       const defaultResearchPrompt =
         `Deep research on "${task.title}". ` +
@@ -1038,7 +1050,7 @@ export function createProgressService(
       const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
       const fullPrompt = (customPrompt ?? defaultResearchPrompt) + summaryInstruction;
 
-      return spawnAndTrack(slug, 'research', fullPrompt);
+      return await spawnAndTrack(slug, 'research', fullPrompt);
     },
 
     async createPlan(slug: string, customPrompt?: string): Promise<{ sessionId: string }> {
@@ -1048,6 +1060,9 @@ export function createProgressService(
       if (!task) throw new Error(`Task not found: ${slug}`);
 
       await service.updateTask(slug, { status: 'planning' });
+
+      // Ensure plans subdirectory exists before spawning agent
+      await mkdir(join(progressDir, slug, 'plans'), { recursive: true });
 
       const researchPath = `progress/${slug}/research/research.md`;
       const planOutPath = `progress/${slug}/plans/plan.md`;
@@ -1060,7 +1075,7 @@ export function createProgressService(
       const summaryInstruction = buildSummaryInstruction(defaultSummarySpec);
       const fullPrompt = (customPrompt ?? defaultPlanPrompt) + summaryInstruction;
 
-      return spawnAndTrack(slug, 'plan', fullPrompt);
+      return await spawnAndTrack(slug, 'plan', fullPrompt);
     },
 
     async spinUpTeam(slug: string, customPrompt?: string): Promise<{ sessionId: string; action: string }> {
@@ -1068,6 +1083,9 @@ export function createProgressService(
 
       const task = await service.getTask(slug);
       if (!task) throw new Error(`Task not found: ${slug}`);
+
+      // Ensure tasks subdirectory exists before spawning team
+      await mkdir(join(progressDir, slug, 'tasks'), { recursive: true });
 
       const planPath = join(projectPath, 'progress', slug, 'plans', 'plan.md');
       const hasPlanFile = await fileExists(planPath);
@@ -1079,7 +1097,7 @@ export function createProgressService(
         : `Implement the feature described in progress/${slug}/task.md. ` +
           `Create task files under progress/${slug}/tasks/ and execute them.`;
 
-      const { sessionId } = spawnAndTrack(slug, 'team', customPrompt ?? defaultPrompt);
+      const { sessionId } = await spawnAndTrack(slug, 'team', customPrompt ?? defaultPrompt);
       return { sessionId, action: 'team' };
     },
 

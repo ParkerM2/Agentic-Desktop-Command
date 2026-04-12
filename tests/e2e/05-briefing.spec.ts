@@ -18,14 +18,21 @@ test.describe('Briefing Page', () => {
 
   test.beforeEach(async ({ authenticatedWindow }) => {
     collector = createConsoleCollector(authenticatedWindow);
-    await navigateToSidebarItem(authenticatedWindow, 'Briefing');
-    await waitForRoute(authenticatedWindow, '/briefing');
+    // Briefing is now a tab under /personal — navigate there directly
+    await navigateToSidebarItem(authenticatedWindow, 'Personal');
+    await waitForRoute(authenticatedWindow, '/personal');
+    await authenticatedWindow.getByRole('tab', { name: 'Briefing' }).click();
     await waitForPageContent(authenticatedWindow);
   });
 
+  test.afterEach(async ({ authenticatedWindow }) => {
+    await authenticatedWindow.keyboard.press('Escape');
+    await authenticatedWindow.waitForTimeout(200);
+  });
+
   test('briefing page loads with header and content', async ({ authenticatedWindow }) => {
-    // Verify we navigated to the briefing route
-    await expect(authenticatedWindow).toHaveURL(/\/briefing/);
+    // Verify we navigated to the personal route with briefing tab active
+    await expect(authenticatedWindow).toHaveURL(/\/personal/);
 
     // The page should show the "Daily Briefing" heading
     await expect(authenticatedWindow.getByText('Daily Briefing')).toBeVisible();

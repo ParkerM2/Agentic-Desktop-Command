@@ -1,5 +1,7 @@
 # ADC Command Bus — Design Spec
 
+> **Note (2026-04):** This spec is historical. The task system migration described here (`.adc/specs/` → SQLite) has been completed. Tasks now use `ProgressService` with the `progress_tasks` table. References to `TaskService`, `TaskRepository`, and `.adc/specs/` describe the old system.
+
 > Unified command bus + SQLite backing store that replaces scattered JSON files, in-memory session maps, and dual agent spawn paths with a single control plane for the entire app.
 
 **Date:** 2026-04-08

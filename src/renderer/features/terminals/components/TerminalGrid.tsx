@@ -66,10 +66,11 @@ export function TerminalGrid() {
       {/* Terminal tabs */}
       <div className="border-border bg-card flex items-center gap-px border-b px-2">
         {terminals?.map((term) => (
-          <button
+          <Button
             key={term.id}
+            variant="ghost"
             className={cn(
-              'group flex items-center gap-2 px-3 py-2 text-sm transition-colors',
+              'group flex h-auto items-center gap-2 rounded-none px-3 py-2 text-sm transition-colors',
               activeTerminalId === term.id
                 ? 'border-primary text-foreground border-b-2'
                 : 'text-muted-foreground hover:text-foreground',
@@ -92,15 +93,17 @@ export function TerminalGrid() {
             >
               <X className="h-3 w-3" />
             </span>
-          </button>
+          </Button>
         ))}
-        <button
+        <Button
           className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded p-1.5"
+          size="icon"
           title="New terminal"
+          variant="ghost"
           onClick={handleCreateTerminal}
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {/* Terminal content area */}

@@ -1,18 +1,19 @@
 /**
  * Briefing Config — Configuration loading and saving backed by SQLite
  *
- * Uses the `briefingConfig` table with a singleton row (key='default').
+ * Uses the `settings_kv` table with category='briefing' and key='default'.
  * One-time migration from briefing-config.json on first access.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
+import { generateId } from '@shared/lib/id';
 import type { BriefingConfig } from '@shared/types';
 
-import { briefingConfig } from '../../db/schema';
+import { settingsKv } from '../../db/schema';
 import { createScopedLogger } from '../../lib/logger';
 
 import type { AdcDatabase } from '../../db';
@@ -20,6 +21,7 @@ import type { AdcDatabase } from '../../db';
 const logger = createScopedLogger('briefing-config');
 
 const SINGLETON_KEY = 'default';
+const CATEGORY = 'briefing';
 
 const DEFAULT_CONFIG: BriefingConfig = {
   enabled: true,
@@ -41,8 +43,8 @@ export interface BriefingConfigManager {
 function migrateFromJson(db: AdcDatabase, dataDir: string): void {
   const existing = db
     .select()
-    .from(briefingConfig)
-    .where(eq(briefingConfig.key, SINGLETON_KEY))
+    .from(settingsKv)
+    .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
     .get();
   if (existing) return;
 
@@ -54,10 +56,12 @@ function migrateFromJson(db: AdcDatabase, dataDir: string): void {
     const parsed = JSON.parse(raw) as Partial<BriefingConfig>;
     const config: BriefingConfig = { ...DEFAULT_CONFIG, ...parsed };
 
-    db.insert(briefingConfig)
+    db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
-        config: config as unknown,
+        category: CATEGORY,
+        settings: config as unknown,
         updatedAt: new Date().toISOString(),
       })
       .run();
@@ -77,28 +81,30 @@ export function createBriefingConfigManager(db: AdcDatabase, dataDir: string): B
   function loadConfig(): BriefingConfig {
     const row = db
       .select()
-      .from(briefingConfig)
-      .where(eq(briefingConfig.key, SINGLETON_KEY))
+      .from(settingsKv)
+      .where(and(eq(settingsKv.category, CATEGORY), eq(settingsKv.key, SINGLETON_KEY)))
       .get();
 
     if (!row) {
       return { ...DEFAULT_CONFIG };
     }
 
-    return { ...DEFAULT_CONFIG, ...(row.config as Partial<BriefingConfig>) };
+    return { ...DEFAULT_CONFIG, ...(row.settings as Partial<BriefingConfig>) };
   }
 
   function saveConfig(config: BriefingConfig): void {
-    db.insert(briefingConfig)
+    db.insert(settingsKv)
       .values({
+        id: generateId(),
         key: SINGLETON_KEY,
-        config: config as unknown,
+        category: CATEGORY,
+        settings: config as unknown,
         updatedAt: new Date().toISOString(),
       })
       .onConflictDoUpdate({
-        target: briefingConfig.key,
+        target: settingsKv.key,
         set: {
-          config: config as unknown,
+          settings: config as unknown,
           updatedAt: new Date().toISOString(),
         },
       })

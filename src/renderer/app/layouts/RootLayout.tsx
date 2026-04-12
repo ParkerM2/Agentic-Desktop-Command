@@ -19,14 +19,14 @@ import { RouteErrorBoundary } from '@renderer/shared/components/error-boundaries
 import { EventBridge } from '@renderer/shared/components/EventBridge';
 import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { MutationErrorToast } from '@renderer/shared/components/MutationErrorToast';
+import { TransitionOutlet } from '@renderer/shared/components/ui/transition-outlet';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
 import { useLayoutSync, useThemeSync } from '@renderer/shared/hooks';
 import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
-import { useErrorEvents } from '@features/health';
 import { OnboardingWizard } from '@features/onboarding';
-import { useSettings } from '@features/settings';
+import { useErrorEvents, useSettings } from '@features/settings';
 import { useHubStatus } from '@features/settings/api/useHub';
 import { WorkflowPermissionModal } from '@features/workflow';
 
@@ -91,11 +91,11 @@ export function RootLayout() {
               ) : null}
             </ContentAreaContainer.ToolBar>
             <ContentAreaContainer.Content>
-              <main className="h-full overflow-hidden">
+              <TransitionOutlet routeKey={pathname}>
                 <RouteErrorBoundary resetKey={pathname}>
                   <Outlet />
                 </RouteErrorBoundary>
-              </main>
+              </TransitionOutlet>
             </ContentAreaContainer.Content>
           </ContentAreaContainer>
         </LayoutWrapper>

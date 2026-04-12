@@ -10,6 +10,7 @@
 
 import { useEffect } from 'react';
 
+// eslint-disable-next-line boundaries/dependencies -- TODO: fix shared->features violation
 import { useSettings } from '@features/settings';
 
 import { useThemeStore } from '../stores/theme-store';

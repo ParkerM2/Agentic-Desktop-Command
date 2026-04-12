@@ -287,3 +287,13 @@ export type { InlineAlertProps } from './inline-alert';
 
 export { ThinkingIndicator, thinkingVariants } from './thinking-indicator';
 export type { ThinkingIndicatorProps } from './thinking-indicator';
+
+// Tier 4: Transition
+export { TransitionOutlet } from './transition-outlet';
+export type { TransitionOutletProps } from './transition-outlet';
+
+// Tier 5: Composition Components
+export * from './composition';
+
+// Tier 6: Data Display Components
+export * from './data-display';

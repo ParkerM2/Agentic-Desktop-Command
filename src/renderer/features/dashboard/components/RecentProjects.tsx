@@ -63,11 +63,12 @@ export function RecentProjects() {
         {projectList.length > 0 ? (
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
             {projectList.map((project) => (
-              <button
+              <Button
                 key={project.id}
                 type="button"
+                variant="ghost"
                 className={cn(
-                  'border-border flex items-start gap-3 rounded-md border p-3 text-left',
+                  'border-border flex h-auto items-start gap-3 rounded-md border p-3 text-left',
                   'hover:bg-accent transition-colors',
                 )}
                 onClick={() => handleOpenProject(project.id)}
@@ -82,7 +83,7 @@ export function RecentProjects() {
                     {formatRelativeTime(project.updatedAt)}
                   </p>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         ) : (

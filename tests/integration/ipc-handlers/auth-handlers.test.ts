@@ -8,6 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ipcInvokeContract, type InvokeChannel } from '@shared/ipc-contract';
+import { AUTH } from '@shared/ipc/auth/channels';
 
 import type { UserSessionManager } from '@main/features/auth';
 import type { IpcRouter } from '@main/ipc/router';
@@ -143,7 +144,7 @@ describe('Auth IPC Handlers', () => {
         data: authResponse,
       });
 
-      const result = await invoke('auth.login', {
+      const result = await invoke(AUTH.LOGIN.USER, {
         email: 'test@example.com',
         password: 'password123',
       });
@@ -179,7 +180,7 @@ describe('Auth IPC Handlers', () => {
         data: authResponse,
       });
 
-      const result = await invoke('auth.login', {
+      const result = await invoke(AUTH.LOGIN.USER, {
         email: 'test@example.com',
         password: 'password123',
       });
@@ -195,7 +196,7 @@ describe('Auth IPC Handlers', () => {
         error: 'Invalid credentials',
       } as HubAuthResult<AuthResponse>);
 
-      const result = await invoke('auth.login', {
+      const result = await invoke(AUTH.LOGIN.USER, {
         email: 'test@example.com',
         password: 'wrong-password',
       });
@@ -209,7 +210,7 @@ describe('Auth IPC Handlers', () => {
         ok: false,
       } as HubAuthResult<AuthResponse>);
 
-      const result = await invoke('auth.login', {
+      const result = await invoke(AUTH.LOGIN.USER, {
         email: 'test@example.com',
         password: 'password',
       });
@@ -219,7 +220,7 @@ describe('Auth IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing email', async () => {
-      const result = await invoke('auth.login', {
+      const result = await invoke(AUTH.LOGIN.USER, {
         password: 'password123',
       });
 
@@ -229,7 +230,7 @@ describe('Auth IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing password', async () => {
-      const result = await invoke('auth.login', {
+      const result = await invoke(AUTH.LOGIN.USER, {
         email: 'test@example.com',
       });
 
@@ -249,7 +250,7 @@ describe('Auth IPC Handlers', () => {
         data: authResponse,
       });
 
-      const result = await invoke('auth.register', {
+      const result = await invoke(AUTH.REGISTER.USER, {
         email: 'new@example.com',
         password: 'password123',
         displayName: 'New User',
@@ -275,7 +276,7 @@ describe('Auth IPC Handlers', () => {
         error: 'Email already in use',
       } as HubAuthResult<AuthResponse>);
 
-      const result = await invoke('auth.register', {
+      const result = await invoke(AUTH.REGISTER.USER, {
         email: 'existing@example.com',
         password: 'password123',
         displayName: 'Existing User',
@@ -290,7 +291,7 @@ describe('Auth IPC Handlers', () => {
         ok: false,
       } as HubAuthResult<AuthResponse>);
 
-      const result = await invoke('auth.register', {
+      const result = await invoke(AUTH.REGISTER.USER, {
         email: 'test@example.com',
         password: 'password',
         displayName: 'Test',
@@ -301,7 +302,7 @@ describe('Auth IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing email', async () => {
-      const result = await invoke('auth.register', {
+      const result = await invoke(AUTH.REGISTER.USER, {
         password: 'password123',
         displayName: 'New User',
       });
@@ -312,7 +313,7 @@ describe('Auth IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing password', async () => {
-      const result = await invoke('auth.register', {
+      const result = await invoke(AUTH.REGISTER.USER, {
         email: 'new@example.com',
         displayName: 'New User',
       });
@@ -323,7 +324,7 @@ describe('Auth IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing displayName', async () => {
-      const result = await invoke('auth.register', {
+      const result = await invoke(AUTH.REGISTER.USER, {
         email: 'new@example.com',
         password: 'password123',
       });
@@ -344,7 +345,7 @@ describe('Auth IPC Handlers', () => {
         data: user,
       });
 
-      const result = await invoke('auth.me', {});
+      const result = await invoke(AUTH.GET.USER, {});
 
       expect(result.success).toBe(true);
       const data = result.data as Record<string, unknown>;
@@ -360,7 +361,7 @@ describe('Auth IPC Handlers', () => {
         data: user,
       });
 
-      const result = await invoke('auth.me', {});
+      const result = await invoke(AUTH.GET.USER, {});
 
       expect(result.success).toBe(true);
       const data = result.data as Record<string, unknown>;
@@ -374,7 +375,7 @@ describe('Auth IPC Handlers', () => {
         data: user,
       });
 
-      const result = await invoke('auth.me', {});
+      const result = await invoke(AUTH.GET.USER, {});
 
       expect(result.success).toBe(true);
       const data = result.data as Record<string, unknown>;
@@ -387,7 +388,7 @@ describe('Auth IPC Handlers', () => {
         error: 'Not authenticated',
       } as HubAuthResult<User>);
 
-      const result = await invoke('auth.me', {});
+      const result = await invoke(AUTH.GET.USER, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Not authenticated');
@@ -398,7 +399,7 @@ describe('Auth IPC Handlers', () => {
         ok: false,
       } as HubAuthResult<User>);
 
-      const result = await invoke('auth.me', {});
+      const result = await invoke(AUTH.GET.USER, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Failed to get current user');
@@ -414,7 +415,7 @@ describe('Auth IPC Handlers', () => {
         data: { success: true },
       });
 
-      const result = await invoke('auth.logout', {});
+      const result = await invoke(AUTH.LOGOUT.USER, {});
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual({ success: true });
@@ -426,7 +427,7 @@ describe('Auth IPC Handlers', () => {
     it('propagates logout errors', async () => {
       vi.mocked(hubAuthService.logout).mockRejectedValue(new Error('Network error'));
 
-      const result = await invoke('auth.logout', {});
+      const result = await invoke(AUTH.LOGOUT.USER, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Network error');
@@ -447,7 +448,7 @@ describe('Auth IPC Handlers', () => {
         },
       });
 
-      const result = await invoke('auth.refresh', {
+      const result = await invoke(AUTH.REFRESH.TOKEN, {
         refreshToken: 'old-refresh-token',
       });
 
@@ -464,7 +465,7 @@ describe('Auth IPC Handlers', () => {
         error: 'Refresh token expired',
       } as HubAuthResult<AuthRefreshResponse>);
 
-      const result = await invoke('auth.refresh', {
+      const result = await invoke(AUTH.REFRESH.TOKEN, {
         refreshToken: 'expired-token',
       });
 
@@ -477,7 +478,7 @@ describe('Auth IPC Handlers', () => {
         ok: false,
       } as HubAuthResult<AuthRefreshResponse>);
 
-      const result = await invoke('auth.refresh', {
+      const result = await invoke(AUTH.REFRESH.TOKEN, {
         refreshToken: 'bad-token',
       });
 
@@ -486,7 +487,7 @@ describe('Auth IPC Handlers', () => {
     });
 
     it('validates input with Zod - missing refreshToken', async () => {
-      const result = await invoke('auth.refresh', {});
+      const result = await invoke(AUTH.REFRESH.TOKEN, {});
 
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
@@ -508,7 +509,7 @@ describe('Auth IPC Handlers', () => {
       };
       vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
 
-      const result = await invoke('auth.restore', {});
+      const result = await invoke(AUTH.RESTORE.SESSION, {});
 
       expect(result.success).toBe(true);
       const data = result.data as {
@@ -535,7 +536,7 @@ describe('Auth IPC Handlers', () => {
       const restoreResult: RestoreResult = { restored: false };
       vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
 
-      const result = await invoke('auth.restore', {});
+      const result = await invoke(AUTH.RESTORE.SESSION, {});
 
       expect(result.success).toBe(true);
       const data = result.data as { restored: false };
@@ -554,7 +555,7 @@ describe('Auth IPC Handlers', () => {
       };
       vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
 
-      const result = await invoke('auth.restore', {});
+      const result = await invoke(AUTH.RESTORE.SESSION, {});
 
       expect(result.success).toBe(true);
       const data = result.data as { restored: true; user: Record<string, unknown> };
@@ -572,7 +573,7 @@ describe('Auth IPC Handlers', () => {
       };
       vi.mocked(hubAuthService.restoreSession).mockResolvedValue(restoreResult);
 
-      const result = await invoke('auth.restore', {});
+      const result = await invoke(AUTH.RESTORE.SESSION, {});
 
       expect(result.success).toBe(true);
       const data = result.data as { restored: true; user: Record<string, unknown> };

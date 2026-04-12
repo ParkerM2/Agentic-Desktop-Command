@@ -95,11 +95,11 @@ import { TaskCard } from '@features/tasks'; // YES
 | React component | PascalCase | `TaskCard.tsx`, `TaskTable.tsx` |
 | Hook | camelCase, prefix `use` | `useTasks.ts`, `useIpcEvent.ts` |
 | Store | kebab-case or camelCase | `layout-store.ts`, `store.ts` |
-| Service | kebab-case | `task-service.ts`, `agent-service.ts` |
-| Handler | kebab-case | `task-handlers.ts`, `project-handlers.ts` |
+| Service | kebab-case | `progress-service.ts`, `agent-service.ts` |
+| Handler | kebab-case | `progress-handlers.ts`, `project-handlers.ts` |
 | Type file | kebab-case | `task.ts`, `project.ts` |
 | Constant file | kebab-case | `routes.ts`, `themes.ts` |
-| Test file | match source + `.test` | `TaskCard.test.tsx`, `task-service.test.ts` |
+| Test file | match source + `.test` | `TaskCard.test.tsx`, `progress-service.test.ts` |
 | Index/barrel | `index.ts` or `index.tsx` | `index.ts` |
 
 ### Code Identifiers
@@ -212,26 +212,23 @@ export function MyComponent({ prop1, prop2, onAction }: MyComponentProps) {
 
 ```typescript
 // Interface first — defines the public API
-export interface TaskService {
-  listTasks: (projectId: string) => Task[];
-  createTask: (draft: TaskDraft) => Task;
-  updateTask: (taskId: string, updates: Partial<Task>) => Task;
+export interface ProgressService {
+  listTasks: (projectId: string) => ProgressTask[];
+  createTask: (draft: TaskDraft) => ProgressTask;
+  updateTask: (taskId: string, updates: Partial<ProgressTask>) => ProgressTask;
 }
 
 // Factory function creates instance
-export function createTaskService(deps: { router: IpcRouter }): TaskService {
-  // Private state via closure
-  const tasks: Map<string, Task> = new Map();
-
+export function createProgressService(deps: { db: AdcDatabase; router: IpcRouter }): ProgressService {
   return {
     listTasks(projectId) {
       // Synchronous — NEVER return Promise
-      return [...tasks.values()].filter(t => t.projectId === projectId);
+      return db.select().from(progressTasks).where(eq(progressTasks.projectId, projectId)).all();
     },
     createTask(draft) {
       const task = { ...draft, id: uuid(), createdAt: new Date().toISOString() };
-      tasks.set(task.id, task);
-      deps.router.emit('event:task.statusChanged', { taskId: task.id, ... });
+      db.insert(progressTasks).values(task).run();
+      deps.router.emit('event:progress.task.created', { taskId: task.id, ... });
       return task;
     },
   };
@@ -249,11 +246,11 @@ export function createTaskService(deps: { router: IpcRouter }): TaskService {
 
 ```typescript
 // Thin wrapper — NO business logic here
-export function registerTaskHandlers(router: IpcRouter, service: TaskService) {
-  router.handle('tasks.list', ({ projectId }) =>
+export function registerProgressHandlers(router: IpcRouter, service: ProgressService) {
+  router.handle(PROGRESS.LIST.ALL, ({ projectId }) =>
     Promise.resolve(service.listTasks(projectId)),
   );
-  router.handle('tasks.create', (draft) =>
+  router.handle(PROGRESS.CREATE.TASK, (draft) =>
     Promise.resolve(service.createTask(draft)),
   );
 }
@@ -313,9 +310,9 @@ services/briefing/             # 6 files: cache, config, generator, summary, sug
 services/email/                # 7 files: config, encryption, queue, store, smtp-transport
 services/notifications/        # 7 files: slack-watcher, github-watcher, filter, manager, store
 services/settings/             # 4 files: defaults, encryption, store
-services/project/              # 6 files: detector, task-service, slug, spec-parser, store
+services/project/              # 2 files: detector, codebase-analyzer
 services/qa/                   # 7 files: poller, prompt, report-parser, session-store, trigger, types
-services/tasks/                # 3 files: decomposer, github-importer (barrel: index.ts)
+features/progress/             # 4 files: progress-service, task-file-io, schema, progress-handlers
 ```
 
 **Rules:**

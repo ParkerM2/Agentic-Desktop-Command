@@ -10,10 +10,10 @@
 │  │ Components   │   │ hooks         │   │ (window.api.invoke) │  │
 │  └──────────────┘   └───────────────┘   └────────┬───────────┘  │
 │  ┌──────────────┐   ┌───────────────┐            │              │
-│  │ Zustand      │   │ useIpcEvent() │◁─ events ──┤              │
-│  │ stores       │   │ hooks         │            │              │
+│  │ Zustand      │   │ EventBridge   │◁─ events ──┤              │
+│  │ stores       │   │ (invalidation)│            │              │
 │  └──────────────┘   └───────────────┘            │              │
-│  ┌──────────────┐                                │              │
+│  ┌──────────────┐                    ◁─ MessagePort (streams) ──┤
 │  │ Route Groups │  (8 route group files)         │              │
 │  └──────────────┘                                │              │
 ├──────────────────────────────────────────────────┼──────────────┤
@@ -31,8 +31,9 @@
 │  │ lifecycle    │   │ Handlers      │   │ Each service has   │  │
 │  │ svc-registry │   │ (thin layer)  │   │ focused sub-modules│  │
 │  │ ipc-wiring   │   └───────────────┘   └────────────────────┘  │
-│  │ event-wiring │                        ├─ AgentService (5)    │
-│  └──────────────┘                        ├─ AssistantService    │
+│  │ event-wiring │                        ├─ AgentHostClient     │
+│  └──────────────┘                        │   (proxy to utility) │
+│                                          ├─ AssistantService    │
 │                                          │   ├─ tool-definitions│
 │                                          │   ├─ tool-executor   │
 │                                          │   └─ tool-handlers/  │
@@ -42,6 +43,16 @@
 │                                          ├─ CommandBus (3)      │
 │                                          ├─ Database (SQLite)    │
 │                                          └─ ... (35 total)      │
+│                                                                  │
+├─────────────────────────────────────────────────────────────────┤
+│  AGENT HOST (Electron utilityProcess)                            │
+│  ┌──────────────┐   ┌───────────────┐   ┌────────────────────┐  │
+│  │ ProcessMgr   │──▷│ StreamJSON    │──▷│ AgentManagerSvc    │  │
+│  │ (spawn PTY)  │   │ Parser        │   │ (session lifecycle) │  │
+│  └──────────────┘   └───────────────┘   └────────────────────┘  │
+│  MessagePort RPC (correlation-ID request/response)               │
+│  Direct MessagePort to renderer for stream events                │
+│  Auto-restart with exponential backoff (5 retries / 60s)         │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
 │  │ IPC Contract: src/shared/ipc/ (28 domain folders)            ││
@@ -89,9 +100,9 @@ The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modu
 | Module | Responsibility |
 |--------|---------------|
 | `lifecycle.ts` | Electron app lifecycle events, BrowserWindow creation, graceful shutdown (disposes all services including HealthRegistry + ErrorCollector last) |
-| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Creates `taskRepository` (local-first with Hub mirror) wired to TaskService + HubApiClient + HubConnectionManager. Initializes CommandBus + SQLite database. Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient`, `taskRepository`, `commandBus`, and `oauthManager` in registry result for use by event-wiring, IPC handlers, and OAuth handler registration. |
+| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Initializes CommandBus + SQLite database. Creates `ProgressService` (SQLite-backed task management via `progress_tasks` table). Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient`, `progressService`, `commandBus`, and `oauthManager` in registry result for use by event-wiring, IPC handlers, and OAuth handler registration. |
 | `ipc-wiring.ts` | Registers all IPC handlers (connects handler files to router). Includes OAuth handlers (`oauth-handlers.ts`) for `oauth.authorize`, `oauth.isAuthenticated`, and `oauth.revoke` channels. |
-| `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via `taskRepository` (local-first). |
+| `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via `progressService`. |
 | `index.ts` | Barrel re-export |
 
 ### Bootstrap Resilience Features
@@ -146,13 +157,27 @@ Key modules:
 | Data | Storage | Location |
 |------|---------|----------|
 | Projects | JSON file | `{appData}/adc/projects.json` |
-| Settings | JSON file | `{appData}/adc/settings.json` |
-| Tasks | File directories | `{projectPath}/.adc/specs/{taskId}/` |
-| Task specs | JSON files | `requirements.json`, `implementation_plan.json`, `task_metadata.json` |
+| Settings | SQLite table | `settings_kv` in `adc.db` |
+| Tasks | SQLite table | `progress_tasks` in `adc.db` |
+| Briefings | SQLite table | `briefings` in `adc.db` |
+| Changelog | SQLite table | `changelog_entries` in `adc.db` |
+| Planner | SQLite table | `planner_entries` in `adc.db` |
+| OAuth Tokens | SQLite table | `oauth_tokens` in `adc.db` |
 | Notes | JSON file | `{appData}/adc/users/{userId}/notes.json` |
 | Captures | JSON file | `{appData}/adc/users/{userId}/captures.json` |
 | Terminals | In-memory only | PTY processes managed by TerminalService |
-| Agents | In-memory only | PTY processes managed by AgentService |
+| Agents | In-memory + utility process | Managed by AgentHostClient → AgentManagerService |
+
+### UUID / Client-Generated IDs
+
+Every persistable entity has a UUID `id` column. IDs can be generated on either side:
+
+- **Server-side**: `generateId()` (calls `randomUUID()` from `node:crypto`)
+- **Client-side**: `crypto.randomUUID()` in the renderer (valuable for future offline-first sync)
+- **Bus**: Uses `randomUUID()` for command and session IDs (replaced ULID)
+- All create methods accept an optional client-provided `id` parameter
+
+Tables with UUID `id` columns: `progress_tasks`, `briefings`, `changelog_entries`, `oauth_tokens`, `settings_kv`, `planner_entries`, `sessions`, `commands`.
 
 ## Service Architecture
 
@@ -195,8 +220,8 @@ Key refactored services:
 - **email/** — 7 files: config, encryption, queue, store, smtp-transport
 - **notifications/** — 7 files: slack-watcher, github-watcher, filter, manager, store
 - **settings/** — 4 files: defaults, encryption, store
-- **project/** — 6 files: detector, task-service, slug, spec-parser, store
-- **tasks/** — 3 files: types (TaskRepository interface), task-repository (local-first impl), barrel
+- **project/** — 2 files: detector, codebase-analyzer
+- **progress/** — 4 files: progress-service, task-file-io, schema (Drizzle ORM), progress-handlers
 - **qa/** — 7 files: poller, prompt, report-parser, session-store, trigger, types
 
 ## React Query Integration (3-Layer Caching Architecture)
@@ -225,7 +250,7 @@ export function useTasks(projectId: string | null) {
 Pattern:
 - `queryKeys.ts` defines a factory for cache keys (enables targeted invalidation by EventBridge)
 - `use<Feature>.ts` defines query hooks (read operations)
-- `useTaskMutations.ts` defines mutation hooks (write operations with optimistic updates)
+- `useTaskMutations.ts` defines mutation hooks (write operations with simple `onSuccess` invalidation)
 - EventBridge handles IPC event → query invalidation centrally (no per-feature event wiring needed)
 
 ## Mutation Error Handling
@@ -277,12 +302,20 @@ Key files:
 - Input flows: xterm.onData() → `terminals.sendInput` IPC call → PTY stdin
 - Resize syncs between xterm FitAddon and PTY process
 
-## Agent System (Legacy)
+## Agent Host Utility Process
 
-- **AgentService** spawns Claude CLI as PTY processes (legacy, still active for basic agent management)
-- Parses CLI output for status indicators (starting, completed, error)
-- Emits `event:agent.statusChanged` and `event:agent.log` events
-- Agents are linked to tasks via `taskId` and projects via `projectId`
+Agent session management runs in an Electron `utilityProcess` for process isolation:
+
+- **AgentManagerService** (`src/main/agent-host/index.ts`) — Runs inside the utility process. Manages `ProcessManager` (PTY spawning), `StreamJsonParser` (output parsing), and session lifecycle.
+- **AgentHostClient** (`src/main/agent-host/agent-host-client.ts`) — Main process proxy. Implements the shared `AgentManager` interface backed by MessagePort RPC (correlation-ID request/response).
+- **AgentManager interface** — Shared interface satisfied by both `AgentManagerService` (direct, sync spawn) and `AgentHostClient` (async spawn via RPC). Callers always `await` spawn methods.
+- **Direct MessagePort** — Stream events (agent output, status changes) flow directly from utility process to renderer, bypassing the main process for lower latency.
+- **Crash Recovery** — Auto-restart with exponential backoff (5 retries within a 60-second window). On utility process crash, `AgentHostClient` re-establishes MessagePort connections.
+
+Key files:
+- `src/main/agent-host/agent-host-client.ts` — Main process proxy + `AgentManager` interface definition
+- `src/main/agent-host/index.ts` — Utility process entry point
+- `src/main/agent-host/host-protocol.ts` — MessagePort protocol types (`ControlRequest`, `ControlReply`, `AgentManagerEvent`)
 
 ## Command Bus + SQLite Layer (Primary)
 
@@ -326,7 +359,7 @@ Sessions, commands, and events are persisted to a local SQLite database, enablin
 
 - **useAgentMutations** — Mutation hooks wired to `bus.dispatch` / `bus.killSession`
 - **useAgentEvents** — Event listeners for `event:bus.*` → cache invalidation
-- **useTaskEvents** — orchestrates useAgentEvents + useQaEvents, called by TaskDataGrid
+- **useTaskEvents** — orchestrates useAgentEvents + useQaEvents, called by ProgressTaskGrid
 - **ActionsCell** — context-sensitive buttons wired to mutations
 - **StatusBadgeCell** — supports all statuses including `planning`, `plan_ready` with pulsing indicators
 - **TaskDetailRow** — expandable row with PlanViewer (approve/request changes/reject), PlanFeedbackDialog, QaReportViewer, SubtaskList, ExecutionLog, PRStatusPanel
@@ -398,48 +431,31 @@ Operators: equals, changes, any
 When a watch triggers, the evaluator fires a callback that emits `event:assistant.proactive`
 with source 'watch', enabling the assistant widget to show proactive notifications.
 
-## Task System (Local-First)
+## Task System (SQLite-Backed — Sole Source of Truth)
 
-Tasks are stored as file-system directories under `{project}/.adc/specs/`:
-
-```
-specs/
-├── 1-implement-login/
-│   ├── requirements.json       # Task description, workflow type
-│   ├── implementation_plan.json # Status, phases, execution state
-│   └── task_metadata.json      # UUID, priority, projectId, model config
-└── 2-fix-sidebar-bug/
-    └── ...
-```
-
-### Local-First Architecture
-
-The task system uses a **local-first** pattern via `TaskRepository`. All reads and writes go through the local `TaskService` (file system), with mutations optionally mirrored to Hub when connected.
-
-```
-BEFORE (Hub-first):
-  Renderer → hub.tasks.* → hubApiClient → Hub HTTP API
-
-AFTER (Local-first):
-  Renderer → hub.tasks.* → TaskRepository → TaskService (ALWAYS, local .adc/specs/)
-                                  |
-                                  +→ HubApiClient (mirror, fire-and-forget, when connected)
-```
+Tasks are stored exclusively in the `progress_tasks` SQLite table (Drizzle ORM), managed by `ProgressService`. The old filesystem-based `.adc/specs/` task system has been completely removed. There is no `TaskService`, `TaskRepository`, `TaskDecomposer`, or `GithubImporter` — all task operations go through `ProgressService`.
 
 **Key files:**
-- `src/main/services/tasks/types.ts` — `TaskRepository` interface and `TaskRepositoryDeps`
-- `src/main/services/tasks/task-repository.ts` — Local-first implementation with Hub mirror
-- `src/main/services/project/task-service.ts` — File-system task CRUD (UUID support, metadata persistence)
-- `src/main/services/project/task-store.ts` — Reads spec files, maps legacy statuses to Hub values
+- `src/main/features/progress/progress-service.ts` — SQLite-backed task CRUD (sole task authority)
+- `src/main/features/progress/schema.ts` — Drizzle schema (`progress_tasks` table with UUID `id` column)
+- `src/main/features/progress/task-file-io.ts` — File I/O utilities
+- `src/main/features/progress/progress-handlers.ts` — IPC handlers
+- `src/shared/ipc/progress/channels.ts` — `PROGRESS` channel constants
+
+**Consumers (all read from `progress_tasks` via ProgressService):**
+- My Work page — cross-project task view
+- Workflow Pipeline — visual task journey diagram
+- Assistant tool-handlers — task CRUD via natural language
+- Briefing service — daily task summaries
+- QA trigger — auto-starts QA on task status change
+- Insights service — task analytics
 
 **Rules:**
-- All task CRUD (list, get, create, update, delete) reads/writes locally first
-- Mutations are mirrored to Hub via `mirrorToHub()` (fire-and-forget, logs warnings on failure)
-- `executeTask` and `cancelTask` are **Hub-only** operations — they throw if Hub is not connected
-- `TaskStatus` is unified to Hub enum values everywhere (`backlog`, `planning`, `plan_ready`, `queued`, `running`, `paused`, `review`, `done`, `error`)
-- Legacy on-disk statuses (`queue`, `in_progress`, `ai_review`, etc.) are auto-mapped to Hub values via `LEGACY_STATUS_MAP` in `src/shared/types/task.ts`
+- All task CRUD (list, get, create, update, delete) goes through `ProgressService` backed by SQLite
+- `TaskStatus` values: `backlog`, `planning`, `plan_ready`, `queued`, `running`, `paused`, `review`, `done`, `error`
+- No filesystem task storage — SQLite is the single source of truth
 
-The Task Table displays tasks in a filterable, sortable TanStack Table view using shadcn Table primitives.
+The Task Table displays tasks in a filterable, sortable TanStack Table view using shadcn Table primitives (`ProgressTaskGrid`).
 
 ## Design System & Theme Architecture
 
@@ -650,45 +666,40 @@ The Electron client connects to a self-hosted Hub server for multi-device sync.
 
 ---
 
-## Local-First Task Operations
+## SQLite-Backed Task Operations
 
-Task CRUD operations route through the `TaskRepository`, which always reads/writes locally and optionally mirrors to Hub:
+Task CRUD operations route through `ProgressService`, which reads/writes the `progress_tasks` SQLite table:
 
 ```
-RENDERER                          MAIN PROCESS                    HUB SERVER
-========                          ============                    ==========
+RENDERER                          MAIN PROCESS
+========                          ============
 
-useTasks() hook
+useProgress() hook
   |
   v
-ipc('hub.tasks.list', { projectId })
+ipc(PROGRESS.LIST.ALL, { projectId })
   |
   v
-                              hub-task-handlers.ts
+                              progress-handlers.ts
                                 |
                                 v
-                              taskRepository.listTasks(projectId)
-                                |  src/main/services/tasks/task-repository.ts
+                              progressService.listTasks(projectId)
+                                |  queries progress_tasks table (SQLite)
                                 v
-                              taskService.listTasks(projectId)
-                                |  reads .adc/specs/ directories
-                                v
-                              Return local tasks (always works, even offline)
+                              Return ProgressTask[] (always works, even offline)
 
 --- On mutation (create, update, delete): ---
 
-                              taskRepository.createTask(body)
+                              progressService.createTask(draft)
+                                |  inserts into progress_tasks table
+                                v
+                              router.emit('event:progress.task.created', task)
                                 |
-                                +→ taskService.createTask(draft)     ← ALWAYS (local)
-                                |
-                                +→ mirrorToHub(() =>                 ← OPTIONAL (when connected)
-                                     hubApiClient.createTask(body))
-                                     Fire-and-forget, logs warnings
+                                v
+                              EventBridge invalidates React Query cache
 ```
 
-Local `tasks.*` channels still exist for backward-compatible access and are used internally by services (insights, briefing, assistant). The renderer exclusively uses `hub.tasks.*` channels.
-
-**Hub-only operations:** `executeTask` and `cancelTask` require Hub connectivity — they throw an error if Hub is not connected. Use `agent.startExecution` for local execution via the orchestrator.
+The renderer uses `PROGRESS.*` channel constants for all task operations.
 
 ### WebSocket Event Forwarding (Hub -> Electron -> React)
 
@@ -757,9 +768,9 @@ Every 30s: deviceService.sendHeartbeat(deviceId)
 
 The task dashboard uses TanStack Table (`@tanstack/react-table`) with shadcn `Table` primitives from `@ui`:
 
-- **TaskDataGrid** — TanStack Table instance with `useReactTable`, column defs with inline cell rendering via `flexRender`, rendered through `Table`/`TableHeader`/`TableBody`/`TableRow`/`TableCell` from `@ui`
+- **ProgressTaskGrid** — TanStack Table instance with `useReactTable`, column defs with inline cell rendering via `flexRender`, rendered through `Table`/`TableHeader`/`TableBody`/`TableRow`/`TableCell` from `@ui`
 - **Column defs** — Status (Badge), Title, Priority, Progress (inline bar), Cost, Updated (relative time), Expand toggle
-- **Detail rows** — Expandable via store `expandedRowIds` Set, renders `TaskDetailRow` in a full-width `TableCell`
+- **Detail rows** — Expandable via store `expandedRowIds` Set, renders `ProgressTaskDetailRow` in a full-width `TableCell`
 - **TaskFiltersToolbar** — Filter controls in the PageHeader actions area
 - **TaskDetailRow** — Expanded row showing subtasks, execution log, PR status, and task controls
 
@@ -887,8 +898,8 @@ tests/
 ├── unit/                        # Unit tests (vitest.config.ts)
 │   └── services/
 │       ├── project-service.test.ts
-│       ├── task-service.test.ts
-│       └── hub-token-store.test.ts
+│       ├── hub-token-store.test.ts
+│       └── ... (40+ service test files)
 │
 ├── integration/                 # Integration tests (vitest.integration.config.ts)
 │   └── ipc-handlers/

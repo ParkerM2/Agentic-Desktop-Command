@@ -14,13 +14,14 @@ import type { BrowserWindow } from 'electron';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
 import type { AgentChatMessage, ToolUseBlock } from '@shared/types/agent-dashboard';
 
+import type { AdcDatabase } from '@main/db';
 import { serviceLogger } from '@main/lib/logger';
 
 import { createHistoryStore } from './history-store';
 import { buildSystemPrompt } from './tool-definitions';
 
 import type { ToolExecutor } from './tool-executor';
-import type { AgentManagerService } from '../../services/agent-manager';
+import type { AgentManager } from '../../agent-host/agent-host-client';
 
 const ASSISTANT_MODEL = 'claude-sonnet-4-6';
 
@@ -32,7 +33,7 @@ export interface AssistantProject {
 
 export interface AssistantService {
   /** Start the global assistant session. Call after auth + hydration. */
-  start: (projects: AssistantProject[]) => void;
+  start: (projects: AssistantProject[]) => void | Promise<void>;
   /** Send a command to the global assistant session. */
   sendCommand: (input: string, context?: { activeView?: string; activeProjectId?: string }) => void;
   /** Stop the global assistant session (call on app quit). */
@@ -43,8 +44,9 @@ export interface AssistantService {
 
 export interface AssistantServiceDeps {
   getWindow: () => BrowserWindow | null;
-  agentManager: AgentManagerService;
+  agentManager: AgentManager;
   toolExecutor: ToolExecutor | null;
+  db: AdcDatabase;
 }
 
 /**
@@ -68,8 +70,8 @@ function extractToolUseBlocks(message: AgentChatMessage): ToolUseBlock[] {
 }
 
 export function createAssistantService(deps: AssistantServiceDeps): AssistantService {
-  const { getWindow, agentManager, toolExecutor } = deps;
-  const historyStore = createHistoryStore();
+  const { getWindow, agentManager, toolExecutor, db } = deps;
+  const historyStore = createHistoryStore({ db });
 
   let sessionId: string | null = null;
   let eventCleanup: (() => void) | null = null;
@@ -197,7 +199,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
   }
 
   return {
-    start(projects) {
+    async start(projects) {
       if (ensureSession()) {
         serviceLogger.info('[Assistant] Session already running, skipping start');
         return;
@@ -205,7 +207,7 @@ export function createAssistantService(deps: AssistantServiceDeps): AssistantSer
 
       try {
         const systemPrompt = buildSystemPrompt(projects);
-        const session = agentManager.spawnProjectOwner({
+        const session = await agentManager.spawnProjectOwner({
           projectPath: process.cwd(),
           prompt: systemPrompt,
           model: ASSISTANT_MODEL,

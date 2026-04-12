@@ -4,7 +4,7 @@ Extracted from `main/index.ts` to keep the Electron entry point small. These mod
 
 ## Key Files
 
-- **`service-registry.ts`** — Instantiates all services and their dependencies (30+ services). Returns the full service bag used by IPC handlers and event wiring.
+- **`service-registry.ts`** — Instantiates all services and their dependencies (30+ services). Creates `AgentHostClient` (proxy to Agent Host utility process) instead of direct `AgentManagerService`. Creates `ProgressService` (SQLite-backed, sole task authority). Returns the full service bag used by IPC handlers and event wiring.
 - **`ipc-wiring.ts`** — Registers all IPC request/response handlers on the router by delegating to `registerAllHandlers()`
 - **`event-wiring.ts`** — Forwards service events (agent sessions, progress, webhooks, watch evaluator) to the renderer via IPC
 - **`lifecycle.ts`** — Electron app lifecycle handlers: `window-all-closed`, `before-quit` (service disposal), `activate` (macOS dock re-open)

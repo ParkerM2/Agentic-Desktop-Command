@@ -13,6 +13,6 @@ Generates daily briefings by aggregating task status, agent activity, and GitHub
 
 ## How It Connects
 
-- Depends on `TaskService`, `ProjectService`, `AgentService`, `ClaudeClient`, and `NotificationManager`
+- Depends on `ProgressService`, `ProjectService`, `AgentService`, `ClaudeClient`, and `NotificationManager`
 - Emits `event:briefing.ready` via `IpcRouter` when a new briefing is generated
 - Consumed by IPC handlers on the `briefing.*` channels and rendered in the briefing page

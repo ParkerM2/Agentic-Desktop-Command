@@ -2,6 +2,7 @@ import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const progressTasks = sqliteTable('progress_tasks', {
   slug: text('slug').primaryKey(),
+  id: text('id'),
   title: text('title').notNull(),
   status: text('status').notNull(),
   priority: text('priority').notNull().default('medium'),

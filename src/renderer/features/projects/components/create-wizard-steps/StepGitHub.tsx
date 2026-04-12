@@ -6,7 +6,7 @@ import { AlertTriangle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Label, Switch } from '@ui';
+import { Input, Label, Switch } from '@ui';
 
 interface StepGitHubProps {
   createGitHubRepo: boolean;
@@ -48,7 +48,7 @@ export function StepGitHub({
                 githubVisibility === 'private' ? 'border-primary bg-primary/5' : 'bg-card',
               )}
             >
-              <input
+              <Input
                 checked={githubVisibility === 'private'}
                 className="text-primary focus:ring-ring h-4 w-4"
                 id="visibility-private"
@@ -72,7 +72,7 @@ export function StepGitHub({
                 githubVisibility === 'public' ? 'border-primary bg-primary/5' : 'bg-card',
               )}
             >
-              <input
+              <Input
                 checked={githubVisibility === 'public'}
                 className="text-primary focus:ring-ring h-4 w-4"
                 id="visibility-public"

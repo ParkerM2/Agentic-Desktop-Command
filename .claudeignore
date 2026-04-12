@@ -1,0 +1,37 @@
+# Build output
+dist/
+out/
+release/
+.vite/
+
+# Dependencies
+node_modules/
+
+# Worktrees (agent isolation copies)
+.worktrees/
+
+# Archived progress (stale workflow data)
+.claude/progress/archived/
+
+# Large generated files
+*.map
+*.tsbuildinfo
+coverage/
+
+# Binary assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Lock files (large, low signal)
+package-lock.json
+
+# OS files
+Thumbs.db
+.DS_Store

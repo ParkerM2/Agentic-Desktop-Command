@@ -9,6 +9,8 @@ import { CheckCircle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 export type StepState = 'completed' | 'active' | 'future' | 'error';
 
 interface PipelineStepNodeProps {
@@ -49,8 +51,10 @@ export function PipelineStepNode({
 
   return (
     <div className="flex flex-col items-center gap-1.5">
-      <button
+      <Button
+        size="icon"
         type="button"
+        variant="ghost"
         className={cn(
           'flex h-12 w-12 items-center justify-center rounded-full transition-all',
           stateClasses,
@@ -63,7 +67,7 @@ export function PipelineStepNode({
         ) : (
           <StepIcon className="h-5 w-5" />
         )}
-      </button>
+      </Button>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );

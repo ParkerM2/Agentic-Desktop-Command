@@ -10,8 +10,11 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema, SuccessWithErrorSchema } from '../common/schemas';
 
-import { HUB, HUB_EVENTS } from './channels';
+import { DEVICES, HUB, HUB_EVENTS } from './channels';
 import {
+  DeviceCapabilitiesSchema,
+  DeviceSchema,
+  DeviceTypeSchema,
   HubConfigOutputSchema,
   HubConnectionStatusSchema,
   HubStatusOutputSchema,
@@ -69,5 +72,39 @@ export const hubEvents = {
   },
   [HUB_EVENTS.PROJECT.UPDATED]: {
     payload: z.object({ projectId: z.string() }),
+  },
+} as const;
+
+// ─── Device Invoke Channels (absorbed from misc/devices) ──────
+
+export const devicesInvoke = {
+  [DEVICES.LIST.ALL]: {
+    input: z.object({}),
+    output: z.array(DeviceSchema),
+  },
+  [DEVICES.REGISTER.DEVICE]: {
+    input: z.object({
+      machineId: z.string(),
+      deviceName: z.string(),
+      deviceType: DeviceTypeSchema,
+      capabilities: DeviceCapabilitiesSchema,
+      appVersion: z.string(),
+    }),
+    output: DeviceSchema,
+  },
+  [DEVICES.HEARTBEAT.DEVICE]: {
+    input: z.object({ deviceId: z.string() }),
+    output: z.object({ success: z.boolean(), lastSeen: z.string() }),
+  },
+  [DEVICES.UPDATE.DEVICE]: {
+    input: z.object({
+      deviceId: z.string(),
+      deviceName: z.string().optional(),
+      nickname: z.string().optional(),
+      capabilities: DeviceCapabilitiesSchema.optional(),
+      isOnline: z.boolean().optional(),
+      appVersion: z.string().optional(),
+    }),
+    output: DeviceSchema,
   },
 } as const;

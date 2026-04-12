@@ -17,6 +17,11 @@ import { waitForPageContent } from './helpers/page-helpers';
 import { takeScreenshot } from './helpers/screenshot';
 
 test.describe('Dashboard', () => {
+  test.afterEach(async ({ authenticatedWindow: page }) => {
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(200);
+  });
+
   test('loads after login', async ({ authenticatedWindow: page }) => {
     // authenticatedWindow lands on /dashboard after login
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });

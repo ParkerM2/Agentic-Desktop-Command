@@ -4,6 +4,8 @@
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 const TECH_STACK_OPTIONS = [
   { category: 'Frontend', items: ['React', 'Vue', 'Next.js', 'Svelte'] },
   { category: 'Backend', items: ['Express', 'Fastify', 'NestJS'] },
@@ -44,10 +46,11 @@ export function StepTechStack({ techStack, onTechStackChange }: StepTechStackPro
             {group.items.map((item) => {
               const isSelected = techStack.includes(item);
               return (
-                <button
+                <Button
                   key={item}
                   aria-pressed={isSelected}
                   type="button"
+                  variant="outline"
                   className={cn(
                     'rounded-md border px-3 py-1.5 text-sm transition-colors',
                     isSelected
@@ -57,7 +60,7 @@ export function StepTechStack({ techStack, onTechStackChange }: StepTechStackPro
                   onClick={() => handleToggle(item)}
                 >
                   {item}
-                </button>
+                </Button>
               );
             })}
           </div>

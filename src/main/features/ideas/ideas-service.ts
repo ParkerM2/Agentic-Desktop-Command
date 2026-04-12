@@ -5,13 +5,13 @@
  * One-time migration from ideas.json on first access.
  */
 
-import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { and, desc, eq } from 'drizzle-orm';
 
 import { IDEAS_EVENTS } from '@shared/ipc/misc/ideas.channels';
+import { generateId } from '@shared/lib/id';
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
 
 import { ideas } from '../../db/schema';
@@ -29,6 +29,7 @@ export interface IdeasService {
     category?: IdeaCategory;
   }) => Idea[];
   createIdea: (data: {
+    id?: string;
     title: string;
     description: string;
     category: IdeaCategory;
@@ -135,7 +136,7 @@ export function createIdeasService(deps: {
     createIdea(data) {
       const now = new Date().toISOString();
       const idea: Idea = {
-        id: randomUUID(),
+        id: data.id ?? generateId(),
         title: data.title,
         description: data.description,
         status: 'new',
