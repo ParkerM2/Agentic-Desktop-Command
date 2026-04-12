@@ -2,6 +2,8 @@
  * BriefingPage — Daily briefing with tasks, agents, and suggestions
  */
 
+import { useState } from 'react';
+
 import {
   AlertCircle,
   CheckCircle2,
@@ -10,6 +12,7 @@ import {
   GitBranch,
   Lightbulb,
   RefreshCw,
+  Settings,
   Sun,
 } from 'lucide-react';
 
@@ -17,6 +20,7 @@ import { Button, Card, CardContent, EmptyState, Heading, MetricCard, PageContent
 
 import { useDailyBriefing, useGenerateBriefing, useSuggestions } from '../api/useBriefing';
 
+import { BriefingConfigPanel } from './BriefingConfigPanel';
 import { SuggestionCard } from './SuggestionCard';
 
 function formatTime(isoString: string): string {
@@ -36,6 +40,7 @@ export function BriefingPage() {
   const { data: briefing, isLoading: briefingLoading } = useDailyBriefing();
   const { data: suggestions } = useSuggestions();
   const generateBriefing = useGenerateBriefing();
+  const [configOpen, setConfigOpen] = useState(false);
 
   const displaySuggestions = briefing?.suggestions ?? suggestions ?? [];
   const hasBriefing = briefing !== null && briefing !== undefined;
@@ -81,6 +86,14 @@ export function BriefingPage() {
             Daily Briefing
           </PageHeader.Title>
           <PageHeader.Actions>
+            <Button
+              aria-label="Briefing settings"
+              size="icon"
+              variant="ghost"
+              onClick={() => setConfigOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
             <Button
               disabled={generateBriefing.isPending}
               variant="outline"
@@ -213,6 +226,8 @@ export function BriefingPage() {
           </div>
         ) : null}
       </PageContent>
+
+      <BriefingConfigPanel open={configOpen} onClose={() => setConfigOpen(false)} />
     </PageLayout>
   );
 }

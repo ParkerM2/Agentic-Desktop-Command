@@ -18,6 +18,7 @@ import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Pencil, Play, Plus } f
 
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
 import {
@@ -528,6 +529,23 @@ function createProgressColumns(
           </a>
         );
       },
+    },
+    {
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Created
+          <ArrowUpDown className="ml-1 h-3 w-3" />
+        </Button>
+      ),
+      size: 110,
+      cell: ({ row }) => (
+        <RelativeTime value={row.getValue<string>('createdAt')} />
+      ),
     },
     {
       accessorKey: 'updatedAt',

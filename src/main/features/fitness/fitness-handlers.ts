@@ -14,9 +14,19 @@ export function registerFitnessHandlers(router: IpcRouter, service: FitnessServi
     Promise.resolve(service.listWorkouts(filters)),
   );
 
+  router.handle(FITNESS.UPDATE.WORKOUT, (data) => Promise.resolve(service.updateWorkout(data)));
+
   router.handle(FITNESS.DELETE.WORKOUT, ({ id }) => Promise.resolve(service.deleteWorkout(id)));
 
   router.handle(FITNESS.LOG.MEASUREMENT, (data) => Promise.resolve(service.logMeasurement(data)));
+
+  router.handle(FITNESS.UPDATE.MEASUREMENT, (data) =>
+    Promise.resolve(service.updateMeasurement(data)),
+  );
+
+  router.handle(FITNESS.DELETE.MEASUREMENT, ({ id }) =>
+    Promise.resolve(service.deleteMeasurement(id)),
+  );
 
   router.handle(FITNESS.GET.MEASUREMENTS, ({ limit }) =>
     Promise.resolve(service.getMeasurements(limit)),
@@ -31,6 +41,8 @@ export function registerFitnessHandlers(router: IpcRouter, service: FitnessServi
   router.handle(FITNESS.UPDATE['GOAL-PROGRESS'], ({ goalId, current }) =>
     Promise.resolve(service.updateGoalProgress(goalId, current)),
   );
+
+  router.handle(FITNESS.UPDATE.GOAL, (data) => Promise.resolve(service.updateGoal(data)));
 
   router.handle(FITNESS.DELETE.GOAL, ({ id }) => Promise.resolve(service.deleteGoal(id)));
 }

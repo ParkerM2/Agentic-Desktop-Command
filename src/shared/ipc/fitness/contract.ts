@@ -80,11 +80,50 @@ export const fitnessInvoke = {
     input: z.object({ goalId: z.string(), current: z.number() }),
     output: FitnessGoalSchema,
   },
+  [FITNESS.UPDATE.GOAL]: {
+    input: z.object({
+      id: z.string(),
+      type: FitnessGoalTypeSchema.optional(),
+      target: z.number().optional(),
+      unit: z.string().optional(),
+      deadline: z.string().optional().nullable(),
+    }),
+    output: FitnessGoalSchema,
+  },
+  [FITNESS.UPDATE.WORKOUT]: {
+    input: z.object({
+      id: z.string(),
+      date: z.string().optional(),
+      type: WorkoutTypeSchema.optional(),
+      duration: z.number().optional(),
+      exercises: z.array(ExerciseSchema).optional(),
+      notes: z.string().optional(),
+    }),
+    output: WorkoutSchema,
+  },
   [FITNESS.DELETE.WORKOUT]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
   [FITNESS.DELETE.GOAL]: {
+    input: z.object({ id: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  [FITNESS.UPDATE.MEASUREMENT]: {
+    input: z.object({
+      id: z.string(),
+      date: z.string().optional(),
+      weight: z.number().optional(),
+      bodyFat: z.number().optional(),
+      muscleMass: z.number().optional(),
+      boneMass: z.number().optional(),
+      waterPercentage: z.number().optional(),
+      visceralFat: z.number().optional(),
+      source: MeasurementSourceSchema.optional(),
+    }),
+    output: BodyMeasurementSchema,
+  },
+  [FITNESS.DELETE.MEASUREMENT]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
