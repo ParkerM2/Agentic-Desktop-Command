@@ -51,6 +51,8 @@ import {
   useStartResearch,
 } from '../../api/useProgressMutations';
 import { EditProgressTaskDialog } from '../EditProgressTaskDialog';
+import { LinkJiraDialog } from '../LinkJiraDialog';
+import { LinkPrDialog } from '../LinkPrDialog';
 
 import { extractSummaryBlock } from './summary-block-parser';
 import { TeamActivityPanel } from './TeamActivityPanel';
@@ -507,6 +509,8 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   }, [allTasks]);
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [linkJiraOpen, setLinkJiraOpen] = useState(false);
+  const [linkPrOpen, setLinkPrOpen] = useState(false);
 
   type PipelineTab = 'research' | 'plan' | 'execute';
   const [activeTab, setActiveTab] = useState<PipelineTab>(() => {
@@ -710,16 +714,22 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
                 </a>
               </Button>
             ) : (
-              <Button disabled size="sm" variant="outline">Link Ticket</Button>
+              <Button size="sm" variant="outline" onClick={() => { setLinkJiraOpen(true); }}>
+                Link Ticket
+              </Button>
             )}
             {hasPr ? (
               <Button asChild size="sm" variant="outline">
                 <a href={task.prUrl} rel="noreferrer" target="_blank">
-                  <Text size="sm">#{task.prNumber}</Text>
+                  <Badge size="sm" variant={prStatusVariant(task.prStatus)}>
+                    #{task.prNumber}
+                  </Badge>
                 </a>
               </Button>
             ) : (
-              <Button disabled size="sm" variant="outline">Link PR</Button>
+              <Button size="sm" variant="outline" onClick={() => { setLinkPrOpen(true); }}>
+                Link PR
+              </Button>
             )}
 
             <Separator className="h-4" orientation="vertical" />
@@ -748,6 +758,18 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
         open={editDialogOpen}
         task={task}
         onOpenChange={setEditDialogOpen}
+      />
+
+      <LinkJiraDialog
+        open={linkJiraOpen}
+        task={task}
+        onOpenChange={setLinkJiraOpen}
+      />
+
+      <LinkPrDialog
+        open={linkPrOpen}
+        task={task}
+        onOpenChange={setLinkPrOpen}
       />
     </div>
   );
