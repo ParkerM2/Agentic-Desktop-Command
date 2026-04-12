@@ -14,7 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Play, Plus } from 'lucide-react';
+import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Pencil, Play, Plus } from 'lucide-react';
 
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
@@ -62,6 +62,7 @@ import {
   useRunWorkflow,
 } from '../../api/useProgressMutations';
 import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
+import { EditProgressTaskDialog } from '../EditProgressTaskDialog';
 
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
@@ -343,6 +344,7 @@ function createProgressColumns(
   activeSessions: Record<string, { sessionId: string; action: string }>,
   onRunWorkflow: (slug: string) => void,
   onArchive: (slug: string) => void,
+  onEdit: (task: ProgressTask) => void,
 ): Array<ColumnDef<ProgressTask>> {
   return [
     {
@@ -605,6 +607,30 @@ function createProgressColumns(
         );
       },
     },
+    {
+      id: 'edit',
+      header: '',
+      size: 40,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label="Edit task"
+              size="icon-xs"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row.original);
+              }}
+            >
+              <Pencil />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Edit task</TooltipContent>
+        </Tooltip>
+      ),
+    },
   ];
 }
 
@@ -639,6 +665,7 @@ export function ProgressTaskGrid() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProgressStatus | 'all'>('all');
   const [newTaskDialogOpen, setNewTaskDialogOpen] = useState(false);
+  const [editTask, setEditTask] = useState<ProgressTask | null>(null);
   const [runWorkflowError, setRunWorkflowError] = useState<string | null>(null);
 
   // Derived
@@ -688,6 +715,10 @@ export function ProgressTaskGrid() {
     archiveTaskMutation.mutate({ slug });
   }
 
+  function handleInlineEdit(task: ProgressTask) {
+    setEditTask(task);
+  }
+
   // Filtered data
   const filteredTasks = useMemo(() => {
     let filtered = tasks;
@@ -719,6 +750,7 @@ export function ProgressTaskGrid() {
         activeSessions,
         handleInlineRunWorkflow,
         handleInlineArchive,
+        handleInlineEdit,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [expandedSlugs, selectedSlugs, activeSessions],
@@ -871,6 +903,17 @@ export function ProgressTaskGrid() {
           await createTaskMutation.mutateAsync({ slug, title, description, priority });
         }}
       />
+
+      {/* Edit Task Dialog */}
+      {editTask === null ? null : (
+        <EditProgressTaskDialog
+          open
+          task={editTask}
+          onOpenChange={(open) => {
+            if (!open) setEditTask(null);
+          }}
+        />
+      )}
     </div>
   );
 }
