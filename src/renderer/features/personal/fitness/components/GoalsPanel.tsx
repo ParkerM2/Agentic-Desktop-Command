@@ -8,6 +8,8 @@ import { Pencil, Plus, Target, Trash2 } from 'lucide-react';
 
 import type { FitnessGoal, FitnessGoalType } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -241,6 +243,9 @@ function GoalCard({ goal }: GoalCardProps) {
             {String(Math.round(progress))}% complete
             {goal.deadline ? ` \u00B7 Due ${goal.deadline}` : ''}
           </p>
+          <div className="mt-1">
+            <RelativeTime value={goal.createdAt} />
+          </div>
         </CardContent>
       </Card>
 

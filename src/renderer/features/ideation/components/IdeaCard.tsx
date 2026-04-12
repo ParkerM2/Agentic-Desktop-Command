@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, Pencil, Tag, Trash2 } from 'lucide-react';
 
 import type { Idea, IdeaCategory } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Badge, Button, Card, CardContent } from '@ui';
@@ -104,6 +105,7 @@ export function IdeaCard({ idea, onDelete, onEdit, onVote }: IdeaCardProps) {
           <span className="text-muted-foreground bg-muted/50 ml-auto rounded-full px-2 py-0.5 text-xs capitalize">
             {idea.status}
           </span>
+          <RelativeTime value={idea.createdAt} />
         </div>
       </CardContent>
     </Card>

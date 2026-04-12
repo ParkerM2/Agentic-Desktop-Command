@@ -8,6 +8,8 @@ import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
 
 import type { BodyMeasurement } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -247,6 +249,7 @@ function MeasurementHistoryRow({ measurement: m }: MeasurementHistoryRowProps) {
             )}
             <span className="text-muted-foreground text-xs capitalize">{m.source}</span>
           </div>
+          <RelativeTime value={m.createdAt} />
         </div>
         <div className="flex items-center gap-1">
           <Button
