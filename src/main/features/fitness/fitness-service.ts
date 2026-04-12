@@ -49,6 +49,14 @@ export interface FitnessService {
     endDate?: string;
     type?: WorkoutType;
   }) => Workout[];
+  updateWorkout: (data: {
+    id: string;
+    date?: string;
+    type?: WorkoutType;
+    duration?: number;
+    exercises?: Exercise[];
+    notes?: string;
+  }) => Workout;
   deleteWorkout: (id: string) => { success: boolean };
   logMeasurement: (data: {
     id?: string;
@@ -263,6 +271,24 @@ export function createFitnessService(deps: {
 
       router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: id });
       return workout;
+    },
+
+    updateWorkout(data) {
+      const updates: Partial<typeof workouts.$inferInsert> = {};
+      if (data.date !== undefined) updates.date = data.date;
+      if (data.type !== undefined) updates.type = data.type;
+      if (data.duration !== undefined) updates.duration = data.duration;
+      if (data.exercises !== undefined) updates.exercises = data.exercises as unknown[];
+      if ('notes' in data) updates.notes = data.notes ?? null;
+
+      const result = db.update(workouts).set(updates).where(eq(workouts.id, data.id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Workout not found: ${data.id}`);
+      }
+
+      const [row] = db.select().from(workouts).where(eq(workouts.id, data.id)).all();
+      router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: data.id });
+      return toWorkout(row);
     },
 
     listWorkouts(filters) {

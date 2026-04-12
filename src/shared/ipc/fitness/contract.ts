@@ -80,6 +80,17 @@ export const fitnessInvoke = {
     input: z.object({ goalId: z.string(), current: z.number() }),
     output: FitnessGoalSchema,
   },
+  [FITNESS.UPDATE.WORKOUT]: {
+    input: z.object({
+      id: z.string(),
+      date: z.string().optional(),
+      type: WorkoutTypeSchema.optional(),
+      duration: z.number().optional(),
+      exercises: z.array(ExerciseSchema).optional(),
+      notes: z.string().optional(),
+    }),
+    output: WorkoutSchema,
+  },
   [FITNESS.DELETE.WORKOUT]: {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),

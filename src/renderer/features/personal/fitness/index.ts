@@ -13,6 +13,7 @@ export {
   useMeasurements,
   useSetGoal,
   useUpdateGoalProgress,
+  useUpdateWorkout,
   useWorkouts,
 } from './api/useFitness';
 export { fitnessKeys } from './api/queryKeys';
