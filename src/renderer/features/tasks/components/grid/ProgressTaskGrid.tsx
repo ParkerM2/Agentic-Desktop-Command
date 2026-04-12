@@ -60,8 +60,11 @@ import { useProgressTasks } from '../../api/useProgress';
 import {
   useArchiveProgressTask,
   useCreateProgressTask,
+  useDeleteProgressTask,
   useRunWorkflow,
+  useUpdateProgressTask,
 } from '../../api/useProgressMutations';
+import { BulkActionBar } from '../BulkActionBar';
 import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
 import { EditProgressTaskDialog } from '../EditProgressTaskDialog';
 
@@ -660,6 +663,8 @@ export function ProgressTaskGrid() {
   const createTaskMutation = useCreateProgressTask();
   const runWorkflowMutation = useRunWorkflow();
   const archiveTaskMutation = useArchiveProgressTask();
+  const deleteTaskMutation = useDeleteProgressTask();
+  const updateTaskMutation = useUpdateProgressTask();
 
   // Derive active sessions from task status (previously maintained by ProgressContextHydrator)
   const activeSessions = useMemo(() => {
@@ -735,6 +740,53 @@ export function ProgressTaskGrid() {
 
   function handleInlineEdit(task: ProgressTask) {
     setEditTask(task);
+  }
+
+  // Bulk action state
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+
+  async function handleBulkArchive() {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all([...selectedSlugs].map((slug) => archiveTaskMutation.mutateAsync({ slug })));
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all([...selectedSlugs].map((slug) => deleteTaskMutation.mutateAsync({ slug })));
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
+  async function handleBulkChangeStatus(status: ProgressStatus) {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all(
+        [...selectedSlugs].map((slug) => updateTaskMutation.mutateAsync({ slug, updates: { status } })),
+      );
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
+  async function handleBulkChangePriority(priority: ProgressPriority) {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all(
+        [...selectedSlugs].map((slug) => updateTaskMutation.mutateAsync({ slug, updates: { priority } })),
+      );
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
   }
 
   // Filtered data
@@ -912,6 +964,17 @@ export function ProgressTaskGrid() {
           </Table>
         </div>
       </div>
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        isLoading={isBulkLoading}
+        selected={selectedSlugs}
+        onArchive={handleBulkArchive}
+        onChangePriority={handleBulkChangePriority}
+        onChangeStatus={handleBulkChangeStatus}
+        onClear={() => setSelectedSlugs(new Set())}
+        onDelete={handleBulkDelete}
+      />
 
       {/* New Task Dialog (rendered outside toolbar so it gets proper portal) */}
       <NewTaskDialog
