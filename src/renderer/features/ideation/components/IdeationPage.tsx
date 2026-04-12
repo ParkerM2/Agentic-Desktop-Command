@@ -46,6 +46,7 @@ const DEFAULT_GENERATE_PROMPT =
 export function IdeationPage() {
   useIdeaEvents();
   const [activeFilter, setActiveFilter] = useState<IdeaCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState('');
@@ -77,14 +78,26 @@ export function IdeationPage() {
     return Array.from(tagSet).sort();
   }, [allItems]);
 
-  // Client-side tag filter (OR logic: idea must have at least one selected tag)
+  // Client-side filters: search query + tag (all compose together)
   const items = useMemo(() => {
     const hasTagFilters = selectedTags.length > 0;
-    if (!hasTagFilters) return allItems;
-    return allItems.filter((idea) =>
-      selectedTags.some((tag) => idea.tags.includes(tag)),
-    );
-  }, [allItems, selectedTags]);
+    const query = searchQuery.trim().toLowerCase();
+    const hasSearch = query.length > 0;
+
+    return allItems.filter((idea) => {
+      if (hasTagFilters && !selectedTags.some((tag) => idea.tags.includes(tag))) {
+        return false;
+      }
+      if (
+        hasSearch &&
+        !idea.title.toLowerCase().includes(query) &&
+        !idea.description.toLowerCase().includes(query)
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [allItems, selectedTags, searchQuery]);
 
   function handleTagToggle(tag: string): void {
     setSelectedTags((prev) =>
@@ -246,9 +259,11 @@ export function IdeationPage() {
           <IdeationFilterRow
             activeFilter={activeFilter}
             allTags={allTags}
+            searchQuery={searchQuery}
             selectedTags={selectedTags}
             onClearTags={handleClearTags}
             onFilterChange={setActiveFilter}
+            onSearchChange={setSearchQuery}
             onTagToggle={handleTagToggle}
           />
         </div>
