@@ -92,7 +92,7 @@ function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
             min
           </Text>
           {(workout.exercises.length > 0) ? (
-            <Text className="mt-0.5" size="xs" variant="muted">
+            <Text className="mt-0.5 text-xs" variant="muted">
               {workout.exercises.map((e) => e.name).join(', ')}
             </Text>
           ) : null}
