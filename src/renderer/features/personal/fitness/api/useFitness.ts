@@ -2,10 +2,11 @@
  * React Query hooks for fitness
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type UseMutationResult, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { FITNESS } from '@shared/ipc/fitness/channels';
 import type {
+  BodyMeasurement,
   Exercise,
   FitnessGoalType,
   MeasurementSource,
@@ -74,6 +75,40 @@ export function useDeleteWorkout() {
     mutationFn: (id: string) => ipc(FITNESS.DELETE.WORKOUT, { id }),
     onSuccess() {
       void queryClient.invalidateQueries({ queryKey: fitnessKeys.workouts() });
+    },
+  });
+}
+
+interface UpdateMeasurementInput {
+  id: string;
+  date?: string;
+  weight?: number;
+  bodyFat?: number;
+  muscleMass?: number;
+  boneMass?: number;
+  waterPercentage?: number;
+  visceralFat?: number;
+  source?: MeasurementSource;
+}
+
+/** Update an existing measurement */
+export function useUpdateMeasurement(): UseMutationResult<BodyMeasurement, Error, UpdateMeasurementInput> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateMeasurementInput) => ipc(FITNESS.UPDATE.MEASUREMENT, data),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: fitnessKeys.measurements() });
+    },
+  });
+}
+
+/** Delete a measurement */
+export function useDeleteMeasurement(): UseMutationResult<{ success: boolean }, Error, string> {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ipc(FITNESS.DELETE.MEASUREMENT, { id }),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: fitnessKeys.measurements() });
     },
   });
 }

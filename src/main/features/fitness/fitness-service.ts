@@ -69,6 +69,18 @@ export interface FitnessService {
     visceralFat?: number;
     source: MeasurementSource;
   }) => BodyMeasurement;
+  updateMeasurement: (data: {
+    id: string;
+    date?: string;
+    weight?: number;
+    bodyFat?: number;
+    muscleMass?: number;
+    boneMass?: number;
+    waterPercentage?: number;
+    visceralFat?: number;
+    source?: MeasurementSource;
+  }) => BodyMeasurement;
+  deleteMeasurement: (id: string) => { success: boolean };
   getMeasurements: (limit?: number) => BodyMeasurement[];
   getStats: () => FitnessStats;
   setGoal: (data: {
@@ -233,6 +245,34 @@ function toGoal(row: typeof fitnessGoals.$inferSelect): FitnessGoal {
   };
 }
 
+// ── Helpers ──────────────────────────────────────────────────
+
+function toNullableInt(value: number | undefined): number | null {
+  return value === undefined ? null : Math.round(value);
+}
+
+function buildMeasurementUpdates(data: {
+  date?: string;
+  weight?: number;
+  bodyFat?: number;
+  muscleMass?: number;
+  boneMass?: number;
+  waterPercentage?: number;
+  visceralFat?: number;
+  source?: MeasurementSource;
+}): Partial<typeof bodyMeasurements.$inferInsert> {
+  const updates: Partial<typeof bodyMeasurements.$inferInsert> = {};
+  if (data.date !== undefined) updates.date = data.date;
+  if (data.source !== undefined) updates.source = data.source;
+  if ('weight' in data) updates.weight = toNullableInt(data.weight);
+  if ('bodyFat' in data) updates.bodyFat = toNullableInt(data.bodyFat);
+  if ('muscleMass' in data) updates.muscleMass = toNullableInt(data.muscleMass);
+  if ('boneMass' in data) updates.boneMass = toNullableInt(data.boneMass);
+  if ('waterPercentage' in data) updates.waterPercentage = toNullableInt(data.waterPercentage);
+  if ('visceralFat' in data) updates.visceralFat = toNullableInt(data.visceralFat);
+  return updates;
+}
+
 // ── Factory ──────────────────────────────────────────────────
 
 export function createFitnessService(deps: {
@@ -356,6 +396,28 @@ export function createFitnessService(deps: {
 
       router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: id });
       return measurement;
+    },
+
+    updateMeasurement(data) {
+      const updates = buildMeasurementUpdates(data);
+
+      const result = db.update(bodyMeasurements).set(updates).where(eq(bodyMeasurements.id, data.id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Measurement not found: ${data.id}`);
+      }
+
+      const [row] = db.select().from(bodyMeasurements).where(eq(bodyMeasurements.id, data.id)).all();
+      router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: data.id });
+      return toMeasurement(row);
+    },
+
+    deleteMeasurement(id) {
+      const result = db.delete(bodyMeasurements).where(eq(bodyMeasurements.id, id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Measurement not found: ${id}`);
+      }
+      router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: id });
+      return { success: true };
     },
 
     getMeasurements(limit) {

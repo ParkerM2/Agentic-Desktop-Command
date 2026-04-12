@@ -4,11 +4,30 @@
 
 import { useState } from 'react';
 
-import { Plus, Scale } from 'lucide-react';
+import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
 
-import { Button, Card, CardContent, EmptyState, Input, Label } from '@ui';
+import type { BodyMeasurement } from '@shared/types';
 
-import { useLogMeasurement, useMeasurements } from '../api/useFitness';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Card,
+  CardContent,
+  EmptyState,
+  Input,
+  Label,
+} from '@ui';
+
+import { useDeleteMeasurement, useLogMeasurement, useMeasurements } from '../api/useFitness';
+
+import { MeasurementEditDialog } from './MeasurementEditDialog';
 
 // ── Component ────────────────────────────────────────────────
 
@@ -71,6 +90,12 @@ export function BodyComposition() {
                 <div>
                   <span className="text-muted-foreground text-xs">Muscle Mass</span>
                   <p className="text-foreground text-lg font-bold">{String(latest.muscleMass)} kg</p>
+                </div>
+              )}
+              {latest.boneMass === undefined ? null : (
+                <div>
+                  <span className="text-muted-foreground text-xs">Bone Mass</span>
+                  <p className="text-foreground text-lg font-bold">{String(latest.boneMass)} kg</p>
                 </div>
               )}
               {latest.waterPercentage === undefined ? null : (
@@ -165,29 +190,110 @@ export function BodyComposition() {
       )}
 
       {/* History */}
-      {displayMeasurements.length > 1 ? (
+      {(displayMeasurements.length > 1) ? (
         <Card>
           <h4 className="text-muted-foreground border-border border-b px-4 py-2 text-xs font-medium tracking-wider uppercase">
             History
           </h4>
           <div className="divide-border divide-y">
             {displayMeasurements.slice(0, 10).map((m) => (
-              <div key={m.id} className="flex items-center justify-between px-4 py-2">
-                <span className="text-foreground text-sm">{m.date}</span>
-                <div className="flex gap-4">
-                  {m.weight === undefined ? null : (
-                    <span className="text-muted-foreground text-sm">{String(m.weight)} kg</span>
-                  )}
-                  {m.bodyFat === undefined ? null : (
-                    <span className="text-muted-foreground text-sm">{String(m.bodyFat)}%</span>
-                  )}
-                  <span className="text-muted-foreground text-xs capitalize">{m.source}</span>
-                </div>
-              </div>
+              <MeasurementHistoryRow key={m.id} measurement={m} />
             ))}
           </div>
         </Card>
       ) : null}
     </div>
+  );
+}
+
+// ── MeasurementHistoryRow ────────────────────────────────────
+
+interface MeasurementHistoryRowProps {
+  measurement: BodyMeasurement;
+}
+
+function MeasurementHistoryRow({ measurement: m }: MeasurementHistoryRowProps) {
+  const deleteMeasurement = useDeleteMeasurement();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  function handleDeleteConfirm(): void {
+    deleteMeasurement.mutate(m.id);
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex-1">
+          <span className="text-foreground text-sm">{m.date}</span>
+          <div className="mt-0.5 flex flex-wrap gap-3">
+            {m.weight === undefined ? null : (
+              <span className="text-muted-foreground text-xs">{String(m.weight)} kg</span>
+            )}
+            {m.bodyFat === undefined ? null : (
+              <span className="text-muted-foreground text-xs">{String(m.bodyFat)}% fat</span>
+            )}
+            {m.muscleMass === undefined ? null : (
+              <span className="text-muted-foreground text-xs">{String(m.muscleMass)} kg muscle</span>
+            )}
+            {m.boneMass === undefined ? null : (
+              <span className="text-muted-foreground text-xs">{String(m.boneMass)} kg bone</span>
+            )}
+            {m.waterPercentage === undefined ? null : (
+              <span className="text-muted-foreground text-xs">{String(m.waterPercentage)}% water</span>
+            )}
+            {m.visceralFat === undefined ? null : (
+              <span className="text-muted-foreground text-xs">visceral {String(m.visceralFat)}</span>
+            )}
+            <span className="text-muted-foreground text-xs capitalize">{m.source}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Edit measurement"
+            className="text-muted-foreground hover:text-foreground"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            aria-label="Delete measurement"
+            className="text-muted-foreground hover:text-destructive"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={() => setDeleteOpen(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <MeasurementEditDialog measurement={m} open={editOpen} onOpenChange={setEditOpen} />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete measurement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the measurement from {m.date}. This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

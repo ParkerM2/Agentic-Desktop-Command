@@ -99,6 +99,24 @@ export const fitnessInvoke = {
     input: z.object({ id: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
+  [FITNESS.UPDATE.MEASUREMENT]: {
+    input: z.object({
+      id: z.string(),
+      date: z.string().optional(),
+      weight: z.number().optional(),
+      bodyFat: z.number().optional(),
+      muscleMass: z.number().optional(),
+      boneMass: z.number().optional(),
+      waterPercentage: z.number().optional(),
+      visceralFat: z.number().optional(),
+      source: MeasurementSourceSchema.optional(),
+    }),
+    output: BodyMeasurementSchema,
+  },
+  [FITNESS.DELETE.MEASUREMENT]: {
+    input: z.object({ id: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
 } as const;
 
 /** Event channels for fitness-related events */

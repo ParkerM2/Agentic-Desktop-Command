@@ -5,8 +5,8 @@ export const FITNESS = domain('fitness', {
   LIST: ['workouts', 'goals'],
   GET: ['measurements', 'stats'],
   SET: ['goal'],
-  UPDATE: ['goal-progress', 'workout'],
-  DELETE: ['workout', 'goal'],
+  UPDATE: ['goal-progress', 'workout', 'measurement'],
+  DELETE: ['workout', 'goal', 'measurement'],
 });
 
 export const FITNESS_EVENTS = events('fitness', {
