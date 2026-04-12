@@ -9,9 +9,23 @@ import { Bell, Check, Clock, Pencil, Plus, Repeat, Trash2 } from 'lucide-react';
 import type { Alert } from '@shared/types';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useDebounce } from '@renderer/shared/hooks/useDebounce';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Badge, Button, EmptyState, PageContent, PageHeader, PageLayout } from '@ui';
+import {
+  Badge,
+  Button,
+  EmptyState,
+  PageContent,
+  PageHeader,
+  PageLayout,
+  SearchInput,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ui';
 
 import { useAlerts, useDeleteAlert, useDismissAlert } from '../api/useAlerts';
 import { useAlertEvents } from '../hooks/useAlertEvents';
@@ -22,6 +36,8 @@ import { CreateAlertModal } from './CreateAlertModal';
 import { RecurringAlerts } from './RecurringAlerts';
 
 type TabId = 'active' | 'dismissed' | 'recurring';
+type SortField = 'triggerAt' | 'createdAt';
+type AlertTypeFilter = 'all' | Alert['type'];
 
 function getAlertIcon(type: Alert['type']) {
   switch (type) {
@@ -56,6 +72,30 @@ function formatTriggerTime(triggerAt: string): string {
   });
 }
 
+function applyFilters(
+  alertList: Alert[],
+  searchQuery: string,
+  typeFilter: AlertTypeFilter,
+  sortField: SortField,
+): Alert[] {
+  let result = alertList;
+
+  if (searchQuery.length > 0) {
+    const lower = searchQuery.toLowerCase();
+    result = result.filter((a) => a.message.toLowerCase().includes(lower));
+  }
+
+  if (typeFilter !== 'all') {
+    result = result.filter((a) => a.type === typeFilter);
+  }
+
+  return [...result].sort((a, b) => {
+    const aVal = new Date(a[sortField]).getTime();
+    const bVal = new Date(b[sortField]).getTime();
+    return aVal - bVal;
+  });
+}
+
 export function AlertsPage() {
   useAlertEvents();
 
@@ -65,9 +105,17 @@ export function AlertsPage() {
   const openCreateModal = useAlertStore((s) => s.openCreateModal);
 
   const [editingAlert, setEditingAlert] = useState<Alert | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const [sortField, setSortField] = useState<SortField>('triggerAt');
+  const [typeFilter, setTypeFilter] = useState<AlertTypeFilter>('all');
+
+  const debouncedSearch = useDebounce(searchText, 250);
 
   const activeAlerts = alerts.filter((a) => !a.dismissed);
   const dismissedAlerts = alerts.filter((a) => a.dismissed);
+
+  const filteredActive = applyFilters(activeAlerts, debouncedSearch, typeFilter, sortField);
+  const filteredDismissed = applyFilters(dismissedAlerts, debouncedSearch, typeFilter, sortField);
 
   const tabs: Array<{ id: TabId; label: string; count: number }> = [
     { id: 'active', label: 'Active', count: activeAlerts.length },
@@ -197,6 +245,48 @@ export function AlertsPage() {
             ))}
           </PageHeader.TabList>
         </PageHeader>
+
+        {/* Filter toolbar */}
+        <div className="border-border flex items-center gap-3 border-b px-4 py-3">
+          <SearchInput
+            aria-label="Search alerts"
+            className="flex-1"
+            placeholder="Search alerts..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            onClear={() => setSearchText('')}
+          />
+
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => setTypeFilter(v as AlertTypeFilter)}
+          >
+            <SelectTrigger aria-label="Filter by type" className="w-36">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All types</SelectItem>
+              <SelectItem value="reminder">Reminder</SelectItem>
+              <SelectItem value="deadline">Deadline</SelectItem>
+              <SelectItem value="notification">Notification</SelectItem>
+              <SelectItem value="recurring">Recurring</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={sortField}
+            onValueChange={(v) => setSortField(v as SortField)}
+          >
+            <SelectTrigger aria-label="Sort by" className="w-40">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="triggerAt">Trigger time</SelectItem>
+              <SelectItem value="createdAt">Created time</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         <PageContent>
           {isLoading ? (
             <div className="text-muted-foreground flex items-center justify-center py-12 text-sm">
@@ -204,8 +294,8 @@ export function AlertsPage() {
             </div>
           ) : (
             <>
-              <PageHeader.TabContent value="active">{renderAlertList(activeAlerts)}</PageHeader.TabContent>
-              <PageHeader.TabContent value="dismissed">{renderAlertList(dismissedAlerts)}</PageHeader.TabContent>
+              <PageHeader.TabContent value="active">{renderAlertList(filteredActive)}</PageHeader.TabContent>
+              <PageHeader.TabContent value="dismissed">{renderAlertList(filteredDismissed)}</PageHeader.TabContent>
               <PageHeader.TabContent value="recurring">
                 <RecurringAlerts alerts={alerts} />
               </PageHeader.TabContent>
