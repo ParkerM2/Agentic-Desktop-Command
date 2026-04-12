@@ -1,6 +1,7 @@
 export { useAgentHostEvent } from './useAgentHostEvent';
 export type { AgentHostEvent, AgentHostEventType } from './useAgentHostEvent';
 export { useClaudeAuth } from './useClaudeAuth';
+export { useDebounce } from './useDebounce';
 export { useHubEvent } from './useHubEvents';
 export { useIpcEvent } from './useIpcEvent';
 export { useLayoutSync } from './useLayoutSync';
