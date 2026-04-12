@@ -14,6 +14,8 @@ export function registerFitnessHandlers(router: IpcRouter, service: FitnessServi
     Promise.resolve(service.listWorkouts(filters)),
   );
 
+  router.handle(FITNESS.UPDATE.WORKOUT, (data) => Promise.resolve(service.updateWorkout(data)));
+
   router.handle(FITNESS.DELETE.WORKOUT, ({ id }) => Promise.resolve(service.deleteWorkout(id)));
 
   router.handle(FITNESS.LOG.MEASUREMENT, (data) => Promise.resolve(service.logMeasurement(data)));

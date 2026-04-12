@@ -49,6 +49,24 @@ export function useLogWorkout() {
   });
 }
 
+/** Update an existing workout */
+export function useUpdateWorkout() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      id: string;
+      date?: string;
+      type?: WorkoutType;
+      duration?: number;
+      exercises?: Exercise[];
+      notes?: string;
+    }) => ipc(FITNESS.UPDATE.WORKOUT, data),
+    onSuccess() {
+      void queryClient.invalidateQueries({ queryKey: fitnessKeys.workouts() });
+    },
+  });
+}
+
 /** Delete a workout */
 export function useDeleteWorkout() {
   const queryClient = useQueryClient();

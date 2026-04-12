@@ -2,13 +2,17 @@
  * WorkoutLog — Recent workouts list
  */
 
-import { Trash2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Pencil, Trash2 } from 'lucide-react';
 
 import type { Workout } from '@shared/types';
 
 import { Badge, Button, EmptyState } from '@ui';
 
 import { useDeleteWorkout, useWorkouts } from '../api/useFitness';
+
+import { WorkoutEditDialog } from './WorkoutEditDialog';
 
 // ── Constants ────────────────────────────────────────────────
 
@@ -66,39 +70,58 @@ function getWorkoutVariant(type: string): 'default' | 'success' | 'info' | 'warn
 }
 
 function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
+  const [editOpen, setEditOpen] = useState(false);
   const exerciseCount = workout.exercises.length;
   const totalSets = workout.exercises.reduce((sum, e) => sum + e.sets.length, 0);
 
   return (
-    <div className="flex items-center justify-between px-4 py-3">
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <Badge variant={getWorkoutVariant(workout.type)}>
-            {TYPE_LABELS[workout.type] ?? workout.type}
-          </Badge>
-          <span className="text-muted-foreground text-xs">{workout.date}</span>
-        </div>
-        <p className="text-foreground mt-1 text-sm">
-          {String(exerciseCount)} exercise{exerciseCount === 1 ? '' : 's'} &middot;{' '}
-          {String(totalSets)} set{totalSets === 1 ? '' : 's'} &middot; {String(workout.duration)}{' '}
-          min
-        </p>
-        {workout.exercises.length > 0 ? (
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {workout.exercises.map((e) => e.name).join(', ')}
+    <>
+      <div className="flex items-start justify-between px-4 py-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <Badge variant={getWorkoutVariant(workout.type)}>
+              {TYPE_LABELS[workout.type] ?? workout.type}
+            </Badge>
+            <span className="text-muted-foreground text-xs">{workout.date}</span>
+          </div>
+          <p className="text-foreground mt-1 text-sm">
+            {String(exerciseCount)} exercise{exerciseCount === 1 ? '' : 's'} &middot;{' '}
+            {String(totalSets)} set{totalSets === 1 ? '' : 's'} &middot; {String(workout.duration)}{' '}
+            min
           </p>
-        ) : null}
+          {(workout.exercises.length > 0) ? (
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              {workout.exercises.map((e) => e.name).join(', ')}
+            </p>
+          ) : null}
+          {workout.notes ? (
+            <p className="text-muted-foreground mt-1 text-xs italic">{workout.notes}</p>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            aria-label="Edit workout"
+            className="text-muted-foreground hover:text-foreground"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            aria-label="Delete workout"
+            className="text-muted-foreground hover:text-destructive"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={onDelete}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
-      <Button
-        aria-label="Delete workout"
-        className="text-muted-foreground hover:text-destructive"
-        size="icon"
-        type="button"
-        variant="ghost"
-        onClick={onDelete}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
+      <WorkoutEditDialog open={editOpen} workout={workout} onOpenChange={setEditOpen} />
+    </>
   );
 }
