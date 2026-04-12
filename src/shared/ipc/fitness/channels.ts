@@ -5,7 +5,7 @@ export const FITNESS = domain('fitness', {
   LIST: ['workouts', 'goals'],
   GET: ['measurements', 'stats'],
   SET: ['goal'],
-  UPDATE: ['goal-progress', 'workout', 'measurement'],
+  UPDATE: ['goal-progress', 'goal', 'workout', 'measurement'],
   DELETE: ['workout', 'goal', 'measurement'],
 });
 

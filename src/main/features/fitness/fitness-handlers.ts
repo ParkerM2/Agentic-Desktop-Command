@@ -42,5 +42,7 @@ export function registerFitnessHandlers(router: IpcRouter, service: FitnessServi
     Promise.resolve(service.updateGoalProgress(goalId, current)),
   );
 
+  router.handle(FITNESS.UPDATE.GOAL, (data) => Promise.resolve(service.updateGoal(data)));
+
   router.handle(FITNESS.DELETE.GOAL, ({ id }) => Promise.resolve(service.deleteGoal(id)));
 }

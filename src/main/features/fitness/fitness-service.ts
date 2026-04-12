@@ -91,6 +91,13 @@ export interface FitnessService {
     deadline?: string;
   }) => FitnessGoal;
   listGoals: () => FitnessGoal[];
+  updateGoal: (data: {
+    id: string;
+    type?: FitnessGoalType;
+    target?: number;
+    unit?: string;
+    deadline?: string | null;
+  }) => FitnessGoal;
   updateGoalProgress: (goalId: string, current: number) => FitnessGoal;
   deleteGoal: (id: string) => { success: boolean };
 }
@@ -466,6 +473,23 @@ export function createFitnessService(deps: {
 
     listGoals() {
       return db.select().from(fitnessGoals).all().map(toGoal);
+    },
+
+    updateGoal(data) {
+      const updates: Partial<typeof fitnessGoals.$inferInsert> = {};
+      if (data.type !== undefined) updates.type = data.type;
+      if (data.target !== undefined) updates.target = Math.round(data.target);
+      if (data.unit !== undefined) updates.unit = data.unit;
+      if ('deadline' in data) updates.deadline = data.deadline ?? null;
+
+      const result = db.update(fitnessGoals).set(updates).where(eq(fitnessGoals.id, data.id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Goal not found: ${data.id}`);
+      }
+
+      const [row] = db.select().from(fitnessGoals).where(eq(fitnessGoals.id, data.id)).all();
+      router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: data.id });
+      return toGoal(row);
     },
 
     updateGoalProgress(goalId, current) {
