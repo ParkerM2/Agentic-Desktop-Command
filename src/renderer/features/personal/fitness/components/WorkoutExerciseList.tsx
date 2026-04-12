@@ -1,0 +1,145 @@
+/**
+ * WorkoutExerciseList — Exercise list editor sub-component for WorkoutEditDialog
+ */
+
+import { Plus, Trash2 } from 'lucide-react';
+
+import type { ExerciseSet } from '@shared/types';
+
+import { Button, Input } from '@ui';
+
+import type { FormExercise } from './WorkoutEditDialog';
+
+// ── EditExerciseInput ─────────────────────────────────────────
+
+interface EditExerciseInputProps {
+  exercise: FormExercise;
+  exerciseIndex: number;
+  onNameChange: (name: string) => void;
+  onRemove: () => void;
+  onAddSet: () => void;
+  onSetChange: (setIndex: number, field: keyof ExerciseSet, value: string) => void;
+}
+
+function EditExerciseInput({
+  exercise,
+  exerciseIndex,
+  onNameChange,
+  onRemove,
+  onAddSet,
+  onSetChange,
+}: EditExerciseInputProps) {
+  return (
+    <div className="bg-muted/50 rounded-md p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <Input
+          aria-label={`Exercise ${String(exerciseIndex + 1)} name`}
+          className="flex-1"
+          placeholder="Exercise name"
+          size="sm"
+          type="text"
+          value={exercise.name}
+          onChange={(e) => onNameChange(e.target.value)}
+        />
+        <Button
+          aria-label="Remove exercise"
+          className="text-muted-foreground hover:text-destructive h-auto p-1"
+          size="icon"
+          type="button"
+          variant="ghost"
+          onClick={onRemove}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
+      <div className="space-y-1">
+        {exercise.sets.map((exerciseSet, setIndex) => (
+          <div key={exercise._setKeys[setIndex]} className="flex items-center gap-2">
+            <span className="text-muted-foreground w-8 text-xs">S{String(setIndex + 1)}</span>
+            <Input
+              aria-label={`Set ${String(setIndex + 1)} reps`}
+              className="w-16"
+              placeholder="Reps"
+              size="sm"
+              type="number"
+              value={exerciseSet.reps ?? ''}
+              onChange={(e) => onSetChange(setIndex, 'reps', e.target.value)}
+            />
+            <Input
+              aria-label={`Set ${String(setIndex + 1)} weight`}
+              className="w-20"
+              placeholder="Weight"
+              size="sm"
+              type="number"
+              value={exerciseSet.weight ?? ''}
+              onChange={(e) => onSetChange(setIndex, 'weight', e.target.value)}
+            />
+            <span className="text-muted-foreground text-xs">lbs</span>
+          </div>
+        ))}
+      </div>
+      <Button
+        className="text-primary mt-1 h-auto p-0 text-xs font-medium"
+        size="sm"
+        type="button"
+        variant="ghost"
+        onClick={onAddSet}
+      >
+        + Add Set
+      </Button>
+    </div>
+  );
+}
+
+// ── WorkoutExerciseList ───────────────────────────────────────
+
+interface WorkoutExerciseListProps {
+  exercises: FormExercise[];
+  onAddExercise: () => void;
+  onRemoveExercise: (index: number) => void;
+  onExerciseNameChange: (index: number, name: string) => void;
+  onAddSet: (exerciseIndex: number) => void;
+  onSetChange: (exerciseIndex: number, setIndex: number, field: keyof ExerciseSet, value: string) => void;
+}
+
+export function WorkoutExerciseList({
+  exercises,
+  onAddExercise,
+  onRemoveExercise,
+  onExerciseNameChange,
+  onAddSet,
+  onSetChange,
+}: WorkoutExerciseListProps) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-muted-foreground text-xs font-medium">Exercises</span>
+        <Button
+          className="text-primary h-auto p-0 text-xs font-medium"
+          size="sm"
+          type="button"
+          variant="ghost"
+          onClick={onAddExercise}
+        >
+          <Plus className="h-3 w-3" />
+          Add Exercise
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {exercises.map((exercise, exerciseIndex) => (
+          <EditExerciseInput
+            key={exercise._key}
+            exercise={exercise}
+            exerciseIndex={exerciseIndex}
+            onAddSet={() => onAddSet(exerciseIndex)}
+            onNameChange={(name) => onExerciseNameChange(exerciseIndex, name)}
+            onRemove={() => onRemoveExercise(exerciseIndex)}
+            onSetChange={(setIndex, field, value) =>
+              onSetChange(exerciseIndex, setIndex, field, value)
+            }
+          />
+        ))}
+      </div>
+    </div>
+  );
+}

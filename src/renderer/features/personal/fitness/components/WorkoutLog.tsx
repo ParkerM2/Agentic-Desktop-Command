@@ -10,7 +10,7 @@ import type { Workout } from '@shared/types';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 
-import { Badge, Button, EmptyState } from '@ui';
+import { Badge, Button, EmptyState, Text } from '@ui';
 
 import { useDeleteWorkout, useWorkouts } from '../api/useFitness';
 
@@ -97,7 +97,7 @@ function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
             </p>
           ) : null}
           {workout.notes ? (
-            <p className="text-muted-foreground mt-1 text-xs italic">{workout.notes}</p>
+            <Text className="mt-1 italic" size="sm" variant="muted">{workout.notes}</Text>
           ) : null}
           <div className="mt-1">
             <RelativeTime value={workout.createdAt} />

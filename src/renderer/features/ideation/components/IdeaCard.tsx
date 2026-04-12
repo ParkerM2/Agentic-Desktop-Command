@@ -9,7 +9,7 @@ import type { Idea, IdeaCategory } from '@shared/types';
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Badge, Button, Card, CardContent } from '@ui';
+import { Badge, Button, Card, CardContent, Text } from '@ui';
 
 const CATEGORY_CONFIG: Record<IdeaCategory, { label: string; colorClass: string }> = {
   feature: { label: 'Feature', colorClass: 'text-primary' },
@@ -66,9 +66,9 @@ export function IdeaCard({ idea, onDelete, onEdit, onVote }: IdeaCardProps) {
 
         {/* Title & Description */}
         <h3 className="mb-1 text-sm font-medium">{idea.title}</h3>
-        <p className="text-muted-foreground mb-2 flex-1 text-xs leading-relaxed">
+        <Text className="mb-2 flex-1 leading-relaxed" size="sm" variant="muted">
           {idea.description}
-        </p>
+        </Text>
 
         {/* Tags */}
         {hasTags ? (

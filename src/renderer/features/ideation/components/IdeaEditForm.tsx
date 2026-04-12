@@ -30,35 +30,10 @@ import {
 
 import { useUpdateIdea } from '../api/useIdeas';
 
-const CATEGORY_OPTIONS: readonly IdeaCategory[] = [
-  'feature',
-  'improvement',
-  'bug',
-  'performance',
-];
-
-const STATUS_OPTIONS: readonly IdeaStatus[] = [
-  'new',
-  'exploring',
-  'accepted',
-  'rejected',
-  'implemented',
-];
-
-const CATEGORY_LABELS: Record<IdeaCategory, string> = {
-  feature: 'Feature',
-  improvement: 'Improvement',
-  bug: 'Bug',
-  performance: 'Performance',
-};
-
-const STATUS_LABELS: Record<IdeaStatus, string> = {
-  new: 'New',
-  exploring: 'Exploring',
-  accepted: 'Accepted',
-  rejected: 'Rejected',
-  implemented: 'Implemented',
-};
+const CATEGORY_OPTIONS: readonly IdeaCategory[] = ['feature', 'improvement', 'bug', 'performance'];
+const STATUS_OPTIONS: readonly IdeaStatus[] = ['new', 'exploring', 'accepted', 'rejected', 'implemented'];
+const CATEGORY_LABELS: Record<IdeaCategory, string> = { feature: 'Feature', improvement: 'Improvement', bug: 'Bug', performance: 'Performance' };
+const STATUS_LABELS: Record<IdeaStatus, string> = { new: 'New', exploring: 'Exploring', accepted: 'Accepted', rejected: 'Rejected', implemented: 'Implemented' };
 
 interface IdeaEditFormProps {
   idea: Idea | null;

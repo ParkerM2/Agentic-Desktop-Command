@@ -110,38 +110,24 @@ interface StoreData<T> {
 
 function migrateFromJson(db: AdcDatabase, dataDir: string): void {
   const fitnessDir = join(dataDir, 'fitness');
-
-  // ── Workouts ──
   migrateWorkouts(db, fitnessDir);
-
-  // ── Measurements ──
   migrateMeasurements(db, fitnessDir);
-
-  // ── Goals ──
   migrateGoals(db, fitnessDir);
 }
 
 function migrateWorkouts(db: AdcDatabase, fitnessDir: string): void {
   const existing = db.select().from(workouts).limit(1).all();
   if (existing.length > 0) return;
-
   const jsonPath = join(fitnessDir, 'workouts.json');
   if (!existsSync(jsonPath)) return;
-
   try {
     const raw = readFileSync(jsonPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<StoreData<Workout>>;
     const items = Array.isArray(parsed.items) ? parsed.items : [];
-
     for (const item of items) {
       db.insert(workouts).values({
-        id: item.id,
-        date: item.date,
-        type: item.type,
-        duration: item.duration,
-        exercises: item.exercises as unknown[],
-        notes: item.notes ?? null,
-        createdAt: item.createdAt,
+        id: item.id, date: item.date, type: item.type, duration: item.duration,
+        exercises: item.exercises as unknown[], notes: item.notes ?? null, createdAt: item.createdAt,
       }).run();
     }
     logger.info(`Migrated ${String(items.length)} workouts from JSON to SQLite`);
@@ -153,27 +139,21 @@ function migrateWorkouts(db: AdcDatabase, fitnessDir: string): void {
 function migrateMeasurements(db: AdcDatabase, fitnessDir: string): void {
   const existing = db.select().from(bodyMeasurements).limit(1).all();
   if (existing.length > 0) return;
-
   const jsonPath = join(fitnessDir, 'measurements.json');
   if (!existsSync(jsonPath)) return;
-
   try {
     const raw = readFileSync(jsonPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<StoreData<BodyMeasurement>>;
     const items = Array.isArray(parsed.items) ? parsed.items : [];
-
     for (const item of items) {
       db.insert(bodyMeasurements).values({
-        id: item.id,
-        date: item.date,
+        id: item.id, date: item.date, source: item.source, createdAt: item.createdAt,
         weight: item.weight === undefined ? null : Math.round(item.weight),
         bodyFat: item.bodyFat === undefined ? null : Math.round(item.bodyFat),
         muscleMass: item.muscleMass === undefined ? null : Math.round(item.muscleMass),
         boneMass: item.boneMass === undefined ? null : Math.round(item.boneMass),
         waterPercentage: item.waterPercentage === undefined ? null : Math.round(item.waterPercentage),
         visceralFat: item.visceralFat === undefined ? null : Math.round(item.visceralFat),
-        source: item.source,
-        createdAt: item.createdAt,
       }).run();
     }
     logger.info(`Migrated ${String(items.length)} measurements from JSON to SQLite`);
@@ -185,24 +165,16 @@ function migrateMeasurements(db: AdcDatabase, fitnessDir: string): void {
 function migrateGoals(db: AdcDatabase, fitnessDir: string): void {
   const existing = db.select().from(fitnessGoals).limit(1).all();
   if (existing.length > 0) return;
-
   const jsonPath = join(fitnessDir, 'goals.json');
   if (!existsSync(jsonPath)) return;
-
   try {
     const raw = readFileSync(jsonPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<StoreData<FitnessGoal>>;
     const items = Array.isArray(parsed.items) ? parsed.items : [];
-
     for (const item of items) {
       db.insert(fitnessGoals).values({
-        id: item.id,
-        type: item.type,
-        target: Math.round(item.target),
-        current: Math.round(item.current),
-        unit: item.unit,
-        deadline: item.deadline ?? null,
-        createdAt: item.createdAt,
+        id: item.id, type: item.type, unit: item.unit, deadline: item.deadline ?? null,
+        target: Math.round(item.target), current: Math.round(item.current), createdAt: item.createdAt,
       }).run();
     }
     logger.info(`Migrated ${String(items.length)} fitness goals from JSON to SQLite`);

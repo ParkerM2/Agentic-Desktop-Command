@@ -2,23 +2,26 @@
  * Fitness feature — public API
  */
 
-// API hooks
+// API hooks — queries
 export {
   useDeleteGoal,
-  useDeleteMeasurement,
   useDeleteWorkout,
   useFitnessGoals,
   useFitnessStats,
-  useLogMeasurement,
-  useLogWorkout,
   useMeasurements,
   useSetGoal,
+  useWorkouts,
+} from './api/useFitness';
+// API hooks — mutations
+export {
+  useDeleteMeasurement,
+  useLogMeasurement,
+  useLogWorkout,
   useUpdateGoal,
   useUpdateGoalProgress,
   useUpdateMeasurement,
   useUpdateWorkout,
-  useWorkouts,
-} from './api/useFitness';
+} from './api/useFitnessMutations';
 export { fitnessKeys } from './api/queryKeys';
 
 // Event hook

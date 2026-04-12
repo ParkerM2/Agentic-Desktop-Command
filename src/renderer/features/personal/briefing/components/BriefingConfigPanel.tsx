@@ -19,6 +19,7 @@ import {
   Label,
   Spinner,
   Switch,
+  Text,
 } from '@ui';
 
 import { useBriefingConfig, useUpdateBriefingConfig } from '../api/useBriefing';
@@ -75,9 +76,9 @@ export function BriefingConfigPanel({ open, onClose }: BriefingConfigPanelProps)
             <Label className="text-sm font-medium" htmlFor="briefing-enabled">
               Enable daily briefing
             </Label>
-            <p className="text-muted-foreground text-xs">
+            <Text size="sm" variant="muted">
               Automatically generate a briefing each day
-            </p>
+            </Text>
           </div>
           <Switch
             checked={enabled}
@@ -98,9 +99,9 @@ export function BriefingConfigPanel({ open, onClose }: BriefingConfigPanelProps)
             value={scheduledTime}
             onChange={(e) => setScheduledTime(e.target.value)}
           />
-          <p className="text-muted-foreground mt-1 text-xs">
+          <Text className="mt-1" size="sm" variant="muted">
             Time when your daily briefing will be generated
-          </p>
+          </Text>
         </div>
 
         {/* Include GitHub */}
@@ -115,9 +116,9 @@ export function BriefingConfigPanel({ open, onClose }: BriefingConfigPanelProps)
             <Label className="text-sm font-medium leading-none" htmlFor="briefing-github">
               Include GitHub notifications
             </Label>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <Text className="mt-1" size="sm" variant="muted">
               Show unread GitHub notification count in your briefing
-            </p>
+            </Text>
           </div>
         </div>
 
@@ -133,9 +134,9 @@ export function BriefingConfigPanel({ open, onClose }: BriefingConfigPanelProps)
             <Label className="text-sm font-medium leading-none" htmlFor="briefing-agents">
               Include agent activity
             </Label>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <Text className="mt-1" size="sm" variant="muted">
               Show running and completed agent sessions in your briefing
-            </p>
+            </Text>
           </div>
         </div>
       </div>

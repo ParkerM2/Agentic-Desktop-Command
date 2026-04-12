@@ -22,6 +22,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Text,
 } from '@ui';
 
 import { useDeleteChangelogEntry } from '../api/useChangelog';
@@ -89,7 +90,7 @@ export function VersionCard({ entry }: VersionCardProps) {
             <CategorySection key={category.type} category={category} />
           ))
         ) : (
-          <p className="text-muted-foreground text-sm">No changes listed.</p>
+          <Text variant="muted">No changes listed.</Text>
         )}
       </div>
 

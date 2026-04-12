@@ -25,6 +25,7 @@ import {
   EmptyState,
   Input,
   Label,
+  Text,
 } from '@ui';
 
 import { useDeleteMeasurement, useLogMeasurement, useMeasurements } from '../api/useFitness';
@@ -79,45 +80,45 @@ export function BodyComposition() {
               {latest.weight === undefined ? null : (
                 <div>
                   <span className="text-muted-foreground text-xs">Weight</span>
-                  <p className="text-foreground text-lg font-bold">{String(latest.weight)} kg</p>
+                  <Text className="text-lg font-bold">{String(latest.weight)} kg</Text>
                 </div>
               )}
               {latest.bodyFat === undefined ? null : (
                 <div>
                   <span className="text-muted-foreground text-xs">Body Fat</span>
-                  <p className="text-foreground text-lg font-bold">{String(latest.bodyFat)}%</p>
+                  <Text className="text-lg font-bold">{String(latest.bodyFat)}%</Text>
                 </div>
               )}
               {latest.muscleMass === undefined ? null : (
                 <div>
                   <span className="text-muted-foreground text-xs">Muscle Mass</span>
-                  <p className="text-foreground text-lg font-bold">{String(latest.muscleMass)} kg</p>
+                  <Text className="text-lg font-bold">{String(latest.muscleMass)} kg</Text>
                 </div>
               )}
               {latest.boneMass === undefined ? null : (
                 <div>
                   <span className="text-muted-foreground text-xs">Bone Mass</span>
-                  <p className="text-foreground text-lg font-bold">{String(latest.boneMass)} kg</p>
+                  <Text className="text-lg font-bold">{String(latest.boneMass)} kg</Text>
                 </div>
               )}
               {latest.waterPercentage === undefined ? null : (
                 <div>
                   <span className="text-muted-foreground text-xs">Water</span>
-                  <p className="text-foreground text-lg font-bold">
+                  <Text className="text-lg font-bold">
                     {String(latest.waterPercentage)}%
-                  </p>
+                  </Text>
                 </div>
               )}
               {latest.visceralFat === undefined ? null : (
                 <div>
                   <span className="text-muted-foreground text-xs">Visceral Fat</span>
-                  <p className="text-foreground text-lg font-bold">{String(latest.visceralFat)}</p>
+                  <Text className="text-lg font-bold">{String(latest.visceralFat)}</Text>
                 </div>
               )}
             </div>
-            <p className="text-muted-foreground mt-2 text-xs">
+            <Text className="mt-2" size="sm" variant="muted">
               {latest.date} &middot; {latest.source}
-            </p>
+            </Text>
           </CardContent>
         </Card>
       ) : (
