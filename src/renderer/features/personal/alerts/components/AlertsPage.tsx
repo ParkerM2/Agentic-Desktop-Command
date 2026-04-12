@@ -8,6 +8,7 @@ import { Bell, Check, Clock, Pencil, Plus, Repeat, Trash2 } from 'lucide-react';
 
 import type { Alert } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Badge, Button, EmptyState, PageContent, PageHeader, PageLayout } from '@ui';
@@ -122,6 +123,7 @@ export function AlertsPage() {
                   {formatTriggerTime(alert.triggerAt)}
                   {alert.recurring === undefined ? '' : ' (recurring)'}
                 </p>
+                <RelativeTime value={alert.createdAt} />
                 {alert.linkedTo === undefined ? null : (
                   <Badge className="mt-1 text-xs" variant="outline">
                     {alert.linkedTo.type}

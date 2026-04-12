@@ -8,6 +8,8 @@ import { Pencil, Trash2 } from 'lucide-react';
 
 import type { Workout } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+
 import { Badge, Button, EmptyState } from '@ui';
 
 import { useDeleteWorkout, useWorkouts } from '../api/useFitness';
@@ -97,6 +99,9 @@ function WorkoutItem({ workout, onDelete }: WorkoutItemProps) {
           {workout.notes ? (
             <p className="text-muted-foreground mt-1 text-xs italic">{workout.notes}</p>
           ) : null}
+          <div className="mt-1">
+            <RelativeTime value={workout.createdAt} />
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <Button

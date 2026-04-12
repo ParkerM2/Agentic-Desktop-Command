@@ -4,6 +4,7 @@ import { CheckCircle2, Circle, Clock, Map, Pencil, Plus, Sparkles, Square, Squar
 
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
@@ -144,6 +145,9 @@ function MilestoneCard({
       <p className="text-muted-foreground mb-3 text-xs">
         Target: {new Date(milestone.targetDate).toLocaleDateString()}
       </p>
+      <div className="mb-3">
+        <RelativeTime value={milestone.createdAt} />
+      </div>
 
       {/* Progress Bar */}
       <div className="mb-3 flex items-center gap-3">

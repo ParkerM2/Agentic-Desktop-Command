@@ -6,6 +6,7 @@ import { Pin } from 'lucide-react';
 
 import type { Note } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, ScrollArea, SearchInput } from '@ui';
@@ -140,6 +141,7 @@ function NoteListItem({ note, isSelected, onSelect }: NoteListItemProps) {
           <span className="text-muted-foreground text-xs">
             {new Date(note.updatedAt).toLocaleDateString()}
           </span>
+          <RelativeTime value={note.createdAt} />
           {note.tags.length > 0 ? (
             <div className="flex gap-1">
               {note.tags.slice(0, 3).map((tag) => (
