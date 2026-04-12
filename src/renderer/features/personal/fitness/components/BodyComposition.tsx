@@ -8,7 +8,22 @@ import { Pencil, Plus, Scale, Trash2 } from 'lucide-react';
 
 import type { BodyMeasurement } from '@shared/types';
 
-import { Button, Card, CardContent, EmptyState, Input, Label } from '@ui';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Card,
+  CardContent,
+  EmptyState,
+  Input,
+  Label,
+} from '@ui';
 
 import { useDeleteMeasurement, useLogMeasurement, useMeasurements } from '../api/useFitness';
 
@@ -200,6 +215,11 @@ interface MeasurementHistoryRowProps {
 function MeasurementHistoryRow({ measurement: m }: MeasurementHistoryRowProps) {
   const deleteMeasurement = useDeleteMeasurement();
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  function handleDeleteConfirm(): void {
+    deleteMeasurement.mutate(m.id);
+  }
 
   return (
     <>
@@ -245,13 +265,35 @@ function MeasurementHistoryRow({ measurement: m }: MeasurementHistoryRowProps) {
             size="icon"
             type="button"
             variant="ghost"
-            onClick={() => deleteMeasurement.mutate(m.id)}
+            onClick={() => setDeleteOpen(true)}
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
+
       <MeasurementEditDialog measurement={m} open={editOpen} onOpenChange={setEditOpen} />
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete measurement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove the measurement from {m.date}. This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteConfirm}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
