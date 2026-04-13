@@ -9,7 +9,7 @@ import type { AgentPanelState, AgentSession } from '@shared/types/agent-dashboar
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { ScrollArea } from '@ui';
+import { ScrollArea, Text } from '@ui';
 
 import { AgentPanelCompact } from './AgentPanelCompact';
 import { AgentPanelExpanded } from './AgentPanelExpanded';
@@ -40,7 +40,7 @@ export function AgentLayoutGrid({
   if (agents.length === 0) {
     return (
       <div className={cn('flex h-full items-center justify-center', className)}>
-        <p className="text-sm text-muted-foreground">No agents active</p>
+        <Text className="text-sm text-muted-foreground">No agents active</Text>
       </div>
     );
   }
