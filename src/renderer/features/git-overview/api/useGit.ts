@@ -35,23 +35,7 @@ export function useGitBranches(repoPath: string | null) {
   });
 }
 
-/** Fetch commit history for a repository */
-export function useCommitHistory({
-  repoPath,
-  branch,
-  limit,
-}: {
-  repoPath: string;
-  branch?: string;
-  limit?: number;
-}) {
-  return useQuery({
-    queryKey: gitOverviewKeys.commitHistory(repoPath, branch, limit),
-    queryFn: () => ipc(GIT.LIST.COMMITS, { repoPath, branch, limit }),
-    enabled: repoPath.length > 0,
-    staleTime: 30_000,
-  });
-}
+export { useCommitHistory } from './useCommitHistory';
 
 /** Fetch worktrees for a project */
 export function useListWorktrees(projectId: string | null) {
