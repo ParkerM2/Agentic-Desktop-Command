@@ -37,3 +37,18 @@ export const ClaudeStreamChunkSchema = z.object({
   usage: ClaudeTokenUsageSchema.optional(),
   error: z.string().optional(),
 });
+
+export const ClaudeConfigItemSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  type: z.enum(['skill', 'agent', 'command']),
+  filePath: z.string(),
+});
+
+export type ClaudeConfigItem = z.infer<typeof ClaudeConfigItemSchema>;
+
+export const ClaudeConfigScanResultSchema = z.object({
+  skills: z.array(ClaudeConfigItemSchema),
+  agents: z.array(ClaudeConfigItemSchema),
+  commands: z.array(ClaudeConfigItemSchema),
+});
