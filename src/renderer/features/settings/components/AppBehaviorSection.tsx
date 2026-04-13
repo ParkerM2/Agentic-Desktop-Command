@@ -2,7 +2,7 @@
  * AppBehaviorSection — App Behavior settings (open at login, tray, agents)
  */
 
-import { Heading, Input, Label, Switch } from '@ui';
+import { Heading, Input, Label, Switch, Text } from '@ui';
 
 import { useSettings, useUpdateSettings, useAgentSettings, useUpdateAgentSettings } from '../api/useSettings';
 
@@ -35,10 +35,10 @@ export function AppBehaviorSection() {
       <div className="border-border bg-card space-y-4 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Open at login</p>
-            <p className="text-muted-foreground text-xs">
+            <Text className="text-sm font-medium">Open at login</Text>
+            <Text className="text-muted-foreground text-xs">
               Launch ADC automatically when you log in
-            </p>
+            </Text>
           </div>
           <Switch
             checked={openAtLogin}
@@ -49,10 +49,10 @@ export function AppBehaviorSection() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Minimize to tray</p>
-            <p className="text-muted-foreground text-xs">
+            <Text className="text-sm font-medium">Minimize to tray</Text>
+            <Text className="text-muted-foreground text-xs">
               Keep ADC in the system tray when minimized
-            </p>
+            </Text>
           </div>
           <Switch
             checked={minimizeToTray}
@@ -63,10 +63,10 @@ export function AppBehaviorSection() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Start minimized</p>
-            <p className="text-muted-foreground text-xs">
+            <Text className="text-sm font-medium">Start minimized</Text>
+            <Text className="text-muted-foreground text-xs">
               Launch ADC minimized to the tray on startup
-            </p>
+            </Text>
           </div>
           <Switch
             checked={startMinimized}
@@ -77,10 +77,10 @@ export function AppBehaviorSection() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Keep running when window closed</p>
-            <p className="text-muted-foreground text-xs">
+            <Text className="text-sm font-medium">Keep running when window closed</Text>
+            <Text className="text-muted-foreground text-xs">
               Continue running agents in the background when the window is closed
-            </p>
+            </Text>
           </div>
           <Switch
             checked={keepRunning}
@@ -94,9 +94,9 @@ export function AppBehaviorSection() {
             <Label className="text-sm font-medium" htmlFor="max-concurrent-agents">
               Max concurrent agents
             </Label>
-            <p className="text-muted-foreground text-xs">
+            <Text className="text-muted-foreground text-xs">
               Maximum number of agents that can run simultaneously (1–20)
-            </p>
+            </Text>
           </div>
           <Input
             className="w-20 text-center"
