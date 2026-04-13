@@ -8,7 +8,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 
-import { Bot, Search } from 'lucide-react';
+import { Bot, Search, Square } from 'lucide-react';
 
 import type {
   AgentDashboardFilters,
@@ -27,6 +27,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -48,6 +49,7 @@ import {
   Text,
 } from '@ui';
 
+import { useStopSession } from '../api/useAgentMutations';
 import { useApplyWorkflow } from '../api/useWorkflowEngine';
 import { useWorkflowTemplate } from '../api/useWorkflowTemplates';
 import { useAgentDashboardStore } from '../store';
@@ -115,6 +117,11 @@ export function AgentDashboardPage({
 
   const debouncedSearch = useDebounce(sessionFilters.search, 250);
 
+  const [isStopAllDialogOpen, setIsStopAllDialogOpen] = useState(false);
+  const [pendingStopIds, setPendingStopIds] = useState<Set<string>>(new Set());
+
+  const stopSession = useStopSession();
+
   const activeMainTab = useAgentDashboardStore((s) => s.activeMainTab);
   const setActiveMainTab = useAgentDashboardStore((s) => s.setActiveMainTab);
 
@@ -161,6 +168,32 @@ export function AgentDashboardPage({
     setAgentUiState((prev) => ({ ...prev, popupAgentId: agentId }));
   }, []);
 
+  const handleStopSession = useCallback(
+    (agentId: string) => {
+      setPendingStopIds((prev) => new Set([...prev, agentId]));
+      stopSession.mutate(
+        { sessionId: agentId },
+        {
+          onSettled: () => {
+            setPendingStopIds((prev) => {
+              const next = new Set(prev);
+              next.delete(agentId);
+              return next;
+            });
+          },
+        },
+      );
+    },
+    [stopSession],
+  );
+
+  function handleStopAll() {
+    runningAgents.forEach((a) => {
+      handleStopSession(a.id);
+    });
+    setIsStopAllDialogOpen(false);
+  }
+
   // ─── Team name options ────────────────────────────────
 
   const teamNameOptions = useMemo(() => {
@@ -200,6 +233,10 @@ export function AgentDashboardPage({
 
     return result;
   }, [agents, agentUiState.filters, sessionFilters, debouncedSearch]);
+
+  const runningAgents = useMemo(() => agents.filter((a) => a.status === 'running'), [agents]);
+
+  const hasRunningAgents = runningAgents.length > 0;
 
   const popupAgent = useMemo(
     () => agents.find((a) => a.id === agentUiState.popupAgentId),
@@ -320,7 +357,9 @@ export function AgentDashboardPage({
               agents={filteredAgents}
               className="h-full"
               expandedAgentId={agentUiState.expandedAgentId}
+              pendingStopIds={pendingStopIds}
               onPanelStateChange={handlePanelStateChange}
+              onStop={handleStopSession}
               onViewAgent={handleViewAgent}
             />
           ) : (
@@ -328,7 +367,9 @@ export function AgentDashboardPage({
               agents={filteredAgents}
               className="h-full"
               expandedAgentId={agentUiState.expandedAgentId}
+              pendingStopIds={pendingStopIds}
               onPanelStateChange={handlePanelStateChange}
+              onStop={handleStopSession}
               onViewAgent={handleViewAgent}
             />
           )}
@@ -354,6 +395,16 @@ export function AgentDashboardPage({
           <PageHeader.Title>Agent Dashboard</PageHeader.Title>
           {activeMainTab === 'agents' ? (
             <PageHeader.Actions>
+              {hasRunningAgents ? (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => setIsStopAllDialogOpen(true)}
+                >
+                  <Square className="mr-1.5 h-3.5 w-3.5" />
+                  Stop All ({runningAgents.length})
+                </Button>
+              ) : null}
               <AgentLayoutToolbar
                 filters={agentUiState.filters}
                 layoutMode={agentUiState.layoutMode}
@@ -388,6 +439,40 @@ export function AgentDashboardPage({
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Stop All confirmation dialog */}
+      <Dialog
+        open={isStopAllDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsStopAllDialogOpen(false);
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Stop all sessions?</DialogTitle>
+            <DialogDescription>
+              This will stop {runningAgents.length} running{' '}
+              {runningAgents.length === 1 ? 'session' : 'sessions'}. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsStopAllDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleStopAll}
+            >
+              Stop All
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Template editor dialog — driven by store */}
       <TemplateEditorPanel />

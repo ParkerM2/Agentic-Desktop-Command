@@ -20,7 +20,9 @@ interface AgentLayoutGridProps {
   agents: AgentSession[];
   expandedAgentId?: string;
   className?: string;
+  pendingStopIds?: Set<string>;
   onPanelStateChange: (agentId: string, state: AgentPanelState) => void;
+  onStop?: (agentId: string) => void;
   onViewAgent?: (agentId: string) => void;
 }
 
@@ -30,7 +32,9 @@ export function AgentLayoutGrid({
   agents,
   expandedAgentId,
   className,
+  pendingStopIds,
   onPanelStateChange,
+  onStop,
   onViewAgent,
 }: AgentLayoutGridProps) {
   if (agents.length === 0) {
@@ -69,8 +73,10 @@ export function AgentLayoutGrid({
             <AgentPanelCompact
               key={agent.id}
               agent={agent}
+              isStopPending={pendingStopIds?.has(agent.id) ?? false}
               onExpand={() => { onPanelStateChange(agent.id, 'expanded'); }}
               onPopup={() => { onPanelStateChange(agent.id, 'popup'); }}
+              onStop={onStop === undefined ? undefined : () => { onStop(agent.id); }}
             />
           );
         })}
