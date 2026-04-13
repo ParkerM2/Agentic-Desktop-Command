@@ -75,7 +75,7 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-semibold">Schedule</h3>
+        <Heading as="h3" className="text-foreground text-sm font-semibold">Schedule</Heading>
         <div className="flex items-center gap-2">
           <Button
             aria-label={showCalendarOverlay ? 'Hide calendar events' : 'Show calendar events'}
@@ -118,7 +118,7 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
 
       {/* User Time Blocks */}
       {sorted.length === 0 && !showEditor ? (
-        <p className="text-muted-foreground text-xs">No time blocks scheduled.</p>
+        <Text className="text-muted-foreground text-xs">No time blocks scheduled.</Text>
       ) : (
         <div className="space-y-2">
           {sorted.map((block) => (
@@ -131,7 +131,7 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-foreground text-sm font-medium">{block.label}</p>
+                  <Text className="text-foreground text-sm font-medium">{block.label}</Text>
                   <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
                     <Clock className="h-3 w-3" />
                     <span>
