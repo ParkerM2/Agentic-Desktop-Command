@@ -8,6 +8,8 @@
 
 import { execFile } from 'node:child_process';
 
+import type { PrDiffFile } from '@shared/ipc/github';
+
 import type { Issue, Notification, PullRequest, PullRequestReview } from './types';
 
 // ── Types ────────────────────────────────────────────────────
@@ -78,6 +80,9 @@ export interface GitHubClient {
 
   /** Watch a repository for notifications */
   watchRepo: (params: { owner: string; repo: string }) => Promise<{ subscribed: boolean }>;
+
+  /** Get the list of files changed in a pull request */
+  getPrFiles: (params: { owner: string; repo: string; number: number }) => Promise<PrDiffFile[]>;
 }
 
 // ── Errors ───────────────────────────────────────────────────
@@ -192,6 +197,14 @@ interface GhApiRepo {
   updated_at: string;
 }
 
+interface RawFile {
+  filename: string;
+  status: string;
+  additions: number;
+  deletions: number;
+  patch?: string;
+}
+
 // ── Factory ──────────────────────────────────────────────────
 
 export function createGitHubCliClient(): GitHubClient {
@@ -294,6 +307,20 @@ export function createGitHubCliClient(): GitHubClient {
         'PUT',
         { subscribed: true },
       );
+    },
+
+    async getPrFiles({ owner, repo, number }) {
+      const raw = await ghApi<RawFile[]>(
+        `/repos/${owner}/${repo}/pulls/${String(number)}/files`,
+      );
+
+      return raw.map((f) => ({
+        filename: f.filename,
+        status: f.status as PrDiffFile['status'],
+        additions: f.additions,
+        deletions: f.deletions,
+        patch: f.patch ?? null,
+      }));
     },
   };
 }

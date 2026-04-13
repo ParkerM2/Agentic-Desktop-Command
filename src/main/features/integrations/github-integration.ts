@@ -5,6 +5,7 @@
  * Maps raw API responses to the shared GitHubPullRequest / GitHubIssue / GitHubNotification types.
  */
 
+import type { PrDiffFile } from '@shared/ipc/github';
 import { GITHUB, GITHUB_EVENTS } from '@shared/ipc/github/channels';
 import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared/types';
 
@@ -30,6 +31,8 @@ export interface GitHubService {
   }) => Promise<GitHubPullRequest[]>;
 
   getPr: (params: { owner: string; repo: string; number: number }) => Promise<GitHubPullRequest>;
+
+  getPrFiles: (params: { owner: string; repo: string; number: number }) => Promise<PrDiffFile[]>;
 
   listIssues: (params: {
     owner: string;
@@ -135,6 +138,10 @@ export function createGitHubService(deps: {
     async getPr(params) {
       const raw = await client.getPr(params);
       return mapPr(raw);
+    },
+
+    async getPrFiles(params) {
+      return await client.getPrFiles(params);
     },
 
     async listIssues(params) {
