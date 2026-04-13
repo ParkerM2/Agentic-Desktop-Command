@@ -181,6 +181,10 @@ export function registerGitHubHandlers(router: IpcRouter, service: GitHubService
     return await service.getPr(params);
   });
 
+  router.handle(GITHUB.GET.PR_FILES, async (params) => {
+    return await service.getPrFiles(params);
+  });
+
   router.handle(GITHUB.LIST.ISSUES, async (params) => {
     return await service.listIssues(params);
   });
