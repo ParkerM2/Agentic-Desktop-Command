@@ -22,8 +22,6 @@ export const integrationsKeys = {
     [...integrationsKeys.githubPrs(), owner, repo] as const,
   githubPrDetail: (owner: string, repo: string, number: number) =>
     [...integrationsKeys.githubPrs(), owner, repo, number] as const,
-  githubPrDiff: (owner: string, repo: string, number: number) =>
-    [...integrationsKeys.githubPrs(), owner, repo, number, 'diff'] as const,
   githubIssues: () => [...integrationsKeys.github(), 'issues'] as const,
   githubIssueList: (owner: string, repo: string) =>
     [...integrationsKeys.githubIssues(), owner, repo] as const,
