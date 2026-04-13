@@ -14,10 +14,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Heading,
   PageContent,
   PageHeader,
   PageLayout,
   Skeleton,
+  Text,
 } from '@ui';
 
 import { useClaudeConfig } from '../api/useClaudeConfig';
@@ -61,13 +63,13 @@ function ConfigSection({ items, loading, title, type }: ConfigSectionProps) {
       );
     }
 
-    return <p className="text-muted-foreground text-sm">No {type}s found.</p>;
+    return <Text className="text-muted-foreground text-sm">No {type}s found.</Text>;
   }
 
   return (
     <div>
       <div className="mb-3 flex items-center gap-2">
-        <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+        <Heading as="h3" className="text-foreground text-sm font-semibold">{title}</Heading>
         {loading ? null : <Badge variant="secondary">{items.length}</Badge>}
       </div>
       {renderContent()}
@@ -105,7 +107,7 @@ export function ToolsPage() {
         <PageContent>
           <PageHeader.TabContent value="config">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-foreground text-sm font-semibold">Claude Configuration</h2>
+              <Heading as="h2" className="text-foreground text-sm font-semibold">Claude Configuration</Heading>
               <Button size="sm" type="button" variant="outline" onClick={() => void refetch()}>
                 Refresh
               </Button>

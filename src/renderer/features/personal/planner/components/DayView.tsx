@@ -10,7 +10,7 @@ import type { ScheduledTask, TimeBlock } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading, Text } from '@ui';
 
 import { usePlannerUI } from '../store';
 
@@ -170,9 +170,9 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
 
       {/* Scheduled Tasks */}
       <div className="mt-4 space-y-2">
-        <h3 className="text-foreground text-sm font-semibold">Scheduled Tasks</h3>
+        <Heading as="h3" className="text-foreground text-sm font-semibold">Scheduled Tasks</Heading>
         {scheduledTasks.length === 0 ? (
-          <p className="text-muted-foreground text-xs">No tasks scheduled.</p>
+          <Text className="text-muted-foreground text-xs">No tasks scheduled.</Text>
         ) : (
           <div className="space-y-2">
             {scheduledTasks.map((task) => (
