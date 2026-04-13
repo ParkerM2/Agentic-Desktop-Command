@@ -18,10 +18,12 @@ import {
   CardContent,
   CardHeader,
   ScrollArea,
+  Separator,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  Text,
 } from '@ui';
 
 import { AgentChatPanel } from './AgentChatPanel';
@@ -62,6 +64,60 @@ function deriveFeatureSlug(agent: AgentSession): string {
     if (featureMatch?.[1] !== undefined) return featureMatch[1];
   }
   return 'agent-dashboard-view';
+}
+
+// ─── Token Usage Section ────────────────────────────────────
+
+function formatTokenCount(count: number): string {
+  if (count >= 1000) {
+    return `${Math.round(count / 1000)}k`;
+  }
+  return String(count);
+}
+
+function formatCost(cost: number): string {
+  if (cost === 0) return '';
+  if (cost < 0.01) return '< $0.01';
+  return `$${cost.toFixed(2)}`;
+}
+
+interface TokenUsageSectionProps {
+  inputTokens: number;
+  outputTokens: number;
+}
+
+function TokenUsageSection({ inputTokens, outputTokens }: TokenUsageSectionProps) {
+  const hasTokens = inputTokens > 0 || outputTokens > 0;
+  if (!hasTokens) return null;
+
+  const cost = ((inputTokens * 3) + (outputTokens * 15)) / 1_000_000;
+  const costLabel = formatCost(cost);
+
+  return (
+    <div className="border-t px-4 py-2">
+      <Text className="mb-1.5 font-medium" size="sm">Token Usage</Text>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <Text size="sm" variant="muted">Input</Text>
+          <Text size="sm">{formatTokenCount(inputTokens)}</Text>
+        </div>
+        <Separator className="h-3" orientation="vertical" />
+        <div className="flex items-center gap-1.5">
+          <Text size="sm" variant="muted">Output</Text>
+          <Text size="sm">{formatTokenCount(outputTokens)}</Text>
+        </div>
+        {costLabel.length > 0 ? (
+          <>
+            <Separator className="h-3" orientation="vertical" />
+            <div className="flex items-center gap-1.5">
+              <Text size="sm" variant="muted">Est. Cost</Text>
+              <Text size="sm">{costLabel}</Text>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 // ─── Files Changed Tab ─────────────────────────────────────
@@ -197,6 +253,11 @@ export function AgentPanelExpanded({
           </p>
         </div>
       )}
+
+      <TokenUsageSection
+        inputTokens={agent.tokenUsage.input}
+        outputTokens={agent.tokenUsage.output}
+      />
 
       <Tabs className="flex min-h-0 flex-1 flex-col" defaultValue="chat">
         <TabsList className="mx-4 shrink-0">
