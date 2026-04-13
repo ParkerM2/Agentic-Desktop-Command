@@ -52,6 +52,7 @@ export const milestonesInvoke = {
       description: z.string().optional(),
       targetDate: z.string().optional(),
       status: MilestoneStatusSchema.optional(),
+      tasks: z.array(MilestoneTaskSchema).optional(),
     }),
     output: MilestoneSchema,
   },

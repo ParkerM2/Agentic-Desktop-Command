@@ -9,7 +9,7 @@ import type { AgentPanelState, AgentSession } from '@shared/types/agent-dashboar
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { ScrollArea } from '@ui';
+import { ScrollArea, Text } from '@ui';
 
 import { AgentPanelCompact } from './AgentPanelCompact';
 import { AgentPanelExpanded } from './AgentPanelExpanded';
@@ -20,7 +20,9 @@ interface AgentLayoutGridProps {
   agents: AgentSession[];
   expandedAgentId?: string;
   className?: string;
+  pendingStopIds?: Set<string>;
   onPanelStateChange: (agentId: string, state: AgentPanelState) => void;
+  onStop?: (agentId: string) => void;
   onViewAgent?: (agentId: string) => void;
 }
 
@@ -30,13 +32,15 @@ export function AgentLayoutGrid({
   agents,
   expandedAgentId,
   className,
+  pendingStopIds,
   onPanelStateChange,
+  onStop,
   onViewAgent,
 }: AgentLayoutGridProps) {
   if (agents.length === 0) {
     return (
       <div className={cn('flex h-full items-center justify-center', className)}>
-        <p className="text-sm text-muted-foreground">No agents active</p>
+        <Text className="text-sm text-muted-foreground">No agents active</Text>
       </div>
     );
   }
@@ -69,8 +73,10 @@ export function AgentLayoutGrid({
             <AgentPanelCompact
               key={agent.id}
               agent={agent}
+              isStopPending={pendingStopIds?.has(agent.id) ?? false}
               onExpand={() => { onPanelStateChange(agent.id, 'expanded'); }}
               onPopup={() => { onPanelStateChange(agent.id, 'popup'); }}
+              onStop={onStop === undefined ? undefined : () => { onStop(agent.id); }}
             />
           );
         })}

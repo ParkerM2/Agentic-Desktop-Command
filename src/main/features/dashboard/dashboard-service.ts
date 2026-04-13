@@ -30,6 +30,7 @@ export interface Capture {
 export interface DashboardService {
   listCaptures: () => Capture[];
   createCapture: (text: string, id?: string) => Capture;
+  updateCapture: (id: string, text: string) => Capture;
   deleteCapture: (id: string) => { success: boolean };
 }
 
@@ -83,6 +84,19 @@ export function createDashboardService(deps: {
       db.insert(captures).values(capture).run();
       router.emit(DASHBOARD_EVENTS.CAPTURE.CHANGED, { captureId: capture.id });
       return capture;
+    },
+
+    updateCapture(id, text) {
+      const result = db.update(captures).set({ text }).where(eq(captures.id, id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Capture not found: ${id}`);
+      }
+      const updated = db.select().from(captures).where(eq(captures.id, id)).get();
+      if (!updated) {
+        throw new Error(`Capture not found after update: ${id}`);
+      }
+      router.emit(DASHBOARD_EVENTS.CAPTURE.CHANGED, { captureId: id });
+      return updated;
     },
 
     deleteCapture(id) {

@@ -8,7 +8,7 @@ import type { AgentSession, AgentStatusUi } from '@shared/types/agent-dashboard'
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Badge } from '@ui';
+import { Badge, Text } from '@ui';
 
 // ─── Props ─────────────────────────────────────────────────
 
@@ -49,18 +49,31 @@ function StatusDot({ status }: { status: AgentStatusUi }) {
   );
 }
 
-// ─── Token Display ─────────────────────────────────────────
+// ─── Token Helpers ─────────────────────────────────────────
 
-function formatTokens(count: number): string {
+const TASK_NUMBER_RE = /work\/[^/]+\/task-(\d+)/i;
+
+function formatTokensCompact(count: number): string {
   if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`;
+    return `${Math.round(count / 1000)}k`;
   }
   return String(count);
+}
+
+function deriveTaskNumber(branch: string | undefined): string | undefined {
+  if (branch === undefined) return undefined;
+  const match = TASK_NUMBER_RE.exec(branch);
+  return match?.[1] ?? undefined;
 }
 
 // ─── Component ─────────────────────────────────────────────
 
 export function AgentStatusBar({ agent, className }: AgentStatusBarProps) {
+  const inputTokens = agent.tokenUsage.input;
+  const outputTokens = agent.tokenUsage.output;
+  const hasTokens = inputTokens > 0 || outputTokens > 0;
+  const taskNumber = deriveTaskNumber(agent.branch);
+
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <StatusDot status={agent.status} />
@@ -70,11 +83,20 @@ export function AgentStatusBar({ agent, className }: AgentStatusBarProps) {
             {agent.name}
           </span>
           <Badge size="sm" variant="secondary">{agent.model}</Badge>
+          {taskNumber === undefined ? null : (
+            <Badge size="sm" variant="outline">Task #{taskNumber}</Badge>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{STATUS_LABELS[agent.status]}</span>
-          <span aria-hidden="true">|</span>
-          <span>{formatTokens(agent.tokens?.inputTokens ?? 0)} in / {formatTokens(agent.tokens?.outputTokens ?? 0)} out</span>
+        <div className="flex items-center gap-2">
+          <Text size="sm" variant="muted">{STATUS_LABELS[agent.status]}</Text>
+          {hasTokens ? (
+            <>
+              <span aria-hidden="true" className="text-xs text-muted-foreground">|</span>
+              <Text size="sm" variant="muted">
+                {formatTokensCompact(inputTokens)}&#8593; {formatTokensCompact(outputTokens)}&#8595;
+              </Text>
+            </>
+          ) : null}
         </div>
       </div>
     </div>

@@ -14,10 +14,11 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Play, Plus } from 'lucide-react';
+import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Pencil, Play, Plus } from 'lucide-react';
 
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
 import {
@@ -59,9 +60,13 @@ import { useProgressTasks } from '../../api/useProgress';
 import {
   useArchiveProgressTask,
   useCreateProgressTask,
+  useDeleteProgressTask,
   useRunWorkflow,
+  useUpdateProgressTask,
 } from '../../api/useProgressMutations';
+import { BulkActionBar } from '../BulkActionBar';
 import { ProgressTaskDetailRow } from '../detail/ProgressTaskDetailRow';
+import { EditProgressTaskDialog } from '../EditProgressTaskDialog';
 
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
 
@@ -343,6 +348,7 @@ function createProgressColumns(
   activeSessions: Record<string, { sessionId: string; action: string }>,
   onRunWorkflow: (slug: string) => void,
   onArchive: (slug: string) => void,
+  onEdit: (task: ProgressTask) => void,
 ): Array<ColumnDef<ProgressTask>> {
   return [
     {
@@ -528,6 +534,23 @@ function createProgressColumns(
       },
     },
     {
+      accessorKey: 'createdAt',
+      header: ({ column }) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Created
+          <ArrowUpDown className="ml-1 h-3 w-3" />
+        </Button>
+      ),
+      size: 110,
+      cell: ({ row }) => (
+        <RelativeTime value={row.getValue<string>('createdAt')} />
+      ),
+    },
+    {
       accessorKey: 'updatedAt',
       header: ({ column }) => (
         <Button
@@ -605,6 +628,30 @@ function createProgressColumns(
         );
       },
     },
+    {
+      id: 'edit',
+      header: '',
+      size: 40,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label="Edit task"
+              size="icon-xs"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(row.original);
+              }}
+            >
+              <Pencil />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Edit task</TooltipContent>
+        </Tooltip>
+      ),
+    },
   ];
 }
 
@@ -616,6 +663,8 @@ export function ProgressTaskGrid() {
   const createTaskMutation = useCreateProgressTask();
   const runWorkflowMutation = useRunWorkflow();
   const archiveTaskMutation = useArchiveProgressTask();
+  const deleteTaskMutation = useDeleteProgressTask();
+  const updateTaskMutation = useUpdateProgressTask();
 
   // Derive active sessions from task status (previously maintained by ProgressContextHydrator)
   const activeSessions = useMemo(() => {
@@ -639,6 +688,7 @@ export function ProgressTaskGrid() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProgressStatus | 'all'>('all');
   const [newTaskDialogOpen, setNewTaskDialogOpen] = useState(false);
+  const [editTask, setEditTask] = useState<ProgressTask | null>(null);
   const [runWorkflowError, setRunWorkflowError] = useState<string | null>(null);
 
   // Derived
@@ -688,6 +738,57 @@ export function ProgressTaskGrid() {
     archiveTaskMutation.mutate({ slug });
   }
 
+  function handleInlineEdit(task: ProgressTask) {
+    setEditTask(task);
+  }
+
+  // Bulk action state
+  const [isBulkLoading, setIsBulkLoading] = useState(false);
+
+  async function handleBulkArchive() {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all([...selectedSlugs].map((slug) => archiveTaskMutation.mutateAsync({ slug })));
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all([...selectedSlugs].map((slug) => deleteTaskMutation.mutateAsync({ slug })));
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
+  async function handleBulkChangeStatus(status: ProgressStatus) {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all(
+        [...selectedSlugs].map((slug) => updateTaskMutation.mutateAsync({ slug, updates: { status } })),
+      );
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
+  async function handleBulkChangePriority(priority: ProgressPriority) {
+    setIsBulkLoading(true);
+    try {
+      await Promise.all(
+        [...selectedSlugs].map((slug) => updateTaskMutation.mutateAsync({ slug, updates: { priority } })),
+      );
+      setSelectedSlugs(new Set());
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }
+
   // Filtered data
   const filteredTasks = useMemo(() => {
     let filtered = tasks;
@@ -719,6 +820,7 @@ export function ProgressTaskGrid() {
         activeSessions,
         handleInlineRunWorkflow,
         handleInlineArchive,
+        handleInlineEdit,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [expandedSlugs, selectedSlugs, activeSessions],
@@ -863,6 +965,17 @@ export function ProgressTaskGrid() {
         </div>
       </div>
 
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        isLoading={isBulkLoading}
+        selected={selectedSlugs}
+        onArchive={handleBulkArchive}
+        onChangePriority={handleBulkChangePriority}
+        onChangeStatus={handleBulkChangeStatus}
+        onClear={() => setSelectedSlugs(new Set())}
+        onDelete={handleBulkDelete}
+      />
+
       {/* New Task Dialog (rendered outside toolbar so it gets proper portal) */}
       <NewTaskDialog
         open={newTaskDialogOpen}
@@ -871,6 +984,17 @@ export function ProgressTaskGrid() {
           await createTaskMutation.mutateAsync({ slug, title, description, priority });
         }}
       />
+
+      {/* Edit Task Dialog */}
+      {editTask === null ? null : (
+        <EditProgressTaskDialog
+          open
+          task={editTask}
+          onOpenChange={(open) => {
+            if (!open) setEditTask(null);
+          }}
+        />
+      )}
     </div>
   );
 }

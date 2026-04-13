@@ -10,7 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Pencil } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -50,6 +50,9 @@ import {
   useSpinUpTeam,
   useStartResearch,
 } from '../../api/useProgressMutations';
+import { EditProgressTaskDialog } from '../EditProgressTaskDialog';
+import { LinkJiraDialog } from '../LinkJiraDialog';
+import { LinkPrDialog } from '../LinkPrDialog';
 
 import { extractSummaryBlock } from './summary-block-parser';
 import { TeamActivityPanel } from './TeamActivityPanel';
@@ -505,6 +508,10 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
     return sessions;
   }, [allTasks]);
 
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [linkJiraOpen, setLinkJiraOpen] = useState(false);
+  const [linkPrOpen, setLinkPrOpen] = useState(false);
+
   type PipelineTab = 'research' | 'plan' | 'execute';
   const [activeTab, setActiveTab] = useState<PipelineTab>(() => {
     if (task.hasTeamTasks) return 'execute';
@@ -707,16 +714,22 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
                 </a>
               </Button>
             ) : (
-              <Button disabled size="sm" variant="outline">Link Ticket</Button>
+              <Button size="sm" variant="outline" onClick={() => { setLinkJiraOpen(true); }}>
+                Link Ticket
+              </Button>
             )}
             {hasPr ? (
               <Button asChild size="sm" variant="outline">
                 <a href={task.prUrl} rel="noreferrer" target="_blank">
-                  <Text size="sm">#{task.prNumber}</Text>
+                  <Badge size="sm" variant={prStatusVariant(task.prStatus)}>
+                    #{task.prNumber}
+                  </Badge>
                 </a>
               </Button>
             ) : (
-              <Button disabled size="sm" variant="outline">Link PR</Button>
+              <Button size="sm" variant="outline" onClick={() => { setLinkPrOpen(true); }}>
+                Link PR
+              </Button>
             )}
 
             <Separator className="h-4" orientation="vertical" />
@@ -727,10 +740,37 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
             <Button className="text-destructive hover:text-destructive" disabled={isActionActive} size="sm" variant="outline" onClick={() => { archiveTaskMutation.mutate({ slug: task.slug }); }}>
               Archive
             </Button>
+
+            <Button
+              aria-label="Edit task"
+              size="sm"
+              variant="outline"
+              onClick={() => { setEditDialogOpen(true); }}
+            >
+              <Pencil className="mr-1.5 h-3.5 w-3.5" />
+              Edit
+            </Button>
           </Flex>
         </Flex>
       </div>
 
+      <EditProgressTaskDialog
+        open={editDialogOpen}
+        task={task}
+        onOpenChange={setEditDialogOpen}
+      />
+
+      <LinkJiraDialog
+        open={linkJiraOpen}
+        task={task}
+        onOpenChange={setLinkJiraOpen}
+      />
+
+      <LinkPrDialog
+        open={linkPrOpen}
+        task={task}
+        onOpenChange={setLinkPrOpen}
+      />
     </div>
   );
 }

@@ -12,6 +12,14 @@ export function registerChangelogHandlers(router: IpcRouter, service: ChangelogS
 
   router.handle(CHANGELOG.ADD.ENTRY, (data) => Promise.resolve(service.addEntry(data)));
 
+  router.handle(CHANGELOG.UPDATE.ENTRY, ({ version, updates }) =>
+    Promise.resolve(service.updateEntry(version, updates)),
+  );
+
+  router.handle(CHANGELOG.DELETE.ENTRY, ({ version }) =>
+    Promise.resolve(service.deleteEntry(version)),
+  );
+
   router.handle(CHANGELOG.GENERATE.ENTRY, ({ repoPath, version, fromTag }) =>
     service.generateFromGit(repoPath, version, fromTag),
   );

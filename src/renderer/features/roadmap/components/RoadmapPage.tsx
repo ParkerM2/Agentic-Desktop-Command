@@ -1,26 +1,31 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { CheckCircle2, Circle, Clock, Map, Plus, Sparkles, Square, SquareCheck, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, Map, Pencil, Plus, Sparkles, Square, SquareCheck, Trash2 } from 'lucide-react';
 
 import type { Milestone, MilestoneStatus } from '@shared/types';
 
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useDebounce } from '@renderer/shared/hooks/useDebounce';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
 import {
   Button,
+  EmptyState,
+  Heading,
   Input,
+  SearchInput,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Spinner,
+  Text,
   Textarea,
 } from '@ui';
 
 import { useSendCommand } from '@features/assistant';
-
 
 import {
   useAddMilestoneTask,
@@ -31,6 +36,8 @@ import {
   useUpdateMilestone,
 } from '../api/useMilestones';
 import { useMilestoneEvents } from '../hooks/useMilestoneEvents';
+
+import { MilestoneEditDialog } from './MilestoneEditDialog';
 
 const STATUS_CONFIG: Record<
   MilestoneStatus,
@@ -74,10 +81,12 @@ function computeProgress(milestone: Milestone): number {
 function MilestoneCard({
   milestone,
   onDelete,
+  onEdit,
   onStatusChange,
 }: {
   milestone: Milestone;
   onDelete: (id: string) => void;
+  onEdit: (milestone: Milestone) => void;
   onStatusChange: (id: string, status: MilestoneStatus) => void;
 }) {
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -98,7 +107,7 @@ function MilestoneCard({
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <StatusIcon className={cn('h-5 w-5', config.iconClass)} />
-          <h3 className="font-medium">{milestone.title}</h3>
+          <Heading as="h3" className="font-medium">{milestone.title}</Heading>
         </div>
         <div className="flex items-center gap-2">
           <Select
@@ -115,6 +124,17 @@ function MilestoneCard({
             </SelectContent>
           </Select>
           <Button
+            aria-label="Edit milestone"
+            className="text-muted-foreground hover:text-foreground"
+            size="icon"
+            type="button"
+            variant="ghost"
+            onClick={() => onEdit(milestone)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            aria-label="Delete milestone"
             className="text-muted-foreground hover:text-destructive"
             size="icon"
             type="button"
@@ -126,10 +146,13 @@ function MilestoneCard({
         </div>
       </div>
 
-      <p className="text-muted-foreground mb-2 text-sm">{milestone.description}</p>
-      <p className="text-muted-foreground mb-3 text-xs">
+      <Text className="text-muted-foreground mb-2" size="sm">{milestone.description}</Text>
+      <Text className="text-muted-foreground mb-3 text-xs">
         Target: {new Date(milestone.targetDate).toLocaleDateString()}
-      </p>
+      </Text>
+      <div className="mb-3">
+        <RelativeTime value={milestone.createdAt} />
+      </div>
 
       {/* Progress Bar */}
       <div className="mb-3 flex items-center gap-3">
@@ -210,6 +233,12 @@ export function RoadmapPage() {
   const [formDate, setFormDate] = useState('');
   const [showGenerate, setShowGenerate] = useState(false);
   const [generatePrompt, setGeneratePrompt] = useState(DEFAULT_GENERATE_PROMPT);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | MilestoneStatus>('all');
+  const [sortBy, setSortBy] = useState<'targetDate' | 'progress' | 'createdAt'>('targetDate');
+
+  const debouncedSearch = useDebounce(searchInput, 250);
 
   const sendCommand = useSendCommand();
   const openWidget = useAssistantWidgetStore((s) => s.open);
@@ -246,10 +275,73 @@ export function RoadmapPage() {
       ? Math.round(items.reduce((sum, m) => sum + computeProgress(m), 0) / items.length)
       : 0;
 
+  const filteredItems = useMemo(() => {
+    const source = milestones ?? [];
+    const query = debouncedSearch.toLowerCase();
+
+    let result = source.filter((m) => {
+      const matchesSearch =
+        query === '' ||
+        m.title.toLowerCase().includes(query) ||
+        m.description.toLowerCase().includes(query);
+      const matchesStatus = statusFilter === 'all' || m.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+
+    result = [...result].sort((a, b) => {
+      if (sortBy === 'targetDate') {
+        return new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime();
+      }
+      if (sortBy === 'progress') {
+        return computeProgress(b) - computeProgress(a);
+      }
+      // createdAt desc
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    return result;
+  }, [milestones, debouncedSearch, statusFilter, sortBy]);
+
   return (
     <div className="space-y-6 p-6">
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <SearchInput
+          className="w-56"
+          placeholder="Search milestones..."
+          size="sm"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          onClear={() => setSearchInput('')}
+        />
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as 'all' | MilestoneStatus)}
+        >
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="planned">Planned</SelectItem>
+            <SelectItem value="in-progress">In Progress</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sortBy}
+          onValueChange={(v) => setSortBy(v as 'targetDate' | 'progress' | 'createdAt')}
+        >
+          <SelectTrigger className="h-8 w-[130px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="targetDate">Target date</SelectItem>
+            <SelectItem value="progress">Progress</SelectItem>
+            <SelectItem value="createdAt">Created at</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex-1" />
         <Button
           type="button"
           variant="outline"
@@ -275,9 +367,9 @@ export function RoadmapPage() {
         {/* Generate with AI Panel */}
         {showGenerate ? (
           <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm">
+            <Text className="text-muted-foreground" size="sm">
               Describe what milestones you want the assistant to generate. It will create them directly on your roadmap.
-            </p>
+            </Text>
             <Textarea
               resize="none"
               rows={3}
@@ -354,21 +446,21 @@ export function RoadmapPage() {
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Total Milestones
             </div>
-            <p className="text-lg font-semibold">{items.length}</p>
+            <Text className="font-semibold" size="lg">{items.length}</Text>
           </div>
           <div className="border-border bg-card rounded-lg border p-4">
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Completed
             </div>
-            <p className="text-lg font-semibold">
+            <Text className="font-semibold" size="lg">
               {completedCount} / {items.length}
-            </p>
+            </Text>
           </div>
           <div className="border-border bg-card rounded-lg border p-4">
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Overall Progress
             </div>
-            <p className="text-lg font-semibold">{totalProgress}%</p>
+            <Text className="font-semibold" size="lg">{totalProgress}%</Text>
           </div>
         </div>
 
@@ -379,17 +471,18 @@ export function RoadmapPage() {
           </div>
         ) : null}
 
-        {!isLoading && items.length > 0 ? (
+        {!isLoading && items.length > 0 && filteredItems.length > 0 ? (
           <section>
-            <h2 className="text-muted-foreground mb-4 text-sm font-medium tracking-wider uppercase">
+            <Heading as="h2" className="text-muted-foreground mb-4 text-sm font-medium tracking-wider uppercase">
               Timeline
-            </h2>
+            </Heading>
             <div className="space-y-4">
-              {items.map((milestone) => (
+              {filteredItems.map((milestone) => (
                 <MilestoneCard
                   key={milestone.id}
                   milestone={milestone}
                   onDelete={(id) => deleteMilestone.mutate(id)}
+                  onEdit={(m) => setEditingMilestone(m)}
                   onStatusChange={(id, status) => updateMilestone.mutate({ id, status })}
                 />
               ))}
@@ -397,15 +490,30 @@ export function RoadmapPage() {
           </section>
         ) : null}
 
+        {!isLoading && items.length > 0 && filteredItems.length === 0 ? (
+          <EmptyState
+            description="Try adjusting your search or filters"
+            icon={Map}
+            size="md"
+            title="No milestones match"
+          />
+        ) : null}
+
         {!isLoading && items.length === 0 ? (
           <div className="border-border rounded-lg border border-dashed p-12 text-center">
             <Map className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <p className="text-lg font-medium">No milestones yet</p>
-            <p className="text-muted-foreground mt-1 text-sm">
+            <Text className="font-medium" size="lg">No milestones yet</Text>
+            <Text className="text-muted-foreground mt-1" size="sm">
               Create your first milestone to start planning
-            </p>
+            </Text>
           </div>
         ) : null}
+
+      {/* Edit dialog */}
+      <MilestoneEditDialog
+        milestone={editingMilestone}
+        onClose={() => setEditingMilestone(null)}
+      />
     </div>
   );
 }

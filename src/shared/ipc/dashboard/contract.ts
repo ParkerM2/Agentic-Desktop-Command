@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { SuccessResponseSchema } from '../common/schemas';
 
 import { DASHBOARD, DASHBOARD_EVENTS } from './channels';
-import { CaptureSchema } from './schemas';
+import { CaptureSchema, UpdateCaptureInputSchema } from './schemas';
 
 export const dashboardInvoke = {
   [DASHBOARD.LIST.CAPTURES]: {
@@ -18,6 +18,10 @@ export const dashboardInvoke = {
   },
   [DASHBOARD.CREATE.CAPTURE]: {
     input: z.object({ id: z.string().optional(), text: z.string() }),
+    output: CaptureSchema,
+  },
+  [DASHBOARD.UPDATE.CAPTURE]: {
+    input: UpdateCaptureInputSchema,
     output: CaptureSchema,
   },
   [DASHBOARD.DELETE.CAPTURE]: {

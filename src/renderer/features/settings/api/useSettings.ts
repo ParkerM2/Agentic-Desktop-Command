@@ -14,6 +14,7 @@ import { useLayoutStore, useThemeStore } from '@renderer/shared/stores';
 export const settingsKeys = {
   all: ['settings'] as const,
   app: () => [...settingsKeys.all, 'app'] as const,
+  agentSettings: () => [...settingsKeys.all, 'agentSettings'] as const,
   profiles: () => [...settingsKeys.all, 'profiles'] as const,
   webhookConfig: () => [...settingsKeys.all, 'webhookConfig'] as const,
 };
@@ -114,6 +115,27 @@ export function useSetDefaultProfile() {
     mutationFn: (id: string) => ipc(SETTINGS.SET['DEFAULT-PROFILE'], { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: settingsKeys.profiles() });
+    },
+  });
+}
+
+/** Fetch agent settings (maxConcurrentAgents) */
+export function useAgentSettings() {
+  return useQuery({
+    queryKey: settingsKeys.agentSettings(),
+    queryFn: () => ipc(SETTINGS.GET['AGENT-SETTINGS'], {}),
+    staleTime: 60_000,
+  });
+}
+
+/** Update agent settings */
+export function useUpdateAgentSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { maxConcurrentAgents: number }) =>
+      ipc(SETTINGS.SET['AGENT-SETTINGS'], data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: settingsKeys.agentSettings() });
     },
   });
 }

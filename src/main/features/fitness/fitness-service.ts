@@ -49,6 +49,14 @@ export interface FitnessService {
     endDate?: string;
     type?: WorkoutType;
   }) => Workout[];
+  updateWorkout: (data: {
+    id: string;
+    date?: string;
+    type?: WorkoutType;
+    duration?: number;
+    exercises?: Exercise[];
+    notes?: string;
+  }) => Workout;
   deleteWorkout: (id: string) => { success: boolean };
   logMeasurement: (data: {
     id?: string;
@@ -61,6 +69,18 @@ export interface FitnessService {
     visceralFat?: number;
     source: MeasurementSource;
   }) => BodyMeasurement;
+  updateMeasurement: (data: {
+    id: string;
+    date?: string;
+    weight?: number;
+    bodyFat?: number;
+    muscleMass?: number;
+    boneMass?: number;
+    waterPercentage?: number;
+    visceralFat?: number;
+    source?: MeasurementSource;
+  }) => BodyMeasurement;
+  deleteMeasurement: (id: string) => { success: boolean };
   getMeasurements: (limit?: number) => BodyMeasurement[];
   getStats: () => FitnessStats;
   setGoal: (data: {
@@ -71,6 +91,13 @@ export interface FitnessService {
     deadline?: string;
   }) => FitnessGoal;
   listGoals: () => FitnessGoal[];
+  updateGoal: (data: {
+    id: string;
+    type?: FitnessGoalType;
+    target?: number;
+    unit?: string;
+    deadline?: string | null;
+  }) => FitnessGoal;
   updateGoalProgress: (goalId: string, current: number) => FitnessGoal;
   deleteGoal: (id: string) => { success: boolean };
 }
@@ -83,38 +110,24 @@ interface StoreData<T> {
 
 function migrateFromJson(db: AdcDatabase, dataDir: string): void {
   const fitnessDir = join(dataDir, 'fitness');
-
-  // ── Workouts ──
   migrateWorkouts(db, fitnessDir);
-
-  // ── Measurements ──
   migrateMeasurements(db, fitnessDir);
-
-  // ── Goals ──
   migrateGoals(db, fitnessDir);
 }
 
 function migrateWorkouts(db: AdcDatabase, fitnessDir: string): void {
   const existing = db.select().from(workouts).limit(1).all();
   if (existing.length > 0) return;
-
   const jsonPath = join(fitnessDir, 'workouts.json');
   if (!existsSync(jsonPath)) return;
-
   try {
     const raw = readFileSync(jsonPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<StoreData<Workout>>;
     const items = Array.isArray(parsed.items) ? parsed.items : [];
-
     for (const item of items) {
       db.insert(workouts).values({
-        id: item.id,
-        date: item.date,
-        type: item.type,
-        duration: item.duration,
-        exercises: item.exercises as unknown[],
-        notes: item.notes ?? null,
-        createdAt: item.createdAt,
+        id: item.id, date: item.date, type: item.type, duration: item.duration,
+        exercises: item.exercises as unknown[], notes: item.notes ?? null, createdAt: item.createdAt,
       }).run();
     }
     logger.info(`Migrated ${String(items.length)} workouts from JSON to SQLite`);
@@ -126,27 +139,21 @@ function migrateWorkouts(db: AdcDatabase, fitnessDir: string): void {
 function migrateMeasurements(db: AdcDatabase, fitnessDir: string): void {
   const existing = db.select().from(bodyMeasurements).limit(1).all();
   if (existing.length > 0) return;
-
   const jsonPath = join(fitnessDir, 'measurements.json');
   if (!existsSync(jsonPath)) return;
-
   try {
     const raw = readFileSync(jsonPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<StoreData<BodyMeasurement>>;
     const items = Array.isArray(parsed.items) ? parsed.items : [];
-
     for (const item of items) {
       db.insert(bodyMeasurements).values({
-        id: item.id,
-        date: item.date,
+        id: item.id, date: item.date, source: item.source, createdAt: item.createdAt,
         weight: item.weight === undefined ? null : Math.round(item.weight),
         bodyFat: item.bodyFat === undefined ? null : Math.round(item.bodyFat),
         muscleMass: item.muscleMass === undefined ? null : Math.round(item.muscleMass),
         boneMass: item.boneMass === undefined ? null : Math.round(item.boneMass),
         waterPercentage: item.waterPercentage === undefined ? null : Math.round(item.waterPercentage),
         visceralFat: item.visceralFat === undefined ? null : Math.round(item.visceralFat),
-        source: item.source,
-        createdAt: item.createdAt,
       }).run();
     }
     logger.info(`Migrated ${String(items.length)} measurements from JSON to SQLite`);
@@ -158,24 +165,16 @@ function migrateMeasurements(db: AdcDatabase, fitnessDir: string): void {
 function migrateGoals(db: AdcDatabase, fitnessDir: string): void {
   const existing = db.select().from(fitnessGoals).limit(1).all();
   if (existing.length > 0) return;
-
   const jsonPath = join(fitnessDir, 'goals.json');
   if (!existsSync(jsonPath)) return;
-
   try {
     const raw = readFileSync(jsonPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<StoreData<FitnessGoal>>;
     const items = Array.isArray(parsed.items) ? parsed.items : [];
-
     for (const item of items) {
       db.insert(fitnessGoals).values({
-        id: item.id,
-        type: item.type,
-        target: Math.round(item.target),
-        current: Math.round(item.current),
-        unit: item.unit,
-        deadline: item.deadline ?? null,
-        createdAt: item.createdAt,
+        id: item.id, type: item.type, unit: item.unit, deadline: item.deadline ?? null,
+        target: Math.round(item.target), current: Math.round(item.current), createdAt: item.createdAt,
       }).run();
     }
     logger.info(`Migrated ${String(items.length)} fitness goals from JSON to SQLite`);
@@ -225,6 +224,34 @@ function toGoal(row: typeof fitnessGoals.$inferSelect): FitnessGoal {
   };
 }
 
+// ── Helpers ──────────────────────────────────────────────────
+
+function toNullableInt(value: number | undefined): number | null {
+  return value === undefined ? null : Math.round(value);
+}
+
+function buildMeasurementUpdates(data: {
+  date?: string;
+  weight?: number;
+  bodyFat?: number;
+  muscleMass?: number;
+  boneMass?: number;
+  waterPercentage?: number;
+  visceralFat?: number;
+  source?: MeasurementSource;
+}): Partial<typeof bodyMeasurements.$inferInsert> {
+  const updates: Partial<typeof bodyMeasurements.$inferInsert> = {};
+  if (data.date !== undefined) updates.date = data.date;
+  if (data.source !== undefined) updates.source = data.source;
+  if ('weight' in data) updates.weight = toNullableInt(data.weight);
+  if ('bodyFat' in data) updates.bodyFat = toNullableInt(data.bodyFat);
+  if ('muscleMass' in data) updates.muscleMass = toNullableInt(data.muscleMass);
+  if ('boneMass' in data) updates.boneMass = toNullableInt(data.boneMass);
+  if ('waterPercentage' in data) updates.waterPercentage = toNullableInt(data.waterPercentage);
+  if ('visceralFat' in data) updates.visceralFat = toNullableInt(data.visceralFat);
+  return updates;
+}
+
 // ── Factory ──────────────────────────────────────────────────
 
 export function createFitnessService(deps: {
@@ -263,6 +290,24 @@ export function createFitnessService(deps: {
 
       router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: id });
       return workout;
+    },
+
+    updateWorkout(data) {
+      const updates: Partial<typeof workouts.$inferInsert> = {};
+      if (data.date !== undefined) updates.date = data.date;
+      if (data.type !== undefined) updates.type = data.type;
+      if (data.duration !== undefined) updates.duration = data.duration;
+      if (data.exercises !== undefined) updates.exercises = data.exercises as unknown[];
+      if ('notes' in data) updates.notes = data.notes ?? null;
+
+      const result = db.update(workouts).set(updates).where(eq(workouts.id, data.id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Workout not found: ${data.id}`);
+      }
+
+      const [row] = db.select().from(workouts).where(eq(workouts.id, data.id)).all();
+      router.emit(FITNESS_EVENTS.WORKOUT.CHANGED, { workoutId: data.id });
+      return toWorkout(row);
     },
 
     listWorkouts(filters) {
@@ -332,6 +377,28 @@ export function createFitnessService(deps: {
       return measurement;
     },
 
+    updateMeasurement(data) {
+      const updates = buildMeasurementUpdates(data);
+
+      const result = db.update(bodyMeasurements).set(updates).where(eq(bodyMeasurements.id, data.id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Measurement not found: ${data.id}`);
+      }
+
+      const [row] = db.select().from(bodyMeasurements).where(eq(bodyMeasurements.id, data.id)).all();
+      router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: data.id });
+      return toMeasurement(row);
+    },
+
+    deleteMeasurement(id) {
+      const result = db.delete(bodyMeasurements).where(eq(bodyMeasurements.id, id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Measurement not found: ${id}`);
+      }
+      router.emit(FITNESS_EVENTS.MEASUREMENT.CHANGED, { measurementId: id });
+      return { success: true };
+    },
+
     getMeasurements(limit) {
       const query = db.select().from(bodyMeasurements)
         .orderBy(desc(bodyMeasurements.date));
@@ -378,6 +445,23 @@ export function createFitnessService(deps: {
 
     listGoals() {
       return db.select().from(fitnessGoals).all().map(toGoal);
+    },
+
+    updateGoal(data) {
+      const updates: Partial<typeof fitnessGoals.$inferInsert> = {};
+      if (data.type !== undefined) updates.type = data.type;
+      if (data.target !== undefined) updates.target = Math.round(data.target);
+      if (data.unit !== undefined) updates.unit = data.unit;
+      if ('deadline' in data) updates.deadline = data.deadline ?? null;
+
+      const result = db.update(fitnessGoals).set(updates).where(eq(fitnessGoals.id, data.id)).run();
+      if (result.changes === 0) {
+        throw new Error(`Goal not found: ${data.id}`);
+      }
+
+      const [row] = db.select().from(fitnessGoals).where(eq(fitnessGoals.id, data.id)).all();
+      router.emit(FITNESS_EVENTS.GOAL.CHANGED, { goalId: data.id });
+      return toGoal(row);
     },
 
     updateGoalProgress(goalId, current) {

@@ -4,6 +4,7 @@
 
 // API hooks (only barrel-export hooks with external consumers)
 export { useAllTasks } from './api/useTasks';
+export { useCreateProgressTask } from './api/useProgressMutations';
 export { taskKeys } from './api/queryKeys';
 
 // Events

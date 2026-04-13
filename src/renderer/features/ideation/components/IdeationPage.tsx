@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-import { ChevronDown, ChevronUp, Lightbulb, Pencil, Plus, Sparkles, Tag, Trash2 } from 'lucide-react';
+import { Lightbulb, Plus, Sparkles } from 'lucide-react';
 
 import type { Idea, IdeaCategory } from '@shared/types';
 
-import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
 import {
@@ -28,24 +27,18 @@ import { useSendCommand } from '@features/assistant';
 import { useCreateIdea, useDeleteIdea, useIdeas, useVoteIdea } from '../api/useIdeas';
 import { useIdeaEvents } from '../hooks/useIdeaEvents';
 
+import { IdeaCard } from './IdeaCard';
 import { IdeaEditForm } from './IdeaEditForm';
-
-const CATEGORY_CONFIG: Record<IdeaCategory, { label: string; colorClass: string }> = {
-  feature: { label: 'Feature', colorClass: 'text-primary' },
-  improvement: { label: 'Improvement', colorClass: 'text-info' },
-  bug: { label: 'Bug', colorClass: 'text-warning' },
-  performance: { label: 'Performance', colorClass: 'text-muted-foreground' },
-};
-
-const FILTER_OPTIONS: Array<{ value: IdeaCategory | 'all'; label: string }> = [
-  { value: 'all', label: 'All' },
-  { value: 'feature', label: 'Features' },
-  { value: 'improvement', label: 'Improvements' },
-  { value: 'bug', label: 'Bugs' },
-  { value: 'performance', label: 'Performance' },
-];
+import { IdeationFilterRow } from './IdeationFilterRow';
 
 const CATEGORY_OPTIONS: IdeaCategory[] = ['feature', 'improvement', 'bug', 'performance'];
+
+const CATEGORY_LABELS: Record<IdeaCategory, string> = {
+  feature: 'Feature',
+  improvement: 'Improvement',
+  bug: 'Bug',
+  performance: 'Performance',
+};
 
 const DEFAULT_GENERATE_PROMPT =
   'Suggest 3 new feature ideas for my developer productivity project. For each, call the create_idea tool with a clear title and description.';
@@ -53,6 +46,8 @@ const DEFAULT_GENERATE_PROMPT =
 export function IdeationPage() {
   useIdeaEvents();
   const [activeFilter, setActiveFilter] = useState<IdeaCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [formTitle, setFormTitle] = useState('');
   const [formDescription, setFormDescription] = useState('');
@@ -69,6 +64,50 @@ export function IdeationPage() {
   const sendCommand = useSendCommand();
   const openWidget = useAssistantWidgetStore((s) => s.open);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+
+  const allItems = useMemo(() => ideas ?? [], [ideas]);
+
+  // Collect all unique tags from all ideas for the tag filter
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const idea of allItems) {
+      for (const tag of idea.tags) {
+        tagSet.add(tag);
+      }
+    }
+    return Array.from(tagSet).sort();
+  }, [allItems]);
+
+  // Client-side filters: search query + tag (all compose together)
+  const items = useMemo(() => {
+    const hasTagFilters = selectedTags.length > 0;
+    const query = searchQuery.trim().toLowerCase();
+    const hasSearch = query.length > 0;
+
+    return allItems.filter((idea) => {
+      if (hasTagFilters && !selectedTags.some((tag) => idea.tags.includes(tag))) {
+        return false;
+      }
+      if (
+        hasSearch &&
+        !idea.title.toLowerCase().includes(query) &&
+        !idea.description.toLowerCase().includes(query)
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [allItems, selectedTags, searchQuery]);
+
+  function handleTagToggle(tag: string): void {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }
+
+  function handleClearTags(): void {
+    setSelectedTags([]);
+  }
 
   function handleCreate(): void {
     if (!formTitle.trim()) return;
@@ -94,7 +133,6 @@ export function IdeationPage() {
     setGeneratePrompt(DEFAULT_GENERATE_PROMPT);
   }
 
-  const items = ideas ?? [];
 
   return (
     <div className="space-y-6 p-6">
@@ -195,7 +233,7 @@ export function IdeationPage() {
                 <SelectContent>
                   {CATEGORY_OPTIONS.map((cat) => (
                     <SelectItem key={cat} value={cat}>
-                      {CATEGORY_CONFIG[cat].label}
+                      {CATEGORY_LABELS[cat]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -217,19 +255,17 @@ export function IdeationPage() {
         ) : null}
 
         {/* Filters */}
-        <div className="mb-6 flex gap-2">
-          {FILTER_OPTIONS.map((option) => (
-            <Button
-              key={option.value}
-              className="rounded-full"
-              size="sm"
-              type="button"
-              variant={activeFilter === option.value ? 'primary' : 'ghost'}
-              onClick={() => setActiveFilter(option.value)}
-            >
-              {option.label}
-            </Button>
-          ))}
+        <div className="mb-6">
+          <IdeationFilterRow
+            activeFilter={activeFilter}
+            allTags={allTags}
+            searchQuery={searchQuery}
+            selectedTags={selectedTags}
+            onClearTags={handleClearTags}
+            onFilterChange={setActiveFilter}
+            onSearchChange={setSearchQuery}
+            onTagToggle={handleTagToggle}
+          />
         </div>
 
         {/* Ideas Grid */}
@@ -239,85 +275,21 @@ export function IdeationPage() {
           </div>
         ) : null}
 
-        {!isLoading && items.length > 0 ? (
+        {!isLoading && (items.length > 0) ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((idea) => {
-              const catConfig = CATEGORY_CONFIG[idea.category];
-
-              return (
-                <Card key={idea.id} className="flex flex-col">
-                  <CardContent className="flex flex-1 flex-col p-4">
-                    {/* Category Badge */}
-                    <div className="mb-2 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Tag className={cn('h-3.5 w-3.5', catConfig.colorClass)} />
-                        <span className={cn('text-xs font-medium', catConfig.colorClass)}>
-                          {catConfig.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          aria-label={`Edit ${idea.title}`}
-                          className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
-                          size="icon"
-                          type="button"
-                          variant="ghost"
-                          onClick={() => setEditingIdea(idea)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          aria-label={`Delete ${idea.title}`}
-                          className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
-                          size="icon"
-                          type="button"
-                          variant="ghost"
-                          onClick={() => deleteIdea.mutate(idea.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Title & Description */}
-                    <h3 className="mb-1 text-sm font-medium">{idea.title}</h3>
-                    <p className="text-muted-foreground mb-3 flex-1 text-xs leading-relaxed">
-                      {idea.description}
-                    </p>
-
-                    {/* Votes */}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        className="text-muted-foreground hover:text-primary h-6 w-6 p-1"
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                        onClick={() => voteIdea.mutate({ id: idea.id, delta: 1 })}
-                      >
-                        <ChevronUp className="h-4 w-4" />
-                      </Button>
-                      <span className="text-sm font-medium">{idea.votes}</span>
-                      <Button
-                        className="text-muted-foreground hover:text-destructive h-6 w-6 p-1"
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                        onClick={() => voteIdea.mutate({ id: idea.id, delta: -1 })}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                      <span className="text-muted-foreground bg-muted/50 ml-auto rounded-full px-2 py-0.5 text-xs capitalize">
-                        {idea.status}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {items.map((idea) => (
+              <IdeaCard
+                key={idea.id}
+                idea={idea}
+                onDelete={(id) => deleteIdea.mutate(id)}
+                onEdit={setEditingIdea}
+                onVote={(id, delta) => voteIdea.mutate({ id, delta })}
+              />
+            ))}
           </div>
         ) : null}
 
-        {!isLoading && items.length === 0 ? (
+        {!isLoading && (items.length === 0) ? (
           <EmptyState
             description="Try a different filter or add a new idea"
             icon={Lightbulb}

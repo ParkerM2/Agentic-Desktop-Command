@@ -41,3 +41,35 @@ export function useAddChangelogEntry() {
     },
   });
 }
+
+/** Update an existing changelog entry */
+export function useUpdateChangelogEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: {
+      version: string;
+      updates: {
+        version?: string;
+        date?: string;
+        categories?: Array<{ type: string; items: string[] }>;
+      };
+    }) => ipc(CHANGELOG.UPDATE.ENTRY, params as Parameters<typeof ipc<typeof CHANGELOG.UPDATE.ENTRY>>[1]),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: changelogKeys.list() });
+    },
+  });
+}
+
+/** Delete a changelog entry by version */
+export function useDeleteChangelogEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: { version: string }) =>
+      ipc(CHANGELOG.DELETE.ENTRY, params),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: changelogKeys.list() });
+    },
+  });
+}

@@ -14,6 +14,10 @@ export function registerDashboardHandlers(router: IpcRouter, service: DashboardS
     Promise.resolve(service.createCapture(text, id)),
   );
 
+  router.handle(DASHBOARD.UPDATE.CAPTURE, ({ id, text }) =>
+    Promise.resolve(service.updateCapture(id, text)),
+  );
+
   router.handle(DASHBOARD.DELETE.CAPTURE, ({ id }) =>
     Promise.resolve(service.deleteCapture(id)),
   );
