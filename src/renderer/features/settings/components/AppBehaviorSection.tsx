@@ -2,7 +2,7 @@
  * AppBehaviorSection — App Behavior settings (open at login, tray, agents)
  */
 
-import { Input, Label, Switch } from '@ui';
+import { Heading, Input, Label, Switch } from '@ui';
 
 import { useSettings, useUpdateSettings, useAgentSettings, useUpdateAgentSettings } from '../api/useSettings';
 
@@ -29,9 +29,9 @@ export function AppBehaviorSection() {
   // 4. Render
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+      <Heading className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         App Behavior
-      </h2>
+      </Heading>
       <div className="border-border bg-card space-y-4 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div>

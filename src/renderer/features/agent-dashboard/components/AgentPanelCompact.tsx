@@ -11,7 +11,7 @@ import type { AgentSession } from '@shared/types/agent-dashboard';
 
 import { cn, truncate } from '@renderer/shared/lib/utils';
 
-import { Button, Card, CardContent, CardHeader, Spinner } from '@ui';
+import { Button, Card, CardContent, CardHeader, Spinner, Text } from '@ui';
 
 import { AgentStatusBar } from './AgentStatusBar';
 
@@ -60,9 +60,9 @@ export function AgentPanelCompact({
         <AgentStatusBar agent={agent} />
       </CardHeader>
       <CardContent className="flex items-end justify-between px-4 py-2">
-        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+        <Text className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
           {getLastMessagePreview(agent)}
-        </p>
+        </Text>
         <div className="ml-2 flex shrink-0 gap-1">
           {isRunning && onStop !== undefined ? (
             <Button

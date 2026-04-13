@@ -9,7 +9,7 @@ import type { AgentPanelState, AgentSession } from '@shared/types/agent-dashboar
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { ScrollArea } from '@ui';
+import { ScrollArea, Text } from '@ui';
 
 import { AgentPanelCompact } from './AgentPanelCompact';
 import { AgentPanelExpanded } from './AgentPanelExpanded';
@@ -43,7 +43,7 @@ export function AgentLayoutSingle({
   if (mainAgent === undefined) {
     return (
       <div className={cn('flex h-full items-center justify-center', className)}>
-        <p className="text-sm text-muted-foreground">No agents active</p>
+        <Text className="text-sm text-muted-foreground">No agents active</Text>
       </div>
     );
   }
@@ -62,7 +62,7 @@ export function AgentLayoutSingle({
       </div>
 
       {/* Stacked agents — 40% right */}
-      {sideAgents.length > 0 && (
+      {sideAgents.length > 0 ? (
         <ScrollArea className="w-2/5">
           <div className="space-y-2 pr-1">
             {sideAgents.map((agent) => {
@@ -94,7 +94,7 @@ export function AgentLayoutSingle({
             })}
           </div>
         </ScrollArea>
-      )}
+      ) : null}
     </div>
   );
 }

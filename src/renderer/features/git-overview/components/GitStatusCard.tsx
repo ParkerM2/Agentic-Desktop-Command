@@ -62,16 +62,16 @@ export function GitStatusCard({ repoPath }: GitStatusCardProps) {
           <Badge variant={status.isClean ? 'default' : 'destructive'}>
             {status.isClean ? 'Clean' : 'Dirty'}
           </Badge>
-          {(status.ahead > 0 || status.behind > 0) && (
+          {status.ahead > 0 || status.behind > 0 ? (
             <div className="flex items-center gap-1">
-              {status.ahead > 0 && (
+              {status.ahead > 0 ? (
                 <Badge variant="secondary">{status.ahead} ahead</Badge>
-              )}
-              {status.behind > 0 && (
+              ) : null}
+              {status.behind > 0 ? (
                 <Badge variant="secondary">{status.behind} behind</Badge>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* File count groups */}

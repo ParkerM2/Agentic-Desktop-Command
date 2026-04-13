@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 
-import { AlertTriangle, GitCommit, GitPullRequest, Upload } from 'lucide-react';
+import { AlertTriangle, GitCommit, Upload } from 'lucide-react';
 
 import {
   Button,
@@ -12,20 +12,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  Input,
   Label,
   Spinner,
   Text,
   Textarea,
 } from '@ui';
 
-import { useGitCommit, useGitPush, useGitStatus, useCreatePr } from '../api/useGit';
+import { useGitCommit, useGitPush, useGitStatus } from '../api/useGit';
+
+import { CreatePrDialog } from './CreatePrDialog';
 
 export interface CommitPanelProps {
   repoPath: string;
@@ -48,18 +43,10 @@ export function CommitPanel({ repoPath }: CommitPanelProps) {
   const { data: status } = useGitStatus(repoPath);
   const gitCommit = useGitCommit();
   const gitPush = useGitPush();
-  const createPr = useCreatePr();
 
   const [commitMessage, setCommitMessage] = useState('');
   const [commitError, setCommitError] = useState<string | null>(null);
   const [pushError, setPushError] = useState<string | null>(null);
-
-  // PR dialog state
-  const [prTitle, setPrTitle] = useState('');
-  const [prBody, setPrBody] = useState('');
-  const [prBaseBranch, setPrBaseBranch] = useState('main');
-  const [prError, setPrError] = useState<string | null>(null);
-  const [prDialogOpen, setPrDialogOpen] = useState(false);
 
   // Derived state
   const staged = status?.staged ?? [];
@@ -96,42 +83,6 @@ export function CommitPanel({ repoPath }: CommitPanelProps) {
         },
       },
     );
-  }
-
-  function handleCreatePr() {
-    if (prTitle.trim().length === 0) return;
-    setPrError(null);
-    createPr.mutate(
-      {
-        projectPath: repoPath,
-        title: prTitle.trim(),
-        body: prBody.trim(),
-        baseBranch: prBaseBranch.trim() || 'main',
-        headBranch,
-      },
-      {
-        onSuccess: () => {
-          setPrDialogOpen(false);
-          setPrTitle('');
-          setPrBody('');
-          setPrBaseBranch('main');
-          setPrError(null);
-        },
-        onError: (err) => {
-          setPrError(err instanceof Error ? err.message : 'Failed to create PR');
-        },
-      },
-    );
-  }
-
-  function handlePrDialogOpenChange(open: boolean) {
-    setPrDialogOpen(open);
-    if (!open) {
-      setPrTitle('');
-      setPrBody('');
-      setPrBaseBranch('main');
-      setPrError(null);
-    }
   }
 
   // Render
@@ -224,87 +175,11 @@ export function CommitPanel({ repoPath }: CommitPanelProps) {
           </Button>
 
           {/* Create PR */}
-          <Dialog open={prDialogOpen} onOpenChange={handlePrDialogOpenChange}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <GitPullRequest className="h-4 w-4" />
-                Create PR
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create Pull Request</DialogTitle>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                {/* PR title */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="pr-title">Title</Label>
-                  <Input
-                    aria-required="true"
-                    id="pr-title"
-                    placeholder="Pull request title..."
-                    type="text"
-                    value={prTitle}
-                    onChange={(e) => setPrTitle(e.target.value)}
-                  />
-                </div>
-
-                {/* PR body */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="pr-body">Description</Label>
-                  <Textarea
-                    className="min-h-[80px]"
-                    id="pr-body"
-                    placeholder="Describe the changes..."
-                    resize="none"
-                    value={prBody}
-                    onChange={(e) => setPrBody(e.target.value)}
-                  />
-                </div>
-
-                {/* Base branch */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="pr-base-branch">Base Branch</Label>
-                  <Input
-                    id="pr-base-branch"
-                    placeholder="main"
-                    type="text"
-                    value={prBaseBranch}
-                    onChange={(e) => setPrBaseBranch(e.target.value)}
-                  />
-                </div>
-
-                {/* PR error */}
-                {prError === null ? null : renderError(prError)}
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="ghost"
-                  onClick={() => handlePrDialogOpenChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={prTitle.trim().length === 0 || createPr.isPending}
-                  onClick={handleCreatePr}
-                >
-                  {createPr.isPending ? (
-                    <>
-                      <Spinner size="sm" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <GitPullRequest className="h-4 w-4" />
-                      Create PR
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <CreatePrDialog
+            headBranch={headBranch}
+            renderError={renderError}
+            repoPath={repoPath}
+          />
         </div>
       </CardContent>
     </Card>
