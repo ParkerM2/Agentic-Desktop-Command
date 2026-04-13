@@ -65,4 +65,8 @@ export function registerGitHandlers(
     const url = await gitService.getRemoteUrl(repoPath, remote);
     return { url };
   });
+
+  router.handle(GIT.LIST.COMMITS, ({ repoPath, branch, limit }) =>
+    gitService.listCommits({ repoPath, branch, limit }),
+  );
 }
