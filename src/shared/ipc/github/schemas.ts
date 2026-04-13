@@ -77,3 +77,13 @@ export const GitHubRepoSchema = z.object({
   url: z.string(),
   updatedAt: z.string(),
 });
+
+export const PrDiffFileSchema = z.object({
+  filename: z.string(),
+  status: z.enum(['added', 'modified', 'removed', 'renamed']),
+  additions: z.number(),
+  deletions: z.number(),
+  patch: z.string().nullable(),
+});
+
+export type PrDiffFile = z.infer<typeof PrDiffFileSchema>;
