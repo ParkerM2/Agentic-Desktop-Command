@@ -69,6 +69,18 @@ export function useGitHubPrDetail(prNumber: number | null) {
   });
 }
 
+/** Fetch diff files for a single PR */
+export function usePrDiff(prNumber: number | null) {
+  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
+
+  return useQuery({
+    queryKey: integrationsKeys.githubPrDiff(owner, repo, prNumber ?? 0),
+    queryFn: () => ipc(GITHUB.GET.PR_FILES, { owner, repo, number: prNumber ?? 0 }),
+    enabled: prNumber !== null && owner.length > 0 && repo.length > 0,
+    staleTime: 300_000,
+  });
+}
+
 /** Fetch issues for the active repo */
 export function useGitHubIssues() {
   const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
