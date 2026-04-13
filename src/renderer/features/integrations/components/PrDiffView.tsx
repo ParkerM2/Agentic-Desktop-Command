@@ -17,7 +17,7 @@ import {
 } from '@ui';
 
 import { usePrDiff } from '../api/useGitHub';
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -144,7 +144,7 @@ function DiffFileItem({ file }: { file: PrDiffFile }) {
 // ── Component ────────────────────────────────────────────────
 
 export function PrDiffView({ prNumber }: PrDiffViewProps) {
-  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
+  const { githubOwner: owner, githubRepo: repo } = useGitHubStore();
   const { data: files, isLoading } = usePrDiff(prNumber);
 
   const enabled = prNumber !== null && owner.length > 0 && repo.length > 0;

@@ -21,7 +21,7 @@ import {
 } from '@ui';
 
 import { useGitHubAuthStatus, useGitHubRepos } from '../api/useGitHub';
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 // ── Icons ─────────────────────────────────────────────────────
 
@@ -84,7 +84,7 @@ function RepoItem({ fullName, description, isPrivate, isSelected, onSelect }: Re
 // ── Main Component ────────────────────────────────────────────
 
 export function GitHubConnectionStatus() {
-  const { githubOwner: owner, githubRepo: repo, setGitHubRepo } = useIntegrationsStore();
+  const { githubOwner: owner, githubRepo: repo, setGitHubRepo } = useGitHubStore();
   const { data: authStatus, isLoading: authLoading, isError: authError } = useGitHubAuthStatus();
   const { data: repos, isLoading: reposLoading } = useGitHubRepos();
 
