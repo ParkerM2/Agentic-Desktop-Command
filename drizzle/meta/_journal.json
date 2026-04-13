@@ -92,6 +92,13 @@
       "when": 1775843300000,
       "tag": "0012_progress_tasks_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1775843400000,
+      "tag": "0013_progress_workflow_columns",
+      "breakpoints": true
     }
   ]
 }
