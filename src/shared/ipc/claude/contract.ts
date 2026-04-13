@@ -11,6 +11,7 @@ import { SuccessResponseSchema } from '../common/schemas';
 
 import { CLAUDE, CLAUDE_EVENTS } from './channels';
 import {
+  ClaudeConfigScanResultSchema,
   ClaudeConversationSchema,
   ClaudeMessageSchema,
   ClaudeSendMessageResponseSchema,
@@ -59,6 +60,10 @@ export const claudeInvoke = {
   [CLAUDE.CHECK.CONFIGURED]: {
     input: z.object({}),
     output: z.object({ configured: z.boolean() }),
+  },
+  [CLAUDE.SCAN.CONFIG]: {
+    input: z.object({}),
+    output: ClaudeConfigScanResultSchema,
   },
 } as const;
 
