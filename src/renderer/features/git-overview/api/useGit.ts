@@ -35,6 +35,8 @@ export function useGitBranches(repoPath: string | null) {
   });
 }
 
+export { useCommitHistory } from './useCommitHistory';
+
 /** Fetch worktrees for a project */
 export function useListWorktrees(projectId: string | null) {
   return useQuery({

@@ -15,6 +15,7 @@ import {
   GitBranchSchema,
   GitCommitInputSchema,
   GitCommitOutputSchema,
+  GitCommitSchema,
   GitCreatePrInputSchema,
   GitCreatePrOutputSchema,
   GitPushInputSchema,
@@ -72,6 +73,14 @@ export const gitInvoke = {
   [GIT.LIST.WORKTREES]: {
     input: z.object({ projectId: z.string() }),
     output: z.array(WorktreeSchema),
+  },
+  [GIT.LIST.COMMITS]: {
+    input: z.object({
+      repoPath: z.string(),
+      branch: z.string().optional(),
+      limit: z.number().optional(),
+    }),
+    output: z.array(GitCommitSchema),
   },
   [GIT.DETECT.STRUCTURE]: {
     input: z.object({ repoPath: z.string() }),

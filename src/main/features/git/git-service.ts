@@ -12,6 +12,7 @@ import { platform } from 'node:os';
 
 import simpleGit from 'simple-git';
 
+import type { GitCommit } from '@shared/ipc/git/schemas';
 import type { GitBranch, GitStatus, RepoStructure } from '@shared/types';
 
 import { serviceLogger } from '@main/lib/logger';
@@ -86,6 +87,12 @@ export interface GitService {
     repoPath: string,
     remote?: string,
   ) => Promise<string>;
+  /** List commit history for a repo, optionally scoped to a branch */
+  listCommits: (params: {
+    repoPath: string;
+    branch?: string;
+    limit?: number;
+  }) => Promise<GitCommit[]>;
 }
 
 export interface GitFileChange {
@@ -97,6 +104,9 @@ export interface GitFileChange {
 
 const GH_CLI_TIMEOUT_MS = 30_000;
 const GH_CLI_MAX_BUFFER = 1_048_576; // 1 MB
+const GIT_TIMEOUT_MS = 15_000;
+const GIT_LOG_FORMAT = '%H%x1f%h%x1f%s%x1f%an%x1f%ae%x1f%aI';
+const GIT_LOG_DEFAULT_LIMIT = 50;
 
 function validateRepoPath(repoPath: string): void {
   if (!existsSync(repoPath)) {
@@ -123,6 +133,30 @@ function runGhCli(args: string[], cwd: string): Promise<string> {
           return;
         }
         resolve(stdout.trim());
+      },
+    );
+  });
+}
+
+/** Run git with the given arguments in the specified directory. */
+function runGit(args: string[], cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile(
+      'git',
+      args,
+      {
+        cwd,
+        timeout: GIT_TIMEOUT_MS,
+        maxBuffer: GH_CLI_MAX_BUFFER,
+        shell: platform() === 'win32',
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          const detail = stderr.trim() || error.message;
+          reject(new Error(`git failed: ${detail}`));
+          return;
+        }
+        resolve(stdout);
       },
     );
   });
@@ -305,6 +339,41 @@ export function createGitService(polyrepoService: PolyrepoService): GitService {
       const remotes = await git.getRemotes(true);
       const found = remotes.find((r) => r.name === targetRemote);
       return found?.refs.fetch ?? '';
+    },
+
+    async listCommits({ repoPath, branch, limit }) {
+      validateRepoPath(repoPath);
+      const n = limit ?? GIT_LOG_DEFAULT_LIMIT;
+      const args = ['log', `--format=${GIT_LOG_FORMAT}`, `-n`, String(n)];
+      if (branch !== undefined) {
+        args.push(branch);
+      }
+
+      let stdout: string;
+      try {
+        stdout = await runGit(args, repoPath);
+      } catch (err) {
+        // Empty repo or no commits — git log exits non-zero; return empty array
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes('does not have any commits') || message.includes('fatal:')) {
+          serviceLogger.info(`[GitService] listCommits: no commits found in ${repoPath}`);
+          return [];
+        }
+        throw err;
+      }
+
+      const lines = stdout.trim().split('\n').filter(Boolean);
+      return lines.map((line) => {
+        const [hash, shortHash, message, author, authorEmail, date] = line.split('\x1f');
+        return {
+          hash,
+          shortHash,
+          message,
+          author,
+          authorEmail,
+          date,
+        };
+      });
     },
   };
 }

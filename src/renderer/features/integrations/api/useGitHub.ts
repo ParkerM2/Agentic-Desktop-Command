@@ -13,7 +13,7 @@ import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared
 import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 import { integrationsKeys } from './queryKeys';
 
@@ -47,7 +47,7 @@ export function useGitHubRepos() {
 
 /** Fetch pull requests for the active repo */
 export function useGitHubPrs() {
-  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
+  const { githubOwner: owner, githubRepo: repo } = useGitHubStore();
 
   return useQuery({
     queryKey: integrationsKeys.githubPrList(owner, repo),
@@ -59,7 +59,7 @@ export function useGitHubPrs() {
 
 /** Fetch a single PR detail */
 export function useGitHubPrDetail(prNumber: number | null) {
-  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
+  const { githubOwner: owner, githubRepo: repo } = useGitHubStore();
 
   return useQuery({
     queryKey: integrationsKeys.githubPrDetail(owner, repo, prNumber ?? 0),
@@ -69,9 +69,21 @@ export function useGitHubPrDetail(prNumber: number | null) {
   });
 }
 
+/** Fetch diff files for a single PR */
+export function usePrDiff(prNumber: number | null) {
+  const { githubOwner: owner, githubRepo: repo } = useGitHubStore();
+
+  return useQuery({
+    queryKey: integrationsKeys.githubPrDiff(owner, repo, prNumber ?? 0),
+    queryFn: () => ipc(GITHUB.GET.PR_FILES, { owner, repo, number: prNumber ?? 0 }),
+    enabled: prNumber !== null && owner.length > 0 && repo.length > 0,
+    staleTime: 300_000,
+  });
+}
+
 /** Fetch issues for the active repo */
 export function useGitHubIssues() {
-  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
+  const { githubOwner: owner, githubRepo: repo } = useGitHubStore();
 
   return useQuery({
     queryKey: integrationsKeys.githubIssueList(owner, repo),
@@ -93,7 +105,7 @@ export function useGitHubNotifications() {
 /** Create a new GitHub issue */
 export function useCreateIssue() {
   const queryClient = useQueryClient();
-  const { githubOwner: owner, githubRepo: repo } = useIntegrationsStore();
+  const { githubOwner: owner, githubRepo: repo } = useGitHubStore();
   const { onError } = useMutationErrorToast();
 
   return useMutation({

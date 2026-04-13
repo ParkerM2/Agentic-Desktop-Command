@@ -4,7 +4,7 @@ export const GIT = domain('git', {
   GET: ['status', 'branches', 'remote-url'],
   CREATE: ['branch', 'pr', 'worktree'],
   REMOVE: ['worktree'],
-  LIST: ['worktrees'],
+  LIST: ['worktrees', 'commits'],
   COMMIT: ['changes'],
   PUSH: ['changes'],
   RESOLVE: ['conflict'],

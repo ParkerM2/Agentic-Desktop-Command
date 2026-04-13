@@ -4,17 +4,22 @@
 
 // Components
 export { IntegrationsPage } from './components/IntegrationsPage';
+export { EmailPanel } from './components/EmailPanel';
 export { GitHubConnectionStatus } from './components/GitHubConnectionStatus';
 export { GitHubPanel } from './components/GitHubPanel';
 export { IssueCreateForm } from './components/IssueCreateForm';
 export { IssueList } from './components/IssueList';
 export { NotificationList } from './components/NotificationList';
+export { NotificationsPanel } from './components/NotificationsPanel';
 export { PrDetailModal } from './components/PrDetailModal';
+export { PrDiffView } from './components/PrDiffView';
 export { PrList } from './components/PrList';
 
 // Store
 export { useIntegrationsStore } from './store';
+export { useGitHubStore } from './store';
 export type { IntegrationsTab } from './store';
+export type { GitHubTab } from './store';
 
 // API
 export { integrationsKeys } from './api/queryKeys';
@@ -29,7 +34,27 @@ export {
   useGitHubPrDetail,
   useGitHubPrs,
   useGitHubRepos,
+  usePrDiff,
 } from './api/useGitHub';
+export {
+  useEmailConfig,
+  useEmailQueue,
+  useRemoveEmailQueued,
+  useRetryEmailQueued,
+  useSendTestEmail,
+  useTestEmailConnection,
+  useUpdateEmailConfig,
+} from './api/useEmail';
+export {
+  useAllNotifications,
+  useMarkAllRead,
+  useMarkNotificationRead,
+  useNotificationsConfig,
+  useStartWatching,
+  useStopWatching,
+  useUpdateNotificationsConfig,
+  useWatcherStatus,
+} from './api/useNotifications';
 
 // Events / Hooks
 export { useIntegrationsEvents } from './hooks/useIntegrationsEvents';
