@@ -4,9 +4,11 @@
  * Shows connection status, repo selector, and sub-tabs for PRs, Issues, Notifications.
  */
 
+import { useState } from 'react';
+
 import { Bell, CircleDot, GitPullRequest } from 'lucide-react';
 
-import { Badge, Spinner, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { Badge, Button, Spinner, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/useGitHub';
 import { useGitHubEvents } from '../hooks/useGitHubEvents';
@@ -18,6 +20,7 @@ import { IssueCreateForm } from './IssueCreateForm';
 import { IssueList } from './IssueList';
 import { NotificationList } from './NotificationList';
 import { PrDetailModal } from './PrDetailModal';
+import { PrDiffView } from './PrDiffView';
 import { PrList } from './PrList';
 
 // ── Types ────────────────────────────────────────────────────
@@ -37,6 +40,8 @@ function LoadingSpinner() {
 // ── Component ────────────────────────────────────────────────
 
 export function GitHubPanel() {
+  const [showDiff, setShowDiff] = useState(false);
+
   const {
     githubActiveTab: activeTab,
     githubSelectedPrNumber: selectedPrNumber,
@@ -112,7 +117,21 @@ export function GitHubPanel() {
 
       {/* PR Detail Modal */}
       {selectedPrNumber === null ? null : (
-        <PrDetailModal prNumber={selectedPrNumber} onClose={() => selectPr(null)} />
+        <PrDetailModal prNumber={selectedPrNumber} onClose={() => { selectPr(null); setShowDiff(false); }} />
+      )}
+
+      {/* View Files toggle — only shown when a PR is selected */}
+      {selectedPrNumber === null ? null : (
+        <div className="space-y-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowDiff(!showDiff)}
+          >
+            {showDiff ? 'Hide Files' : 'View Files'}
+          </Button>
+          {showDiff ? <PrDiffView prNumber={selectedPrNumber} /> : null}
+        </div>
       )}
 
       {/* Issue Create Dialog */}
