@@ -14,6 +14,7 @@ import { PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
+import { AppBehaviorSection } from './AppBehaviorSection';
 import { AppearanceModeSection } from './AppearanceModeSection';
 import { BackgroundSettings } from './BackgroundSettings';
 import { ClaudeAuthSettings } from './ClaudeAuthSettings';
@@ -229,6 +230,7 @@ function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
           </div>
         </div>
       </section>
+      <AppBehaviorSection />
       <section className="mb-8">
         <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Assistant &amp; Webhooks
