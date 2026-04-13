@@ -5,8 +5,8 @@
  * Maps raw API responses to the shared GitHubPullRequest / GitHubIssue / GitHubNotification types.
  */
 
-import { GITHUB, GITHUB_EVENTS } from '@shared/ipc/github/channels';
 import type { PrDiffFile } from '@shared/ipc/github';
+import { GITHUB, GITHUB_EVENTS } from '@shared/ipc/github/channels';
 import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared/types';
 
 import type { IpcRouter } from '../../ipc/router';
