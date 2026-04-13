@@ -17,7 +17,9 @@ export { PrList } from './components/PrList';
 
 // Store
 export { useIntegrationsStore } from './store';
+export { useGitHubStore } from './store';
 export type { IntegrationsTab } from './store';
+export type { GitHubTab } from './store';
 
 // API
 export { integrationsKeys } from './api/queryKeys';

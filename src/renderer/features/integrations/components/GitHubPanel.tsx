@@ -13,7 +13,7 @@ import { Badge, Button, Spinner, Tabs, TabsContent, TabsList, TabsTrigger } from
 import { useGitHubIssues, useGitHubNotifications, useGitHubPrs } from '../api/useGitHub';
 import { useGitHubEvents } from '../hooks/useGitHubEvents';
 import { useGitHubProjectSync } from '../hooks/useGitHubProjectSync';
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 import { GitHubConnectionStatus } from './GitHubConnectionStatus';
 import { IssueCreateForm } from './IssueCreateForm';
@@ -47,7 +47,7 @@ export function GitHubPanel() {
     githubSelectedPrNumber: selectedPrNumber,
     setGitHubActiveTab: setActiveTab,
     selectPr,
-  } = useIntegrationsStore();
+  } = useGitHubStore();
 
   const { data: prs, isLoading: prsLoading } = useGitHubPrs();
   const { data: issues, isLoading: issuesLoading } = useGitHubIssues();

@@ -20,7 +20,7 @@ import {
 } from '@ui';
 
 import { useCreateIssue } from '../api/useGitHub';
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 // ── Component ────────────────────────────────────────────────
 
@@ -30,7 +30,7 @@ export function IssueCreateForm() {
     githubOwner: owner,
     githubRepo: repo,
     setIssueCreateDialogOpen,
-  } = useIntegrationsStore();
+  } = useGitHubStore();
   const createIssue = useCreateIssue();
 
   const [title, setTitle] = useState('');

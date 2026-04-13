@@ -1,6 +1,6 @@
 /**
  * Communications Store — UI state for integrations: tab navigation, Slack, Discord,
- * notification rules, and GitHub panel state.
+ * and notification rules.
  *
  * Notification rules are persisted to localStorage so they survive restarts.
  * Service connection status is ephemeral and re-established on mount.
@@ -11,8 +11,6 @@ import { create } from 'zustand';
 // ── Types ────────────────────────────────────────────────────
 
 type ServiceStatus = 'connected' | 'disconnected' | 'error';
-
-type GitHubTab = 'prs' | 'issues' | 'notifications';
 
 export type IntegrationsTab =
   | 'slack'
@@ -44,17 +42,6 @@ interface IntegrationsState {
   addNotificationRule: (rule: Omit<NotificationRule, 'id'>) => void;
   removeNotificationRule: (id: string) => void;
   toggleNotificationRule: (id: string) => void;
-
-  // ── GitHub ──
-  githubActiveTab: GitHubTab;
-  githubSelectedPrNumber: number | null;
-  githubOwner: string;
-  githubRepo: string;
-  githubIssueCreateDialogOpen: boolean;
-  setGitHubActiveTab: (tab: GitHubTab) => void;
-  selectPr: (prNumber: number | null) => void;
-  setGitHubRepo: (owner: string, repo: string) => void;
-  setIssueCreateDialogOpen: (open: boolean) => void;
 }
 
 // ── localStorage helpers ──────────────────────────────────────
@@ -122,16 +109,4 @@ export const useIntegrationsStore = create<IntegrationsState>((set) => ({
       saveRules(next);
       return { notificationRules: next };
     }),
-
-  // GitHub
-  githubActiveTab: 'prs',
-  githubSelectedPrNumber: null,
-  githubOwner: '',
-  githubRepo: '',
-  githubIssueCreateDialogOpen: false,
-
-  setGitHubActiveTab: (tab) => set({ githubActiveTab: tab }),
-  selectPr: (prNumber) => set({ githubSelectedPrNumber: prNumber }),
-  setGitHubRepo: (owner, repo) => set({ githubOwner: owner, githubRepo: repo }),
-  setIssueCreateDialogOpen: (open) => set({ githubIssueCreateDialogOpen: open }),
 }));

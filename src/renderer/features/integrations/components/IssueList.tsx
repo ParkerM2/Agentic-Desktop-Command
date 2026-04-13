@@ -8,7 +8,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Badge, Button, Card, EmptyState } from '@ui';
 
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 import type { GitHubIssue } from '../api/useGitHub';
 
@@ -35,7 +35,7 @@ interface IssueListProps {
 }
 
 export function IssueList({ issues }: IssueListProps) {
-  const setIssueCreateDialogOpen = useIntegrationsStore((s) => s.setIssueCreateDialogOpen);
+  const setIssueCreateDialogOpen = useGitHubStore((s) => s.setIssueCreateDialogOpen);
 
   return (
     <div>

@@ -12,7 +12,7 @@ import { useLayoutStore } from '@renderer/shared/stores';
 
 import { useProjects } from '@features/projects';
 
-import { useIntegrationsStore } from '../store';
+import { useGitHubStore } from '../store';
 
 /** Parse owner/repo from a GitHub URL (HTTPS or SSH) */
 function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
@@ -34,7 +34,7 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } | null {
 export function useGitHubProjectSync() {
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
   const { data: projects } = useProjects();
-  const setGitHubRepo = useIntegrationsStore((s) => s.setGitHubRepo);
+  const setGitHubRepo = useGitHubStore((s) => s.setGitHubRepo);
 
   useEffect(() => {
     if (!activeProjectId || !projects) return;
