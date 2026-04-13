@@ -146,7 +146,7 @@ function MilestoneCard({
         </div>
       </div>
 
-      <Text size="sm" className="text-muted-foreground mb-2">{milestone.description}</Text>
+      <Text className="text-muted-foreground mb-2" size="sm">{milestone.description}</Text>
       <Text className="text-muted-foreground mb-3 text-xs">
         Target: {new Date(milestone.targetDate).toLocaleDateString()}
       </Text>
@@ -367,7 +367,7 @@ export function RoadmapPage() {
         {/* Generate with AI Panel */}
         {showGenerate ? (
           <div className="border-border bg-card mb-6 space-y-3 rounded-lg border p-4">
-            <Text size="sm" className="text-muted-foreground">
+            <Text className="text-muted-foreground" size="sm">
               Describe what milestones you want the assistant to generate. It will create them directly on your roadmap.
             </Text>
             <Textarea
@@ -446,13 +446,13 @@ export function RoadmapPage() {
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Total Milestones
             </div>
-            <Text size="lg" className="font-semibold">{items.length}</Text>
+            <Text className="font-semibold" size="lg">{items.length}</Text>
           </div>
           <div className="border-border bg-card rounded-lg border p-4">
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Completed
             </div>
-            <Text size="lg" className="font-semibold">
+            <Text className="font-semibold" size="lg">
               {completedCount} / {items.length}
             </Text>
           </div>
@@ -460,7 +460,7 @@ export function RoadmapPage() {
             <div className="text-muted-foreground mb-1 text-xs font-medium tracking-wider uppercase">
               Overall Progress
             </div>
-            <Text size="lg" className="font-semibold">{totalProgress}%</Text>
+            <Text className="font-semibold" size="lg">{totalProgress}%</Text>
           </div>
         </div>
 
@@ -502,8 +502,8 @@ export function RoadmapPage() {
         {!isLoading && items.length === 0 ? (
           <div className="border-border rounded-lg border border-dashed p-12 text-center">
             <Map className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-            <Text size="lg" className="font-medium">No milestones yet</Text>
-            <Text size="sm" className="text-muted-foreground mt-1">
+            <Text className="font-medium" size="lg">No milestones yet</Text>
+            <Text className="text-muted-foreground mt-1" size="sm">
               Create your first milestone to start planning
             </Text>
           </div>

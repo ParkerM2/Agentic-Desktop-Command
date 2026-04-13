@@ -162,7 +162,7 @@ export function AlertsPage() {
               />
 
               <div className="min-w-0 flex-1">
-                <Text size="sm" className="text-foreground font-medium">{alert.message}</Text>
+                <Text className="text-foreground font-medium" size="sm">{alert.message}</Text>
                 <Text
                   className={cn(
                     'text-xs',
