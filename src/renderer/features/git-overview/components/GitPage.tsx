@@ -15,6 +15,7 @@ import { GitHubPanel } from '@features/integrations';
 import { useProjects } from '@features/projects';
 
 import { BranchList } from './BranchList';
+import { CommitHistory } from './CommitHistory';
 import { CommitPanel } from './CommitPanel';
 import { GitStatusCard } from './GitStatusCard';
 import { WorktreeList } from './WorktreeList';
@@ -36,6 +37,7 @@ export function GitPage() {
           </PageHeader.Row>
           <PageHeader.TabList>
             <PageHeader.Tab value="local">Local</PageHeader.Tab>
+            <PageHeader.Tab value="history">History</PageHeader.Tab>
             <PageHeader.Tab value="github">GitHub</PageHeader.Tab>
           </PageHeader.TabList>
         </PageHeader>
@@ -52,6 +54,15 @@ export function GitPage() {
                 <WorktreeList projectId={projectId ?? ''} repoPath={repoPath} />
                 <CommitPanel projectId={projectId ?? ''} repoPath={repoPath} />
               </div>
+            )}
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="history">
+            {repoPath === null ? (
+              <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                Open a project to view commit history.
+              </div>
+            ) : (
+              <CommitHistory repoPath={repoPath} />
             )}
           </PageHeader.TabContent>
           <PageHeader.TabContent value="github">
