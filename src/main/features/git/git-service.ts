@@ -12,8 +12,8 @@ import { platform } from 'node:os';
 
 import simpleGit from 'simple-git';
 
-import type { GitBranch, GitStatus, RepoStructure } from '@shared/types';
 import type { GitCommit } from '@shared/ipc/git/schemas';
+import type { GitBranch, GitStatus, RepoStructure } from '@shared/types';
 
 import { serviceLogger } from '@main/lib/logger';
 
@@ -366,12 +366,12 @@ export function createGitService(polyrepoService: PolyrepoService): GitService {
       return lines.map((line) => {
         const [hash, shortHash, message, author, authorEmail, date] = line.split('\x1f');
         return {
-          hash: hash ?? '',
-          shortHash: shortHash ?? '',
-          message: message ?? '',
-          author: author ?? '',
-          authorEmail: authorEmail ?? '',
-          date: date ?? '',
+          hash,
+          shortHash,
+          message,
+          author,
+          authorEmail,
+          date,
         };
       });
     },
