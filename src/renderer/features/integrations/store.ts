@@ -19,7 +19,9 @@ export type IntegrationsTab =
   | 'discord'
   | 'rules'
   | 'github'
-  | 'calendar';
+  | 'calendar'
+  | 'email'
+  | 'notifications';
 
 interface NotificationRule {
   id: string;
