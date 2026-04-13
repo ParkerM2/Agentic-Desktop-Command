@@ -40,6 +40,19 @@ export const WorktreeSchema = z.object({
 
 export const RepoStructureSchema = z.enum(['single', 'monorepo', 'polyrepo']);
 
+// ── Commit History Schema ───────────────────────────────────────
+
+export const GitCommitSchema = z.object({
+  hash: z.string(),
+  shortHash: z.string(),
+  message: z.string(),
+  author: z.string(),
+  authorEmail: z.string(),
+  date: z.string(), // ISO 8601
+});
+
+export type GitCommit = z.infer<typeof GitCommitSchema>;
+
 // ── Commit Schemas ──────────────────────────────────────────────
 
 export const GitCommitInputSchema = z.object({

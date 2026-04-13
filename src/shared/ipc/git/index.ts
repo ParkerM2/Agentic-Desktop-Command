@@ -7,6 +7,7 @@ export {
   GitBranchSchema,
   GitCommitInputSchema,
   GitCommitOutputSchema,
+  GitCommitSchema,
   GitConflictStrategySchema,
   GitCreatePrInputSchema,
   GitCreatePrOutputSchema,
@@ -18,3 +19,4 @@ export {
   RepoStructureSchema,
   WorktreeSchema,
 } from './schemas';
+export type { GitCommit } from './schemas';
