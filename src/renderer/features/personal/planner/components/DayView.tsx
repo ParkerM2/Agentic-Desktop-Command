@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 import { Calendar, Clock, Edit2, Plus, Trash2 } from 'lucide-react';
 
-import type { TimeBlock } from '@shared/types';
+import type { ScheduledTask, TimeBlock } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
@@ -35,12 +35,13 @@ interface DayViewProps {
   /** Date in YYYY-MM-DD format */
   date: string;
   timeBlocks: TimeBlock[];
+  scheduledTasks?: ScheduledTask[];
   onAdd: (block: Omit<TimeBlock, 'id'>) => void;
   onUpdate: (blockId: string, updates: Partial<Omit<TimeBlock, 'id'>>) => void;
   onRemove: (blockId: string) => void;
 }
 
-export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayViewProps) {
+export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate, onRemove }: DayViewProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TimeBlock | undefined>();
   const { showCalendarOverlay, setShowCalendarOverlay } = usePlannerUI();
@@ -166,6 +167,37 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
           ))}
         </div>
       )}
+
+      {/* Scheduled Tasks */}
+      <div className="mt-4 space-y-2">
+        <h3 className="text-foreground text-sm font-semibold">Scheduled Tasks</h3>
+        {scheduledTasks.length === 0 ? (
+          <p className="text-muted-foreground text-xs">No tasks scheduled.</p>
+        ) : (
+          <div className="space-y-2">
+            {scheduledTasks.map((task) => (
+              <div
+                key={task.taskId}
+                className="border-l-muted-foreground bg-muted/20 group rounded-md border-l-3 px-3 py-2"
+              >
+                <div className="flex items-start justify-between">
+                  <div className={cn('min-w-0 flex-1', task.completed ? 'opacity-50' : '')}>
+                    <code className="text-foreground text-xs font-mono">{task.taskId}</code>
+                    {task.scheduledTime === undefined && task.estimatedDuration === undefined ? null : (
+                      <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                        {task.scheduledTime === undefined ? null : <span>{task.scheduledTime}</span>}
+                        {task.estimatedDuration === undefined ? null : (
+                          <span>{task.estimatedDuration} min</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
