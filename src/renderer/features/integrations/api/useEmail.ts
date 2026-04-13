@@ -6,7 +6,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-
 import { EMAIL } from '@shared/ipc/email/channels';
 import type { EmailSchema, SmtpConfigSchema } from '@shared/ipc/email/schemas';
 

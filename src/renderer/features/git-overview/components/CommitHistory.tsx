@@ -13,7 +13,7 @@ import type { GitCommit as GitCommitType } from '@shared/ipc/git/schemas';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 
-import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Separator, Skeleton } from '@ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Separator, Skeleton, Text } from '@ui';
 
 
 import { useCommitHistory } from '../api/useGit';
@@ -42,8 +42,8 @@ function CommitRow({ commit }: { commit: GitCommitType }) {
         {commit.shortHash}
       </code>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-foreground">{commit.message}</p>
-        <p className="text-xs text-muted-foreground">{commit.author}</p>
+        <Text className="truncate" size="sm">{commit.message}</Text>
+        <Text className="text-xs text-muted-foreground">{commit.author}</Text>
       </div>
       <RelativeTime className="text-xs text-muted-foreground shrink-0" value={commit.date} />
     </div>
