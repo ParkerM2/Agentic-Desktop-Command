@@ -23,6 +23,7 @@ import {
   Card,
   CardContent,
   EmptyState,
+  Heading,
   Input,
   Label,
   Text,
@@ -40,8 +41,17 @@ export function BodyComposition() {
   const [showForm, setShowForm] = useState(false);
   const [weight, setWeight] = useState('');
   const [bodyFat, setBodyFat] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
-  const displayMeasurements = measurements ?? [];
+  const allMeasurements = measurements ?? [];
+
+  const displayMeasurements = allMeasurements.filter((m) => {
+    if (dateFrom && m.date < dateFrom) return false;
+    if (dateTo && m.date > dateTo) return false;
+    return true;
+  });
+
   const latest = displayMeasurements.length > 0 ? displayMeasurements[0] : null;
 
   function handleSubmit() {
@@ -67,15 +77,53 @@ export function BodyComposition() {
     );
   }
 
+  const isFiltered = dateFrom !== '' || dateTo !== '';
+
   return (
     <div className="space-y-4">
+      {/* Date-range filter */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-3">
+        <div className="flex-1">
+          <Label className="mb-1" htmlFor="measure-date-from">
+            From
+          </Label>
+          <Input
+            id="measure-date-from"
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <Label className="mb-1" htmlFor="measure-date-to">
+            To
+          </Label>
+          <Input
+            id="measure-date-to"
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+          />
+        </div>
+        {isFiltered ? (
+          <Button
+            size="sm"
+            type="button"
+            variant="ghost"
+            onClick={() => { setDateFrom(''); setDateTo(''); }}
+          >
+            Clear
+          </Button>
+        ) : null}
+      </div>
+
       {/* Latest measurements */}
       {latest ? (
         <Card>
           <CardContent className="p-4">
-            <h4 className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
+            <Heading as="h4" className="text-muted-foreground mb-3 text-xs font-medium tracking-wider uppercase">
               Latest Measurements
-            </h4>
+            </Heading>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
               {latest.weight === undefined ? null : (
                 <div>
@@ -123,7 +171,7 @@ export function BodyComposition() {
         </Card>
       ) : (
         <EmptyState
-          description="No measurements recorded yet"
+          description={isFiltered ? 'No measurements in this date range' : 'No measurements recorded yet'}
           icon={Scale}
           size="sm"
           title=""
@@ -134,7 +182,7 @@ export function BodyComposition() {
       {showForm ? (
         <Card>
           <CardContent className="p-4">
-            <h4 className="text-foreground mb-3 text-sm font-medium">Log Measurement</h4>
+            <Heading as="h4" className="text-foreground mb-3 text-sm font-medium">Log Measurement</Heading>
             <div className="flex gap-3">
               <div className="flex-1">
                 <Label className="mb-1" htmlFor="measure-weight">
@@ -195,9 +243,9 @@ export function BodyComposition() {
       {/* History */}
       {(displayMeasurements.length > 1) ? (
         <Card>
-          <h4 className="text-muted-foreground border-border border-b px-4 py-2 text-xs font-medium tracking-wider uppercase">
+          <Heading as="h4" className="text-muted-foreground border-border border-b px-4 py-2 text-xs font-medium tracking-wider uppercase">
             History
-          </h4>
+          </Heading>
           <div className="divide-border divide-y">
             {displayMeasurements.slice(0, 10).map((m) => (
               <MeasurementHistoryRow key={m.id} measurement={m} />

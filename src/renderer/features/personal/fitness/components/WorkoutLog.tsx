@@ -9,8 +9,9 @@ import { Pencil, Trash2 } from 'lucide-react';
 import type { Workout } from '@shared/types';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useDebounce } from '@renderer/shared/hooks/useDebounce';
 
-import { Badge, Button, EmptyState, Text } from '@ui';
+import { Badge, Button, EmptyState, SearchInput, Text } from '@ui';
 
 import { useDeleteWorkout, useWorkouts } from '../api/useFitness';
 
@@ -30,28 +31,45 @@ const TYPE_LABELS: Record<string, string> = {
 export function WorkoutLog() {
   const { data: workouts } = useWorkouts();
   const deleteWorkout = useDeleteWorkout();
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedQuery = useDebounce(searchQuery);
 
-  const displayWorkouts = workouts ?? [];
+  const allWorkouts = workouts ?? [];
 
-  if (displayWorkouts.length === 0) {
-    return (
-      <EmptyState
-        description="No workouts logged yet"
-        size="sm"
-        title=""
-      />
-    );
-  }
+  const displayWorkouts = debouncedQuery.trim()
+    ? allWorkouts.filter((w) => {
+        const q = debouncedQuery.toLowerCase();
+        return w.type.toLowerCase().includes(q) || (w.notes ?? '').toLowerCase().includes(q);
+      })
+    : allWorkouts;
 
   return (
-    <div className="divide-border divide-y">
-      {displayWorkouts.slice(0, 20).map((workout) => (
-        <WorkoutItem
-          key={workout.id}
-          workout={workout}
-          onDelete={() => deleteWorkout.mutate(workout.id)}
+    <div className="flex flex-col gap-3">
+      <SearchInput
+        placeholder="Search workouts by type or notes..."
+        showClear={searchQuery.length > 0}
+        size="sm"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onClear={() => setSearchQuery('')}
+      />
+      {displayWorkouts.length === 0 ? (
+        <EmptyState
+          description={searchQuery ? 'No workouts match your search' : 'No workouts logged yet'}
+          size="sm"
+          title=""
         />
-      ))}
+      ) : (
+        <div className="divide-border divide-y">
+          {displayWorkouts.slice(0, 20).map((workout) => (
+            <WorkoutItem
+              key={workout.id}
+              workout={workout}
+              onDelete={() => deleteWorkout.mutate(workout.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
