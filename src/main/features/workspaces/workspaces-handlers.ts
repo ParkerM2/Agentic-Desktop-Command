@@ -4,8 +4,8 @@
 
 import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
 
-import type { IpcRouter } from '../../ipc/router';
 import type { WorkspacesService } from './workspaces-service';
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerWorkspacesHandlers(
   router: IpcRouter,
