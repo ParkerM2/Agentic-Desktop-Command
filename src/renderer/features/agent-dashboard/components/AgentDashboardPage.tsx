@@ -49,6 +49,7 @@ import {
   Text,
 } from '@ui';
 
+import { useAgentSessions } from '../api/useAgentSessions';
 import { useStopSession } from '../api/useAgentMutations';
 import { useApplyWorkflow } from '../api/useWorkflowEngine';
 import { useWorkflowTemplate } from '../api/useWorkflowTemplates';
@@ -91,6 +92,7 @@ interface SessionFilterState {
 // ─── Props ─────────────────────────────────────────────────
 
 interface AgentDashboardPageProps {
+  /** If omitted, the component self-fetches via useAgentSessions() */
   agents?: AgentSession[];
   projectOptions?: Array<{ id: string; name: string }>;
   className?: string;
@@ -99,10 +101,12 @@ interface AgentDashboardPageProps {
 // ─── Component ─────────────────────────────────────────────
 
 export function AgentDashboardPage({
-  agents = [],
+  agents: agentsProp,
   projectOptions = [],
   className,
 }: AgentDashboardPageProps) {
+  const { data: fetchedAgents = [] } = useAgentSessions();
+  const agents = agentsProp ?? fetchedAgents;
   const [agentUiState, setAgentUiState] = useState<AgentDashboardState>({
     layoutMode: 'single',
     filters: {},

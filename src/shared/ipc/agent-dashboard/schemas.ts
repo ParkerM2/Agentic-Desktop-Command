@@ -88,6 +88,7 @@ export const AgentSessionSchema = z.object({
   model: z.string(),
   teamName: z.string().optional(),
   taskId: z.string().optional(),
+  projectId: z.string().optional(),
   branch: z.string().optional(),
   tmuxPaneId: z.string().optional(),
   sessionJsonlPath: z.string().optional(),
