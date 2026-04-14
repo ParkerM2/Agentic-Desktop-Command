@@ -49,15 +49,15 @@ export function useLaunchTask() {
 }
 
 /** Check if a session is running — polls bus sessions every 5s */
-export function useSessionStatus(sessionId: string) {
+export function useSessionStatus(taskSlug: string) {
   return useQuery({
-    queryKey: workflowKeys.session(sessionId),
+    queryKey: workflowKeys.session(taskSlug),
     queryFn: async () => {
-      const sessions = await ipc(BUS.LIST.SESSIONS, { taskSlug: sessionId });
+      const sessions = await ipc(BUS.LIST.SESSIONS, { taskSlug });
       const running = sessions.some((s) => s.status === 'active');
       return { running };
     },
-    enabled: sessionId.length > 0,
+    enabled: taskSlug.length > 0,
     refetchInterval: 5_000,
   });
 }
