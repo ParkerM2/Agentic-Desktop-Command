@@ -36,7 +36,8 @@ Feature Slice Design with React Query for server state, Zustand for UI-only stat
 - **SQLite is the SINGLE source of truth** for all data — no filesystem task system
 - All entities have UUID primary keys generated via `crypto.randomUUID()`
 - Client generates UUIDs for future optimistic updates; services accept optional `id` parameter, fall back to `generateId()`
-- React Query mutations use simple `onSuccess` invalidation — NOT optimistic updates (IPC is <1ms)
+- **Mutations** use `onSuccess` invalidation (`queryClient.invalidateQueries`) — NOT optimistic updates (IPC is <1ms)
+- **Event-driven cache updates** use `setQueryData` via EventBridge `append` handlers — this is distinct from mutation invalidation. When IPC events arrive (e.g., `BUS_EVENTS.SESSION.*`), the EventBridge patches the cache directly without a re-fetch.
 - `ProgressService` replaced old `.adc/specs/` filesystem task system
 
 ## Feature Slice Design
@@ -84,11 +85,27 @@ Use `codebase-nav` skill to locate any domain across layers.
 @ui        -> src/renderer/shared/components/ui
 ```
 
+## Codebase Reference (read these FIRST before exploring files)
+
+Pre-built index files in `.claude/codex/` — auto-regenerated on every commit via lefthook:
+
+- **`.claude/codex/lib.md`** — every exported function and class across all layers (main/renderer/shared). Use this to locate any factory function, service, handler, or hook before grepping.
+
+Codebase state document (manual doc, updated via doc-sync hooks):
+
+- **`.claude/progress/adc-codebase-state-2026-04-13.html`** — wire status for all 66 domains, critical issues, migration history, agent host protocol. Open in browser or search with Grep.
+- **`.claude/progress/sprint-6-7-finish-line/codebase-issues-breakdown.md`** — 40 issues categorized by severity (core broken, stubs, dead code, deprecated, overkill, mismatches, cleanup) with recommended sprint order.
+
+Automation config:
+
+- **`.claude/automate.json`** — active onEdit rules and scripts. Consulted by SessionStart hook. When adding new per-file automation, edit this file and add a script to `.claude/scripts/`.
+
 ## Available Tools
 
-- **30 agent definitions** in `.claude/agents/` — specialist agents for each engineering role
-- **17 skills** in `.claude/skills/` — `codebase-nav` for file lookup, `scaffold-feature` for new domains
+- **30 agent definitions** in `.claude/agents/` — specialist agents for each engineering role (48 total including plugin agents from claude-workflow, mempalace, etc.)
+- **20 skills** in `.claude/skills/` — `codebase-nav` for file lookup, `scaffold-feature` for new domains (45 total including plugin skills; run `/skills` to see full list)
 - **context7 plugin** — live documentation for all libraries
+- **mempalace MCP** — semantic search over session memory and mined project docs (`/mempalace:init` to verify)
 - **Playwright MCP** — browser automation for E2E testing
 - **Chrome DevTools MCP** — debugging running Electron app
 - **Electron MCP** — screenshot and interact with running app
@@ -100,6 +117,7 @@ Each connected MCP server costs ~18K tokens per turn in tool definitions. Only c
 | Task Type | Servers Needed |
 |-----------|---------------|
 | General coding | context7 only |
+| Codebase research / planning | context7, mempalace |
 | UI development | context7, Chrome DevTools |
 | E2E testing | Playwright, Chrome DevTools |
 | Debugging running app | Electron, Chrome DevTools |
