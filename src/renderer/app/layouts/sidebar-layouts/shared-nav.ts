@@ -13,6 +13,7 @@ import {
   Home,
   ListTodo,
   Map,
+  MessageSquare,
   Network,
   Plug,
   Terminal,
@@ -40,6 +41,7 @@ export const personalItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
   { label: 'Personal', icon: User, path: ROUTES.PERSONAL },
+  { label: 'Assistant', icon: MessageSquare, path: ROUTES.ASSISTANT },
   { label: 'Integrations', icon: Plug, path: ROUTES.INTEGRATIONS },
 ];
 
