@@ -8,7 +8,7 @@ import { useLooseParams } from '@renderer/shared/hooks';
 import { PageHeader, PageLayout } from '@ui';
 
 import { visualizationKeys } from '../api/queryKeys';
-import { useAgentTeams, useCodebaseGraph } from '../api/visualization-api';
+import { useAgentTeams, useCodebaseGraph } from '../api/useVisualization';
 import { useVisualizationStore } from '../store';
 
 import { VisualizationCanvas } from './canvas/VisualizationCanvas';

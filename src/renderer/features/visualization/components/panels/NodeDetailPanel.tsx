@@ -10,7 +10,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, Card, ScrollArea } from '@ui';
 
-import { useAgentTeams } from '../../api/visualization-api';
+import { useAgentTeams } from '../../api/useVisualization';
 import { useVisualizationStore } from '../../store';
 
 import { getPanelTitle, renderNodeContent } from './node-detail/node-content';
