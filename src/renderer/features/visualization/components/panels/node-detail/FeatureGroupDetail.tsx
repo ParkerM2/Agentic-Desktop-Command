@@ -7,7 +7,7 @@
 
 import type { AgentTaskInfoSchema, CodebaseFileSchema } from '@shared/ipc/visualization/schemas';
 
-import { Badge, MetadataItem, MetadataList, Text } from '@ui';
+import { Badge, Code, MetadataItem, MetadataList, Text } from '@ui';
 
 
 import { SessionLogSection } from './SessionLogSection';
@@ -44,11 +44,7 @@ export function FeatureGroupDetail({ agentTasks, data, files, projectId }: Featu
         {data.branch !== null && (
           <MetadataItem
             label="Branch"
-            value={
-              <code className="block rounded bg-muted px-2 py-1 font-mono text-xs">
-                {data.branch}
-              </code>
-            }
+            value={<Code>{data.branch}</Code>}
           />
         )}
         <MetadataItem label="Agents" value={data.agentCount} />
