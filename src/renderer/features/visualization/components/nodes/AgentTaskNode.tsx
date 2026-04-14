@@ -23,7 +23,7 @@ function statusVariant(
 ): 'success' | 'error' | 'warning' | 'neutral' {
   switch (status) {
     case 'active': {
-      return 'warning';
+      return 'success';
     }
     case 'completed': {
       return 'success';
@@ -31,9 +31,29 @@ function statusVariant(
     case 'error': {
       return 'error';
     }
+    case 'killed':
     case 'idle':
     case 'pending': {
       return 'neutral';
+    }
+  }
+}
+
+function ringClass(status: AgentStatus): string {
+  switch (status) {
+    case 'active': {
+      return 'ring-2 ring-green-500';
+    }
+    case 'error': {
+      return 'ring-2 ring-red-500';
+    }
+    case 'completed':
+    case 'killed': {
+      return 'opacity-60';
+    }
+    case 'idle':
+    case 'pending': {
+      return '';
     }
   }
 }
@@ -65,7 +85,7 @@ export function AgentTaskNode({ id, data, selected }: NodeProps<AgentTaskRFNode>
         tabIndex={0}
         className={[
           'min-w-[180px] rounded-md border bg-background/95 px-3 py-2 shadow-sm',
-          selected ? 'ring-2 ring-primary' : '',
+          selected ? 'ring-2 ring-primary' : ringClass(data.status),
         ].join(' ')}
         onClick={() => {
           openDetailPanel(id);

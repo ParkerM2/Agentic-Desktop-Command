@@ -61,13 +61,13 @@ interface RegistryEntry {
 /** Map bus SessionRecord.status to visualization AgentStatus */
 function sessionStatusToAgentStatus(
   status: string,
-): 'pending' | 'active' | 'idle' | 'completed' | 'error' {
+): 'pending' | 'active' | 'idle' | 'completed' | 'error' | 'killed' {
   switch (status) {
     case 'spawned': return 'pending';
     case 'active': return 'active';
     case 'completed': return 'completed';
     case 'error': return 'error';
-    case 'killed': return 'error';
+    case 'killed': return 'killed';
     default: return 'idle';
   }
 }

@@ -44,6 +44,7 @@ export const AgentStatusSchema = z.enum([
   'idle',
   'completed',
   'error',
+  'killed',
 ]);
 
 /** A single tracking event emitted by an agent */
