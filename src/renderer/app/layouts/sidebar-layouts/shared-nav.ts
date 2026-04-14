@@ -19,6 +19,7 @@ import {
   Terminal,
   TestTube2,
   User,
+  Workflow,
   Wrench,
 } from 'lucide-react';
 
@@ -40,6 +41,7 @@ export interface NavItem {
 export const personalItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
+  { label: 'Agents', icon: Bot, path: ROUTES.AGENTS },
   { label: 'Personal', icon: User, path: ROUTES.PERSONAL },
   { label: 'Assistant', icon: MessageSquare, path: ROUTES.ASSISTANT },
   { label: 'Integrations', icon: Plug, path: ROUTES.INTEGRATIONS },
@@ -53,6 +55,7 @@ export const developmentItems: NavItem[] = [
   { label: 'Planning', icon: Map, path: PROJECT_VIEWS.PLANNING },
   { label: 'Git', icon: GitBranch, path: PROJECT_VIEWS.GIT },
   { label: 'Tools', icon: Wrench, path: PROJECT_VIEWS.TOOLS },
+  { label: 'Workflow', icon: Workflow, path: PROJECT_VIEWS.WORKFLOW },
   { label: 'Visual Map', icon: Network, path: PROJECT_VIEWS.VISUALIZATION },
   { label: 'QA', icon: TestTube2, path: PROJECT_VIEWS.QA_RECORDER },
 ];

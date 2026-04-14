@@ -49,7 +49,6 @@ import {
 } from './misc';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
-import { personalEvents, personalInvoke } from './personal';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
@@ -66,7 +65,6 @@ import {
 import { spotifyInvoke } from './spotify';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
-import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
@@ -116,14 +114,12 @@ export const ipcInvokeContract = {
   ...workflowInvoke,
   ...dashboardInvoke,
   ...dataManagementInvoke,
-  ...trackerInvoke,
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
   ...progressInvoke,
   ...busInvoke,
 
-  ...personalInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -162,7 +158,6 @@ export const ipcEventContract = {
   ...progressEvents,
   ...busEvents,
 
-  ...personalEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -192,7 +187,6 @@ export {
   UserSchema,
 } from './auth';
 
-// Briefing schemas now re-exported from personal/ (see bottom of file)
 
 export { CaptureSchema } from './dashboard';
 
@@ -229,7 +223,6 @@ export {
   SmtpProviderSchema,
 } from './email';
 
-// Fitness schemas now re-exported from personal/ (see bottom of file)
 
 export {
   GitBranchSchema,
@@ -275,7 +268,7 @@ export {
   HubSyncOutputSchema,
 } from './hub';
 
-// Non-personal schemas from misc (personal schemas re-exported from ./personal below)
+
 export {
   InsightMetricsSchema,
   InsightTimeSeriesSchema,
@@ -320,7 +313,6 @@ export {
   OAuthRevokeOutputSchema,
 } from './oauth';
 
-// Planner schemas now re-exported from personal/ (see bottom of file)
 
 export {
   ChildRepoSchema,
@@ -370,8 +362,6 @@ export {
 export { TerminalSessionSchema } from './terminals';
 
 export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './app';
-
-export { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './tracker';
 
 export {
   AgentChatMessageSchema,
@@ -460,47 +450,63 @@ export {
   workflowStepStatusSchema,
 } from './progress';
 
+
+// ─── Per-domain schema re-exports (formerly aggregated by personal/) ─────────
+
+export { NoteSchema } from './misc/notes.contract';
+
+export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './misc/ideas.contract';
+
 export {
-  AgentActivitySummarySchema,
+  MilestoneSchema,
+  MilestoneStatusSchema,
+  MilestoneTaskSchema,
+} from './misc/milestones.contract';
+
+export {
   AlertLinkedToSchema,
   AlertSchema,
   AlertTypeSchema,
-  BodyMeasurementSchema,
-  BriefingConfigSchema,
+  RecurringConfigSchema,
+} from './misc/alerts.contract';
+
+export {
   ChangeCategorySchema,
   ChangelogEntrySchema,
   ChangeTypeSchema,
-  DailyBriefingSchema,
+} from './misc/changelog.contract';
+
+export {
   DailyPlanSchema,
+  ScheduledTaskSchema,
+  TimeBlockSchema,
+  TimeBlockTypeSchema,
+  WeeklyReviewSchema,
+  WeeklyReviewSummarySchema,
+} from './planner/schemas';
+
+export {
+  AgentActivitySummarySchema,
+  BriefingConfigSchema,
+  DailyBriefingSchema,
+  SuggestionActionSchema,
+  SuggestionSchema,
+  SuggestionTypeSchema,
+  TaskSummarySchema,
+} from './briefing/schemas';
+
+export {
+  BodyMeasurementSchema,
   ExerciseSchema,
   ExerciseSetSchema,
   FitnessGoalSchema,
   FitnessGoalTypeSchema,
   FitnessStatsSchema,
-  IdeaCategorySchema,
-  IdeaSchema,
-  IdeaStatusSchema,
   MeasurementSourceSchema,
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
-  NoteSchema,
-  PERSONAL,
-  PERSONAL_EVENTS,
-  RecurringConfigSchema,
-  ScheduledTaskSchema,
-  SuggestionActionSchema,
-  SuggestionSchema,
-  SuggestionTypeSchema,
-  TaskSummarySchema,
-  TimeBlockSchema,
-  TimeBlockTypeSchema,
-  WeeklyReviewSchema,
-  WeeklyReviewSummarySchema,
   WeightUnitSchema,
   WorkoutSchema,
   WorkoutTypeSchema,
-} from './personal';
+} from './fitness/schemas';
 
 // ─── Integrations Domain (unified namespace) ─────────────────
 export { integrationsEvents, integrationsInvoke } from './integrations';
