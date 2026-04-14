@@ -24,7 +24,6 @@ import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
 import type { AgentTeamsDataSchema } from '@shared/ipc/visualization/schemas';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
-import { WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
 
@@ -95,7 +94,6 @@ function extractTextPreview(content: ContentBlock[]): string {
 const PROGRESS_LIST = ['progress', 'list'] as const;
 const TASKS = ['tasks'] as const;
 const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
-const WORKSPACE_SESSIONS = ['workspaces'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
 const VISUALIZATION_AGENTS = ['visualization', 'agents'] as const;
@@ -129,12 +127,6 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [AGENT_DASHBOARD_EVENTS.SESSION.ENDED]: { keys: [AGENT_SESSIONS] },
   [AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED']]: { keys: [AGENT_SESSIONS] },
   [AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED]: { keys: [['agent-messages']], handler: 'append' },
-
-  // Workspace events
-  [WORKSPACE_EVENTS.SESSION.READY]: { keys: [WORKSPACE_SESSIONS] },
-  [WORKSPACE_EVENTS.SESSION.CRASHED]: { keys: [WORKSPACE_SESSIONS] },
-  [WORKSPACE_EVENTS.SESSION.RESTARTED]: { keys: [WORKSPACE_SESSIONS] },
-  [WORKSPACE_EVENTS.PLAN['HANDED-OFF']]: { keys: [WORKSPACE_SESSIONS] },
 
   // Workflow template events
   [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.CREATED]: { keys: [WORKFLOW_TEMPLATES] },
