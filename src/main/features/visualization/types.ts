@@ -61,7 +61,7 @@ export interface PathConfig {
 // ─── Agent Teams ─────────────────────────────────────────────
 
 /** Live status of an agent derived from tracking events. */
-export type AgentStatus = 'pending' | 'active' | 'idle' | 'completed' | 'error';
+export type AgentStatus = 'pending' | 'active' | 'idle' | 'completed' | 'error' | 'killed';
 
 /** A single event from a tracking JSONL file. */
 export interface TrackingEvent {
@@ -97,6 +97,8 @@ export interface AgentTaskInfo {
   lastEventTs: string | null;
   /** Last known session ID prefix for log lookup, or null. */
   lastSid: string | null;
+  /** Task slug used as the stable join key between session records and agent nodes, or null. */
+  taskSlug: string | null;
   /** Files this agent is scoped to touch (from task .md ## Files sections). */
   fileScope: string[];
   /** Total number of events recorded for this agent. */

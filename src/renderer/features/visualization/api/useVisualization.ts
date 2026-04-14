@@ -13,12 +13,15 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { visualizationKeys } from './queryKeys';
 
 /** Fetch codebase dependency graph — cached for 5 minutes */
-export function useCodebaseGraph(projectId: string) {
+export function useCodebaseGraph(
+  projectId: string,
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: visualizationKeys.codebaseGraph(projectId),
     queryFn: () => ipc(VISUALIZATION.GET['CODEBASE-GRAPH'], { projectId }),
     staleTime: 300_000,
-    enabled: !!projectId,
+    enabled: !!projectId && (options?.enabled ?? true),
   });
 }
 

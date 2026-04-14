@@ -7,6 +7,8 @@
 
 import { Cog, Workflow } from 'lucide-react';
 
+import { useLayoutStore } from '@renderer/shared/stores';
+
 import {
   Badge,
   Button,
@@ -21,6 +23,8 @@ import {
   Skeleton,
   Text,
 } from '@ui';
+
+import { useProjects } from '@features/projects';
 
 import { useClaudeConfig } from '../api/useClaudeConfig';
 import { useToolsUI } from '../store';
@@ -79,7 +83,10 @@ function ConfigSection({ items, loading, title, type }: ConfigSectionProps) {
 
 export function ToolsPage() {
   const { activeTab, setActiveTab } = useToolsUI();
-  const { data, isLoading, refetch } = useClaudeConfig();
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projects } = useProjects();
+  const activeProject = projects?.find((p) => p.id === activeProjectId);
+  const { data, isLoading, refetch } = useClaudeConfig(activeProject?.path);
 
   return (
     <PageLayout>

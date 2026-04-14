@@ -12,10 +12,10 @@ import { ipc } from '@renderer/shared/lib/ipc';
 
 import { toolsKeys } from './queryKeys';
 
-export function useClaudeConfig() {
+export function useClaudeConfig(projectPath?: string) {
   return useQuery({
-    queryKey: toolsKeys.claudeConfig(),
-    queryFn: () => ipc(CLAUDE.SCAN.CONFIG, {}),
+    queryKey: [...toolsKeys.claudeConfig(), projectPath ?? ''],
+    queryFn: () => ipc(CLAUDE.SCAN.CONFIG, { projectPath }),
     staleTime: 30_000,
   });
 }

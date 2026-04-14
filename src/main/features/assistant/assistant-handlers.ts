@@ -13,7 +13,9 @@ import type { IpcRouter } from '../../ipc/router';
 
 export function registerAssistantHandlers(router: IpcRouter, service: AssistantService): void {
   router.handle(ASSISTANT.START.SESSION, ({ projects }) => {
-    void service.start(projects);
+    void Promise.resolve(service.start(projects)).catch((err: unknown) => {
+      console.error('[assistant-handlers] service.start failed:', err);
+    });
     return Promise.resolve(
       { success: true } as unknown as InvokeOutput<typeof ASSISTANT.START.SESSION>,
     );

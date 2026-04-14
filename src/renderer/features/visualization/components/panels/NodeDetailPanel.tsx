@@ -37,7 +37,9 @@ export function NodeDetailPanel({ projectId }: NodeDetailPanelProps) {
 
   const { data: agentTeamsData, isLoading: agentTeamsLoading } = useAgentTeams(projectId);
 
-  const { data: codebaseGraphData } = useCodebaseGraph(projectId);
+  const { data: codebaseGraphData } = useCodebaseGraph(projectId, {
+    enabled: node?.type === 'featureGroup',
+  });
 
   const featureName = selectedFeature ?? agentTeamsData?.features[0]?.feature ?? '';
   const featureData = agentTeamsData?.features.find((f) => f.feature === featureName);

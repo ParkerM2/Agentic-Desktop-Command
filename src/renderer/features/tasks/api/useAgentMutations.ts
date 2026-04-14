@@ -123,7 +123,7 @@ export function useRestartFromCheckpoint() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: async (input: { taskId: string; projectPath: string }) => {
+    mutationFn: async (input: { taskId: string; projectPath: string; projectId?: string }) => {
       // Find any active session for this task
       const sessions = await ipc(BUS.LIST.SESSIONS, { taskSlug: input.taskId });
       const active = sessions.find((s) => s.status === 'active');
@@ -136,6 +136,7 @@ export function useRestartFromCheckpoint() {
         type: 'team-lead',
         phase: 'executing',
         taskSlug: input.taskId,
+        projectId: input.projectId,
         projectPath: input.projectPath,
         prompt: 'Resume from last checkpoint.',
       });

@@ -34,14 +34,7 @@ export function useStopProgressWatcher() {
 export function useLaunchTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      name: string;
-      type: 'team-lead' | 'project-owner' | 'assistant' | 'qa' | 'research' | 'planner';
-      phase?: 'research' | 'planning' | 'executing' | 'qa';
-      projectPath?: string;
-      prompt: string;
-      taskSlug?: string;
-    }) => ipc(BUS.SPAWN.SESSION, data),
+    mutationFn: (data: InvokeInput<typeof BUS.SPAWN.SESSION>) => ipc(BUS.SPAWN.SESSION, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: busKeys.sessions() });
     },
@@ -49,15 +42,15 @@ export function useLaunchTask() {
 }
 
 /** Check if a session is running — polls bus sessions every 5s */
-export function useSessionStatus(sessionId: string) {
+export function useSessionStatus(taskSlug: string) {
   return useQuery({
-    queryKey: workflowKeys.session(sessionId),
+    queryKey: workflowKeys.session(taskSlug),
     queryFn: async () => {
-      const sessions = await ipc(BUS.LIST.SESSIONS, { taskSlug: sessionId });
+      const sessions = await ipc(BUS.LIST.SESSIONS, { taskSlug });
       const running = sessions.some((s) => s.status === 'active');
       return { running };
     },
-    enabled: sessionId.length > 0,
+    enabled: taskSlug.length > 0,
     refetchInterval: 5_000,
   });
 }

@@ -123,9 +123,9 @@ export function CalendarOverlay({ date, visible }: CalendarOverlayProps) {
             <div
               key={event.id}
               className={cn(
-                'rounded-md border-l-3 px-3 py-2 transition-colors',
+                'rounded-md border-l-2 px-3 py-2 transition-colors',
                 'border-info/60 bg-info/8',
-                'border border-l-3 border-dashed',
+                'border border-l-2 border-dashed',
                 isCurrent && 'border-info bg-info/15 border-solid',
               )}
               style={{
