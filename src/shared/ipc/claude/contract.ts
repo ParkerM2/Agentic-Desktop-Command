@@ -62,7 +62,7 @@ export const claudeInvoke = {
     output: z.object({ configured: z.boolean() }),
   },
   [CLAUDE.SCAN.CONFIG]: {
-    input: z.object({}),
+    input: z.object({ projectPath: z.string().optional() }),
     output: ClaudeConfigScanResultSchema,
   },
 } as const;

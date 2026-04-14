@@ -21,8 +21,8 @@ export function registerClaudeHandlers(router: IpcRouter, claudeClient: ClaudeCl
   );
 
   // Scan Claude config directories for skills, agents, and commands
-  router.handle(CLAUDE.SCAN.CONFIG, () =>
-    Promise.resolve(scanClaudeConfig(process.cwd(), os.homedir())),
+  router.handle(CLAUDE.SCAN.CONFIG, ({ projectPath }) =>
+    Promise.resolve(scanClaudeConfig(projectPath ?? process.cwd(), os.homedir())),
   );
 
   // Create a new conversation
