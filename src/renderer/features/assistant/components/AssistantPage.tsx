@@ -8,6 +8,8 @@
 import { useRouterState } from '@tanstack/react-router';
 import { Trash2 } from 'lucide-react';
 
+import { ROUTES } from '@shared/constants/routes';
+
 import { useLayoutStore } from '@renderer/shared/stores';
 
 import { Button, PageContent, PageHeader, PageLayout, PageHeaderTitle, PageHeaderActions, PageHeaderRow } from '@ui';
@@ -30,11 +32,11 @@ export function AssistantPage() {
 
   function getActiveView(path: string): string {
     if (path.includes('/roadmap')) return 'roadmap';
-    if (path.includes('/planner')) return 'planner';
+    if (path.startsWith(ROUTES.PLANNER)) return 'planner';
     if (path.includes('/ideation')) return 'ideation';
-    if (path.includes('/notes')) return 'notes';
-    if (path.includes('/fitness')) return 'fitness';
-    if (path.includes('/dashboard') || path === '/') return 'dashboard';
+    if (path.startsWith(ROUTES.NOTES)) return 'notes';
+    if (path.startsWith(ROUTES.FITNESS)) return 'fitness';
+    if (path.startsWith(ROUTES.DASHBOARD) || path === ROUTES.INDEX) return 'dashboard';
     return 'default';
   }
 

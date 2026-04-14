@@ -10,7 +10,7 @@ import type { ScheduledTask, TimeBlock } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Heading, Text } from '@ui';
+import { Button, Code, Heading, Text } from '@ui';
 
 import { usePlannerUI } from '../store';
 
@@ -125,7 +125,7 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
             <div
               key={block.id}
               className={cn(
-                'group rounded-md border-l-3 px-3 py-2.5 transition-colors',
+                'group rounded-md border-l-2 px-3 py-2.5 transition-colors',
                 BLOCK_TYPE_STYLES[block.type],
               )}
             >
@@ -176,11 +176,11 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
             {scheduledTasks.map((task) => (
               <div
                 key={task.taskId}
-                className="border-l-muted-foreground bg-muted/20 group rounded-md border-l-3 px-3 py-2"
+                className="border-l-muted-foreground bg-muted/20 group rounded-md border-l-2 px-3 py-2"
               >
                 <div className="flex items-start justify-between">
                   <div className={cn('min-w-0 flex-1', task.completed ? 'opacity-50' : '')}>
-                    <code className="text-foreground text-xs font-mono">{task.taskId}</code>
+                    <Code>{task.taskId}</Code>
                     {task.scheduledTime === undefined && task.estimatedDuration === undefined ? null : (
                       <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
                         {task.scheduledTime === undefined ? null : <span>{task.scheduledTime}</span>}
