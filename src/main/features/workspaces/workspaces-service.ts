@@ -76,13 +76,13 @@ export function createWorkspacesService({ db }: { db: AdcDatabase }): Workspaces
 
     const now = new Date().toISOString();
     const id = generateId();
-    const name = hostname();
+    const name = hostname() || 'My Workspace';
     db.insert(workspaces).values({
       id,
       name,
       description: null,
       hostDeviceId: null,
-      settings: JSON.stringify({ autoStart: false, maxConcurrent: 3, defaultBranch: 'main' }),
+      settings: JSON.stringify(DEFAULT_SETTINGS),
       createdAt: now,
       updatedAt: now,
     }).run();
@@ -101,7 +101,7 @@ export function createWorkspacesService({ db }: { db: AdcDatabase }): Workspaces
       name: input.name,
       description: input.description ?? null,
       hostDeviceId: null,
-      settings: JSON.stringify({ autoStart: false, maxConcurrent: 3, defaultBranch: 'main' }),
+      settings: JSON.stringify(DEFAULT_SETTINGS),
       createdAt: now,
       updatedAt: now,
     }).run();
