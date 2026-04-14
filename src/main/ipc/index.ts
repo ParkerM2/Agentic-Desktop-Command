@@ -306,6 +306,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.hubApiClient,
     services.workflowEngineService,
     services.workflowTemplateService,
+    services.busSessionManager,
   );
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);

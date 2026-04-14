@@ -22,6 +22,7 @@ import type { WorkflowEngineService } from './engine';
 import type { JsonlWatcher } from "./jsonl-watcher";
 import type { ProgressWatcher } from "./progress-watcher";
 import type { WorkflowTemplateService } from './templates';
+import type { BusSessionManager } from '../../bus/session-manager';
 import type { IpcRouter } from '../../ipc/router';
 import type { HubApiClient } from "../hub/hub-api-client";
 
@@ -38,6 +39,7 @@ export function registerWorkflowHandlers(
   hubApiClient: HubApiClient,
   workflowEngineService: WorkflowEngineService,
   workflowTemplateService: WorkflowTemplateService,
+  busSessionManager: BusSessionManager,
 ): void {
   // ── Watcher channels ──────────────────────────────────────────
 
@@ -111,19 +113,27 @@ export function registerWorkflowHandlers(
     return Promise.resolve({ success: true });
   });
 
-  // ── Task Launcher (deprecated — use command bus sessions) ──
+  // ── Task Launcher ─────────────────────────────────────────
 
-  router.handle(WORKFLOW.LAUNCH.WORKFLOW, () => {
-    throw new Error('Task launcher has been removed. Use command bus sessions instead.');
+  router.handle(WORKFLOW.LAUNCH.WORKFLOW, async ({ taskDescription, projectPath }) => {
+    const session = await busSessionManager.spawn({
+      name: `task-${Date.now()}`,
+      type: 'team-lead',
+      projectPath,
+      prompt: taskDescription,
+    });
+    return { sessionId: session.id, pid: session.pid ?? 0 };
   });
 
-  router.handle(WORKFLOW.CHECK.RUNNING, () =>
-    Promise.resolve({ running: false }),
-  );
+  router.handle(WORKFLOW.CHECK.RUNNING, ({ sessionId }) => {
+    const session = busSessionManager.get(sessionId);
+    return Promise.resolve({ running: session?.status === 'active' });
+  });
 
-  router.handle(WORKFLOW.STOP.RUNNING, () =>
-    Promise.resolve({ stopped: false }),
-  );
+  router.handle(WORKFLOW.STOP.RUNNING, async ({ sessionId }) => {
+    await busSessionManager.kill(sessionId);
+    return { stopped: true };
+  });
 
   // ── Engine channels ───────────────────────────────────────────
 
