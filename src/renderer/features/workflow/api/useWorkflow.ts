@@ -34,14 +34,7 @@ export function useStopProgressWatcher() {
 export function useLaunchTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      name: string;
-      type: 'team-lead' | 'project-owner' | 'assistant' | 'qa' | 'research' | 'planner';
-      phase?: 'research' | 'planning' | 'executing' | 'qa';
-      projectPath?: string;
-      prompt: string;
-      taskSlug?: string;
-    }) => ipc(BUS.SPAWN.SESSION, data),
+    mutationFn: (data: InvokeInput<typeof BUS.SPAWN.SESSION>) => ipc(BUS.SPAWN.SESSION, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: busKeys.sessions() });
     },

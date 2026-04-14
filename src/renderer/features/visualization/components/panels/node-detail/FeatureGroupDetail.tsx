@@ -3,12 +3,9 @@
  * Shows: metadata, file list, active agents, and session log.
  */
 
-
-
 import type { AgentTaskInfoSchema, CodebaseFileSchema } from '@shared/ipc/visualization/schemas';
 
 import { Badge, Code, MetadataItem, MetadataList, Text } from '@ui';
-
 
 import { SessionLogSection } from './SessionLogSection';
 import { statusVariant } from './types';

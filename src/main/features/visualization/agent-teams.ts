@@ -199,7 +199,7 @@ type LiveSession = LiveSessions[number];
  * Map AgentManagerService session status to visualization AgentStatus.
  *
  * AgentSession.status: 'running' | 'idle' | 'needs-attention' | 'failed' | 'completed'
- * AgentStatus (viz): 'pending' | 'active' | 'idle' | 'completed' | 'error'
+ * AgentStatus (viz): 'pending' | 'active' | 'idle' | 'completed' | 'error' | 'killed'
  */
 function sessionStatusToAgentStatus(sessionStatus: string): AgentStatus {
   switch (sessionStatus) {

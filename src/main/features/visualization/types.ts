@@ -61,7 +61,7 @@ export interface PathConfig {
 // ─── Agent Teams ─────────────────────────────────────────────
 
 /** Live status of an agent derived from tracking events. */
-export type AgentStatus = 'pending' | 'active' | 'idle' | 'completed' | 'error';
+export type AgentStatus = 'pending' | 'active' | 'idle' | 'completed' | 'error' | 'killed';
 
 /** A single event from a tracking JSONL file. */
 export interface TrackingEvent {
