@@ -45,8 +45,8 @@ export interface AgentMessagePreview {
 // ─── Types ──────────────────────────────────────────────────
 
 interface RegistryEntry {
-  /** React Query key prefixes to invalidate when the event fires. */
-  readonly keys: ReadonlyArray<readonly string[]>;
+  /** React Query key prefixes to invalidate when the event fires. Not used by 'append' handlers. */
+  readonly keys?: ReadonlyArray<readonly string[]>;
   /**
    * Handler strategy:
    * - 'invalidate' (default): invalidates matching query keys
@@ -96,7 +96,6 @@ const TASKS = ['tasks'] as const;
 const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
-const VISUALIZATION_AGENTS = ['visualization', 'agents'] as const;
 
 // ─── Registry ───────────────────────────────────────────────
 
@@ -142,11 +141,11 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [TASKS_EVENTS.STATUS.CHANGED]: { keys: [TASKS] },
 
   // Bus session events — update visualization agent nodes in-place
-  [BUS_EVENTS.SESSION.SPAWNED]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
-  [BUS_EVENTS.SESSION.ACTIVE]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
-  [BUS_EVENTS.SESSION.COMPLETED]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
-  [BUS_EVENTS.SESSION.ERROR]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
-  [BUS_EVENTS.SESSION.KILLED]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
+  [BUS_EVENTS.SESSION.SPAWNED]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.ACTIVE]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.COMPLETED]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.ERROR]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.KILLED]: { handler: 'append' as const },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -193,7 +192,7 @@ function handleAppend(queryClient: QueryClient, event: EventChannel, payload: un
           features: old.features.map((f) => ({
             ...f,
             tasks: f.tasks.map((t) =>
-              t.lastSid === sessionId || t.agentName === session.name
+              t.lastSid === sessionId || (session.taskSlug !== null && t.taskSlug === session.taskSlug)
                 ? { ...t, status: agentStatus, lastSid: sessionId }
                 : t,
             ),
@@ -237,7 +236,7 @@ export function EventBridge() {
       } else {
         // Default: invalidate matching query keys
         const cleanup = window.api.on(typedEvent, () => {
-          for (const key of entry.keys) {
+          for (const key of (entry.keys ?? [])) {
             void queryClient.invalidateQueries({ queryKey: [...key] });
           }
         });
