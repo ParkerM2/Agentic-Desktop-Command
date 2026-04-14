@@ -169,11 +169,9 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
       )}
 
       {/* Scheduled Tasks */}
-      <div className="mt-4 space-y-2">
-        <Heading as="h3" className="text-foreground text-sm font-semibold">Scheduled Tasks</Heading>
-        {scheduledTasks.length === 0 ? (
-          <Text className="text-muted-foreground text-xs">No tasks scheduled.</Text>
-        ) : (
+      {scheduledTasks.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          <Heading as="h3" className="text-foreground text-sm font-semibold">Scheduled Tasks</Heading>
           <div className="space-y-2">
             {scheduledTasks.map((task) => (
               <div
@@ -196,8 +194,8 @@ export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

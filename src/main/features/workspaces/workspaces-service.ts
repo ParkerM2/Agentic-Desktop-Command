@@ -11,6 +11,12 @@ import type { AdcDatabase } from '../../db';
 
 const logger = createScopedLogger('workspaces-service');
 
+const DEFAULT_SETTINGS: WorkspaceRecord['settings'] = {
+  autoStart: false,
+  maxConcurrent: 3,
+  defaultBranch: 'main',
+};
+
 export interface WorkspaceRow {
   id: string;
   name: string;
@@ -32,7 +38,13 @@ export interface WorkspaceRecord {
 }
 
 function rowToRecord(row: WorkspaceRow): WorkspaceRecord {
-  const settings = JSON.parse(row.settings) as WorkspaceRecord['settings'];
+  let settings: WorkspaceRecord['settings'];
+  try {
+    settings = JSON.parse(row.settings) as WorkspaceRecord['settings'];
+  } catch {
+    logger.warn(`[Workspaces] Malformed settings JSON for workspace ${row.id}, using defaults`);
+    settings = DEFAULT_SETTINGS;
+  }
   return {
     id: row.id,
     name: row.name,
@@ -108,7 +120,12 @@ export function createWorkspacesService({ db }: { db: AdcDatabase }): Workspaces
     if (!existing) throw new Error(`Workspace ${id} not found`);
 
     const now = new Date().toISOString();
-    const existingSettings = JSON.parse(existing.settings) as WorkspaceRecord['settings'];
+    let existingSettings: WorkspaceRecord['settings'];
+    try {
+      existingSettings = JSON.parse(existing.settings) as WorkspaceRecord['settings'];
+    } catch {
+      existingSettings = DEFAULT_SETTINGS;
+    }
     const mergedSettings = input.settings
       ? { ...existingSettings, ...input.settings }
       : existingSettings;
@@ -127,7 +144,8 @@ export function createWorkspacesService({ db }: { db: AdcDatabase }): Workspaces
   }
 
   function deleteWorkspace(id: string): { success: boolean } {
-    db.delete(workspaces).where(eq(workspaces.id, id)).run();
+    const result = db.delete(workspaces).where(eq(workspaces.id, id)).run();
+    if (result.changes === 0) return { success: false };
     return { success: true };
   }
 

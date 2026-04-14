@@ -37,17 +37,23 @@ function scanDir(dir: string, type: ClaudeConfigItem['type']): ClaudeConfigItem[
 export function scanClaudeConfig(projectRoot: string, userHome: string) {
   const globalSkillsDir = join(userHome, '.claude', 'skills');
   const projectSkillsDir = join(projectRoot, '.claude', 'skills');
+  const globalAgentsDir = join(userHome, '.claude', 'agents');
   const projectAgentsDir = join(projectRoot, '.claude', 'agents');
 
   const globalSkills = scanDir(globalSkillsDir, 'skill');
   const projectSkills = scanDir(projectSkillsDir, 'skill');
-  // Deduplicate: project skills override global by name
+  // Deduplicate: project skills/agents override global by name
   const skillNames = new Set(projectSkills.map((s) => s.name));
   const skills = [...projectSkills, ...globalSkills.filter((s) => !skillNames.has(s.name))];
 
+  const globalAgents = scanDir(globalAgentsDir, 'agent');
+  const projectAgents = scanDir(projectAgentsDir, 'agent');
+  const agentNames = new Set(projectAgents.map((a) => a.name));
+  const agents = [...projectAgents, ...globalAgents.filter((a) => !agentNames.has(a.name))];
+
   return {
     skills,
-    agents: scanDir(projectAgentsDir, 'agent'),
+    agents,
     commands: [] as ClaudeConfigItem[],
   };
 }

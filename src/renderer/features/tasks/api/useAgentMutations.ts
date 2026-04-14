@@ -18,6 +18,7 @@ export function useStartPlanning() {
   return useMutation({
     mutationFn: (input: {
       taskId: string;
+      projectId?: string;
       projectPath: string;
       taskDescription: string;
       subProjectPath?: string;
@@ -27,6 +28,7 @@ export function useStartPlanning() {
         type: 'team-lead',
         phase: 'planning',
         taskSlug: input.taskId,
+        projectId: input.projectId,
         projectPath: input.projectPath,
         prompt: input.taskDescription,
       }),
@@ -44,6 +46,7 @@ export function useStartExecution() {
   return useMutation({
     mutationFn: (input: {
       taskId: string;
+      projectId?: string;
       projectPath: string;
       taskDescription: string;
       planRef?: string;
@@ -54,6 +57,7 @@ export function useStartExecution() {
         type: 'team-lead',
         phase: 'executing',
         taskSlug: input.taskId,
+        projectId: input.projectId,
         projectPath: input.projectPath,
         prompt: input.planRef
           ? `${input.taskDescription}\n\nPlan: ${input.planRef}`
@@ -73,6 +77,7 @@ export function useReplanWithFeedback() {
   return useMutation({
     mutationFn: (input: {
       taskId: string;
+      projectId?: string;
       projectPath: string;
       taskDescription: string;
       feedback: string;
@@ -84,8 +89,13 @@ export function useReplanWithFeedback() {
         type: 'team-lead',
         phase: 'planning',
         taskSlug: input.taskId,
+        projectId: input.projectId,
         projectPath: input.projectPath,
-        prompt: input.feedback,
+        prompt: [
+          input.taskDescription,
+          input.previousPlanPath ? `Previous plan: ${input.previousPlanPath}` : null,
+          `Feedback: ${input.feedback}`,
+        ].filter(Boolean).join('\n\n'),
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: busKeys.sessions() });
