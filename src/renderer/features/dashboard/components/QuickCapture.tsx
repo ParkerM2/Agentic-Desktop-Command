@@ -10,7 +10,7 @@ import { useRef, useState } from 'react';
 
 import { MoreHorizontal, Plus } from 'lucide-react';
 
-import { formatRelativeTime } from '@renderer/shared/lib/utils';
+import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 import { useToastStore } from '@renderer/shared/stores';
 
 import {
@@ -197,9 +197,10 @@ export function QuickCapture() {
                         {capture.text}
                       </Button>
                     )}
-                    <span className="text-muted-foreground shrink-0 text-xs">
-                      {formatRelativeTime(capture.createdAt)}
-                    </span>
+                    <RelativeTime
+                      className="text-muted-foreground shrink-0 text-xs"
+                      value={capture.createdAt}
+                    />
 
                     <AlertDialog>
                       <DropdownMenu>
