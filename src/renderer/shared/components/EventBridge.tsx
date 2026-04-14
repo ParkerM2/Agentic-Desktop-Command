@@ -16,14 +16,22 @@ import { useEffect } from 'react';
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
+import { BUS_EVENTS } from '@shared/ipc/bus/channels';
+import type { sessionRecordSchema } from '@shared/ipc/bus/schemas';
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
 import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import type { AgentTeamsDataSchema } from '@shared/ipc/visualization/schemas';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
 import { WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
+
+import type { z } from 'zod';
+
+type AgentTeamsData = z.infer<typeof AgentTeamsDataSchema>;
+type SessionRecord = z.infer<typeof sessionRecordSchema>;
 
 // ─── Exported Types ─────────────────────────────────────────
 
@@ -50,6 +58,28 @@ interface RegistryEntry {
 
 // ─── Helpers ────────────────────────────────────────────────
 
+/** Map bus SessionRecord.status to visualization AgentStatus */
+function sessionStatusToAgentStatus(
+  status: string,
+): 'pending' | 'active' | 'idle' | 'completed' | 'error' {
+  switch (status) {
+    case 'spawned': return 'pending';
+    case 'active': return 'active';
+    case 'completed': return 'completed';
+    case 'error': return 'error';
+    case 'killed': return 'error';
+    default: return 'idle';
+  }
+}
+
+const BUS_SESSION_EVENTS = new Set<string>([
+  BUS_EVENTS.SESSION.SPAWNED,
+  BUS_EVENTS.SESSION.ACTIVE,
+  BUS_EVENTS.SESSION.COMPLETED,
+  BUS_EVENTS.SESSION.ERROR,
+  BUS_EVENTS.SESSION.KILLED,
+]);
+
 /** Extract a text preview from content blocks (max 200 chars). */
 function extractTextPreview(content: ContentBlock[]): string {
   for (const block of content) {
@@ -64,10 +94,11 @@ function extractTextPreview(content: ContentBlock[]): string {
 
 const PROGRESS_LIST = ['progress', 'list'] as const;
 const TASKS = ['tasks'] as const;
-const AGENT_SESSIONS = ['agent-sessions'] as const;
-const WORKSPACE_SESSIONS = ['workspace-sessions'] as const;
+const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
+const WORKSPACE_SESSIONS = ['workspaces'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
+const VISUALIZATION_AGENTS = ['visualization', 'agents'] as const;
 
 // ─── Registry ───────────────────────────────────────────────
 
@@ -117,6 +148,13 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 
   // Task status events
   [TASKS_EVENTS.STATUS.CHANGED]: { keys: [TASKS] },
+
+  // Bus session events — update visualization agent nodes in-place
+  [BUS_EVENTS.SESSION.SPAWNED]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
+  [BUS_EVENTS.SESSION.ACTIVE]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
+  [BUS_EVENTS.SESSION.COMPLETED]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
+  [BUS_EVENTS.SESSION.ERROR]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
+  [BUS_EVENTS.SESSION.KILLED]: { keys: [VISUALIZATION_AGENTS], handler: 'append' as const },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -144,6 +182,31 @@ function handleAppend(queryClient: QueryClient, event: EventChannel, payload: un
           ...existing,
           { id: message.id, role: message.role, preview, timestamp: message.timestamp },
         ].slice(-50);
+      },
+    );
+  }
+
+  if (BUS_SESSION_EVENTS.has(event)) {
+    const { sessionId, session } = payload as { sessionId: string; session: SessionRecord };
+    if (!session.projectId) return;
+
+    const agentStatus = sessionStatusToAgentStatus(session.status);
+
+    queryClient.setQueryData<AgentTeamsData>(
+      ['visualization', 'agents', session.projectId],
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          features: old.features.map((f) => ({
+            ...f,
+            tasks: f.tasks.map((t) =>
+              t.lastSid === sessionId || t.agentName === session.name
+                ? { ...t, status: agentStatus, lastSid: sessionId }
+                : t,
+            ),
+          })),
+        };
       },
     );
   }
