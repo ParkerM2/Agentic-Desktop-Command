@@ -44,7 +44,6 @@ import {
   milestonesInvoke,
   notesEvents,
   notesInvoke,
-  timeInvoke,
   webhookEvents,
   workspacesInvoke,
 } from './misc';
@@ -106,7 +105,6 @@ export const ipcInvokeContract = {
   ...windowInvoke,
   ...qaInvoke,
   ...qaRecorderInvoke,
-  ...timeInvoke,
   ...mcpInvoke,
   ...claudeInvoke,
   ...emailInvoke,

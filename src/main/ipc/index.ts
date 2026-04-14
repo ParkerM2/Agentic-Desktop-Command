@@ -54,7 +54,6 @@ import { registerSettingsHandlers } from '../features/settings/settings-handlers
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
 import { registerTerminalHandlers } from '../features/terminal/terminal-handlers';
-import { registerTimeHandlers } from '../features/time-parser/time-handlers';
 import { registerTrackerHandlers } from '../features/tracker/tracker-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
@@ -111,7 +110,6 @@ import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
 import type { TerminalService } from '../features/terminal/terminal-service';
-import type { TimeParserService } from '../features/time-parser/time-parser-service';
 import type { TrackerService } from '../features/tracker/tracker-service';
 import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
@@ -151,7 +149,6 @@ export interface Services {
   githubService: GitHubService;
   worktreeService: WorktreeService;
   mergeService: MergeService;
-  timeParserService: TimeParserService;
   voiceService: VoiceService | null;
   screenCaptureService: ScreenCaptureService | null;
   briefingService: BriefingService;
@@ -282,7 +279,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);
   registerOAuthHandlers(router, services.oauthManager);
-  registerTimeHandlers(router, services.timeParserService);
   if (services.voiceService) {
     registerVoiceHandlers(router, services.voiceService);
   } else {

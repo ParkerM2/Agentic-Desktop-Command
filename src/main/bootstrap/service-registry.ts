@@ -85,7 +85,6 @@ import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
 import { createTerminalService } from '../features/terminal/terminal-service';
-import { createTimeParserService } from '../features/time-parser/time-parser-service';
 import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
@@ -524,7 +523,7 @@ export function createServiceRegistry(
     busSessionManager,
     agentManagerService: agentHostClient,
     progressService,
-    teamWatcherService: null,
+    teamWatcherService,
     projectService,
     terminalService,
     settingsService,
@@ -555,7 +554,6 @@ export function createServiceRegistry(
     githubService,
     worktreeService,
     mergeService,
-    timeParserService: createTimeParserService(),
     voiceService,
     screenCaptureService,
     briefingService,
