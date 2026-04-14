@@ -6,45 +6,58 @@
  * changelog, planner, briefing, and fitness.
  */
 
+
 import type {
   AgentActivitySummarySchema,
-  AlertLinkedToSchema,
-  AlertSchema,
-  AlertTypeSchema,
-  BodyMeasurementSchema,
   BriefingConfigSchema,
-  ChangeCategorySchema,
-  ChangelogEntrySchema,
-  ChangeTypeSchema,
   DailyBriefingSchema,
-  DailyPlanSchema,
+  SuggestionActionSchema,
+  SuggestionSchema,
+  SuggestionTypeSchema,
+  TaskSummarySchema,
+} from '../ipc/briefing/schemas';
+import type {
+  BodyMeasurementSchema,
   ExerciseSchema,
   ExerciseSetSchema,
   FitnessGoalSchema,
   FitnessGoalTypeSchema,
   FitnessStatsSchema,
+  MeasurementSourceSchema,
+  WeightUnitSchema,
+  WorkoutSchema,
+  WorkoutTypeSchema,
+} from '../ipc/fitness/schemas';
+import type {
+  AlertLinkedToSchema,
+  AlertSchema,
+  AlertTypeSchema,
+  RecurringConfigSchema,
+} from '../ipc/misc/alerts.contract';
+import type {
+  ChangeCategorySchema,
+  ChangelogEntrySchema,
+  ChangeTypeSchema,
+} from '../ipc/misc/changelog.contract';
+import type {
   IdeaCategorySchema,
   IdeaSchema,
   IdeaStatusSchema,
-  MeasurementSourceSchema,
+} from '../ipc/misc/ideas.contract';
+import type {
   MilestoneSchema,
   MilestoneStatusSchema,
   MilestoneTaskSchema,
-  NoteSchema,
-  RecurringConfigSchema,
+} from '../ipc/misc/milestones.contract';
+import type { NoteSchema } from '../ipc/misc/notes.contract';
+import type {
+  DailyPlanSchema,
   ScheduledTaskSchema,
-  SuggestionActionSchema,
-  SuggestionSchema,
-  SuggestionTypeSchema,
-  TaskSummarySchema,
   TimeBlockSchema,
   TimeBlockTypeSchema,
   WeeklyReviewSchema,
   WeeklyReviewSummarySchema,
-  WeightUnitSchema,
-  WorkoutSchema,
-  WorkoutTypeSchema,
-} from '../ipc/personal/schemas';
+} from '../ipc/planner/schemas';
 import type { z } from 'zod';
 
 // ── Notes ───────────────────────────────────────────────────────
