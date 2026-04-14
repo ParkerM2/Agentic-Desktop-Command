@@ -85,7 +85,6 @@ import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
 import { createTerminalService } from '../features/terminal/terminal-service';
-import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
@@ -505,7 +504,6 @@ export function createServiceRegistry(
   const teamWatcherService = lazyService(() => createTeamWatcherService());
   const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
   const fileTreeService = lazyService(() => createFileTreeService());
-  const trackerService = lazyService(() => createTrackerService(process.cwd()));
   const visualizationService = lazyService(() => createVisualizationService(agentHostClient));
   const progressService = lazyService(() => createProgressService(process.cwd(), agentHostClient, db));
 
@@ -575,7 +573,6 @@ export function createServiceRegistry(
     oauthManager,
     codebaseAnalyzer,
     setupPipeline,
-    trackerService,
     visualizationService,
     userSessionManager,
     workspaceSessionManager,

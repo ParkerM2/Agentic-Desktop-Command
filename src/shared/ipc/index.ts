@@ -66,7 +66,6 @@ import {
 import { spotifyInvoke } from './spotify';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
-import { trackerInvoke } from './tracker';
 import { visualizationInvoke } from './visualization';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
@@ -116,7 +115,6 @@ export const ipcInvokeContract = {
   ...workflowInvoke,
   ...dashboardInvoke,
   ...dataManagementInvoke,
-  ...trackerInvoke,
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
@@ -370,8 +368,6 @@ export {
 export { TerminalSessionSchema } from './terminals';
 
 export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './app';
-
-export { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './tracker';
 
 export {
   AgentChatMessageSchema,

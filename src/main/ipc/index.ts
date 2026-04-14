@@ -53,7 +53,6 @@ import { registerSettingsHandlers } from '../features/settings/settings-handlers
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
 import { registerTerminalHandlers } from '../features/terminal/terminal-handlers';
-import { registerTrackerHandlers } from '../features/tracker/tracker-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
@@ -108,7 +107,6 @@ import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
 import type { TerminalService } from '../features/terminal/terminal-service';
-import type { TrackerService } from '../features/tracker/tracker-service';
 import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';
@@ -167,7 +165,6 @@ export interface Services {
   storageInspector: StorageInspector;
   codebaseAnalyzer: CodebaseAnalyzerService;
   setupPipeline: SetupPipelineService;
-  trackerService: TrackerService;
   visualizationService: VisualizationService;
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
@@ -325,7 +322,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerDataDirHandlers(router, services.configReader, services.dataMigrator);
   registerWindowHandlers(router);
-  registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
   registerBusHandlers(router, services.commandBus, services.busSessionManager);
