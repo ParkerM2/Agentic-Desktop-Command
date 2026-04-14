@@ -2,7 +2,6 @@
  * Route groups barrel — Re-exports all route group creators
  */
 
-export { createAgentsRoutes } from './agents.routes';
 export { createAssistantRoutes } from './assistant.routes';
 export { createAuthRoutes } from './auth.routes';
 export { createIntegrationsRoutes } from './integrations.routes';
