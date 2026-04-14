@@ -41,6 +41,7 @@ export interface NavItem {
 export const personalItems: NavItem[] = [
   { label: 'Dashboard', icon: Home, path: ROUTES.DASHBOARD },
   { label: 'My Work', icon: Briefcase, path: ROUTES.MY_WORK },
+  { label: 'Agents', icon: Bot, path: ROUTES.AGENTS },
   { label: 'Personal', icon: User, path: ROUTES.PERSONAL },
   { label: 'Assistant', icon: MessageSquare, path: ROUTES.ASSISTANT },
   { label: 'Integrations', icon: Plug, path: ROUTES.INTEGRATIONS },
