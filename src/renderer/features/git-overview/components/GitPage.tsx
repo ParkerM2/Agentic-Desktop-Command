@@ -1,7 +1,9 @@
 /**
- * GitPage — Source control dashboard with Local and GitHub tabs.
+ * GitPage — Source control dashboard with Local, History, Diff, and GitHub tabs.
  *
  * Local tab: GitStatusCard, BranchList, WorktreeList, CommitPanel.
+ * History tab: CommitHistory.
+ * Diff tab: BranchDiffPanel (branch-to-branch diff via @git-diff-view/react).
  * GitHub tab: GitHubPanel (existing integration).
  *
  * repoPath is derived from the active project via the $projectId route param.
@@ -14,6 +16,7 @@ import { PageContent, PageHeader, PageLayout } from '@ui';
 import { GitHubPanel } from '@features/integrations';
 import { useProjects } from '@features/projects';
 
+import { BranchDiffPanel } from './BranchDiffPanel';
 import { BranchList } from './BranchList';
 import { CommitHistory } from './CommitHistory';
 import { CommitPanel } from './CommitPanel';
@@ -38,6 +41,7 @@ export function GitPage() {
           <PageHeader.TabList>
             <PageHeader.Tab value="local">Local</PageHeader.Tab>
             <PageHeader.Tab value="history">History</PageHeader.Tab>
+            <PageHeader.Tab value="diff">Diff</PageHeader.Tab>
             <PageHeader.Tab value="github">GitHub</PageHeader.Tab>
           </PageHeader.TabList>
         </PageHeader>
@@ -63,6 +67,15 @@ export function GitPage() {
               </div>
             ) : (
               <CommitHistory repoPath={repoPath} />
+            )}
+          </PageHeader.TabContent>
+          <PageHeader.TabContent value="diff">
+            {repoPath === null ? (
+              <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                Open a project to compare branches.
+              </div>
+            ) : (
+              <BranchDiffPanel repoPath={repoPath} />
             )}
           </PageHeader.TabContent>
           <PageHeader.TabContent value="github">
