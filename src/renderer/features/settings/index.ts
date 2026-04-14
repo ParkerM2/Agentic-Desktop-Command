@@ -10,6 +10,8 @@ export {
   useUpdateProfile,
   useDeleteProfile,
   useSetDefaultProfile,
+  useAgentSettings,
+  useUpdateAgentSettings,
   settingsKeys,
 } from './api/useSettings';
 export {
@@ -86,3 +88,4 @@ export { healthKeys } from './api/healthQueryKeys';
 export { HealthIndicator } from './components/health/HealthIndicator';
 export { HealthPanel } from './components/health/HealthPanel';
 export { useErrorEvents } from './hooks/useErrorEvents';
+export { AppBehaviorSection } from './components/AppBehaviorSection';

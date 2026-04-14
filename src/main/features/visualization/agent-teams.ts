@@ -199,7 +199,7 @@ type LiveSession = LiveSessions[number];
  * Map AgentManagerService session status to visualization AgentStatus.
  *
  * AgentSession.status: 'running' | 'idle' | 'needs-attention' | 'failed' | 'completed'
- * AgentStatus (viz): 'pending' | 'active' | 'idle' | 'completed' | 'error'
+ * AgentStatus (viz): 'pending' | 'active' | 'idle' | 'completed' | 'error' | 'killed'
  */
 function sessionStatusToAgentStatus(sessionStatus: string): AgentStatus {
   switch (sessionStatus) {
@@ -243,6 +243,7 @@ function makeSingleAgentTask(opts: {
     status,
     lastEventTs: session ? session.lastActivityAt : null,
     lastSid: session ? session.id : null,
+    taskSlug: null,
     fileScope: [],
     eventCount: 0,
     isGuardian: false,
@@ -300,6 +301,7 @@ function buildTaskInfoFromFile(
     status: derivedStatus,
     lastEventTs,
     lastSid,
+    taskSlug: null,
     fileScope: parsed?.fileScope ?? [],
     eventCount: 0,
     isGuardian,

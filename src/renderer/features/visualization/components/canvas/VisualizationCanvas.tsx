@@ -21,7 +21,7 @@ import {
 
 import { Spinner } from '@ui';
 
-import { useAgentTeams, useCodebaseGraph } from '../../api/visualization-api';
+import { useAgentTeams, useCodebaseGraph } from '../../api/useVisualization';
 import {
   buildAgentRFNodes,
   buildCodebaseGroupEdges,

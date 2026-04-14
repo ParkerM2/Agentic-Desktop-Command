@@ -13,6 +13,7 @@ import {
   GitHubNotificationSchema,
   GitHubPullRequestSchema,
   GitHubRepoSchema,
+  PrDiffFileSchema,
 } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
@@ -29,6 +30,10 @@ export const githubInvoke = {
   [GITHUB.GET.PR]: {
     input: z.object({ owner: z.string(), repo: z.string(), number: z.number() }),
     output: GitHubPullRequestSchema,
+  },
+  [GITHUB.GET.PR_FILES]: {
+    input: z.object({ owner: z.string(), repo: z.string(), number: z.number() }),
+    output: z.array(PrDiffFileSchema),
   },
   [GITHUB.LIST.ISSUES]: {
     input: z.object({

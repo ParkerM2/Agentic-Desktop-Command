@@ -44,6 +44,7 @@ export const AgentStatusSchema = z.enum([
   'idle',
   'completed',
   'error',
+  'killed',
 ]);
 
 /** A single tracking event emitted by an agent */
@@ -66,6 +67,7 @@ export const AgentTaskInfoSchema = z.object({
   status: AgentStatusSchema,
   lastEventTs: z.string().nullable(),
   lastSid: z.string().nullable(),
+  taskSlug: z.string().nullable(),
   fileScope: z.array(z.string().max(500)),
   eventCount: z.number(),
   isGuardian: z.boolean(),

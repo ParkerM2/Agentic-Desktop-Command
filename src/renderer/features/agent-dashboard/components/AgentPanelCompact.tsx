@@ -2,15 +2,16 @@
  * AgentPanelCompact — Minimal status view (~120px fixed height)
  *
  * Shows: status dot, name, model, task, last message preview, expand/popup buttons.
+ * Running sessions also show a Stop button.
  */
 
-import { Maximize2, Expand } from 'lucide-react';
+import { Expand, Maximize2, Square } from 'lucide-react';
 
 import type { AgentSession } from '@shared/types/agent-dashboard';
 
 import { cn, truncate } from '@renderer/shared/lib/utils';
 
-import { Button, Card, CardContent, CardHeader } from '@ui';
+import { Button, Card, CardContent, CardHeader, Spinner, Text } from '@ui';
 
 import { AgentStatusBar } from './AgentStatusBar';
 
@@ -19,8 +20,10 @@ import { AgentStatusBar } from './AgentStatusBar';
 interface AgentPanelCompactProps {
   agent: AgentSession;
   className?: string;
+  isStopPending?: boolean;
   onExpand: () => void;
   onPopup: () => void;
+  onStop?: () => void;
 }
 
 // ─── Helpers ───────────────────────────────────────────────
@@ -41,9 +44,13 @@ function getLastMessagePreview(agent: AgentSession): string {
 export function AgentPanelCompact({
   agent,
   className,
+  isStopPending = false,
   onExpand,
   onPopup,
+  onStop,
 }: AgentPanelCompactProps) {
+  const isRunning = agent.status === 'running';
+
   return (
     <Card
       className={cn('h-[120px] overflow-hidden', className)}
@@ -53,10 +60,25 @@ export function AgentPanelCompact({
         <AgentStatusBar agent={agent} />
       </CardHeader>
       <CardContent className="flex items-end justify-between px-4 py-2">
-        <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+        <Text className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
           {getLastMessagePreview(agent)}
-        </p>
+        </Text>
         <div className="ml-2 flex shrink-0 gap-1">
+          {isRunning && onStop !== undefined ? (
+            <Button
+              aria-label="Stop session"
+              disabled={isStopPending}
+              size="icon"
+              variant="ghost"
+              onClick={onStop}
+            >
+              {isStopPending ? (
+                <Spinner size="sm" />
+              ) : (
+                <Square className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          ) : null}
           <Button
             aria-label="Expand panel"
             size="icon"

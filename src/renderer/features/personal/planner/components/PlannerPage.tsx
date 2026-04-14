@@ -17,7 +17,7 @@ import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, PageContent, PageHeader, PageLayout, Textarea } from '@ui';
+import { Button, Heading, PageContent, PageHeader, PageLayout, Text, Textarea } from '@ui';
 
 import {
   useDay,
@@ -49,9 +49,9 @@ function isToday(dateStr: string): boolean {
 
 function ReflectionDisplay({ text }: { text?: string }) {
   if (text) {
-    return <p className="text-muted-foreground text-sm">{text}</p>;
+    return <Text className="text-muted-foreground text-sm">{text}</Text>;
   }
-  return <p className="text-muted-foreground text-xs italic">No reflection yet.</p>;
+  return <Text className="text-muted-foreground text-xs italic">No reflection yet.</Text>;
 }
 
 export function PlannerPage() {
@@ -211,7 +211,7 @@ export function PlannerPage() {
             {/* Reflection */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-foreground text-sm font-semibold">Reflection</h3>
+                <Heading as="h3" className="text-foreground text-sm font-semibold">Reflection</Heading>
                 {isEditingReflection ? null : (
                   <Button
                     className="text-muted-foreground hover:text-primary h-auto gap-1 p-0 text-xs"
@@ -262,6 +262,7 @@ export function PlannerPage() {
           {/* Right column — Schedule */}
           <DayView
             date={selectedDate}
+            scheduledTasks={plan?.scheduledTasks ?? []}
             timeBlocks={plan?.timeBlocks ?? []}
             onAdd={(block) => addTimeBlock.mutate({ date: selectedDate, timeBlock: block })}
             onRemove={(blockId) => removeTimeBlock.mutate({ date: selectedDate, blockId })}

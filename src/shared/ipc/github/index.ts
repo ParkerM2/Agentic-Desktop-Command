@@ -10,4 +10,6 @@ export {
   GitHubNotificationSchema,
   GitHubPullRequestSchema,
   GitHubRepoSchema,
+  PrDiffFileSchema,
 } from './schemas';
+export type { PrDiffFile } from './schemas';

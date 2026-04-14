@@ -29,6 +29,7 @@ function statusVariant(
     case 'error': {
       return 'error';
     }
+    case 'killed':
     case 'idle':
     case 'pending': {
       return 'neutral';

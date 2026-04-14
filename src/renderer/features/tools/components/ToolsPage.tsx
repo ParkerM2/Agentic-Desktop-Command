@@ -1,65 +1,92 @@
 /**
  * ToolsPage — Tabbed layout for Claude Config and ADC Workflow
  *
- * Config tab: upcoming tool categories (Skills, Commands, Agents, Plugins, Config).
+ * Config tab: live Skills, Agents, and Commands from .claude/ directory.
  * Workflow tab: placeholder for the workflow editor.
  */
 
-import { Bot, Cog, Puzzle, Settings2, Sparkles, Terminal, Workflow } from 'lucide-react';
+import { Cog, Workflow } from 'lucide-react';
+
+import { useLayoutStore } from '@renderer/shared/stores';
 
 import {
+  Badge,
+  Button,
   Card,
   CardDescription,
   CardHeader,
   CardTitle,
-  EmptyState,
+  Heading,
   PageContent,
   PageHeader,
   PageLayout,
+  Skeleton,
+  Text,
 } from '@ui';
 
+import { useProjects } from '@features/projects';
+
+import { useClaudeConfig } from '../api/useClaudeConfig';
 import { useToolsUI } from '../store';
 
 import { WorkflowEditor } from './WorkflowEditor';
 
-import type { LucideIcon } from 'lucide-react';
-
-interface ToolCard {
-  icon: LucideIcon;
-  name: string;
-  description: string;
+interface ConfigSectionProps {
+  items: Array<{ name: string; description: string }>;
+  loading: boolean;
+  title: string;
+  type: string;
 }
 
-const TOOL_CARDS: ToolCard[] = [
-  {
-    icon: Sparkles,
-    name: 'Skills',
-    description: 'Manage reusable skill definitions for Claude sessions',
-  },
-  {
-    icon: Terminal,
-    name: 'Commands',
-    description: 'Custom slash commands and automation shortcuts',
-  },
-  {
-    icon: Bot,
-    name: 'Agents',
-    description: 'Configure agent roles, tools, and spawn templates',
-  },
-  {
-    icon: Puzzle,
-    name: 'Plugins',
-    description: 'Install and manage Claude Code plugins',
-  },
-  {
-    icon: Settings2,
-    name: 'Config',
-    description: 'Global and project-level Claude configuration',
-  },
-];
+function ConfigSection({ items, loading, title, type }: ConfigSectionProps) {
+  function renderContent() {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-lg" />
+          ))}
+        </div>
+      );
+    }
+
+    const hasItems = items.length > 0;
+
+    if (hasItems) {
+      return (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item) => (
+            <Card key={item.name}>
+              <CardHeader>
+                <CardTitle className="text-sm">{item.name}</CardTitle>
+                <CardDescription className="text-xs">{item.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    return <Text className="text-muted-foreground text-sm">No {type}s found.</Text>;
+  }
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <Heading as="h3" className="text-foreground text-sm font-semibold">{title}</Heading>
+        {loading ? null : <Badge variant="secondary">{items.length}</Badge>}
+      </div>
+      {renderContent()}
+    </div>
+  );
+}
 
 export function ToolsPage() {
   const { activeTab, setActiveTab } = useToolsUI();
+  const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const { data: projects } = useProjects();
+  const activeProject = projects?.find((p) => p.id === activeProjectId);
+  const { data, isLoading, refetch } = useClaudeConfig(activeProject?.path);
 
   return (
     <PageLayout>
@@ -86,24 +113,31 @@ export function ToolsPage() {
         </PageHeader>
         <PageContent>
           <PageHeader.TabContent value="config">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {TOOL_CARDS.map((card) => (
-                <Card key={card.name}>
-                  <CardHeader>
-                    <div className="mb-2 flex items-center gap-2">
-                      <card.icon className="text-muted-foreground h-5 w-5" />
-                      <CardTitle>{card.name}</CardTitle>
-                    </div>
-                    <CardDescription>{card.description}</CardDescription>
-                  </CardHeader>
-                  <EmptyState
-                    description={`Add ${card.name.toLowerCase()} to get started`}
-                    icon={card.icon}
-                    size="sm"
-                    title="No items configured"
-                  />
-                </Card>
-              ))}
+            <div className="mb-4 flex items-center justify-between">
+              <Heading as="h2" className="text-foreground text-sm font-semibold">Claude Configuration</Heading>
+              <Button size="sm" type="button" variant="outline" onClick={() => void refetch()}>
+                Refresh
+              </Button>
+            </div>
+            <div className="space-y-6">
+              <ConfigSection
+                items={data?.skills ?? []}
+                loading={isLoading}
+                title="Skills"
+                type="skill"
+              />
+              <ConfigSection
+                items={data?.agents ?? []}
+                loading={isLoading}
+                title="Agents"
+                type="agent"
+              />
+              <ConfigSection
+                items={data?.commands ?? []}
+                loading={isLoading}
+                title="Commands"
+                type="command"
+              />
             </div>
           </PageHeader.TabContent>
           <PageHeader.TabContent value="workflow">

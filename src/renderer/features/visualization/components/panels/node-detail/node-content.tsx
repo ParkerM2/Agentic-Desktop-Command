@@ -4,6 +4,9 @@
 
 import type { ReactNode } from 'react';
 
+
+import type { AgentTaskInfoSchema, CodebaseFileSchema } from '@shared/ipc/visualization/schemas';
+
 import { AgentDetail } from './AgentDetail';
 import { FeatureGroupDetail } from './FeatureGroupDetail';
 import { FileDetail } from './FileDetail';
@@ -18,6 +21,10 @@ import type {
   FileNodeData,
 } from '../../../lib/graph-builders';
 import type { Node } from '@xyflow/react';
+import type { z } from 'zod';
+
+type AgentTaskInfo = z.infer<typeof AgentTaskInfoSchema>;
+type CodebaseFile = z.infer<typeof CodebaseFileSchema>;
 
 // ─── Panel title ────────────────────────────────────────────────────────────
 
@@ -48,7 +55,9 @@ export function getPanelTitle(node: Node | undefined): string {
 
 export interface NodeContentContext {
   agentTeamsLoading: boolean;
+  featureAgentTasks: AgentTaskInfo[];
   featureEvents: TrackingEvent[];
+  featureFiles: CodebaseFile[];
   featureName: string;
   getFileEdges: (path: string) => { exports: string[]; imports: string[] };
   projectId: string;
@@ -61,7 +70,15 @@ export function renderNodeContent(
   ctx: NodeContentContext,
 ): ReactNode {
   if (node === undefined) return null;
-  const { agentTeamsLoading, featureEvents, featureName, getFileEdges, projectId } = ctx;
+  const {
+    agentTeamsLoading,
+    featureAgentTasks,
+    featureEvents,
+    featureFiles,
+    featureName,
+    getFileEdges,
+    projectId,
+  } = ctx;
 
   switch (node.type) {
     case 'file': {
@@ -93,7 +110,14 @@ export function renderNodeContent(
       );
     }
     case 'featureGroup': {
-      return <FeatureGroupDetail data={node.data as unknown as FeatureGroupData} />;
+      return (
+        <FeatureGroupDetail
+          agentTasks={featureAgentTasks}
+          data={node.data as unknown as FeatureGroupData}
+          files={featureFiles}
+          projectId={projectId}
+        />
+      );
     }
     case undefined:
     default: {

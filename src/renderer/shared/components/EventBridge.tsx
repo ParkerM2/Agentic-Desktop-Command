@@ -16,14 +16,21 @@ import { useEffect } from 'react';
 import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
+import { BUS_EVENTS } from '@shared/ipc/bus/channels';
+import type { sessionRecordSchema } from '@shared/ipc/bus/schemas';
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
 import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import type { AgentTeamsDataSchema } from '@shared/ipc/visualization/schemas';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
-import { WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
+
+import type { z } from 'zod';
+
+type AgentTeamsData = z.infer<typeof AgentTeamsDataSchema>;
+type SessionRecord = z.infer<typeof sessionRecordSchema>;
 
 // ─── Exported Types ─────────────────────────────────────────
 
@@ -38,8 +45,8 @@ export interface AgentMessagePreview {
 // ─── Types ──────────────────────────────────────────────────
 
 interface RegistryEntry {
-  /** React Query key prefixes to invalidate when the event fires. */
-  readonly keys: ReadonlyArray<readonly string[]>;
+  /** React Query key prefixes to invalidate when the event fires. Not used by 'append' handlers. */
+  readonly keys?: ReadonlyArray<readonly string[]>;
   /**
    * Handler strategy:
    * - 'invalidate' (default): invalidates matching query keys
@@ -49,6 +56,28 @@ interface RegistryEntry {
 }
 
 // ─── Helpers ────────────────────────────────────────────────
+
+/** Map bus SessionRecord.status to visualization AgentStatus */
+function sessionStatusToAgentStatus(
+  status: string,
+): 'pending' | 'active' | 'idle' | 'completed' | 'error' | 'killed' {
+  switch (status) {
+    case 'spawned': return 'pending';
+    case 'active': return 'active';
+    case 'completed': return 'completed';
+    case 'error': return 'error';
+    case 'killed': return 'killed';
+    default: return 'idle';
+  }
+}
+
+const BUS_SESSION_EVENTS = new Set<string>([
+  BUS_EVENTS.SESSION.SPAWNED,
+  BUS_EVENTS.SESSION.ACTIVE,
+  BUS_EVENTS.SESSION.COMPLETED,
+  BUS_EVENTS.SESSION.ERROR,
+  BUS_EVENTS.SESSION.KILLED,
+]);
 
 /** Extract a text preview from content blocks (max 200 chars). */
 function extractTextPreview(content: ContentBlock[]): string {
@@ -64,8 +93,7 @@ function extractTextPreview(content: ContentBlock[]): string {
 
 const PROGRESS_LIST = ['progress', 'list'] as const;
 const TASKS = ['tasks'] as const;
-const AGENT_SESSIONS = ['agent-sessions'] as const;
-const WORKSPACE_SESSIONS = ['workspace-sessions'] as const;
+const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
 
@@ -99,12 +127,6 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED']]: { keys: [AGENT_SESSIONS] },
   [AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED]: { keys: [['agent-messages']], handler: 'append' },
 
-  // Workspace events
-  [WORKSPACE_EVENTS.SESSION.READY]: { keys: [WORKSPACE_SESSIONS] },
-  [WORKSPACE_EVENTS.SESSION.CRASHED]: { keys: [WORKSPACE_SESSIONS] },
-  [WORKSPACE_EVENTS.SESSION.RESTARTED]: { keys: [WORKSPACE_SESSIONS] },
-  [WORKSPACE_EVENTS.PLAN['HANDED-OFF']]: { keys: [WORKSPACE_SESSIONS] },
-
   // Workflow template events
   [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.CREATED]: { keys: [WORKFLOW_TEMPLATES] },
   [WORKFLOW_TEMPLATES_EVENTS.TEMPLATE.UPDATED]: { keys: [WORKFLOW_TEMPLATES] },
@@ -117,6 +139,13 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 
   // Task status events
   [TASKS_EVENTS.STATUS.CHANGED]: { keys: [TASKS] },
+
+  // Bus session events — update visualization agent nodes in-place
+  [BUS_EVENTS.SESSION.SPAWNED]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.ACTIVE]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.COMPLETED]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.ERROR]: { handler: 'append' as const },
+  [BUS_EVENTS.SESSION.KILLED]: { handler: 'append' as const },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -144,6 +173,31 @@ function handleAppend(queryClient: QueryClient, event: EventChannel, payload: un
           ...existing,
           { id: message.id, role: message.role, preview, timestamp: message.timestamp },
         ].slice(-50);
+      },
+    );
+  }
+
+  if (BUS_SESSION_EVENTS.has(event)) {
+    const { sessionId, session } = payload as { sessionId: string; session: SessionRecord };
+    if (!session.projectId) return;
+
+    const agentStatus = sessionStatusToAgentStatus(session.status);
+
+    queryClient.setQueryData<AgentTeamsData>(
+      ['visualization', 'agents', session.projectId],
+      (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          features: old.features.map((f) => ({
+            ...f,
+            tasks: f.tasks.map((t) =>
+              t.lastSid === sessionId || (session.taskSlug !== null && t.taskSlug === session.taskSlug)
+                ? { ...t, status: agentStatus, lastSid: sessionId }
+                : t,
+            ),
+          })),
+        };
       },
     );
   }
@@ -182,7 +236,7 @@ export function EventBridge() {
       } else {
         // Default: invalidate matching query keys
         const cleanup = window.api.on(typedEvent, () => {
-          for (const key of entry.keys) {
+          for (const key of (entry.keys ?? [])) {
             void queryClient.invalidateQueries({ queryKey: [...key] });
           }
         });

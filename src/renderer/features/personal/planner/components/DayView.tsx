@@ -6,11 +6,11 @@ import { useState } from 'react';
 
 import { Calendar, Clock, Edit2, Plus, Trash2 } from 'lucide-react';
 
-import type { TimeBlock } from '@shared/types';
+import type { ScheduledTask, TimeBlock } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Code, Heading, Text } from '@ui';
 
 import { usePlannerUI } from '../store';
 
@@ -35,12 +35,13 @@ interface DayViewProps {
   /** Date in YYYY-MM-DD format */
   date: string;
   timeBlocks: TimeBlock[];
+  scheduledTasks?: ScheduledTask[];
   onAdd: (block: Omit<TimeBlock, 'id'>) => void;
   onUpdate: (blockId: string, updates: Partial<Omit<TimeBlock, 'id'>>) => void;
   onRemove: (blockId: string) => void;
 }
 
-export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayViewProps) {
+export function DayView({ date, timeBlocks, scheduledTasks = [], onAdd, onUpdate, onRemove }: DayViewProps) {
   const [showEditor, setShowEditor] = useState(false);
   const [editingBlock, setEditingBlock] = useState<TimeBlock | undefined>();
   const { showCalendarOverlay, setShowCalendarOverlay } = usePlannerUI();
@@ -74,7 +75,7 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-semibold">Schedule</h3>
+        <Heading as="h3" className="text-foreground text-sm font-semibold">Schedule</Heading>
         <div className="flex items-center gap-2">
           <Button
             aria-label={showCalendarOverlay ? 'Hide calendar events' : 'Show calendar events'}
@@ -117,20 +118,20 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
 
       {/* User Time Blocks */}
       {sorted.length === 0 && !showEditor ? (
-        <p className="text-muted-foreground text-xs">No time blocks scheduled.</p>
+        <Text className="text-muted-foreground text-xs">No time blocks scheduled.</Text>
       ) : (
         <div className="space-y-2">
           {sorted.map((block) => (
             <div
               key={block.id}
               className={cn(
-                'group rounded-md border-l-3 px-3 py-2.5 transition-colors',
+                'group rounded-md border-l-2 px-3 py-2.5 transition-colors',
                 BLOCK_TYPE_STYLES[block.type],
               )}
             >
               <div className="flex items-start justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="text-foreground text-sm font-medium">{block.label}</p>
+                  <Text className="text-foreground text-sm font-medium">{block.label}</Text>
                   <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
                     <Clock className="h-3 w-3" />
                     <span>
@@ -166,6 +167,35 @@ export function DayView({ date, timeBlocks, onAdd, onUpdate, onRemove }: DayView
           ))}
         </div>
       )}
+
+      {/* Scheduled Tasks */}
+      {scheduledTasks.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          <Heading as="h3" className="text-foreground text-sm font-semibold">Scheduled Tasks</Heading>
+          <div className="space-y-2">
+            {scheduledTasks.map((task) => (
+              <div
+                key={task.taskId}
+                className="border-l-muted-foreground bg-muted/20 group rounded-md border-l-2 px-3 py-2"
+              >
+                <div className="flex items-start justify-between">
+                  <div className={cn('min-w-0 flex-1', task.completed ? 'opacity-50' : '')}>
+                    <Code>{task.taskId}</Code>
+                    {task.scheduledTime === undefined && task.estimatedDuration === undefined ? null : (
+                      <div className="text-muted-foreground mt-0.5 flex items-center gap-2 text-xs">
+                        {task.scheduledTime === undefined ? null : <span>{task.scheduledTime}</span>}
+                        {task.estimatedDuration === undefined ? null : (
+                          <span>{task.estimatedDuration} min</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

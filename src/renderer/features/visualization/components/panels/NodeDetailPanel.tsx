@@ -10,7 +10,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, Card, ScrollArea } from '@ui';
 
-import { useAgentTeams } from '../../api/visualization-api';
+import { useAgentTeams, useCodebaseGraph } from '../../api/useVisualization';
 import { useVisualizationStore } from '../../store';
 
 import { getPanelTitle, renderNodeContent } from './node-detail/node-content';
@@ -37,9 +37,16 @@ export function NodeDetailPanel({ projectId }: NodeDetailPanelProps) {
 
   const { data: agentTeamsData, isLoading: agentTeamsLoading } = useAgentTeams(projectId);
 
+  const { data: codebaseGraphData } = useCodebaseGraph(projectId, {
+    enabled: node?.type === 'featureGroup',
+  });
+
   const featureName = selectedFeature ?? agentTeamsData?.features[0]?.feature ?? '';
   const featureData = agentTeamsData?.features.find((f) => f.feature === featureName);
   const featureEvents: TrackingEvent[] = featureData?.events ?? [];
+
+  const featureAgentTasks = featureData?.tasks ?? [];
+  const featureFiles = codebaseGraphData?.files.filter((f) => f.group === featureName) ?? [];
 
   function getFileEdges(nodePath: string) {
     const edges = getEdges();
@@ -82,6 +89,8 @@ export function NodeDetailPanel({ projectId }: NodeDetailPanelProps) {
               featureName,
               projectId,
               getFileEdges,
+              featureAgentTasks,
+              featureFiles,
             })}
           </ScrollArea>
         ) : (

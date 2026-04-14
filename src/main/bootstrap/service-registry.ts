@@ -85,11 +85,11 @@ import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
 import { createTerminalService } from '../features/terminal/terminal-service';
-import { createTimeParserService } from '../features/time-parser/time-parser-service';
 import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
+import { createWorkspacesService } from '../features/workspaces/workspaces-service';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
@@ -143,6 +143,7 @@ export interface ServiceRegistryResult {
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
+  workspacesService: ReturnType<typeof createWorkspacesService>;
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
@@ -195,6 +196,9 @@ export function createServiceRegistry(
   const commandBus = createCommandBus(db);
   const busSessionManager = createBusSessionManager(db, agentHostClient);
   busSessionManager.recoverInterrupted();
+
+  const workspacesService = createWorkspacesService({ db });
+  workspacesService.init();
 
   // ─── Tier 1: Infrastructure — deferred ───────────────────────
 
@@ -522,9 +526,10 @@ export function createServiceRegistry(
   const services: Services = {
     commandBus,
     busSessionManager,
+    workspacesService,
     agentManagerService: agentHostClient,
     progressService,
-    teamWatcherService: null,
+    teamWatcherService,
     projectService,
     terminalService,
     settingsService,
@@ -555,7 +560,6 @@ export function createServiceRegistry(
     githubService,
     worktreeService,
     mergeService,
-    timeParserService: createTimeParserService(),
     voiceService,
     screenCaptureService,
     briefingService,
@@ -591,6 +595,7 @@ export function createServiceRegistry(
     busSessionManager,
     agentHostClient,
     workspaceSessionManager,
+    workspacesService,
     assistantService,
     errorCollector,
     healthRegistry,

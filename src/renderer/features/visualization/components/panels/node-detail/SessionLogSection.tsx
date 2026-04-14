@@ -6,7 +6,7 @@ import { useState } from 'react';
 
 import { Button, ScrollArea, Skeleton } from '@ui';
 
-import { useSessionLog } from '../../../api/visualization-api';
+import { useSessionLog } from '../../../api/useVisualization';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 

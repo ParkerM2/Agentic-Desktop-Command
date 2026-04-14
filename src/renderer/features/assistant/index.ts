@@ -3,6 +3,7 @@
  */
 
 // Components
+export { AssistantPage } from './components/AssistantPage';
 export { AssistantWidget } from './components/AssistantWidget';
 export { SidebarAssistantButton } from './components/SidebarAssistantButton';
 

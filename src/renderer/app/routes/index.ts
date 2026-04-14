@@ -2,6 +2,7 @@
  * Route groups barrel — Re-exports all route group creators
  */
 
+export { createAssistantRoutes } from './assistant.routes';
 export { createAuthRoutes } from './auth.routes';
 export { createIntegrationsRoutes } from './integrations.routes';
 export { createDashboardRoutes } from './dashboard.routes';

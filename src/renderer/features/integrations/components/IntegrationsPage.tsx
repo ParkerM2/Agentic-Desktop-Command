@@ -12,8 +12,10 @@ import { useIntegrationsStore } from '../store';
 
 import { CalendarPanel } from './CalendarPanel';
 import { DiscordPanel } from './DiscordPanel';
+import { EmailPanel } from './EmailPanel';
 import { GitHubPanel } from './GitHubPanel';
 import { NotificationRules } from './NotificationRules';
+import { NotificationsPanel } from './NotificationsPanel';
 import { SlackPanel } from './SlackPanel';
 
 import type { IntegrationsTab } from '../store';
@@ -24,6 +26,8 @@ const TABS: Array<{ id: IntegrationsTab; label: string }> = [
   { id: 'rules', label: 'Rules' },
   { id: 'github', label: 'GitHub' },
   { id: 'calendar', label: 'Calendar' },
+  { id: 'email', label: 'Email' },
+  { id: 'notifications', label: 'Notifications' },
 ];
 
 export function IntegrationsPage() {
@@ -67,6 +71,12 @@ export function IntegrationsPage() {
             </PageHeader.TabContent>
             <PageHeader.TabContent value="calendar">
               <CalendarPanel />
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="email">
+              <EmailPanel />
+            </PageHeader.TabContent>
+            <PageHeader.TabContent value="notifications">
+              <NotificationsPanel />
             </PageHeader.TabContent>
           </PageContent>
         </PageHeader.Tabs>

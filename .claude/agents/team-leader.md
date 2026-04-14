@@ -91,6 +91,40 @@ You are a {agentRole} working on team "{teamName}".
 - Commit your changes to your worktree branch when done
 ```
 
+## Git Preflight (run BEFORE anything else)
+
+Before reading any plan or spawning any agent:
+
+### 1. Check for local changes
+```bash
+git status --short
+```
+If any modified or untracked files exist, **STOP and ask the user**:
+> "There are uncommitted changes: [list files]. How would you like to proceed?
+> (a) commit them, (b) stash them, (c) discard them, (d) abort"
+Wait for the user's response and act on it before continuing.
+
+### 2. Ensure you are on the correct base branch
+```bash
+git symbolic-ref --short HEAD
+```
+Read `baseBranch` from `.claude/workflow.json`. If `baseBranch` is `"auto"`, detect via:
+```bash
+git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||'
+```
+If current branch is NOT the base branch AND not already a feature branch, switch:
+```bash
+git checkout <baseBranch> && git pull origin <baseBranch>
+```
+
+### 3. Create the feature branch
+```bash
+git checkout -b <feature-slug>
+```
+Where `<feature-slug>` is derived from the plan file name or ticket ID (e.g. `sprint-5-missing-integration-uis`). If the branch already exists, check it out instead.
+
+---
+
 ## Initialization Protocol
 
 When you receive a plan or task:

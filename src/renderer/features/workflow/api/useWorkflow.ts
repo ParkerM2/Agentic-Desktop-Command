@@ -2,12 +2,15 @@
  * React Query hooks for workflow operations
  */
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { BUS } from '@shared/ipc/bus/channels';
 import { WORKFLOW } from '@shared/ipc/workflow/channels';
 import type { InvokeInput } from '@shared/ipc-contract';
 
 import { ipc } from '@renderer/shared/lib/ipc';
+
+import { busKeys } from '../../bus/api/queryKeys';
 
 import { workflowKeys } from './queryKeys';
 
@@ -27,28 +30,39 @@ export function useStopProgressWatcher() {
   });
 }
 
-/** Launch a task execution */
+/** Launch a task execution via command bus */
 export function useLaunchTask() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: InvokeInput<typeof WORKFLOW.LAUNCH.WORKFLOW>) =>
-      ipc(WORKFLOW.LAUNCH.WORKFLOW, data),
+    mutationFn: (data: InvokeInput<typeof BUS.SPAWN.SESSION>) => ipc(BUS.SPAWN.SESSION, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: busKeys.sessions() });
+    },
   });
 }
 
-/** Check if a session is running */
-export function useSessionStatus(sessionId: string) {
+/** Check if a session is running — polls bus sessions every 5s */
+export function useSessionStatus(taskSlug: string) {
   return useQuery({
-    queryKey: workflowKeys.session(sessionId),
-    queryFn: () => ipc(WORKFLOW.CHECK.RUNNING, { sessionId }),
-    enabled: sessionId.length > 0,
+    queryKey: workflowKeys.session(taskSlug),
+    queryFn: async () => {
+      const sessions = await ipc(BUS.LIST.SESSIONS, { taskSlug });
+      const running = sessions.some((s) => s.status === 'active');
+      return { running };
+    },
+    enabled: taskSlug.length > 0,
     refetchInterval: 5_000,
   });
 }
 
 /** Stop a running session */
 export function useStopSession() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: InvokeInput<typeof WORKFLOW.STOP.RUNNING>) =>
-      ipc(WORKFLOW.STOP.RUNNING, data),
+    mutationFn: (data: { sessionId: string }) =>
+      ipc(BUS.KILL.SESSION, { sessionId: data.sessionId }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: busKeys.sessions() });
+    },
   });
 }

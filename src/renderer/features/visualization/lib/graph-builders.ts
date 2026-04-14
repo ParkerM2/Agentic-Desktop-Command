@@ -33,7 +33,7 @@ export interface FileNodeData {
   group: string;
 }
 
-export type AgentStatus = 'pending' | 'active' | 'completed' | 'error' | 'idle';
+export type AgentStatus = 'pending' | 'active' | 'completed' | 'error' | 'idle' | 'killed';
 
 export interface FeatureGroupData {
   type: 'featureGroup';
