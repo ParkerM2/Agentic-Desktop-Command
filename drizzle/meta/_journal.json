@@ -99,6 +99,13 @@
       "when": 1775843400000,
       "tag": "0013_progress_workflow_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1775843500000,
+      "tag": "0014_add_workspaces_table",
+      "breakpoints": true
     }
   ]
 }
