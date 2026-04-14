@@ -46,8 +46,8 @@ export function BranchDiffPanel({ repoPath }: BranchDiffPanelProps) {
     setTargetBranch((prev) => {
       if (prev !== null) return prev;
       return (
-        branches.find((b) => b.name === 'main')?.name ??
-        branches.find((b) => b.name === 'master')?.name ??
+        branches.find((b) => b.name === 'main' && !b.current)?.name ??
+        branches.find((b) => b.name === 'master' && !b.current)?.name ??
         branches.find((b) => !b.current)?.name ??
         null
       );

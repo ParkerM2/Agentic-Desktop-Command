@@ -29,8 +29,8 @@ export interface CommitPanelProps {
 
 function renderError(message: string) {
   return (
-    <div className="rounded-md bg-red-500/10 p-3">
-      <div className="flex items-center gap-2 text-sm text-red-400">
+    <div className="bg-destructive/10 rounded-md p-3">
+      <div className="text-destructive flex items-center gap-2 text-sm">
         <AlertTriangle className="h-4 w-4 shrink-0" />
         {message}
       </div>

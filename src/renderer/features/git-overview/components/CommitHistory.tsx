@@ -5,7 +5,7 @@
  * Supports "Load more" to incrementally fetch additional commits.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { GitCommit } from 'lucide-react';
 
@@ -13,7 +13,7 @@ import type { GitCommit as GitCommitType } from '@shared/ipc/git/schemas';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
 
-import { Button, Card, CardContent, CardHeader, CardTitle, EmptyState, Separator, Skeleton, Text } from '@ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Code, EmptyState, Separator, Skeleton, Text } from '@ui';
 
 
 import { useCommitHistory } from '../api/useGit';
@@ -38,9 +38,7 @@ function CommitRowSkeleton() {
 function CommitRow({ commit }: { commit: GitCommitType }) {
   return (
     <div className="flex items-start gap-3 py-3">
-      <code className="font-mono text-xs text-muted-foreground bg-accent px-1 rounded mt-0.5 shrink-0">
-        {commit.shortHash}
-      </code>
+      <Code className="mt-0.5 shrink-0 text-xs">{commit.shortHash}</Code>
       <div className="min-w-0 flex-1">
         <Text className="truncate" size="sm">{commit.message}</Text>
         <Text className="text-xs text-muted-foreground">{commit.author}</Text>
@@ -52,6 +50,11 @@ function CommitRow({ commit }: { commit: GitCommitType }) {
 
 export function CommitHistory({ repoPath }: CommitHistoryProps) {
   const [limit, setLimit] = useState(50);
+
+  // Reset pagination when switching projects
+  useEffect(() => {
+    setLimit(50);
+  }, [repoPath]);
 
   const { data: commits, isLoading } = useCommitHistory({ repoPath, limit });
 
