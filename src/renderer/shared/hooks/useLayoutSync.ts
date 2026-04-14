@@ -33,26 +33,27 @@ export function useLayoutSync(): void {
         // Fetch full project list to map IDs → names/paths
         const allProjects = await ipc(PROJECTS.LIST.ALL, {});
 
-        // Build project info for open tabs (fall back to full list if no tabs)
+        // Build project info for open tabs only
         const tabIds = new Set(layout.openProjectTabs);
-        const activeProjects =
-          tabIds.size > 0
-            ? allProjects.filter((p) => tabIds.has(p.id))
-            : allProjects;
+        const openTabProjects = allProjects.filter((p) => tabIds.has(p.id));
 
-        const projectInfos = activeProjects.map((p) => ({
+        const projectInfos = openTabProjects.map((p) => ({
           id: p.id,
           name: p.name,
           path: p.path,
         }));
 
-        // Start global assistant session with project context
+        // Start global assistant session with open-tab project context
         await ipc(ASSISTANT.START.SESSION, { projects: projectInfos });
 
-        // Eagerly spawn workspace sessions for all persisted project tabs
-        await ipc(WORKSPACE.INIT['ALL-PROJECTS'], {
-          projects: activeProjects.map((p) => ({ id: p.id, path: p.path })),
-        });
+        // Spawn workspace sessions only for projects with open tabs.
+        // WorkspacePage also calls WORKSPACE.INIT.PROJECT per tab, so this
+        // handles the case where tabs were open at last shutdown.
+        if (openTabProjects.length > 0) {
+          await ipc(WORKSPACE.INIT['ALL-PROJECTS'], {
+            projects: openTabProjects.map((p) => ({ id: p.id, path: p.path })),
+          });
+        }
       } catch {
         // Settings unavailable — keep defaults
       }
