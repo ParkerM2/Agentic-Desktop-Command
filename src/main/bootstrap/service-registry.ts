@@ -89,6 +89,7 @@ import { createTrackerService } from '../features/tracker/tracker-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
+import { createWorkspacesService } from '../features/workspaces/workspaces-service';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
@@ -142,6 +143,7 @@ export interface ServiceRegistryResult {
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
   hubApiClient: HubApiClient;
+  workspacesService: ReturnType<typeof createWorkspacesService>;
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
@@ -194,6 +196,9 @@ export function createServiceRegistry(
   const commandBus = createCommandBus(db);
   const busSessionManager = createBusSessionManager(db, agentHostClient);
   busSessionManager.recoverInterrupted();
+
+  const workspacesService = createWorkspacesService({ db });
+  workspacesService.init();
 
   // ─── Tier 1: Infrastructure — deferred ───────────────────────
 
@@ -521,6 +526,7 @@ export function createServiceRegistry(
   const services: Services = {
     commandBus,
     busSessionManager,
+    workspacesService,
     agentManagerService: agentHostClient,
     progressService,
     teamWatcherService,
@@ -589,6 +595,7 @@ export function createServiceRegistry(
     busSessionManager,
     agentHostClient,
     workspaceSessionManager,
+    workspacesService,
     assistantService,
     errorCollector,
     healthRegistry,
