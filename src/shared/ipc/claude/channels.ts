@@ -8,6 +8,7 @@ export const CLAUDE = domain('claude', {
   GET: ['messages'],
   CLEAR: ['conversation'],
   CHECK: ['configured'],
+  SCAN: ['config'],
 });
 
 export const CLAUDE_EVENTS = events('claude', {

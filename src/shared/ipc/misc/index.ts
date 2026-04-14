@@ -88,9 +88,6 @@ export {
   ScreenshotSchema,
 } from './screen.contract';
 
-// ── Time ──
-export { timeInvoke } from './time.contract';
-
 // ── Voice ──
 export {
   voiceEvents,

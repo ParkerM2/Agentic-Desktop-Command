@@ -16,6 +16,8 @@ export const progressTasks = sqliteTable('progress_tasks', {
   completedAt: text('completed_at'),
   archivedAt: text('archived_at'),
   teamName: text('team_name'),
+  workflow: text('workflow'),
+  workflowPhase: text('workflow_phase'),
   sessionHistory: text('session_history', { mode: 'json' }).$type<unknown[]>(),
   description: text('description'),
   createdAt: text('created_at').notNull(),

@@ -401,6 +401,8 @@ function rowToTask(
     completedAt: row.completedAt ?? undefined,
     archivedAt: row.archivedAt ?? undefined,
     teamName: row.teamName ?? undefined,
+    workflow: row.workflow ?? undefined,
+    workflowPhase: row.workflowPhase ?? undefined,
     sessionHistory: Array.isArray(row.sessionHistory)
       ? (row.sessionHistory as ProgressTask['sessionHistory'])
       : undefined,
@@ -912,6 +914,8 @@ export function createProgressService(
       if (updates.prUrl !== undefined) dbUpdates.prUrl = updates.prUrl;
       if (updates.prNumber !== undefined) dbUpdates.prNumber = updates.prNumber;
       if (updates.prStatus !== undefined) dbUpdates.prStatus = updates.prStatus;
+      if (updates.workflow !== undefined) dbUpdates.workflow = updates.workflow;
+      if (updates.workflowPhase !== undefined) dbUpdates.workflowPhase = updates.workflowPhase;
       if (updates.lastSessionId !== undefined) dbUpdates.lastSessionId = updates.lastSessionId;
       if (updates.lastAgentName !== undefined) dbUpdates.lastAgentName = updates.lastAgentName;
       if (updates.completedAt !== undefined) dbUpdates.completedAt = updates.completedAt;

@@ -12,7 +12,6 @@ import { IDEAS } from '@shared/ipc/misc/ideas.channels';
 import { MILESTONES } from '@shared/ipc/misc/milestones.channels';
 import { SCREEN } from '@shared/ipc/misc/screen.channels';
 import { VOICE } from '@shared/ipc/misc/voice.channels';
-import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
 
 import { registerAgentDashboardHandlers } from '../features/agent-dashboard/agent-dashboard-handlers';
 import { registerAlertHandlers } from '../features/alerts/alert-handlers';
@@ -54,13 +53,11 @@ import { registerSettingsHandlers } from '../features/settings/settings-handlers
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
 import { registerTerminalHandlers } from '../features/terminal/terminal-handlers';
-import { registerTimeHandlers } from '../features/time-parser/time-handlers';
 import { registerTrackerHandlers } from '../features/tracker/tracker-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
-
-
+import { registerWorkspacesHandlers } from '../features/workspaces/workspaces-handlers';
 
 import type { IpcRouter } from './router';
 import type { AgentManager } from '../agent-host/agent-host-client';
@@ -111,12 +108,12 @@ import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
 import type { TerminalService } from '../features/terminal/terminal-service';
-import type { TimeParserService } from '../features/time-parser/time-parser-service';
 import type { TrackerService } from '../features/tracker/tracker-service';
 import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
+import type { WorkspacesService } from '../features/workspaces/workspaces-service';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
@@ -151,7 +148,6 @@ export interface Services {
   githubService: GitHubService;
   worktreeService: WorktreeService;
   mergeService: MergeService;
-  timeParserService: TimeParserService;
   voiceService: VoiceService | null;
   screenCaptureService: ScreenCaptureService | null;
   briefingService: BriefingService;
@@ -175,6 +171,7 @@ export interface Services {
   visualizationService: VisualizationService;
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
+  workspacesService: WorkspacesService;
   progressService: ProgressService;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
@@ -282,7 +279,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);
   registerOAuthHandlers(router, services.oauthManager);
-  registerTimeHandlers(router, services.timeParserService);
   if (services.voiceService) {
     registerVoiceHandlers(router, services.voiceService);
   } else {
@@ -306,6 +302,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.hubApiClient,
     services.workflowEngineService,
     services.workflowTemplateService,
+    services.busSessionManager,
   );
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
   registerDeviceHandlers(router, services.deviceService);
@@ -333,19 +330,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerProgressHandlers(router, services.progressService);
   registerBusHandlers(router, services.commandBus, services.busSessionManager);
 
-  // Workspaces CRUD — Hub-backed, no local service yet.
-  // Returns empty list for reads; throws descriptive error for mutations
-  // since the typed contract requires a full workspace object on success.
-  router.handle(WORKSPACES.LIST.ALL, () => Promise.resolve([]));
-  router.handle(WORKSPACES.CREATE.WORKSPACE, () => {
-    throw new Error('Cannot create workspace: Hub connection required. Connect to a Hub first.');
-  });
-  router.handle(WORKSPACES.UPDATE.WORKSPACE, () => {
-    throw new Error('Cannot update workspace: Hub connection required. Connect to a Hub first.');
-  });
-  router.handle(WORKSPACES.DELETE.WORKSPACE, () => {
-    throw new Error('Cannot delete workspace: Hub connection required. Connect to a Hub first.');
-  });
+  registerWorkspacesHandlers(router, services.workspacesService);
 
   if (services.teamWatcherService) {
     registerAgentDashboardHandlers(

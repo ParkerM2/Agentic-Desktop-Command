@@ -5,7 +5,11 @@
  * conversation management and message sending.
  */
 
+import os from 'node:os';
+
 import { CLAUDE } from '@shared/ipc/claude/channels';
+
+import { scanClaudeConfig } from './claude-config-scanner';
 
 import type { ClaudeClient } from ".";
 import type { IpcRouter } from '../../ipc/router';
@@ -14,6 +18,11 @@ export function registerClaudeHandlers(router: IpcRouter, claudeClient: ClaudeCl
   // Check if Claude is configured
   router.handle(CLAUDE.CHECK.CONFIGURED, () =>
     Promise.resolve({ configured: claudeClient.isConfigured() }),
+  );
+
+  // Scan Claude config directories for skills, agents, and commands
+  router.handle(CLAUDE.SCAN.CONFIG, () =>
+    Promise.resolve(scanClaudeConfig(process.cwd(), os.homedir())),
   );
 
   // Create a new conversation
