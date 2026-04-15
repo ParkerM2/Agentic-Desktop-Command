@@ -35,10 +35,10 @@ import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
+import { mcpInvoke } from './mcp';
 import { mergeInvoke } from './merge';
 import {
   calendarInvoke,
-  mcpInvoke,
   notesEvents,
   notesInvoke,
   webhookEvents,

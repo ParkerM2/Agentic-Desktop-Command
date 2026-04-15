@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { MCP } from './mcp.channels';
+import { MCP } from './channels';
 
 export const mcpInvoke = {
   [MCP.CALL.TOOL]: {
