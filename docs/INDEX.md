@@ -39,16 +39,6 @@
 <doc path="contracts/hub-device-protocol.md" tags="hub rest-api websocket auth" />
 </contracts>
 <features pattern="{name}/plan.md">
-<doc path="features/agent-dashboard-view/plan.md" tags="agent-chat headless-ui" />
-<doc path="features/command-palette/plan.md" tags="command-palette" />
-<doc path="features/devices-ui/plan.md" tags="devices registration" />
-<doc path="features/docs-sync/plan.md" tags="docs sync" />
-<doc path="features/future-roadmap/plan.md" tags="roadmap milestones" />
-<doc path="features/productivity-hub-restructure/plan.md" tags="productivity tabs" />
-<doc path="features/sidebar-architecture-refactor/plan.md" tags="sidebar layouts" />
-<doc path="features/user-scoped-storage/plan.md" tags="per-user data-isolation" />
-<doc path="features/visualization/plan.md" tags="visual-map react-flow dagre" />
-<doc path="features/workspace-ui/plan.md" tags="workspace agents" />
 </features>
 <patterns>
 <doc path="patterns/CACHING-LAYER-QUICKGUIDE.md" tags="react-query eventbridge zustand caching invalidation" priority="always" />
