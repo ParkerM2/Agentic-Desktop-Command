@@ -7,7 +7,7 @@
 import { DOCKER } from '@shared/ipc/docker/channels';
 
 import type { DockerService } from "./docker-service";
-import type { IpcRouter } from '../../../ipc/router';
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerDockerHandlers(router: IpcRouter, dockerService: DockerService): void {
   router.handle(DOCKER.GET.STATUS, () => dockerService.getStatus());

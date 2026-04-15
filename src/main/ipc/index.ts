@@ -17,7 +17,7 @@ import { registerAgentDashboardHandlers } from '../features/agent-dashboard/agen
 import { registerAlertHandlers } from '../features/alerts/alert-handlers';
 import { registerAppHandlers } from '../features/app/app-handlers';
 import { registerAppUpdateHandlers } from '../features/app/app-update-handlers';
-import { registerDockerHandlers } from '../features/app/docker';
+import { registerDockerHandlers } from '../features/docker';
 import { registerErrorHandlers } from '../features/app/health';
 import { registerWindowHandlers } from '../features/app/window-handlers';
 import { registerAssistantHandlers } from '../features/assistant/assistant-handlers';
@@ -68,7 +68,7 @@ import type { BusSessionManager } from '../bus/session-manager';
 import type { TeamWatcherService } from '../features/agent-dashboard/agent-dashboard-handlers';
 import type { AlertService } from '../features/alerts/alert-service';
 import type { AppUpdateService } from '../features/app/app-update-service';
-import type { DockerService } from '../features/app/docker';
+import type { DockerService } from '../features/docker';
 import type { ErrorCollectorHandler, HealthRegistryHandler } from '../features/app/health';
 import type { AssistantService } from '../features/assistant/assistant-service';
 import type { UserSessionManager } from '../features/auth';

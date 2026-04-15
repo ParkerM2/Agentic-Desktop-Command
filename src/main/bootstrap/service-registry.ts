@@ -28,7 +28,7 @@ import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
-import { createDockerService } from '../features/app/docker';
+import { createDockerService } from '../features/docker';
 import {
   createErrorCollector,
   createHealthRegistry,
