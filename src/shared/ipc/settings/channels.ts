@@ -12,14 +12,6 @@ export const SETTINGS = domain('settings', {
   RESET: ['data-dir'],
 });
 
-// ─── Hotkeys channels (absorbed from misc/hotkeys) ────────────
-
-export const HOTKEYS = domain('hotkeys', {
-  GET: ['config'],
-  UPDATE: ['config'],
-  RESET: ['config'],
-});
-
 // ─── Voice channels (absorbed from misc/voice) ────────────────
 
 export const VOICE = domain('voice', {

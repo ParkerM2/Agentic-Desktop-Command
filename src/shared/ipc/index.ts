@@ -33,6 +33,7 @@ import { filesInvoke } from './files';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
+import { hotkeysInvoke } from './hotkeys';
 import { hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
@@ -52,7 +53,6 @@ import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
 import { qaRecorderEvents, qaRecorderInvoke } from './qa-recorder';
 import {
-  hotkeysInvoke,
   screenInvoke,
   securityInvoke,
   settingsInvoke,

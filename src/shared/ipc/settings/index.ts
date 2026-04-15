@@ -23,7 +23,6 @@ export {
 } from './schemas';
 
 export {
-  hotkeysInvoke,
   screenInvoke,
   securityInvoke,
   settingsInvoke,
@@ -31,4 +30,4 @@ export {
   voiceInvoke,
 } from './contract';
 
-export { HOTKEYS, SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
+export { SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';

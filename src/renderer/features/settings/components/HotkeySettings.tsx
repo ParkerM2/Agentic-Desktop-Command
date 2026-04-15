@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Keyboard, RotateCcw } from 'lucide-react';
 
 
-import { HOTKEYS } from '@shared/ipc/misc/hotkeys.channels';
+import { HOTKEYS } from '@shared/ipc/hotkeys';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';

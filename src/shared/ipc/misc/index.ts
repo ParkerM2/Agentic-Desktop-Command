@@ -5,9 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Hotkeys ──
-export { hotkeysInvoke } from './hotkeys.contract';
-
 // ── MCP ──
 export { mcpInvoke } from './mcp.contract';
 

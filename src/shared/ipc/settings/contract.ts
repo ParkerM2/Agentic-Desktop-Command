@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 
-import { HOTKEYS, SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
+import { SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
 import {
   AppSettingsSchema,
   DataDirInfoSchema,
@@ -143,24 +143,6 @@ export const settingsInvoke = {
   [SETTINGS.RESET['DATA-DIR']]: {
     input: z.object({}),
     output: z.object({ requiresRestart: z.boolean() }),
-  },
-} as const;
-
-/** Invoke channels for hotkey operations (absorbed from misc/hotkeys) */
-export const hotkeysInvoke = {
-  [HOTKEYS.GET.CONFIG]: {
-    input: z.object({}),
-    output: z.record(z.string(), z.string()),
-  },
-  [HOTKEYS.UPDATE.CONFIG]: {
-    input: z.object({
-      hotkeys: z.record(z.string(), z.string()),
-    }),
-    output: z.object({ success: z.boolean() }),
-  },
-  [HOTKEYS.RESET.CONFIG]: {
-    input: z.object({}),
-    output: z.record(z.string(), z.string()),
   },
 } as const;
 

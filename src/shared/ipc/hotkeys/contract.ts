@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { HOTKEYS } from './hotkeys.channels';
+import { HOTKEYS } from './channels';
 
 export const hotkeysInvoke = {
   [HOTKEYS.GET.CONFIG]: {
