@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import { INSIGHTS } from './insights.channels';
+import { INSIGHTS } from './channels';
 
 export const InsightMetricsSchema = z.object({
   totalTasks: z.number(),

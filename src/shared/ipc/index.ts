@@ -34,9 +34,9 @@ import { githubEvents, githubInvoke } from './github';
 import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
+import { insightsInvoke } from './insights';
 import {
   calendarInvoke,
-  insightsInvoke,
   mcpInvoke,
   mergeInvoke,
   notesEvents,
@@ -266,13 +266,16 @@ export {
 export {
   InsightMetricsSchema,
   InsightTimeSeriesSchema,
+  ProjectInsightsSchema,
+  TaskDistributionSchema,
+} from './insights';
+
+export {
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
   MergeFileDiffInputSchema,
   MergeFileDiffOutputSchema,
   MergeResultSchema,
-  ProjectInsightsSchema,
-  TaskDistributionSchema,
   WorkspaceSchema,
   WorkspaceSettingsSchema,
 } from './misc';

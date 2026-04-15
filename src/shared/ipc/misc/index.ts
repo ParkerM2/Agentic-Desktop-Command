@@ -19,15 +19,6 @@ export {
 // ── Hotkeys ──
 export { hotkeysInvoke } from './hotkeys.contract';
 
-// ── Insights ──
-export {
-  insightsInvoke,
-  InsightMetricsSchema,
-  InsightTimeSeriesSchema,
-  ProjectInsightsSchema,
-  TaskDistributionSchema,
-} from './insights.contract';
-
 // ── MCP ──
 export { mcpInvoke } from './mcp.contract';
 
