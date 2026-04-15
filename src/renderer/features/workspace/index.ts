@@ -6,7 +6,7 @@
  *   Backend: busSessionManager (command bus, NOT SQLite CRUD)
  *
  * CRUD layer: manage Workspace records in the database (create/read/update/delete).
- *   IPC domain: WORKSPACES.* (src/shared/ipc/misc/ — workspaces channels)
+ *   IPC domain: WORKSPACES.* (src/shared/ipc/workspaces/)
  *   Backend: WorkspacesService + migration 0014_add_workspaces_table
  */
 export { WorkspacePage } from './components/WorkspacePage';

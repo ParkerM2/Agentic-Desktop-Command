@@ -83,6 +83,8 @@ import { createQaRecorderService } from '../features/qa-recorder';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
+import { createGitHubService } from '../features/github';
+import { createSpotifyService } from '../features/spotify';
 import { createTerminalService } from '../features/terminals/terminals-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
@@ -346,14 +348,14 @@ export function createServiceRegistry(
   // ─── Tier 1: External integrations (unified) ─────────────────
 
   const integrationsService = lazyService(() =>
-    createIntegrationsService({ db, dataDir, router, oauthManager, githubCliClient }),
+    createIntegrationsService({ db, dataDir, router, oauthManager }),
   );
 
   // Convenience accessors — expose sub-services from the unified service
   const emailService = lazyService(() => integrationsService.email);
   const notificationManager = lazyService(() => integrationsService.notifications);
-  const spotifyService = lazyService(() => integrationsService.spotify);
-  const githubService = lazyService(() => integrationsService.github);
+  const spotifyService = lazyService(() => createSpotifyService({ oauthManager }));
+  const githubService = lazyService(() => createGitHubService({ client: githubCliClient, router }));
   const calendarService = lazyService(() => integrationsService.calendar);
 
   const claudeClient = lazyService(() =>

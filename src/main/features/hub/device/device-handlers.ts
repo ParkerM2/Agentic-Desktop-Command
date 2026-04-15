@@ -2,7 +2,7 @@
  * Device IPC handlers — Proxies to Hub API via DeviceService
  */
 
-import { DEVICES } from '@shared/ipc/misc/devices.channels';
+import { DEVICES } from '@shared/ipc/devices';
 
 import type { DeviceService } from "./device-service";
 import type { IpcRouter } from '../../../ipc/router';

@@ -2,7 +2,7 @@
  * Notes IPC handlers
  */
 
-import { NOTES } from '@shared/ipc/misc/notes.channels';
+import { NOTES } from '@shared/ipc/notes';
 
 import type { NotesService } from "./notes-service";
 import type { IpcRouter } from '../../ipc/router';

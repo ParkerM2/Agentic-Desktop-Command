@@ -155,8 +155,8 @@ When context compresses (auto or via `/compact`), always preserve:
 
 ## Current Sprint Plan
 
-Reference: `docs/superpowers/plans/2026-04-11-gap-closure-multi-sprint.md`
-44 tasks across 7 sprints closing feature gaps identified by full-system data flow audit.
+Reference: `docs/superpowers/plans/2026-04-15-full-gap-closure.md`
+Closes every error and debt item from the 2026-04-15 codebase-state dashboard: promotes remaining `ipc/misc/` features, eliminates naming mismatches, extracts spotify/github main services, adds Vitest better-sqlite3 ABI rebuild hooks, and cleans up landed plans/docs.
 
 ## Communication Standards
 

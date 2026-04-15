@@ -2,7 +2,7 @@
  * Hotkey IPC handlers — get, update, reset global hotkeys
  */
 
-import { HOTKEYS } from '@shared/ipc/misc/hotkeys.channels';
+import { HOTKEYS } from '@shared/ipc/hotkeys';
 
 import { DEFAULT_HOTKEYS } from '../../tray/hotkey-manager';
 

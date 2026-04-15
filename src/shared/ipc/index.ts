@@ -22,28 +22,25 @@ import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { busEvents, busInvoke } from './bus';
+import { calendarInvoke } from './calendar';
 import { changelogInvoke } from './changelog';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
+import { devicesInvoke } from './devices';
 import { emailEvents, emailInvoke } from './email';
 import { filesInvoke } from './files';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
-import { devicesInvoke, hubEvents, hubInvoke } from './hub';
+import { hotkeysInvoke } from './hotkeys';
+import { hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
 import { mcpInvoke } from './mcp';
 import { mergeInvoke } from './merge';
-import {
-  calendarInvoke,
-  notesEvents,
-  notesInvoke,
-  webhookEvents,
-  workspacesInvoke,
-} from './misc';
+import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
@@ -51,19 +48,19 @@ import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
 import { qaRecorderEvents, qaRecorderInvoke } from './qa-recorder';
+import { screenInvoke } from './screen';
 import {
-  hotkeysInvoke,
-  screenInvoke,
   securityInvoke,
   settingsInvoke,
-  voiceEvents,
-  voiceInvoke,
 } from './settings';
 import { spotifyInvoke } from './spotify';
+import { voiceEvents, voiceInvoke } from './voice';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { visualizationInvoke } from './visualization';
+import { webhookEvents, webhookInvoke } from './webhook';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
+import { workspacesInvoke } from './workspaces';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
 
@@ -112,6 +109,7 @@ export const ipcInvokeContract = {
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
+  ...webhookInvoke,
   ...progressInvoke,
   ...busInvoke,
 
@@ -281,17 +279,20 @@ export {
 export {
   WorkspaceSchema,
   WorkspaceSettingsSchema,
-} from './misc';
+} from './workspaces';
 
-export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './hub';
+export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './devices';
 
 export {
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
   ScreenshotSchema,
+} from './screen';
+
+export {
   VoiceConfigSchema,
   VoiceInputModeSchema,
-} from './settings';
+} from './voice';
 
 export {
   GitHubNotificationTypeSchema,
@@ -453,7 +454,7 @@ export {
 
 // ─── Per-domain schema re-exports (formerly aggregated by personal/) ─────────
 
-export { NoteSchema } from './misc/notes.contract';
+export { NoteSchema } from './notes';
 
 export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './ideas';
 

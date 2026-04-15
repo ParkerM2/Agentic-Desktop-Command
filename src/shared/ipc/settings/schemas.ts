@@ -2,7 +2,7 @@
  * Settings IPC Schemas
  *
  * Zod schemas for application settings, profiles, OAuth providers,
- * webhook configuration, agent settings, hotkeys, voice, and screen capture.
+ * webhook configuration, and agent settings.
  */
 
 import { z } from 'zod';
@@ -110,34 +110,6 @@ export const WebhookConfigSchema = z.object({
   }),
 });
 
-// ── Voice Schemas ───────────────────────────────────────────────
-
-export const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
-
-export const VoiceConfigSchema = z.object({
-  enabled: z.boolean(),
-  language: z.string(),
-  inputMode: VoiceInputModeSchema,
-});
-
-// ── Screen Capture Schemas ──────────────────────────────────────
-
-export const ScreenSourceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  thumbnail: z.string(),
-  display_id: z.string().optional(),
-  appIcon: z.string().optional(),
-});
-
-export const ScreenshotSchema = z.object({
-  data: z.string(),
-  timestamp: z.string(),
-  source: ScreenSourceSchema,
-  width: z.number(),
-  height: z.number(),
-});
-
 // ── Layout Persistence Schemas ─────────────────────────────────
 
 export const LayoutStateSchema = z.object({
@@ -159,13 +131,6 @@ export const LayoutUpdateSchema = z.object({
   toolbarStyle: z.string().optional(),
   contentLayout: z.string().optional(),
 });
-
-export const ScreenPermissionStatusSchema = z.enum([
-  'granted',
-  'denied',
-  'not-determined',
-  'restricted',
-]);
 
 // ── Data Directory Schemas ─────────────────────────────────────
 

@@ -5,7 +5,7 @@
  * Maps raw API responses to the IPC contract shapes.
  */
 
-import { CALENDAR } from '@shared/ipc/misc/calendar.channels';
+import { CALENDAR } from '@shared/ipc/calendar';
 
 import { createCalendarClient } from '../../mcp-servers/calendar/calendar-client';
 

@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { SCREEN } from '@shared/ipc/misc/screen.channels';
+import { SCREEN } from '@shared/ipc/screen';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

@@ -44,7 +44,7 @@ import type {
   IdeaSchema,
   IdeaStatusSchema,
 } from '../ipc/ideas';
-import type { NoteSchema } from '../ipc/misc/notes.contract';
+import type { NoteSchema } from '../ipc/notes';
 import type {
   DailyPlanSchema,
   ScheduledTaskSchema,

@@ -6,7 +6,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { NOTES_EVENTS } from '@shared/ipc/misc/notes.channels';
+import { NOTES_EVENTS } from '@shared/ipc/notes';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 

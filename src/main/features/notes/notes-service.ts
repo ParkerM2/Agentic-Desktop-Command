@@ -10,7 +10,7 @@ import { join } from 'node:path';
 
 import { desc, eq, like, or } from 'drizzle-orm';
 
-import { NOTES_EVENTS } from '@shared/ipc/misc/notes.channels';
+import { NOTES_EVENTS } from '@shared/ipc/notes';
 import { generateId } from '@shared/lib/id';
 import type { Note } from '@shared/types';
 
