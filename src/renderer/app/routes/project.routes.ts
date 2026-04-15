@@ -85,7 +85,7 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Git' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/git-overview'),
+      () => import('@features/git'),
       'GitPage',
     ),
   });

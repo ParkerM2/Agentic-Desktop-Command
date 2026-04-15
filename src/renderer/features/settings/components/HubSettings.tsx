@@ -17,7 +17,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, Form, FormInput, Spinner } from '@ui';
 
-import { validateHubUrl } from '@features/hub-setup/lib/validateHubUrl';
+import { validateHubUrl } from '@features/hub/lib/validateHubUrl';
 
 import {
   useHubConnect,

@@ -64,7 +64,7 @@ const LazyRegisterPage = lazyRouteComponent(
 );
 
 const LazyHubSetupPage = lazyRouteComponent(
-  () => import('@features/hub-setup'),
+  () => import('@features/hub'),
   'HubSetupPage',
 );
 

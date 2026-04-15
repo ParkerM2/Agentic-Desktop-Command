@@ -29,7 +29,7 @@ import { useIdeaEvents } from '../hooks/useIdeaEvents';
 
 import { IdeaCard } from './IdeaCard';
 import { IdeaEditForm } from './IdeaEditForm';
-import { IdeationFilterRow } from './IdeationFilterRow';
+import { IdeationFilterRow } from './IdeasFilterRow';
 
 const CATEGORY_OPTIONS: IdeaCategory[] = ['feature', 'improvement', 'bug', 'performance'];
 
