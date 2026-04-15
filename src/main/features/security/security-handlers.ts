@@ -10,7 +10,7 @@ import { ipcInvokeContract } from '@shared/ipc-contract';
 import { DEFAULT_SECURITY_SETTINGS } from '@shared/types/security';
 import type { SecuritySettings } from '@shared/types/security';
 
-import type { SettingsService } from "./settings-service";
+import type { SettingsService } from '../settings/settings-service';
 import type { IpcRouter } from '../../ipc/router';
 
 export function registerSecurityHandlers(router: IpcRouter, service: SettingsService): void {
