@@ -5,9 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Webhook ──
-export { webhookEvents, webhookInvoke } from './webhook.contract';
-
 // ── Workspaces ──
 export {
   workspacesInvoke,

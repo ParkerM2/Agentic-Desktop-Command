@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import { WEBHOOK_EVENTS } from './webhook.channels';
+import { WEBHOOK_EVENTS } from './channels';
 
 export const webhookInvoke = {} as const;
 

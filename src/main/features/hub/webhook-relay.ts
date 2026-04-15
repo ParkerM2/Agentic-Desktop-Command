@@ -6,7 +6,7 @@
  * Emits event:webhook.received so the renderer can show a notification.
  */
 
-import { WEBHOOK_EVENTS } from '@shared/ipc/misc/webhook.channels';
+import { WEBHOOK_EVENTS } from '@shared/ipc/webhook';
 import type { WebhookCommand } from '@shared/types';
 
 

@@ -40,10 +40,7 @@ import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
 import { mcpInvoke } from './mcp';
 import { mergeInvoke } from './merge';
-import {
-  webhookEvents,
-  workspacesInvoke,
-} from './misc';
+import { workspacesInvoke } from './misc';
 import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
@@ -61,6 +58,7 @@ import { spotifyInvoke } from './spotify';
 import { voiceEvents, voiceInvoke } from './voice';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { visualizationInvoke } from './visualization';
+import { webhookEvents, webhookInvoke } from './webhook';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
 
@@ -111,6 +109,7 @@ export const ipcInvokeContract = {
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
+  ...webhookInvoke,
   ...progressInvoke,
   ...busInvoke,
 
