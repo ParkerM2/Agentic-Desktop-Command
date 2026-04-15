@@ -34,6 +34,7 @@ import { registerDeviceHandlers } from '../features/hub/device';
 import { registerHubHandlers } from '../features/hub/hub-handlers';
 import { registerIdeasHandlers } from '../features/ideas/ideas-handlers';
 import { registerInsightsHandlers } from '../features/insights/insights-handlers';
+import { registerGitHubHandlers } from '../features/github';
 import { registerIntegrationsHandlers } from '../features/integrations/integrations-handlers';
 import { registerMcpHandlers } from '../features/mcp/mcp-handlers';
 import { registerMergeHandlers } from '../features/merge/merge-handlers';
@@ -89,7 +90,7 @@ import type { HubSyncService } from '../features/hub/hub-sync';
 import type { IdeasService } from '../features/ideas/ideas-service';
 import type { InsightsService } from '../features/insights/insights-service';
 import type { CalendarService } from '../features/integrations/calendar';
-import type { GitHubService } from '../features/integrations/github-integration';
+import type { GitHubService } from '../features/github';
 import type { MergeService } from '../features/merge/merge-service';
 import type { NotesService } from '../features/notes/notes-service';
 import type { NotificationManager } from '../features/notifications';
@@ -213,9 +214,9 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerIntegrationsHandlers(router, {
     email: services.emailService,
     notifications: services.notificationManager,
-    github: services.githubService,
     calendar: services.calendarService,
   });
+  registerGitHubHandlers(router, services.githubService);
   registerSpotifyHandlers(router, services.spotifyService);
   registerClaudeHandlers(router, services.claudeClient);
   if (services.changelogService) {

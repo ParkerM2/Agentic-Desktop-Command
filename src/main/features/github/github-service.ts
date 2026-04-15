@@ -1,12 +1,11 @@
 /**
- * GitHub Integration — re-export from github service and handlers.
+ * GitHub Service — wraps the gh CLI client for GitHub API access.
  *
- * Service wraps the gh CLI client for GitHub API access.
  * Maps raw API responses to the shared GitHubPullRequest / GitHubIssue / GitHubNotification types.
  */
 
 import type { PrDiffFile } from '@shared/ipc/github';
-import { GITHUB, GITHUB_EVENTS } from '@shared/ipc/github/channels';
+import { GITHUB_EVENTS } from '@shared/ipc/github/channels';
 import type { GitHubIssue, GitHubNotification, GitHubPullRequest } from '@shared/types';
 
 import type { IpcRouter } from '../../ipc/router';
@@ -160,40 +159,4 @@ export function createGitHubService(deps: {
       return raw.map(mapNotification);
     },
   };
-}
-
-// ── Handlers ──────────────────────────────────────────────────
-
-export function registerGitHubHandlers(router: IpcRouter, service: GitHubService): void {
-  router.handle(GITHUB.GET['AUTH-STATUS'], async () => {
-    return await service.getAuthStatus();
-  });
-
-  router.handle(GITHUB.LIST.REPOS, async (params) => {
-    return await service.getRepos(params);
-  });
-
-  router.handle(GITHUB.LIST.PRS, async (params) => {
-    return await service.listPrs(params);
-  });
-
-  router.handle(GITHUB.GET.PR, async (params) => {
-    return await service.getPr(params);
-  });
-
-  router.handle(GITHUB.GET.PR_FILES, async (params) => {
-    return await service.getPrFiles(params);
-  });
-
-  router.handle(GITHUB.LIST.ISSUES, async (params) => {
-    return await service.listIssues(params);
-  });
-
-  router.handle(GITHUB.CREATE.ISSUE, async (params) => {
-    return await service.createIssue(params);
-  });
-
-  router.handle(GITHUB.GET.NOTIFICATIONS, async (params) => {
-    return await service.getNotifications(params);
-  });
 }
