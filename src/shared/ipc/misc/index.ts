@@ -5,14 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Devices ──
-export {
-  DeviceCapabilitiesSchema,
-  DeviceSchema,
-  devicesInvoke,
-  DeviceTypeSchema,
-} from './devices.contract';
-
 // ── Hotkeys ──
 export { hotkeysInvoke } from './hotkeys.contract';
 

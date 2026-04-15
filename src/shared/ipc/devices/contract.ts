@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { DEVICES } from './devices.channels';
+import { DEVICES } from './channels';
 
 export const DeviceCapabilitiesSchema = z.object({
   canExecute: z.boolean(),
