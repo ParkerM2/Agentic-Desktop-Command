@@ -12,13 +12,13 @@ import { and, eq } from 'drizzle-orm';
 
 import { generateId } from '@shared/lib/id';
 
-import { settingsKv } from '../../../db/schema';
-import { createScopedLogger } from '../../../lib/logger';
+import { settingsKv } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
 import { encryptSecret } from './email-encryption';
 
 import type { EncryptedSecretEntry } from './email-encryption';
-import type { AdcDatabase } from '../../../db';
+import type { AdcDatabase } from '../../db';
 
 const logger = createScopedLogger('email-store');
 

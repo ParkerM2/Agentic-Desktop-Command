@@ -80,7 +80,7 @@ import {
   createStorageInspector,
   createUserDataMigrator,
   createUserDataResolver,
-} from '../features/settings/data-management';
+} from '../features/data-management';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';

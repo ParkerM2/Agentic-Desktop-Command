@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 import type { RetentionPolicy } from '@shared/types';
 
-import { safeWriteJson } from '../../../lib/safe-write-json';
+import { safeWriteJson } from '../../lib/safe-write-json';
 
 // ── Types ────────────────────────────────────────────────────────
 

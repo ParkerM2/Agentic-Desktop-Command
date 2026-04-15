@@ -22,12 +22,12 @@ import type {
 
 import { watcherLogger } from '@main/lib/logger';
 
-import { createSlackClient } from '../../../mcp-servers/slack/slack-client';
+import { createSlackClient } from '../../mcp-servers/slack/slack-client';
 
 import type { NotificationManager, NotificationWatcher } from './notification-watcher';
-import type { OAuthManager } from '../../../auth/oauth-manager';
-import type { IpcRouter } from '../../../ipc/router';
-import type { SlackMessage } from '../../../mcp-servers/slack/types';
+import type { OAuthManager } from '../../auth/oauth-manager';
+import type { IpcRouter } from '../../ipc/router';
+import type { SlackMessage } from '../../mcp-servers/slack/types';
 
 // ── Types ────────────────────────────────────────────────────
 

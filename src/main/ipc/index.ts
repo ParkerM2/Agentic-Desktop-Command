@@ -45,7 +45,7 @@ import { registerProgressHandlers } from '../features/progress/progress-handlers
 import { registerProjectHandlers } from '../features/projects/project-handlers';
 import { registerQaHandlers } from '../features/qa/qa-handlers';
 import { registerQaRecorderHandlers } from '../features/qa/recorder/recorder-handlers';
-import { registerDataDirHandlers, registerDataManagementHandlers } from '../features/settings/data-management';
+import { registerDataDirHandlers, registerDataManagementHandlers } from '../features/data-management';
 import { registerHotkeyHandlers } from '../features/settings/hotkeys';
 import { registerScreenHandlers } from '../features/settings/screen';
 import { registerSecurityHandlers } from '../features/settings/security-handlers';
@@ -102,7 +102,7 @@ import type { ProjectService } from '../features/projects/project-service';
 import type { SetupPipelineService } from '../features/projects/setup-pipeline';
 import type { QaRunner } from '../features/qa/qa-types';
 import type { QaRecorderService } from '../features/qa/recorder';
-import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/settings/data-management';
+import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/data-management';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';

@@ -22,7 +22,7 @@ import type { createBriefingService } from '../features/briefing/briefing-servic
 import type { createHubConnectionManager } from '../features/hub/hub-connection';
 import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
-import type { CleanupService } from '../features/settings/data-management';
+import type { CleanupService } from '../features/data-management';
 import type { createTerminalService } from '../features/terminals/terminals-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 

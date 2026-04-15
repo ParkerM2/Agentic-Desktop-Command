@@ -4,10 +4,10 @@
 
 import { EMAIL } from '@shared/ipc/email/channels';
 
-import { createThrottle } from '../../../ipc/throttle';
+import { createThrottle } from '../../ipc/throttle';
 
 import type { EmailService } from './email-service';
-import type { IpcRouter } from '../../../ipc/router';
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerEmailHandlers(router: IpcRouter, service: EmailService): void {
   const allowSend = createThrottle(2000);

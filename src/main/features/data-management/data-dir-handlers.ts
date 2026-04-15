@@ -9,7 +9,7 @@ import { SETTINGS } from '@shared/ipc/settings/channels';
 
 import type { ConfigReader } from './config-reader';
 import type { DataMigrator } from './data-migrator';
-import type { IpcRouter } from '../../../ipc/router';
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerDataDirHandlers(
   router: IpcRouter,

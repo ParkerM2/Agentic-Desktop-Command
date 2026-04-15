@@ -22,11 +22,11 @@ import type {
 
 import { watcherLogger } from '@main/lib/logger';
 
-import { createGitHubCliClient } from '../../../mcp-servers/github/github-client';
+import { createGitHubCliClient } from '../../mcp-servers/github/github-client';
 
 import type { NotificationManager, NotificationWatcher } from './notification-watcher';
-import type { IpcRouter } from '../../../ipc/router';
-import type { Notification as GitHubApiNotification } from '../../../mcp-servers/github/types';
+import type { IpcRouter } from '../../ipc/router';
+import type { Notification as GitHubApiNotification } from '../../mcp-servers/github/types';
 
 // ── Types ────────────────────────────────────────────────────
 

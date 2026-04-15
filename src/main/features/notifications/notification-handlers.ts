@@ -7,7 +7,7 @@
 import { NOTIFICATIONS } from '@shared/ipc/notifications/channels';
 
 import type { NotificationManager } from ".";
-import type { IpcRouter } from '../../../ipc/router';
+import type { IpcRouter } from '../../ipc/router';
 
 export function registerNotificationHandlers(
   router: IpcRouter,

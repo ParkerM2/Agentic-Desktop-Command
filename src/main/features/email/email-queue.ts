@@ -13,14 +13,14 @@ import { eq } from 'drizzle-orm';
 
 import type { Email, EmailSendResult, QueuedEmail } from '@shared/types';
 
-import { emailQueue as emailQueueTable } from '../../../db/schema';
-import { createScopedLogger } from '../../../lib/logger';
+import { emailQueue as emailQueueTable } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
 import { sendEmailViaSmtp } from './smtp-transport';
 
 import type { StoredEmailConfig } from './email-store';
-import type { AdcDatabase } from '../../../db';
-import type { IpcRouter } from '../../../ipc/router';
+import type { AdcDatabase } from '../../db';
+import type { IpcRouter } from '../../ipc/router';
 
 const logger = createScopedLogger('email-queue');
 

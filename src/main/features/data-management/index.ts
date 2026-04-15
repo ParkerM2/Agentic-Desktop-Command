@@ -11,3 +11,4 @@ export { createUserDataMigrator, type UserDataMigrator } from './user-data-migra
 export { createConfigReader, type ConfigReader } from './config-reader';
 export { createDataMigrator, type DataMigrator } from './data-migrator';
 export { registerDataDirHandlers } from './data-dir-handlers';
+export { registerDataManagementHandlers } from './data-management-handlers';

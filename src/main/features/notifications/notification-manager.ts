@@ -22,8 +22,8 @@ import { matchesFilter } from './notification-filter';
 import { createNotificationStore } from './notification-store';
 
 import type { NotificationConfigUpdate } from './notification-filter';
-import type { AdcDatabase } from '../../../db';
-import type { IpcRouter } from '../../../ipc/router';
+import type { AdcDatabase } from '../../db';
+import type { IpcRouter } from '../../ipc/router';
 
 // ── Types ────────────────────────────────────────────────────
 

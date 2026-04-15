@@ -19,10 +19,10 @@ import {
   DEFAULT_SLACK_WATCHER_CONFIG,
 } from '@shared/types';
 
-import { notifications, settingsKv } from '../../../db/schema';
-import { createScopedLogger } from '../../../lib/logger';
+import { notifications, settingsKv } from '../../db/schema';
+import { createScopedLogger } from '../../lib/logger';
 
-import type { AdcDatabase } from '../../../db';
+import type { AdcDatabase } from '../../db';
 
 // ── Constants ────────────────────────────────────────────────
 
