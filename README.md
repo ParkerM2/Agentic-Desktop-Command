@@ -181,11 +181,11 @@ npm run dev
 src/
 ├── main/           # Electron main process (29 services)
 ├── preload/        # IPC context bridge
-├── renderer/       # React app (25 features)
+├── renderer/       # React app (31 features)
 └── shared/         # Types + IPC contract (single source of truth)
 
 hub/                # Optional sync server (Fastify + SQLite)
-.claude/agents/     # 27 specialist agent definitions
+.claude/agents/     # 30 specialist agent definitions
 ```
 
 ---

@@ -1138,7 +1138,7 @@ The `src/shared/ipc/misc/` folder bundles 17 smaller domain contracts. Here's wh
 | `notes.contract.ts` | `notes.*` | `notes-handlers.ts` | `services/notes/` |
 | `rate-limit.contract.ts` | `rateLimit.*` | -- (internal) | -- |
 | `screen.contract.ts` | `screen.*` | `screen-handlers.ts` | `services/screen/` |
-| `time.contract.ts` | `time.*` | `time-handlers.ts` | `services/time-parser/` |
+| ~~`time.contract.ts`~~ | ~~`time.*`~~ | ~~`time-handlers.ts`~~ | REMOVED — time-parser feature deleted (Sprint 6-7) |
 | `voice.contract.ts` | `voice.*` | `voice-handlers.ts` | `services/voice/` |
 | `webhook.contract.ts` | `webhooks.*` | `webhook-settings-handlers.ts` | `services/settings/` |
 | `workspaces.contract.ts` | `workspaces.*` | `workspace-handlers.ts` | -- (Hub API) |

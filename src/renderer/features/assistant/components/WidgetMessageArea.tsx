@@ -13,7 +13,7 @@ import { AlertCircle, MessageSquare } from 'lucide-react';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
 
-import { ThinkingIndicator } from '@ui';
+import { MarkdownMessage, ThinkingIndicator } from '@ui';
 
 import { useSpeechSynthesis } from '@features/settings';
 
@@ -112,11 +112,11 @@ export function WidgetMessageArea() {
               <div
                 className={cn(
                   'max-w-[85%] rounded-lg px-2.5 py-1.5',
-                  'text-foreground text-xs leading-relaxed whitespace-pre-wrap',
+                  'text-foreground',
                   RESPONSE_STYLES[entry.type],
                 )}
               >
-                {entry.response}
+                <MarkdownMessage compact>{entry.response}</MarkdownMessage>
               </div>
             </div>
           </div>

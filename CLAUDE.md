@@ -93,8 +93,7 @@ Pre-built index files in `.claude/codex/` — auto-regenerated on every commit v
 
 Codebase state document (manual doc, updated via doc-sync hooks):
 
-- **`.claude/progress/adc-codebase-state-2026-04-13.html`** — wire status for all 66 domains, critical issues, migration history, agent host protocol. Open in browser or search with Grep.
-- **`.claude/progress/sprint-6-7-finish-line/codebase-issues-breakdown.md`** — 40 issues categorized by severity (core broken, stubs, dead code, deprecated, overkill, mismatches, cleanup) with recommended sprint order.
+- **`.claude/progress/adc-codebase-state-2026-04-14.html`** — wire status for all domains, critical issues (resolved through Sprint 9 + post-sprint fixes), migration history, agent host protocol. Last updated 2026-04-15. Open in browser or search with Grep.
 
 Automation config:
 

@@ -68,6 +68,8 @@ export type {
 export { Code, Heading, headingVariants, Text, textVariants } from './typography';
 export type { CodeProps, HeadingProps, TextProps } from './typography';
 
+export { MarkdownMessage } from './markdown-message';
+
 export { Grid, gridVariants } from './grid';
 export type { GridProps } from './grid';
 

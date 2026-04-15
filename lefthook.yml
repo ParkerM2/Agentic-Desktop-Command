@@ -1,0 +1,44 @@
+# lefthook.yml — git hook automation for Agent Desktop Command
+# Run once after cloning: npx lefthook install
+# Docs: https://github.com/evilmartians/lefthook
+#
+# What this covers (complements the Claude Code PostToolUse hooks):
+#   - Pre-commit runs on ALL staged files, including manual edits Claude didn't touch
+#   - Typecheck catches cross-file type errors that per-file eslint misses
+#   - Stage-fixed ensures auto-fixed files are included in the commit
+#
+# To add a custom pre-commit script: add to pre-commit.commands and reference
+# a script from .claude/scripts/ or scripts/
+
+pre-commit:
+  parallel: true
+  commands:
+
+    # Full TypeScript check — catches cross-file errors eslint misses.
+    # ~10-30s on this codebase. Skip with: git commit --no-verify
+    typecheck:
+      run: npx tsc --noEmit
+      fail_text: "TypeScript errors — fix before committing (or git commit --no-verify to skip)"
+
+    # ESLint on staged TS/JS files only — faster than full lint
+    eslint:
+      glob: "*.{ts,tsx,js,jsx,mjs,cjs}"
+      run: npx eslint --fix --no-warn-ignored {staged_files}
+      stage_fixed: true
+      fail_text: "ESLint errors found"
+
+    # Prettier on staged files
+    prettier:
+      glob: "*.{ts,tsx,css,json,md,yaml,yml}"
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
+
+    # Regenerate ai-codex index when source files change.
+    # Keeps .claude/codex/lib.md current so Claude always has accurate function signatures.
+    ai-codex:
+      glob: "*.{ts,tsx,mjs,cjs}"
+      run: npx ai-codex --output .claude/codex && git add .claude/codex/
+      stage_fixed: true
+
+# pre-push: typecheck already runs pre-commit, no need to repeat here.
+# Add to pre-push if you want a second safety net before pushing.
