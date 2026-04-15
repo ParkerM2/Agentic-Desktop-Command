@@ -4,7 +4,7 @@
 
 import { FILES } from '@shared/ipc/files/channels';
 
-import type { FileTreeService } from "./file-tree-service";
+import type { FileTreeService } from "./files-service";
 import type { IpcRouter } from '../../ipc/router';
 
 export function registerFilesHandlers(
