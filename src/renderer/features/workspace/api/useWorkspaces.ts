@@ -9,7 +9,7 @@ import type { InvokeInput } from '@shared/ipc-contract';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { workspaceKeys } from './queryKeys';
+import { workspaceKeys } from './workspacesQueryKeys';
 
 /** Fetch all workspaces */
 export function useWorkspaces() {

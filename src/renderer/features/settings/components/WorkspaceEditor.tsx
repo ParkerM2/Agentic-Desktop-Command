@@ -10,7 +10,7 @@ import type { Workspace } from '@shared/types';
 
 import { Button, Input, Label, Switch, Textarea } from '@ui';
 
-import { useCreateWorkspace, useUpdateWorkspace } from '@features/workspaces';
+import { useCreateWorkspace, useUpdateWorkspace } from '@features/workspace';
 
 import { DeviceSelector } from './DeviceSelector';
 

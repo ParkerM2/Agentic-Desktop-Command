@@ -10,7 +10,7 @@ import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 
 import { useHubEvent } from '@renderer/shared/hooks';
 
-import { workspaceKeys } from '../api/queryKeys';
+import { workspaceKeys } from '../api/workspacesQueryKeys';
 
 /** Subscribe to hub workspace events and invalidate queries */
 export function useWorkspaceEvents() {

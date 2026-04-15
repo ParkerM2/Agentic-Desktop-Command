@@ -22,4 +22,4 @@ export * from '../features/progress/session-logs-schema';
 export * from '../bus/schema';
 export * from '../features/assistant/schema';
 export * from '../features/qa/recorder/schema';
-export * from '../features/workspaces/schema';
+export * from '../features/workspace/workspaces-schema';

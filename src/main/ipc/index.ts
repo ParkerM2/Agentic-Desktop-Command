@@ -56,7 +56,7 @@ import { registerTerminalHandlers } from '../features/terminals/terminals-handle
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
-import { registerWorkspacesHandlers } from '../features/workspaces/workspaces-handlers';
+import { registerWorkspacesHandlers } from '../features/workspace/workspaces-handlers';
 
 import type { IpcRouter } from './router';
 import type { AgentManager } from '../agent-host/agent-host-client';
@@ -111,7 +111,7 @@ import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import type { WorkspacesService } from '../features/workspaces/workspaces-service';
+import type { WorkspacesService } from '../features/workspace/workspaces-service';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 

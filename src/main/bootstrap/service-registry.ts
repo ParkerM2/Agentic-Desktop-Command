@@ -88,7 +88,7 @@ import { createTerminalService } from '../features/terminals/terminals-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import { createWorkspacesService } from '../features/workspaces/workspaces-service';
+import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
