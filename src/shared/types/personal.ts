@@ -43,7 +43,7 @@ import type {
   IdeaCategorySchema,
   IdeaSchema,
   IdeaStatusSchema,
-} from '../ipc/misc/ideas.contract';
+} from '../ipc/ideas';
 import type { NoteSchema } from '../ipc/misc/notes.contract';
 import type {
   DailyPlanSchema,

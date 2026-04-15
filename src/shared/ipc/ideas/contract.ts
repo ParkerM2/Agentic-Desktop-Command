@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { IDEAS, IDEAS_EVENTS } from './ideas.channels';
+import { IDEAS, IDEAS_EVENTS } from './channels';
 
 export const IdeaStatusSchema = z.enum([
   'new',

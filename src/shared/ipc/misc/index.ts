@@ -19,15 +19,6 @@ export {
 // ── Hotkeys ──
 export { hotkeysInvoke } from './hotkeys.contract';
 
-// ── Ideas ──
-export {
-  IdeaCategorySchema,
-  IdeaSchema,
-  ideasEvents,
-  ideasInvoke,
-  IdeaStatusSchema,
-} from './ideas.contract';
-
 // ── Insights ──
 export {
   insightsInvoke,

@@ -10,7 +10,7 @@ import { join } from 'node:path';
 
 import { and, desc, eq } from 'drizzle-orm';
 
-import { IDEAS_EVENTS } from '@shared/ipc/misc/ideas.channels';
+import { IDEAS_EVENTS } from '@shared/ipc/ideas';
 import { generateId } from '@shared/lib/id';
 import type { Idea, IdeaCategory, IdeaStatus } from '@shared/types';
 

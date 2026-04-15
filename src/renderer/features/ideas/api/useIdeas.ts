@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { IDEAS } from '@shared/ipc/misc/ideas.channels';
+import { IDEAS } from '@shared/ipc/ideas';
 import type { IdeaCategory, IdeaStatus } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';

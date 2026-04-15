@@ -33,10 +33,9 @@ import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
 import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
+import { ideasEvents, ideasInvoke } from './ideas';
 import {
   calendarInvoke,
-  ideasEvents,
-  ideasInvoke,
   insightsInvoke,
   mcpInvoke,
   mergeInvoke,
@@ -450,7 +449,7 @@ export {
 
 export { NoteSchema } from './misc/notes.contract';
 
-export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './misc/ideas.contract';
+export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './ideas';
 
 export {
   AlertLinkedToSchema,

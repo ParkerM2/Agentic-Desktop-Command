@@ -8,7 +8,7 @@
 import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
 import { CHANGELOG } from '@shared/ipc/changelog';
 import { FITNESS } from '@shared/ipc/fitness/channels';
-import { IDEAS } from '@shared/ipc/misc/ideas.channels';
+import { IDEAS } from '@shared/ipc/ideas';
 import { SCREEN } from '@shared/ipc/misc/screen.channels';
 import { VOICE } from '@shared/ipc/misc/voice.channels';
 

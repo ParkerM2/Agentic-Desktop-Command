@@ -4,7 +4,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { IDEAS_EVENTS } from '@shared/ipc/misc/ideas.channels';
+import { IDEAS_EVENTS } from '@shared/ipc/ideas';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
