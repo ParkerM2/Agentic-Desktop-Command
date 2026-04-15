@@ -35,10 +35,10 @@ import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
+import { mergeInvoke } from './merge';
 import {
   calendarInvoke,
   mcpInvoke,
-  mergeInvoke,
   notesEvents,
   notesInvoke,
   webhookEvents,
@@ -276,6 +276,9 @@ export {
   MergeFileDiffInputSchema,
   MergeFileDiffOutputSchema,
   MergeResultSchema,
+} from './merge';
+
+export {
   WorkspaceSchema,
   WorkspaceSettingsSchema,
 } from './misc';

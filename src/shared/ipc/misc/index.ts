@@ -22,16 +22,6 @@ export { hotkeysInvoke } from './hotkeys.contract';
 // ── MCP ──
 export { mcpInvoke } from './mcp.contract';
 
-// ── Merge ──
-export {
-  MergeDiffFileSchema,
-  MergeDiffSummarySchema,
-  MergeFileDiffInputSchema,
-  MergeFileDiffOutputSchema,
-  mergeInvoke,
-  MergeResultSchema,
-} from './merge.contract';
-
 // ── Notes ──
 export { NoteSchema, notesEvents, notesInvoke } from './notes.contract';
 

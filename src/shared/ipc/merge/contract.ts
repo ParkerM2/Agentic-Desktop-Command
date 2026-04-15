@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { MERGE } from './merge.channels';
+import { MERGE } from './channels';
 
 export const MergeDiffFileSchema = z.object({
   file: z.string(),
