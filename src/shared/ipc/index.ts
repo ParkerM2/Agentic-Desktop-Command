@@ -22,6 +22,7 @@ import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { busEvents, busInvoke } from './bus';
+import { calendarInvoke } from './calendar';
 import { changelogInvoke } from './changelog';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
@@ -37,7 +38,6 @@ import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
 import { mergeInvoke } from './merge';
 import {
-  calendarInvoke,
   mcpInvoke,
   webhookEvents,
   workspacesInvoke,

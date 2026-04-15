@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { CALENDAR } from './calendar.channels';
+import { CALENDAR } from './channels';
 
 export const calendarInvoke = {
   [CALENDAR.LIST.EVENTS]: {

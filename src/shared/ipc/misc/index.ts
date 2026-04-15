@@ -5,9 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Calendar ──
-export { calendarInvoke } from './calendar.contract';
-
 // ── Devices ──
 export {
   DeviceCapabilitiesSchema,
