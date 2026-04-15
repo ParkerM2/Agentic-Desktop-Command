@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { VOICE, VOICE_EVENTS } from './voice.channels';
+import { VOICE, VOICE_EVENTS } from './channels';
 
 export const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
 

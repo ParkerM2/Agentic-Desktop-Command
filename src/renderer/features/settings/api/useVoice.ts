@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { VOICE } from '@shared/ipc/misc/voice.channels';
+import { VOICE } from '@shared/ipc/voice';
 import type { VoiceConfig, VoiceInputMode } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';

@@ -10,7 +10,7 @@ import { CHANGELOG } from '@shared/ipc/changelog';
 import { FITNESS } from '@shared/ipc/fitness/channels';
 import { IDEAS } from '@shared/ipc/ideas';
 import { SCREEN } from '@shared/ipc/screen';
-import { VOICE } from '@shared/ipc/misc/voice.channels';
+import { VOICE } from '@shared/ipc/voice';
 
 import { registerAgentDashboardHandlers } from '../features/agent-dashboard/agent-dashboard-handlers';
 import { registerAlertHandlers } from '../features/alerts/alert-handlers';

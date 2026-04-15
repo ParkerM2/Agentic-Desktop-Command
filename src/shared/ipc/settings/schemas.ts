@@ -2,7 +2,7 @@
  * Settings IPC Schemas
  *
  * Zod schemas for application settings, profiles, OAuth providers,
- * webhook configuration, agent settings, hotkeys, and voice.
+ * webhook configuration, and agent settings.
  */
 
 import { z } from 'zod';
@@ -108,16 +108,6 @@ export const WebhookConfigSchema = z.object({
     webhookSecret: z.string(),
     configured: z.boolean(),
   }),
-});
-
-// ── Voice Schemas ───────────────────────────────────────────────
-
-export const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
-
-export const VoiceConfigSchema = z.object({
-  enabled: z.boolean(),
-  language: z.string(),
-  inputMode: VoiceInputModeSchema,
 });
 
 // ── Layout Persistence Schemas ─────────────────────────────────

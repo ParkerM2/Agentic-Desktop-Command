@@ -56,10 +56,9 @@ import { screenInvoke } from './screen';
 import {
   securityInvoke,
   settingsInvoke,
-  voiceEvents,
-  voiceInvoke,
 } from './settings';
 import { spotifyInvoke } from './spotify';
+import { voiceEvents, voiceInvoke } from './voice';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { visualizationInvoke } from './visualization';
 import { workflowEvents, workflowInvoke } from './workflow';
@@ -294,7 +293,7 @@ export {
 export {
   VoiceConfigSchema,
   VoiceInputModeSchema,
-} from './settings';
+} from './voice';
 
 export {
   GitHubNotificationTypeSchema,

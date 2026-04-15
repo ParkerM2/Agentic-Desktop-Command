@@ -2,13 +2,12 @@
  * Settings IPC Contract
  *
  * Invoke and event channel definitions for app settings, profiles,
- * OAuth providers, webhooks, agent settings, hotkeys, voice, and
- * screen capture.
+ * OAuth providers, webhooks, agent settings, and screen capture.
  */
 
 import { z } from 'zod';
 
-import { SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
+import { SECURITY, SETTINGS } from './channels';
 import {
   AppSettingsSchema,
   DataDirInfoSchema,
@@ -18,8 +17,6 @@ import {
   SecurityAuditExportSchema,
   SecuritySettingsSchema,
   ValidationCheckSchema,
-  VoiceConfigSchema,
-  VoiceInputModeSchema,
   WebhookConfigSchema,
 } from './schemas';
 
@@ -140,39 +137,6 @@ export const settingsInvoke = {
   [SETTINGS.RESET['DATA-DIR']]: {
     input: z.object({}),
     output: z.object({ requiresRestart: z.boolean() }),
-  },
-} as const;
-
-/** Invoke channels for voice operations (absorbed from misc/voice) */
-export const voiceInvoke = {
-  [VOICE.GET.CONFIG]: {
-    input: z.object({}),
-    output: VoiceConfigSchema,
-  },
-  [VOICE.UPDATE.CONFIG]: {
-    input: z.object({
-      enabled: z.boolean().optional(),
-      language: z.string().optional(),
-      inputMode: VoiceInputModeSchema.optional(),
-    }),
-    output: VoiceConfigSchema,
-  },
-  [VOICE.CHECK.PERMISSION]: {
-    input: z.object({}),
-    output: z.object({
-      granted: z.boolean(),
-      canRequest: z.boolean(),
-    }),
-  },
-} as const;
-
-/** Event channels for voice operations */
-export const voiceEvents = {
-  [VOICE_EVENTS.SPEECH.TRANSCRIPT]: {
-    payload: z.object({
-      transcript: z.string(),
-      isFinal: z.boolean(),
-    }),
   },
 } as const;
 

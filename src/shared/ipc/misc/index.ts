@@ -5,14 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Voice ──
-export {
-  voiceEvents,
-  voiceInvoke,
-  VoiceConfigSchema,
-  VoiceInputModeSchema,
-} from './voice.contract';
-
 // ── Webhook ──
 export { webhookEvents, webhookInvoke } from './webhook.contract';
 
