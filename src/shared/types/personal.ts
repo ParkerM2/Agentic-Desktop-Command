@@ -2,7 +2,7 @@
  * Personal Domain — Unified TypeScript Types
  *
  * Inferred types from the personal/ Zod schemas. Covers all
- * personal sub-domains: notes, ideas, milestones, alerts,
+ * personal sub-domains: notes, ideas, alerts,
  * changelog, planner, briefing, and fitness.
  */
 
@@ -44,11 +44,6 @@ import type {
   IdeaSchema,
   IdeaStatusSchema,
 } from '../ipc/misc/ideas.contract';
-import type {
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
-} from '../ipc/misc/milestones.contract';
 import type { NoteSchema } from '../ipc/misc/notes.contract';
 import type {
   DailyPlanSchema,
@@ -69,12 +64,6 @@ export type Note = z.infer<typeof NoteSchema>;
 export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 export type IdeaCategory = z.infer<typeof IdeaCategorySchema>;
 export type Idea = z.infer<typeof IdeaSchema>;
-
-// ── Milestones ──────────────────────────────────────────────────
-
-export type MilestoneStatus = z.infer<typeof MilestoneStatusSchema>;
-export type MilestoneTask = z.infer<typeof MilestoneTaskSchema>;
-export type Milestone = z.infer<typeof MilestoneSchema>;
 
 // ── Alerts ──────────────────────────────────────────────────────
 

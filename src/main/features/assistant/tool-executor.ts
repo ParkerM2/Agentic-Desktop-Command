@@ -22,7 +22,6 @@ import {
 import type { BriefingService } from '../briefing/briefing-service';
 import type { ChangelogService } from '../changelog/changelog-service';
 import type { IdeasService } from '../ideas/ideas-service';
-import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
 import type { PlannerService } from '../planner/planner-service';
 import type { ProgressService } from '../progress/progress-service';
@@ -31,7 +30,6 @@ import type { GitToolDeps } from './tool-handlers/git-tools';
 import type { WorkspaceSessionManager } from '../workspace/workspace-session-manager';
 
 const QUERY_KEY_NOTES = 'notes';
-const QUERY_KEY_MILESTONES = 'milestones';
 const QUERY_KEY_IDEAS = 'ideas';
 const QUERY_KEY_PLANNER = 'planner';
 const QUERY_KEY_WORKSPACE = 'workspace';
@@ -39,7 +37,6 @@ const ERR_PROGRESS_UNAVAILABLE = 'Progress service unavailable';
 
 export interface ToolExecutorDeps {
   notesService: NotesService | null;
-  milestonesService: MilestonesService | null;
   ideasService: IdeasService | null;
   plannerService: PlannerService | null;
   projectService: Pick<ProjectService, 'listProjectsSync' | 'getProjectPath'> | null;
@@ -90,7 +87,6 @@ function executeListProjects(projectService: ToolExecutorDeps['projectService'])
 function executeQueryRecentItems(
   input: ToolInput,
   notesService: NotesService | null,
-  milestonesService: MilestonesService | null,
   ideasService: IdeasService | null,
 ): ToolResult {
   const type = getString(input, 'type');
@@ -103,13 +99,6 @@ function executeQueryRecentItems(
     if (!notesService) return fail('Notes service unavailable');
     const notes = notesService.listNotes({}).filter((n) => new Date(n.createdAt) >= since);
     return { success: true, data: notes, queryKeyRoots: [] };
-  }
-  if (type === 'milestones') {
-    if (!milestonesService) return fail('Milestones service unavailable');
-    const items = milestonesService
-      .listMilestones({})
-      .filter((m) => new Date(m.createdAt) >= since);
-    return { success: true, data: items, queryKeyRoots: [] };
   }
   if (type === 'ideas') {
     if (!ideasService) return fail('Ideas service unavailable');
@@ -154,7 +143,7 @@ function executeReadProgressFile(input: ToolInput): ToolResult {
 }
 
 export function createToolExecutor(deps: ToolExecutorDeps) {
-  const { notesService, milestonesService, ideasService, plannerService, projectService, progressService, briefingService, changelogService, gitToolDeps, workspaceSessionManager, sendEvent } = deps;
+  const { notesService, ideasService, plannerService, projectService, progressService, briefingService, changelogService, gitToolDeps, workspaceSessionManager, sendEvent } = deps;
 
   function emitExecuted(toolName: string, result: ToolResult): void {
     sendEvent(ASSISTANT_EVENTS.TOOL.EXECUTED, {
@@ -173,17 +162,6 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
       projectId: typeof input.projectId === 'string' ? input.projectId : undefined,
     });
     return ok(note, QUERY_KEY_NOTES);
-  }
-
-  function executeCreateMilestone(input: ToolInput): ToolResult {
-    if (!milestonesService) return fail('Milestones service unavailable');
-    const milestone = milestonesService.createMilestone({
-      title: getString(input, 'title'),
-      description: getString(input, 'description'),
-      targetDate: getString(input, 'targetDate', new Date().toISOString()),
-      projectId: typeof input.projectId === 'string' ? input.projectId : undefined,
-    });
-    return ok(milestone, QUERY_KEY_MILESTONES);
   }
 
   function executeCreateIdea(input: ToolInput): ToolResult {
@@ -289,11 +267,10 @@ export function createToolExecutor(deps: ToolExecutorDeps) {
   // Map uses string keys to avoid camelCase naming convention lint
   const handlerMap = new Map<string, ToolHandler>([
     ['create_note', executeCreateNote],
-    ['create_milestone', executeCreateMilestone],
     ['create_idea', executeCreateIdea],
     ['add_daily_goal', executeAddDailyGoal],
     ['list_projects', () => executeListProjects(projectService)],
-    ['query_recent_items', (input) => executeQueryRecentItems(input, notesService, milestonesService, ideasService)],
+    ['query_recent_items', (input) => executeQueryRecentItems(input, notesService, ideasService)],
     ['list_progress_features', () => executeListProgressFeatures()],
     ['read_progress_file', (input) => executeReadProgressFile(input)],
     ['generate_briefing', () => executeGenerateBriefing()],

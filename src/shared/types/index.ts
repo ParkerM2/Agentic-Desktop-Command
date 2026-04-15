@@ -18,7 +18,6 @@ export type * from './github';
 export type * from './hub-connection';
 export type * from './idea';
 export type * from './insights';
-export type * from './milestone';
 export type * from './note';
 export type * from './planner';
 export type * from './project';

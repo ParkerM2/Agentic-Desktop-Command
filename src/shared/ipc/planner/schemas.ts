@@ -2,7 +2,7 @@
  * Planner IPC Schemas
  *
  * Zod schemas for daily planning, time blocks, weekly reviews,
- * notes, alerts, milestones, and ideas.
+ * notes, alerts, and ideas.
  */
 
 import { z } from 'zod';
@@ -92,28 +92,6 @@ export const AlertSchema = z.object({
   linkedTo: AlertLinkedToSchema.optional(),
   dismissed: z.boolean(),
   createdAt: z.string(),
-});
-
-// ── Milestone Schemas ───────────────────────────────────────────
-
-export const MilestoneStatusSchema = z.enum(['planned', 'in-progress', 'completed']);
-
-export const MilestoneTaskSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  completed: z.boolean(),
-});
-
-export const MilestoneSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string(),
-  targetDate: z.string(),
-  status: MilestoneStatusSchema,
-  tasks: z.array(MilestoneTaskSchema),
-  projectId: z.string().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
 });
 
 // ── Idea Schemas ────────────────────────────────────────────────

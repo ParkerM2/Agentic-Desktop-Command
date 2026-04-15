@@ -91,15 +91,6 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
   });
 
   // ── Legacy redirect routes ──────────────────────────────────
-  const roadmapRedirect = createRoute({
-    getParentRoute: () => appLayoutRoute,
-    path: ROUTE_PATTERNS.PROJECT_ROADMAP,
-    beforeLoad: ({ params }) => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
-      throw redirect({ to: ROUTE_PATTERNS.PROJECT_PLANNING, params });
-    },
-  });
-
   const ideationRedirect = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_IDEATION,
@@ -193,7 +184,6 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     visualizationRoute,
     qaRecorderRoute,
     // Legacy redirects
-    roadmapRedirect,
     ideationRedirect,
     insightsRedirect,
     githubRedirect,

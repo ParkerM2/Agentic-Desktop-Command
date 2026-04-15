@@ -41,8 +41,6 @@ import {
   insightsInvoke,
   mcpInvoke,
   mergeInvoke,
-  milestonesEvents,
-  milestonesInvoke,
   notesEvents,
   notesInvoke,
   webhookEvents,
@@ -85,7 +83,6 @@ export const ipcInvokeContract = {
   ...alertsInvoke,
   ...gitInvoke,
   ...mergeInvoke,
-  ...milestonesInvoke,
   ...ideasInvoke,
   ...changelogInvoke,
   ...insightsInvoke,
@@ -139,7 +136,6 @@ export const ipcEventContract = {
   ...notesEvents,
   ...plannerEvents,
   ...alertsEvents,
-  ...milestonesEvents,
   ...ideasEvents,
   ...fitnessEvents,
   ...hubEvents,
@@ -456,12 +452,6 @@ export {
 export { NoteSchema } from './misc/notes.contract';
 
 export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './misc/ideas.contract';
-
-export {
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
-} from './misc/milestones.contract';
 
 export {
   AlertLinkedToSchema,

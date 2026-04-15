@@ -7,7 +7,6 @@ export * from '../features/dashboard/schema';
 export * from '../features/notes/schema';
 export * from '../features/alerts/schema';
 export * from '../features/ideas/schema';
-export * from '../features/milestones/schema';
 export * from '../features/planner/schema';
 export * from '../features/fitness/schema';
 export * from '../features/briefing/schema';

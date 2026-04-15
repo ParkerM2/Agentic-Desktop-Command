@@ -59,7 +59,6 @@ export const ROUTE_PATTERNS = {
   PROJECT_VISUALIZATION: '/projects/$projectId/visualization',
   PROJECT_QA_RECORDER: '/projects/$projectId/qa-recorder',
   // Legacy patterns kept for redirect routes
-  PROJECT_ROADMAP: '/projects/$projectId/roadmap',
   PROJECT_IDEATION: '/projects/$projectId/ideation',
   PROJECT_CHANGELOG: '/projects/$projectId/changelog',
   PROJECT_INSIGHTS: '/projects/$projectId/insights',

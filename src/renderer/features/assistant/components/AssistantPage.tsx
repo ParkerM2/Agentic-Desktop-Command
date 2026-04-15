@@ -31,7 +31,6 @@ export function AssistantPage() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   function getActiveView(path: string): string {
-    if (path.includes('/roadmap')) return 'roadmap';
     if (path.startsWith(ROUTES.PLANNER)) return 'planner';
     if (path.includes('/ideation')) return 'ideation';
     if (path.startsWith(ROUTES.NOTES)) return 'notes';

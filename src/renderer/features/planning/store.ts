@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type PlanningTab = 'roadmap' | 'ideation' | 'insights';
+type PlanningTab = 'ideation' | 'insights';
 
 interface PlanningState {
   activeTab: PlanningTab;
@@ -8,7 +8,7 @@ interface PlanningState {
 }
 
 export const usePlanningStore = create<PlanningState>()((set) => ({
-  activeTab: 'roadmap',
+  activeTab: 'ideation',
   setActiveTab: (tab) => set({ activeTab: tab }),
 }));
 

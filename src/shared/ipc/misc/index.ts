@@ -68,15 +68,6 @@ export {
   MergeResultSchema,
 } from './merge.contract';
 
-// ── Milestones ──
-export {
-  milestonesEvents,
-  milestonesInvoke,
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
-} from './milestones.contract';
-
 // ── Notes ──
 export { NoteSchema, notesEvents, notesInvoke } from './notes.contract';
 

@@ -43,30 +43,6 @@ export const APP_TOOLS: AppTool[] = [
     queryKeyRoots: ['notes'],
   },
 
-  // ── Milestones ───────────────────────────────────────────────────────────
-  {
-    name: 'create_milestone',
-    description:
-      'Create a new roadmap milestone. Use when the user asks to add a milestone, plan a feature release, or create a project phase.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        title: { type: 'string', description: 'Milestone title, e.g. "v1.0 Release"' },
-        description: {
-          type: 'string',
-          description: 'What this milestone represents and its success criteria',
-        },
-        targetDate: {
-          type: 'string',
-          description: 'ISO date string for when this should be achieved, e.g. "2026-06-01"',
-        },
-        projectId: { type: 'string', description: 'Optional project ID to associate with' },
-      },
-      required: ['title', 'description', 'targetDate'],
-    },
-    queryKeyRoots: ['milestones'],
-  },
-
   // ── Ideas ────────────────────────────────────────────────────────────────
   {
     name: 'create_idea',
@@ -177,13 +153,13 @@ export const APP_TOOLS: AppTool[] = [
   {
     name: 'query_recent_items',
     description:
-      'Query notes, milestones, or ideas created since a given date. Use when the user asks what was created, added, or done recently.',
+      'Query notes or ideas created since a given date. Use when the user asks what was created, added, or done recently.',
     input_schema: {
       type: 'object',
       properties: {
         type: {
           type: 'string',
-          enum: ['notes', 'milestones', 'ideas'],
+          enum: ['notes', 'ideas'],
           description: 'Which data type to query',
         },
         since: {
@@ -408,7 +384,7 @@ ${toolList}
 - Always use in-app tools instead of CLI commands when available.
 - When the user mentions a project by name, resolve it to the project ID from the list above.
 - Respond concisely. Use markdown formatting for readability.
-- When creating items (notes, tasks, milestones), confirm what you created.
+- When creating items (notes, tasks, ideas), confirm what you created.
 - When the user says things like "send this to a team-lead", "have the team-lead execute this plan", "hand this off", "delegate this", or refers to sending work to an agent — use the hand_off_plan or execute_task tools. These route work to an idle team-lead agent (or spawn a new one).
 - Await user messages.`;
 }

@@ -17,7 +17,6 @@ const USER_SCOPED_FILES = [
   'assistant-watches.json',
   'alerts.json',
   'ideas.json',
-  'milestones.json',
   'changelog.json',
 ];
 

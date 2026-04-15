@@ -67,7 +67,6 @@ import { createIdeasService } from '../features/ideas/ideas-service';
 import { createInsightsService } from '../features/insights/insights-service';
 import { createIntegrationsService } from '../features/integrations/integrations-service';
 import { createMergeService } from '../features/merge/merge-service';
-import { createMilestonesService } from '../features/milestones/milestones-service';
 import { createNotesService } from '../features/notes/notes-service';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
@@ -337,7 +336,6 @@ export function createServiceRegistry(
   const notesService = lazyService(() => createNotesService({ db, dataDir, router }));
   const dashboardService = lazyService(() => createDashboardService({ db, dataDir, router }));
   const plannerService = lazyService(() => createPlannerService({ db, dataDir, router }));
-  const milestonesService = lazyService(() => createMilestonesService({ db, dataDir, router }));
   const ideasService = lazyService(() => createIdeasService({ db, dataDir, router }));
   const changelogService = lazyService(() => createChangelogService({ db, router, dataDir }));
   const fitnessService = lazyService(() => createFitnessService({ db, dataDir, router }));
@@ -408,7 +406,6 @@ export function createServiceRegistry(
   const toolExecutor = lazyService(() =>
     createToolExecutor({
       notesService,
-      milestonesService,
       ideasService,
       plannerService,
       projectService,
@@ -547,7 +544,6 @@ export function createServiceRegistry(
     ideasService,
     insightsService,
     mcpManager,
-    milestonesService,
     notesService,
     dashboardService,
     dockerService,

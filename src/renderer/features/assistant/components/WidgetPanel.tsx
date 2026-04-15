@@ -47,7 +47,6 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   }, []);
 
   function getActiveView(path: string): string {
-    if (path.includes('/roadmap')) return 'roadmap';
     if (path.includes('/planner')) return 'planner';
     if (path.includes('/ideation')) return 'ideation';
     if (path.includes('/notes')) return 'notes';

@@ -9,7 +9,6 @@ import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
 import { FITNESS } from '@shared/ipc/fitness/channels';
 import { CHANGELOG } from '@shared/ipc/misc/changelog.channels';
 import { IDEAS } from '@shared/ipc/misc/ideas.channels';
-import { MILESTONES } from '@shared/ipc/misc/milestones.channels';
 import { SCREEN } from '@shared/ipc/misc/screen.channels';
 import { VOICE } from '@shared/ipc/misc/voice.channels';
 
@@ -38,7 +37,6 @@ import { registerInsightsHandlers } from '../features/insights/insights-handlers
 import { registerIntegrationsHandlers } from '../features/integrations/integrations-handlers';
 import { registerMcpHandlers } from '../features/mcp/mcp-handlers';
 import { registerMergeHandlers } from '../features/merge/merge-handlers';
-import { registerMilestonesHandlers } from '../features/milestones/milestones-handlers';
 import { registerNotesHandlers } from '../features/notes/notes-handlers';
 import { registerOAuthHandlers } from '../features/oauth/oauth-handlers';
 import { registerPlannerHandlers } from '../features/planner/planner-handlers';
@@ -93,7 +91,6 @@ import type { CalendarService } from '../features/integrations/calendar';
 import type { GitHubService } from '../features/integrations/github-integration';
 import type { SpotifyService } from '../features/integrations/spotify';
 import type { MergeService } from '../features/merge/merge-service';
-import type { MilestonesService } from '../features/milestones/milestones-service';
 import type { NotesService } from '../features/notes/notes-service';
 import type { NotificationManager } from '../features/notifications';
 import type { PlannerService } from '../features/planner/planner-service';
@@ -137,7 +134,6 @@ export interface Services {
   ideasService: IdeasService | null;
   insightsService: InsightsService;
   mcpManager: McpManager;
-  milestonesService: MilestonesService | null;
   notesService: NotesService;
   notificationManager: NotificationManager;
   plannerService: PlannerService;
@@ -254,16 +250,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     router.handle(IDEAS.VOTE.IDEA, unavailable('Ideas'));
   }
   registerInsightsHandlers(router, services.insightsService);
-  if (services.milestonesService) {
-    registerMilestonesHandlers(router, services.milestonesService);
-  } else {
-    router.handle(MILESTONES.LIST.ALL, emptyList);
-    router.handle(MILESTONES.CREATE.MILESTONE, unavailable('Milestones'));
-    router.handle(MILESTONES.UPDATE.MILESTONE, unavailable('Milestones'));
-    router.handle(MILESTONES.DELETE.MILESTONE, unavailable('Milestones'));
-    router.handle(MILESTONES.ADD.TASK, unavailable('Milestones'));
-    router.handle(MILESTONES.TOGGLE.TASK, unavailable('Milestones'));
-  }
   registerNotesHandlers(router, services.notesService);
   registerPlannerHandlers(router, services.plannerService);
   registerGitHandlers(router, services.gitService, services.worktreeService);
