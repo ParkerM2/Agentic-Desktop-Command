@@ -12,7 +12,7 @@ import { join } from 'node:path';
 
 import { eq } from 'drizzle-orm';
 
-import { ALERTS_EVENTS } from '@shared/ipc/misc/alerts.channels';
+import { ALERTS_EVENTS } from '@shared/ipc/alerts';
 import { generateId } from '@shared/lib/id';
 import type { Alert, AlertLinkedTo, RecurringConfig } from '@shared/types';
 

@@ -4,8 +4,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { ALERTS } from '@shared/ipc/misc/alerts.channels';
-import type { UpdateAlertInput } from '@shared/ipc/misc/alerts.contract';
+import { ALERTS } from '@shared/ipc/alerts';
+import type { UpdateAlertInput } from '@shared/ipc/alerts';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

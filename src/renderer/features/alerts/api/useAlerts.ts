@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { ALERTS } from '@shared/ipc/misc/alerts.channels';
+import { ALERTS } from '@shared/ipc/alerts';
 import type { RecurringConfig, AlertLinkedTo } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';

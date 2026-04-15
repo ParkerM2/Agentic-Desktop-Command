@@ -8,6 +8,12 @@
 
 
 import type {
+  AlertLinkedToSchema,
+  AlertSchema,
+  AlertTypeSchema,
+  RecurringConfigSchema,
+} from '../ipc/alerts';
+import type {
   AgentActivitySummarySchema,
   BriefingConfigSchema,
   DailyBriefingSchema,
@@ -28,12 +34,6 @@ import type {
   WorkoutSchema,
   WorkoutTypeSchema,
 } from '../ipc/fitness/schemas';
-import type {
-  AlertLinkedToSchema,
-  AlertSchema,
-  AlertTypeSchema,
-  RecurringConfigSchema,
-} from '../ipc/misc/alerts.contract';
 import type {
   ChangeCategorySchema,
   ChangelogEntrySchema,

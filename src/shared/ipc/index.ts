@@ -9,6 +9,7 @@
  */
 
 import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
+import { alertsEvents, alertsInvoke } from './alerts';
 import {
   appEvents,
   appInvoke,
@@ -32,8 +33,6 @@ import { githubEvents, githubInvoke } from './github';
 import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import {
-  alertsEvents,
-  alertsInvoke,
   calendarInvoke,
   changelogInvoke,
   ideasEvents,
@@ -458,7 +457,7 @@ export {
   AlertSchema,
   AlertTypeSchema,
   RecurringConfigSchema,
-} from './misc/alerts.contract';
+} from './alerts';
 
 export {
   ChangeCategorySchema,

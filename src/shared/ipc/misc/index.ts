@@ -5,16 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Alerts ──
-export {
-  AlertLinkedToSchema,
-  AlertSchema,
-  alertsEvents,
-  alertsInvoke,
-  AlertTypeSchema,
-  RecurringConfigSchema,
-} from './alerts.contract';
-
 // ── Calendar ──
 export { calendarInvoke } from './calendar.contract';
 

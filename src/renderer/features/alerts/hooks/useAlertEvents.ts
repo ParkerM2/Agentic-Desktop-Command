@@ -4,7 +4,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { ALERTS_EVENTS } from '@shared/ipc/misc/alerts.channels';
+import { ALERTS_EVENTS } from '@shared/ipc/alerts';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
