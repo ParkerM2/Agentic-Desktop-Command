@@ -77,31 +77,31 @@ export const testSuiteInvoke = {
     input: z.object({ yaml: z.string() }),
     output: z.object({ filePath: z.string(), committed: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW.CREATE]: {
+  [TEST_SUITE['BROWSER-VIEW'].CREATE]: {
     input: BrowserViewCreateInputSchema,
     output: z.object({ success: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW.NAVIGATE]: {
+  [TEST_SUITE['BROWSER-VIEW'].NAVIGATE]: {
     input: z.object({ url: z.string().url() }),
     output: z.object({ success: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW.BACK]: {
+  [TEST_SUITE['BROWSER-VIEW'].BACK]: {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW.FORWARD]: {
+  [TEST_SUITE['BROWSER-VIEW'].FORWARD]: {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW.RELOAD]: {
+  [TEST_SUITE['BROWSER-VIEW'].RELOAD]: {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW['SET-BOUNDS']]: {
+  [TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS']]: {
     input: BrowserViewBoundsSchema,
     output: z.object({ success: z.boolean() }),
   },
-  [TEST_SUITE.BROWSER_VIEW.DESTROY]: {
+  [TEST_SUITE['BROWSER-VIEW'].DESTROY]: {
     input: z.object({}),
     output: z.object({ success: z.boolean() }),
   },

@@ -7,7 +7,7 @@ export const TEST_SUITE = domain('test-suite', {
   DELETE: ['script'],
   RUN: ['script'],
   EXPORT: ['file', 'github', 'ci-preview', 'ci-commit'],
-  BROWSER_VIEW: ['create', 'navigate', 'back', 'forward', 'reload', 'set-bounds', 'destroy'],
+  'BROWSER-VIEW': ['create', 'navigate', 'back', 'forward', 'reload', 'set-bounds', 'destroy'],
   CONFIG: ['get', 'save', 'list', 'delete', 'set-active'],
   SCREENSHOT: ['list', 'export-zip', 'copy'],
 });
