@@ -1,7 +1,7 @@
 /**
- * QA Recorder IPC Schemas
+ * Test Suite IPC Schemas
  *
- * Zod schemas for scripts, steps, runs, and export operations.
+ * Zod schemas for scripts, steps, runs, configs, screenshots, and export operations.
  */
 
 import { z } from 'zod';
@@ -56,7 +56,7 @@ export const QaStepAssertSchema = z.object({
   expected: z.string(),
 });
 
-export const QaRecorderStepSchema = z.discriminatedUnion('type', [
+export const TestSuiteStepSchema = z.discriminatedUnion('type', [
   QaStepNavigateSchema,
   QaStepClickSchema,
   QaStepFillSchema,
@@ -72,7 +72,7 @@ export const QaScriptSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().optional(),
-  steps: z.array(QaRecorderStepSchema),
+  steps: z.array(TestSuiteStepSchema),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -109,4 +109,48 @@ export const QaRunReportSchema = z.object({
   outputLines: z.array(z.string()),
   startedAt: z.string(),
   completedAt: z.string().optional(),
+});
+
+// ─── Config ───────────────────────────────────────────────────
+
+export const TestSuiteConfigSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  targetUrl: z.string().url(),
+  viewportWidth: z.number().int().positive(),
+  viewportHeight: z.number().int().positive(),
+  screenshotMode: z.enum(['smart', 'per-click', 'per-nav', 'per-form', 'per-assertion', 'manual']),
+  testDirectory: z.string(),
+  saveScreenshotsToTemp: z.boolean(),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type TestSuiteConfig = z.infer<typeof TestSuiteConfigSchema>;
+
+// ─── Screenshot ───────────────────────────────────────────────
+
+export const TestSuiteScreenshotSchema = z.object({
+  id: z.string(),
+  runId: z.string(),
+  scriptId: z.string(),
+  stepIndex: z.number().int(),
+  stepLabel: z.string(),
+  trigger: z.enum(['nav', 'click', 'fill', 'assert', 'manual']),
+  filePath: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  capturedAt: z.string(),
+});
+export type TestSuiteScreenshot = z.infer<typeof TestSuiteScreenshotSchema>;
+
+// ─── Browser View ─────────────────────────────────────────────
+
+export const BrowserViewBoundsSchema = z.object({
+  x: z.number().int(), y: z.number().int(),
+  width: z.number().int().positive(), height: z.number().int().positive(),
+});
+export const BrowserViewCreateInputSchema = z.object({
+  url: z.string().url(),
+  bounds: BrowserViewBoundsSchema,
 });
