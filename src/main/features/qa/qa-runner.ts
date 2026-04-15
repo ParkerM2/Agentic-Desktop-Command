@@ -25,7 +25,7 @@ import type {
   QaSession,
   QaSessionStatus,
 } from './qa-types';
-import type { NotificationManager } from '../integrations/notifications';
+import type { NotificationManager } from '../notifications';
 
 export function createQaRunner(
   busSessionManager: BusSessionManager,

@@ -108,7 +108,7 @@ import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
-import type { NotificationManager } from '../features/integrations/notifications';
+import type { NotificationManager } from '../features/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';

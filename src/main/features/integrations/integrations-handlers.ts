@@ -5,9 +5,9 @@
  */
 
 import { registerCalendarHandlers } from './calendar';
-import { registerEmailHandlers } from './email/email-handlers';
+import { registerEmailHandlers } from '../email/email-handlers';
 import { registerGitHubHandlers } from './github-integration';
-import { registerNotificationHandlers } from './notifications/notification-handlers';
+import { registerNotificationHandlers } from '../notifications/notification-handlers';
 import { registerSpotifyHandlers } from './spotify';
 
 import type { IntegrationsService } from './integrations-service';

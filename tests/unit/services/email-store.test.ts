@@ -51,13 +51,13 @@ const mockEncryptSecret = vi.fn((value: string) => ({
   useSafeStorage: false,
 }));
 
-vi.mock('@main/features/integrations/email/email-encryption', () => ({
+vi.mock('@main/features/email/email-encryption', () => ({
   encryptSecret: mockEncryptSecret,
 }));
 
 // Import after mocks are set up
 const { loadEmailConfig, saveEmailConfig, migrateEmailConfigFromJson } = await import(
-  '@main/features/integrations/email/email-store'
+  '@main/features/email/email-store'
 );
 
 // ── Helpers ─────────────────────────────────────────────────────────

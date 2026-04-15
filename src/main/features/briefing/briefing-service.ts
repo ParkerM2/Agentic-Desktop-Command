@@ -22,7 +22,7 @@ import type { BusSessionManager } from '../../bus/session-manager';
 import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 import type { ClaudeClient } from '../claude/claude-client';
-import type { NotificationManager } from '../integrations/notifications';
+import type { NotificationManager } from '../notifications';
 import type { ProgressService } from '../progress/progress-service';
 import type { ProjectService } from '../projects/project-service';
 
