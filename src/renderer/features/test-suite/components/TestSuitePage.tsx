@@ -38,7 +38,7 @@ import { StepPanel } from './StepPanel';
 import { WebviewPanel } from './WebviewPanel';
 
 interface TestSuitePageProps {
-  /** Path to the qa-recorder preload script; required for webview to function */
+  /** Path to the test-suite preload script; required for webview to function */
   preloadPath?: string;
 }
 

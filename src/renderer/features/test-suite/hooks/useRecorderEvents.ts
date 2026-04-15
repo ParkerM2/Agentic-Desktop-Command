@@ -1,5 +1,5 @@
 /**
- * useRecorderEvents — Subscribe to QA Recorder IPC events
+ * useRecorderEvents — Subscribe to Test Suite IPC events
  *
  * Bridges real-time recording/run output events from main process
  * to React Query cache and local store state.
@@ -7,7 +7,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { QA_RECORDER_EVENTS } from '@shared/ipc/qa-recorder/channels';
+import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { useToastStore } from '@renderer/shared/stores';
@@ -23,17 +23,17 @@ export function useRecorderEvents() {
   const setRunning = useTestSuiteStore((s) => s.setRunning);
 
   // Streaming output line → append to local store
-  useIpcEvent(QA_RECORDER_EVENTS.OUTPUT.LINE, (data) => {
+  useIpcEvent(TEST_SUITE_EVENTS.OUTPUT.LINE, (data) => {
     appendOutputLine(data.line);
   });
 
   // Screenshot captured during run → invalidate run cache
-  useIpcEvent(QA_RECORDER_EVENTS.RUN.SCREENSHOT, (data) => {
+  useIpcEvent(TEST_SUITE_EVENTS.RUN.SCREENSHOT, (data) => {
     void queryClient.invalidateQueries({ queryKey: testSuiteKeys.run(data.runId) });
   });
 
   // Run complete → update state, invalidate caches, show toast
-  useIpcEvent(QA_RECORDER_EVENTS.RUN.COMPLETE, (data) => {
+  useIpcEvent(TEST_SUITE_EVENTS.RUN.COMPLETED, (data) => {
     setRunning(false);
     setActiveRunId(data.runId);
     void queryClient.invalidateQueries({ queryKey: testSuiteKeys.run(data.runId) });

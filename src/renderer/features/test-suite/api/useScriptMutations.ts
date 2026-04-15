@@ -4,8 +4,8 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { QA_RECORDER } from '@shared/ipc/qa-recorder/channels';
-import type { QaRecorderStepSchema } from '@shared/ipc/qa-recorder/schemas';
+import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
+import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
@@ -15,7 +15,7 @@ import { testSuiteKeys } from './queryKeys';
 
 import type { z } from 'zod';
 
-export type TestSuiteStep = z.infer<typeof QaRecorderStepSchema>;
+export type TestSuiteStep = z.infer<typeof TestSuiteStepSchema>;
 
 /** Save (create or update) a QA script */
 export function useSaveScript() {
@@ -27,7 +27,7 @@ export function useSaveScript() {
       name: string;
       description?: string;
       steps: TestSuiteStep[];
-    }) => ipc(QA_RECORDER.SAVE.SCRIPT, data),
+    }) => ipc(TEST_SUITE.SAVE.SCRIPT, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: testSuiteKeys.scripts() });
     },
@@ -40,7 +40,7 @@ export function useDeleteScript() {
   const queryClient = useQueryClient();
   const { onError } = useMutationErrorToast();
   return useMutation({
-    mutationFn: ({ id }: { id: string }) => ipc(QA_RECORDER.DELETE.SCRIPT, { id }),
+    mutationFn: ({ id }: { id: string }) => ipc(TEST_SUITE.DELETE.SCRIPT, { id }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: testSuiteKeys.scripts() });
     },
@@ -53,7 +53,7 @@ export function useExportRun() {
   const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: ({ runId, format }: { runId: string; format: 'json' | 'html' | 'csv' }) =>
-      ipc(QA_RECORDER.EXPORT.FILE, { runId, format }),
+      ipc(TEST_SUITE.EXPORT.FILE, { runId, format }),
     onError: onError('export run'),
   });
 }

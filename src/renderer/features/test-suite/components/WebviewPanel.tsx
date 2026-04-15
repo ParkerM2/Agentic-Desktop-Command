@@ -2,7 +2,7 @@
  * WebviewPanel — Right panel hosting the Electron <webview> element
  *
  * Border turns red while recording. Accepts a preload script path
- * from the electron-configured qa-recorder preload.
+ * from the electron-configured test-suite preload.
  */
 
 import { useEffect, useRef } from 'react';
@@ -37,7 +37,7 @@ export function WebviewPanel({ initialUrl = 'about:blank', preloadPath }: Webvie
     if (!webview) return;
 
     const handleIpcMessage = (event: Electron.IpcMessageEvent) => {
-      if (event.channel === 'qa-recorder:step') {
+      if (event.channel === 'test-suite:step') {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         appendStep(event.args[0]);
       }

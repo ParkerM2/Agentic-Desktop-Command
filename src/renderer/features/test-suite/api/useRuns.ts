@@ -4,8 +4,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { QA_RECORDER } from '@shared/ipc/qa-recorder/channels';
-import type { QaRunSchema } from '@shared/ipc/qa-recorder/schemas';
+import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
+import type { QaRunSchema } from '@shared/ipc/test-suite/schemas';
 
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
@@ -21,7 +21,7 @@ export type QaRun = z.infer<typeof QaRunSchema>;
 export function useRuns(scriptId?: string) {
   return useQuery({
     queryKey: scriptId ? testSuiteKeys.runsByScript(scriptId) : testSuiteKeys.runs(),
-    queryFn: () => ipc(QA_RECORDER.LIST.RUNS, { scriptId }),
+    queryFn: () => ipc(TEST_SUITE.LIST.RUNS, { scriptId }),
     staleTime: 10_000,
   });
 }
@@ -30,7 +30,7 @@ export function useRuns(scriptId?: string) {
 export function useRun(runId: string | null) {
   return useQuery({
     queryKey: testSuiteKeys.run(runId ?? ''),
-    queryFn: () => ipc(QA_RECORDER.GET.RUN, { runId: runId ?? '' }),
+    queryFn: () => ipc(TEST_SUITE.GET.RUN, { runId: runId ?? '' }),
     enabled: runId !== null && runId.length > 0,
     staleTime: 5_000,
   });
@@ -47,7 +47,7 @@ export function useRunScript() {
     }: {
       scriptId: string;
       triggeredBy?: 'manual' | 'scheduled' | 'ci';
-    }) => ipc(QA_RECORDER.RUN.SCRIPT, { scriptId, triggeredBy }),
+    }) => ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, triggeredBy }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: testSuiteKeys.runs() });
     },
