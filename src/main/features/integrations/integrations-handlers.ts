@@ -4,10 +4,11 @@
  * Delegates to: email, notifications, spotify, github, calendar sub-modules.
  */
 
-import { registerCalendarHandlers } from './calendar';
 import { registerEmailHandlers } from '../email/email-handlers';
-import { registerGitHubHandlers } from './github-integration';
 import { registerNotificationHandlers } from '../notifications/notification-handlers';
+
+import { registerCalendarHandlers } from './calendar';
+import { registerGitHubHandlers } from './github-integration';
 import { registerSpotifyHandlers } from './spotify';
 
 import type { IntegrationsService } from './integrations-service';

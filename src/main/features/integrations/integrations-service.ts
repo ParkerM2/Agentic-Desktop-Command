@@ -5,14 +5,14 @@
  * into a single service registry entry.
  */
 
-import { createCalendarService } from './calendar';
 import { createEmailService } from '../email/email-service';
-import { createGitHubService } from './github-integration';
 import { createGitHubWatcher, createNotificationManager, createSlackWatcher } from '../notifications';
+
+import { createCalendarService } from './calendar';
+import { createGitHubService } from './github-integration';
 import { createSpotifyService } from './spotify';
 
 import type { CalendarService } from './calendar';
-import type { EmailService } from '../email/email-service';
 import type { GitHubService } from './github-integration';
 import type { NotificationManager } from '../notifications';
 import type { SpotifyService } from './spotify';
@@ -20,6 +20,7 @@ import type { OAuthManager } from '../../auth/oauth-manager';
 import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 import type { GitHubClient } from '../../mcp-servers/github/github-client';
+import type { EmailService } from '../email/email-service';
 
 // ── Interface ─────────────────────────────────────────────────
 

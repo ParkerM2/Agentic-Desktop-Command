@@ -7,8 +7,8 @@
 
 
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
-import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
 import { HUB_TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
+import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
 import type { HubConnection, HubConnectionStatus } from '@shared/types';
 
 import { decryptApiKey } from './hub-config-store';

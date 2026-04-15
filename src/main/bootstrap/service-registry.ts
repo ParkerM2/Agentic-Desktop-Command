@@ -28,7 +28,6 @@ import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
-import { createDockerService } from '../features/docker';
 import {
   createErrorCollector,
   createHealthRegistry,
@@ -44,6 +43,15 @@ import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
+import {
+  createCleanupService,
+  createConfigReader,
+  createDataMigrator,
+  createStorageInspector,
+  createUserDataMigrator,
+  createUserDataResolver,
+} from '../features/data-management';
+import { createDockerService } from '../features/docker';
 import { createFileTreeService } from '../features/files/files-service';
 import { createFitnessService } from '../features/fitness/fitness-service';
 import { createGitService } from '../features/git/git-service';
@@ -73,14 +81,6 @@ import { createSkillsResolver } from '../features/projects/skills-resolver';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
 import { createQaRecorderService } from '../features/qa-recorder';
-import {
-  createCleanupService,
-  createConfigReader,
-  createDataMigrator,
-  createStorageInspector,
-  createUserDataMigrator,
-  createUserDataResolver,
-} from '../features/data-management';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';

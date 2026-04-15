@@ -19,10 +19,10 @@ import type { AppUpdateService } from '../features/app/app-update-service';
 import type { ErrorCollector, HealthRegistry, HealthService } from '../features/app/health';
 import type { createWatchEvaluator } from '../features/assistant/watch-evaluator';
 import type { createBriefingService } from '../features/briefing/briefing-service';
+import type { CleanupService } from '../features/data-management';
 import type { createHubConnectionManager } from '../features/hub/hub-connection';
 import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
-import type { CleanupService } from '../features/data-management';
 import type { createTerminalService } from '../features/terminals/terminals-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
