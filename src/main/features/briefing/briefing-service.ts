@@ -24,7 +24,7 @@ import type { IpcRouter } from '../../ipc/router';
 import type { ClaudeClient } from '../claude/claude-client';
 import type { NotificationManager } from '../integrations/notifications';
 import type { ProgressService } from '../progress/progress-service';
-import type { ProjectService } from '../project/project-service';
+import type { ProjectService } from '../projects/project-service';
 
 const BRIEFING_READY_EVENT = BRIEFING_EVENTS.BRIEFING.READY;
 

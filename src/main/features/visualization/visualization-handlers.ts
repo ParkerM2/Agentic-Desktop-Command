@@ -9,7 +9,7 @@ import { VISUALIZATION } from '@shared/ipc/visualization/channels';
 
 import type { VisualizationService } from ".";
 import type { IpcRouter } from '../../ipc/router';
-import type { ProjectService } from "../project/project-service";
+import type { ProjectService } from "../projects/project-service";
 
 export function registerVisualizationHandlers(
   router: IpcRouter,
