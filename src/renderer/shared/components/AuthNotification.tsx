@@ -10,6 +10,8 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { AlertTriangle, ExternalLink, Settings, X } from 'lucide-react';
 
+import { ROUTES } from '@shared/constants';
+
 import { useClaudeAuth } from '@renderer/shared/hooks';
 
 // ── Component ────────────────────────────────────────────────
@@ -30,7 +32,7 @@ export function AuthNotification() {
   const isInstalled = auth.installed;
 
   function handleGoToSettings() {
-    void navigate({ to: '/settings' });
+    void navigate({ to: ROUTES.SETTINGS });
   }
 
   return (

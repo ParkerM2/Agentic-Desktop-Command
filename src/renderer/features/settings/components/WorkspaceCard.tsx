@@ -13,7 +13,7 @@ import { cn } from '@renderer/shared/lib/utils';
 import { Button } from '@ui';
 
 
-import { useDeleteWorkspace } from '@features/workspaces';
+import { useDeleteWorkspace } from '@features/workspace';
 
 interface WorkspaceCardProps {
   workspace: Workspace;

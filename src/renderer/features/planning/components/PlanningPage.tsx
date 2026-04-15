@@ -9,7 +9,7 @@ import { BarChart3, Lightbulb, Map } from 'lucide-react';
 
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
-import { IdeationPage } from '@features/ideation';
+import { IdeationPage } from '@features/ideas';
 import { InsightsPage } from '@features/insights';
 import { RoadmapPage } from '@features/roadmap';
 

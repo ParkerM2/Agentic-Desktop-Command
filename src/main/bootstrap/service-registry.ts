@@ -28,7 +28,6 @@ import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
-import { createDockerService } from '../features/app/docker';
 import {
   createErrorCollector,
   createHealthRegistry,
@@ -44,7 +43,16 @@ import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
-import { createFileTreeService } from '../features/file-tree/file-tree-service';
+import {
+  createCleanupService,
+  createConfigReader,
+  createDataMigrator,
+  createStorageInspector,
+  createUserDataMigrator,
+  createUserDataResolver,
+} from '../features/data-management';
+import { createDockerService } from '../features/docker';
+import { createFileTreeService } from '../features/files/files-service';
 import { createFitnessService } from '../features/fitness/fitness-service';
 import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
@@ -63,32 +71,24 @@ import { createMilestonesService } from '../features/milestones/milestones-servi
 import { createNotesService } from '../features/notes/notes-service';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
-import { createClaudeMdGenerator } from '../features/project/claudemd-generator';
-import { createCodebaseAnalyzer } from '../features/project/codebase-analyzer';
-import { createDocGenerator } from '../features/project/doc-generator';
-import { createGitHubRepoCreator } from '../features/project/github-repo-creator';
-import { createProjectService } from '../features/project/project-service';
-import { createSetupPipeline } from '../features/project/setup-pipeline';
-import { createSkillsResolver } from '../features/project/skills-resolver';
+import { createClaudeMdGenerator } from '../features/projects/claudemd-generator';
+import { createCodebaseAnalyzer } from '../features/projects/codebase-analyzer';
+import { createDocGenerator } from '../features/projects/doc-generator';
+import { createGitHubRepoCreator } from '../features/projects/github-repo-creator';
+import { createProjectService } from '../features/projects/project-service';
+import { createSetupPipeline } from '../features/projects/setup-pipeline';
+import { createSkillsResolver } from '../features/projects/skills-resolver';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
-import { createQaRecorderService } from '../features/qa/recorder';
-import {
-  createCleanupService,
-  createConfigReader,
-  createDataMigrator,
-  createStorageInspector,
-  createUserDataMigrator,
-  createUserDataResolver,
-} from '../features/settings/data-management';
+import { createQaRecorderService } from '../features/qa-recorder';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
-import { createTerminalService } from '../features/terminal/terminal-service';
+import { createTerminalService } from '../features/terminals/terminals-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import { createWorkspacesService } from '../features/workspaces/workspaces-service';
+import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
@@ -108,7 +108,7 @@ import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
-import type { NotificationManager } from '../features/integrations/notifications';
+import type { NotificationManager } from '../features/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';

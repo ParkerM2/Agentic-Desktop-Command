@@ -26,7 +26,7 @@ import type { MilestonesService } from '../milestones/milestones-service';
 import type { NotesService } from '../notes/notes-service';
 import type { PlannerService } from '../planner/planner-service';
 import type { ProgressService } from '../progress/progress-service';
-import type { ProjectService } from '../project/project-service';
+import type { ProjectService } from '../projects/project-service';
 import type { GitToolDeps } from './tool-handlers/git-tools';
 import type { WorkspaceSessionManager } from '../workspace/workspace-session-manager';
 

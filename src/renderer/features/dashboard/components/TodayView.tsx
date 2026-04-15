@@ -10,7 +10,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Card, CardContent, EmptyState } from '@ui';
 
-import { useDay } from '@features/personal';
+import { useDay } from '@features/planner';
 
 type TimeBlockType = TimeBlock['type'];
 

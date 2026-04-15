@@ -49,8 +49,8 @@ import {
   Text,
 } from '@ui';
 
-import { useAgentSessions } from '../api/useAgentSessions';
 import { useStopSession } from '../api/useAgentMutations';
+import { useAgentSessions } from '../api/useAgentSessions';
 import { useApplyWorkflow } from '../api/useWorkflowEngine';
 import { useWorkflowTemplate } from '../api/useWorkflowTemplates';
 import { useAgentDashboardStore } from '../store';

@@ -28,7 +28,7 @@ import {
   Textarea,
 } from '@ui';
 
-import { useWorkspaces } from '@features/workspaces';
+import { useWorkspaces } from '@features/workspace';
 
 import { useRemoveProject, useUpdateProject } from '../api/useProjects';
 

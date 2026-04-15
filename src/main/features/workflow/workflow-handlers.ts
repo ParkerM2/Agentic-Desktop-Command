@@ -9,7 +9,7 @@
  * No business logic here — all logic delegates to services.
  */
 
-import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import { TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
 import { WORKFLOW, WORKFLOW_EVENTS } from '@shared/ipc/workflow/channels';
 import { WORKFLOW_ENGINE } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES, WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';

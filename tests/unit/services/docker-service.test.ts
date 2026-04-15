@@ -19,7 +19,7 @@ vi.mock('node:util', () => ({
 }));
 
 const { createDockerService } = await import(
-  '@main/features/app/docker/docker-service'
+  '@main/features/docker/docker-service'
 );
 
 // ── Helpers ───────────────────────────────────────────────────

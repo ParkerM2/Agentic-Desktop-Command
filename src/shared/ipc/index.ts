@@ -30,6 +30,7 @@ import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
 import { devicesInvoke, hubEvents, hubInvoke } from './hub';
+import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import {
   alertsEvents,
   alertsInvoke,
@@ -63,7 +64,6 @@ import {
   voiceInvoke,
 } from './settings';
 import { spotifyInvoke } from './spotify';
-import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
 import { visualizationInvoke } from './visualization';
 import { workflowEvents, workflowInvoke } from './workflow';
@@ -357,7 +357,7 @@ export {
   HubTaskSchema,
   HubTaskStatusSchema,
   TaskStatusSchema,
-} from './tasks';
+} from './hub-tasks';
 
 export { TerminalSessionSchema } from './terminals';
 

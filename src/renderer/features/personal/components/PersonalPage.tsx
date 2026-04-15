@@ -14,22 +14,22 @@ import { usePersonalStore } from '../store';
 // ── Lazy Tab Content ─────────────────────────────────────────
 
 const NotesPage = lazy(() =>
-  import('../notes/components/NotesPage').then((m) => ({ default: m.NotesPage })),
+  import('@features/notes/components/NotesPage').then((m) => ({ default: m.NotesPage })),
 );
 const FitnessPage = lazy(() =>
-  import('../fitness/components/FitnessPage').then((m) => ({ default: m.FitnessPage })),
+  import('@features/fitness/components/FitnessPage').then((m) => ({ default: m.FitnessPage })),
 );
 const PlannerPage = lazy(() =>
-  import('../planner/components/PlannerPage').then((m) => ({ default: m.PlannerPage })),
+  import('@features/planner/components/PlannerPage').then((m) => ({ default: m.PlannerPage })),
 );
 const BriefingPage = lazy(() =>
-  import('../briefing/components/BriefingPage').then((m) => ({ default: m.BriefingPage })),
+  import('@features/briefing/components/BriefingPage').then((m) => ({ default: m.BriefingPage })),
 );
 const AlertsPage = lazy(() =>
-  import('../alerts/components/AlertsPage').then((m) => ({ default: m.AlertsPage })),
+  import('@features/alerts/components/AlertsPage').then((m) => ({ default: m.AlertsPage })),
 );
 const ChangelogPage = lazy(() =>
-  import('../changelog/components/ChangelogPage').then((m) => ({ default: m.ChangelogPage })),
+  import('@features/changelog/components/ChangelogPage').then((m) => ({ default: m.ChangelogPage })),
 );
 
 // ── Constants ────────────────────────────────────────────────
