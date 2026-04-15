@@ -8,7 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { QaExporter, QaStep } from '@main/features/qa-recorder/exporter';
+import type { QaExporter, QaStep } from '@main/features/test-suite/exporter';
 
 // ── Mock node:fs ──────────────────────────────────────────────────────────
 // Must be called before any import that resolves the mocked module.
@@ -20,7 +20,7 @@ vi.mock('node:fs', () => ({
 
 // Dynamic imports run after vi.mock() hoisting is complete
 const { mkdirSync, writeFileSync } = await import('node:fs');
-const { createExporter } = await import('@main/features/qa-recorder/exporter');
+const { createExporter } = await import('@main/features/test-suite/exporter');
 
 const mockMkdirSync = mkdirSync as ReturnType<typeof vi.fn>;
 const mockWriteFileSync = writeFileSync as ReturnType<typeof vi.fn>;

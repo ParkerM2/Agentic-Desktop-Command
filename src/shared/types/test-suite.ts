@@ -1,5 +1,5 @@
 /**
- * QA Recorder types
+ * Test Suite types
  */
 
 export type QaRunStatus = 'running' | 'passed' | 'failed' | 'cancelled';
@@ -42,7 +42,7 @@ export interface QaStepAssert {
   expected: string;
 }
 
-export type QaRecorderStep =
+export type TestSuiteStep =
   | QaStepNavigate
   | QaStepClick
   | QaStepFill
@@ -55,7 +55,7 @@ export interface QaScript {
   id: string;
   name: string;
   description?: string;
-  steps: QaRecorderStep[];
+  steps: TestSuiteStep[];
   createdAt: string;
   updatedAt: string;
 }

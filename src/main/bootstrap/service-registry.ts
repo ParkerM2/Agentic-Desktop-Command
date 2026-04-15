@@ -57,6 +57,7 @@ import { createFitnessService } from '../features/fitness/fitness-service';
 import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
+import { createGitHubService } from '../features/github';
 import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
@@ -79,13 +80,12 @@ import { createSetupPipeline } from '../features/projects/setup-pipeline';
 import { createSkillsResolver } from '../features/projects/skills-resolver';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
-import { createQaRecorderService } from '../features/qa-recorder';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
-import { createGitHubService } from '../features/github';
 import { createSpotifyService } from '../features/spotify';
 import { createTerminalService } from '../features/terminals/terminals-service';
+import { createTestSuiteService } from '../features/test-suite';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
@@ -434,9 +434,9 @@ export function createServiceRegistry(
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
-  const qaRecorderService = lazyService(() => createQaRecorderService(db));
+  const testSuiteService = lazyService(() => createTestSuiteService(db));
   const qaTrigger = lazyService(() =>
-    createQaTrigger({ qaRunner, busSessionManager, progressService, router, qaRecorderService }),
+    createQaTrigger({ qaRunner, busSessionManager, progressService, router, testSuiteService }),
   );
 
   // ─── Tier 1: App update + hotkeys ────────────────────────────
@@ -564,7 +564,7 @@ export function createServiceRegistry(
     hubApiClient,
     hubAuthService,
     qaRunner,
-    qaRecorderService,
+    testSuiteService,
     workflowTemplateService,
     cleanupService,
     storageInspector,

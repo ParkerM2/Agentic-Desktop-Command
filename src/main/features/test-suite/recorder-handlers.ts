@@ -1,18 +1,18 @@
 /**
- * QA Recorder IPC Handlers
+ * Test Suite IPC Handlers
  *
- * Bridges qa-recorder service to the renderer via IPC.
+ * Bridges test-suite service to the renderer via IPC.
  * Thin handlers — all logic delegated to service.
  */
 
-import { QA_RECORDER, QA_RECORDER_EVENTS } from '@shared/ipc/qa-recorder/channels';
+import { TEST_SUITE, TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 import type {
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
   QaScriptSchema,
-  QaRecorderStepSchema,
-} from '@shared/ipc/qa-recorder/schemas';
+  TestSuiteStepSchema,
+} from '@shared/ipc/test-suite/schemas';
 
 import type { IpcRouter } from '../../ipc/router';
 
@@ -25,12 +25,12 @@ type QaScript = InferZodType<typeof QaScriptSchema>;
 type QaRun = InferZodType<typeof QaRunSchema>;
 type QaRunStatus = InferZodType<typeof QaRunStatusSchema>;
 type QaRunReport = InferZodType<typeof QaRunReportSchema>;
-type QaRecorderStep = InferZodType<typeof QaRecorderStepSchema>;
+type TestSuiteStep = InferZodType<typeof TestSuiteStepSchema>;
 
 // ─── Service Interface ─────────────────────────────────────────
 // Defined locally until Task #34 merges.
 
-export interface QaRecorderRunEvent {
+export interface TestSuiteRunEvent {
   type: 'output' | 'screenshot' | 'complete';
   runId: string;
   line?: string;
@@ -41,14 +41,14 @@ export interface QaRecorderRunEvent {
   report?: QaRunReport;
 }
 
-export interface QaRecorderService {
+export interface TestSuiteService {
   listScripts: () => Promise<QaScript[]>;
   getScript: (id: string) => Promise<QaScript | null>;
   saveScript: (input: {
     id?: string;
     name: string;
     description?: string;
-    steps: QaRecorderStep[];
+    steps: TestSuiteStep[];
   }) => Promise<QaScript>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
   runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' }) => Promise<{ runId: string }>;
@@ -56,20 +56,20 @@ export interface QaRecorderService {
   listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
   exportGithub: (input: { runId: string; owner: string; repo: string }) => Promise<{ issueUrl: string }>;
-  onRunEvent: (listener: (event: QaRecorderRunEvent) => void) => void;
+  onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
 
-export function registerQaRecorderHandlers(
+export function registerTestSuiteHandlers(
   router: IpcRouter,
-  qaRecorderService: QaRecorderService,
+  testSuiteService: TestSuiteService,
 ): void {
   // ── Event forwarding ──────────────────────────────────────────
 
-  qaRecorderService.onRunEvent((event) => {
+  testSuiteService.onRunEvent((event) => {
     if (event.type === 'output' && event.line !== undefined && event.timestamp !== undefined) {
-      router.emit(QA_RECORDER_EVENTS.OUTPUT.LINE, {
+      router.emit(TEST_SUITE_EVENTS.OUTPUT.LINE, {
         runId: event.runId,
         line: event.line,
         timestamp: event.timestamp,
@@ -82,7 +82,7 @@ export function registerQaRecorderHandlers(
       event.stepIndex !== undefined &&
       event.timestamp !== undefined
     ) {
-      router.emit(QA_RECORDER_EVENTS.RUN.SCREENSHOT, {
+      router.emit(TEST_SUITE_EVENTS.RUN.SCREENSHOT, {
         runId: event.runId,
         screenshotPath: event.screenshotPath,
         stepIndex: event.stepIndex,
@@ -91,7 +91,7 @@ export function registerQaRecorderHandlers(
     }
 
     if (event.type === 'complete' && event.status !== undefined && event.report !== undefined) {
-      router.emit(QA_RECORDER_EVENTS.RUN.COMPLETE, {
+      router.emit(TEST_SUITE_EVENTS.RUN.COMPLETED, {
         runId: event.runId,
         status: event.status,
         report: event.report,
@@ -101,39 +101,39 @@ export function registerQaRecorderHandlers(
 
   // ── Invoke handlers ───────────────────────────────────────────
 
-  router.handle(QA_RECORDER.LIST.SCRIPTS, () =>
-    qaRecorderService.listScripts(),
+  router.handle(TEST_SUITE.LIST.SCRIPTS, () =>
+    testSuiteService.listScripts(),
   );
 
-  router.handle(QA_RECORDER.GET.SCRIPT, ({ id }) =>
-    qaRecorderService.getScript(id),
+  router.handle(TEST_SUITE.GET.SCRIPT, ({ id }) =>
+    testSuiteService.getScript(id),
   );
 
-  router.handle(QA_RECORDER.SAVE.SCRIPT, (input) =>
-    qaRecorderService.saveScript(input),
+  router.handle(TEST_SUITE.SAVE.SCRIPT, (input) =>
+    testSuiteService.saveScript(input),
   );
 
-  router.handle(QA_RECORDER.DELETE.SCRIPT, ({ id }) =>
-    qaRecorderService.deleteScript(id),
+  router.handle(TEST_SUITE.DELETE.SCRIPT, ({ id }) =>
+    testSuiteService.deleteScript(id),
   );
 
-  router.handle(QA_RECORDER.RUN.SCRIPT, (input) =>
-    qaRecorderService.runScript(input),
+  router.handle(TEST_SUITE.RUN.SCRIPT, (input) =>
+    testSuiteService.runScript(input),
   );
 
-  router.handle(QA_RECORDER.GET.RUN, ({ runId }) =>
-    qaRecorderService.getRun(runId),
+  router.handle(TEST_SUITE.GET.RUN, ({ runId }) =>
+    testSuiteService.getRun(runId),
   );
 
-  router.handle(QA_RECORDER.LIST.RUNS, (input) =>
-    qaRecorderService.listRuns(input),
+  router.handle(TEST_SUITE.LIST.RUNS, (input) =>
+    testSuiteService.listRuns(input),
   );
 
-  router.handle(QA_RECORDER.EXPORT.FILE, (input) =>
-    qaRecorderService.exportFile(input),
+  router.handle(TEST_SUITE.EXPORT.FILE, (input) =>
+    testSuiteService.exportFile(input),
   );
 
-  router.handle(QA_RECORDER.EXPORT.GITHUB, (input) =>
-    qaRecorderService.exportGithub(input),
+  router.handle(TEST_SUITE.EXPORT.GITHUB, (input) =>
+    testSuiteService.exportGithub(input),
   );
 }

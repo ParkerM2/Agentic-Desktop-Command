@@ -10,8 +10,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createScriptStore } from '@main/features/qa-recorder/script-store';
-import type { QaScript, ScriptStore } from '@main/features/qa-recorder/script-store';
+import { createScriptStore } from '@main/features/test-suite/script-store';
+import type { QaScript, ScriptStore } from '@main/features/test-suite/script-store';
 
 // ── DB stub factory ────────────────────────────────────────────────────────
 

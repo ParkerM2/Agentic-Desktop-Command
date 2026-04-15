@@ -1,11 +1,11 @@
 /**
- * QA Recorder Service — Factory
+ * Test Suite Service — Factory
  *
  * Composes script store, runner, and exporter into a single facade that
  * satisfies the IPC handler interface expected by recorder-handlers.ts.
  */
 
-import type { QaRecorderStepSchema } from '@shared/ipc/qa-recorder/schemas';
+import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
 import { createExporter } from './exporter';
 import { createRunner } from './runner';
@@ -16,7 +16,7 @@ import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
 import type { ScriptStore, QaScript } from './script-store';
 import type { AdcDatabase } from '../../db';
 
-type QaRecorderStep = typeof QaRecorderStepSchema extends { _output: infer T } ? T : never;
+type TestSuiteStep = typeof TestSuiteStepSchema extends { _output: infer T } ? T : never;
 
 // ─── IPC-compatible run record (triggeredBy without 'auto-trigger') ──
 
@@ -34,7 +34,7 @@ export interface QaRunIpcRecord {
 
 // ─── Run event listener type ──────────────────────────────────
 
-export interface QaRecorderRunEvent {
+export interface TestSuiteRunEvent {
   type: 'output' | 'screenshot' | 'complete';
   runId: string;
   line?: string;
@@ -59,7 +59,7 @@ export interface QaRecorderRunEvent {
 
 // ─── Facade interface (satisfies recorder-handlers.ts) ────────
 
-export interface QaRecorderService {
+export interface TestSuiteService {
   // Sub-services (used by qa-trigger.ts and other internal consumers)
   scriptStore: ScriptStore;
   runner: QaRunner;
@@ -72,7 +72,7 @@ export interface QaRecorderService {
     id?: string;
     name: string;
     description?: string;
-    steps: QaRecorderStep[];
+    steps: TestSuiteStep[];
   }) => Promise<QaScript>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
   runScript: (input: {
@@ -90,22 +90,22 @@ export interface QaRecorderService {
     owner: string;
     repo: string;
   }) => Promise<{ issueUrl: string }>;
-  onRunEvent: (listener: (event: QaRecorderRunEvent) => void) => void;
+  onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
 }
 
-export function createQaRecorderService(db: AdcDatabase): QaRecorderService {
+export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
   const scriptStore = createScriptStore(db);
-  const runEventListeners: Array<(event: QaRecorderRunEvent) => void> = [];
+  const runEventListeners: Array<(event: TestSuiteRunEvent) => void> = [];
 
   const sharedHandlers: RunnerEventHandlers = {
     onLine(runId, line, timestamp) {
-      const event: QaRecorderRunEvent = { type: 'output', runId, line, timestamp };
+      const event: TestSuiteRunEvent = { type: 'output', runId, line, timestamp };
       for (const listener of runEventListeners) listener(event);
     },
     onComplete(runId, status, record) {
       const startedMs = new Date(record.startedAt).getTime();
       const completedMs = record.completedAt ? new Date(record.completedAt).getTime() : Date.now();
-      const event: QaRecorderRunEvent = {
+      const event: TestSuiteRunEvent = {
         type: 'complete',
         runId,
         status,
