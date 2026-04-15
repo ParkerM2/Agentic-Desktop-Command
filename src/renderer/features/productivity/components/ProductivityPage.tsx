@@ -6,9 +6,9 @@ import { Bell, Calendar, CalendarDays, Globe, Headphones, LayoutGrid, Newspaper,
 
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
-import { IntegrationsPage } from '@features/integrations';
 import { AlertsPage } from '@features/alerts';
 import { BriefingPage } from '@features/briefing';
+import { IntegrationsPage } from '@features/integrations';
 import { NotesPage } from '@features/notes';
 import { PlannerPage } from '@features/planner';
 
