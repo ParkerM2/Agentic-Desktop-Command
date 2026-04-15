@@ -16,14 +16,3 @@ export const HUB_EVENTS = events('hub', {
   PROJECT: ['updated'],
 });
 
-// ─── Device channels (absorbed from misc/devices) ─────────────
-
-export const DEVICES = domain('devices', {
-  LIST: ['all'],
-  REGISTER: ['device'],
-  HEARTBEAT: ['device'],
-  UPDATE: ['device'],
-});
-
-// ─── Backwards-compatible alias ───────────────────────────────
-// Consumers can import DEVICES from hub/ instead of misc/devices.

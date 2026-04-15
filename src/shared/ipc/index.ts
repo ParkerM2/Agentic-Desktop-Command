@@ -27,12 +27,13 @@ import { changelogInvoke } from './changelog';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
+import { devicesInvoke } from './devices';
 import { emailEvents, emailInvoke } from './email';
 import { filesInvoke } from './files';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
-import { devicesInvoke, hubEvents, hubInvoke } from './hub';
+import { hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
@@ -282,7 +283,7 @@ export {
   WorkspaceSettingsSchema,
 } from './misc';
 
-export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './hub';
+export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './devices';
 
 export {
   ScreenPermissionStatusSchema,
