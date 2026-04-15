@@ -5,9 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── MCP ──
-export { mcpInvoke } from './mcp.contract';
-
 // ── Screen ──
 export {
   screenInvoke,
