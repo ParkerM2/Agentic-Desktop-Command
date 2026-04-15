@@ -1,16 +1,12 @@
 /**
- * Spotify Integration — service and IPC handlers.
+ * Spotify Service — wraps the Spotify client with OAuth token management.
  *
- * Service wraps the Spotify client with OAuth token management.
  * Maps raw API responses to the IPC contract shapes.
  */
-
-import { SPOTIFY } from '@shared/ipc/spotify/channels';
 
 import { createSpotifyClient } from '../../mcp-servers/spotify/spotify-client';
 
 import type { OAuthManager } from '../../auth/oauth-manager';
-import type { IpcRouter } from '../../ipc/router';
 
 // ── Interface ─────────────────────────────────────────────────
 
@@ -118,40 +114,4 @@ export function createSpotifyService(deps: { oauthManager: OAuthManager }): Spot
       return await client.addToQueue(params);
     },
   };
-}
-
-// ── Handlers ──────────────────────────────────────────────────
-
-export function registerSpotifyHandlers(router: IpcRouter, service: SpotifyService): void {
-  router.handle(SPOTIFY.GET.PLAYBACK, async () => {
-    return await service.getPlayback();
-  });
-
-  router.handle(SPOTIFY.PLAY.TRACK, async (params) => {
-    return await service.play(params);
-  });
-
-  router.handle(SPOTIFY.PAUSE.TRACK, async () => {
-    return await service.pause();
-  });
-
-  router.handle(SPOTIFY.SKIP.NEXT, async () => {
-    return await service.next();
-  });
-
-  router.handle(SPOTIFY.SKIP.PREVIOUS, async () => {
-    return await service.previous();
-  });
-
-  router.handle(SPOTIFY.SEARCH.TRACKS, async (params) => {
-    return await service.search(params);
-  });
-
-  router.handle(SPOTIFY.SET.VOLUME, async (params) => {
-    return await service.setVolume(params);
-  });
-
-  router.handle(SPOTIFY.ADD['TO-QUEUE'], async (params) => {
-    return await service.addToQueue(params);
-  });
 }

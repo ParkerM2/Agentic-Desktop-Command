@@ -83,6 +83,7 @@ import { createQaRecorderService } from '../features/qa-recorder';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
+import { createSpotifyService } from '../features/spotify';
 import { createTerminalService } from '../features/terminals/terminals-service';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
@@ -352,7 +353,7 @@ export function createServiceRegistry(
   // Convenience accessors — expose sub-services from the unified service
   const emailService = lazyService(() => integrationsService.email);
   const notificationManager = lazyService(() => integrationsService.notifications);
-  const spotifyService = lazyService(() => integrationsService.spotify);
+  const spotifyService = lazyService(() => createSpotifyService({ oauthManager }));
   const githubService = lazyService(() => integrationsService.github);
   const calendarService = lazyService(() => integrationsService.calendar);
 

@@ -50,6 +50,7 @@ import { registerScreenHandlers } from '../features/settings/screen';
 import { registerSettingsHandlers } from '../features/settings/settings-handlers';
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
+import { registerSpotifyHandlers } from '../features/spotify';
 import { registerTerminalHandlers } from '../features/terminals/terminals-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
@@ -89,7 +90,6 @@ import type { IdeasService } from '../features/ideas/ideas-service';
 import type { InsightsService } from '../features/insights/insights-service';
 import type { CalendarService } from '../features/integrations/calendar';
 import type { GitHubService } from '../features/integrations/github-integration';
-import type { SpotifyService } from '../features/integrations/spotify';
 import type { MergeService } from '../features/merge/merge-service';
 import type { NotesService } from '../features/notes/notes-service';
 import type { NotificationManager } from '../features/notifications';
@@ -103,6 +103,7 @@ import type { QaRecorderService } from '../features/qa-recorder';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
+import type { SpotifyService } from '../features/spotify';
 import type { TerminalService } from '../features/terminals/terminals-service';
 import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
@@ -212,10 +213,10 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerIntegrationsHandlers(router, {
     email: services.emailService,
     notifications: services.notificationManager,
-    spotify: services.spotifyService,
     github: services.githubService,
     calendar: services.calendarService,
   });
+  registerSpotifyHandlers(router, services.spotifyService);
   registerClaudeHandlers(router, services.claudeClient);
   if (services.changelogService) {
     registerChangelogHandlers(router, services.changelogService);

@@ -1,8 +1,9 @@
 /**
  * Integrations Service — Unified factory for all integration sub-domains.
  *
- * Consolidates: email, notifications, spotify, github, calendar
- * into a single service registry entry.
+ * Consolidates: email, notifications, github, calendar
+ * into a single service registry entry. Spotify has been extracted to
+ * its own top-level feature folder (`src/main/features/spotify/`).
  */
 
 import { createEmailService } from '../email/email-service';
@@ -10,24 +11,21 @@ import { createGitHubWatcher, createNotificationManager, createSlackWatcher } fr
 
 import { createCalendarService } from './calendar';
 import { createGitHubService } from './github-integration';
-import { createSpotifyService } from './spotify';
 
 import type { CalendarService } from './calendar';
 import type { GitHubService } from './github-integration';
-import type { NotificationManager } from '../notifications';
-import type { SpotifyService } from './spotify';
 import type { OAuthManager } from '../../auth/oauth-manager';
 import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
 import type { GitHubClient } from '../../mcp-servers/github/github-client';
 import type { EmailService } from '../email/email-service';
+import type { NotificationManager } from '../notifications';
 
 // ── Interface ─────────────────────────────────────────────────
 
 export interface IntegrationsService {
   email: EmailService;
   notifications: NotificationManager;
-  spotify: SpotifyService;
   github: GitHubService;
   calendar: CalendarService;
 }
@@ -69,9 +67,8 @@ export function createIntegrationsService(deps: IntegrationsServiceDeps): Integr
     return mgr;
   })();
 
-  const spotify = createSpotifyService({ oauthManager });
   const github = createGitHubService({ client: githubCliClient, router });
   const calendar = createCalendarService({ oauthManager });
 
-  return { email, notifications, spotify, github, calendar };
+  return { email, notifications, github, calendar };
 }
