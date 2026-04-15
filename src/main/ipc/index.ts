@@ -52,7 +52,7 @@ import { registerSecurityHandlers } from '../features/settings/security-handlers
 import { registerSettingsHandlers } from '../features/settings/settings-handlers';
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
-import { registerTerminalHandlers } from '../features/terminal/terminal-handlers';
+import { registerTerminalHandlers } from '../features/terminals/terminals-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
@@ -106,7 +106,7 @@ import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } 
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
-import type { TerminalService } from '../features/terminal/terminal-service';
+import type { TerminalService } from '../features/terminals/terminals-service';
 import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';

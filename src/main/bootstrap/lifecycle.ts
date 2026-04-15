@@ -23,7 +23,7 @@ import type { createHubConnectionManager } from '../features/hub/hub-connection'
 import type { createNotificationManager } from '../features/integrations/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
 import type { CleanupService } from '../features/settings/data-management';
-import type { createTerminalService } from '../features/terminal/terminal-service';
+import type { createTerminalService } from '../features/terminals/terminals-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface LifecycleDeps {

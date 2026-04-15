@@ -4,7 +4,7 @@
 
 import { TERMINALS } from '@shared/ipc/terminals/channels';
 
-import type { TerminalService } from "./terminal-service";
+import type { TerminalService } from "./terminals-service";
 import type { IpcRouter } from '../../ipc/router';
 
 export function registerTerminalHandlers(router: IpcRouter, service: TerminalService): void {
