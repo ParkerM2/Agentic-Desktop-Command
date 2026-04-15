@@ -7,17 +7,17 @@
 
 import { create } from 'zustand';
 
-import type { QaRecorderStep } from './api/useScriptMutations';
+import type { TestSuiteStep } from './api/useScriptMutations';
 
 export interface OutputLine {
   id: number;
   text: string;
 }
 
-interface QaRecorderState {
+interface TestSuiteState {
   // Recording
   isRecording: boolean;
-  recordedSteps: QaRecorderStep[];
+  recordedSteps: TestSuiteStep[];
 
   // Run output
   isRunning: boolean;
@@ -32,7 +32,7 @@ interface QaRecorderState {
   startRecording: () => void;
   stopRecording: () => void;
   clearRecordedSteps: () => void;
-  appendStep: (step: QaRecorderStep) => void;
+  appendStep: (step: TestSuiteStep) => void;
 
   setRunning: (running: boolean) => void;
   setActiveRunId: (runId: string | null) => void;
@@ -42,7 +42,7 @@ interface QaRecorderState {
   selectScript: (id: string | null) => void;
 }
 
-export const useQaRecorderStore = create<QaRecorderState>((set) => ({
+export const useTestSuiteStore = create<TestSuiteState>((set) => ({
   isRecording: false,
   recordedSteps: [],
   isRunning: false,

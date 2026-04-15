@@ -22,7 +22,7 @@ import {
 } from '@ui';
 
 import { useRun } from '../api/useRuns';
-import { useQaRecorderStore } from '../store';
+import { useTestSuiteStore } from '../store';
 
 type BadgeVariant = 'default' | 'destructive' | 'secondary' | 'outline' | 'success';
 
@@ -34,9 +34,9 @@ const RUN_STATUS_VARIANT: Record<string, BadgeVariant> = {
 };
 
 export function RunOutputPanel() {
-  const isRunning = useQaRecorderStore((s) => s.isRunning);
-  const activeRunId = useQaRecorderStore((s) => s.activeRunId);
-  const outputLines = useQaRecorderStore((s) => s.outputLines);
+  const isRunning = useTestSuiteStore((s) => s.isRunning);
+  const activeRunId = useTestSuiteStore((s) => s.activeRunId);
+  const outputLines = useTestSuiteStore((s) => s.outputLines);
 
   const { data: run } = useRun(activeRunId);
   const scrollRef = useRef<HTMLDivElement>(null);

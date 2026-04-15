@@ -11,7 +11,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Card, CardContent } from '@ui';
 
-import { useQaRecorderStore } from '../store';
+import { useTestSuiteStore } from '../store';
 
 // Electron's webview tag is not in the standard React/HTML JSX namespace.
 // We use a loose ref type and cast at call sites.
@@ -26,8 +26,8 @@ interface WebviewPanelProps {
 }
 
 export function WebviewPanel({ initialUrl = 'about:blank', preloadPath }: WebviewPanelProps) {
-  const isRecording = useQaRecorderStore((s) => s.isRecording);
-  const appendStep = useQaRecorderStore((s) => s.appendStep);
+  const isRecording = useTestSuiteStore((s) => s.isRecording);
+  const appendStep = useTestSuiteStore((s) => s.appendStep);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const webviewRef = useRef<any>(null);
 

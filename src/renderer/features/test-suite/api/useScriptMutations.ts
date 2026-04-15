@@ -11,11 +11,11 @@ import type { QaRecorderStepSchema } from '@shared/ipc/qa-recorder/schemas';
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { qaRecorderKeys } from './queryKeys';
+import { testSuiteKeys } from './queryKeys';
 
 import type { z } from 'zod';
 
-export type QaRecorderStep = z.infer<typeof QaRecorderStepSchema>;
+export type TestSuiteStep = z.infer<typeof QaRecorderStepSchema>;
 
 /** Save (create or update) a QA script */
 export function useSaveScript() {
@@ -26,10 +26,10 @@ export function useSaveScript() {
       id?: string;
       name: string;
       description?: string;
-      steps: QaRecorderStep[];
+      steps: TestSuiteStep[];
     }) => ipc(QA_RECORDER.SAVE.SCRIPT, data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: qaRecorderKeys.scripts() });
+      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.scripts() });
     },
     onError: onError('save QA script'),
   });
@@ -42,7 +42,7 @@ export function useDeleteScript() {
   return useMutation({
     mutationFn: ({ id }: { id: string }) => ipc(QA_RECORDER.DELETE.SCRIPT, { id }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: qaRecorderKeys.scripts() });
+      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.scripts() });
     },
     onError: onError('delete QA script'),
   });

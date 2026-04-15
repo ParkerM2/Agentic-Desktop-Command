@@ -1,5 +1,5 @@
 /**
- * QaRecorderPage — Split-panel QA recording interface
+ * TestSuitePage — Split-panel QA recording interface
  *
  * Layout: StepPanel (30%) | WebviewPanel (70%)
  * Control bar: Record, Stop, Save, Run, Export
@@ -30,30 +30,30 @@ import { useRunScript } from '../api/useRuns';
 import { useSaveScript } from '../api/useScriptMutations';
 import { useScripts } from '../api/useScripts';
 import { useRecorderEvents } from '../hooks/useRecorderEvents';
-import { useQaRecorderStore } from '../store';
+import { useTestSuiteStore } from '../store';
 
 import { RunOutputPanel } from './RunOutputPanel';
 import { ScriptSelector } from './ScriptSelector';
 import { StepPanel } from './StepPanel';
 import { WebviewPanel } from './WebviewPanel';
 
-interface QaRecorderPageProps {
+interface TestSuitePageProps {
   /** Path to the qa-recorder preload script; required for webview to function */
   preloadPath?: string;
 }
 
-export function QaRecorderPage({ preloadPath = '' }: QaRecorderPageProps) {
+export function TestSuitePage({ preloadPath = '' }: TestSuitePageProps) {
   // Wire up IPC event listeners
   useRecorderEvents();
 
-  const isRecording = useQaRecorderStore((s) => s.isRecording);
-  const isRunning = useQaRecorderStore((s) => s.isRunning);
-  const recordedSteps = useQaRecorderStore((s) => s.recordedSteps);
-  const selectedScriptId = useQaRecorderStore((s) => s.selectedScriptId);
-  const startRecording = useQaRecorderStore((s) => s.startRecording);
-  const stopRecording = useQaRecorderStore((s) => s.stopRecording);
-  const clearOutputLines = useQaRecorderStore((s) => s.clearOutputLines);
-  const setRunning = useQaRecorderStore((s) => s.setRunning);
+  const isRecording = useTestSuiteStore((s) => s.isRecording);
+  const isRunning = useTestSuiteStore((s) => s.isRunning);
+  const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
+  const selectedScriptId = useTestSuiteStore((s) => s.selectedScriptId);
+  const startRecording = useTestSuiteStore((s) => s.startRecording);
+  const stopRecording = useTestSuiteStore((s) => s.stopRecording);
+  const clearOutputLines = useTestSuiteStore((s) => s.clearOutputLines);
+  const setRunning = useTestSuiteStore((s) => s.setRunning);
 
   const [saveName, setSaveName] = useState('');
 
@@ -88,10 +88,10 @@ export function QaRecorderPage({ preloadPath = '' }: QaRecorderPageProps) {
   };
 
   return (
-    <PageLayout data-testid="qa-recorder-page">
+    <PageLayout data-testid="test-suite-page">
       <PageHeader>
         <PageHeaderRow>
-          <PageHeaderTitle>QA Recorder</PageHeaderTitle>
+          <PageHeaderTitle>Test Suite</PageHeaderTitle>
           <PageHeaderActions>
             <ScriptSelector />
             <Separator className="h-6" orientation="vertical" />
@@ -149,7 +149,7 @@ export function QaRecorderPage({ preloadPath = '' }: QaRecorderPageProps) {
       <PageContent className="overflow-hidden p-0">
         {noPreload ? (
           <EmptyState
-            data-testid="qa-recorder-no-preload"
+            data-testid="test-suite-no-preload"
             description="Pass a preloadPath prop with the recorder preload script path"
             icon={Video}
             title="Webview preload not configured"

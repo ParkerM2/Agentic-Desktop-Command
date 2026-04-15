@@ -10,7 +10,7 @@ import type { QaScriptSchema } from '@shared/ipc/qa-recorder/schemas';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { qaRecorderKeys } from './queryKeys';
+import { testSuiteKeys } from './queryKeys';
 
 import type { z } from 'zod';
 
@@ -19,7 +19,7 @@ export type QaScript = z.infer<typeof QaScriptSchema>;
 /** Fetch all saved QA scripts */
 export function useScripts() {
   return useQuery({
-    queryKey: qaRecorderKeys.scripts(),
+    queryKey: testSuiteKeys.scripts(),
     queryFn: () => ipc(QA_RECORDER.LIST.SCRIPTS, {}),
     staleTime: 30_000,
   });
@@ -28,7 +28,7 @@ export function useScripts() {
 /** Fetch a single QA script by id */
 export function useScript(id: string | null) {
   return useQuery({
-    queryKey: qaRecorderKeys.script(id ?? ''),
+    queryKey: testSuiteKeys.script(id ?? ''),
     queryFn: () => ipc(QA_RECORDER.GET.SCRIPT, { id: id ?? '' }),
     enabled: id !== null && id.length > 0,
     staleTime: 30_000,

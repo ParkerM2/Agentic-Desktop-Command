@@ -26,14 +26,14 @@ import {
   Text,
 } from '@ui';
 
-import { useQaRecorderStore } from '../store';
+import { useTestSuiteStore } from '../store';
 
-import type { QaRecorderStep } from '../api/useScriptMutations';
+import type { TestSuiteStep } from '../api/useScriptMutations';
 
 
 // ── Step icon mapping ────────────────────────────────────────────
 
-type StepType = QaRecorderStep['type'];
+type StepType = TestSuiteStep['type'];
 
 const STEP_ICONS: Record<StepType, React.ComponentType<{ className?: string }>> = {
   navigate: Navigation,
@@ -55,7 +55,7 @@ const STEP_LABELS: Record<StepType, string> = {
   assert: 'Assert',
 };
 
-function stepDescription(step: QaRecorderStep): string {
+function stepDescription(step: TestSuiteStep): string {
   switch (step.type) {
     case 'navigate':
       return step.url;
@@ -77,12 +77,12 @@ function stepDescription(step: QaRecorderStep): string {
 // ── Component ────────────────────────────────────────────────────
 
 interface StepPanelProps {
-  steps?: QaRecorderStep[];
+  steps?: TestSuiteStep[];
 }
 
 export function StepPanel({ steps: propSteps }: StepPanelProps) {
-  const recordedSteps = useQaRecorderStore((s) => s.recordedSteps);
-  const isRecording = useQaRecorderStore((s) => s.isRecording);
+  const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
+  const isRecording = useTestSuiteStore((s) => s.isRecording);
 
   const steps = propSteps ?? recordedSteps;
 

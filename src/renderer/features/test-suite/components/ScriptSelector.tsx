@@ -15,12 +15,12 @@ import {
 } from '@ui';
 
 import { useScripts } from '../api/useScripts';
-import { useQaRecorderStore } from '../store';
+import { useTestSuiteStore } from '../store';
 
 export function ScriptSelector() {
   const { data: scripts, isLoading } = useScripts();
-  const selectedScriptId = useQaRecorderStore((s) => s.selectedScriptId);
-  const selectScript = useQaRecorderStore((s) => s.selectScript);
+  const selectedScriptId = useTestSuiteStore((s) => s.selectedScriptId);
+  const selectScript = useTestSuiteStore((s) => s.selectScript);
 
   if (isLoading) {
     return <Spinner size="sm" />;
