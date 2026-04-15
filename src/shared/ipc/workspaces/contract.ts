@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { WORKSPACES } from './workspaces.channels';
+import { WORKSPACES } from './channels';
 
 export const WorkspaceSettingsSchema = z.object({
   autoStart: z.boolean(),

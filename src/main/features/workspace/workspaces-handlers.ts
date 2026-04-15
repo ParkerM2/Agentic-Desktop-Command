@@ -2,7 +2,7 @@
  * Workspaces IPC handlers
  */
 
-import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
+import { WORKSPACES } from '@shared/ipc/workspaces';
 
 import type { WorkspacesService } from './workspaces-service';
 import type { IpcRouter } from '../../ipc/router';

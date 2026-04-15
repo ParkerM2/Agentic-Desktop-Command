@@ -40,7 +40,6 @@ import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
 import { mcpInvoke } from './mcp';
 import { mergeInvoke } from './merge';
-import { workspacesInvoke } from './misc';
 import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
@@ -61,6 +60,7 @@ import { visualizationInvoke } from './visualization';
 import { webhookEvents, webhookInvoke } from './webhook';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
+import { workspacesInvoke } from './workspaces';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
 
@@ -279,7 +279,7 @@ export {
 export {
   WorkspaceSchema,
   WorkspaceSettingsSchema,
-} from './misc';
+} from './workspaces';
 
 export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './devices';
 

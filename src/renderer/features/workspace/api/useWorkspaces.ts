@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { WORKSPACES } from '@shared/ipc/misc/workspaces.channels';
+import { WORKSPACES } from '@shared/ipc/workspaces';
 import type { InvokeInput } from '@shared/ipc-contract';
 
 import { ipc } from '@renderer/shared/lib/ipc';
