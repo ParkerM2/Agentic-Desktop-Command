@@ -157,13 +157,6 @@ export const testSuiteEvents = {
       timestamp: z.string(),
     }),
   },
-  [TEST_SUITE_EVENTS.RUN.COMPLETE]: {
-    payload: z.object({
-      runId: z.string(),
-      status: QaRunStatusSchema,
-      report: QaRunReportSchema,
-    }),
-  },
   [TEST_SUITE_EVENTS.RUN.STARTED]: {
     payload: z.object({
       runId: z.string(),

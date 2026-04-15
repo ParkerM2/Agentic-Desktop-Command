@@ -147,8 +147,10 @@ export type TestSuiteScreenshot = z.infer<typeof TestSuiteScreenshotSchema>;
 // ─── Browser View ─────────────────────────────────────────────
 
 export const BrowserViewBoundsSchema = z.object({
-  x: z.number().int(), y: z.number().int(),
-  width: z.number().int().positive(), height: z.number().int().positive(),
+  x: z.number().int(),
+  y: z.number().int(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
 });
 export const BrowserViewCreateInputSchema = z.object({
   url: z.string().url(),

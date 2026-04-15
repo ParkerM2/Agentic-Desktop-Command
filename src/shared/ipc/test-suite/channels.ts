@@ -14,7 +14,7 @@ export const TEST_SUITE = domain('test-suite', {
 
 export const TEST_SUITE_EVENTS = events('test-suite', {
   OUTPUT: ['line'],
-  RUN: ['screenshot', 'complete', 'started', 'step', 'completed'],
+  RUN: ['screenshot', 'started', 'step', 'completed'],
   RECORDER: ['step', 'stopped'],
   CONFIG: ['changed'],
 });

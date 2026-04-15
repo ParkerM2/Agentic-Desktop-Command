@@ -344,8 +344,21 @@ export {
 export {
   BrowserViewBoundsSchema,
   BrowserViewCreateInputSchema,
+  QaRunReportSchema,
+  QaRunSchema,
+  QaRunStatusSchema,
+  QaScriptSchema,
+  QaStepAssertSchema,
+  QaStepClickSchema,
+  QaStepFillSchema,
+  QaStepNavigateSchema,
+  QaStepPressSchema,
+  QaStepSelectSchema,
+  QaStepTypeSchema,
+  QaStepWaitSchema,
   TestSuiteConfigSchema,
   TestSuiteScreenshotSchema,
+  TestSuiteStepSchema,
 } from './test-suite';
 export type { TestSuiteConfig, TestSuiteScreenshot } from './test-suite';
 
