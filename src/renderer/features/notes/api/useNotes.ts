@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { NOTES } from '@shared/ipc/misc/notes.channels';
+import { NOTES } from '@shared/ipc/notes';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

@@ -8,7 +8,7 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import { NOTES, NOTES_EVENTS } from './notes.channels';
+import { NOTES, NOTES_EVENTS } from './channels';
 
 export const NoteSchema = z.object({
   id: z.string(),

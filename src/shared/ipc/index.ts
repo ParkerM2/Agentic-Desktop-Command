@@ -39,11 +39,10 @@ import { mergeInvoke } from './merge';
 import {
   calendarInvoke,
   mcpInvoke,
-  notesEvents,
-  notesInvoke,
   webhookEvents,
   workspacesInvoke,
 } from './misc';
+import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
 import { plannerEvents, plannerInvoke } from './planner';
@@ -453,7 +452,7 @@ export {
 
 // ─── Per-domain schema re-exports (formerly aggregated by personal/) ─────────
 
-export { NoteSchema } from './misc/notes.contract';
+export { NoteSchema } from './notes';
 
 export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './ideas';
 

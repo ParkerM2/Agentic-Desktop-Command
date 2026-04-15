@@ -22,9 +22,6 @@ export { hotkeysInvoke } from './hotkeys.contract';
 // ── MCP ──
 export { mcpInvoke } from './mcp.contract';
 
-// ── Notes ──
-export { NoteSchema, notesEvents, notesInvoke } from './notes.contract';
-
 // ── Screen ──
 export {
   screenInvoke,
