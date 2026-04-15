@@ -22,7 +22,7 @@ import {
   Text,
 } from '@ui';
 
-import { ChangelogPage, useChangelog } from '@features/personal';
+import { ChangelogPage, useChangelog } from '@features/changelog';
 
 /** Build a plain-text summary from a changelog entry, truncated to maxLen chars */
 function summariseEntry(entry: ChangelogEntry, maxLen = 100): string {

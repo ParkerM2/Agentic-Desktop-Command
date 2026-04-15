@@ -7,7 +7,10 @@ import { Bell, Calendar, CalendarDays, Globe, Headphones, LayoutGrid, Newspaper,
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { IntegrationsPage } from '@features/integrations';
-import { AlertsPage, BriefingPage, NotesPage, PlannerPage } from '@features/personal';
+import { AlertsPage } from '@features/alerts';
+import { BriefingPage } from '@features/briefing';
+import { NotesPage } from '@features/notes';
+import { PlannerPage } from '@features/planner';
 
 import { useProductivityStore } from '../store';
 
