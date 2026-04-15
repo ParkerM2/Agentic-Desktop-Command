@@ -93,7 +93,7 @@ Pre-built index files in `.claude/codex/` — auto-regenerated on every commit v
 
 Codebase state document (manual doc, updated via doc-sync hooks):
 
-- **`.claude/progress/adc-codebase-state-2026-04-14.html`** — wire status for all domains, critical issues (resolved through Sprint 9 + post-sprint fixes), migration history, agent host protocol. Last updated 2026-04-15. Open in browser or search with Grep.
+- **`.claude/progress/adc-codebase-state-2026-04-15.html`** — canonical domain inventory after the 2026-04-15 wire-cleanup-naming pass. Zero naming mismatches, zero hardcoded routes, full verification results. Open in browser.
 
 Automation config:
 
