@@ -5,14 +5,6 @@
  * Each domain has a single <name>.contract.ts file.
  */
 
-// ── Screen ──
-export {
-  screenInvoke,
-  ScreenPermissionStatusSchema,
-  ScreenSourceSchema,
-  ScreenshotSchema,
-} from './screen.contract';
-
 // ── Voice ──
 export {
   voiceEvents,

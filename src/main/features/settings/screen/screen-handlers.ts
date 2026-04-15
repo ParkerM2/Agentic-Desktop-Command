@@ -2,7 +2,7 @@
  * Screen capture IPC handlers
  */
 
-import { SCREEN } from '@shared/ipc/misc/screen.channels';
+import { SCREEN } from '@shared/ipc/screen';
 
 import type { ScreenCaptureService } from "./screen-capture-service";
 import type { IpcRouter } from '../../../ipc/router';

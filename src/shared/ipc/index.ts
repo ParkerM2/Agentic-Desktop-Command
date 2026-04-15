@@ -52,8 +52,8 @@ import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
 import { qaRecorderEvents, qaRecorderInvoke } from './qa-recorder';
+import { screenInvoke } from './screen';
 import {
-  screenInvoke,
   securityInvoke,
   settingsInvoke,
   voiceEvents,
@@ -289,6 +289,9 @@ export {
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
   ScreenshotSchema,
+} from './screen';
+
+export {
   VoiceConfigSchema,
   VoiceInputModeSchema,
 } from './settings';

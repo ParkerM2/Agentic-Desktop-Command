@@ -8,16 +8,13 @@
 
 import { z } from 'zod';
 
-import { SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
+import { SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
 import {
   AppSettingsSchema,
   DataDirInfoSchema,
   LayoutStateSchema,
   LayoutUpdateSchema,
   ProfileSchema,
-  ScreenPermissionStatusSchema,
-  ScreenSourceSchema,
-  ScreenshotSchema,
   SecurityAuditExportSchema,
   SecuritySettingsSchema,
   ValidationCheckSchema,
@@ -175,36 +172,6 @@ export const voiceEvents = {
     payload: z.object({
       transcript: z.string(),
       isFinal: z.boolean(),
-    }),
-  },
-} as const;
-
-/** Invoke channels for screen capture operations (absorbed from misc/screen) */
-export const screenInvoke = {
-  [SCREEN.LIST.SOURCES]: {
-    input: z.object({
-      types: z.array(z.enum(['screen', 'window'])).optional(),
-      thumbnailSize: z.object({ width: z.number(), height: z.number() }).optional(),
-    }),
-    output: z.array(ScreenSourceSchema),
-  },
-  [SCREEN.CAPTURE.SCREEN]: {
-    input: z.object({
-      sourceId: z.string(),
-      options: z
-        .object({
-          width: z.number().optional(),
-          height: z.number().optional(),
-        })
-        .optional(),
-    }),
-    output: ScreenshotSchema,
-  },
-  [SCREEN.CHECK.PERMISSION]: {
-    input: z.object({}),
-    output: z.object({
-      status: ScreenPermissionStatusSchema,
-      platform: z.string(),
     }),
   },
 } as const;

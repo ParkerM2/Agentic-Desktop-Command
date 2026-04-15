@@ -9,7 +9,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { Camera, Check } from 'lucide-react';
 
-import { SCREEN } from '@shared/ipc/misc/screen.channels';
+import { SCREEN } from '@shared/ipc/screen';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

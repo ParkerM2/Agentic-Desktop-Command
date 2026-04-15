@@ -2,7 +2,7 @@
  * Settings IPC — Barrel Export
  *
  * Re-exports all settings-related schemas (app settings, profiles,
- * webhooks, voice, screen capture, security) and contract definitions.
+ * webhooks, voice, security) and contract definitions.
  */
 
 export {
@@ -11,9 +11,6 @@ export {
   LayoutStateSchema,
   LayoutUpdateSchema,
   ProfileSchema,
-  ScreenPermissionStatusSchema,
-  ScreenSourceSchema,
-  ScreenshotSchema,
   SecurityAuditExportSchema,
   SecurityModeSchema,
   SecuritySettingsSchema,
@@ -23,11 +20,10 @@ export {
 } from './schemas';
 
 export {
-  screenInvoke,
   securityInvoke,
   settingsInvoke,
   voiceEvents,
   voiceInvoke,
 } from './contract';
 
-export { SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
+export { SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';

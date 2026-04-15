@@ -24,14 +24,6 @@ export const VOICE_EVENTS = events('voice', {
   SPEECH: ['transcript'],
 });
 
-// ─── Screen channels (absorbed from misc/screen) ─────────────
-
-export const SCREEN = domain('screen', {
-  LIST: ['sources'],
-  CAPTURE: ['screen'],
-  CHECK: ['permission'],
-});
-
 // ─── Security channels (absorbed from security/) ─────────────
 
 export const SECURITY = domain('security', {

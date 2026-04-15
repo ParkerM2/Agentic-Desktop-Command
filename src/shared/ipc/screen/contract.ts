@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { SCREEN } from './screen.channels';
+import { SCREEN } from './channels';
 
 export const ScreenSourceSchema = z.object({
   id: z.string(),
