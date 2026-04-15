@@ -14,7 +14,7 @@ import type {
   QaRecorderStepSchema,
 } from '@shared/ipc/qa-recorder/schemas';
 
-import type { IpcRouter } from '../../../ipc/router';
+import type { IpcRouter } from '../../ipc/router';
 
 // ─── Locally-inferred types from shared schemas ────────────────
 // These use `infer` to avoid importing zod directly in main/.

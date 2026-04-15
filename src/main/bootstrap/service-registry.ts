@@ -72,7 +72,7 @@ import { createSetupPipeline } from '../features/projects/setup-pipeline';
 import { createSkillsResolver } from '../features/projects/skills-resolver';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
-import { createQaRecorderService } from '../features/qa/recorder';
+import { createQaRecorderService } from '../features/qa-recorder';
 import {
   createCleanupService,
   createConfigReader,

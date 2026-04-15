@@ -14,7 +14,7 @@ import { createScriptStore } from './script-store';
 import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
 import type { ScriptStore, QaScript } from './script-store';
-import type { AdcDatabase } from '../../../db';
+import type { AdcDatabase } from '../../db';
 
 type QaRecorderStep = typeof QaRecorderStepSchema extends { _output: infer T } ? T : never;
 

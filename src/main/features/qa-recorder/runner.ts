@@ -11,9 +11,9 @@ import { spawn } from 'node:child_process';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
-import { qaRuns } from '../../../db/schema';
+import { qaRuns } from '../../db/schema';
 
-import type { AdcDatabase } from '../../../db';
+import type { AdcDatabase } from '../../db';
 
 export interface QaRunRecord {
   id: string;

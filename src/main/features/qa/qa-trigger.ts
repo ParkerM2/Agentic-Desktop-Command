@@ -14,7 +14,7 @@ import type { SessionRecord } from '@main/bus/types';
 import { serviceLogger } from '@main/lib/logger';
 
 import type { QaContext, QaRunner } from './qa-types';
-import type { QaRecorderService } from './recorder';
+import type { QaRecorderService } from '../qa-recorder';
 import type { IpcRouter } from '../../ipc/router';
 import type { ProgressService } from '../progress/progress-service';
 

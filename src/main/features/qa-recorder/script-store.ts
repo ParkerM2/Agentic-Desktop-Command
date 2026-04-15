@@ -7,9 +7,9 @@ import { nanoid } from 'nanoid';
 
 import type { QaRecorderStepSchema } from '@shared/ipc/qa-recorder/schemas';
 
-import { qaScripts } from '../../../db/schema';
+import { qaScripts } from '../../db/schema';
 
-import type { AdcDatabase } from '../../../db';
+import type { AdcDatabase } from '../../db';
 
 type QaRecorderStep = typeof QaRecorderStepSchema extends { _output: infer T } ? T : never;
 
