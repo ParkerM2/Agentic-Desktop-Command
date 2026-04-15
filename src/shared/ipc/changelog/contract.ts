@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-import { CHANGELOG } from './changelog.channels';
+import { CHANGELOG } from './channels';
 
 export const ChangeTypeSchema = z.enum([
   'added',

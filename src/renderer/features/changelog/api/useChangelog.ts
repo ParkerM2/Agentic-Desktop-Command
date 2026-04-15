@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { CHANGELOG } from '@shared/ipc/misc/changelog.channels';
+import { CHANGELOG } from '@shared/ipc/changelog';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

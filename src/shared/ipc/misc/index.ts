@@ -8,14 +8,6 @@
 // ── Calendar ──
 export { calendarInvoke } from './calendar.contract';
 
-// ── Changelog ──
-export {
-  ChangeCategorySchema,
-  changelogInvoke,
-  ChangelogEntrySchema,
-  ChangeTypeSchema,
-} from './changelog.contract';
-
 // ── Devices ──
 export {
   DeviceCapabilitiesSchema,

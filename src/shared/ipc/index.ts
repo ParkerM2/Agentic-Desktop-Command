@@ -22,6 +22,7 @@ import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { busEvents, busInvoke } from './bus';
+import { changelogInvoke } from './changelog';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
@@ -34,7 +35,6 @@ import { devicesInvoke, hubEvents, hubInvoke } from './hub';
 import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import {
   calendarInvoke,
-  changelogInvoke,
   ideasEvents,
   ideasInvoke,
   insightsInvoke,
@@ -463,7 +463,7 @@ export {
   ChangeCategorySchema,
   ChangelogEntrySchema,
   ChangeTypeSchema,
-} from './misc/changelog.contract';
+} from './changelog';
 
 export {
   DailyPlanSchema,

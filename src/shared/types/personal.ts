@@ -23,6 +23,11 @@ import type {
   TaskSummarySchema,
 } from '../ipc/briefing/schemas';
 import type {
+  ChangeCategorySchema,
+  ChangelogEntrySchema,
+  ChangeTypeSchema,
+} from '../ipc/changelog';
+import type {
   BodyMeasurementSchema,
   ExerciseSchema,
   ExerciseSetSchema,
@@ -34,11 +39,6 @@ import type {
   WorkoutSchema,
   WorkoutTypeSchema,
 } from '../ipc/fitness/schemas';
-import type {
-  ChangeCategorySchema,
-  ChangelogEntrySchema,
-  ChangeTypeSchema,
-} from '../ipc/misc/changelog.contract';
 import type {
   IdeaCategorySchema,
   IdeaSchema,
