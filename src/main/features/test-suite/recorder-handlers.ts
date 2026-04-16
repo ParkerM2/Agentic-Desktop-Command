@@ -21,6 +21,7 @@ import type {
   QaRunStatusSchema,
 } from '@shared/ipc/test-suite/schemas';
 
+import { parseDataFile } from './data-runner';
 import { compareScreenshots } from './diff-engine';
 import { ensurePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
@@ -32,8 +33,10 @@ import type { Analytics } from './analytics';
 import type { BaselineStore } from './baseline-store';
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
+import type { SchedulerService } from './scheduler';
 import type { ScreenshotStore } from './screenshot-capture';
 import type { ScriptStore } from './script-store';
+import type { SharedStepsStore } from './shared-steps-store';
 import type { FileWatcher } from './watcher';
 import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
@@ -89,6 +92,8 @@ export interface TestSuiteService {
   fileWatcher: FileWatcher;
   baselineStore: BaselineStore;
   scriptStore: ScriptStore;
+  sharedStepsStore: SharedStepsStore;
+  scheduler: SchedulerService;
   getProjectPath: (projectId: string) => string | undefined;
   db: AdcDatabase;
 }
@@ -520,4 +525,94 @@ export function registerTestSuiteHandlers(
         }>,
     ),
   );
+
+  // ── Shared step group handlers ─────────────────────────────────
+
+  const { sharedStepsStore, scheduler } = testSuiteService;
+
+  router.handle(TEST_SUITE['SHARED-STEPS'].LIST, ({ projectId }) =>
+    Promise.resolve(sharedStepsStore.list(projectId)),
+  );
+
+  router.handle(TEST_SUITE['SHARED-STEPS'].GET, ({ id }) =>
+    Promise.resolve(sharedStepsStore.get(id)),
+  );
+
+  router.handle(TEST_SUITE['SHARED-STEPS'].CREATE, (input) =>
+    Promise.resolve(sharedStepsStore.create(input)),
+  );
+
+  router.handle(TEST_SUITE['SHARED-STEPS'].UPDATE, ({ id, ...params }) =>
+    Promise.resolve(sharedStepsStore.update(id, params)),
+  );
+
+  router.handle(TEST_SUITE['SHARED-STEPS'].DELETE, ({ id }) => {
+    sharedStepsStore.delete(id);
+    return Promise.resolve({ success: true });
+  });
+
+  router.handle(TEST_SUITE['SHARED-STEPS'].DOMAINS, ({ projectId }) =>
+    Promise.resolve(sharedStepsStore.domains(projectId)),
+  );
+
+  // ── Schedule handlers ──────────────────────────────────────────
+
+  router.handle(TEST_SUITE.SCHEDULE.LIST, ({ projectId }) =>
+    Promise.resolve(scheduler.list(projectId)),
+  );
+
+  router.handle(TEST_SUITE.SCHEDULE.GET, ({ id }) =>
+    Promise.resolve(scheduler.get(id)),
+  );
+
+  router.handle(TEST_SUITE.SCHEDULE.CREATE, (input) =>
+    Promise.resolve(scheduler.create(input)),
+  );
+
+  router.handle(TEST_SUITE.SCHEDULE.UPDATE, ({ id, ...params }) =>
+    Promise.resolve(scheduler.update(id, params)),
+  );
+
+  router.handle(TEST_SUITE.SCHEDULE.DELETE, ({ id }) => {
+    scheduler.delete(id);
+    return Promise.resolve({ success: true });
+  });
+
+  router.handle(TEST_SUITE.SCHEDULE['TRIGGER-NOW'], async ({ id }) => {
+    const schedule = scheduler.get(id);
+    if (!schedule) throw new Error(`Schedule not found: ${id}`);
+    const result = await testSuiteService.runScript({
+      scriptId: schedule.scriptId,
+      triggeredBy: 'scheduled',
+    });
+    router.emit(TEST_SUITE_EVENTS.RUN.STARTED, {
+      runId: result.runId,
+      scriptId: schedule.scriptId,
+      timestamp: new Date().toISOString(),
+    });
+    return result;
+  });
+
+  // ── Data-driven run handlers ───────────────────────────────────
+
+  router.handle(TEST_SUITE['DATA-RUN'].PARSE, ({ filePath }) => {
+    const rows = parseDataFile(filePath);
+    const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
+    return Promise.resolve({ rows, headers, rowCount: rows.length });
+  });
+
+  router.handle(TEST_SUITE['DATA-RUN'].EXECUTE, async ({ scriptId, dataFilePath }) => {
+    const rows = parseDataFile(dataFilePath);
+    const runIds: string[] = [];
+
+    for (const _row of rows) {
+      const { runId } = await testSuiteService.runScript({
+        scriptId,
+        triggeredBy: 'manual',
+      });
+      runIds.push(runId);
+    }
+
+    return { runIds, totalRows: rows.length };
+  });
 }

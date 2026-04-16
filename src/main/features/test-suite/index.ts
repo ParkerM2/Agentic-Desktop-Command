@@ -21,8 +21,10 @@ import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
 import { createRunner } from './runner';
+import { createScheduler, sendTestNotification } from './scheduler';
 import { createScreenshotStore } from './screenshot-capture';
 import { createScriptStore } from './script-store';
+import { createSharedStepsStore } from './shared-steps-store';
 import { createFileWatcher } from './watcher';
 
 import type { Analytics } from './analytics';
@@ -31,8 +33,10 @@ import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
+import type { SchedulerService } from './scheduler';
 import type { ScreenshotStore } from './screenshot-capture';
 import type { ScriptStore, QaScript } from './script-store';
+import type { SharedStepsStore } from './shared-steps-store';
 import type { FileWatcher } from './watcher';
 import type { AdcDatabase } from '../../db';
 
@@ -90,6 +94,8 @@ export interface TestSuiteService {
   analytics: Analytics;
   fileWatcher: FileWatcher;
   baselineStore: BaselineStore;
+  sharedStepsStore: SharedStepsStore;
+  scheduler: SchedulerService;
   getProjectPath: (projectId: string) => string | undefined;
   db: AdcDatabase;
 
@@ -186,8 +192,10 @@ export function createTestSuiteService(
   const analytics = createAnalytics(db);
   const fileWatcher = createFileWatcher();
   const baselineStore = createBaselineStore(db);
+  const sharedStepsStore = createSharedStepsStore(db);
+  const scheduler = createScheduler(db);
 
-  return {
+  const service: TestSuiteService = {
     // Sub-services
     scriptStore,
     runner,
@@ -198,6 +206,8 @@ export function createTestSuiteService(
     analytics,
     fileWatcher,
     baselineStore,
+    sharedStepsStore,
+    scheduler,
     getProjectPath: deps.getProjectPath,
     db,
 
@@ -298,4 +308,28 @@ export function createTestSuiteService(
       runEventListeners.push(listener);
     },
   };
+
+  // Scheduler: fire runs for due schedules
+  scheduler.start((schedule) => {
+    void service
+      .runScript({
+        scriptId: schedule.scriptId,
+        triggeredBy: 'scheduled',
+      })
+      .catch(() => {
+        // Swallow — scheduler callback must not throw
+      });
+  });
+
+  // Notification: surface scheduled run results to the OS
+  service.onRunEvent((event) => {
+    if (event.type !== 'complete' || event.status === undefined) return;
+    const run = runner.get(event.runId);
+    if (run?.triggeredBy !== 'scheduled') return;
+    const script = scriptStore.get(run.scriptId);
+    if (!script) return;
+    sendTestNotification(script.name, event.status);
+  });
+
+  return service;
 }
