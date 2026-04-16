@@ -3,9 +3,11 @@
  *
  * Lists all .spec.ts files found in the scripts directory.
  * Overwrites on every call so the README stays current.
+ *
+ * Also writes a .gitignore for test output directories (screenshots, reports).
  */
 
-import { existsSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 export function writeTestSuiteReadme(params: {
@@ -36,4 +38,31 @@ export function writeTestSuiteReadme(params: {
 
   writeFileSync(readmePath, lines.join('\n'), 'utf8');
   return readmePath;
+}
+
+/**
+ * Writes a .gitignore inside the test directory so generated output
+ * (screenshots, Playwright reports, test-results) is not committed.
+ * Idempotent — overwrites on every call.
+ */
+export function writeTestSuiteGitignore(params: {
+  projectRoot: string;
+  testDir: string;
+}): string {
+  const testDirPath = path.join(params.projectRoot, params.testDir);
+  if (!existsSync(testDirPath)) {
+    mkdirSync(testDirPath, { recursive: true });
+  }
+
+  const gitignorePath = path.join(testDirPath, '.gitignore');
+  const content = [
+    '# Test Suite output (gitignored)',
+    'screenshots/',
+    'playwright-report/',
+    'test-results/',
+    '',
+  ].join('\n');
+
+  writeFileSync(gitignorePath, content, 'utf8');
+  return gitignorePath;
 }

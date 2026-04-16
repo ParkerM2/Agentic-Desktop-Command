@@ -1,5 +1,9 @@
 # QA Recorder — Feature Research & Integration Plan
 
+> **Superseded:** The domain was renamed from `qa-recorder` to `test-suite` during implementation.
+> All IPC channels, services, and routes now use the `test-suite` naming convention.
+> This document is retained as historical research context only.
+
 > **Status:** Research complete. Ready for implementation.
 > **Target:** New project-scoped tab in the Electron app for recording, saving, and running Playwright browser tests against localhost.
 

@@ -19,7 +19,7 @@ import type {
 } from '@shared/ipc/test-suite/schemas';
 
 import { ensurePlaywrightConfig } from './playwright-config-writer';
-import { writeTestSuiteReadme } from './readme-writer';
+import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
 import { getScreenshotById, getScreenshots } from './screenshot-capture';
 import { writeSpecFile } from './script-writer';
 import { commitWorkflow, previewWorkflow } from './workflow-exporter';
@@ -148,6 +148,7 @@ export function registerTestSuiteHandlers(
 
       ensurePlaywrightConfig({ projectRoot: projectPath, testDir, baseUrl });
       writeTestSuiteReadme({ projectRoot: projectPath, testDir });
+      writeTestSuiteGitignore({ projectRoot: projectPath, testDir });
     }
 
     return testSuiteService.saveScript({ ...input, filePath }) as never;
