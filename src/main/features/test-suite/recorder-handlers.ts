@@ -134,4 +134,83 @@ export function registerTestSuiteHandlers(
   router.handle(TEST_SUITE.EXPORT.GITHUB, (input) =>
     testSuiteService.exportGithub(input),
   );
+
+  // ── Stub handlers (Wave 1 T7) ────────────────────────────────
+  // Return schema-compatible empty shapes so renderer hooks resolve.
+  // Real implementations land in later waves.
+
+  router.handle(TEST_SUITE.EXPORT['CI-PREVIEW'], () =>
+    Promise.resolve({ yaml: '', filePath: '', exists: false }),
+  );
+
+  router.handle(TEST_SUITE.EXPORT['CI-COMMIT'], () =>
+    Promise.resolve({ filePath: '', committed: false }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].CREATE, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].NAVIGATE, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].BACK, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].FORWARD, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].RELOAD, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS'], () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].DESTROY, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE.CONFIG.GET, () => Promise.resolve(null));
+
+  router.handle(TEST_SUITE.CONFIG.LIST, () => Promise.resolve([]));
+
+  router.handle(TEST_SUITE.CONFIG.SAVE, (input) => {
+    const now = new Date().toISOString();
+    return Promise.resolve({
+      id: input.id ?? '',
+      name: input.name,
+      targetUrl: input.targetUrl ?? 'http://localhost',
+      viewportWidth: input.viewportWidth ?? 1280,
+      viewportHeight: input.viewportHeight ?? 720,
+      screenshotMode: input.screenshotMode ?? 'smart',
+      testDirectory: input.testDirectory ?? '',
+      saveScreenshotsToTemp: input.saveScreenshotsToTemp ?? true,
+      isActive: input.isActive ?? false,
+      createdAt: input.createdAt ?? now,
+      updatedAt: now,
+    });
+  });
+
+  router.handle(TEST_SUITE.CONFIG.DELETE, () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE.CONFIG['SET-ACTIVE'], () =>
+    Promise.resolve({ success: true }),
+  );
+
+  router.handle(TEST_SUITE.SCREENSHOT.LIST, () => Promise.resolve([]));
+
+  router.handle(TEST_SUITE.SCREENSHOT['EXPORT-ZIP'], () =>
+    Promise.resolve({ filePath: '' }),
+  );
+
+  router.handle(TEST_SUITE.SCREENSHOT.COPY, () =>
+    Promise.resolve({ filePath: '' }),
+  );
 }
