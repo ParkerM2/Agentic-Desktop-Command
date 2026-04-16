@@ -1,7 +1,8 @@
-import { useParams } from '@tanstack/react-router';
 import { FileCode, List, PlayCircle, Camera, Upload } from 'lucide-react';
 
-import { PageHeader, PageLayout } from '@ui';
+import { useLooseParams } from '@renderer/shared/hooks';
+
+import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useTestSuiteStore } from '../test-suite-store';
@@ -22,10 +23,24 @@ const TABS = [
 ];
 
 export function TestSuitePage() {
-  const params = useParams({ strict: false }) as unknown as { projectId?: string };
-  const projectId = params.projectId ?? '';
+  const { projectId } = useLooseParams();
   const { data: config, isLoading } = useTestSuiteConfig(projectId);
   const { activeTab, setActiveTab } = useTestSuiteStore();
+
+  if (!projectId) {
+    return (
+      <PageLayout>
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title>Test Suite</PageHeader.Title>
+          </PageHeader.Row>
+        </PageHeader>
+        <PageContent>
+          <div className="p-6 text-text-muted">No project selected.</div>
+        </PageContent>
+      </PageLayout>
+    );
+  }
 
   if (isLoading) return <PageLayout><div className="p-6">Loading…</div></PageLayout>;
   if (!config) {
