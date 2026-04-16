@@ -60,10 +60,29 @@ export function RunnerPanel({ scope, heading = 'Dev Server' }: Props) {
 
   const selectedProfile = profiles.find((p) => p.id === selectedProfileId);
 
+  const scopeLabel = scope.kind === 'worktree' ? 'worktree' : 'project';
+
+  let startDisabledReason: string | undefined;
+  if (!selectedProfileId) {
+    startDisabledReason = profiles.length === 0
+      ? 'Create a runner profile first'
+      : 'Select a profile to start';
+  }
+
+  let consoleHint: string;
+  if (profiles.length === 0) {
+    consoleHint = 'No runner profiles yet — click New to create one.';
+  } else if (selectedProfileId) {
+    consoleHint = 'Click Start to launch this runner.';
+  } else {
+    consoleHint = 'Select a profile to begin.';
+  }
+
   return (
     <div className="flex flex-col rounded-md border border-border bg-surface">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <h3 className="text-sm font-semibold">{heading}</h3>
+        <span className="text-xs text-text-muted">({scopeLabel})</span>
 
         <Select value={selectedProfileId ?? ''} onValueChange={setSelectedProfileId}>
           <SelectTrigger className="h-7 w-48">
@@ -98,6 +117,7 @@ export function RunnerPanel({ scope, heading = 'Dev Server' }: Props) {
           <Button
             disabled={!selectedProfileId || start.isPending}
             size="sm"
+            title={startDisabledReason}
             onClick={() => {
               if (selectedProfileId) start.mutate(selectedProfileId);
             }}
@@ -118,7 +138,7 @@ export function RunnerPanel({ scope, heading = 'Dev Server' }: Props) {
         </div>
       </div>
 
-      <RunnerOutputConsole instanceId={activeInstance?.id} />
+      <RunnerOutputConsole hint={consoleHint} instanceId={activeInstance?.id} />
 
       <ProfileEditDialog
         initial={profiles.find((p) => p.id === editing.id)}

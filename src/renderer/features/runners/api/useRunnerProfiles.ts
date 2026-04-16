@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RUNNERS } from '@shared/ipc/runners/channels';
 import type { RunnerProfile } from '@shared/ipc/runners/schemas';
 
+import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { runnerKeys } from './queryKeys';
@@ -17,21 +18,25 @@ export function useRunnerProfiles(projectId: string) {
 
 export function useSaveRunnerProfile(projectId: string) {
   const qc = useQueryClient();
+  const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (profile: RunnerProfile) => ipc(RUNNERS.PROFILE.SAVE, { profile }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: runnerKeys.profiles(projectId) });
     },
+    onError: onError('save runner profile'),
   });
 }
 
 export function useDeleteRunnerProfile(projectId: string) {
   const qc = useQueryClient();
+  const { onError } = useMutationErrorToast();
   return useMutation({
     mutationFn: (profileId: string) => ipc(RUNNERS.PROFILE.DELETE, { profileId }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: runnerKeys.profiles(projectId) });
     },
+    onError: onError('delete runner profile'),
   });
 }
 

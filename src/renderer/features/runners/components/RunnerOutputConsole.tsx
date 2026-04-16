@@ -2,7 +2,12 @@ import { useEffect, useRef } from 'react';
 
 import { useRunnersStore } from '../runners-store';
 
-export function RunnerOutputConsole({ instanceId }: { instanceId: string | undefined }) {
+interface Props {
+  instanceId: string | undefined;
+  hint?: string;
+}
+
+export function RunnerOutputConsole({ instanceId, hint }: Props) {
   const lines = useRunnersStore((s) => (instanceId ? s.outputs[instanceId] : undefined)) ?? [];
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -13,7 +18,7 @@ export function RunnerOutputConsole({ instanceId }: { instanceId: string | undef
   if (!instanceId) {
     return (
       <div className="flex h-40 items-center justify-center text-sm text-text-muted">
-        No runner selected.
+        {hint ?? 'No runner selected.'}
       </div>
     );
   }

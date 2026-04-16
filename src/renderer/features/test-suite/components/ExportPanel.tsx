@@ -6,6 +6,7 @@ import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
+import { useToastStore } from '@renderer/shared/stores/toast-store';
 
 import {
   Button,
@@ -35,8 +36,11 @@ export function ExportPanel() {
   const [committed, setCommitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const testDir = config?.testDirectory ?? 'tests/e2e';
+  const rawTestDir = config?.testDirectory ?? 'tests/e2e';
+  const testDir = rawTestDir.replace(/\/+$/, '');
   const scriptCount = scripts?.length ?? 0;
+
+  const addToast = useToastStore((s) => s.addToast);
 
   const handlePreview = useCallback(async () => {
     if (!projectId) return;
@@ -47,10 +51,13 @@ export function ExportPanel() {
       setFilePath(result.filePath);
       setFileExists(result.exists);
       setDialogOpen(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      addToast(`Failed to preview CI workflow: ${message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, addToast]);
 
   const handleCommit = useCallback(async () => {
     if (!projectId) return;
@@ -61,10 +68,13 @@ export function ExportPanel() {
         setCommitted(true);
         setFilePath(result.filePath);
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      addToast(`Failed to commit CI workflow: ${message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, addToast]);
 
   return (
     <PageContent>
