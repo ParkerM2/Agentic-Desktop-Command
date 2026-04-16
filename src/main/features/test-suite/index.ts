@@ -5,13 +5,17 @@
  * satisfies the IPC handler interface expected by recorder-handlers.ts.
  */
 
+import type { BrowserWindow } from 'electron';
+
 import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
+import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
 import { createRunner } from './runner';
 import { createScriptStore } from './script-store';
 
+import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
@@ -67,6 +71,7 @@ export interface TestSuiteService {
   runner: QaRunner;
   exporter: QaExporter;
   configStore: ConfigStore;
+  browserViewManager: BrowserViewManager;
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
@@ -96,8 +101,12 @@ export interface TestSuiteService {
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
 }
 
-export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
+export function createTestSuiteService(
+  db: AdcDatabase,
+  deps: { getMainWindow: () => BrowserWindow | null },
+): TestSuiteService {
   const scriptStore = createScriptStore(db);
+  const browserViewManager = createBrowserViewManager(deps.getMainWindow);
   const runEventListeners: Array<(event: TestSuiteRunEvent) => void> = [];
 
   const sharedHandlers: RunnerEventHandlers = {
@@ -140,6 +149,7 @@ export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
     runner,
     exporter,
     configStore,
+    browserViewManager,
 
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),

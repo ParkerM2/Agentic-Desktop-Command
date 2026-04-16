@@ -13,6 +13,7 @@ import type {
   TestSuiteStepSchema,
 } from '@shared/ipc/test-suite/schemas';
 
+import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { IpcRouter } from '../../ipc/router';
 
@@ -57,6 +58,7 @@ export interface TestSuiteService {
   exportGithub: (input: { runId: string; owner: string; repo: string }) => Promise<{ issueUrl: string }>;
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
   configStore: ConfigStore;
+  browserViewManager: BrowserViewManager;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -149,32 +151,34 @@ export function registerTestSuiteHandlers(
     Promise.resolve({ filePath: '', committed: false }),
   );
 
-  router.handle(TEST_SUITE['BROWSER-VIEW'].CREATE, () =>
-    Promise.resolve({ success: true }),
+  const { browserViewManager: bvm } = testSuiteService;
+
+  router.handle(TEST_SUITE['BROWSER-VIEW'].CREATE, ({ url, bounds }) =>
+    Promise.resolve(bvm.create(url, bounds)),
   );
 
-  router.handle(TEST_SUITE['BROWSER-VIEW'].NAVIGATE, () =>
-    Promise.resolve({ success: true }),
+  router.handle(TEST_SUITE['BROWSER-VIEW'].NAVIGATE, ({ url }) =>
+    Promise.resolve(bvm.navigate(url)),
   );
 
   router.handle(TEST_SUITE['BROWSER-VIEW'].BACK, () =>
-    Promise.resolve({ success: true }),
+    Promise.resolve(bvm.back()),
   );
 
   router.handle(TEST_SUITE['BROWSER-VIEW'].FORWARD, () =>
-    Promise.resolve({ success: true }),
+    Promise.resolve(bvm.forward()),
   );
 
   router.handle(TEST_SUITE['BROWSER-VIEW'].RELOAD, () =>
-    Promise.resolve({ success: true }),
+    Promise.resolve(bvm.reload()),
   );
 
-  router.handle(TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS'], () =>
-    Promise.resolve({ success: true }),
+  router.handle(TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS'], (bounds) =>
+    Promise.resolve(bvm.setBounds(bounds)),
   );
 
   router.handle(TEST_SUITE['BROWSER-VIEW'].DESTROY, () =>
-    Promise.resolve({ success: true }),
+    Promise.resolve(bvm.destroy()),
   );
 
   const { configStore } = testSuiteService;
