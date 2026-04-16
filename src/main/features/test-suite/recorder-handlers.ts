@@ -15,6 +15,7 @@ import type {
 
 import { ensurePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteReadme } from './readme-writer';
+import { getScreenshots } from './screenshot-capture';
 import { writeSpecFile } from './script-writer';
 
 import type { BrowserViewManager } from './browser-view-manager';
@@ -136,6 +137,7 @@ export function registerTestSuiteHandlers(
         name: input.name,
         baseUrl,
         steps,
+        screenshotMode: config.screenshotMode,
       });
 
       ensurePlaywrightConfig({ projectRoot: projectPath, testDir, baseUrl });
@@ -269,7 +271,10 @@ export function registerTestSuiteHandlers(
     return Promise.resolve({ success: true });
   });
 
-  router.handle(TEST_SUITE.SCREENSHOT.LIST, () => Promise.resolve([]));
+  router.handle(TEST_SUITE.SCREENSHOT.LIST, ({ runId }) => {
+    if (!runId) return Promise.resolve([]);
+    return Promise.resolve(getScreenshots(runId));
+  });
 
   router.handle(TEST_SUITE.SCREENSHOT['EXPORT-ZIP'], () =>
     Promise.resolve({ filePath: '' }),

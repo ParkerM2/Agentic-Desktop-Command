@@ -7,6 +7,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { mkdirSync } from 'node:fs';
 
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -39,6 +40,7 @@ export interface QaRunner {
     projectPath: string;
     triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
     taskId?: string;
+    screenshotDir?: string;
     handlers?: RunnerEventHandlers;
   }) => string;
   get: (runId: string) => QaRunRecord | null;
@@ -71,7 +73,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, filePath, projectPath, triggeredBy, taskId: _taskId, handlers }) {
+    run({ scriptId, filePath, projectPath, triggeredBy, taskId: _taskId, screenshotDir, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
@@ -90,10 +92,14 @@ export function createRunner(db: AdcDatabase): QaRunner {
       const outputLines: string[] = [];
       const screenshots: string[] = [];
 
+      if (screenshotDir) {
+        mkdirSync(screenshotDir, { recursive: true });
+      }
+
       const child = spawn('npx', ['playwright', 'test', filePath, '--reporter=line'], {
         cwd: projectPath,
         shell: false,
-        env: { ...process.env },
+        env: { ...process.env, ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}) },
       });
 
       activeProcesses.set(runId, child);

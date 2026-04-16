@@ -5,6 +5,8 @@
  * satisfies the IPC handler interface expected by recorder-handlers.ts.
  */
 
+import path from 'node:path';
+
 import type { BrowserWindow } from 'electron';
 
 import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
@@ -13,6 +15,7 @@ import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
 import { createRunner } from './runner';
+import { indexScreenshots } from './screenshot-capture';
 import { createScriptStore } from './script-store';
 
 import type { BrowserViewManager } from './browser-view-manager';
@@ -114,12 +117,26 @@ export function createTestSuiteService(
   const browserViewManager = createBrowserViewManager(deps.getMainWindow);
   const runEventListeners: Array<(event: TestSuiteRunEvent) => void> = [];
 
+  // Tracks screenshotDir per runId so onComplete can index screenshots
+  const runScreenshotDirs = new Map<string, { screenshotDir: string; scriptId: string }>();
+
   const sharedHandlers: RunnerEventHandlers = {
     onLine(runId, line, timestamp) {
       const event: TestSuiteRunEvent = { type: 'output', runId, line, timestamp };
       for (const listener of runEventListeners) listener(event);
     },
     onComplete(runId, status, record) {
+      // Index screenshots if a screenshot dir was configured for this run
+      const ssMeta = runScreenshotDirs.get(runId);
+      if (ssMeta) {
+        indexScreenshots({
+          runId,
+          scriptId: ssMeta.scriptId,
+          screenshotDir: ssMeta.screenshotDir,
+        });
+        runScreenshotDirs.delete(runId);
+      }
+
       const startedMs = new Date(record.startedAt).getTime();
       const completedMs = record.completedAt ? new Date(record.completedAt).getTime() : Date.now();
       const event: TestSuiteRunEvent = {
@@ -183,13 +200,37 @@ export function createTestSuiteService(
           new Error(`Project path not found for projectId: ${script.projectId}`),
         );
       }
+
+      // Compute screenshot directory from config
+      const config = configStore.getActive(script.projectId);
+      const testDir = config?.testDirectory ?? 'tests/e2e';
+      const screenshotMode = config?.screenshotMode ?? 'manual';
+      let screenshotDir: string | undefined;
+
+      if (screenshotMode !== 'manual') {
+        const slug = script.name
+          .toLowerCase()
+          .replaceAll(/[^a-z0-9]+/g, '-')
+          .replaceAll(/^-|-$/g, '');
+        // Use a temp runId prefix for the dir name (actual runId comes from runner)
+        const dirName = `${slug}-screenshots`;
+        screenshotDir = path.join(projectPath, testDir, 'screenshots', dirName);
+      }
+
       const runId = runner.run({
         scriptId,
         filePath: script.filePath,
         projectPath,
         triggeredBy,
+        screenshotDir,
         handlers: sharedHandlers,
       });
+
+      // Track screenshot dir for post-run indexing
+      if (screenshotDir) {
+        runScreenshotDirs.set(runId, { screenshotDir, scriptId });
+      }
+
       return Promise.resolve({ runId });
     },
 
