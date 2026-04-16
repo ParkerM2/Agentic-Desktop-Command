@@ -1,3 +1,5 @@
+const ANALYTICS = 'analytics';
+
 export const testSuiteKeys = {
   all: ['test-suite'] as const,
   config: (projectId: string) => [...testSuiteKeys.all, 'config', projectId] as const,
@@ -7,13 +9,13 @@ export const testSuiteKeys = {
   run:     (runId: string) => [...testSuiteKeys.all, 'run', runId] as const,
   screenshots: (runId: string) => [...testSuiteKeys.all, 'screenshots', runId] as const,
   analytics: {
-    all: (projectId: string) => ['test-suite', 'analytics', projectId] as const,
-    summary: (projectId: string) => ['test-suite', 'analytics', 'summary', projectId] as const,
-    trend: (projectId: string) => ['test-suite', 'analytics', 'trend', projectId] as const,
-    topFailures: (projectId: string) => ['test-suite', 'analytics', 'top-failures', projectId] as const,
-    slowest: (projectId: string) => ['test-suite', 'analytics', 'slowest', projectId] as const,
-    errorPatterns: (projectId: string) => ['test-suite', 'analytics', 'error-patterns', projectId] as const,
-    flaky: (projectId: string) => ['test-suite', 'analytics', 'flaky', projectId] as const,
-    runHistory: (scriptId: string) => ['test-suite', 'analytics', 'run-history', scriptId] as const,
+    all: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, projectId] as const,
+    summary: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, 'summary', projectId] as const,
+    trend: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, 'trend', projectId] as const,
+    topFailures: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, 'top-failures', projectId] as const,
+    slowest: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, 'slowest', projectId] as const,
+    errorPatterns: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, 'error-patterns', projectId] as const,
+    flaky: (projectId: string) => [...testSuiteKeys.all, ANALYTICS, 'flaky', projectId] as const,
+    runHistory: (scriptId: string) => [...testSuiteKeys.all, ANALYTICS, 'run-history', scriptId] as const,
   },
 };

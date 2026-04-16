@@ -96,7 +96,7 @@ export const testSuiteInvoke = {
     output: z.object({ success: z.boolean() }),
   },
   [TEST_SUITE['BROWSER-VIEW'].NAVIGATE]: {
-    input: z.object({ url: z.string().url() }),
+    input: z.object({ url: z.url() }),
     output: z.object({ success: z.boolean() }),
   },
   [TEST_SUITE['BROWSER-VIEW'].BACK]: {

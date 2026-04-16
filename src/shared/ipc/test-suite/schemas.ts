@@ -116,7 +116,7 @@ export const QaRunReportSchema = z.object({
 export const TestSuiteConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
-  targetUrl: z.string().url(),
+  targetUrl: z.url(),
   viewportWidth: z.number().int().positive(),
   viewportHeight: z.number().int().positive(),
   screenshotMode: z.enum(['smart', 'per-click', 'per-nav', 'per-form', 'per-assertion', 'manual']),
@@ -153,6 +153,6 @@ export const BrowserViewBoundsSchema = z.object({
   height: z.number().int().positive(),
 });
 export const BrowserViewCreateInputSchema = z.object({
-  url: z.string().url(),
+  url: z.url(),
   bounds: BrowserViewBoundsSchema,
 });

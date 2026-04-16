@@ -60,6 +60,51 @@ export interface FlakyTest {
   recentResults: Array<'passed' | 'failed'>;
 }
 
+// ── Error-Pattern Helpers ──────────────────────────────────────
+
+function extractErrorLines(output: string | null): string[] {
+  if (!output) return [];
+
+  let parsed: { error?: string; outputLines?: string[] };
+  try {
+    parsed = JSON.parse(output) as { error?: string; outputLines?: string[] };
+  } catch {
+    return [];
+  }
+
+  const lines: string[] = [];
+  if (parsed.error) lines.push(parsed.error);
+  if (parsed.outputLines) {
+    for (const line of parsed.outputLines) {
+      if (/error/i.test(line)) lines.push(line);
+    }
+  }
+  return lines;
+}
+
+function accumulatePattern(
+  patternMap: Map<string, { count: number; scriptIds: Set<string>; lastSeen: string }>,
+  raw: string,
+  scriptId: string,
+  startedAt: string,
+): void {
+  const normalized = raw.trim().replaceAll(/\s+/g, ' ').slice(0, 120);
+  if (!normalized) return;
+
+  const existing = patternMap.get(normalized);
+  if (existing) {
+    existing.count++;
+    existing.scriptIds.add(scriptId);
+    if (startedAt > existing.lastSeen) existing.lastSeen = startedAt;
+  } else {
+    patternMap.set(normalized, {
+      count: 1,
+      scriptIds: new Set([scriptId]),
+      lastSeen: startedAt,
+    });
+  }
+}
+
 // ── Analytics Factory ──────────────────────────────────────────
 
 export interface Analytics {
@@ -106,10 +151,7 @@ export function createAnalytics(db: AdcDatabase): Analytics {
       .where(inArray(testSuiteRuns.scriptId, scriptIds))
       .all();
 
-    const row = rows[0];
-    const totalRuns = row?.totalRuns ?? 0;
-    const passedRuns = row?.passedRuns ?? 0;
-    const avgDurationMs = row?.avgDuration ?? 0;
+    const { totalRuns, passedRuns, avgDuration: avgDurationMs } = rows[0];
     const passRate = totalRuns > 0 ? Math.round((passedRuns / totalRuns) * 10000) / 100 : 0;
 
     // Count flaky tests
@@ -152,10 +194,10 @@ export function createAnalytics(db: AdcDatabase): Analytics {
 
     return rows.map((r) => ({
       date: r.date,
-      passed: r.passed ?? 0,
-      failed: r.failed ?? 0,
+      passed: r.passed,
+      failed: r.failed,
       flaky: 0, // Flaky detection requires per-script analysis; set to 0 in trend view
-      total: r.total ?? 0,
+      total: r.total,
     }));
   }
 
@@ -219,8 +261,8 @@ export function createAnalytics(db: AdcDatabase): Analytics {
     return rows.map((r) => ({
       scriptId: r.scriptId,
       scriptName: r.scriptName,
-      avgDurationMs: Math.round(r.avgDuration ?? 0),
-      maxDurationMs: r.maxDuration ?? 0,
+      avgDurationMs: Math.round(r.avgDuration),
+      maxDurationMs: r.maxDuration,
       runCount: r.runCount,
     }));
   }
@@ -229,7 +271,6 @@ export function createAnalytics(db: AdcDatabase): Analytics {
     const scriptIds = getScriptIdsForProject(projectId);
     if (scriptIds.length === 0) return [];
 
-    // Fetch all failed runs with output
     const failedRuns = db
       .select({
         scriptId: testSuiteRuns.scriptId,
@@ -245,50 +286,15 @@ export function createAnalytics(db: AdcDatabase): Analytics {
       )
       .all();
 
-    // Parse output JSON and extract error lines
     const patternMap = new Map<string, { count: number; scriptIds: Set<string>; lastSeen: string }>();
 
     for (const run of failedRuns) {
-      if (!run.output) continue;
-
-      let parsed: { error?: string; outputLines?: string[] };
-      try {
-        parsed = JSON.parse(run.output) as { error?: string; outputLines?: string[] };
-      } catch {
-        continue;
-      }
-
-      // Collect error strings: explicit error field + output lines containing "error"
-      const errorLines: string[] = [];
-      if (parsed.error) errorLines.push(parsed.error);
-
-      if (parsed.outputLines) {
-        for (const line of parsed.outputLines) {
-          if (/error/i.test(line)) errorLines.push(line);
-        }
-      }
-
-      for (const raw of errorLines) {
-        // Normalize: trim, collapse whitespace, truncate to 120 chars
-        const normalized = raw.trim().replaceAll(/\s+/g, ' ').slice(0, 120);
-        if (!normalized) continue;
-
-        const existing = patternMap.get(normalized);
-        if (existing) {
-          existing.count++;
-          existing.scriptIds.add(run.scriptId);
-          if (run.startedAt > existing.lastSeen) existing.lastSeen = run.startedAt;
-        } else {
-          patternMap.set(normalized, {
-            count: 1,
-            scriptIds: new Set([run.scriptId]),
-            lastSeen: run.startedAt,
-          });
-        }
+      const errorLines = extractErrorLines(run.output);
+      for (const line of errorLines) {
+        accumulatePattern(patternMap, line, run.scriptId, run.startedAt);
       }
     }
 
-    // Sort by count descending, take top N
     return [...patternMap.entries()]
       .sort((a, b) => b[1].count - a[1].count)
       .slice(0, limit)
