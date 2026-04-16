@@ -1,5 +1,9 @@
 export { testSuiteKeys } from './testSuiteKeys';
 export { useTestSuiteConfig } from './useTestSuiteConfig';
+export { useTestSuiteConfigs } from './useTestSuiteConfigs';
 export { useTestSuiteScripts } from './useTestSuiteScripts';
 export { useTestSuiteRuns } from './useTestSuiteRuns';
 export { useTestSuiteScreenshots } from './useTestSuiteScreenshots';
+export { useSaveTestSuiteConfig } from './useSaveTestSuiteConfig';
+export { useDeleteTestSuiteConfig } from './useDeleteTestSuiteConfig';
+export { useSetActiveTestSuiteConfig } from './useSetActiveTestSuiteConfig';

@@ -12,14 +12,23 @@
 
 import { useEffect, useState } from 'react';
 
+import { Trash2 } from 'lucide-react';
+
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 
+import { useDeleteTestSuiteConfig } from '@renderer/features/test-suite/api/useDeleteTestSuiteConfig';
 import { useSaveTestSuiteConfig } from '@renderer/features/test-suite/api/useSaveTestSuiteConfig';
+import { useSetActiveTestSuiteConfig } from '@renderer/features/test-suite/api/useSetActiveTestSuiteConfig';
 import { useTestSuiteConfig } from '@renderer/features/test-suite/api/useTestSuiteConfig';
+import { useTestSuiteConfigs } from '@renderer/features/test-suite/api/useTestSuiteConfigs';
+import { ConfigEditDialog } from '@renderer/features/test-suite/components/ConfigEditDialog';
 import { useDebounce } from '@renderer/shared/hooks/useDebounce';
+import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -80,6 +89,10 @@ export function TestingSettingsTab() {
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
   const { data: config } = useTestSuiteConfig(activeProjectId);
   const save = useSaveTestSuiteConfig(activeProjectId ?? '');
+  const { data: configs } = useTestSuiteConfigs(activeProjectId ?? '');
+  const setActive = useSetActiveTestSuiteConfig(activeProjectId ?? '');
+  const del = useDeleteTestSuiteConfig(activeProjectId ?? '');
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [buffer, setBuffer] = useState<EditableFields | null>(
     config ? toBuffer(config) : null,
@@ -239,6 +252,80 @@ export function TestingSettingsTab() {
             </div>
           </CardContent>
         </Card>
+
+        {/* ── Section 4: Saved Configurations ───────────────────────── */}
+        <Card>
+          <CardHeader>
+            <h2 className="text-sm font-semibold uppercase text-text-muted">
+              Saved Configurations
+            </h2>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {(configs ?? []).map((c) => (
+                  <Card
+                    key={c.id}
+                    className={cn(
+                      'flex items-center gap-3 p-3',
+                      c.isActive && 'border-accent',
+                    )}
+                  >
+                    <div className="flex flex-1 flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{c.name}</span>
+                        {c.isActive ? <Badge>Active</Badge> : null}
+                      </div>
+                      <span className="text-text-muted text-xs">
+                        {c.targetUrl} · {c.viewportWidth}×{c.viewportHeight} ·{' '}
+                        {c.screenshotMode}
+                      </span>
+                    </div>
+                    {c.isActive ? null : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setActive.mutate(c.id)}
+                      >
+                        Use
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingId(c.id)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      aria-label="Delete"
+                      disabled={c.isActive}
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => del.mutate(c.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </Card>
+              ))}
+              <Button variant="ghost" onClick={() => setEditingId('new')}>
+                + Add Configuration
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <ConfigEditDialog
+          open={editingId !== null}
+          projectId={activeProjectId}
+          config={
+            editingId && editingId !== 'new'
+              ? (configs ?? []).find((c) => c.id === editingId) ?? null
+              : null
+          }
+          onOpenChange={(o) => {
+            if (!o) setEditingId(null);
+          }}
+        />
       </div>
     </PageContent>
   );
