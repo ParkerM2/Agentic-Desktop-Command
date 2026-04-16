@@ -47,16 +47,17 @@ import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
-import { testSuiteEvents, testSuiteInvoke } from './test-suite';
+import { runnersEvents, runnersInvoke } from './runners';
 import { screenInvoke } from './screen';
 import {
   securityInvoke,
   settingsInvoke,
 } from './settings';
 import { spotifyInvoke } from './spotify';
-import { voiceEvents, voiceInvoke } from './voice';
 import { terminalsEvents, terminalsInvoke } from './terminals';
+import { testSuiteEvents, testSuiteInvoke } from './test-suite';
 import { visualizationInvoke } from './visualization';
+import { voiceEvents, voiceInvoke } from './voice';
 import { webhookEvents, webhookInvoke } from './webhook';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
@@ -112,6 +113,7 @@ export const ipcInvokeContract = {
   ...webhookInvoke,
   ...progressInvoke,
   ...busInvoke,
+  ...runnersInvoke,
 
 } as const;
 
@@ -149,6 +151,7 @@ export const ipcEventContract = {
   ...workflowEvents,
   ...progressEvents,
   ...busEvents,
+  ...runnersEvents,
 
 } as const;
 
