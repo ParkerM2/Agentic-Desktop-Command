@@ -14,9 +14,9 @@ import type { SessionRecord } from '@main/bus/types';
 import { serviceLogger } from '@main/lib/logger';
 
 import type { QaContext, QaRunner } from './qa-types';
-import type { QaRecorderService } from './recorder';
 import type { IpcRouter } from '../../ipc/router';
 import type { ProgressService } from '../progress/progress-service';
+import type { TestSuiteService } from '../test-suite';
 
 export interface QaTrigger {
   dispose: () => void;
@@ -71,9 +71,9 @@ export function createQaTrigger(deps: {
   busSessionManager: BusSessionManager;
   progressService: ProgressService;
   router: IpcRouter;
-  qaRecorderService?: QaRecorderService;
+  testSuiteService?: TestSuiteService;
 }): QaTrigger {
-  const { qaRunner, busSessionManager, progressService, qaRecorderService } = deps;
+  const { qaRunner, busSessionManager, progressService, testSuiteService } = deps;
   const triggeredTasks = new Set<string>();
 
   function isQaAlreadyRunning(taskId: string): boolean {
@@ -123,12 +123,12 @@ export function createQaTrigger(deps: {
       await qaRunner.startQuiet(taskId, context);
 
       // Fire recorded scripts for this project in parallel with agent QA
-      if (qaRecorderService) {
-        const scripts = qaRecorderService.scriptStore.listByProject(projectPath);
+      if (testSuiteService) {
+        const scripts = testSuiteService.scriptStore.listByProject(projectPath);
         for (const script of scripts) {
           if (!script.filePath) continue;
           try {
-            qaRecorderService.runner.run({
+            testSuiteService.runner.run({
               scriptId: script.id,
               filePath: script.filePath,
               projectPath,

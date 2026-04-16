@@ -6,18 +6,16 @@
  */
 
 import { AGENT_DASHBOARD } from '@shared/ipc/agent-dashboard/channels';
+import { CHANGELOG } from '@shared/ipc/changelog';
 import { FITNESS } from '@shared/ipc/fitness/channels';
-import { CHANGELOG } from '@shared/ipc/misc/changelog.channels';
-import { IDEAS } from '@shared/ipc/misc/ideas.channels';
-import { MILESTONES } from '@shared/ipc/misc/milestones.channels';
-import { SCREEN } from '@shared/ipc/misc/screen.channels';
-import { VOICE } from '@shared/ipc/misc/voice.channels';
+import { IDEAS } from '@shared/ipc/ideas';
+import { SCREEN } from '@shared/ipc/screen';
+import { VOICE } from '@shared/ipc/voice';
 
 import { registerAgentDashboardHandlers } from '../features/agent-dashboard/agent-dashboard-handlers';
 import { registerAlertHandlers } from '../features/alerts/alert-handlers';
 import { registerAppHandlers } from '../features/app/app-handlers';
 import { registerAppUpdateHandlers } from '../features/app/app-update-handlers';
-import { registerDockerHandlers } from '../features/app/docker';
 import { registerErrorHandlers } from '../features/app/health';
 import { registerWindowHandlers } from '../features/app/window-handlers';
 import { registerAssistantHandlers } from '../features/assistant/assistant-handlers';
@@ -27,9 +25,12 @@ import { registerBusHandlers } from '../features/bus/bus-handlers';
 import { registerChangelogHandlers } from '../features/changelog/changelog-handlers';
 import { registerClaudeHandlers } from '../features/claude/claude-handlers';
 import { registerDashboardHandlers } from '../features/dashboard/dashboard-handlers';
-import { registerFilesHandlers } from '../features/file-tree/files-handlers';
+import { registerDataDirHandlers, registerDataManagementHandlers } from '../features/data-management';
+import { registerDockerHandlers } from '../features/docker';
+import { registerFilesHandlers } from '../features/files/files-handlers';
 import { registerFitnessHandlers } from '../features/fitness/fitness-handlers';
 import { registerGitHandlers } from '../features/git/git-handlers';
+import { registerGitHubHandlers } from '../features/github';
 import { registerDeviceHandlers } from '../features/hub/device';
 import { registerHubHandlers } from '../features/hub/hub-handlers';
 import { registerIdeasHandlers } from '../features/ideas/ideas-handlers';
@@ -37,27 +38,26 @@ import { registerInsightsHandlers } from '../features/insights/insights-handlers
 import { registerIntegrationsHandlers } from '../features/integrations/integrations-handlers';
 import { registerMcpHandlers } from '../features/mcp/mcp-handlers';
 import { registerMergeHandlers } from '../features/merge/merge-handlers';
-import { registerMilestonesHandlers } from '../features/milestones/milestones-handlers';
 import { registerNotesHandlers } from '../features/notes/notes-handlers';
 import { registerOAuthHandlers } from '../features/oauth/oauth-handlers';
 import { registerPlannerHandlers } from '../features/planner/planner-handlers';
 import { registerProgressHandlers } from '../features/progress/progress-handlers';
-import { registerProjectHandlers } from '../features/project/project-handlers';
+import { registerProjectHandlers } from '../features/projects/project-handlers';
 import { registerQaHandlers } from '../features/qa/qa-handlers';
-import { registerQaRecorderHandlers } from '../features/qa/recorder/recorder-handlers';
-import { registerDataDirHandlers, registerDataManagementHandlers } from '../features/settings/data-management';
+import { registerRunnerHandlers } from '../features/runners/runners-handlers';
+import { registerSecurityHandlers } from '../features/security/security-handlers';
 import { registerHotkeyHandlers } from '../features/settings/hotkeys';
 import { registerScreenHandlers } from '../features/settings/screen';
-import { registerSecurityHandlers } from '../features/settings/security-handlers';
 import { registerSettingsHandlers } from '../features/settings/settings-handlers';
 import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
-import { registerTerminalHandlers } from '../features/terminal/terminal-handlers';
-import { registerTrackerHandlers } from '../features/tracker/tracker-handlers';
+import { registerSpotifyHandlers } from '../features/spotify';
+import { registerTerminalHandlers } from '../features/terminals/terminals-handlers';
+import { registerTestSuiteHandlers } from '../features/test-suite/recorder-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';
-import { registerWorkspacesHandlers } from '../features/workspaces/workspaces-handlers';
+import { registerWorkspacesHandlers } from '../features/workspace/workspaces-handlers';
 
 import type { IpcRouter } from './router';
 import type { AgentManager } from '../agent-host/agent-host-client';
@@ -69,7 +69,6 @@ import type { BusSessionManager } from '../bus/session-manager';
 import type { TeamWatcherService } from '../features/agent-dashboard/agent-dashboard-handlers';
 import type { AlertService } from '../features/alerts/alert-service';
 import type { AppUpdateService } from '../features/app/app-update-service';
-import type { DockerService } from '../features/app/docker';
 import type { ErrorCollectorHandler, HealthRegistryHandler } from '../features/app/health';
 import type { AssistantService } from '../features/assistant/assistant-service';
 import type { UserSessionManager } from '../features/auth';
@@ -77,10 +76,14 @@ import type { BriefingService } from '../features/briefing/briefing-service';
 import type { ChangelogService } from '../features/changelog/changelog-service';
 import type { ClaudeClient } from '../features/claude';
 import type { DashboardService } from '../features/dashboard/dashboard-service';
-import type { FileTreeService } from '../features/file-tree/file-tree-service';
+import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/data-management';
+import type { DockerService } from '../features/docker';
+import type { EmailService } from '../features/email/email-service';
+import type { FileTreeService } from '../features/files/files-service';
 import type { FitnessService } from '../features/fitness/fitness-service';
 import type { GitService } from '../features/git/git-service';
 import type { WorktreeService } from '../features/git/worktree-service';
+import type { GitHubService } from '../features/github';
 import type { DeviceService } from '../features/hub/device';
 import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { HubAuthService } from '../features/hub/hub-auth-service';
@@ -89,31 +92,27 @@ import type { HubSyncService } from '../features/hub/hub-sync';
 import type { IdeasService } from '../features/ideas/ideas-service';
 import type { InsightsService } from '../features/insights/insights-service';
 import type { CalendarService } from '../features/integrations/calendar';
-import type { EmailService } from '../features/integrations/email/email-service';
-import type { GitHubService } from '../features/integrations/github-integration';
-import type { NotificationManager } from '../features/integrations/notifications';
-import type { SpotifyService } from '../features/integrations/spotify';
 import type { MergeService } from '../features/merge/merge-service';
-import type { MilestonesService } from '../features/milestones/milestones-service';
 import type { NotesService } from '../features/notes/notes-service';
+import type { NotificationManager } from '../features/notifications';
 import type { PlannerService } from '../features/planner/planner-service';
 import type { ProgressService } from '../features/progress/progress-service';
-import type { CodebaseAnalyzerService } from '../features/project/codebase-analyzer';
-import type { ProjectService } from '../features/project/project-service';
-import type { SetupPipelineService } from '../features/project/setup-pipeline';
+import type { CodebaseAnalyzerService } from '../features/projects/codebase-analyzer';
+import type { ProjectService } from '../features/projects/project-service';
+import type { SetupPipelineService } from '../features/projects/setup-pipeline';
 import type { QaRunner } from '../features/qa/qa-types';
-import type { QaRecorderService } from '../features/qa/recorder';
-import type { StorageInspector, DataMigrator , ConfigReader , CleanupService  } from '../features/settings/data-management';
+import type { RunnersService } from '../features/runners/runners-service';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
-import type { TerminalService } from '../features/terminal/terminal-service';
-import type { TrackerService } from '../features/tracker/tracker-service';
+import type { SpotifyService } from '../features/spotify';
+import type { TerminalService } from '../features/terminals/terminals-service';
+import type { TestSuiteService } from '../features/test-suite';
 import type { VisualizationService } from '../features/visualization';
 import type { WorkflowEngineService } from '../features/workflow/engine';
 import type { WorkflowTemplateService } from '../features/workflow/templates';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import type { WorkspacesService } from '../features/workspaces/workspaces-service';
+import type { WorkspacesService } from '../features/workspace/workspaces-service';
 import type { McpManager } from '../mcp/mcp-manager';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
@@ -139,7 +138,6 @@ export interface Services {
   ideasService: IdeasService | null;
   insightsService: InsightsService;
   mcpManager: McpManager;
-  milestonesService: MilestonesService | null;
   notesService: NotesService;
   notificationManager: NotificationManager;
   plannerService: PlannerService;
@@ -156,7 +154,7 @@ export interface Services {
   hubApiClient: HubApiClient;
   hubAuthService: HubAuthService;
   qaRunner: QaRunner;
-  qaRecorderService: QaRecorderService;
+  testSuiteService: TestSuiteService;
   workflowTemplateService: WorkflowTemplateService;
   dashboardService: DashboardService;
   dockerService: DockerService;
@@ -167,12 +165,12 @@ export interface Services {
   storageInspector: StorageInspector;
   codebaseAnalyzer: CodebaseAnalyzerService;
   setupPipeline: SetupPipelineService;
-  trackerService: TrackerService;
   visualizationService: VisualizationService;
   userSessionManager: UserSessionManager;
   workspaceSessionManager: WorkspaceSessionManager;
   workspacesService: WorkspacesService;
   progressService: ProgressService;
+  runnersService: RunnersService;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
   workflowEngineService: WorkflowEngineService;
@@ -219,10 +217,10 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerIntegrationsHandlers(router, {
     email: services.emailService,
     notifications: services.notificationManager,
-    spotify: services.spotifyService,
-    github: services.githubService,
     calendar: services.calendarService,
   });
+  registerGitHubHandlers(router, services.githubService);
+  registerSpotifyHandlers(router, services.spotifyService);
   registerClaudeHandlers(router, services.claudeClient);
   if (services.changelogService) {
     registerChangelogHandlers(router, services.changelogService);
@@ -257,16 +255,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     router.handle(IDEAS.VOTE.IDEA, unavailable('Ideas'));
   }
   registerInsightsHandlers(router, services.insightsService);
-  if (services.milestonesService) {
-    registerMilestonesHandlers(router, services.milestonesService);
-  } else {
-    router.handle(MILESTONES.LIST.ALL, emptyList);
-    router.handle(MILESTONES.CREATE.MILESTONE, unavailable('Milestones'));
-    router.handle(MILESTONES.UPDATE.MILESTONE, unavailable('Milestones'));
-    router.handle(MILESTONES.DELETE.MILESTONE, unavailable('Milestones'));
-    router.handle(MILESTONES.ADD.TASK, unavailable('Milestones'));
-    router.handle(MILESTONES.TOGGLE.TASK, unavailable('Milestones'));
-  }
   registerNotesHandlers(router, services.notesService);
   registerPlannerHandlers(router, services.plannerService);
   registerGitHandlers(router, services.gitService, services.worktreeService);
@@ -312,7 +300,8 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.busSessionManager,
     services.progressService,
   );
-  registerQaRecorderHandlers(router, services.qaRecorderService);
+  registerTestSuiteHandlers(router, services.testSuiteService, services.projectService);
+  registerRunnerHandlers(router, services.runnersService);
   registerDashboardHandlers(router, services.dashboardService);
   registerDockerHandlers(router, services.dockerService);
   registerSecurityHandlers(router, services.settingsService);
@@ -325,7 +314,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   );
   registerDataDirHandlers(router, services.configReader, services.dataMigrator);
   registerWindowHandlers(router);
-  registerTrackerHandlers(router, services.trackerService);
   registerVisualizationHandlers(router, services.visualizationService, services.projectService);
   registerProgressHandlers(router, services.progressService);
   registerBusHandlers(router, services.commandBus, services.busSessionManager);

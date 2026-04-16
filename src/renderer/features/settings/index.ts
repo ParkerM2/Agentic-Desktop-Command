@@ -43,7 +43,7 @@ export {
   useDeleteWorkspace,
   workspaceKeys,
   useWorkspaceEvents,
-} from '@features/workspaces';
+} from '@features/workspace';
 
 // Devices (absorbed from @features/devices)
 export { useDevices, useRegisterDevice, useUpdateDevice } from './api/useDevices';

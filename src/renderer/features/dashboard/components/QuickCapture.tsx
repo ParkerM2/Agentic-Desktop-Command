@@ -36,7 +36,7 @@ import {
   Text,
 } from '@ui';
 
-import { useCreateNote } from '@features/personal/notes';
+import { useCreateNote } from '@features/notes';
 import { useCreateProgressTask } from '@features/tasks';
 
 import { useCaptureMutations, useCaptures, useUpdateCapture } from '../api/useCaptures';

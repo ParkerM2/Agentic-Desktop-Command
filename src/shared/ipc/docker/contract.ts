@@ -22,4 +22,9 @@ export const dockerInvoke = {
     input: z.object({}),
     output: DockerHubSetupResultSchema,
   },
+  /** Reset: stop + remove existing Hub container, recreate fresh, new API key. */
+  [DOCKER.RESET.HUB]: {
+    input: z.object({}),
+    output: DockerHubSetupResultSchema,
+  },
 } as const;

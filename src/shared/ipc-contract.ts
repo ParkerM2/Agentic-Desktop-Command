@@ -98,7 +98,7 @@ export {
   HubConnectionStatusSchema,
   HubStatusOutputSchema,
   HubSyncOutputSchema,
-  // misc (alerts, changelog, devices, ideas, insights, merge, milestones, notes, screen, voice, workspaces)
+  // misc (alerts, changelog, devices, ideas, insights, merge, notes, screen, voice, workspaces)
   AlertLinkedToSchema,
   AlertSchema,
   AlertTypeSchema,
@@ -116,9 +116,6 @@ export {
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
   MergeResultSchema,
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
   NoteSchema,
   ProjectInsightsSchema,
   RecurringConfigSchema,

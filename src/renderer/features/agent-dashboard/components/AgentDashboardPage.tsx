@@ -50,6 +50,7 @@ import {
 } from '@ui';
 
 import { useStopSession } from '../api/useAgentMutations';
+import { useAgentSessions } from '../api/useAgentSessions';
 import { useApplyWorkflow } from '../api/useWorkflowEngine';
 import { useWorkflowTemplate } from '../api/useWorkflowTemplates';
 import { useAgentDashboardStore } from '../store';
@@ -91,6 +92,7 @@ interface SessionFilterState {
 // ─── Props ─────────────────────────────────────────────────
 
 interface AgentDashboardPageProps {
+  /** If omitted, the component self-fetches via useAgentSessions() */
   agents?: AgentSession[];
   projectOptions?: Array<{ id: string; name: string }>;
   className?: string;
@@ -99,10 +101,12 @@ interface AgentDashboardPageProps {
 // ─── Component ─────────────────────────────────────────────
 
 export function AgentDashboardPage({
-  agents = [],
+  agents: agentsProp,
   projectOptions = [],
   className,
 }: AgentDashboardPageProps) {
+  const { data: fetchedAgents = [] } = useAgentSessions();
+  const agents = agentsProp ?? fetchedAgents;
   const [agentUiState, setAgentUiState] = useState<AgentDashboardState>({
     layoutMode: 'single',
     filters: {},
@@ -121,6 +125,7 @@ export function AgentDashboardPage({
   const [pendingStopIds, setPendingStopIds] = useState<Set<string>>(new Set());
 
   const stopSession = useStopSession();
+
 
   const activeMainTab = useAgentDashboardStore((s) => s.activeMainTab);
   const setActiveMainTab = useAgentDashboardStore((s) => s.setActiveMainTab);
@@ -193,6 +198,7 @@ export function AgentDashboardPage({
     });
     setIsStopAllDialogOpen(false);
   }
+
 
   // ─── Team name options ────────────────────────────────
 

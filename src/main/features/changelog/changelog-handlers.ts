@@ -2,7 +2,7 @@
  * Changelog IPC handlers
  */
 
-import { CHANGELOG } from '@shared/ipc/misc/changelog.channels';
+import { CHANGELOG } from '@shared/ipc/changelog';
 
 import type { ChangelogService } from "./changelog-service";
 import type { IpcRouter } from '../../ipc/router';

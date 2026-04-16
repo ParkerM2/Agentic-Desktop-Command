@@ -6,7 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { HUB_TASKS } from '@shared/ipc/tasks/channels';
+import { HUB_TASKS } from '@shared/ipc/hub-tasks/channels';
 import type { Task } from '@shared/types';
 
 import { ipc } from '@renderer/shared/lib/ipc';

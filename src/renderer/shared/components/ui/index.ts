@@ -68,6 +68,8 @@ export type {
 export { Code, Heading, headingVariants, Text, textVariants } from './typography';
 export type { CodeProps, HeadingProps, TextProps } from './typography';
 
+export { MarkdownMessage } from './markdown-message';
+
 export { Grid, gridVariants } from './grid';
 export type { GridProps } from './grid';
 
@@ -287,10 +289,6 @@ export type { InlineAlertProps } from './inline-alert';
 
 export { ThinkingIndicator, thinkingVariants } from './thinking-indicator';
 export type { ThinkingIndicatorProps } from './thinking-indicator';
-
-// Tier 4: Transition
-export { TransitionOutlet } from './transition-outlet';
-export type { TransitionOutletProps } from './transition-outlet';
 
 // Tier 5: Composition Components
 export * from './composition';

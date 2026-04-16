@@ -2,7 +2,7 @@
  * Ideas IPC handlers
  */
 
-import { IDEAS } from '@shared/ipc/misc/ideas.channels';
+import { IDEAS } from '@shared/ipc/ideas';
 
 import type { IdeasService } from "./ideas-service";
 import type { IpcRouter } from '../../ipc/router';

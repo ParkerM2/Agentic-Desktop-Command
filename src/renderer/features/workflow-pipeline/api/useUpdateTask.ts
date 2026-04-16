@@ -22,7 +22,7 @@ export function useUpdateTaskDescription() {
     mutationFn: ({ slug, description }: { slug: string; description: string }) =>
       ipc(PROGRESS.UPDATE.TASK, { slug, updates: { description } }),
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.detail(variables.slug) });
     },
     onError: onError('update task description'),
@@ -37,7 +37,7 @@ export function useUpdateTaskPlan() {
     mutationFn: ({ slug, planContent }: { slug: string; planContent: string }) =>
       ipc(PROGRESS.UPDATE.TASK, { slug, updates: { description: planContent } }),
     onSuccess: (_data, variables) => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.detail(variables.slug) });
     },
     onError: onError('update task plan'),

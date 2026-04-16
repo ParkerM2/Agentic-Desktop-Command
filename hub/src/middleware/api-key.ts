@@ -31,12 +31,20 @@ export function createApiKeyMiddleware(db: Database.Database) {
       return;
     }
 
-    // Skip auth for the generate-key endpoint when no keys exist
+    // Skip auth for the generate-key endpoint when either:
+    //   (a) no keys exist yet (first-run bootstrap), or
+    //   (b) HUB_BOOTSTRAP_SECRET is configured — the route handler
+    //       validates the secret header before minting a new key.
+    //
+    // Without this, an admin who has lost their API key is locked out of
+    // their own Hub (can't use the generator, can't authenticate to rotate).
     if (request.url === '/api/auth/generate-key' && request.method === 'POST') {
       const row = db.prepare('SELECT COUNT(*) as count FROM api_keys').get() as
         | { count: number }
         | undefined;
-      if (!row || row.count === 0) {
+      const secretValue = process.env.HUB_BOOTSTRAP_SECRET;
+      const bootstrapSecretSet = typeof secretValue === 'string' && secretValue.length > 0;
+      if (!row || row.count === 0 || bootstrapSecretSet) {
         return;
       }
     }

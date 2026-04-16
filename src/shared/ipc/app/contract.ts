@@ -172,6 +172,10 @@ export const dockerInvoke = {
     input: z.object({}),
     output: DockerHubSetupResultSchema,
   },
+  [DOCKER.RESET.HUB]: {
+    input: z.object({}),
+    output: DockerHubSetupResultSchema,
+  },
 } as const;
 
 // ─── Window Invoke Channels (absorbed from window/) ───────────

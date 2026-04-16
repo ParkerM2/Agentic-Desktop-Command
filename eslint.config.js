@@ -367,6 +367,24 @@ export default tseslint.config(
         ...globals.browser,
       },
     },
+    rules: {
+      // Forbid hardcoded route strings — must use ROUTES / ROUTE_PATTERNS from @shared/constants
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "Property[key.name='to'] > Literal[value=/^\\/(?!.*\\$).+/]",
+          message:
+            "Hardcoded route string in navigate({ to }). Import ROUTES or ROUTE_PATTERNS from '@shared/constants'.",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name='to'] > Literal[value=/^\\/(?!.*\\$).+/]",
+          message:
+            "Hardcoded route string in <Link to>. Import ROUTES or ROUTE_PATTERNS from '@shared/constants'.",
+        },
+      ],
+    },
   },
 
   // ── Test file overrides ────────────────────────────────────────

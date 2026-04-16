@@ -85,21 +85,12 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     staticData: { breadcrumbLabel: 'Git' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/git-overview'),
+      () => import('@features/git'),
       'GitPage',
     ),
   });
 
   // ── Legacy redirect routes ──────────────────────────────────
-  const roadmapRedirect = createRoute({
-    getParentRoute: () => appLayoutRoute,
-    path: ROUTE_PATTERNS.PROJECT_ROADMAP,
-    beforeLoad: ({ params }) => {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error -- TanStack Router redirect pattern
-      throw redirect({ to: ROUTE_PATTERNS.PROJECT_PLANNING, params });
-    },
-  });
-
   const ideationRedirect = createRoute({
     getParentRoute: () => appLayoutRoute,
     path: ROUTE_PATTERNS.PROJECT_IDEATION,
@@ -169,14 +160,14 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     ),
   });
 
-  const qaRecorderRoute = createRoute({
+  const testSuiteRoute = createRoute({
     getParentRoute: () => appLayoutRoute,
-    path: ROUTE_PATTERNS.PROJECT_QA_RECORDER,
-    staticData: { breadcrumbLabel: 'QA Recorder' },
+    path: ROUTE_PATTERNS.PROJECT_TEST_SUITE,
+    staticData: { breadcrumbLabel: 'Test Suite' },
     pendingComponent: ProjectSkeleton,
     component: lazyRouteComponent(
-      () => import('@features/qa-recorder'),
-      'QaRecorderPage',
+      () => import('@features/test-suite'),
+      'TestSuitePage',
     ),
   });
 
@@ -191,9 +182,8 @@ export function createProjectRoutes(appLayoutRoute: AnyRoute) {
     toolsRoute,
     workflowRoute,
     visualizationRoute,
-    qaRecorderRoute,
+    testSuiteRoute,
     // Legacy redirects
-    roadmapRedirect,
     ideationRedirect,
     insightsRedirect,
     githubRedirect,

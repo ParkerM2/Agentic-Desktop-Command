@@ -4,7 +4,7 @@
  * Handles: projects_list (alias for list_projects)
  */
 
-import type { ProjectService } from '../../project/project-service';
+import type { ProjectService } from '../../projects/project-service';
 import type { ToolResult } from '../tool-executor';
 
 type ToolInput = Record<string, unknown>;

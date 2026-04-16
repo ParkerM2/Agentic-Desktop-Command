@@ -42,7 +42,7 @@ export const PROJECT_VIEWS = {
   TOOLS: 'tools',
   WORKFLOW: 'workflow',
   VISUALIZATION: 'visualization',
-  QA_RECORDER: 'qa-recorder',
+  TEST_SUITE: 'test-suite',
 } as const;
 
 /** TanStack Router path patterns (use $projectId param syntax) */
@@ -57,9 +57,8 @@ export const ROUTE_PATTERNS = {
   PROJECT_TOOLS: '/projects/$projectId/tools',
   PROJECT_WORKFLOW: '/projects/$projectId/workflow',
   PROJECT_VISUALIZATION: '/projects/$projectId/visualization',
-  PROJECT_QA_RECORDER: '/projects/$projectId/qa-recorder',
+  PROJECT_TEST_SUITE: '/projects/$projectId/test-suite',
   // Legacy patterns kept for redirect routes
-  PROJECT_ROADMAP: '/projects/$projectId/roadmap',
   PROJECT_IDEATION: '/projects/$projectId/ideation',
   PROJECT_CHANGELOG: '/projects/$projectId/changelog',
   PROJECT_INSIGHTS: '/projects/$projectId/insights',

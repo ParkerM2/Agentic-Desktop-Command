@@ -2,7 +2,7 @@
  * Insights IPC handlers
  */
 
-import { INSIGHTS } from '@shared/ipc/misc/insights.channels';
+import { INSIGHTS } from '@shared/ipc/insights';
 
 import type { InsightsService } from "./insights-service";
 import type { IpcRouter } from '../../ipc/router';

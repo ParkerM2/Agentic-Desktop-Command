@@ -2,7 +2,7 @@
  * Voice IPC handlers
  */
 
-import { VOICE } from '@shared/ipc/misc/voice.channels';
+import { VOICE } from '@shared/ipc/voice';
 
 import type { VoiceService } from "./voice-service";
 import type { IpcRouter } from '../../../ipc/router';

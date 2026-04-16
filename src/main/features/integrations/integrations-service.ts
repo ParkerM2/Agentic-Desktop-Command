@@ -1,33 +1,29 @@
 /**
- * Integrations Service — Unified factory for all integration sub-domains.
+ * Integrations Service — Unified factory for remaining integration sub-domains.
  *
- * Consolidates: email, notifications, spotify, github, calendar
- * into a single service registry entry.
+ * Consolidates: email, notifications, calendar
+ * into a single service registry entry. Spotify and GitHub have been extracted
+ * to their own top-level feature folders (`src/main/features/spotify/`,
+ * `src/main/features/github/`).
  */
 
+import { createEmailService } from '../email/email-service';
+import { createGitHubWatcher, createNotificationManager, createSlackWatcher } from '../notifications';
+
 import { createCalendarService } from './calendar';
-import { createEmailService } from './email/email-service';
-import { createGitHubService } from './github-integration';
-import { createGitHubWatcher, createNotificationManager, createSlackWatcher } from './notifications';
-import { createSpotifyService } from './spotify';
 
 import type { CalendarService } from './calendar';
-import type { EmailService } from './email/email-service';
-import type { GitHubService } from './github-integration';
-import type { NotificationManager } from './notifications';
-import type { SpotifyService } from './spotify';
 import type { OAuthManager } from '../../auth/oauth-manager';
 import type { AdcDatabase } from '../../db';
 import type { IpcRouter } from '../../ipc/router';
-import type { GitHubClient } from '../../mcp-servers/github/github-client';
+import type { EmailService } from '../email/email-service';
+import type { NotificationManager } from '../notifications';
 
 // ── Interface ─────────────────────────────────────────────────
 
 export interface IntegrationsService {
   email: EmailService;
   notifications: NotificationManager;
-  spotify: SpotifyService;
-  github: GitHubService;
   calendar: CalendarService;
 }
 
@@ -38,13 +34,12 @@ export interface IntegrationsServiceDeps {
   dataDir: string;
   router: IpcRouter;
   oauthManager: OAuthManager;
-  githubCliClient: GitHubClient;
 }
 
 // ── Factory ───────────────────────────────────────────────────
 
 export function createIntegrationsService(deps: IntegrationsServiceDeps): IntegrationsService {
-  const { db, dataDir, router, oauthManager, githubCliClient } = deps;
+  const { db, dataDir, router, oauthManager } = deps;
 
   const email = createEmailService({ db, dataDir, router });
 
@@ -68,9 +63,7 @@ export function createIntegrationsService(deps: IntegrationsServiceDeps): Integr
     return mgr;
   })();
 
-  const spotify = createSpotifyService({ oauthManager });
-  const github = createGitHubService({ client: githubCliClient, router });
   const calendar = createCalendarService({ oauthManager });
 
-  return { email, notifications, spotify, github, calendar };
+  return { email, notifications, calendar };
 }

@@ -55,7 +55,7 @@
 │  Auto-restart with exponential backoff (5 retries / 60s)         │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
-│  │ IPC Contract: src/shared/ipc/ (28 domain folders)            ││
+│  │ IPC Contract: src/shared/ipc/ (37 domain folders)            ││
 │  │ Each folder: contract.ts + schemas.ts + index.ts             ││
 │  │ Root barrel merges all into ipcInvokeContract/ipcEventContract││
 │  └──────────────────────────────────────────────────────────────┘│
@@ -83,7 +83,7 @@
 
 ## Domain-Based IPC Structure
 
-The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 28 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
+The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 37 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
 
 - `schemas.ts` — Zod schemas for the domain
 - `contract.ts` — Invoke and event contract entries using those schemas

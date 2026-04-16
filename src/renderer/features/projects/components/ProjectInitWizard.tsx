@@ -21,7 +21,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Button } from '@ui';
 
-import { useWorkspaces } from '@features/workspaces';
+import { useWorkspaces } from '@features/workspace';
 
 import { useAddProject, useCreateSubProject, useSetupExisting } from '../api/useProjects';
 

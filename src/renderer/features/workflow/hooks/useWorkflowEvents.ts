@@ -7,7 +7,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
+import { TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 

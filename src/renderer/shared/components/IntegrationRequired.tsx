@@ -10,6 +10,8 @@ import type React from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Settings } from 'lucide-react';
 
+import { ROUTES } from '@shared/constants';
+
 import { useOAuthStatus } from '@renderer/shared/hooks';
 
 // ── Types ─────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ export function IntegrationRequired({
         className="bg-primary text-primary-foreground hover:bg-primary/90 mt-3 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
         type="button"
         onClick={() => {
-          void navigate({ to: '/settings' });
+          void navigate({ to: ROUTES.SETTINGS });
         }}
       >
         <Settings className="h-4 w-4" />

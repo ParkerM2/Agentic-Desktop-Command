@@ -28,7 +28,6 @@ import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
-import { createDockerService } from '../features/app/docker';
 import {
   createErrorCollector,
   createHealthRegistry,
@@ -44,11 +43,21 @@ import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
-import { createFileTreeService } from '../features/file-tree/file-tree-service';
+import {
+  createCleanupService,
+  createConfigReader,
+  createDataMigrator,
+  createStorageInspector,
+  createUserDataMigrator,
+  createUserDataResolver,
+} from '../features/data-management';
+import { createDockerService } from '../features/docker';
+import { createFileTreeService } from '../features/files/files-service';
 import { createFitnessService } from '../features/fitness/fitness-service';
 import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
+import { createGitHubService } from '../features/github';
 import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
@@ -59,37 +68,29 @@ import { createIdeasService } from '../features/ideas/ideas-service';
 import { createInsightsService } from '../features/insights/insights-service';
 import { createIntegrationsService } from '../features/integrations/integrations-service';
 import { createMergeService } from '../features/merge/merge-service';
-import { createMilestonesService } from '../features/milestones/milestones-service';
 import { createNotesService } from '../features/notes/notes-service';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
-import { createClaudeMdGenerator } from '../features/project/claudemd-generator';
-import { createCodebaseAnalyzer } from '../features/project/codebase-analyzer';
-import { createDocGenerator } from '../features/project/doc-generator';
-import { createGitHubRepoCreator } from '../features/project/github-repo-creator';
-import { createProjectService } from '../features/project/project-service';
-import { createSetupPipeline } from '../features/project/setup-pipeline';
-import { createSkillsResolver } from '../features/project/skills-resolver';
+import { createClaudeMdGenerator } from '../features/projects/claudemd-generator';
+import { createCodebaseAnalyzer } from '../features/projects/codebase-analyzer';
+import { createDocGenerator } from '../features/projects/doc-generator';
+import { createGitHubRepoCreator } from '../features/projects/github-repo-creator';
+import { createProjectService } from '../features/projects/project-service';
+import { createSetupPipeline } from '../features/projects/setup-pipeline';
+import { createSkillsResolver } from '../features/projects/skills-resolver';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
-import { createQaRecorderService } from '../features/qa/recorder';
-import {
-  createCleanupService,
-  createConfigReader,
-  createDataMigrator,
-  createStorageInspector,
-  createUserDataMigrator,
-  createUserDataResolver,
-} from '../features/settings/data-management';
+import { createRunnersService } from '../features/runners';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
-import { createTerminalService } from '../features/terminal/terminal-service';
-import { createTrackerService } from '../features/tracker/tracker-service';
+import { createSpotifyService } from '../features/spotify';
+import { createTerminalService } from '../features/terminals/terminals-service';
+import { createTestSuiteService } from '../features/test-suite';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import { createWorkspacesService } from '../features/workspaces/workspaces-service';
+import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
@@ -109,7 +110,7 @@ import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
 import type { HubApiClient } from '../features/hub/hub-api-client';
-import type { NotificationManager } from '../features/integrations/notifications';
+import type { NotificationManager } from '../features/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
@@ -338,7 +339,6 @@ export function createServiceRegistry(
   const notesService = lazyService(() => createNotesService({ db, dataDir, router }));
   const dashboardService = lazyService(() => createDashboardService({ db, dataDir, router }));
   const plannerService = lazyService(() => createPlannerService({ db, dataDir, router }));
-  const milestonesService = lazyService(() => createMilestonesService({ db, dataDir, router }));
   const ideasService = lazyService(() => createIdeasService({ db, dataDir, router }));
   const changelogService = lazyService(() => createChangelogService({ db, router, dataDir }));
   const fitnessService = lazyService(() => createFitnessService({ db, dataDir, router }));
@@ -349,14 +349,14 @@ export function createServiceRegistry(
   // ─── Tier 1: External integrations (unified) ─────────────────
 
   const integrationsService = lazyService(() =>
-    createIntegrationsService({ db, dataDir, router, oauthManager, githubCliClient }),
+    createIntegrationsService({ db, dataDir, router, oauthManager }),
   );
 
   // Convenience accessors — expose sub-services from the unified service
   const emailService = lazyService(() => integrationsService.email);
   const notificationManager = lazyService(() => integrationsService.notifications);
-  const spotifyService = lazyService(() => integrationsService.spotify);
-  const githubService = lazyService(() => integrationsService.github);
+  const spotifyService = lazyService(() => createSpotifyService({ oauthManager }));
+  const githubService = lazyService(() => createGitHubService({ client: githubCliClient, router }));
   const calendarService = lazyService(() => integrationsService.calendar);
 
   const claudeClient = lazyService(() =>
@@ -409,7 +409,6 @@ export function createServiceRegistry(
   const toolExecutor = lazyService(() =>
     createToolExecutor({
       notesService,
-      milestonesService,
       ideasService,
       plannerService,
       projectService,
@@ -436,9 +435,21 @@ export function createServiceRegistry(
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
-  const qaRecorderService = lazyService(() => createQaRecorderService(db));
+  const runnersService = createRunnersService({
+    db,
+    router,
+    projectService: {
+      getProjectPath: (id: string) => projectService.getProjectPath(id),
+    },
+  });
+  const testSuiteService = lazyService(() =>
+    createTestSuiteService(db, {
+      getMainWindow,
+      getProjectPath: (id) => projectService.getProjectPath(id),
+    }),
+  );
   const qaTrigger = lazyService(() =>
-    createQaTrigger({ qaRunner, busSessionManager, progressService, router, qaRecorderService }),
+    createQaTrigger({ qaRunner, busSessionManager, progressService, router, testSuiteService }),
   );
 
   // ─── Tier 1: App update + hotkeys ────────────────────────────
@@ -505,7 +516,6 @@ export function createServiceRegistry(
   const teamWatcherService = lazyService(() => createTeamWatcherService());
   const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
   const fileTreeService = lazyService(() => createFileTreeService());
-  const trackerService = lazyService(() => createTrackerService(process.cwd()));
   const visualizationService = lazyService(() => createVisualizationService(agentHostClient));
   const progressService = lazyService(() => createProgressService(process.cwd(), agentHostClient, db));
 
@@ -549,7 +559,6 @@ export function createServiceRegistry(
     ideasService,
     insightsService,
     mcpManager,
-    milestonesService,
     notesService,
     dashboardService,
     dockerService,
@@ -568,14 +577,14 @@ export function createServiceRegistry(
     hubApiClient,
     hubAuthService,
     qaRunner,
-    qaRecorderService,
+    runnersService,
+    testSuiteService,
     workflowTemplateService,
     cleanupService,
     storageInspector,
     oauthManager,
     codebaseAnalyzer,
     setupPipeline,
-    trackerService,
     visualizationService,
     userSessionManager,
     workspaceSessionManager,

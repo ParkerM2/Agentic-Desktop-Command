@@ -37,6 +37,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
+          'test-suite-recorder': resolve(__dirname, 'src/preload/test-suite-recorder.ts'),
         },
       },
     },

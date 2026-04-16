@@ -110,7 +110,7 @@ Location: `src/main/services/`
 | **email** | Email sending (SMTP, SQLite-backed). Sub-modules: `email-encryption.ts`, `email-queue.ts` (SQLite via `emailQueue` table), `email-store.ts` (SQLite via `emailConfig` table), `smtp-transport.ts` (barrel: `index.ts`). Deps: `db`, `dataDir`. One-time JSON migration from `email-config.json`. | sendEmail, getConfig, testConnection | - |
 | **notifications** | Background Slack/GitHub watchers, SQLite-backed. Sub-modules: `slack-watcher.ts`, `github-watcher.ts`, `notification-filter.ts`, `notification-manager.ts`, `notification-store.ts` (SQLite via `notifications` + `notificationConfig` tables; barrel: `index.ts`) | startWatching, stopWatching, getNotifications | `event:notification.*` |
 | **progress** | SQLite-backed progress tracking — sole source of truth for all task data (old `.adc/specs/` filesystem system and `TaskService`/`TaskRepository` fully removed). Sub-modules: `progress-service.ts`, `task-file-io.ts`, `schema.ts` (Drizzle ORM, `progress_tasks` table with UUID `id` column). All consumers (My Work, Workflow Pipeline, Assistant, Briefing, QA, Insights) read from this service. | listTasks, getTask, createTask, updateTask, deleteTask | `event:progress.*` |
-| **time-parser** | Natural language time parsing | parseTimeExpression | - |
+| ~~**time-parser**~~ | REMOVED Sprint 6-7 — NLP time parsing feature deleted | - | - |
 | **voice** | Voice interface (Web Speech API) | startListening, stopListening, speak | `event:voice.*` |
 | **device** | Device registration & heartbeat via Hub API | registerDevice, updateDevice, sendHeartbeat | `event:hub.devices.*` |
 | **command-bus** | Unified command bus for all agent lifecycle operations. SQLite-backed (Drizzle ORM). Dispatches commands, tracks sessions. Location: `src/main/bus/`. Sub-modules: `command-bus.ts`, `session-manager.ts`, `dispatcher.ts` | dispatch, query, subscribe | `event:bus.*` |
@@ -310,7 +310,7 @@ The IPC contract has been split from a single monolithic file into **27 domain f
 | `data-management` | Data store registry, retention settings, cleanup, usage, export/import (8 invoke + 1 event) |
 | `security` | Security settings, audit export (3 channels) |
 | `window` | Window controls (minimize, maximize, close, isMaximized) |
-| `tracker` | Plan tracker (list, get, update docs/tracker.json via IPC) |
+| ~~`tracker`~~ | REMOVED Sprint 9 — tracker IPC domain deleted (no renderer callers) |
 | `workflow` | Workflow execution |
 | `progress` | SQLite-backed task pipeline CRUD + Research→Plan→Team actions + FS-watch events (13 invoke + 7 event channels) |
 | `workflow-templates` | Workflow template CRUD, artifact scanning/writing (7 invoke + 3 event channels) |

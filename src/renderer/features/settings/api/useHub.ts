@@ -66,6 +66,14 @@ export function useHubSync() {
   });
 }
 
+/** Generate a first-run API key using the Hub's bootstrap secret. */
+export function useHubGenerateKey() {
+  return useMutation({
+    mutationFn: (data: { url: string; bootstrapSecret: string }) =>
+      ipc(HUB.GENERATE.KEY, data),
+  });
+}
+
 /** Remove hub configuration entirely. */
 export function useHubRemoveConfig() {
   const queryClient = useQueryClient();

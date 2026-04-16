@@ -1,0 +1,79 @@
+/**
+ * Merge IPC Contract
+ *
+ * Invoke channels for branch merge operations: diff preview,
+ * conflict checking, merge execution, and abort.
+ */
+
+import { z } from 'zod';
+
+import { SuccessResponseSchema } from '../common/schemas';
+
+import { MERGE } from './channels';
+
+export const MergeDiffFileSchema = z.object({
+  file: z.string(),
+  insertions: z.number(),
+  deletions: z.number(),
+  binary: z.boolean(),
+});
+
+export const MergeDiffSummarySchema = z.object({
+  files: z.array(MergeDiffFileSchema),
+  insertions: z.number(),
+  deletions: z.number(),
+  changedFiles: z.number(),
+});
+
+export const MergeResultSchema = z.object({
+  success: z.boolean(),
+  conflicts: z.array(z.string()).optional(),
+  message: z.string(),
+});
+
+export const MergeFileDiffInputSchema = z.object({
+  repoPath: z.string(),
+  sourceBranch: z.string(),
+  targetBranch: z.string(),
+  filePath: z.string(),
+});
+
+export const MergeFileDiffOutputSchema = z.object({
+  diff: z.string(),
+  filePath: z.string(),
+});
+
+export const mergeInvoke = {
+  [MERGE.PREVIEW.DIFF]: {
+    input: z.object({
+      repoPath: z.string(),
+      sourceBranch: z.string(),
+      targetBranch: z.string(),
+    }),
+    output: MergeDiffSummarySchema,
+  },
+  [MERGE.GET['FILE-DIFF']]: {
+    input: MergeFileDiffInputSchema,
+    output: MergeFileDiffOutputSchema,
+  },
+  [MERGE.CHECK.CONFLICTS]: {
+    input: z.object({
+      repoPath: z.string(),
+      sourceBranch: z.string(),
+      targetBranch: z.string(),
+    }),
+    output: z.array(z.string()),
+  },
+  [MERGE.EXECUTE.MERGE]: {
+    input: z.object({
+      repoPath: z.string(),
+      sourceBranch: z.string(),
+      targetBranch: z.string(),
+    }),
+    output: MergeResultSchema,
+  },
+  [MERGE.ABORT.MERGE]: {
+    input: z.object({ repoPath: z.string() }),
+    output: SuccessResponseSchema,
+  },
+} as const;

@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { MessageSquare, Phone, Server, Settings, UserCircle } from 'lucide-react';
 
+import { ROUTES } from '@shared/constants';
+
 import { cn } from '@renderer/shared/lib/utils';
 
 import { Button, StatusIndicator } from '@ui';
@@ -66,14 +68,14 @@ export function DiscordPanel() {
 
   function handleAction(actionType: DiscordActionType): void {
     if (discordStatus !== 'connected') {
-      void navigate({ to: '/settings' });
+      void navigate({ to: ROUTES.SETTINGS });
       return;
     }
     setActiveAction(actionType);
   }
 
   function handleConnect(): void {
-    void navigate({ to: '/settings' });
+    void navigate({ to: ROUTES.SETTINGS });
   }
 
   function handleCloseModal(): void {

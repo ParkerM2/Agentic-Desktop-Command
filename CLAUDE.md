@@ -39,6 +39,7 @@ Feature Slice Design with React Query for server state, Zustand for UI-only stat
 - **Mutations** use `onSuccess` invalidation (`queryClient.invalidateQueries`) — NOT optimistic updates (IPC is <1ms)
 - **Event-driven cache updates** use `setQueryData` via EventBridge `append` handlers — this is distinct from mutation invalidation. When IPC events arrive (e.g., `BUS_EVENTS.SESSION.*`), the EventBridge patches the cache directly without a re-fetch.
 - `ProgressService` replaced old `.adc/specs/` filesystem task system
+- `RunnersService` manages long-running project processes (dev servers, workers). Scoped by `ScopeRef` (project | worktree). Events stream over `event:runners.instance.*` — see `src/shared/ipc/runners/`.
 
 ## Feature Slice Design
 
@@ -93,8 +94,7 @@ Pre-built index files in `.claude/codex/` — auto-regenerated on every commit v
 
 Codebase state document (manual doc, updated via doc-sync hooks):
 
-- **`.claude/progress/adc-codebase-state-2026-04-13.html`** — wire status for all 66 domains, critical issues, migration history, agent host protocol. Open in browser or search with Grep.
-- **`.claude/progress/sprint-6-7-finish-line/codebase-issues-breakdown.md`** — 40 issues categorized by severity (core broken, stubs, dead code, deprecated, overkill, mismatches, cleanup) with recommended sprint order.
+- **`.claude/progress/adc-codebase-state-2026-04-15.html`** — canonical domain inventory after the 2026-04-15 wire-cleanup-naming pass. Zero naming mismatches, zero hardcoded routes, full verification results. Open in browser.
 
 Automation config:
 
@@ -156,8 +156,8 @@ When context compresses (auto or via `/compact`), always preserve:
 
 ## Current Sprint Plan
 
-Reference: `docs/superpowers/plans/2026-04-11-gap-closure-multi-sprint.md`
-44 tasks across 7 sprints closing feature gaps identified by full-system data flow audit.
+Reference: `docs/superpowers/plans/2026-04-15-full-gap-closure.md`
+Closes every error and debt item from the 2026-04-15 codebase-state dashboard: promotes remaining `ipc/misc/` features, eliminates naming mismatches, extracts spotify/github main services, adds Vitest better-sqlite3 ABI rebuild hooks, and cleans up landed plans/docs.
 
 ## Communication Standards
 

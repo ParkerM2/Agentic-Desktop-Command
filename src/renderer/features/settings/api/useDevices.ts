@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { DEVICES } from '@shared/ipc/misc/devices.channels';
+import { DEVICES } from '@shared/ipc/devices';
 import type { InvokeInput } from '@shared/ipc-contract';
 
 import { ipc } from '@renderer/shared/lib/ipc';

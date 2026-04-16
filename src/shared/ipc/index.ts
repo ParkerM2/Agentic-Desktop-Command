@@ -9,6 +9,7 @@
  */
 
 import { agentDashboardEvents, agentDashboardInvoke } from './agent-dashboard';
+import { alertsEvents, alertsInvoke } from './alerts';
 import {
   appEvents,
   appInvoke,
@@ -21,55 +22,46 @@ import { assistantEvents, assistantInvoke } from './assistant';
 import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { busEvents, busInvoke } from './bus';
+import { calendarInvoke } from './calendar';
+import { changelogInvoke } from './changelog';
 import { claudeEvents, claudeInvoke } from './claude';
 import { dashboardEvents, dashboardInvoke } from './dashboard';
 import { dataManagementEvents, dataManagementInvoke } from './data-management';
+import { devicesInvoke } from './devices';
 import { emailEvents, emailInvoke } from './email';
 import { filesInvoke } from './files';
 import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
-import { devicesInvoke, hubEvents, hubInvoke } from './hub';
-import {
-  alertsEvents,
-  alertsInvoke,
-  calendarInvoke,
-  changelogInvoke,
-  ideasEvents,
-  ideasInvoke,
-  insightsInvoke,
-  mcpInvoke,
-  mergeInvoke,
-  milestonesEvents,
-  milestonesInvoke,
-  notesEvents,
-  notesInvoke,
-  webhookEvents,
-  workspacesInvoke,
-} from './misc';
+import { hotkeysInvoke } from './hotkeys';
+import { hubEvents, hubInvoke } from './hub';
+import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
+import { ideasEvents, ideasInvoke } from './ideas';
+import { insightsInvoke } from './insights';
+import { mcpInvoke } from './mcp';
+import { mergeInvoke } from './merge';
+import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
-import { personalEvents, personalInvoke } from './personal';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
-import { qaRecorderEvents, qaRecorderInvoke } from './qa-recorder';
+import { runnersEvents, runnersInvoke } from './runners';
+import { screenInvoke } from './screen';
 import {
-  hotkeysInvoke,
-  screenInvoke,
   securityInvoke,
   settingsInvoke,
-  voiceEvents,
-  voiceInvoke,
 } from './settings';
 import { spotifyInvoke } from './spotify';
-import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './tasks';
 import { terminalsEvents, terminalsInvoke } from './terminals';
-import { trackerInvoke } from './tracker';
+import { testSuiteEvents, testSuiteInvoke } from './test-suite';
 import { visualizationInvoke } from './visualization';
+import { voiceEvents, voiceInvoke } from './voice';
+import { webhookEvents, webhookInvoke } from './webhook';
 import { workflowEvents, workflowInvoke } from './workflow';
 import { workspaceEvents, workspaceInvoke } from './workspace';
+import { workspacesInvoke } from './workspaces';
 
 // ─── Merged Invoke Contract ──────────────────────────────────
 
@@ -87,7 +79,6 @@ export const ipcInvokeContract = {
   ...alertsInvoke,
   ...gitInvoke,
   ...mergeInvoke,
-  ...milestonesInvoke,
   ...ideasInvoke,
   ...changelogInvoke,
   ...insightsInvoke,
@@ -104,7 +95,7 @@ export const ipcInvokeContract = {
   ...dockerInvoke,
   ...windowInvoke,
   ...qaInvoke,
-  ...qaRecorderInvoke,
+  ...testSuiteInvoke,
   ...mcpInvoke,
   ...claudeInvoke,
   ...emailInvoke,
@@ -116,14 +107,14 @@ export const ipcInvokeContract = {
   ...workflowInvoke,
   ...dashboardInvoke,
   ...dataManagementInvoke,
-  ...trackerInvoke,
   ...agentDashboardInvoke,
   ...workspaceInvoke,
   ...visualizationInvoke,
+  ...webhookInvoke,
   ...progressInvoke,
   ...busInvoke,
+  ...runnersInvoke,
 
-  ...personalInvoke,
 } as const;
 
 // ─── Merged Event Contract ───────────────────────────────────
@@ -143,7 +134,6 @@ export const ipcEventContract = {
   ...notesEvents,
   ...plannerEvents,
   ...alertsEvents,
-  ...milestonesEvents,
   ...ideasEvents,
   ...fitnessEvents,
   ...hubEvents,
@@ -152,7 +142,7 @@ export const ipcEventContract = {
   ...notificationsEvents,
   ...briefingEvents,
   ...qaEvents,
-  ...qaRecorderEvents,
+  ...testSuiteEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
   ...authEvents,
@@ -161,8 +151,8 @@ export const ipcEventContract = {
   ...workflowEvents,
   ...progressEvents,
   ...busEvents,
+  ...runnersEvents,
 
-  ...personalEvents,
 } as const;
 
 // ─── Type Utilities ──────────────────────────────────────────
@@ -192,7 +182,6 @@ export {
   UserSchema,
 } from './auth';
 
-// Briefing schemas now re-exported from personal/ (see bottom of file)
 
 export { CaptureSchema } from './dashboard';
 
@@ -229,7 +218,6 @@ export {
   SmtpProviderSchema,
 } from './email';
 
-// Fitness schemas now re-exported from personal/ (see bottom of file)
 
 export {
   GitBranchSchema,
@@ -275,30 +263,39 @@ export {
   HubSyncOutputSchema,
 } from './hub';
 
-// Non-personal schemas from misc (personal schemas re-exported from ./personal below)
+
 export {
   InsightMetricsSchema,
   InsightTimeSeriesSchema,
+  ProjectInsightsSchema,
+  TaskDistributionSchema,
+} from './insights';
+
+export {
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
   MergeFileDiffInputSchema,
   MergeFileDiffOutputSchema,
   MergeResultSchema,
-  ProjectInsightsSchema,
-  TaskDistributionSchema,
+} from './merge';
+
+export {
   WorkspaceSchema,
   WorkspaceSettingsSchema,
-} from './misc';
+} from './workspaces';
 
-export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './hub';
+export { DeviceCapabilitiesSchema, DeviceSchema, DeviceTypeSchema } from './devices';
 
 export {
   ScreenPermissionStatusSchema,
   ScreenSourceSchema,
   ScreenshotSchema,
+} from './screen';
+
+export {
   VoiceConfigSchema,
   VoiceInputModeSchema,
-} from './settings';
+} from './voice';
 
 export {
   GitHubNotificationTypeSchema,
@@ -320,7 +317,6 @@ export {
   OAuthRevokeOutputSchema,
 } from './oauth';
 
-// Planner schemas now re-exported from personal/ (see bottom of file)
 
 export {
   ChildRepoSchema,
@@ -349,6 +345,27 @@ export {
 } from './qa';
 
 export {
+  BrowserViewBoundsSchema,
+  BrowserViewCreateInputSchema,
+  QaRunReportSchema,
+  QaRunSchema,
+  QaRunStatusSchema,
+  QaScriptSchema,
+  QaStepAssertSchema,
+  QaStepClickSchema,
+  QaStepFillSchema,
+  QaStepNavigateSchema,
+  QaStepPressSchema,
+  QaStepSelectSchema,
+  QaStepTypeSchema,
+  QaStepWaitSchema,
+  TestSuiteConfigSchema,
+  TestSuiteScreenshotSchema,
+  TestSuiteStepSchema,
+} from './test-suite';
+export type { TestSuiteConfig, TestSuiteScreenshot } from './test-suite';
+
+export {
   CspModeSchema,
   SecurityAuditExportSchema,
   SecurityModeSchema,
@@ -365,13 +382,11 @@ export {
   HubTaskSchema,
   HubTaskStatusSchema,
   TaskStatusSchema,
-} from './tasks';
+} from './hub-tasks';
 
 export { TerminalSessionSchema } from './terminals';
 
 export { WindowEmptyInputSchema, WindowIsMaximizedOutputSchema } from './app';
-
-export { TrackerFileSchema, TrackerPlanSchema, TrackerPlanStatusSchema } from './tracker';
 
 export {
   AgentChatMessageSchema,
@@ -460,47 +475,57 @@ export {
   workflowStepStatusSchema,
 } from './progress';
 
+
+// ─── Per-domain schema re-exports (formerly aggregated by personal/) ─────────
+
+export { NoteSchema } from './notes';
+
+export { IdeaCategorySchema, IdeaSchema, IdeaStatusSchema } from './ideas';
+
 export {
-  AgentActivitySummarySchema,
   AlertLinkedToSchema,
   AlertSchema,
   AlertTypeSchema,
-  BodyMeasurementSchema,
-  BriefingConfigSchema,
+  RecurringConfigSchema,
+} from './alerts';
+
+export {
   ChangeCategorySchema,
   ChangelogEntrySchema,
   ChangeTypeSchema,
-  DailyBriefingSchema,
+} from './changelog';
+
+export {
   DailyPlanSchema,
+  ScheduledTaskSchema,
+  TimeBlockSchema,
+  TimeBlockTypeSchema,
+  WeeklyReviewSchema,
+  WeeklyReviewSummarySchema,
+} from './planner/schemas';
+
+export {
+  AgentActivitySummarySchema,
+  BriefingConfigSchema,
+  DailyBriefingSchema,
+  SuggestionActionSchema,
+  SuggestionSchema,
+  SuggestionTypeSchema,
+  TaskSummarySchema,
+} from './briefing/schemas';
+
+export {
+  BodyMeasurementSchema,
   ExerciseSchema,
   ExerciseSetSchema,
   FitnessGoalSchema,
   FitnessGoalTypeSchema,
   FitnessStatsSchema,
-  IdeaCategorySchema,
-  IdeaSchema,
-  IdeaStatusSchema,
   MeasurementSourceSchema,
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
-  NoteSchema,
-  PERSONAL,
-  PERSONAL_EVENTS,
-  RecurringConfigSchema,
-  ScheduledTaskSchema,
-  SuggestionActionSchema,
-  SuggestionSchema,
-  SuggestionTypeSchema,
-  TaskSummarySchema,
-  TimeBlockSchema,
-  TimeBlockTypeSchema,
-  WeeklyReviewSchema,
-  WeeklyReviewSummarySchema,
   WeightUnitSchema,
   WorkoutSchema,
   WorkoutTypeSchema,
-} from './personal';
+} from './fitness/schemas';
 
 // ─── Integrations Domain (unified namespace) ─────────────────
 export { integrationsEvents, integrationsInvoke } from './integrations';

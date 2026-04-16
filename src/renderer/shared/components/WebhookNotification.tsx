@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { GitBranch, MessageSquare, X } from 'lucide-react';
 
-import { WEBHOOK_EVENTS } from '@shared/ipc/misc/webhook.channels';
+import { WEBHOOK_EVENTS } from '@shared/ipc/webhook';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 

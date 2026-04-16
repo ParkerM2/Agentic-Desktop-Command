@@ -4,7 +4,7 @@
  * All merge operations are async (git commands).
  */
 
-import { MERGE } from '@shared/ipc/misc/merge.channels';
+import { MERGE } from '@shared/ipc/merge';
 
 import type { MergeService } from "./merge-service";
 import type { IpcRouter } from '../../ipc/router';

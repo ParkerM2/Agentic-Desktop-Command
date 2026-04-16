@@ -28,7 +28,7 @@ import {
   Textarea,
 } from '@ui';
 
-import { useWorkspaces } from '@features/workspaces';
+import { useWorkspaces } from '@features/workspace';
 
 import { useRemoveProject, useUpdateProject } from '../api/useProjects';
 
@@ -198,12 +198,15 @@ export function ProjectEditDialog({ project, onClose }: ProjectEditDialogProps) 
             {(workspaces?.length ?? 0) > 0 ? (
               <div>
                 <Label htmlFor="edit-workspace">Workspace</Label>
-                <Select value={workspaceId} onValueChange={setWorkspaceId}>
+                <Select
+                  value={workspaceId === '' ? '__none__' : workspaceId}
+                  onValueChange={(val) => setWorkspaceId(val === '__none__' ? '' : val)}
+                >
                   <SelectTrigger className="mt-1" id="edit-workspace">
                     <SelectValue placeholder="No workspace" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No workspace</SelectItem>
+                    <SelectItem value="__none__">No workspace</SelectItem>
                     {workspaces?.map((ws) => (
                       <SelectItem key={ws.id} value={ws.id}>
                         {ws.name}

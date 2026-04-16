@@ -58,7 +58,7 @@ describe('ProjectService', () => {
   async function createFreshService() {
     vi.resetModules();
     const { createProjectService } = await import(
-      '@main/features/project/project-service'
+      '@main/features/projects/project-service'
     );
     return createProjectService({ hubApiClient });
   }

@@ -80,7 +80,7 @@ Electron main process starts
 
 | Path | Component | Auth Required | File |
 |------|-----------|---------------|------|
-| `/hub-setup` | `HubSetupPage` | No (redirects to /login if hub already configured) | `src/renderer/features/hub-setup/components/HubSetupPage.tsx` |
+| `/hub-setup` | `HubSetupPage` | No (redirects to /login if hub already configured) | `src/renderer/features/hub/components/HubSetupPage.tsx` |
 | `/login` | `LoginPage` | No (redirects to /hub-setup if hub not configured) | `src/renderer/features/auth/components/LoginPage.tsx` |
 | `/register` | `RegisterPage` | No (redirects to /hub-setup if hub not configured) | `src/renderer/features/auth/components/RegisterPage.tsx` |
 | All other routes | Wrapped by `AuthGuard` | Yes | `src/renderer/features/auth/components/AuthGuard.tsx` |
@@ -431,7 +431,7 @@ Once a project is active, these routes become available:
 | `/projects/$projectId/agents` | `AgentDashboard` | `src/renderer/features/agents/` |
 | `/projects/$projectId/github` | `GitHubPage` | `src/renderer/features/github/` |
 | `/projects/$projectId/roadmap` | `RoadmapPage` | `src/renderer/features/roadmap/` |
-| `/projects/$projectId/ideation` | `IdeationPage` | `src/renderer/features/ideation/` |
+| `/projects/$projectId/ideation` | `IdeationPage` | `src/renderer/features/ideas/` |
 | `/projects/$projectId/changelog` | `ChangelogPage` | `src/renderer/features/changelog/` |
 | `/projects/$projectId/insights` | `InsightsPage` | `src/renderer/features/insights/` |
 | `/projects/$projectId/workflow` | `WorkflowPipelinePage` | `src/renderer/features/workflow-pipeline/` |
@@ -654,7 +654,7 @@ Hub broadcasts WebSocket event
 ## 12. Ideation
 
 **Route**: `/projects/$projectId/ideation`
-**Feature**: `src/renderer/features/ideation/`
+**Feature**: `src/renderer/features/ideas/`
 
 ### User Actions
 
@@ -999,7 +999,7 @@ Delete:
 - `src/renderer/features/settings/components/WorkspacesTab.tsx`
 - `src/renderer/features/settings/components/WorkspaceCard.tsx`
 - `src/renderer/features/settings/components/WorkspaceEditor.tsx`
-- `src/renderer/features/workspaces/api/useWorkspaces.ts`
+- `src/renderer/features/workspace/api/useWorkspaces.ts`
 - `src/main/ipc/handlers/workspace-handlers.ts`
 
 ### 23.4 Device Management

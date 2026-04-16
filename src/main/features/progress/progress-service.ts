@@ -14,7 +14,7 @@ import { watch } from 'node:fs';
 import { access, mkdir, readFile, readdir, rename, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { eq, ne } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 
 import { generateId } from '@shared/lib/id';
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
@@ -32,7 +32,7 @@ import type { FSWatcher } from 'node:fs';
 // ─── Service Interface ────────────────────────────────────────
 
 export interface ProgressService {
-  listTasks: () => Promise<ProgressTask[]>;
+  listTasks: (projectId?: string) => Promise<ProgressTask[]>;
   getTask: (slug: string) => Promise<ProgressTask | null>;
   createTask: (
     slug: string,
@@ -40,6 +40,7 @@ export interface ProgressService {
     description: string,
     priority?: ProgressPriority,
     id?: string,
+    projectId?: string,
   ) => Promise<ProgressTask>;
   updateTask: (
     slug: string,
@@ -386,6 +387,7 @@ function rowToTask(
   return {
     id: row.id ?? row.slug,
     slug: row.slug,
+    projectId: row.projectId ?? undefined,
     rootFile: derived.rootFile,
     title: row.title,
     description: row.description ?? '',
@@ -726,11 +728,16 @@ export function createProgressService(
   // ─── Public API ───────────────────────────────────────────────
 
   const service: ProgressService = {
-    async listTasks(): Promise<ProgressTask[]> {
+    async listTasks(projectId?: string): Promise<ProgressTask[]> {
       await init();
 
+      const notArchived = ne(progressTasks.status, 'archived');
+      const where = projectId === undefined
+        ? notArchived
+        : and(notArchived, eq(progressTasks.projectId, projectId));
+
       const rows = db.select().from(progressTasks)
-        .where(ne(progressTasks.status, 'archived'))
+        .where(where)
         .all();
 
       const tasks: ProgressTask[] = [];
@@ -820,6 +827,7 @@ export function createProgressService(
       description: string,
       priority: ProgressPriority = 'normal',
       id?: string,
+      projectId?: string,
     ): Promise<ProgressTask> {
       await init();
 
@@ -830,6 +838,7 @@ export function createProgressService(
       db.insert(progressTasks).values({
         slug,
         id: resolvedId,
+        projectId: projectId ?? null,
         title,
         status: 'backlog',
         priority,
@@ -858,6 +867,7 @@ export function createProgressService(
       const task: ProgressTask = {
         id: resolvedId,
         slug,
+        projectId,
         rootFile: 'task.md',
         title,
         description,

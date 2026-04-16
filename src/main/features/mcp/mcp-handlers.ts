@@ -4,7 +4,7 @@
  * Exposes MCP tool calls to the renderer process.
  */
 
-import { MCP } from '@shared/ipc/misc/mcp.channels';
+import { MCP } from '@shared/ipc/mcp';
 
 import type { IpcRouter } from '../../ipc/router';
 import type { McpManager } from '../../mcp/mcp-manager';

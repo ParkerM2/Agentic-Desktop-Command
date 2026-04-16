@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { MERGE } from '@shared/ipc/misc/merge.channels';
+import { MERGE } from '@shared/ipc/merge';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

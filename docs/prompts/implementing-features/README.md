@@ -179,7 +179,7 @@ Claude-UI/
 │   ├── tracker.json                   # Single source of truth for plan/progress lifecycle
 │   ├── plans/                         # Design documents (one per feature)
 │   └── specs/                         # Specification files (one per feature)
-├── .claude/agents/                    # Agent prompt definitions (27 specialists)
+├── .claude/agents/                    # Agent prompt definitions (30 specialists)
 ├── hub/                               # Hub backend (Fastify + SQLite)
 │   └── src/
 │       ├── db/schema.sql

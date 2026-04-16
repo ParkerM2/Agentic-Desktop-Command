@@ -1,0 +1,115 @@
+wing: agent_desktop_command
+rooms:
+- name: agents
+  description: Files from agents/
+  keywords:
+  - agents
+  - agents
+- name: ai_docs
+  description: Files from ai-docs/
+  keywords:
+  - ai_docs
+  - ai-docs
+- name: design
+  description: Files from assets/
+  keywords:
+  - design
+  - assets
+- name: autoresearch
+  description: Files from autoresearch/
+  keywords:
+  - autoresearch
+  - autoresearch
+- name: brand
+  description: Files from brand/
+  keywords:
+  - brand
+  - brand
+- name: certs
+  description: Files from certs/
+  keywords:
+  - certs
+  - certs
+- name: documentation
+  description: Files from docs/
+  keywords:
+  - documentation
+  - docs
+- name: drizzle
+  description: Files from drizzle/
+  keywords:
+  - drizzle
+  - drizzle
+- name: hub
+  description: Files from hub/
+  keywords:
+  - hub
+  - hub
+- name: logs
+  description: Files from logs/
+  keywords:
+  - logs
+  - logs
+- name: nginx
+  description: Files from nginx/
+  keywords:
+  - nginx
+  - nginx
+- name: out
+  description: Files from out/
+  keywords:
+  - out
+  - out
+- name: progress
+  description: Files from progress/
+  keywords:
+  - progress
+  - progress
+- name: resources
+  description: Files from resources/
+  keywords:
+  - resources
+  - resources
+- name: scripts
+  description: Files from scripts/
+  keywords:
+  - scripts
+  - scripts
+- name: src
+  description: Files from src/
+  keywords:
+  - src
+  - src
+- name: test_suite
+  description: Files from test-suite/
+  keywords:
+  - test_suite
+  - test-suite
+- name: testing
+  description: Files from tests/
+  keywords:
+  - testing
+  - tests
+- name: tracking
+  description: Files from tracking/
+  keywords:
+  - tracking
+  - tracking
+- name: planning
+  description: Files from specs/
+  keywords:
+  - planning
+  - specs
+- name: research
+  description: Files from research/
+  keywords:
+  - research
+  - research
+- name: frontend
+  description: Files from ui/
+  keywords:
+  - frontend
+  - ui
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

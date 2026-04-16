@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-const { matchesFilter } = await import('@main/features/integrations/notifications/notification-filter');
+const { matchesFilter } = await import('@main/features/notifications/notification-filter');
 
 import type { Notification, NotificationFilter } from '@shared/types';
 

@@ -19,6 +19,7 @@ import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Pencil, Play, Plus } f
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useLooseParams } from '@renderer/shared/hooks';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
 import {
@@ -658,8 +659,10 @@ function createProgressColumns(
 // ── Main component ─────────────────────────────────────────
 
 export function ProgressTaskGrid() {
+  const { projectId } = useLooseParams();
+
   // Data hooks
-  const { data: tasks = [], isLoading } = useProgressTasks();
+  const { data: tasks = [], isLoading } = useProgressTasks(projectId);
   const createTaskMutation = useCreateProgressTask();
   const runWorkflowMutation = useRunWorkflow();
   const archiveTaskMutation = useArchiveProgressTask();
@@ -840,14 +843,14 @@ export function ProgressTaskGrid() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-0 overflow-hidden">
+    <div className="flex h-full w-full min-w-0 flex-col gap-0 overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
         <SearchInput
@@ -981,7 +984,13 @@ export function ProgressTaskGrid() {
         open={newTaskDialogOpen}
         onOpenChange={setNewTaskDialogOpen}
         onCreate={async (slug, title, description, priority) => {
-          await createTaskMutation.mutateAsync({ slug, title, description, priority });
+          await createTaskMutation.mutateAsync({
+            slug,
+            title,
+            description,
+            priority,
+            projectId,
+          });
         }}
       />
 
