@@ -44,6 +44,7 @@ import { registerPlannerHandlers } from '../features/planner/planner-handlers';
 import { registerProgressHandlers } from '../features/progress/progress-handlers';
 import { registerProjectHandlers } from '../features/projects/project-handlers';
 import { registerQaHandlers } from '../features/qa/qa-handlers';
+import { registerRunnerHandlers } from '../features/runners/runners-handlers';
 import { registerSecurityHandlers } from '../features/security/security-handlers';
 import { registerHotkeyHandlers } from '../features/settings/hotkeys';
 import { registerScreenHandlers } from '../features/settings/screen';
@@ -100,6 +101,7 @@ import type { CodebaseAnalyzerService } from '../features/projects/codebase-anal
 import type { ProjectService } from '../features/projects/project-service';
 import type { SetupPipelineService } from '../features/projects/setup-pipeline';
 import type { QaRunner } from '../features/qa/qa-types';
+import type { RunnersService } from '../features/runners/runners-service';
 import type { ScreenCaptureService } from '../features/settings/screen';
 import type { SettingsService } from '../features/settings/settings-service';
 import type { VoiceService } from '../features/settings/voice';
@@ -168,6 +170,7 @@ export interface Services {
   workspaceSessionManager: WorkspaceSessionManager;
   workspacesService: WorkspacesService;
   progressService: ProgressService;
+  runnersService: RunnersService;
   teamWatcherService: TeamWatcherService | null;
   fileTreeService: FileTreeService;
   workflowEngineService: WorkflowEngineService;
@@ -298,6 +301,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.progressService,
   );
   registerTestSuiteHandlers(router, services.testSuiteService, services.projectService);
+  registerRunnerHandlers(router, services.runnersService);
   registerDashboardHandlers(router, services.dashboardService);
   registerDockerHandlers(router, services.dockerService);
   registerSecurityHandlers(router, services.settingsService);

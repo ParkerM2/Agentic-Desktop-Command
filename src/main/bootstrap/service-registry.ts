@@ -80,6 +80,7 @@ import { createSetupPipeline } from '../features/projects/setup-pipeline';
 import { createSkillsResolver } from '../features/projects/skills-resolver';
 import { createQaRunner } from '../features/qa/qa-runner';
 import { createQaTrigger } from '../features/qa/qa-trigger';
+import { createRunnersService } from '../features/runners';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
@@ -434,6 +435,13 @@ export function createServiceRegistry(
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
+  const runnersService = createRunnersService({
+    db,
+    router,
+    projectService: {
+      getProjectPath: (id: string) => projectService.getProjectPath(id),
+    },
+  });
   const testSuiteService = lazyService(() =>
     createTestSuiteService(db, {
       getMainWindow,
@@ -569,6 +577,7 @@ export function createServiceRegistry(
     hubApiClient,
     hubAuthService,
     qaRunner,
+    runnersService,
     testSuiteService,
     workflowTemplateService,
     cleanupService,
