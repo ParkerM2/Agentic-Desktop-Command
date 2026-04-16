@@ -5,6 +5,8 @@ import type { TestSuiteStep } from '@shared/types/test-suite';
 
 export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics';
 
+export type StatusFilter = 'all' | 'passed' | 'failed' | 'flaky' | 'no-runs';
+
 export interface RecordedStep {
   stepIndex: number;
   step: TestSuiteStep;
@@ -18,6 +20,7 @@ interface TestSuiteUiState {
   recordingActive: boolean;
   recordedSteps: RecordedStep[];
   shortcutHelpOpen: boolean;
+  libraryStatusFilter: StatusFilter;
   setActiveTab: (tab: TestSuiteTab) => void;
   setSelectedScriptId: (id: string | null) => void;
   setSelectedRunId: (id: string | null) => void;
@@ -25,6 +28,7 @@ interface TestSuiteUiState {
   addStep: (step: RecordedStep) => void;
   clearSteps: () => void;
   setShortcutHelpOpen: (open: boolean) => void;
+  setLibraryStatusFilter: (filter: StatusFilter) => void;
 }
 
 export const useTestSuiteStore = create<TestSuiteUiState>()(
@@ -36,6 +40,7 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       recordingActive: false,
       recordedSteps: [],
       shortcutHelpOpen: false,
+      libraryStatusFilter: 'all' as StatusFilter,
       setActiveTab: (activeTab) => {
         set({ activeTab });
       },
@@ -56,6 +61,9 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       setShortcutHelpOpen: (shortcutHelpOpen) => {
         set({ shortcutHelpOpen });
+      },
+      setLibraryStatusFilter: (libraryStatusFilter) => {
+        set({ libraryStatusFilter });
       },
     }),
     {

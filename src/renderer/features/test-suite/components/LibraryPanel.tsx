@@ -24,11 +24,20 @@ import {
 
 import { useDeleteScript } from '../api/useDeleteScript';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
+import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { RunSparkline } from './RunSparkline';
+
+const FILTER_LABELS = {
+  all: 'All',
+  passed: 'Passed',
+  failed: 'Failed',
+  flaky: 'Flaky',
+  'no-runs': 'No runs',
+} as const;
 
 export function LibraryPanel() {
   const { projectId } = useLooseParams();
@@ -42,13 +51,51 @@ export function LibraryPanel() {
   const deleteScript = useDeleteScript(projectId ?? '');
   const setActiveTab = useTestSuiteStore((s) => s.setActiveTab);
   const setSelectedScriptId = useTestSuiteStore((s) => s.setSelectedScriptId);
+  const statusFilter = useTestSuiteStore((s) => s.libraryStatusFilter);
+  const setStatusFilter = useTestSuiteStore((s) => s.setLibraryStatusFilter);
 
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
-  const filtered = scripts.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const { data: allRuns = [] } = useAllTestSuiteRuns();
+  const latestStartByScript = new Map<string, string>();
+  const lastStatusByScript = new Map<string, string>();
+  for (const run of allRuns) {
+    const prevStart = latestStartByScript.get(run.scriptId);
+    if (!prevStart || run.startedAt > prevStart) {
+      latestStartByScript.set(run.scriptId, run.startedAt);
+      lastStatusByScript.set(run.scriptId, run.status);
+    }
+  }
+  const getLastStatus = (scriptId: string): string | undefined =>
+    lastStatusByScript.get(scriptId);
+
+  const matchesSearch = (name: string) =>
+    name.toLowerCase().includes(search.toLowerCase());
+
+  const statusCounts = {
+    all: scripts.filter((s) => matchesSearch(s.name)).length,
+    passed: scripts.filter(
+      (s) => matchesSearch(s.name) && getLastStatus(s.id) === 'passed',
+    ).length,
+    failed: scripts.filter(
+      (s) => matchesSearch(s.name) && getLastStatus(s.id) === 'failed',
+    ).length,
+    flaky: scripts.filter(
+      (s) => matchesSearch(s.name) && flakySet.has(s.id),
+    ).length,
+    'no-runs': scripts.filter(
+      (s) => matchesSearch(s.name) && !getLastStatus(s.id),
+    ).length,
+  };
+
+  const filtered = scripts.filter((s) => {
+    if (!matchesSearch(s.name)) return false;
+    if (statusFilter === 'all') return true;
+    if (statusFilter === 'flaky') return flakySet.has(s.id);
+    if (statusFilter === 'no-runs') return !getLastStatus(s.id);
+    return getLastStatus(s.id) === statusFilter;
+  });
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -80,19 +127,34 @@ export function LibraryPanel() {
 
   return (
     <PageContent>
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-          <Input
-            className="pl-9"
-            placeholder="Search tests..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex flex-col gap-2 border-b border-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <Input
+              className="pl-9"
+              data-testid="test-suite-search"
+              placeholder="Search tests..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button size="sm" onClick={onNewTest}>
+            <Plus className="h-4 w-4" /> New Test
+          </Button>
         </div>
-        <Button size="sm" onClick={onNewTest}>
-          <Plus className="h-4 w-4" /> New Test
-        </Button>
+        <div className="flex items-center gap-1">
+          {(['all', 'passed', 'failed', 'flaky', 'no-runs'] as const).map((filter) => (
+            <Button
+              key={filter}
+              size="sm"
+              variant={statusFilter === filter ? 'primary' : 'outline'}
+              onClick={() => setStatusFilter(filter)}
+            >
+              {`${FILTER_LABELS[filter]} (${statusCounts[filter]})`}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 overflow-auto">

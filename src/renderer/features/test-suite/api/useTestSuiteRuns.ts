@@ -14,3 +14,11 @@ export function useTestSuiteRuns(scriptId: string | null | undefined) {
     staleTime: 10_000,
   });
 }
+
+export function useAllTestSuiteRuns() {
+  return useQuery({
+    queryKey: testSuiteKeys.runs('*'),
+    queryFn: () => ipc(TEST_SUITE.LIST.RUNS, {}),
+    staleTime: 10_000,
+  });
+}
