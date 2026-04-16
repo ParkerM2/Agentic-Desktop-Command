@@ -23,12 +23,17 @@ import {
 } from '@ui';
 
 import { useDeleteScript } from '../api/useDeleteScript';
+import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useTestSuiteStore } from '../test-suite-store';
+
+import { RunSparkline } from './RunSparkline';
 
 export function LibraryPanel() {
   const { projectId } = useLooseParams();
   const { data: scripts = [] } = useTestSuiteScripts(projectId);
+  const { data: flakyTests = [] } = useFlakyTests(projectId);
+  const flakySet = new Set(flakyTests.map((f) => f.scriptId));
   const deleteScript = useDeleteScript(projectId ?? '');
   const setActiveTab = useTestSuiteStore((s) => s.setActiveTab);
   const setSelectedScriptId = useTestSuiteStore((s) => s.setSelectedScriptId);
@@ -99,6 +104,7 @@ export function LibraryPanel() {
               <TableHead className="w-20 text-center">Steps</TableHead>
               <TableHead className="w-28">Created</TableHead>
               <TableHead className="w-28">Updated</TableHead>
+              <TableHead className="w-32">History</TableHead>
               <TableHead className="w-24">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -113,6 +119,11 @@ export function LibraryPanel() {
                 </TableCell>
                 <TableCell className="font-medium">
                   {script.name}
+                  {flakySet.has(script.id) ? (
+                    <Badge className="ml-2" variant="secondary">
+                      flaky
+                    </Badge>
+                  ) : null}
                   {script.description ? (
                     <span className="ml-2 text-sm text-text-muted">{script.description}</span>
                   ) : null}
@@ -127,6 +138,9 @@ export function LibraryPanel() {
                 </TableCell>
                 <TableCell className="text-sm text-text-muted">
                   {formatDate(script.updatedAt)}
+                </TableCell>
+                <TableCell>
+                  <ScriptSparkline scriptId={script.id} />
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
@@ -157,7 +171,7 @@ export function LibraryPanel() {
             ))}
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell className="py-8 text-center text-text-muted" colSpan={6}>
+                <TableCell className="py-8 text-center text-text-muted" colSpan={7}>
                   {search ? 'No matching tests' : 'No tests recorded yet'}
                 </TableCell>
               </TableRow>
@@ -187,4 +201,9 @@ export function LibraryPanel() {
       ) : null}
     </PageContent>
   );
+}
+
+function ScriptSparkline({ scriptId }: { scriptId: string }) {
+  const { data: history = [] } = useRunHistory(scriptId, 10);
+  return <RunSparkline results={history} />;
 }
