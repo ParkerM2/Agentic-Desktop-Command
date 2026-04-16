@@ -27,6 +27,7 @@ import type { Analytics } from './analytics';
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { ScreenshotStore } from './screenshot-capture';
+import type { FileWatcher } from './watcher';
 import type { IpcRouter } from '../../ipc/router';
 import type { ProjectService } from '../projects/project-service';
 
@@ -56,7 +57,7 @@ export interface TestSuiteRunEvent {
 
 export interface TestSuiteService {
   listScripts: () => Promise<unknown[]>;
-  getScript: (id: string) => Promise<unknown>;
+  getScript: (id: string) => Promise<{ filePath?: string } | null>;
   saveScript: (input: {
     id?: string;
     projectId: string;
@@ -66,7 +67,7 @@ export interface TestSuiteService {
     filePath?: string;
   }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
-  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' }) => Promise<{ runId: string }>;
+  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger' }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRun | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
@@ -77,6 +78,7 @@ export interface TestSuiteService {
   browserViewManager: BrowserViewManager;
   screenshotStore: ScreenshotStore;
   analytics: Analytics;
+  fileWatcher: FileWatcher;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -360,5 +362,39 @@ export function registerTestSuiteHandlers(
 
   router.handle(TEST_SUITE.ANALYTICS['RUN-HISTORY'], ({ scriptId, limit }) =>
     Promise.resolve(analytics.runHistory(scriptId, limit)),
+  );
+
+  // ── Watch mode handlers ────────────────────────────────────────
+
+  router.handle(TEST_SUITE.WATCH.START, async ({ scriptId }) => {
+    const script = await testSuiteService.getScript(scriptId);
+    if (!script?.filePath) return { success: false };
+
+    testSuiteService.fileWatcher.watch(scriptId, script.filePath, () => {
+      void testSuiteService
+        .runScript({ scriptId, triggeredBy: 'auto-trigger' })
+        .then(({ runId }) => {
+          router.emit(TEST_SUITE_EVENTS.WATCH.TRIGGERED, {
+            scriptId,
+            runId,
+            timestamp: new Date().toISOString(),
+          });
+          return null;
+        })
+        .catch(() => {
+          // Swallow — the watcher callback must not throw.
+        });
+    });
+
+    return { success: true };
+  });
+
+  router.handle(TEST_SUITE.WATCH.STOP, ({ scriptId }) => {
+    testSuiteService.fileWatcher.unwatch(scriptId);
+    return Promise.resolve({ success: true });
+  });
+
+  router.handle(TEST_SUITE.WATCH.LIST, () =>
+    Promise.resolve(testSuiteService.fileWatcher.listWatched()),
   );
 }

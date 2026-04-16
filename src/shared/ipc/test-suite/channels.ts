@@ -12,6 +12,7 @@ export const TEST_SUITE = domain('test-suite', {
   CONFIG: ['get', 'save', 'list', 'delete', 'set-active'],
   SCREENSHOT: ['list', 'export-zip', 'copy'],
   ANALYTICS: ['summary', 'trend', 'top-failures', 'slowest', 'error-patterns', 'flaky', 'run-history'],
+  WATCH: ['start', 'stop', 'list'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {
@@ -19,4 +20,5 @@ export const TEST_SUITE_EVENTS = events('test-suite', {
   RUN: ['screenshot', 'started', 'step', 'completed'],
   RECORDER: ['step', 'stopped'],
   CONFIG: ['changed'],
+  WATCH: ['triggered'],
 });

@@ -22,6 +22,7 @@ import { createExporter } from './exporter';
 import { createRunner } from './runner';
 import { createScreenshotStore } from './screenshot-capture';
 import { createScriptStore } from './script-store';
+import { createFileWatcher } from './watcher';
 
 import type { Analytics } from './analytics';
 import type { BrowserViewManager } from './browser-view-manager';
@@ -30,6 +31,7 @@ import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
 import type { ScreenshotStore } from './screenshot-capture';
 import type { ScriptStore, QaScript } from './script-store';
+import type { FileWatcher } from './watcher';
 import type { AdcDatabase } from '../../db';
 
 type TestSuiteStep = typeof TestSuiteStepSchema extends { _output: infer T } ? T : never;
@@ -84,6 +86,7 @@ export interface TestSuiteService {
   browserViewManager: BrowserViewManager;
   screenshotStore: ScreenshotStore;
   analytics: Analytics;
+  fileWatcher: FileWatcher;
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
@@ -99,7 +102,7 @@ export interface TestSuiteService {
   deleteScript: (id: string) => Promise<{ success: boolean }>;
   runScript: (input: {
     scriptId: string;
-    triggeredBy: 'manual' | 'scheduled' | 'ci';
+    triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
   }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRunIpcRecord | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRunIpcRecord[]>;
@@ -176,6 +179,7 @@ export function createTestSuiteService(
   const exporter = createExporter();
   const configStore = createConfigStore(db);
   const analytics = createAnalytics(db);
+  const fileWatcher = createFileWatcher();
 
   return {
     // Sub-services
@@ -186,6 +190,7 @@ export function createTestSuiteService(
     browserViewManager,
     screenshotStore,
     analytics,
+    fileWatcher,
 
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),

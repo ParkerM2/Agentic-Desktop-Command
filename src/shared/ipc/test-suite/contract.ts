@@ -179,6 +179,18 @@ export const testSuiteInvoke = {
     input: z.object({ scriptId: z.string(), limit: z.number().default(20) }),
     output: z.array(RunHistoryEntrySchema),
   },
+  [TEST_SUITE.WATCH.START]: {
+    input: z.object({ scriptId: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.WATCH.STOP]: {
+    input: z.object({ scriptId: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.WATCH.LIST]: {
+    input: z.object({}),
+    output: z.array(z.string()),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────
@@ -236,6 +248,13 @@ export const testSuiteEvents = {
   [TEST_SUITE_EVENTS.CONFIG.CHANGED]: {
     payload: z.object({
       config: TestSuiteConfigSchema,
+    }),
+  },
+  [TEST_SUITE_EVENTS.WATCH.TRIGGERED]: {
+    payload: z.object({
+      scriptId: z.string(),
+      runId: z.string(),
+      timestamp: z.string(),
     }),
   },
 } as const;
