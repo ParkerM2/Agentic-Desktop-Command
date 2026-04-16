@@ -6,20 +6,20 @@
  * each payload to local state.
  */
 
-import { useState } from 'react';
-
-import type { EventPayload } from '@shared/ipc';
 import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
-type StepEvent = EventPayload<typeof TEST_SUITE_EVENTS.RECORDER.STEP>;
+import { useTestSuiteStore } from '../test-suite-store';
+
+import type { RecordedStep } from '../test-suite-store';
 
 export function StepList() {
-  const [steps, setSteps] = useState<StepEvent[]>([]);
+  const steps = useTestSuiteStore((s) => s.recordedSteps);
+  const addStep = useTestSuiteStore((s) => s.addStep);
 
   useIpcEvent(TEST_SUITE_EVENTS.RECORDER.STEP, (payload) => {
-    setSteps((prev) => [...prev, payload]);
+    addStep(payload as RecordedStep);
   });
 
   return (
@@ -38,7 +38,7 @@ export function StepList() {
   );
 }
 
-function renderDetail(step: StepEvent['step']): string {
+function renderDetail(step: RecordedStep['step']): string {
   switch (step.type) {
     case 'navigate':
       return step.url;
