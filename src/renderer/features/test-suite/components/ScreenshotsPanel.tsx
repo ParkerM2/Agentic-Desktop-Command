@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 
-import { Copy, FolderOpen, ImageIcon } from 'lucide-react';
+import { Copy, FolderOpen, GitCompare, ImageIcon, Target } from 'lucide-react';
 
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
@@ -28,9 +28,19 @@ import {
   Text,
 } from '@ui';
 
+import {
+  useBaselines,
+  useCompareDiffs,
+  useRunDiffs,
+  useSetBaseline,
+} from '../api/useBaselines';
 import { useRuns } from '../api/useRuns';
 import { useTestSuiteScreenshots } from '../api/useTestSuiteScreenshots';
 import { useTestSuiteStore } from '../test-suite-store';
+
+import { DiffViewer } from './DiffViewer';
+
+type Sensitivity = 'strict' | 'balanced' | 'relaxed';
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -59,9 +69,22 @@ export function ScreenshotsPanel() {
   const { data: screenshots, isLoading: screenshotsLoading } = useTestSuiteScreenshots(selectedRunId);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [sensitivity, setSensitivity] = useState<Sensitivity>('balanced');
 
   const selected = screenshots?.[selectedIndex] ?? null;
   const hasScreenshots = Array.isArray(screenshots) && screenshots.length > 0;
+
+  const { data: baselines } = useBaselines(selected?.scriptId);
+  const { data: diffs } = useRunDiffs(selectedRunId ?? undefined);
+  const setBaseline = useSetBaseline();
+  const compareDiffs = useCompareDiffs();
+
+  const currentDiff = selected
+    ? diffs?.find((d) => d.screenshotId === selected.id) ?? null
+    : null;
+  const currentBaseline = selected
+    ? baselines?.find((b) => b.stepIndex === selected.stepIndex) ?? null
+    : null;
 
   // ── Actions ───────────────────────────────────────────────────
 
@@ -74,6 +97,16 @@ export function ScreenshotsPanel() {
     if (!selected) return;
     const tempDest = `${selected.filePath}.clipboard.png`;
     await ipc(TEST_SUITE.SCREENSHOT.COPY, { id: selected.id, destPath: tempDest });
+  }
+
+  function handleSetBaseline() {
+    if (!selected) return;
+    setBaseline.mutate({ scriptId: selected.scriptId, screenshotId: selected.id });
+  }
+
+  function handleCompare() {
+    if (!selectedRunId) return;
+    compareDiffs.mutate({ runId: selectedRunId, sensitivity });
   }
 
   // ── Loading state ─────────────────────────────────────────────
@@ -151,13 +184,26 @@ export function ScreenshotsPanel() {
 
         {/* Large preview */}
         <div className="flex flex-1 flex-col gap-2 overflow-hidden rounded-md border border-border bg-surface-raised p-3">
-          <div className="flex-1 overflow-auto">
-            <img
-              alt={selected.stepLabel}
-              className="mx-auto max-h-full max-w-full rounded object-contain"
-              src={fileUrl(selected.filePath)}
-            />
-          </div>
+          <ScrollArea className="flex-1">
+            <div className="flex flex-col gap-3">
+              <img
+                alt={selected.stepLabel}
+                className="mx-auto max-w-full rounded object-contain"
+                src={fileUrl(selected.filePath)}
+              />
+
+              {/* Diff viewer — visible when a diff record + baseline exist for this screenshot */}
+              {currentDiff && currentBaseline ? (
+                <DiffViewer
+                  actualPath={selected.filePath}
+                  baselinePath={currentBaseline.filePath}
+                  diffPath={currentDiff.diffFilePath}
+                  mismatchPercentage={currentDiff.mismatchPercentage}
+                  status={currentDiff.status}
+                />
+              ) : null}
+            </div>
+          </ScrollArea>
 
           {/* Metadata overlay */}
           <div className="flex items-center gap-4 rounded bg-surface px-3 py-2">
@@ -206,6 +252,37 @@ export function ScreenshotsPanel() {
           </Select>
 
           <div className="ml-auto flex items-center gap-2">
+            <Button
+              disabled={selected === null || setBaseline.isPending}
+              size="sm"
+              variant="outline"
+              onClick={handleSetBaseline}
+            >
+              <Target className="mr-1.5 h-4 w-4" />
+              Set as Baseline
+            </Button>
+            <Button
+              disabled={!selectedRunId || !hasScreenshots || compareDiffs.isPending}
+              size="sm"
+              variant="outline"
+              onClick={handleCompare}
+            >
+              <GitCompare className="mr-1.5 h-4 w-4" />
+              Compare to Baseline
+            </Button>
+            <Select
+              value={sensitivity}
+              onValueChange={(val) => setSensitivity(val as Sensitivity)}
+            >
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="strict">Strict</SelectItem>
+                <SelectItem value="balanced">Balanced</SelectItem>
+                <SelectItem value="relaxed">Relaxed</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               disabled={selected === null}
               size="sm"
