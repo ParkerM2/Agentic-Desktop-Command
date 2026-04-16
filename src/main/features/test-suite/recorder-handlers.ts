@@ -5,6 +5,11 @@
  * Thin handlers — all logic delegated to service.
  */
 
+import { copyFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+
+import { shell } from 'electron';
+
 import { TEST_SUITE, TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 import { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 import type {
@@ -15,7 +20,7 @@ import type {
 
 import { ensurePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteReadme } from './readme-writer';
-import { getScreenshots } from './screenshot-capture';
+import { getScreenshotById, getScreenshots } from './screenshot-capture';
 import { writeSpecFile } from './script-writer';
 
 import type { BrowserViewManager } from './browser-view-manager';
@@ -276,11 +281,23 @@ export function registerTestSuiteHandlers(
     return Promise.resolve(getScreenshots(runId));
   });
 
-  router.handle(TEST_SUITE.SCREENSHOT['EXPORT-ZIP'], () =>
-    Promise.resolve({ filePath: '' }),
-  );
+  router.handle(TEST_SUITE.SCREENSHOT['EXPORT-ZIP'], async ({ runId }) => {
+    const screenshots = getScreenshots(runId);
+    if (screenshots.length === 0) return { filePath: '' };
 
-  router.handle(TEST_SUITE.SCREENSHOT.COPY, () =>
-    Promise.resolve({ filePath: '' }),
-  );
+    // Return the parent directory of the screenshots and open it in the file manager
+    const dir = path.dirname(screenshots[0].filePath);
+    await shell.openPath(dir);
+    return { filePath: dir };
+  });
+
+  router.handle(TEST_SUITE.SCREENSHOT.COPY, async ({ id, destPath }) => {
+    const screenshot = getScreenshotById(id);
+    if (!screenshot) return { filePath: '' };
+
+    // Ensure destination directory exists
+    await mkdir(path.dirname(destPath), { recursive: true });
+    await copyFile(screenshot.filePath, destPath);
+    return { filePath: destPath };
+  });
 }

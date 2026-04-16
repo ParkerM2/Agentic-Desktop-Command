@@ -80,6 +80,17 @@ export function getScreenshots(runId: string): ScreenshotRecord[] {
   return store.get(runId) ?? [];
 }
 
+/**
+ * Retrieve a single screenshot by its id across all runs.
+ */
+export function getScreenshotById(id: string): ScreenshotRecord | null {
+  for (const records of store.values()) {
+    const found = records.find((r) => r.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
 // ─── Helpers ────────────────────────────────────────────────
 
 function mapTrigger(raw: string): ScreenshotRecord['trigger'] {
