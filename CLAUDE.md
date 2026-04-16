@@ -39,6 +39,7 @@ Feature Slice Design with React Query for server state, Zustand for UI-only stat
 - **Mutations** use `onSuccess` invalidation (`queryClient.invalidateQueries`) — NOT optimistic updates (IPC is <1ms)
 - **Event-driven cache updates** use `setQueryData` via EventBridge `append` handlers — this is distinct from mutation invalidation. When IPC events arrive (e.g., `BUS_EVENTS.SESSION.*`), the EventBridge patches the cache directly without a re-fetch.
 - `ProgressService` replaced old `.adc/specs/` filesystem task system
+- `RunnersService` manages long-running project processes (dev servers, workers). Scoped by `ScopeRef` (project | worktree). Events stream over `event:runners.instance.*` — see `src/shared/ipc/runners/`.
 
 ## Feature Slice Design
 
