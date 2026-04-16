@@ -23,12 +23,14 @@ import type { CleanupService } from '../features/data-management';
 import type { createHubConnectionManager } from '../features/hub/hub-connection';
 import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
+import type { RunnersService } from '../features/runners/runners-service';
 import type { createTerminalService } from '../features/terminals/terminals-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface LifecycleDeps {
   createWindow: () => void;
   terminalService: ReturnType<typeof createTerminalService>;
+  runnersService: RunnersService;
   errorCollector: ErrorCollector;
   healthRegistry: HealthRegistry;
   healthService: HealthService;
@@ -76,6 +78,7 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     deps.hotkeyManager.unregisterAll();
     deps.qaTrigger.dispose();
     deps.terminalService.dispose();
+    deps.runnersService.dispose();
     deps.alertService.stopChecking();
     deps.hubConnectionManager.dispose();
     deps.notificationManager.dispose();

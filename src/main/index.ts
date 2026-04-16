@@ -252,6 +252,7 @@ function initializeApp(): void {
   setupLifecycle({
     createWindow,
     terminalService: registry.terminalService,
+    runnersService: registry.services.runnersService,
     errorCollector: registry.errorCollector,
     healthRegistry: registry.healthRegistry,
     healthService: registry.healthService,
