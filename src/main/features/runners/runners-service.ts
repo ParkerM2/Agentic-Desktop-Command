@@ -150,9 +150,73 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
         }
         return result;
       })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        updateInstance(instanceId, { status: 'failed', lastError: message });
+        router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, {
+          instanceId,
+          status: 'failed',
+          lastError: message,
+        });
+      })
       .finally(() => {
         healthControllers.delete(instanceId);
       });
+  }
+
+  function startInstance(profileId: string, scope: ScopeRef): RunnerInstance {
+    const profileRow = db
+      .select()
+      .from(runnerProfiles)
+      .where(eq(runnerProfiles.id, profileId))
+      .get();
+    if (!profileRow) throw new Error(`Profile ${profileId} not found`);
+    const profile = rowToProfile(profileRow);
+
+    const resolvedCwd = resolveCwd(profile, scope);
+    const id = generateId();
+    const now = new Date().toISOString();
+
+    db.insert(runnerInstances)
+      .values({
+        id,
+        profileId,
+        scopeKind: scope.kind,
+        scopeProjectId: scope.projectId,
+        scopeWorktreePath: scope.kind === 'worktree' ? scope.worktreePath : null,
+        status: 'starting',
+        resolvedCwd,
+        resolvedCommand: profile.command,
+        startedAt: now,
+      })
+      .run();
+
+    router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId: id, status: 'starting' });
+
+    const handle = supervisor.spawn({
+      id,
+      command: profile.command,
+      cwd: resolvedCwd,
+      env: profile.env,
+    });
+
+    updateInstance(id, { pid: handle.pid ?? null, status: 'running' });
+    router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId: id, status: 'running' });
+
+    if (profile.healthCheckUrl) {
+      startHealthCheck(id, profile.healthCheckUrl, profile.healthCheckTimeoutMs);
+    } else {
+      updateInstance(id, { status: 'ready', readyAt: new Date().toISOString() });
+      router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId: id, status: 'ready' });
+    }
+
+    const freshRow = db
+      .select()
+      .from(runnerInstances)
+      .where(eq(runnerInstances.id, id))
+      .get();
+    if (!freshRow) throw new Error('Instance row vanished');
+    return rowToInstance(freshRow);
   }
 
   return {
@@ -222,60 +286,7 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
       return rows.map(rowToInstance);
     },
 
-    startInstance(profileId, scope) {
-      const profileRow = db
-        .select()
-        .from(runnerProfiles)
-        .where(eq(runnerProfiles.id, profileId))
-        .get();
-      if (!profileRow) throw new Error(`Profile ${profileId} not found`);
-      const profile = rowToProfile(profileRow);
-
-      const resolvedCwd = resolveCwd(profile, scope);
-      const id = generateId();
-      const now = new Date().toISOString();
-
-      db.insert(runnerInstances)
-        .values({
-          id,
-          profileId,
-          scopeKind: scope.kind,
-          scopeProjectId: scope.projectId,
-          scopeWorktreePath: scope.kind === 'worktree' ? scope.worktreePath : null,
-          status: 'starting',
-          resolvedCwd,
-          resolvedCommand: profile.command,
-          startedAt: now,
-        })
-        .run();
-
-      router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId: id, status: 'starting' });
-
-      const handle = supervisor.spawn({
-        id,
-        command: profile.command,
-        cwd: resolvedCwd,
-        env: profile.env,
-      });
-
-      updateInstance(id, { pid: handle.pid ?? null, status: 'running' });
-      router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId: id, status: 'running' });
-
-      if (profile.healthCheckUrl) {
-        startHealthCheck(id, profile.healthCheckUrl, profile.healthCheckTimeoutMs);
-      } else {
-        updateInstance(id, { status: 'ready', readyAt: new Date().toISOString() });
-        router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId: id, status: 'ready' });
-      }
-
-      const freshRow = db
-        .select()
-        .from(runnerInstances)
-        .where(eq(runnerInstances.id, id))
-        .get();
-      if (!freshRow) throw new Error('Instance row vanished');
-      return rowToInstance(freshRow);
-    },
+    startInstance,
 
     stopInstance(instanceId) {
       updateInstance(instanceId, { status: 'stopping' });
@@ -293,7 +304,7 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
       if (!row) throw new Error(`Instance ${instanceId} not found`);
       supervisor.kill(instanceId);
       const inst = rowToInstance(row);
-      return this.startInstance(inst.profileId, inst.scope);
+      return startInstance(inst.profileId, inst.scope);
     },
 
     dispose() {
