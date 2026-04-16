@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS test_suite_schedules (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
-
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_test_suite_schedules_project ON test_suite_schedules(project_id);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_test_suite_schedules_script ON test_suite_schedules(script_id);

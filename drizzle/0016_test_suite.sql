@@ -1,7 +1,8 @@
 -- drizzle/0016_test_suite.sql
 ALTER TABLE qa_scripts RENAME TO test_suite_scripts;
+--> statement-breakpoint
 ALTER TABLE qa_runs RENAME TO test_suite_runs;
-
+--> statement-breakpoint
 CREATE TABLE test_suite_screenshots (
   id TEXT PRIMARY KEY NOT NULL,
   run_id TEXT NOT NULL,
@@ -16,6 +17,7 @@ CREATE TABLE test_suite_screenshots (
   FOREIGN KEY (run_id) REFERENCES test_suite_runs(id) ON DELETE CASCADE,
   FOREIGN KEY (script_id) REFERENCES test_suite_scripts(id) ON DELETE CASCADE
 );
-
+--> statement-breakpoint
 CREATE INDEX idx_test_suite_screenshots_run ON test_suite_screenshots(run_id);
+--> statement-breakpoint
 CREATE INDEX idx_test_suite_screenshots_script ON test_suite_screenshots(script_id);

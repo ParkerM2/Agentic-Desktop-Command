@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS test_suite_baselines (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
-
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS test_suite_diffs (
   id TEXT PRIMARY KEY,
   run_id TEXT NOT NULL,
