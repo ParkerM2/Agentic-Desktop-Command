@@ -9,6 +9,15 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
+import {
+  AnalyticsSummarySchema,
+  ErrorPatternSchema,
+  FlakyTestSchema,
+  RunHistoryEntrySchema,
+  SlowestTestSchema,
+  TopFailureSchema,
+  TrendPointSchema,
+} from './analytics-schemas';
 import { TEST_SUITE, TEST_SUITE_EVENTS } from './channels';
 import {
   BrowserViewBoundsSchema,
@@ -141,6 +150,34 @@ export const testSuiteInvoke = {
   [TEST_SUITE.SCREENSHOT.COPY]: {
     input: z.object({ id: z.string(), destPath: z.string() }),
     output: z.object({ filePath: z.string() }),
+  },
+  [TEST_SUITE.ANALYTICS.SUMMARY]: {
+    input: z.object({ projectId: z.string() }),
+    output: AnalyticsSummarySchema,
+  },
+  [TEST_SUITE.ANALYTICS.TREND]: {
+    input: z.object({ projectId: z.string(), days: z.number().default(30) }),
+    output: z.array(TrendPointSchema),
+  },
+  [TEST_SUITE.ANALYTICS['TOP-FAILURES']]: {
+    input: z.object({ projectId: z.string(), limit: z.number().default(10) }),
+    output: z.array(TopFailureSchema),
+  },
+  [TEST_SUITE.ANALYTICS.SLOWEST]: {
+    input: z.object({ projectId: z.string(), limit: z.number().default(10) }),
+    output: z.array(SlowestTestSchema),
+  },
+  [TEST_SUITE.ANALYTICS['ERROR-PATTERNS']]: {
+    input: z.object({ projectId: z.string(), limit: z.number().default(10) }),
+    output: z.array(ErrorPatternSchema),
+  },
+  [TEST_SUITE.ANALYTICS.FLAKY]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.array(FlakyTestSchema),
+  },
+  [TEST_SUITE.ANALYTICS['RUN-HISTORY']]: {
+    input: z.object({ scriptId: z.string(), limit: z.number().default(20) }),
+    output: z.array(RunHistoryEntrySchema),
   },
 } as const;
 

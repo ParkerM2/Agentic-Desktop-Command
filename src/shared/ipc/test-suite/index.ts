@@ -2,6 +2,7 @@
  * Test Suite IPC — Barrel Export
  */
 
+export * from './analytics-schemas';
 export { testSuiteEvents, testSuiteInvoke } from './contract';
 export {
   BrowserViewBoundsSchema,

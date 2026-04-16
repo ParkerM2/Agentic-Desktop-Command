@@ -11,6 +11,7 @@ export const TEST_SUITE = domain('test-suite', {
   'BROWSER-VIEW': ['create', 'navigate', 'back', 'forward', 'reload', 'set-bounds', 'destroy'],
   CONFIG: ['get', 'save', 'list', 'delete', 'set-active'],
   SCREENSHOT: ['list', 'export-zip', 'copy'],
+  ANALYTICS: ['summary', 'trend', 'top-failures', 'slowest', 'error-patterns', 'flaky', 'run-history'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {
