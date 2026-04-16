@@ -1,4 +1,5 @@
 export { testSuiteKeys } from './testSuiteKeys';
+export { useAttachRunToTask } from './useAttachRunToTask';
 export { useTestSuiteConfig } from './useTestSuiteConfig';
 export { useTestSuiteConfigs } from './useTestSuiteConfigs';
 export { useTestSuiteScripts } from './useTestSuiteScripts';

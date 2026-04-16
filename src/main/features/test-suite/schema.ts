@@ -23,6 +23,7 @@ export const testSuiteRuns = sqliteTable('test_suite_runs', {
   output: text('output'),
   startedAt: text('started_at').notNull(),
   completedAt: text('completed_at'),
+  taskId: text('task_id'),
 });
 
 export const testSuiteScreenshots = sqliteTable('test_suite_screenshots', {

@@ -62,6 +62,10 @@ export const testSuiteInvoke = {
     input: z.object({ scriptId: z.string().optional() }),
     output: z.array(QaRunSchema),
   },
+  [TEST_SUITE.TASK['ATTACH-RUN']]: {
+    input: z.object({ runId: z.string(), taskId: z.string() }),
+    output: SuccessResponseSchema,
+  },
   [TEST_SUITE.EXPORT.FILE]: {
     input: z.object({ runId: z.string(), format: z.enum(['json', 'html', 'csv']) }),
     output: z.object({ filePath: z.string() }),

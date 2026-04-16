@@ -19,6 +19,7 @@ import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
 import { Badge, Button, Checkbox, Spinner, Stack, Text } from '@ui';
 
+import { useAttachRunToTask } from '@features/test-suite/api/useAttachRunToTask';
 import { useRunScript } from '@features/test-suite/api/useRuns';
 import { useTestSuiteScripts } from '@features/test-suite/api/useTestSuiteScripts';
 import { useRunOutput } from '@features/test-suite/hooks/useRunOutput';
@@ -109,10 +110,11 @@ function ScriptListEmpty() {
 
 // ─── Component ──────────────────────────────────────────
 
-export function TestPhasePanel({ taskId: _taskId }: TestPhasePanelProps) {
+export function TestPhasePanel({ taskId }: TestPhasePanelProps) {
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
   const { data: scripts = [], isLoading: scriptsLoading } = useTestSuiteScripts(activeProjectId);
   const runScript = useRunScript();
+  const attachRun = useAttachRunToTask();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [results, setResults] = useState<RunResult[]>([]);
@@ -204,6 +206,8 @@ export function TestPhasePanel({ taskId: _taskId }: TestPhasePanelProps) {
   // ── Derived state ───────────────────────────────────────
 
   const status = overallStatus(results);
+  const latestRunId = results.at(-1)?.runId ?? null;
+  const canAttach = latestRunId !== null && !isRunning && status !== 'idle';
 
   // ── Render ──────────────────────────────────────────────
 
@@ -294,14 +298,18 @@ export function TestPhasePanel({ taskId: _taskId }: TestPhasePanelProps) {
             Start Test Phase ({selected.size})
           </Button>
 
-          {/* TODO: Cross-domain IPC for attaching run results to the task review record */}
           <Button
-            disabled
             className="mt-2 w-full"
+            disabled={!canAttach || attachRun.isPending}
             size="sm"
             variant="outline"
+            onClick={() => {
+              if (latestRunId) {
+                attachRun.mutate({ runId: latestRunId, taskId });
+              }
+            }}
           >
-            Attach to Task (coming soon)
+            {attachRun.isPending ? 'Attaching...' : 'Attach to Task'}
           </Button>
         </div>
       </div>

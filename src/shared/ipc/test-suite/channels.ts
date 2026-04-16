@@ -6,6 +6,7 @@ export const TEST_SUITE = domain('test-suite', {
   SAVE: ['script'],
   DELETE: ['script'],
   RUN: ['script'],
+  TASK: ['attach-run'],
   EXPORT: ['file', 'github', 'ci-preview', 'ci-commit'],
   'BROWSER-VIEW': ['create', 'navigate', 'back', 'forward', 'reload', 'set-bounds', 'destroy'],
   CONFIG: ['get', 'save', 'list', 'delete', 'set-active'],
