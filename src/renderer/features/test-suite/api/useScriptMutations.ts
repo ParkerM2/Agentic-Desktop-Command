@@ -24,6 +24,7 @@ export function useSaveScript() {
   return useMutation({
     mutationFn: (data: {
       id?: string;
+      projectId: string;
       name: string;
       description?: string;
       steps: TestSuiteStep[];

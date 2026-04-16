@@ -13,9 +13,14 @@ import type {
   QaRunStatusSchema,
 } from '@shared/ipc/test-suite/schemas';
 
+import { ensurePlaywrightConfig } from './playwright-config-writer';
+import { writeTestSuiteReadme } from './readme-writer';
+import { writeSpecFile } from './script-writer';
+
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { IpcRouter } from '../../ipc/router';
+import type { ProjectService } from '../projects/project-service';
 
 // ─── Locally-inferred types from shared schemas ────────────────
 // These use `infer` to avoid importing zod directly in main/.
@@ -46,9 +51,11 @@ export interface TestSuiteService {
   getScript: (id: string) => Promise<unknown>;
   saveScript: (input: {
     id?: string;
+    projectId: string;
     name: string;
     description?: string;
     steps: TestSuiteStep[];
+    filePath?: string;
   }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
   runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' }) => Promise<{ runId: string }>;
@@ -66,6 +73,7 @@ export interface TestSuiteService {
 export function registerTestSuiteHandlers(
   router: IpcRouter,
   testSuiteService: TestSuiteService,
+  projectService: ProjectService,
 ): void {
   // ── Event forwarding ──────────────────────────────────────────
 
@@ -111,9 +119,31 @@ export function registerTestSuiteHandlers(
     testSuiteService.getScript(id) as never,
   );
 
-  router.handle(TEST_SUITE.SAVE.SCRIPT, (input) =>
-    testSuiteService.saveScript(input) as never,
-  );
+  router.handle(TEST_SUITE.SAVE.SCRIPT, (input) => {
+    const { projectId, steps } = input;
+    const projectPath = projectService.getProjectPath(projectId);
+    const config = testSuiteService.configStore.getActive(projectId);
+
+    // If we have both a project path and an active config, write files to disk
+    let filePath = '';
+    if (projectPath && config) {
+      const testDir = config.testDirectory || 'tests/e2e';
+      const baseUrl = config.targetUrl;
+
+      filePath = writeSpecFile({
+        projectRoot: projectPath,
+        testDir,
+        name: input.name,
+        baseUrl,
+        steps,
+      });
+
+      ensurePlaywrightConfig({ projectRoot: projectPath, testDir, baseUrl });
+      writeTestSuiteReadme({ projectRoot: projectPath, testDir });
+    }
+
+    return testSuiteService.saveScript({ ...input, filePath }) as never;
+  });
 
   router.handle(TEST_SUITE.DELETE.SCRIPT, ({ id }) =>
     testSuiteService.deleteScript(id),

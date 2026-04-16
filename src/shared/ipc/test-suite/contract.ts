@@ -36,6 +36,7 @@ export const testSuiteInvoke = {
   [TEST_SUITE.SAVE.SCRIPT]: {
     input: z.object({
       id: z.string().optional(),
+      projectId: z.string(),
       name: z.string(),
       description: z.string().optional(),
       steps: z.array(TestSuiteStepSchema),

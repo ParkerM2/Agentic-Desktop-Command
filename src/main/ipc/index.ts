@@ -297,7 +297,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.busSessionManager,
     services.progressService,
   );
-  registerTestSuiteHandlers(router, services.testSuiteService);
+  registerTestSuiteHandlers(router, services.testSuiteService, services.projectService);
   registerDashboardHandlers(router, services.dashboardService);
   registerDockerHandlers(router, services.dockerService);
   registerSecurityHandlers(router, services.settingsService);

@@ -78,9 +78,11 @@ export interface TestSuiteService {
   getScript: (id: string) => Promise<QaScript | null>;
   saveScript: (input: {
     id?: string;
+    projectId: string;
     name: string;
     description?: string;
     steps: TestSuiteStep[];
+    filePath?: string;
   }) => Promise<QaScript>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
   runScript: (input: {
@@ -159,9 +161,10 @@ export function createTestSuiteService(
     saveScript: (input) => Promise.resolve(scriptStore.save({
       id: input.id,
       name: input.name,
-      projectId: '',
-      filePath: '',
+      projectId: input.projectId,
+      filePath: input.filePath ?? '',
       targetUrl: '',
+      stepCount: input.steps.length,
     })),
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
