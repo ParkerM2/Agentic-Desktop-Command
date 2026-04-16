@@ -18,6 +18,11 @@ import {
   TopFailureSchema,
   TrendPointSchema,
 } from './analytics-schemas';
+import {
+  BaselineRecordSchema,
+  DiffResultSchema,
+  DiffSensitivitySchema,
+} from './baseline-schemas';
 import { TEST_SUITE, TEST_SUITE_EVENTS } from './channels';
 import {
   BrowserViewBoundsSchema,
@@ -190,6 +195,32 @@ export const testSuiteInvoke = {
   [TEST_SUITE.WATCH.LIST]: {
     input: z.object({}),
     output: z.array(z.string()),
+  },
+  [TEST_SUITE.BASELINE.LIST]: {
+    input: z.object({ scriptId: z.string() }),
+    output: z.array(BaselineRecordSchema),
+  },
+  [TEST_SUITE.BASELINE.SET]: {
+    input: z.object({
+      scriptId: z.string(),
+      screenshotId: z.string(),
+    }),
+    output: BaselineRecordSchema,
+  },
+  [TEST_SUITE.BASELINE.DELETE]: {
+    input: z.object({ scriptId: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.DIFF.COMPARE]: {
+    input: z.object({
+      runId: z.string(),
+      sensitivity: DiffSensitivitySchema.default('balanced'),
+    }),
+    output: z.array(DiffResultSchema),
+  },
+  [TEST_SUITE.DIFF.LIST]: {
+    input: z.object({ runId: z.string() }),
+    output: z.array(DiffResultSchema),
   },
 } as const;
 

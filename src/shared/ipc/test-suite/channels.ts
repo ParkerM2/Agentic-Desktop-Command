@@ -13,6 +13,8 @@ export const TEST_SUITE = domain('test-suite', {
   SCREENSHOT: ['list', 'export-zip', 'copy'],
   ANALYTICS: ['summary', 'trend', 'top-failures', 'slowest', 'error-patterns', 'flaky', 'run-history'],
   WATCH: ['start', 'stop', 'list'],
+  BASELINE: ['list', 'set', 'delete'],
+  DIFF: ['compare', 'list'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {

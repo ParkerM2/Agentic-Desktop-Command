@@ -3,6 +3,7 @@
  */
 
 export * from './analytics-schemas';
+export * from './baseline-schemas';
 export { testSuiteEvents, testSuiteInvoke } from './contract';
 export {
   BrowserViewBoundsSchema,

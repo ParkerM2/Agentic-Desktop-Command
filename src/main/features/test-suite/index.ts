@@ -16,6 +16,7 @@ import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 import { testSuiteRuns } from '../../db/schema';
 
 import { createAnalytics } from './analytics';
+import { createBaselineStore } from './baseline-store';
 import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
@@ -25,6 +26,7 @@ import { createScriptStore } from './script-store';
 import { createFileWatcher } from './watcher';
 
 import type { Analytics } from './analytics';
+import type { BaselineStore } from './baseline-store';
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { QaExporter } from './exporter';
@@ -87,6 +89,9 @@ export interface TestSuiteService {
   screenshotStore: ScreenshotStore;
   analytics: Analytics;
   fileWatcher: FileWatcher;
+  baselineStore: BaselineStore;
+  getProjectPath: (projectId: string) => string | undefined;
+  db: AdcDatabase;
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
@@ -180,6 +185,7 @@ export function createTestSuiteService(
   const configStore = createConfigStore(db);
   const analytics = createAnalytics(db);
   const fileWatcher = createFileWatcher();
+  const baselineStore = createBaselineStore(db);
 
   return {
     // Sub-services
@@ -191,6 +197,9 @@ export function createTestSuiteService(
     screenshotStore,
     analytics,
     fileWatcher,
+    baselineStore,
+    getProjectPath: deps.getProjectPath,
+    db,
 
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),
