@@ -1,15 +1,20 @@
 /**
- * Screenshot Capture — In-memory store + post-run indexer
+ * Screenshot Capture — Drizzle-backed store + post-run indexer
  *
  * Scans the screenshot directory after a test run completes, parses
- * filenames into ScreenshotRecord metadata, and stores them in a Map
- * keyed by runId. Screenshots are ephemeral per-run data — no DB table.
+ * filenames into ScreenshotRecord metadata, and persists them in the
+ * test_suite_screenshots SQLite table.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+
+import { testSuiteScreenshots } from '../../db/schema';
+
+import type { AdcDatabase } from '../../db';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -26,69 +31,112 @@ export interface ScreenshotRecord {
   capturedAt: string;
 }
 
-// ─── In-memory store ────────────────────────────────────────
+// ─── Store interface ────────────────────────────────────────
 
-const store = new Map<string, ScreenshotRecord[]>();
+export interface ScreenshotStore {
+  index: (params: { runId: string; scriptId: string; screenshotDir: string }) => ScreenshotRecord[];
+  list: (runId: string) => ScreenshotRecord[];
+  listByScript: (scriptId: string) => ScreenshotRecord[];
+  get: (id: string) => ScreenshotRecord | null;
+}
 
-// ─── Public API ─────────────────────────────────────────────
+// ─── Factory ────────────────────────────────────────────────
 
-/**
- * Scan a screenshot directory after a run completes, parse filenames
- * into records, and store them in the in-memory map.
- */
-export function indexScreenshots(params: {
-  runId: string;
-  scriptId: string;
-  screenshotDir: string;
-}): ScreenshotRecord[] {
-  if (!fs.existsSync(params.screenshotDir)) return [];
-
-  const files = fs
-    .readdirSync(params.screenshotDir)
-    .filter((f) => f.endsWith('.png'))
-    .sort();
-
-  const records: ScreenshotRecord[] = files.map((file) => {
-    // Parse filename: "01-navigate.png" -> stepIndex=1, trigger=navigate
-    const match = /^(\d+)-(\w+)\.png$/.exec(file);
-    const stepIndex = match ? parseInt(match[1], 10) : 0;
-    const triggerRaw = match ? match[2] : 'manual';
-    const trigger = mapTrigger(triggerRaw);
-
+export function createScreenshotStore(db: AdcDatabase): ScreenshotStore {
+  function toRecord(row: typeof testSuiteScreenshots.$inferSelect): ScreenshotRecord {
     return {
-      id: nanoid(),
-      runId: params.runId,
-      scriptId: params.scriptId,
-      stepIndex,
-      stepLabel: `${trigger} step ${stepIndex}`,
-      trigger,
-      filePath: path.join(params.screenshotDir, file),
-      width: 0,
-      height: 0,
-      capturedAt: new Date().toISOString(),
+      id: row.id,
+      runId: row.runId,
+      scriptId: row.scriptId,
+      stepIndex: row.stepIndex,
+      stepLabel: row.stepLabel,
+      trigger: row.trigger as ScreenshotRecord['trigger'],
+      filePath: row.filePath,
+      width: row.width,
+      height: row.height,
+      capturedAt: row.capturedAt,
     };
-  });
-
-  store.set(params.runId, records);
-  return records;
-}
-
-/**
- * Retrieve indexed screenshots for a given run.
- */
-export function getScreenshots(runId: string): ScreenshotRecord[] {
-  return store.get(runId) ?? [];
-}
-
-/**
- * Retrieve a single screenshot by its id across all runs.
- */
-export function getScreenshotById(id: string): ScreenshotRecord | null {
-  for (const records of store.values()) {
-    const found = records.find((r) => r.id === id);
-    if (found) return found;
   }
-  return null;
+
+  return {
+    /**
+     * Scan a screenshot directory after a run completes, parse filenames
+     * into records, and persist them to the database.
+     */
+    index(params) {
+      if (!fs.existsSync(params.screenshotDir)) return [];
+
+      const files = fs
+        .readdirSync(params.screenshotDir)
+        .filter((f) => f.endsWith('.png'))
+        .sort();
+
+      const records: ScreenshotRecord[] = files.map((file) => {
+        // Parse filename: "01-navigate.png" -> stepIndex=1, trigger=navigate
+        const match = /^(\d+)-(\w+)\.png$/.exec(file);
+        const stepIndex = match ? parseInt(match[1], 10) : 0;
+        const triggerRaw = match ? match[2] : 'manual';
+        const trigger = mapTrigger(triggerRaw);
+
+        return {
+          id: nanoid(),
+          runId: params.runId,
+          scriptId: params.scriptId,
+          stepIndex,
+          stepLabel: `${trigger} step ${stepIndex}`,
+          trigger,
+          filePath: path.join(params.screenshotDir, file),
+          width: 0,
+          height: 0,
+          capturedAt: new Date().toISOString(),
+        };
+      });
+
+      // Batch insert into SQLite
+      for (const record of records) {
+        db.insert(testSuiteScreenshots).values(record).run();
+      }
+
+      return records;
+    },
+
+    /**
+     * Retrieve indexed screenshots for a given run.
+     */
+    list(runId) {
+      return db
+        .select()
+        .from(testSuiteScreenshots)
+        .where(eq(testSuiteScreenshots.runId, runId))
+        .all()
+        .map(toRecord);
+    },
+
+    /**
+     * Retrieve indexed screenshots for a given script.
+     */
+    listByScript(scriptId) {
+      return db
+        .select()
+        .from(testSuiteScreenshots)
+        .where(eq(testSuiteScreenshots.scriptId, scriptId))
+        .all()
+        .map(toRecord);
+    },
+
+    /**
+     * Retrieve a single screenshot by its id.
+     */
+    get(id) {
+      const row = db
+        .select()
+        .from(testSuiteScreenshots)
+        .where(eq(testSuiteScreenshots.id, id))
+        .all()
+        .at(0);
+      return row ? toRecord(row) : null;
+    },
+  };
 }
 
 // ─── Helpers ────────────────────────────────────────────────

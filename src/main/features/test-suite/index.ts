@@ -9,19 +9,24 @@ import path from 'node:path';
 
 import type { BrowserWindow } from 'electron';
 
+import { eq } from 'drizzle-orm';
+
 import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
+
+import { testSuiteRuns } from '../../db/schema';
 
 import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
 import { createRunner } from './runner';
-import { indexScreenshots } from './screenshot-capture';
+import { createScreenshotStore } from './screenshot-capture';
 import { createScriptStore } from './script-store';
 
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
+import type { ScreenshotStore } from './screenshot-capture';
 import type { ScriptStore, QaScript } from './script-store';
 import type { AdcDatabase } from '../../db';
 
@@ -75,6 +80,7 @@ export interface TestSuiteService {
   exporter: QaExporter;
   configStore: ConfigStore;
   browserViewManager: BrowserViewManager;
+  screenshotStore: ScreenshotStore;
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
@@ -103,6 +109,7 @@ export interface TestSuiteService {
     owner: string;
     repo: string;
   }) => Promise<{ issueUrl: string }>;
+  attachRunToTask: (runId: string, taskId: string) => Promise<{ success: boolean }>;
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
 }
 
@@ -114,6 +121,7 @@ export function createTestSuiteService(
   },
 ): TestSuiteService {
   const scriptStore = createScriptStore(db);
+  const screenshotStore = createScreenshotStore(db);
   const browserViewManager = createBrowserViewManager(deps.getMainWindow);
   const runEventListeners: Array<(event: TestSuiteRunEvent) => void> = [];
 
@@ -129,7 +137,7 @@ export function createTestSuiteService(
       // Index screenshots if a screenshot dir was configured for this run
       const ssMeta = runScreenshotDirs.get(runId);
       if (ssMeta) {
-        indexScreenshots({
+        screenshotStore.index({
           runId,
           scriptId: ssMeta.scriptId,
           screenshotDir: ssMeta.screenshotDir,
@@ -172,6 +180,7 @@ export function createTestSuiteService(
     exporter,
     configStore,
     browserViewManager,
+    screenshotStore,
 
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),
@@ -256,6 +265,14 @@ export function createTestSuiteService(
 
     exportGithub() {
       return Promise.reject(new Error('GitHub export not implemented — configure GitHub integration first'));
+    },
+
+    attachRunToTask(runId, taskId) {
+      db.update(testSuiteRuns)
+        .set({ taskId })
+        .where(eq(testSuiteRuns.id, runId))
+        .run();
+      return Promise.resolve({ success: true });
     },
 
     onRunEvent(listener) {

@@ -20,12 +20,12 @@ import type {
 
 import { ensurePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
-import { getScreenshotById, getScreenshots } from './screenshot-capture';
 import { writeSpecFile } from './script-writer';
 import { commitWorkflow, previewWorkflow } from './workflow-exporter';
 
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
+import type { ScreenshotStore } from './screenshot-capture';
 import type { IpcRouter } from '../../ipc/router';
 import type { ProjectService } from '../projects/project-service';
 
@@ -70,9 +70,11 @@ export interface TestSuiteService {
   listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
   exportGithub: (input: { runId: string; owner: string; repo: string }) => Promise<{ issueUrl: string }>;
+  attachRunToTask: (runId: string, taskId: string) => Promise<{ success: boolean }>;
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
   configStore: ConfigStore;
   browserViewManager: BrowserViewManager;
+  screenshotStore: ScreenshotStore;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -182,6 +184,10 @@ export function registerTestSuiteHandlers(
 
   router.handle(TEST_SUITE.EXPORT.GITHUB, (input) =>
     testSuiteService.exportGithub(input),
+  );
+
+  router.handle(TEST_SUITE.TASK['ATTACH-RUN'], ({ runId, taskId }) =>
+    testSuiteService.attachRunToTask(runId, taskId),
   );
 
   // ── CI export handlers ────────────────────────────────────────
@@ -296,13 +302,14 @@ export function registerTestSuiteHandlers(
     return Promise.resolve({ success: true });
   });
 
-  router.handle(TEST_SUITE.SCREENSHOT.LIST, ({ runId }) => {
-    if (!runId) return Promise.resolve([]);
-    return Promise.resolve(getScreenshots(runId));
+  router.handle(TEST_SUITE.SCREENSHOT.LIST, ({ runId, scriptId }) => {
+    if (runId) return Promise.resolve(testSuiteService.screenshotStore.list(runId));
+    if (scriptId) return Promise.resolve(testSuiteService.screenshotStore.listByScript(scriptId));
+    return Promise.resolve([]);
   });
 
   router.handle(TEST_SUITE.SCREENSHOT['EXPORT-ZIP'], async ({ runId }) => {
-    const screenshots = getScreenshots(runId);
+    const screenshots = testSuiteService.screenshotStore.list(runId);
     if (screenshots.length === 0) return { filePath: '' };
 
     // Return the parent directory of the screenshots and open it in the file manager
@@ -312,7 +319,7 @@ export function registerTestSuiteHandlers(
   });
 
   router.handle(TEST_SUITE.SCREENSHOT.COPY, async ({ id, destPath }) => {
-    const screenshot = getScreenshotById(id);
+    const screenshot = testSuiteService.screenshotStore.get(id);
     if (!screenshot) return { filePath: '' };
 
     // Ensure destination directory exists
