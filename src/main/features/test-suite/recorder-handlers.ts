@@ -149,9 +149,15 @@ export function registerTestSuiteHandlers(
     testSuiteService.deleteScript(id),
   );
 
-  router.handle(TEST_SUITE.RUN.SCRIPT, (input) =>
-    testSuiteService.runScript(input),
-  );
+  router.handle(TEST_SUITE.RUN.SCRIPT, async (input) => {
+    const result = await testSuiteService.runScript(input);
+    router.emit(TEST_SUITE_EVENTS.RUN.STARTED, {
+      runId: result.runId,
+      scriptId: input.scriptId,
+      timestamp: new Date().toISOString(),
+    });
+    return result;
+  });
 
   router.handle(TEST_SUITE.GET.RUN, ({ runId }) =>
     testSuiteService.getRun(runId),

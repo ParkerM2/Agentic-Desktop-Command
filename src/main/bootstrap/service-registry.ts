@@ -434,7 +434,12 @@ export function createServiceRegistry(
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
-  const testSuiteService = lazyService(() => createTestSuiteService(db, { getMainWindow }));
+  const testSuiteService = lazyService(() =>
+    createTestSuiteService(db, {
+      getMainWindow,
+      getProjectPath: (id) => projectService.getProjectPath(id),
+    }),
+  );
   const qaTrigger = lazyService(() =>
     createQaTrigger({ qaRunner, busSessionManager, progressService, router, testSuiteService }),
   );

@@ -105,7 +105,10 @@ export interface TestSuiteService {
 
 export function createTestSuiteService(
   db: AdcDatabase,
-  deps: { getMainWindow: () => BrowserWindow | null },
+  deps: {
+    getMainWindow: () => BrowserWindow | null;
+    getProjectPath: (projectId: string) => string | undefined;
+  },
 ): TestSuiteService {
   const scriptStore = createScriptStore(db);
   const browserViewManager = createBrowserViewManager(deps.getMainWindow);
@@ -174,7 +177,12 @@ export function createTestSuiteService(
       if (!script) {
         return Promise.reject(new Error(`Script not found: ${scriptId}`));
       }
-      const projectPath = script.projectId;
+      const projectPath = deps.getProjectPath(script.projectId);
+      if (!projectPath) {
+        return Promise.reject(
+          new Error(`Project path not found for projectId: ${script.projectId}`),
+        );
+      }
       const runId = runner.run({
         scriptId,
         filePath: script.filePath,
@@ -194,7 +202,7 @@ export function createTestSuiteService(
       if (!run) return Promise.reject(new Error(`Run not found: ${runId}`));
       const script = scriptStore.get(run.scriptId);
       if (!script) return Promise.reject(new Error(`Script not found for run ${runId}`));
-      const projectPath = script.projectId || process.cwd();
+      const projectPath = deps.getProjectPath(script.projectId) ?? process.cwd();
       const result = exporter.export({
         scriptId: script.id,
         scriptName: script.name,
