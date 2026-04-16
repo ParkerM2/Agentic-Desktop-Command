@@ -13,6 +13,7 @@ import type {
   TestSuiteStepSchema,
 } from '@shared/ipc/test-suite/schemas';
 
+import type { ConfigStore } from './config-store';
 import type { IpcRouter } from '../../ipc/router';
 
 // ─── Locally-inferred types from shared schemas ────────────────
@@ -55,6 +56,7 @@ export interface TestSuiteService {
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
   exportGithub: (input: { runId: string; owner: string; repo: string }) => Promise<{ issueUrl: string }>;
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
+  configStore: ConfigStore;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -175,34 +177,33 @@ export function registerTestSuiteHandlers(
     Promise.resolve({ success: true }),
   );
 
-  router.handle(TEST_SUITE.CONFIG.GET, () => Promise.resolve(null));
+  const { configStore } = testSuiteService;
 
-  router.handle(TEST_SUITE.CONFIG.LIST, () => Promise.resolve([]));
+  router.handle(TEST_SUITE.CONFIG.GET, ({ projectId }) =>
+    Promise.resolve(configStore.getActive(projectId)),
+  );
 
-  router.handle(TEST_SUITE.CONFIG.SAVE, (input) => {
-    const now = new Date().toISOString();
-    return Promise.resolve({
-      id: input.id ?? '',
-      name: input.name,
-      targetUrl: input.targetUrl ?? 'http://localhost',
-      viewportWidth: input.viewportWidth ?? 1280,
-      viewportHeight: input.viewportHeight ?? 720,
-      screenshotMode: input.screenshotMode ?? 'smart',
-      testDirectory: input.testDirectory ?? '',
-      saveScreenshotsToTemp: input.saveScreenshotsToTemp ?? true,
-      isActive: input.isActive ?? false,
-      createdAt: input.createdAt ?? now,
-      updatedAt: now,
-    });
+  router.handle(TEST_SUITE.CONFIG.LIST, ({ projectId }) =>
+    Promise.resolve(configStore.list(projectId)),
+  );
+
+  router.handle(TEST_SUITE.CONFIG.SAVE, ({ projectId, config }) =>
+    Promise.resolve(configStore.save(projectId, config)),
+  );
+
+  router.handle(TEST_SUITE.CONFIG.DELETE, ({ projectId, configId }) => {
+    configStore.delete(projectId, configId);
+    return Promise.resolve({ success: true });
   });
 
-  router.handle(TEST_SUITE.CONFIG.DELETE, () =>
-    Promise.resolve({ success: true }),
-  );
-
-  router.handle(TEST_SUITE.CONFIG['SET-ACTIVE'], () =>
-    Promise.resolve({ success: true }),
-  );
+  router.handle(TEST_SUITE.CONFIG['SET-ACTIVE'], ({ projectId, configId }) => {
+    configStore.setActive(projectId, configId);
+    const active = configStore.getActive(projectId);
+    if (active) {
+      router.emit(TEST_SUITE_EVENTS.CONFIG.CHANGED, { config: active });
+    }
+    return Promise.resolve({ success: true });
+  });
 
   router.handle(TEST_SUITE.SCREENSHOT.LIST, () => Promise.resolve([]));
 

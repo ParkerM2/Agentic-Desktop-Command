@@ -106,23 +106,23 @@ export const testSuiteInvoke = {
     output: z.object({ success: z.boolean() }),
   },
   [TEST_SUITE.CONFIG.GET]: {
-    input: z.object({ id: z.string() }),
+    input: z.object({ projectId: z.string() }),
     output: TestSuiteConfigSchema.nullable(),
   },
   [TEST_SUITE.CONFIG.SAVE]: {
-    input: TestSuiteConfigSchema.partial().required({ name: true }),
+    input: z.object({ projectId: z.string(), config: TestSuiteConfigSchema }),
     output: TestSuiteConfigSchema,
   },
   [TEST_SUITE.CONFIG.LIST]: {
-    input: z.object({}),
+    input: z.object({ projectId: z.string() }),
     output: z.array(TestSuiteConfigSchema),
   },
   [TEST_SUITE.CONFIG.DELETE]: {
-    input: z.object({ id: z.string() }),
+    input: z.object({ projectId: z.string(), configId: z.string() }),
     output: SuccessResponseSchema,
   },
   [TEST_SUITE.CONFIG['SET-ACTIVE']]: {
-    input: z.object({ id: z.string() }),
+    input: z.object({ projectId: z.string(), configId: z.string() }),
     output: SuccessResponseSchema,
   },
   [TEST_SUITE.SCREENSHOT.LIST]: {

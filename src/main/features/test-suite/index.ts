@@ -7,10 +7,12 @@
 
 import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
+import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
 import { createRunner } from './runner';
 import { createScriptStore } from './script-store';
 
+import type { ConfigStore } from './config-store';
 import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
 import type { ScriptStore, QaScript } from './script-store';
@@ -64,6 +66,7 @@ export interface TestSuiteService {
   scriptStore: ScriptStore;
   runner: QaRunner;
   exporter: QaExporter;
+  configStore: ConfigStore;
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
@@ -129,12 +132,14 @@ export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
 
   const runner = createRunner(db);
   const exporter = createExporter();
+  const configStore = createConfigStore(db);
 
   return {
     // Sub-services
     scriptStore,
     runner,
     exporter,
+    configStore,
 
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),
