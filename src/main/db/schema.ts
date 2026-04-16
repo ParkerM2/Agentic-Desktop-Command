@@ -22,4 +22,5 @@ export * from '../bus/schema';
 export * from '../features/assistant/schema';
 export * from '../features/test-suite/schema';
 export * from '../features/test-suite/schema-baselines';
+export * from '../features/test-suite/schema-shared-steps';
 export * from '../features/workspace/workspaces-schema';
