@@ -10,3 +10,4 @@ export { useSetActiveTestSuiteConfig } from './useSetActiveTestSuiteConfig';
 export { useStartRecording } from './useStartRecording';
 export { useStopRecording } from './useStopRecording';
 export { useSaveScript } from './useSaveScript';
+export { useDeleteScript } from './useDeleteScript';
