@@ -8,7 +8,7 @@ import { testSuiteKeys } from './testSuiteKeys';
 
 export function useTestSuiteScripts(projectId: string | null | undefined) {
   return useQuery({
-    queryKey: testSuiteKeys.scriptsByProject(projectId ?? ''),
+    queryKey: testSuiteKeys.scripts(projectId ?? ''),
     queryFn: () => ipc(TEST_SUITE.LIST.SCRIPTS, {}),
     enabled: typeof projectId === 'string' && projectId.length > 0,
     staleTime: 30_000,

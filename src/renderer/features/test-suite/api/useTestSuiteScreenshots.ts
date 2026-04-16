@@ -8,7 +8,7 @@ import { testSuiteKeys } from './testSuiteKeys';
 
 export function useTestSuiteScreenshots(runId: string | null | undefined) {
   return useQuery({
-    queryKey: testSuiteKeys.screenshotsByRun(runId ?? ''),
+    queryKey: testSuiteKeys.screenshots(runId ?? ''),
     queryFn: () => ipc(TEST_SUITE.SCREENSHOT.LIST, { runId: runId ?? undefined }),
     enabled: typeof runId === 'string' && runId.length > 0,
     staleTime: 10_000,
