@@ -840,14 +840,14 @@ export function ProgressTaskGrid() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <Spinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-0 overflow-hidden">
+    <div className="flex h-full w-full min-w-0 flex-col gap-0 overflow-hidden">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
         <SearchInput

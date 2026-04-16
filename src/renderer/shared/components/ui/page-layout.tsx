@@ -194,7 +194,7 @@ type PageHeaderTabContentProps = React.ComponentProps<typeof TabsPrimitive.Conte
 function PageHeaderTabContent({ className, ...props }: PageHeaderTabContentProps) {
   return (
     <TabsPrimitive.Content
-      className={cn('flex-1 outline-none', className)}
+      className={cn('flex min-h-0 flex-1 flex-col outline-none', className)}
       data-slot="page-header-tab-content"
       {...props}
     />

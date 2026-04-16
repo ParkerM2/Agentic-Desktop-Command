@@ -61,8 +61,8 @@ export function RecordingPanel() {
   };
 
   return (
-    <PageContent className="p-0">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+    <PageContent className="flex flex-col p-0">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <h3 className="text-sm font-semibold">Recording</h3>
         {recording ? (
           <Button size="sm" variant="destructive" onClick={onStop}>
