@@ -4,7 +4,7 @@ import { Circle, Play, Save } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
-import { Button, PageContent } from '@ui';
+import { Button, Input, PageContent } from '@ui';
 
 import { useSaveScript } from '../api/useSaveScript';
 import { useStartRecording } from '../api/useStartRecording';
@@ -19,16 +19,19 @@ export function RecordingPanel() {
   const { projectId } = useLooseParams();
   const { data: config } = useTestSuiteConfig(projectId ?? '');
   const [url, setUrl] = useState(config?.targetUrl ?? '');
+  const [scriptName, setScriptName] = useState('');
   const recording = useTestSuiteStore((s) => s.recordingActive);
   const setRecordingActive = useTestSuiteStore((s) => s.setRecordingActive);
+  const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
+  const clearSteps = useTestSuiteStore((s) => s.clearSteps);
   const start = useStartRecording();
   const stop = useStopRecording();
-  // TODO: wire save onClick once StepList steps are hoisted to shared state
-  const _save = useSaveScript(projectId ?? '');
+  const saveScript = useSaveScript(projectId ?? '');
 
   if (!projectId || !config) return null;
 
   const onStart = () => {
+    clearSteps();
     start.mutate(
       { url, width: config.viewportWidth, height: config.viewportHeight },
       { onSuccess: () => setRecordingActive(true) },
@@ -37,6 +40,24 @@ export function RecordingPanel() {
 
   const onStop = () => {
     stop.mutate(undefined, { onSuccess: () => setRecordingActive(false) });
+  };
+
+  const onSave = () => {
+    if (recordedSteps.length === 0) return;
+    const name = scriptName.trim() || `Recording ${new Date().toLocaleString()}`;
+    saveScript.mutate(
+      {
+        projectId,
+        name,
+        steps: recordedSteps.map((r) => r.step),
+      },
+      {
+        onSuccess: () => {
+          clearSteps();
+          setScriptName('');
+        },
+      },
+    );
   };
 
   return (
@@ -52,8 +73,14 @@ export function RecordingPanel() {
             <Circle className="h-3 w-3 fill-destructive text-destructive" /> Record
           </Button>
         )}
-        <Button disabled={!recording} size="sm" variant="ghost">
-          <Save className="h-3 w-3" /> Save
+        <Input
+          className="h-7 w-48"
+          placeholder="Test name..."
+          value={scriptName}
+          onChange={(e) => setScriptName(e.target.value)}
+        />
+        <Button disabled={recordedSteps.length === 0 || saveScript.isPending} size="sm" variant="ghost" onClick={onSave}>
+          <Save className="h-3 w-3" /> Save ({recordedSteps.length})
         </Button>
         <Button size="sm" variant="ghost">
           <Play className="h-3 w-3" /> Run
