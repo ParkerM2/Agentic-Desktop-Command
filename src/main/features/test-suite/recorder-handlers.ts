@@ -22,6 +22,7 @@ import { ensurePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteReadme } from './readme-writer';
 import { getScreenshotById, getScreenshots } from './screenshot-capture';
 import { writeSpecFile } from './script-writer';
+import { commitWorkflow, previewWorkflow } from './workflow-exporter';
 
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
@@ -182,17 +183,35 @@ export function registerTestSuiteHandlers(
     testSuiteService.exportGithub(input),
   );
 
-  // ── Stub handlers (Wave 1 T7) ────────────────────────────────
-  // Return schema-compatible empty shapes so renderer hooks resolve.
-  // Real implementations land in later waves.
+  // ── CI export handlers ────────────────────────────────────────
 
-  router.handle(TEST_SUITE.EXPORT['CI-PREVIEW'], () =>
-    Promise.resolve({ yaml: '', filePath: '', exists: false }),
-  );
+  router.handle(TEST_SUITE.EXPORT['CI-PREVIEW'], ({ projectId }) => {
+    const projectPath = projectService.getProjectPath(projectId);
+    if (!projectPath) return Promise.resolve({ yaml: '', filePath: '', exists: false });
 
-  router.handle(TEST_SUITE.EXPORT['CI-COMMIT'], () =>
-    Promise.resolve({ filePath: '', committed: false }),
-  );
+    const config = testSuiteService.configStore.getActive(projectId);
+    const testDir = config?.testDirectory ?? 'tests/e2e';
+
+    const scripts = testSuiteService.listScripts() as Promise<Array<{ name: string }>>;
+    return scripts.then((list) => {
+      const specNames = list.map((s) => s.name);
+      return previewWorkflow(projectPath, testDir, specNames);
+    });
+  });
+
+  router.handle(TEST_SUITE.EXPORT['CI-COMMIT'], ({ projectId }) => {
+    const projectPath = projectService.getProjectPath(projectId);
+    if (!projectPath) return Promise.resolve({ filePath: '', committed: false });
+
+    const config = testSuiteService.configStore.getActive(projectId);
+    const testDir = config?.testDirectory ?? 'tests/e2e';
+
+    const scripts = testSuiteService.listScripts() as Promise<Array<{ name: string }>>;
+    return scripts.then((list) => {
+      const specNames = list.map((s) => s.name);
+      return commitWorkflow(projectPath, testDir, specNames);
+    });
+  });
 
   const { browserViewManager: bvm } = testSuiteService;
 

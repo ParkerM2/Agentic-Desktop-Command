@@ -71,11 +71,11 @@ export const testSuiteInvoke = {
     output: z.object({ issueUrl: z.string() }),
   },
   [TEST_SUITE.EXPORT['CI-PREVIEW']]: {
-    input: z.object({}),
+    input: z.object({ projectId: z.string() }),
     output: z.object({ yaml: z.string(), filePath: z.string(), exists: z.boolean() }),
   },
   [TEST_SUITE.EXPORT['CI-COMMIT']]: {
-    input: z.object({ yaml: z.string() }),
+    input: z.object({ projectId: z.string() }),
     output: z.object({ filePath: z.string(), committed: z.boolean() }),
   },
   [TEST_SUITE['BROWSER-VIEW'].CREATE]: {
