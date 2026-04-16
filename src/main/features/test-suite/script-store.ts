@@ -1,25 +1,23 @@
 /**
- * QA Recorder Script Store — Drizzle CRUD for qa_scripts table
+ * Test Suite Script Store — Drizzle CRUD for test_suite_scripts table
  */
 
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
-import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
-
-import { qaScripts } from '../../db/schema';
+import { testSuiteScripts } from '../../db/schema';
 
 import type { AdcDatabase } from '../../db';
-
-type TestSuiteStep = typeof TestSuiteStepSchema extends { _output: infer T } ? T : never;
 
 export interface QaScript {
   id: string;
   name: string;
-  description?: string;
-  filePath?: string;
-  projectId?: string;
-  steps: TestSuiteStep[];
+  filePath: string;
+  projectId: string;
+  targetUrl: string;
+  stepCount: number;
+  lastStatus: string | null;
+  lastRunAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,20 +29,24 @@ export interface ScriptStore {
   save: (data: {
     id?: string;
     name: string;
-    description?: string;
-    steps: TestSuiteStep[];
+    projectId: string;
+    filePath: string;
+    targetUrl: string;
+    stepCount?: number;
   }) => QaScript;
   delete: (id: string) => { success: boolean };
 }
 
-function toQaScript(row: typeof qaScripts.$inferSelect): QaScript {
+function toQaScript(row: typeof testSuiteScripts.$inferSelect): QaScript {
   return {
     id: row.id,
     name: row.name,
-    description: undefined,
-    filePath: row.filePath ?? undefined,
-    projectId: row.projectId ?? undefined,
-    steps: row.steps as TestSuiteStep[],
+    filePath: row.filePath,
+    projectId: row.projectId,
+    targetUrl: row.targetUrl,
+    stepCount: row.stepCount,
+    lastStatus: row.lastStatus ?? null,
+    lastRunAt: row.lastRunAt ?? null,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -53,15 +55,15 @@ function toQaScript(row: typeof qaScripts.$inferSelect): QaScript {
 export function createScriptStore(db: AdcDatabase): ScriptStore {
   return {
     list() {
-      return db.select().from(qaScripts).all().map(toQaScript);
+      return db.select().from(testSuiteScripts).all().map(toQaScript);
     },
 
     listByProject(projectId) {
-      return db.select().from(qaScripts).where(eq(qaScripts.projectId, projectId)).all().map(toQaScript);
+      return db.select().from(testSuiteScripts).where(eq(testSuiteScripts.projectId, projectId)).all().map(toQaScript);
     },
 
     get(id) {
-      const rows = db.select().from(qaScripts).where(eq(qaScripts.id, id)).all();
+      const rows = db.select().from(testSuiteScripts).where(eq(testSuiteScripts.id, id)).all();
       const row = rows.at(0);
       return row ? toQaScript(row) : null;
     },
@@ -69,36 +71,40 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
     save(data) {
       const now = new Date().toISOString();
       const existing = data.id
-        ? db.select().from(qaScripts).where(eq(qaScripts.id, data.id)).all().at(0)
+        ? db.select().from(testSuiteScripts).where(eq(testSuiteScripts.id, data.id)).all().at(0)
         : undefined;
 
       if (existing) {
         const updated = {
           ...existing,
           name: data.name,
-          steps: data.steps,
+          filePath: data.filePath,
+          targetUrl: data.targetUrl,
+          stepCount: data.stepCount ?? existing.stepCount,
           updatedAt: now,
         };
-        db.update(qaScripts).set(updated).where(eq(qaScripts.id, existing.id)).run();
+        db.update(testSuiteScripts).set(updated).where(eq(testSuiteScripts.id, existing.id)).run();
         return toQaScript(updated);
       }
 
       const record = {
         id: data.id ?? nanoid(),
         name: data.name,
-        baseUrl: '',
-        steps: data.steps,
-        projectId: null,
-        filePath: null,
+        projectId: data.projectId,
+        filePath: data.filePath,
+        targetUrl: data.targetUrl,
+        stepCount: data.stepCount ?? 0,
+        lastStatus: null,
+        lastRunAt: null,
         createdAt: now,
         updatedAt: now,
       };
-      db.insert(qaScripts).values(record).run();
+      db.insert(testSuiteScripts).values(record).run();
       return toQaScript(record);
     },
 
     delete(id) {
-      const result = db.delete(qaScripts).where(eq(qaScripts.id, id)).run();
+      const result = db.delete(testSuiteScripts).where(eq(testSuiteScripts.id, id)).run();
       return { success: result.changes > 0 };
     },
   };

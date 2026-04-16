@@ -1,5 +1,5 @@
 /**
- * Unit Tests for QA Recorder ScriptStore
+ * Unit Tests for Test Suite ScriptStore
  *
  * Tests CRUD operations: list, get, save (create + update), and delete.
  *
@@ -67,10 +67,12 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}): Record<strin
   return {
     id: 'seed-id',
     name: 'Seed Script',
-    baseUrl: 'https://example.com',
-    steps: [{ type: 'navigate', url: 'https://example.com' }],
-    projectId: null,
-    filePath: null,
+    projectId: 'proj-1',
+    filePath: '/path/to/script.spec.ts',
+    targetUrl: 'https://example.com',
+    stepCount: 1,
+    lastStatus: null,
+    lastRunAt: null,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     ...overrides,
@@ -110,7 +112,9 @@ describe('ScriptStore', () => {
       expect(script).toMatchObject<Partial<QaScript>>({
         id: 'seed-id',
         name: 'Seed Script',
-        steps: expect.any(Array) as QaScript['steps'],
+        projectId: 'proj-1',
+        filePath: '/path/to/script.spec.ts',
+        targetUrl: 'https://example.com',
         createdAt: expect.any(String) as string,
         updatedAt: expect.any(String) as string,
       });
@@ -143,31 +147,30 @@ describe('ScriptStore', () => {
     });
 
     it('returns a QaScript with the provided name', () => {
-      const script = store.save({ name: 'New Script', steps: [] });
+      const script = store.save({ name: 'New Script', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(script.name).toBe('New Script');
     });
 
     it('generates an id when none is provided', () => {
-      const script = store.save({ name: 'No ID', steps: [] });
+      const script = store.save({ name: 'No ID', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(script.id).toBeTruthy();
       expect(typeof script.id).toBe('string');
     });
 
     it('uses the provided id when given', () => {
-      const script = store.save({ id: 'custom-id', name: 'Named', steps: [] });
+      const script = store.save({ id: 'custom-id', name: 'Named', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(script.id).toBe('custom-id');
     });
 
     it('sets createdAt and updatedAt on new records', () => {
-      const script = store.save({ name: 'Timestamped', steps: [] });
+      const script = store.save({ name: 'Timestamped', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(script.createdAt).toBeTruthy();
       expect(script.updatedAt).toBeTruthy();
     });
 
-    it('preserves the steps array in the returned script', () => {
-      const steps = [{ type: 'navigate' as const, url: 'https://example.com' }];
-      const script = store.save({ name: 'With Steps', steps });
-      expect(script.steps).toEqual(steps);
+    it('stores the provided targetUrl', () => {
+      const script = store.save({ name: 'With URL', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
+      expect(script.targetUrl).toBe('https://example.com');
     });
   });
 
@@ -179,7 +182,7 @@ describe('ScriptStore', () => {
       db.allResult = [existing];
       db.runResult = { changes: 1 };
 
-      const updated = store.save({ id: 'seed-id', name: 'Updated Name', steps: [] });
+      const updated = store.save({ id: 'seed-id', name: 'Updated Name', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(updated.name).toBe('Updated Name');
     });
 
@@ -188,7 +191,7 @@ describe('ScriptStore', () => {
       db.allResult = [existing];
       db.runResult = { changes: 1 };
 
-      const updated = store.save({ id: 'seed-id', name: 'Updated', steps: [] });
+      const updated = store.save({ id: 'seed-id', name: 'Updated', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(updated.updatedAt).not.toBe(existing.updatedAt);
     });
 
@@ -196,7 +199,7 @@ describe('ScriptStore', () => {
       const existing = makeRow();
       db.allResult = [existing];
 
-      const updated = store.save({ id: 'seed-id', name: 'Updated', steps: [] });
+      const updated = store.save({ id: 'seed-id', name: 'Updated', projectId: 'proj-1', filePath: '/f.spec.ts', targetUrl: 'https://example.com' });
       expect(updated.id).toBe('seed-id');
     });
   });

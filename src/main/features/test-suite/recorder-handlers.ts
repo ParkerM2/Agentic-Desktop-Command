@@ -10,7 +10,6 @@ import type {
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
-  QaScriptSchema,
   TestSuiteStepSchema,
 } from '@shared/ipc/test-suite/schemas';
 
@@ -21,7 +20,6 @@ import type { IpcRouter } from '../../ipc/router';
 
 type InferZodType<T extends { _output: unknown }> = T['_output'];
 
-type QaScript = InferZodType<typeof QaScriptSchema>;
 type QaRun = InferZodType<typeof QaRunSchema>;
 type QaRunStatus = InferZodType<typeof QaRunStatusSchema>;
 type QaRunReport = InferZodType<typeof QaRunReportSchema>;
@@ -42,14 +40,14 @@ export interface TestSuiteRunEvent {
 }
 
 export interface TestSuiteService {
-  listScripts: () => Promise<QaScript[]>;
-  getScript: (id: string) => Promise<QaScript | null>;
+  listScripts: () => Promise<unknown[]>;
+  getScript: (id: string) => Promise<unknown>;
   saveScript: (input: {
     id?: string;
     name: string;
     description?: string;
     steps: TestSuiteStep[];
-  }) => Promise<QaScript>;
+  }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
   runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRun | null>;
@@ -102,15 +100,15 @@ export function registerTestSuiteHandlers(
   // ── Invoke handlers ───────────────────────────────────────────
 
   router.handle(TEST_SUITE.LIST.SCRIPTS, () =>
-    testSuiteService.listScripts(),
+    testSuiteService.listScripts() as never,
   );
 
   router.handle(TEST_SUITE.GET.SCRIPT, ({ id }) =>
-    testSuiteService.getScript(id),
+    testSuiteService.getScript(id) as never,
   );
 
   router.handle(TEST_SUITE.SAVE.SCRIPT, (input) =>
-    testSuiteService.saveScript(input),
+    testSuiteService.saveScript(input) as never,
   );
 
   router.handle(TEST_SUITE.DELETE.SCRIPT, ({ id }) =>

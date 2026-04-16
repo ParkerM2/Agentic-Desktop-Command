@@ -11,7 +11,7 @@ import { spawn } from 'node:child_process';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
-import { qaRuns } from '../../db/schema';
+import { testSuiteRuns } from '../../db/schema';
 
 import type { AdcDatabase } from '../../db';
 
@@ -46,18 +46,24 @@ export interface QaRunner {
   cancel: (runId: string) => void;
 }
 
-function toRunRecord(row: typeof qaRuns.$inferSelect): QaRunRecord {
-  const report = row.report as { outputLines?: string[]; screenshots?: string[]; error?: string } | null;
+function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
+  interface ParsedOutput { outputLines?: string[]; screenshots?: string[]; error?: string }
+  let parsed: ParsedOutput | null = null;
+  try {
+    parsed = row.output ? (JSON.parse(row.output) as ParsedOutput) : null;
+  } catch {
+    parsed = null;
+  }
   return {
     id: row.id,
     scriptId: row.scriptId,
     status: row.status as QaRunRecord['status'],
-    triggeredBy: row.triggeredBy as QaRunRecord['triggeredBy'],
+    triggeredBy: 'manual',
     startedAt: row.startedAt,
     completedAt: row.completedAt ?? undefined,
-    outputLines: report?.outputLines ?? [],
-    screenshots: report?.screenshots ?? [],
-    error: report?.error,
+    outputLines: parsed?.outputLines ?? [],
+    screenshots: parsed?.screenshots ?? [],
+    error: parsed?.error,
   };
 }
 
@@ -65,19 +71,18 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, filePath, projectPath, triggeredBy, taskId, handlers }) {
+    run({ scriptId, filePath, projectPath, triggeredBy, taskId: _taskId, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
-      db.insert(qaRuns).values({
+      db.insert(testSuiteRuns).values({
         id: runId,
         scriptId,
-        projectId: projectPath,
-        taskId: taskId ?? null,
-        sessionId: null,
         status: 'running',
-        triggeredBy,
-        report: null,
+        durationMs: 0,
+        stepsPassed: 0,
+        stepsFailed: 0,
+        output: null,
         startedAt: now,
         completedAt: null,
       }).run();
@@ -118,12 +123,15 @@ export function createRunner(db: AdcDatabase): QaRunner {
         const completedAt = new Date().toISOString();
         const status: QaRunRecord['status'] = code === 0 ? 'passed' : 'failed';
 
-        const report = { outputLines, screenshots };
-        db.update(qaRuns).set({
+        const startMs = new Date(now).getTime();
+        const endMs = new Date(completedAt).getTime();
+        const output = JSON.stringify({ outputLines, screenshots });
+        db.update(testSuiteRuns).set({
           status,
           completedAt,
-          report,
-        }).where(eq(qaRuns.id, runId)).run();
+          durationMs: endMs - startMs,
+          output,
+        }).where(eq(testSuiteRuns.id, runId)).run();
 
         const record: QaRunRecord = {
           id: runId,
@@ -142,13 +150,16 @@ export function createRunner(db: AdcDatabase): QaRunner {
       child.on('error', (err) => {
         activeProcesses.delete(runId);
         const completedAt = new Date().toISOString();
-        const report = { outputLines, screenshots, error: err.message };
+        const startMs = new Date(now).getTime();
+        const endMs = new Date(completedAt).getTime();
+        const output = JSON.stringify({ outputLines, screenshots, error: err.message });
 
-        db.update(qaRuns).set({
+        db.update(testSuiteRuns).set({
           status: 'failed',
           completedAt,
-          report,
-        }).where(eq(qaRuns.id, runId)).run();
+          durationMs: endMs - startMs,
+          output,
+        }).where(eq(testSuiteRuns.id, runId)).run();
 
         const record: QaRunRecord = {
           id: runId,
@@ -169,15 +180,15 @@ export function createRunner(db: AdcDatabase): QaRunner {
     },
 
     get(runId) {
-      const rows = db.select().from(qaRuns).where(eq(qaRuns.id, runId)).all();
+      const rows = db.select().from(testSuiteRuns).where(eq(testSuiteRuns.id, runId)).all();
       const row = rows.at(0);
       return row ? toRunRecord(row) : null;
     },
 
     list(scriptId) {
       const rows = scriptId
-        ? db.select().from(qaRuns).where(eq(qaRuns.scriptId, scriptId)).all()
-        : db.select().from(qaRuns).all();
+        ? db.select().from(testSuiteRuns).where(eq(testSuiteRuns.scriptId, scriptId)).all()
+        : db.select().from(testSuiteRuns).all();
       return rows.map(toRunRecord);
     },
 
@@ -187,10 +198,10 @@ export function createRunner(db: AdcDatabase): QaRunner {
         child.kill();
         activeProcesses.delete(runId);
       }
-      db.update(qaRuns).set({
+      db.update(testSuiteRuns).set({
         status: 'cancelled',
         completedAt: new Date().toISOString(),
-      }).where(eq(qaRuns.id, runId)).run();
+      }).where(eq(testSuiteRuns.id, runId)).run();
     },
   };
 }

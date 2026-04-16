@@ -1,31 +1,39 @@
-import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-export const qaScripts = sqliteTable('qa_scripts', {
+export const testSuiteScripts = sqliteTable('test_suite_scripts', {
   id: text('id').primaryKey(),
-  projectId: text('project_id'),
+  projectId: text('project_id').notNull(),
   name: text('name').notNull(),
-  baseUrl: text('base_url').notNull(),
-  steps: text('steps', { mode: 'json' }).$type<unknown[]>().notNull(),
-  filePath: text('file_path'),
+  filePath: text('file_path').notNull(),
+  targetUrl: text('target_url').notNull(),
+  stepCount: integer('step_count').notNull().default(0),
+  lastStatus: text('last_status'),
+  lastRunAt: text('last_run_at'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
-}, (table) => [
-  index('idx_qa_scripts_project_id').on(table.projectId),
-]);
+});
 
-export const qaRuns = sqliteTable('qa_runs', {
+export const testSuiteRuns = sqliteTable('test_suite_runs', {
   id: text('id').primaryKey(),
   scriptId: text('script_id').notNull(),
-  projectId: text('project_id').notNull(),
-  taskId: text('task_id'),
-  sessionId: text('session_id'),
   status: text('status').notNull(),
-  triggeredBy: text('triggered_by').notNull(),
-  report: text('report', { mode: 'json' }).$type<unknown>(),
+  durationMs: integer('duration_ms').notNull().default(0),
+  stepsPassed: integer('steps_passed').notNull().default(0),
+  stepsFailed: integer('steps_failed').notNull().default(0),
+  output: text('output'),
   startedAt: text('started_at').notNull(),
   completedAt: text('completed_at'),
-}, (table) => [
-  index('idx_qa_runs_script_id').on(table.scriptId),
-  index('idx_qa_runs_project_id').on(table.projectId),
-  index('idx_qa_runs_status').on(table.status),
-]);
+});
+
+export const testSuiteScreenshots = sqliteTable('test_suite_screenshots', {
+  id: text('id').primaryKey(),
+  runId: text('run_id').notNull(),
+  scriptId: text('script_id').notNull(),
+  stepIndex: integer('step_index').notNull(),
+  stepLabel: text('step_label').notNull(),
+  trigger: text('trigger').notNull(),
+  filePath: text('file_path').notNull(),
+  width: integer('width').notNull(),
+  height: integer('height').notNull(),
+  capturedAt: text('captured_at').notNull(),
+});

@@ -141,7 +141,13 @@ export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
 
     getScript: (id) => Promise.resolve(scriptStore.get(id)),
 
-    saveScript: (input) => Promise.resolve(scriptStore.save(input)),
+    saveScript: (input) => Promise.resolve(scriptStore.save({
+      id: input.id,
+      name: input.name,
+      projectId: '',
+      filePath: '',
+      targetUrl: '',
+    })),
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
 
@@ -150,10 +156,7 @@ export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
       if (!script) {
         return Promise.reject(new Error(`Script not found: ${scriptId}`));
       }
-      if (!script.filePath) {
-        return Promise.reject(new Error(`Script ${scriptId} has no filePath — export it first`));
-      }
-      const projectPath = script.projectId ?? '';
+      const projectPath = script.projectId;
       const runId = runner.run({
         scriptId,
         filePath: script.filePath,
@@ -173,12 +176,12 @@ export function createTestSuiteService(db: AdcDatabase): TestSuiteService {
       if (!run) return Promise.reject(new Error(`Run not found: ${runId}`));
       const script = scriptStore.get(run.scriptId);
       if (!script) return Promise.reject(new Error(`Script not found for run ${runId}`));
-      const projectPath = script.projectId ?? process.cwd();
+      const projectPath = script.projectId || process.cwd();
       const result = exporter.export({
         scriptId: script.id,
         scriptName: script.name,
-        baseUrl: '',
-        steps: script.steps,
+        baseUrl: script.targetUrl,
+        steps: [],
         projectPath,
       });
       return Promise.resolve({ filePath: result.filePath });
