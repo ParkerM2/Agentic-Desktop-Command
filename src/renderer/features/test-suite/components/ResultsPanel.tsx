@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { CheckCircle, Play, XCircle } from 'lucide-react';
+import { Play } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -19,7 +19,10 @@ import { useRunScript } from '../api/useRuns';
 import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useRunOutput } from '../hooks/useRunOutput';
+import { useRunSteps } from '../hooks/useRunSteps';
 import { useTestSuiteStore } from '../test-suite-store';
+
+import { StepTimeline } from './StepTimeline';
 
 function getOutputLineClass(line: string): string {
   if (line.includes('\u2713') || line.includes('passed')) return 'text-green-500';
@@ -48,6 +51,7 @@ export function ResultsPanel() {
   const firstRun = runs.length > 0 ? runs[0] : undefined;
   const activeRunId = selectedRunId ?? firstRun?.id ?? null;
   const { lines } = useRunOutput(activeRunId);
+  const { steps: runSteps } = useRunSteps(activeRunId);
   const runScript = useRunScript();
 
   const outputRef = useRef<HTMLDivElement>(null);
@@ -58,16 +62,6 @@ export function ResultsPanel() {
       outputRef.current.scrollTop = outputRef.current.scrollHeight;
     }
   }, [lines.length]);
-
-  // Parse output lines to extract step results
-  const parsedSteps = lines
-    .map((l) => {
-      const pass = l.line.includes('\u2713') || l.line.includes('passed');
-      const fail = l.line.includes('\u2717') || l.line.includes('failed') || l.line.includes('Error');
-      if (!pass && !fail) return null;
-      return { line: l.line.trim(), passed: pass && !fail, timestamp: l.timestamp };
-    })
-    .filter(Boolean) as Array<{ line: string; passed: boolean; timestamp: string }>;
 
   const runStatus = firstRun?.status ?? 'pending';
 
@@ -125,28 +119,12 @@ export function ResultsPanel() {
 
       {/* Content split */}
       <div className="flex flex-1 min-h-0">
-        {/* Step list */}
+        {/* Step timeline */}
         <div className="w-80 border-r border-border overflow-y-auto">
           <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
-            Steps ({parsedSteps.length})
+            Steps ({runSteps.length})
           </div>
-          <div className="flex flex-col">
-            {parsedSteps.map((step) => (
-              <div key={step.timestamp} className="flex items-center gap-2 border-b border-border px-3 py-2">
-                {step.passed ? (
-                  <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive shrink-0" />
-                )}
-                <span className="text-sm truncate flex-1">{step.line}</span>
-              </div>
-            ))}
-            {parsedSteps.length === 0 && (
-              <div className="p-4 text-sm text-text-muted text-center">
-                {lines.length > 0 ? 'Parsing output...' : 'No run results yet'}
-              </div>
-            )}
-          </div>
+          <StepTimeline runStatus={runStatus} steps={runSteps} />
         </div>
 
         {/* Output log */}
