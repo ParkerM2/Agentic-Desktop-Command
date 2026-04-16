@@ -17,12 +17,14 @@ interface TestSuiteUiState {
   selectedRunId: string | null;
   recordingActive: boolean;
   recordedSteps: RecordedStep[];
+  shortcutHelpOpen: boolean;
   setActiveTab: (tab: TestSuiteTab) => void;
   setSelectedScriptId: (id: string | null) => void;
   setSelectedRunId: (id: string | null) => void;
   setRecordingActive: (active: boolean) => void;
   addStep: (step: RecordedStep) => void;
   clearSteps: () => void;
+  setShortcutHelpOpen: (open: boolean) => void;
 }
 
 export const useTestSuiteStore = create<TestSuiteUiState>()(
@@ -33,6 +35,7 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       selectedRunId: null,
       recordingActive: false,
       recordedSteps: [],
+      shortcutHelpOpen: false,
       setActiveTab: (activeTab) => {
         set({ activeTab });
       },
@@ -50,6 +53,9 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       clearSteps: () => {
         set({ recordedSteps: [] });
+      },
+      setShortcutHelpOpen: (shortcutHelpOpen) => {
+        set({ shortcutHelpOpen });
       },
     }),
     {

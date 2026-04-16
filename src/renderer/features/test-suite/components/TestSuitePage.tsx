@@ -5,6 +5,7 @@ import { useLooseParams } from '@renderer/shared/hooks';
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
+import { useTestSuiteShortcuts } from '../hooks/useTestSuiteShortcuts';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { AnalyticsPanel } from './AnalyticsPanel';
@@ -14,6 +15,7 @@ import { RecordingPanel } from './RecordingPanel';
 import { ResultsPanel } from './ResultsPanel';
 import { ScreenshotsPanel } from './ScreenshotsPanel';
 import { SetupCard } from './SetupCard';
+import { ShortcutHelpDialog } from './ShortcutHelpDialog';
 
 const TABS = [
   { id: 'recording' as const, label: 'Recording', icon: PlayCircle },
@@ -28,6 +30,8 @@ export function TestSuitePage() {
   const { projectId } = useLooseParams();
   const { data: config, isLoading } = useTestSuiteConfig(projectId);
   const { activeTab, setActiveTab } = useTestSuiteStore();
+
+  useTestSuiteShortcuts();
 
   if (!projectId) {
     return (
@@ -80,6 +84,7 @@ export function TestSuitePage() {
         <PageHeader.TabContent value="analytics"><AnalyticsPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="export"><ExportPanel /></PageHeader.TabContent>
       </PageHeader.Tabs>
+      <ShortcutHelpDialog />
     </PageLayout>
   );
 }
