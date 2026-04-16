@@ -15,6 +15,9 @@ export const TEST_SUITE = domain('test-suite', {
   WATCH: ['start', 'stop', 'list'],
   BASELINE: ['list', 'set', 'delete'],
   DIFF: ['compare', 'list'],
+  'SHARED-STEPS': ['list', 'get', 'create', 'update', 'delete', 'domains'],
+  SCHEDULE: ['list', 'get', 'create', 'update', 'delete', 'trigger-now'],
+  'DATA-RUN': ['parse', 'execute'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {

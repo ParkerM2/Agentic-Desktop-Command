@@ -25,6 +25,11 @@ import {
 } from './baseline-schemas';
 import { TEST_SUITE, TEST_SUITE_EVENTS } from './channels';
 import {
+  DataRowSchema,
+  ScheduleRecordSchema,
+  SharedStepGroupSchema,
+} from './power-schemas';
+import {
   BrowserViewBoundsSchema,
   BrowserViewCreateInputSchema,
   QaRunReportSchema,
@@ -221,6 +226,92 @@ export const testSuiteInvoke = {
   [TEST_SUITE.DIFF.LIST]: {
     input: z.object({ runId: z.string() }),
     output: z.array(DiffResultSchema),
+  },
+  [TEST_SUITE['SHARED-STEPS'].LIST]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.array(SharedStepGroupSchema),
+  },
+  [TEST_SUITE['SHARED-STEPS'].GET]: {
+    input: z.object({ id: z.string() }),
+    output: SharedStepGroupSchema.nullable(),
+  },
+  [TEST_SUITE['SHARED-STEPS'].CREATE]: {
+    input: z.object({
+      projectId: z.string(),
+      name: z.string(),
+      domain: z.string(),
+      description: z.string().optional(),
+      steps: z.array(TestSuiteStepSchema),
+    }),
+    output: SharedStepGroupSchema,
+  },
+  [TEST_SUITE['SHARED-STEPS'].UPDATE]: {
+    input: z.object({
+      id: z.string(),
+      name: z.string().optional(),
+      domain: z.string().optional(),
+      description: z.string().optional(),
+      steps: z.array(TestSuiteStepSchema).optional(),
+    }),
+    output: SharedStepGroupSchema.nullable(),
+  },
+  [TEST_SUITE['SHARED-STEPS'].DELETE]: {
+    input: z.object({ id: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE['SHARED-STEPS'].DOMAINS]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.array(z.string()),
+  },
+  [TEST_SUITE.SCHEDULE.LIST]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.array(ScheduleRecordSchema),
+  },
+  [TEST_SUITE.SCHEDULE.GET]: {
+    input: z.object({ id: z.string() }),
+    output: ScheduleRecordSchema.nullable(),
+  },
+  [TEST_SUITE.SCHEDULE.CREATE]: {
+    input: z.object({
+      scriptId: z.string(),
+      projectId: z.string(),
+      intervalMs: z.number().min(60000),
+    }),
+    output: ScheduleRecordSchema,
+  },
+  [TEST_SUITE.SCHEDULE.UPDATE]: {
+    input: z.object({
+      id: z.string(),
+      intervalMs: z.number().min(60000).optional(),
+      enabled: z.boolean().optional(),
+    }),
+    output: ScheduleRecordSchema.nullable(),
+  },
+  [TEST_SUITE.SCHEDULE.DELETE]: {
+    input: z.object({ id: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.SCHEDULE['TRIGGER-NOW']]: {
+    input: z.object({ id: z.string() }),
+    output: z.object({ runId: z.string() }),
+  },
+  [TEST_SUITE['DATA-RUN'].PARSE]: {
+    input: z.object({ filePath: z.string() }),
+    output: z.object({
+      rows: z.array(DataRowSchema),
+      headers: z.array(z.string()),
+      rowCount: z.number(),
+    }),
+  },
+  [TEST_SUITE['DATA-RUN'].EXECUTE]: {
+    input: z.object({
+      scriptId: z.string(),
+      dataFilePath: z.string(),
+    }),
+    output: z.object({
+      runIds: z.array(z.string()),
+      totalRows: z.number(),
+    }),
   },
 } as const;
 

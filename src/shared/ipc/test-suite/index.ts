@@ -4,6 +4,7 @@
 
 export * from './analytics-schemas';
 export * from './baseline-schemas';
+export * from './power-schemas';
 export { testSuiteEvents, testSuiteInvoke } from './contract';
 export {
   BrowserViewBoundsSchema,
