@@ -56,6 +56,7 @@ import { LinkPrDialog } from '../LinkPrDialog';
 
 import { extractSummaryBlock } from './summary-block-parser';
 import { TeamActivityPanel } from './TeamActivityPanel';
+import { TestPhasePanel } from './TestPhasePanel';
 
 // ─── Live Agent Preview ──────────────────────────────────
 
@@ -512,7 +513,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
   const [linkJiraOpen, setLinkJiraOpen] = useState(false);
   const [linkPrOpen, setLinkPrOpen] = useState(false);
 
-  type PipelineTab = 'research' | 'plan' | 'execute';
+  type PipelineTab = 'research' | 'plan' | 'execute' | 'test-phase';
   const [activeTab, setActiveTab] = useState<PipelineTab>(() => {
     if (task.hasTeamTasks) return 'execute';
     if (task.hasPlan) return 'plan';
@@ -582,6 +583,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
     task.status === 'done' || task.status === 'review',
     activeAction === 'team' || task.hasTeamTasks,
   );
+  const testPhaseStatus: StepStatus = 'pending';
 
   return (
     <div className="flex max-h-[60vh] flex-col">
@@ -611,6 +613,7 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
           { key: 'research' as PipelineTab, label: 'Research', status: researchStatus },
           { key: 'plan' as PipelineTab, label: 'Plan', status: planStatus },
           { key: 'execute' as PipelineTab, label: 'Execute', status: executeStatus },
+          { key: 'test-phase' as PipelineTab, label: 'Test Phase', status: testPhaseStatus },
         ]).map((tab) => (
           <Button
             key={tab.key}
@@ -654,6 +657,10 @@ export function ProgressTaskDetailRow({ task }: ProgressTaskDetailRowProps) {
             activeAction={activeAction}
             task={task}
           />
+        ) : null}
+
+        {activeTab === 'test-phase' ? (
+          <TestPhasePanel taskId={task.slug} />
         ) : null}
       </div>
 
