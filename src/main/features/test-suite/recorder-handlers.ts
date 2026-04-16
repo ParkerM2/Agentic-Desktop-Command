@@ -23,6 +23,7 @@ import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
 import { writeSpecFile } from './script-writer';
 import { commitWorkflow, previewWorkflow } from './workflow-exporter';
 
+import type { Analytics } from './analytics';
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { ScreenshotStore } from './screenshot-capture';
@@ -75,6 +76,7 @@ export interface TestSuiteService {
   configStore: ConfigStore;
   browserViewManager: BrowserViewManager;
   screenshotStore: ScreenshotStore;
+  analytics: Analytics;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -327,4 +329,36 @@ export function registerTestSuiteHandlers(
     await copyFile(screenshot.filePath, destPath);
     return { filePath: destPath };
   });
+
+  // ── Analytics handlers ──────────────────────────────────────────
+
+  const { analytics } = testSuiteService;
+
+  router.handle(TEST_SUITE.ANALYTICS.SUMMARY, ({ projectId }) =>
+    Promise.resolve(analytics.summary(projectId)),
+  );
+
+  router.handle(TEST_SUITE.ANALYTICS.TREND, ({ projectId, days }) =>
+    Promise.resolve(analytics.trend(projectId, days)),
+  );
+
+  router.handle(TEST_SUITE.ANALYTICS['TOP-FAILURES'], ({ projectId, limit }) =>
+    Promise.resolve(analytics.topFailures(projectId, limit)),
+  );
+
+  router.handle(TEST_SUITE.ANALYTICS.SLOWEST, ({ projectId, limit }) =>
+    Promise.resolve(analytics.slowestTests(projectId, limit)),
+  );
+
+  router.handle(TEST_SUITE.ANALYTICS['ERROR-PATTERNS'], ({ projectId, limit }) =>
+    Promise.resolve(analytics.errorPatterns(projectId, limit)),
+  );
+
+  router.handle(TEST_SUITE.ANALYTICS.FLAKY, ({ projectId }) =>
+    Promise.resolve(analytics.flakyTests(projectId)),
+  );
+
+  router.handle(TEST_SUITE.ANALYTICS['RUN-HISTORY'], ({ scriptId, limit }) =>
+    Promise.resolve(analytics.runHistory(scriptId, limit)),
+  );
 }

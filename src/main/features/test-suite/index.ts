@@ -15,6 +15,7 @@ import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
 import { testSuiteRuns } from '../../db/schema';
 
+import { createAnalytics } from './analytics';
 import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
 import { createExporter } from './exporter';
@@ -22,6 +23,7 @@ import { createRunner } from './runner';
 import { createScreenshotStore } from './screenshot-capture';
 import { createScriptStore } from './script-store';
 
+import type { Analytics } from './analytics';
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
 import type { QaExporter } from './exporter';
@@ -81,6 +83,7 @@ export interface TestSuiteService {
   configStore: ConfigStore;
   browserViewManager: BrowserViewManager;
   screenshotStore: ScreenshotStore;
+  analytics: Analytics;
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
@@ -172,6 +175,7 @@ export function createTestSuiteService(
   const runner = createRunner(db);
   const exporter = createExporter();
   const configStore = createConfigStore(db);
+  const analytics = createAnalytics(db);
 
   return {
     // Sub-services
@@ -181,6 +185,7 @@ export function createTestSuiteService(
     configStore,
     browserViewManager,
     screenshotStore,
+    analytics,
 
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),
