@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:mcp": "electron-vite dev -- --remote-debugging-port=9222",
+    "dev:kill": "node scripts/kill-dev.mjs",
     "build": "electron-vite build",
     "start": "electron .",
     "preview": "electron-vite preview",

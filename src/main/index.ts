@@ -36,6 +36,20 @@ if (isDevMode) {
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
 
+// Single-instance lock: second invocation exits immediately and focuses the first.
+// Prevents duplicate Electron trees accumulating across `npm run dev` re-runs,
+// stale Ctrl+C orphans, or concurrent agent-spawned dev servers.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
+
 let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
 let errorCollectorRef: ErrorCollector | null = null;
