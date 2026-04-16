@@ -148,6 +148,13 @@
       "when": 1776000000000,
       "tag": "0020_add_runners",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1776100000000,
+      "tag": "0021_add_project_id_to_progress_tasks",
+      "breakpoints": true
     }
   ]
 }

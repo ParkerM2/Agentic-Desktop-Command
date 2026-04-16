@@ -19,6 +19,7 @@ import { Archive, ArrowUpDown, ChevronDown, ChevronRight, Pencil, Play, Plus } f
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import { RelativeTime } from '@renderer/shared/components/RelativeTime';
+import { useLooseParams } from '@renderer/shared/hooks';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
 import {
@@ -658,8 +659,10 @@ function createProgressColumns(
 // ── Main component ─────────────────────────────────────────
 
 export function ProgressTaskGrid() {
+  const { projectId } = useLooseParams();
+
   // Data hooks
-  const { data: tasks = [], isLoading } = useProgressTasks();
+  const { data: tasks = [], isLoading } = useProgressTasks(projectId);
   const createTaskMutation = useCreateProgressTask();
   const runWorkflowMutation = useRunWorkflow();
   const archiveTaskMutation = useArchiveProgressTask();
@@ -981,7 +984,13 @@ export function ProgressTaskGrid() {
         open={newTaskDialogOpen}
         onOpenChange={setNewTaskDialogOpen}
         onCreate={async (slug, title, description, priority) => {
-          await createTaskMutation.mutateAsync({ slug, title, description, priority });
+          await createTaskMutation.mutateAsync({
+            slug,
+            title,
+            description,
+            priority,
+            projectId,
+          });
         }}
       />
 

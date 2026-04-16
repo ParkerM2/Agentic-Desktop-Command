@@ -32,6 +32,7 @@ interface CreateProgressTaskInput {
   priority?: ProgressPriority;
   slug?: string;
   id?: string;
+  projectId?: string;
 }
 
 /** Create a new progress task */
@@ -46,7 +47,7 @@ export function useCreateProgressTask() {
       return ipc(PROGRESS.CREATE.TASK, { ...data, id, slug });
     },
     onSuccess() {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
     },
     onError(err) {
       toastOnError('create progress task')(err);
@@ -81,7 +82,7 @@ export function useUpdateProgressTask() {
       };
     }) => ipc(PROGRESS.UPDATE.TASK, data),
     onSettled: (_data, _error, variables) => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
       void queryClient.invalidateQueries({
         queryKey: progressKeys.detail(variables.slug),
       });
@@ -97,7 +98,7 @@ export function useArchiveProgressTask() {
   return useMutation({
     mutationFn: (data: { slug: string }) => ipc(PROGRESS.ARCHIVE.TASK, data),
     onSuccess() {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.archived() });
     },
     onError: onError('archive progress task'),
@@ -111,7 +112,7 @@ export function useDeleteProgressTask() {
   return useMutation({
     mutationFn: (data: { slug: string }) => ipc(PROGRESS.DELETE.TASK, data),
     onSuccess() {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
     },
     onError: onError('delete progress task'),
   });
@@ -125,7 +126,7 @@ export function useStartResearch() {
     mutationFn: (data: { slug: string; prompt?: string }) =>
       ipc(PROGRESS.START.RESEARCH, data),
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
     },
     onError: onError('start research'),
   });
@@ -139,7 +140,7 @@ export function useCreatePlan() {
     mutationFn: (data: { slug: string; prompt?: string }) =>
       ipc(PROGRESS.CREATE.PLAN, data),
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
     },
     onError: onError('create plan'),
   });
@@ -153,7 +154,7 @@ export function useSpinUpTeam() {
     mutationFn: (data: { slug: string; prompt?: string }) =>
       ipc(PROGRESS.START.TEAM, data),
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
     },
     onError: onError('spin up team'),
   });
@@ -167,7 +168,7 @@ export function useRunWorkflow() {
     mutationFn: (data: { slug: string; templateId?: string }) =>
       ipc(PROGRESS.START.WORKFLOW, data),
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
     },
     onError: onError('run workflow'),
   });
@@ -180,7 +181,7 @@ export function useCancelAction() {
   return useMutation({
     mutationFn: (data: { slug: string }) => ipc(PROGRESS.CANCEL.ACTION, data),
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: progressKeys.list() });
+      void queryClient.invalidateQueries({ queryKey: progressKeys.lists() });
       void queryClient.invalidateQueries({ queryKey: progressKeys.sessions() });
     },
     onError: onError('cancel action'),

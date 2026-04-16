@@ -35,7 +35,7 @@ import {
 
 export const progressInvoke = {
   [PROGRESS.LIST.TASKS]: {
-    input: z.object({}),
+    input: z.object({ projectId: z.string().optional() }),
     output: z.array(progressTaskSchema),
   },
   [PROGRESS.GET.TASK]: {

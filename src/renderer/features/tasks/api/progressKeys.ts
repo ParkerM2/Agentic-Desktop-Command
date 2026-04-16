@@ -7,7 +7,8 @@
  */
 export const progressKeys = {
   all: ['progress'] as const,
-  list: () => [...progressKeys.all, 'list'] as const,
+  lists: () => [...progressKeys.all, 'list'] as const,
+  list: (projectId?: string) => [...progressKeys.all, 'list', projectId ?? 'all'] as const,
   detail: (slug: string) => [...progressKeys.all, 'detail', slug] as const,
   archived: () => [...progressKeys.all, 'archived'] as const,
   sessions: () => [...progressKeys.all, 'sessions'] as const,

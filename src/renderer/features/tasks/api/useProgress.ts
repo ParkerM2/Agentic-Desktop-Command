@@ -14,12 +14,12 @@ import { ipc } from '@renderer/shared/lib/ipc';
 
 import { progressKeys } from './progressKeys';
 
-/** Fetch all non-archived progress tasks */
-export function useProgressTasks() {
+/** Fetch non-archived progress tasks, optionally scoped to a project */
+export function useProgressTasks(projectId?: string) {
   return useQuery({
-    queryKey: progressKeys.list(),
+    queryKey: progressKeys.list(projectId),
     queryFn: async () => {
-      const result = await ipc(PROGRESS.LIST.TASKS, {});
+      const result = await ipc(PROGRESS.LIST.TASKS, { projectId });
       return result as ProgressTask[];
     },
     staleTime: 30_000,
