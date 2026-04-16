@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export';
+export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics';
 
 export interface RecordedStep {
   stepIndex: number;

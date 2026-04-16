@@ -1,4 +1,4 @@
-import { FileCode, List, PlayCircle, Camera, Upload } from 'lucide-react';
+import { BarChart3, FileCode, List, PlayCircle, Camera, Upload } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -7,6 +7,7 @@ import { PageContent, PageHeader, PageLayout } from '@ui';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useTestSuiteStore } from '../test-suite-store';
 
+import { AnalyticsPanel } from './AnalyticsPanel';
 import { ExportPanel } from './ExportPanel';
 import { LibraryPanel } from './LibraryPanel';
 import { RecordingPanel } from './RecordingPanel';
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'library' as const, label: 'Library', icon: List },
   { id: 'results' as const, label: 'Results', icon: FileCode },
   { id: 'screenshots' as const, label: 'Screenshots', icon: Camera },
+  { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
   { id: 'export' as const, label: 'CI Export', icon: Upload },
 ];
 
@@ -75,6 +77,7 @@ export function TestSuitePage() {
         <PageHeader.TabContent value="library"><LibraryPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="results"><ResultsPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="screenshots"><ScreenshotsPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="analytics"><AnalyticsPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="export"><ExportPanel /></PageHeader.TabContent>
       </PageHeader.Tabs>
     </PageLayout>
