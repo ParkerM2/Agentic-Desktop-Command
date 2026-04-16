@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics';
+export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics' | 'shared-steps';
 
 export type StatusFilter = 'all' | 'passed' | 'failed' | 'flaky' | 'no-runs';
 

@@ -1,4 +1,4 @@
-import { BarChart3, FileCode, List, PlayCircle, Camera, Upload } from 'lucide-react';
+import { BarChart3, Blocks, FileCode, List, PlayCircle, Camera, Upload } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -15,6 +15,7 @@ import { RecordingPanel } from './RecordingPanel';
 import { ResultsPanel } from './ResultsPanel';
 import { ScreenshotsPanel } from './ScreenshotsPanel';
 import { SetupCard } from './SetupCard';
+import { SharedStepsPanel } from './SharedStepsPanel';
 import { ShortcutHelpDialog } from './ShortcutHelpDialog';
 
 const TABS = [
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'results' as const, label: 'Results', icon: FileCode },
   { id: 'screenshots' as const, label: 'Screenshots', icon: Camera },
   { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+  { id: 'shared-steps' as const, label: 'Shared Steps', icon: Blocks },
   { id: 'export' as const, label: 'CI Export', icon: Upload },
 ];
 
@@ -82,6 +84,7 @@ export function TestSuitePage() {
         <PageHeader.TabContent value="results"><ResultsPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="screenshots"><ScreenshotsPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="analytics"><AnalyticsPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="shared-steps"><SharedStepsPanel /></PageHeader.TabContent>
         <PageHeader.TabContent value="export"><ExportPanel /></PageHeader.TabContent>
       </PageHeader.Tabs>
       <ShortcutHelpDialog />
