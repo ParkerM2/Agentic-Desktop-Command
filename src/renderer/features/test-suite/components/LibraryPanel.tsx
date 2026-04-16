@@ -1,6 +1,16 @@
 import { useState } from 'react';
 
-import { Eye, EyeOff, MoreHorizontal, Play, Plus, Search, Trash2 } from 'lucide-react';
+import {
+  Calendar,
+  Eye,
+  EyeOff,
+  FileSpreadsheet,
+  MoreHorizontal,
+  Play,
+  Plus,
+  Search,
+  Trash2,
+} from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -29,7 +39,9 @@ import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
 import { useTestSuiteStore } from '../test-suite-store';
 
+import { DataRunDialog } from './DataRunDialog';
 import { RunSparkline } from './RunSparkline';
+import { ScheduleDialog } from './ScheduleDialog';
 
 const FILTER_LABELS = {
   all: 'All',
@@ -56,6 +68,8 @@ export function LibraryPanel() {
 
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [scheduleScriptId, setScheduleScriptId] = useState<string | null>(null);
+  const [dataRunScriptId, setDataRunScriptId] = useState<string | null>(null);
 
   const { data: allRuns = [] } = useAllTestSuiteRuns();
   const latestStartByScript = new Map<string, string>();
@@ -240,6 +254,12 @@ export function LibraryPanel() {
                         <DropdownMenuItem onClick={() => onEdit(script.id)}>
                           Edit
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setScheduleScriptId(script.id)}>
+                          <Calendar className="mr-2 h-4 w-4" /> Schedule
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setDataRunScriptId(script.id)}>
+                          <FileSpreadsheet className="mr-2 h-4 w-4" /> Data-Driven Run
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => deleteScript.mutate(script.id)}
@@ -281,6 +301,26 @@ export function LibraryPanel() {
             <Trash2 className="h-3 w-3" /> Delete
           </Button>
         </div>
+      ) : null}
+
+      {scheduleScriptId && projectId ? (
+        <ScheduleDialog
+          open={!!scheduleScriptId}
+          projectId={projectId}
+          scriptId={scheduleScriptId}
+          onOpenChange={(open) => {
+            if (!open) setScheduleScriptId(null);
+          }}
+        />
+      ) : null}
+      {dataRunScriptId ? (
+        <DataRunDialog
+          open={!!dataRunScriptId}
+          scriptId={dataRunScriptId}
+          onOpenChange={(open) => {
+            if (!open) setDataRunScriptId(null);
+          }}
+        />
       ) : null}
     </PageContent>
   );
