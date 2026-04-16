@@ -34,12 +34,13 @@ import {
 
 import { useDeleteScript } from '../api/useDeleteScript';
 import { useSaveScript } from '../api/useSaveScript';
+import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
-import { buildStarterTest } from '../lib/starter-test';
+import { buildDefaultConfig, buildStarterTest } from '../lib/starter-test';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { DataRunDialog } from './DataRunDialog';
@@ -65,6 +66,7 @@ export function LibraryPanel() {
   const watchedSet = new Set(watchedScripts);
   const deleteScript = useDeleteScript(projectId ?? '');
   const saveScript = useSaveScript(projectId ?? '');
+  const saveConfig = useSaveTestSuiteConfig(projectId ?? '');
   const { data: config } = useTestSuiteConfig(projectId);
   const setActiveTab = useTestSuiteStore((s) => s.setActiveTab);
   const setSelectedScriptId = useTestSuiteStore((s) => s.setSelectedScriptId);
@@ -135,9 +137,12 @@ export function LibraryPanel() {
     setActiveTab('recording');
   };
 
-  const onCreateStarterTest = () => {
-    if (!projectId || !config) return;
-    saveScript.mutate(buildStarterTest({ projectId, targetUrl: config.targetUrl }));
+  const onCreateStarterTest = async () => {
+    if (!projectId) return;
+    const resolvedConfig = config ?? (await saveConfig.mutateAsync(buildDefaultConfig()));
+    await saveScript.mutateAsync(
+      buildStarterTest({ projectId, targetUrl: resolvedConfig.targetUrl }),
+    );
   };
 
   const onEdit = (id: string) => {
@@ -292,13 +297,15 @@ export function LibraryPanel() {
                       <span>No tests recorded yet</span>
                       <Button
                         data-testid="create-starter-test"
-                        disabled={!config || saveScript.isPending}
+                        disabled={saveScript.isPending || saveConfig.isPending}
                         size="sm"
                         variant="outline"
-                        onClick={onCreateStarterTest}
+                        onClick={() => {
+                          void onCreateStarterTest();
+                        }}
                       >
                         <Plus className="h-4 w-4" />
-                        {config ? 'Create Starter Test' : 'Configure test suite to add a starter test'}
+                        {config ? 'Create Starter Test' : 'Create Default Config + Starter Test'}
                       </Button>
                     </div>
                   )}

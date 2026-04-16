@@ -20,6 +20,13 @@ import {
 } from '@ui';
 
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
+import {
+  DEFAULT_CONFIG_SCREENSHOT_MODE,
+  DEFAULT_CONFIG_TARGET_URL,
+  DEFAULT_CONFIG_TEST_DIRECTORY,
+  DEFAULT_CONFIG_VIEWPORT_HEIGHT,
+  DEFAULT_CONFIG_VIEWPORT_WIDTH,
+} from '../lib/starter-test';
 
 interface SetupCardProps {
   projectId: string;
@@ -39,11 +46,11 @@ const SCREENSHOT_MODES: Array<{ value: ScreenshotMode; label: string }> = [
 export function SetupCard({ projectId }: SetupCardProps) {
   const save = useSaveTestSuiteConfig(projectId);
 
-  const [targetUrl, setTargetUrl] = useState('http://localhost:3000');
-  const [width, setWidth] = useState(1280);
-  const [height, setHeight] = useState(720);
-  const [mode, setMode] = useState<ScreenshotMode>('smart');
-  const [testDirectory, setTestDirectory] = useState('test-suite/');
+  const [targetUrl, setTargetUrl] = useState(DEFAULT_CONFIG_TARGET_URL);
+  const [width, setWidth] = useState(DEFAULT_CONFIG_VIEWPORT_WIDTH);
+  const [height, setHeight] = useState(DEFAULT_CONFIG_VIEWPORT_HEIGHT);
+  const [mode, setMode] = useState<ScreenshotMode>(DEFAULT_CONFIG_SCREENSHOT_MODE);
+  const [testDirectory, setTestDirectory] = useState(DEFAULT_CONFIG_TEST_DIRECTORY);
   const [urlError, setUrlError] = useState<string | null>(null);
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
