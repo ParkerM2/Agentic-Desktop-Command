@@ -26,6 +26,9 @@ interface TestSuiteUiState {
   setSelectedRunId: (id: string | null) => void;
   setRecordingActive: (active: boolean) => void;
   addStep: (step: RecordedStep) => void;
+  removeStep: (stepIndex: number) => void;
+  reorderSteps: (fromIndex: number, toIndex: number) => void;
+  updateStep: (stepIndex: number, step: TestSuiteStep) => void;
   clearSteps: () => void;
   setShortcutHelpOpen: (open: boolean) => void;
   setLibraryStatusFilter: (filter: StatusFilter) => void;
@@ -55,6 +58,31 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       addStep: (step) => {
         set((s) => ({ recordedSteps: [...s.recordedSteps, step] }));
+      },
+      removeStep: (stepIndex) => {
+        set((state) => ({
+          recordedSteps: state.recordedSteps
+            .filter((s) => s.stepIndex !== stepIndex)
+            .map((s, i) => ({ ...s, stepIndex: i })),
+        }));
+      },
+      reorderSteps: (fromIndex, toIndex) => {
+        set((state) => {
+          const steps = [...state.recordedSteps];
+          if (fromIndex < 0 || fromIndex >= steps.length) {
+            return { recordedSteps: steps };
+          }
+          const [moved] = steps.splice(fromIndex, 1) as [RecordedStep];
+          steps.splice(toIndex, 0, moved);
+          return { recordedSteps: steps.map((s, i) => ({ ...s, stepIndex: i })) };
+        });
+      },
+      updateStep: (stepIndex, step) => {
+        set((state) => ({
+          recordedSteps: state.recordedSteps.map((s) =>
+            s.stepIndex === stepIndex ? { ...s, step } : s,
+          ),
+        }));
       },
       clearSteps: () => {
         set({ recordedSteps: [] });
