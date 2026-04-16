@@ -33,6 +33,7 @@ export interface BrowserViewManager {
   setBounds: (bounds: Electron.Rectangle) => { success: boolean };
   destroy: () => { success: boolean };
   getWebContents: () => Electron.WebContents | null;
+  setStepEmitter: (fn: (step: unknown) => void) => void;
 }
 
 export function createBrowserViewManager(
@@ -40,6 +41,8 @@ export function createBrowserViewManager(
 ): BrowserViewManager {
   let view: BrowserView | null = null;
   const partition = 'persist:test-suite';
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  let stepEmitter: (step: unknown) => void = () => {};
 
   function ensure(): BrowserView {
     if (view) return view;
@@ -58,6 +61,9 @@ export function createBrowserViewManager(
       } else {
         cb(-3);
       }
+    });
+    view.webContents.ipc.on('adc.test-suite.step', (_e, step: unknown) => {
+      stepEmitter(step);
     });
     return view;
   }
@@ -104,6 +110,9 @@ export function createBrowserViewManager(
     },
     getWebContents() {
       return view?.webContents ?? null;
+    },
+    setStepEmitter(fn) {
+      stepEmitter = fn;
     },
   };
 }

@@ -6,11 +6,11 @@
  */
 
 import { TEST_SUITE, TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
+import { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 import type {
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
-  TestSuiteStepSchema,
 } from '@shared/ipc/test-suite/schemas';
 
 import type { BrowserViewManager } from './browser-view-manager';
@@ -152,6 +152,30 @@ export function registerTestSuiteHandlers(
   );
 
   const { browserViewManager: bvm } = testSuiteService;
+
+  // ── Recorder step forwarding ─────────────────────────────────
+  // Preload emits steps in contract-normalized shape; we validate,
+  // wrap with stepIndex + timestamp, and forward to renderer.
+
+  const recorderEmittableTypes = new Set(['navigate', 'click', 'fill', 'select', 'press']);
+  let recorderStepIndex = 0;
+
+  function normalizeStep(raw: unknown): TestSuiteStep | null {
+    const parsed = TestSuiteStepSchema.safeParse(raw);
+    if (!parsed.success) return null;
+    if (!recorderEmittableTypes.has(parsed.data.type)) return null;
+    return parsed.data;
+  }
+
+  bvm.setStepEmitter((raw) => {
+    const step = normalizeStep(raw);
+    if (!step) return;
+    router.emit(TEST_SUITE_EVENTS.RECORDER.STEP, {
+      stepIndex: recorderStepIndex++,
+      step,
+      timestamp: new Date().toISOString(),
+    });
+  });
 
   router.handle(TEST_SUITE['BROWSER-VIEW'].CREATE, ({ url, bounds }) =>
     Promise.resolve(bvm.create(url, bounds)),
