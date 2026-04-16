@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { MoreHorizontal, Play, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, EyeOff, MoreHorizontal, Play, Plus, Search, Trash2 } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -25,6 +25,7 @@ import {
 import { useDeleteScript } from '../api/useDeleteScript';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
+import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { RunSparkline } from './RunSparkline';
@@ -34,6 +35,10 @@ export function LibraryPanel() {
   const { data: scripts = [] } = useTestSuiteScripts(projectId);
   const { data: flakyTests = [] } = useFlakyTests(projectId);
   const flakySet = new Set(flakyTests.map((f) => f.scriptId));
+  const { data: watchedScripts = [] } = useWatchedScripts();
+  const startWatch = useStartWatch();
+  const stopWatch = useStopWatch();
+  const watchedSet = new Set(watchedScripts);
   const deleteScript = useDeleteScript(projectId ?? '');
   const setActiveTab = useTestSuiteStore((s) => s.setActiveTab);
   const setSelectedScriptId = useTestSuiteStore((s) => s.setSelectedScriptId);
@@ -146,6 +151,22 @@ export function LibraryPanel() {
                   <div className="flex items-center gap-1">
                     <Button size="icon" title="Run" variant="ghost">
                       <Play className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      title={watchedSet.has(script.id) ? 'Stop watching' : 'Watch for changes'}
+                      variant="ghost"
+                      onClick={() =>
+                        watchedSet.has(script.id)
+                          ? stopWatch.mutate(script.id)
+                          : startWatch.mutate(script.id)
+                      }
+                    >
+                      {watchedSet.has(script.id) ? (
+                        <Eye className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <EyeOff className="h-4 w-4" />
+                      )}
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
