@@ -33,10 +33,13 @@ import {
 } from '@ui';
 
 import { useDeleteScript } from '../api/useDeleteScript';
+import { useSaveScript } from '../api/useSaveScript';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
+import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
+import { buildStarterTest } from '../lib/starter-test';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { DataRunDialog } from './DataRunDialog';
@@ -61,6 +64,8 @@ export function LibraryPanel() {
   const stopWatch = useStopWatch();
   const watchedSet = new Set(watchedScripts);
   const deleteScript = useDeleteScript(projectId ?? '');
+  const saveScript = useSaveScript(projectId ?? '');
+  const { data: config } = useTestSuiteConfig(projectId);
   const setActiveTab = useTestSuiteStore((s) => s.setActiveTab);
   const setSelectedScriptId = useTestSuiteStore((s) => s.setSelectedScriptId);
   const statusFilter = useTestSuiteStore((s) => s.libraryStatusFilter);
@@ -128,6 +133,11 @@ export function LibraryPanel() {
   const onNewTest = () => {
     setSelectedScriptId(null);
     setActiveTab('recording');
+  };
+
+  const onCreateStarterTest = () => {
+    if (!projectId || !config) return;
+    saveScript.mutate(buildStarterTest({ projectId, targetUrl: config.targetUrl }));
   };
 
   const onEdit = (id: string) => {
@@ -275,7 +285,23 @@ export function LibraryPanel() {
             {filtered.length === 0 ? (
               <TableRow>
                 <TableCell className="py-8 text-center text-text-muted" colSpan={7}>
-                  {search ? 'No matching tests' : 'No tests recorded yet'}
+                  {search ? (
+                    'No matching tests'
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <span>No tests recorded yet</span>
+                      <Button
+                        data-testid="create-starter-test"
+                        disabled={!config || saveScript.isPending}
+                        size="sm"
+                        variant="outline"
+                        onClick={onCreateStarterTest}
+                      >
+                        <Plus className="h-4 w-4" />
+                        {config ? 'Create Starter Test' : 'Configure test suite to add a starter test'}
+                      </Button>
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             ) : null}
