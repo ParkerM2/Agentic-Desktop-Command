@@ -1,13 +1,20 @@
 import { z } from 'zod';
 
-import { RUNNERS } from './channels';
+import { SuccessResponseSchema } from '../common/schemas';
+
+import { RUNNERS, RUNNERS_EVENTS } from './channels';
 import {
+  RunnerHealthEventSchema,
   RunnerInstanceSchema,
+  RunnerOutputEventSchema,
   RunnerProfileSchema,
+  RunnerStatusEventSchema,
   ScopeRefSchema,
 } from './schemas';
 
-export const RUNNERS_CONTRACT = {
+// ─── Invoke Channels ──────────────────────────────────────────
+
+export const runnersInvoke = {
   [RUNNERS.PROFILE.LIST]: {
     input: z.object({ projectId: z.string() }),
     output: z.array(RunnerProfileSchema),
@@ -18,7 +25,7 @@ export const RUNNERS_CONTRACT = {
   },
   [RUNNERS.PROFILE.DELETE]: {
     input: z.object({ profileId: z.string() }),
-    output: z.object({ success: z.literal(true) }),
+    output: SuccessResponseSchema,
   },
   [RUNNERS.INSTANCE.LIST]: {
     input: z.object({ scope: ScopeRefSchema }),
@@ -30,10 +37,18 @@ export const RUNNERS_CONTRACT = {
   },
   [RUNNERS.INSTANCE.STOP]: {
     input: z.object({ instanceId: z.string() }),
-    output: z.object({ success: z.literal(true) }),
+    output: SuccessResponseSchema,
   },
   [RUNNERS.INSTANCE.RESTART]: {
     input: z.object({ instanceId: z.string() }),
     output: RunnerInstanceSchema,
   },
+} as const;
+
+// ─── Event Channels ───────────────────────────────────────────
+
+export const runnersEvents = {
+  [RUNNERS_EVENTS.INSTANCE.STATUS]: { payload: RunnerStatusEventSchema },
+  [RUNNERS_EVENTS.INSTANCE.OUTPUT]: { payload: RunnerOutputEventSchema },
+  [RUNNERS_EVENTS.INSTANCE.HEALTH]: { payload: RunnerHealthEventSchema },
 } as const;
