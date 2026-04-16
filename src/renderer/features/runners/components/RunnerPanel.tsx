@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Pencil, Play, RotateCw, Square } from 'lucide-react';
 
@@ -21,6 +21,7 @@ import {
 } from '../api/useRunnerInstances';
 import { useRunnerEvents } from '../api/useRunnerOutput';
 import { useRunnerProfiles } from '../api/useRunnerProfiles';
+import { useRunnersStore } from '../runners-store';
 
 import { ProfileEditDialog } from './ProfileEditDialog';
 import { RunnerOutputConsole } from './RunnerOutputConsole';
@@ -41,6 +42,11 @@ export function RunnerPanel({ scope, heading = 'Dev Server' }: Props) {
 
   const [selectedProfileId, setSelectedProfileId] = useState<string | undefined>(profiles[0]?.id);
   const [editing, setEditing] = useState<{ open: boolean; id?: string }>({ open: false });
+
+  const pruneExcept = useRunnersStore((s) => s.pruneExcept);
+  useEffect(() => {
+    pruneExcept(instances.map((i) => i.id));
+  }, [instances, pruneExcept]);
 
   const activeInstance = useMemo(
     () =>

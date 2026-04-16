@@ -51,6 +51,13 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
     router.emit(RUNNERS_EVENTS.INSTANCE.OUTPUT, { instanceId: id, stream, chunk });
   });
   supervisor.on('exit', ({ id, code }: { id: string; code: number | null }) => {
+    const instanceRow = db
+      .select()
+      .from(runnerInstances)
+      .where(eq(runnerInstances.id, id))
+      .get();
+    const wasStopping = instanceRow?.status === 'stopping';
+
     const nextStatus: RunnerStatus = code === 0 ? 'stopped' : 'failed';
     updateInstance(id, {
       status: nextStatus,
@@ -64,6 +71,27 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
     });
     healthControllers.get(id)?.abort();
     healthControllers.delete(id);
+
+    if (!wasStopping && code !== 0 && instanceRow) {
+      const profileRow = db
+        .select()
+        .from(runnerProfiles)
+        .where(eq(runnerProfiles.id, instanceRow.profileId))
+        .get();
+      if (profileRow?.autoRestart) {
+        const inst = rowToInstance(instanceRow);
+        console.warn(
+          `[runners] auto-restart triggered for profile ${profileRow.id} after abnormal exit (code=${code ?? 'null'})`,
+        );
+        queueMicrotask(() => {
+          try {
+            startInstance(profileRow.id, inst.scope);
+          } catch (err) {
+            console.error('[runners] auto-restart failed:', err);
+          }
+        });
+      }
+    }
   });
   supervisor.on('error', ({ id, message }: { id: string; message: string }) => {
     updateInstance(id, { status: 'failed', lastError: message });
@@ -291,6 +319,8 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
     stopInstance(instanceId) {
       updateInstance(instanceId, { status: 'stopping' });
       router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId, status: 'stopping' });
+      healthControllers.get(instanceId)?.abort();
+      healthControllers.delete(instanceId);
       supervisor.kill(instanceId);
       return { success: true };
     },
@@ -302,6 +332,8 @@ export function createRunnersService(deps: RunnersServiceDeps): RunnersService {
         .where(eq(runnerInstances.id, instanceId))
         .get();
       if (!row) throw new Error(`Instance ${instanceId} not found`);
+      healthControllers.get(instanceId)?.abort();
+      healthControllers.delete(instanceId);
       supervisor.kill(instanceId);
       const inst = rowToInstance(row);
       return startInstance(inst.profileId, inst.scope);
