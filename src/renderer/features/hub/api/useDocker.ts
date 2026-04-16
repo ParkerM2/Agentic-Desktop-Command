@@ -28,3 +28,10 @@ export function useDockerSetupHub() {
     mutationFn: () => ipc(DOCKER.SETUP.HUB, {}),
   });
 }
+
+/** Reset Hub: stop/remove container + volume, then re-run setup for a fresh key. */
+export function useDockerResetHub() {
+  return useMutation({
+    mutationFn: () => ipc(DOCKER.RESET.HUB, {}),
+  });
+}

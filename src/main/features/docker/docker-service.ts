@@ -16,14 +16,17 @@ const execFileAsync = promisify(execFile);
 
 const HUB_IMAGE = 'parkerm2/adc-hub:latest';
 const HUB_CONTAINER_NAME = 'adc-hub';
+const HUB_VOLUME_NAME = 'adc-hub-data';
 const HUB_PORT = 3200;
 const HUB_URL = `http://localhost:${String(HUB_PORT)}`;
 const HEALTH_TIMEOUT_MS = 30_000;
 const HEALTH_POLL_MS = 1_000;
+const STEP_DOCKER_CHECK = 'docker-check';
 
 export interface DockerService {
   getStatus: () => Promise<{ installed: boolean; running: boolean }>;
   setupHub: () => Promise<{ success: boolean; url?: string; apiKey?: string; error?: string; step?: string }>;
+  resetHub: () => Promise<{ success: boolean; url?: string; apiKey?: string; error?: string; step?: string }>;
 }
 
 export function createDockerService(): DockerService {
@@ -98,10 +101,10 @@ export function createDockerService(): DockerService {
       // Step 1: Ensure Docker is running
       const status = await getStatus();
       if (!status.installed) {
-        return { success: false, error: 'Docker is not installed', step: 'docker-check' };
+        return { success: false, error: 'Docker is not installed', step: STEP_DOCKER_CHECK };
       }
       if (!status.running) {
-        return { success: false, error: 'Docker Desktop is not running. Please start it and try again.', step: 'docker-check' };
+        return { success: false, error: 'Docker Desktop is not running. Please start it and try again.', step: STEP_DOCKER_CHECK };
       }
 
       // Step 2: Check if container already exists
@@ -135,11 +138,12 @@ export function createDockerService(): DockerService {
         // Step 3: Pull the image
         await docker('pull', HUB_IMAGE);
 
-        // Step 4: Run the container
+        // Step 4: Run the container with a persistent volume so data survives resets
         await docker(
           'run', '-d',
           '--name', HUB_CONTAINER_NAME,
           '-p', `${String(HUB_PORT)}:${String(HUB_PORT)}`,
+          '-v', `${HUB_VOLUME_NAME}:/app/data`,
           '--restart', 'unless-stopped',
           HUB_IMAGE,
         );
@@ -161,5 +165,33 @@ export function createDockerService(): DockerService {
     }
   }
 
-  return { getStatus, setupHub };
+  async function resetHub(): Promise<{
+    success: boolean;
+    url?: string;
+    apiKey?: string;
+    error?: string;
+    step?: string;
+  }> {
+    try {
+      const status = await getStatus();
+      if (!status.installed) {
+        return { success: false, error: 'Docker is not installed', step: STEP_DOCKER_CHECK };
+      }
+      if (!status.running) {
+        return { success: false, error: 'Docker Desktop is not running. Please start it and try again.', step: STEP_DOCKER_CHECK };
+      }
+
+      // Tear down existing container and its volume so the fresh Hub mints a new key.
+      try { await docker('stop', HUB_CONTAINER_NAME); } catch { /* already stopped or absent */ }
+      try { await docker('rm', HUB_CONTAINER_NAME); } catch { /* already removed */ }
+      try { await docker('volume', 'rm', HUB_VOLUME_NAME); } catch { /* may not exist yet */ }
+
+      return await setupHub();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, error: message, step: 'reset' };
+    }
+  }
+
+  return { getStatus, setupHub, resetHub };
 }

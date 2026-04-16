@@ -6,6 +6,7 @@ export const HUB = domain('hub', {
   GET: ['status', 'config'],
   SYNC: ['data'],
   REMOVE: ['config'],
+  GENERATE: ['key'],
 });
 
 export const HUB_EVENTS = events('hub', {

@@ -10,18 +10,20 @@
 import { useState } from 'react';
 
 import { useForm } from '@tanstack/react-form';
-import { Cloud, CloudOff, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Cloud, CloudOff, KeyRound, RefreshCw, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { z } from 'zod';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Form, FormInput, Spinner } from '@ui';
+import { Button, Form, FormInput, Input, Label, Spinner } from '@ui';
 
+import { useDockerResetHub, useDockerSetupHub, useDockerStatus } from '@features/hub/api/useDocker';
 import { validateHubUrl } from '@features/hub/lib/validateHubUrl';
 
 import {
   useHubConnect,
   useHubDisconnect,
+  useHubGenerateKey,
   useHubRemoveConfig,
   useHubStatus,
   useHubSync,
@@ -49,6 +51,238 @@ const connectionSchema = z.object({
 });
 
 // ── Sub-components ──────────────────────────────────────────
+
+interface AutoSetupPanelProps {
+  onConnected: (url: string, apiKey: string) => void;
+}
+
+function AutoSetupPanel({ onConnected }: AutoSetupPanelProps) {
+  const { data: dockerStatus } = useDockerStatus();
+  const setupMutation = useDockerSetupHub();
+  const resetMutation = useDockerResetHub();
+  const [error, setError] = useState<string | null>(null);
+  const [showReset, setShowReset] = useState(false);
+
+  const docker = dockerStatus ?? { installed: false, running: false };
+  const dockerReady = docker.installed && docker.running;
+  const busy = setupMutation.isPending || resetMutation.isPending;
+
+  async function handleSetup() {
+    setError(null);
+    setShowReset(false);
+    try {
+      const result = await setupMutation.mutateAsync();
+      if (!result.success || !result.url || !result.apiKey) {
+        setError(result.error ?? 'Setup failed.');
+        if (result.step === 'api-key') {
+          setShowReset(true);
+        }
+        return;
+      }
+      onConnected(result.url, result.apiKey);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Setup failed: ${message}`);
+    }
+  }
+
+  async function handleReset() {
+    setError(null);
+    try {
+      const result = await resetMutation.mutateAsync();
+      if (!result.success || !result.url || !result.apiKey) {
+        setError(result.error ?? 'Reset failed.');
+        return;
+      }
+      setShowReset(false);
+      onConnected(result.url, result.apiKey);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(`Reset failed: ${message}`);
+    }
+  }
+
+  let dockerHint: string | null = null;
+  if (!docker.installed) {
+    dockerHint = 'Docker Desktop is not installed. Install it from docker.com, then retry.';
+  } else if (!docker.running) {
+    dockerHint = 'Docker Desktop is installed but not running. Start it, then retry.';
+  }
+
+  return (
+    <div className="border-primary/40 bg-primary/5 space-y-3 rounded-md border p-4">
+      <div className="flex items-start gap-3">
+        <Sparkles className="text-primary mt-0.5 h-5 w-5" />
+        <div className="flex-1">
+          <h4 className="text-foreground text-sm font-semibold">Set up Hub automatically</h4>
+          <p className="text-muted-foreground text-xs">
+            Pulls the Hub image, starts the container, generates an API key, and connects — no
+            terminal needed.
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={!dockerReady || busy}
+          variant="primary"
+          onClick={() => {
+            void handleSetup();
+          }}
+        >
+          {setupMutation.isPending ? <Spinner size="sm" /> : <Sparkles className="h-4 w-4" />}
+          {setupMutation.isPending ? 'Setting up...' : 'Set Up Hub'}
+        </Button>
+
+        {showReset ? (
+          <Button
+            disabled={!dockerReady || busy}
+            variant="destructive"
+            onClick={() => {
+              void handleReset();
+            }}
+          >
+            {resetMutation.isPending ? <Spinner size="sm" /> : <RotateCcw className="h-4 w-4" />}
+            {resetMutation.isPending ? 'Resetting...' : 'Reset Hub and try again'}
+          </Button>
+        ) : null}
+      </div>
+
+      {dockerHint === null ? null : <p className="text-warning-foreground text-xs">{dockerHint}</p>}
+      {error === null ? null : <p className="text-destructive text-sm">{error}</p>}
+      {showReset ? (
+        <p className="text-muted-foreground text-xs">
+          Reset wipes the existing Hub container and its data volume, then provisions a fresh Hub
+          with a new API key. Use this if the existing container has a key you can&apos;t recover.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+interface GenerateKeyPanelProps {
+  hubUrl: string;
+  onGenerated: (url: string, key: string) => void;
+}
+
+function GenerateKeyPanel({ hubUrl, onGenerated }: GenerateKeyPanelProps) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState(hubUrl);
+  const [secret, setSecret] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const generateMutation = useHubGenerateKey();
+
+  // Keep the generator URL in sync with the parent URL until the user overrides it
+  const [urlTouched, setUrlTouched] = useState(false);
+  if (!urlTouched && url !== hubUrl) {
+    setUrl(hubUrl);
+  }
+
+  async function handleGenerate() {
+    setError(null);
+    if (!url.trim()) {
+      setError('Enter the Hub URL first.');
+      return;
+    }
+
+    try {
+      const result = await generateMutation.mutateAsync({
+        url: url.trim(),
+        bootstrapSecret: secret.trim(),
+      });
+
+      if (!result.success || !result.key) {
+        setError(result.error ?? 'Failed to generate key.');
+        return;
+      }
+
+      setSecret('');
+      onGenerated(url.trim(), result.key);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('Unknown IPC channel') || message.includes('No handler')) {
+        setError(
+          'Main process is running older code — restart `npm run dev` so the new handler loads.',
+        );
+      } else {
+        setError(`Request failed: ${message}`);
+      }
+    }
+  }
+
+  return (
+    <div className="border-border rounded-md border">
+      <Button
+        className="w-full justify-between rounded-none p-3"
+        type="button"
+        variant="ghost-muted"
+        onClick={() => {
+          setOpen((v) => !v);
+        }}
+      >
+        <span className="flex items-center gap-2">
+          <KeyRound className="h-4 w-4" />
+          Don&apos;t have an API key? Generate one
+        </span>
+        {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+      </Button>
+
+      {open ? (
+        <div className="border-border space-y-3 border-t p-3">
+          <p className="text-muted-foreground text-xs">
+            The Hub can mint an API key for you. First-time setup usually needs no secret — leave
+            the field blank. If your Hub is locked down with a{' '}
+            <code className="bg-muted rounded px-1">HUB_BOOTSTRAP_SECRET</code> env var, paste its
+            value below.
+          </p>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="gen-hub-url">Hub URL</Label>
+            <Input
+              id="gen-hub-url"
+              placeholder="http://localhost:3200"
+              type="url"
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setUrlTouched(true);
+              }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="gen-hub-secret">
+              Bootstrap Secret <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="gen-hub-secret"
+              placeholder="Leave blank for first-time setup"
+              type="password"
+              value={secret}
+              onChange={(e) => {
+                setSecret(e.target.value);
+              }}
+            />
+          </div>
+
+          <Button
+            disabled={generateMutation.isPending}
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              void handleGenerate();
+            }}
+          >
+            {generateMutation.isPending ? <Spinner size="sm" /> : <KeyRound className="h-4 w-4" />}
+            {generateMutation.isPending ? 'Generating...' : 'Generate Key'}
+          </Button>
+
+          {error === null ? null : <p className="text-destructive text-sm">{error}</p>}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 interface ConnectionFormProps {
   isConnecting: boolean;
@@ -149,6 +383,18 @@ function ConnectionForm({ isConnecting, connectError, onConnect }: ConnectionFor
       {connectError && validationError === null ? (
         <p className="text-destructive text-sm">Failed to connect. Check your URL and API key.</p>
       ) : null}
+
+      <form.Subscribe selector={(state) => [state.values.hubUrl]}>
+        {([currentUrl]) => (
+          <GenerateKeyPanel
+            hubUrl={typeof currentUrl === 'string' ? currentUrl : ''}
+            onGenerated={(url, key) => {
+              form.setFieldValue('hubUrl', url);
+              form.setFieldValue('apiKey', key);
+            }}
+          />
+        )}
+      </form.Subscribe>
     </Form>
   );
 }
@@ -264,13 +510,25 @@ export function HubSettings() {
           }}
         />
       ) : (
-        <ConnectionForm
-          connectError={connectMutation.isError}
-          isConnecting={connectMutation.isPending}
-          onConnect={(url, apiKey) => {
-            connectMutation.mutate({ url, apiKey });
-          }}
-        />
+        <div className="space-y-6">
+          <AutoSetupPanel
+            onConnected={(url, apiKey) => {
+              connectMutation.mutate({ url, apiKey });
+            }}
+          />
+          <div className="border-border border-t pt-4">
+            <p className="text-muted-foreground mb-3 text-xs uppercase tracking-wide">
+              Or connect manually
+            </p>
+            <ConnectionForm
+              connectError={connectMutation.isError}
+              isConnecting={connectMutation.isPending}
+              onConnect={(url, apiKey) => {
+                connectMutation.mutate({ url, apiKey });
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {/* Sync result */}

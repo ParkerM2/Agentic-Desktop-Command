@@ -45,6 +45,17 @@ export const hubInvoke = {
     input: z.object({}),
     output: SuccessResponseSchema,
   },
+  [HUB.GENERATE.KEY]: {
+    input: z.object({
+      url: z.string(),
+      bootstrapSecret: z.string().default(''),
+    }),
+    output: z.object({
+      success: z.boolean(),
+      key: z.string().optional(),
+      error: z.string().optional(),
+    }),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────

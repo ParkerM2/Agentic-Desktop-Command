@@ -24,6 +24,7 @@ export const APP_EVENTS = events('app', {
 export const DOCKER = domain('docker', {
   GET: ['status'],
   SETUP: ['hub'],
+  RESET: ['hub'],
 });
 
 // ─── Window channels (absorbed from window/) ─────────────────

@@ -275,21 +275,29 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // ─────────────────────────────────────────────────────────────
-  // Legacy: POST /api/auth/generate-key — Generate API key
+  // POST /api/auth/generate-key — Generate API key
+  //
+  // Allowed when either (a) no keys exist yet (first-run bootstrap), or
+  // (b) HUB_BOOTSTRAP_SECRET is set AND the request carries a matching
+  // X-Bootstrap-Secret header. Existing keys are preserved so admins can
+  // mint a replacement without losing other clients.
   // ─────────────────────────────────────────────────────────────
-  app.post('/api/auth/generate-key', async (request, reply) => {
+  app.post<{ Body?: { name?: string } }>('/api/auth/generate-key', async (request, reply) => {
     const bootstrapSecret = request.headers['x-bootstrap-secret'];
     if (!validateBootstrapSecret(bootstrapSecret)) {
-      return reply.status(401).send({
+      return await reply.status(401).send({
         error: 'Invalid or missing X-Bootstrap-Secret header',
       });
     }
 
     const row = db.prepare('SELECT COUNT(*) as count FROM api_keys').get() as { count: number };
+    const secretValue = process.env.HUB_BOOTSTRAP_SECRET;
+    const bootstrapSecretConfigured = typeof secretValue === 'string' && secretValue.length > 0;
 
-    if (row.count > 0) {
-      return reply.status(403).send({
-        error: 'API keys already exist. Cannot generate new keys via this endpoint.',
+    if (row.count > 0 && !bootstrapSecretConfigured) {
+      return await reply.status(403).send({
+        error:
+          'API keys already exist. Set HUB_BOOTSTRAP_SECRET on the Hub and retry to mint a replacement key.',
       });
     }
 
@@ -297,12 +305,14 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     const keyHash = hashKey(rawKey);
     const id = nanoid();
     const now = new Date().toISOString();
+    const trimmedName = request.body?.name?.trim();
+    const name = trimmedName !== undefined && trimmedName.length > 0 ? trimmedName : `key-${now}`;
 
     db.prepare(
       'INSERT INTO api_keys (id, key_hash, name, created_at) VALUES (?, ?, ?, ?)',
-    ).run(id, keyHash, 'default', now);
+    ).run(id, keyHash, name, now);
 
-    return reply.status(201).send({ key: rawKey });
+    return await reply.status(201).send({ key: rawKey, id, name, createdAt: now });
   });
 
   // ─────────────────────────────────────────────────────────────
