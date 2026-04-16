@@ -6,6 +6,8 @@ import { useLooseParams } from '@renderer/shared/hooks';
 
 import { Button, Input, PageContent } from '@ui';
 
+import { RunnerPanel } from '@features/runners';
+
 import { useSaveScript } from '../api/useSaveScript';
 import { useStartRecording } from '../api/useStartRecording';
 import { useStopRecording } from '../api/useStopRecording';
@@ -62,6 +64,9 @@ export function RecordingPanel() {
 
   return (
     <PageContent className="flex flex-col p-0">
+      <div className="shrink-0 border-b border-border p-2">
+        <RunnerPanel heading="Dev Server" scope={{ kind: 'project', projectId }} />
+      </div>
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <h3 className="text-sm font-semibold">Recording</h3>
         {recording ? (
