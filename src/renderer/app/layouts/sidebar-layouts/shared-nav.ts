@@ -57,5 +57,5 @@ export const developmentItems: NavItem[] = [
   { label: 'Tools', icon: Wrench, path: PROJECT_VIEWS.TOOLS },
   { label: 'Workflow', icon: Workflow, path: PROJECT_VIEWS.WORKFLOW },
   { label: 'Visual Map', icon: Network, path: PROJECT_VIEWS.VISUALIZATION },
-  { label: 'QA', icon: TestTube2, path: PROJECT_VIEWS.QA_RECORDER },
+  { label: 'Test Suite', icon: TestTube2, path: PROJECT_VIEWS.TEST_SUITE },
 ];

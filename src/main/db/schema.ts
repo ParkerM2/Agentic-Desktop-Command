@@ -20,5 +20,5 @@ export * from '../features/changelog/schema';
 export * from '../features/progress/session-logs-schema';
 export * from '../bus/schema';
 export * from '../features/assistant/schema';
-export * from '../features/qa-recorder/schema';
+export * from '../features/test-suite/schema';
 export * from '../features/workspace/workspaces-schema';

@@ -4,7 +4,7 @@
  * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
  */
 
-import { HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
+import { FlaskConical, HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
@@ -26,6 +26,7 @@ import { LayoutSection } from './LayoutSection';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
 import { StorageManagementSection } from './StorageManagementSection';
+import { TestingSettingsTab } from './TestingSettingsTab';
 import { TypographySection } from './TypographySection';
 import { UiScaleSection } from './UiScaleSection';
 import { VoiceSettings } from './voice/VoiceSettings';
@@ -40,6 +41,7 @@ const SETTINGS_TABS = [
   { id: 'hub' as const, label: 'Hub', icon: Server },
   { id: 'integrations' as const, label: 'Integrations', icon: Plug },
   { id: 'storage' as const, label: 'Storage', icon: HardDrive },
+  { id: 'testing' as const, label: 'Testing', icon: FlaskConical },
   { id: 'advanced' as const, label: 'Advanced', icon: Wrench },
 ];
 
@@ -166,6 +168,10 @@ export function SettingsPage() {
               </h2>
               <StorageManagementSection />
             </section>
+          </PageHeader.TabContent>
+
+          <PageHeader.TabContent value="testing">
+            <TestingSettingsTab />
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="advanced">

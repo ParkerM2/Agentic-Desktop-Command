@@ -47,7 +47,7 @@ import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
 import { qaEvents, qaInvoke } from './qa';
-import { qaRecorderEvents, qaRecorderInvoke } from './qa-recorder';
+import { testSuiteEvents, testSuiteInvoke } from './test-suite';
 import { screenInvoke } from './screen';
 import {
   securityInvoke,
@@ -94,7 +94,7 @@ export const ipcInvokeContract = {
   ...dockerInvoke,
   ...windowInvoke,
   ...qaInvoke,
-  ...qaRecorderInvoke,
+  ...testSuiteInvoke,
   ...mcpInvoke,
   ...claudeInvoke,
   ...emailInvoke,
@@ -140,7 +140,7 @@ export const ipcEventContract = {
   ...notificationsEvents,
   ...briefingEvents,
   ...qaEvents,
-  ...qaRecorderEvents,
+  ...testSuiteEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
   ...authEvents,
@@ -340,6 +340,27 @@ export {
   QaVerificationResultSchema,
   QaVerificationSuiteSchema,
 } from './qa';
+
+export {
+  BrowserViewBoundsSchema,
+  BrowserViewCreateInputSchema,
+  QaRunReportSchema,
+  QaRunSchema,
+  QaRunStatusSchema,
+  QaScriptSchema,
+  QaStepAssertSchema,
+  QaStepClickSchema,
+  QaStepFillSchema,
+  QaStepNavigateSchema,
+  QaStepPressSchema,
+  QaStepSelectSchema,
+  QaStepTypeSchema,
+  QaStepWaitSchema,
+  TestSuiteConfigSchema,
+  TestSuiteScreenshotSchema,
+  TestSuiteStepSchema,
+} from './test-suite';
+export type { TestSuiteConfig, TestSuiteScreenshot } from './test-suite';
 
 export {
   CspModeSchema,

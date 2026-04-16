@@ -1,0 +1,20 @@
+import { domain, events } from '../channel-builder';
+
+export const TEST_SUITE = domain('test-suite', {
+  LIST: ['scripts', 'runs'],
+  GET: ['script', 'run'],
+  SAVE: ['script'],
+  DELETE: ['script'],
+  RUN: ['script'],
+  EXPORT: ['file', 'github', 'ci-preview', 'ci-commit'],
+  'BROWSER-VIEW': ['create', 'navigate', 'back', 'forward', 'reload', 'set-bounds', 'destroy'],
+  CONFIG: ['get', 'save', 'list', 'delete', 'set-active'],
+  SCREENSHOT: ['list', 'export-zip', 'copy'],
+});
+
+export const TEST_SUITE_EVENTS = events('test-suite', {
+  OUTPUT: ['line'],
+  RUN: ['screenshot', 'started', 'step', 'completed'],
+  RECORDER: ['step', 'stopped'],
+  CONFIG: ['changed'],
+});
