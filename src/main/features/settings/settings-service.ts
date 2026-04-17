@@ -25,6 +25,8 @@ export interface LayoutState {
   lastRoutePerProject: Record<string, string>;
   sidebarCollapsed: boolean;
   sidebarLayout: string;
+  toolbarStyle?: string;
+  contentLayout?: string;
 }
 
 export interface LayoutUpdate {
@@ -33,6 +35,8 @@ export interface LayoutUpdate {
   lastRoutePerProject?: Record<string, string>;
   sidebarCollapsed?: boolean;
   sidebarLayout?: string;
+  toolbarStyle?: string;
+  contentLayout?: string;
 }
 
 export interface SettingsService {
@@ -233,6 +237,8 @@ export function createSettingsService(deps: { db: AdcDatabase; dataDir: string }
         lastRoutePerProject: store.settings.lastRoutePerProject ?? {},
         sidebarCollapsed: store.settings.sidebarCollapsed ?? false,
         sidebarLayout: store.settings.sidebarLayout ?? 'sidebar-01',
+        toolbarStyle: store.settings.toolbarStyle,
+        contentLayout: store.settings.contentLayout,
       };
     },
 
@@ -251,6 +257,12 @@ export function createSettingsService(deps: { db: AdcDatabase; dataDir: string }
       }
       if (updates.sidebarLayout !== undefined) {
         store.settings.sidebarLayout = updates.sidebarLayout as AppSettings['sidebarLayout'];
+      }
+      if (updates.toolbarStyle !== undefined) {
+        store.settings.toolbarStyle = updates.toolbarStyle;
+      }
+      if (updates.contentLayout !== undefined) {
+        store.settings.contentLayout = updates.contentLayout;
       }
       persist();
       return { success: true };

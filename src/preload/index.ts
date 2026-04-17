@@ -9,6 +9,9 @@
  * electron's IPC to a clean interface.
  */
 
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import { contextBridge, ipcRenderer } from 'electron';
 
 import { ENV_VARS, APP_INFO_BRIDGE } from '@shared/constants/env';
@@ -116,6 +119,14 @@ const appInfo = {
 
 contextBridge.exposeInMainWorld(APP_INFO_BRIDGE, appInfo);
 
+// ─── Sibling preload paths ───────────────────────────────
+// Renderer needs file:// URLs to pass as <webview preload="...">
+const preloads = {
+  testSuiteRecorder: pathToFileURL(join(__dirname, 'test-suite-recorder.mjs')).href,
+};
+
+contextBridge.exposeInMainWorld('preloads', preloads);
+
 // Type declaration for the renderer process
 declare global {
   interface Window {
@@ -128,6 +139,9 @@ declare global {
       version: string;
       devEmail: string;
       devPassword: string;
+    };
+    preloads: {
+      testSuiteRecorder: string;
     };
   }
 }

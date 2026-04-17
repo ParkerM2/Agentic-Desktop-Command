@@ -74,7 +74,8 @@ export function ResultsPanel() {
   };
 
   return (
-    <PageContent className="p-0">
+    <PageContent className="flex h-full flex-col overflow-hidden p-1">
+      <div className="flex h-full flex-col overflow-hidden rounded-md border border-border">
       {/* Toolbar */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-2">
         <Select value={scriptId ?? ''} onValueChange={setSelectedScriptId}>
@@ -141,6 +142,7 @@ export function ResultsPanel() {
             )}
           </pre>
         </div>
+      </div>
       </div>
     </PageContent>
   );

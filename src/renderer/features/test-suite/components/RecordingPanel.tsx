@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Circle, Play, Save, Square } from 'lucide-react';
 
@@ -30,8 +30,6 @@ import {
 } from '@features/runners';
 
 import { useSaveScript } from '../api/useSaveScript';
-import { useStartRecording } from '../api/useStartRecording';
-import { useStopRecording } from '../api/useStopRecording';
 import { useTestSuiteConfigs } from '../api/useTestSuiteConfigs';
 import { useTestSuiteStore } from '../test-suite-store';
 
@@ -87,14 +85,12 @@ export function RecordingPanel() {
   const { projectId } = useLooseParams();
   const { data: configs = [] } = useTestSuiteConfigs(projectId ?? '');
   const [selectedConfigId, setSelectedConfigId] = useState<string>();
-  const [url, setUrl] = useState('');
   const [scriptName, setScriptName] = useState('');
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const recording = useTestSuiteStore((s) => s.recordingActive);
   const setRecordingActive = useTestSuiteStore((s) => s.setRecordingActive);
   const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
   const clearSteps = useTestSuiteStore((s) => s.clearSteps);
-  const startRec = useStartRecording();
-  const stopRec = useStopRecording();
   const saveScript = useSaveScript(projectId ?? '');
 
   // Runner state — shared between DevServerButton and BrowserViewPanel
@@ -115,55 +111,41 @@ export function RecordingPanel() {
       ?? configs[0];
   }, [configs, selectedConfigId]);
 
-  useEffect(() => {
-    if (activeConfig) {
-      setUrl(activeConfig.targetUrl);
-    }
-  }, [activeConfig]);
-
-  if (!projectId) return null;
-
   const vw = activeConfig ? activeConfig.viewportWidth : 1280;
   const vh = activeConfig ? activeConfig.viewportHeight : 720;
 
+  // URL state — initialized from active config, editable via address bar
+  const [urlOverride, setUrlOverride] = useState<string>();
+  const url = urlOverride ?? activeConfig?.targetUrl ?? '';
+
+  if (!projectId) return null;
+
+  const hasName = scriptName.trim().length > 0;
+  const canRecord = hasName && serverRunning;
+  const canSave = !recording && recordedSteps.length > 0;
+
   const onStartRecording = () => {
     clearSteps();
-    startRec.mutate(
-      { url, width: vw, height: vh },
-      {
-        onSuccess: () => setRecordingActive(true),
-        onError: () => setRecordingActive(false),
-      },
-    );
+    setRecordingActive(true);
   };
 
   const onStopRecording = () => {
-    stopRec.mutate(undefined, {
-      onSuccess: () => setRecordingActive(false),
-      onError: () => setRecordingActive(false),
-    });
-  };
-
-  const onSave = () => {
-    if (recordedSteps.length === 0) return;
-    const name = scriptName.trim() || `Recording ${new Date().toLocaleString()}`;
-    saveScript.mutate(
-      { projectId, name, steps: recordedSteps.map((r) => r.step) },
-      {
-        onSuccess: () => {
-          clearSteps();
-          setScriptName('');
-        },
-      },
-    );
+    setRecordingActive(false);
   };
 
   return (
-    <PageContent className="flex h-full flex-col overflow-hidden p-0">
+    <PageContent className="flex h-full flex-col overflow-hidden p-1">
+      <div className="flex h-full flex-col overflow-hidden rounded-md border border-border">
       {/* Toolbar */}
       <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
         {configs.length > 0 && activeConfig ? (
-          <Select value={activeConfig.id} onValueChange={setSelectedConfigId}>
+          <Select
+            value={activeConfig.id}
+            onValueChange={(id) => {
+              setSelectedConfigId(id);
+              setUrlOverride(undefined);
+            }}
+          >
             <SelectTrigger className="h-7 w-44 text-xs">
               <SelectValue placeholder="Select config..." />
             </SelectTrigger>
@@ -190,24 +172,27 @@ export function RecordingPanel() {
             <Circle className="h-3.5 w-3.5 fill-current" /> Stop
           </Button>
         ) : (
-          <Button disabled={startRec.isPending} size="sm" onClick={onStartRecording}>
-            <Circle className="h-3.5 w-3.5 fill-destructive text-destructive" /> Record
-          </Button>
+          <span title={!hasName ? 'Enter a test name to start recording' : !serverRunning ? 'Start the dev server first' : undefined}>
+            <Button disabled={!canRecord} size="sm" onClick={onStartRecording}>
+              <Circle className="h-3.5 w-3.5 fill-destructive text-destructive" /> Record
+            </Button>
+          </span>
         )}
 
         <Input
           className="h-7 max-w-[200px] flex-1 text-xs"
-          placeholder="Test name..."
+          placeholder="Test name (required)..."
+          readOnly={recording}
           value={scriptName}
           onChange={(e) => setScriptName(e.target.value)}
         />
 
         <div className="ml-auto flex items-center gap-2">
           <Button
-            disabled={recordedSteps.length === 0 || saveScript.isPending}
+            disabled={!canSave || saveScript.isPending}
             size="sm"
             variant="outline"
-            onClick={onSave}
+            onClick={() => setSaveDialogOpen(true)}
           >
             <Save className="h-3.5 w-3.5" /> Save ({recordedSteps.length})
           </Button>
@@ -230,9 +215,11 @@ export function RecordingPanel() {
           serverRunning={serverRunning}
           url={url}
           width={vw}
-          onUrlChange={setUrl}
+          onUrlChange={setUrlOverride}
         />
       </div>
+      </div>
+      {/* SaveRecordingDialog will be mounted here */}
     </PageContent>
   );
 }

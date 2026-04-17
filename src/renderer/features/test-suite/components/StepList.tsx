@@ -26,11 +26,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Pencil, Trash2 } from 'lucide-react';
 
-import type { EventPayload } from '@shared/ipc';
-import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 import type { TestSuiteStep } from '@shared/types/test-suite';
-
-import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { Button, Input } from '@ui';
 
@@ -39,16 +35,9 @@ import { useTestSuiteStore } from '../test-suite-store';
 import type { RecordedStep } from '../test-suite-store';
 import type { DragEndEvent } from '@dnd-kit/core';
 
-type StepEvent = EventPayload<typeof TEST_SUITE_EVENTS.RECORDER.STEP>;
-
 export function StepList() {
   const steps = useTestSuiteStore((s) => s.recordedSteps);
-  const addStep = useTestSuiteStore((s) => s.addStep);
   const reorderSteps = useTestSuiteStore((s) => s.reorderSteps);
-
-  useIpcEvent(TEST_SUITE_EVENTS.RECORDER.STEP, (payload: StepEvent) => {
-    addStep(payload as RecordedStep);
-  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -189,11 +178,28 @@ type DetailRenderer = (step: TestSuiteStep) => string;
 
 const DETAIL_RENDERERS: Record<TestSuiteStep['type'], DetailRenderer> = {
   navigate: (step) => (step.type === 'navigate' ? step.url : ''),
-  click: (step) => (step.type === 'click' ? step.selector : ''),
-  fill: (step) =>
-    step.type === 'fill' ? `${step.selector} → "${step.value.slice(0, 30)}"` : '',
-  select: (step) =>
-    step.type === 'select' ? `${step.selector} → ${step.value}` : '',
+  click: (step) => {
+    if (step.type !== 'click') return '';
+    if (step.context?.tagName) {
+      const label = step.context.label || step.context.text || '';
+      return label ? `${step.context.tagName} "${label.slice(0, 30)}"` : step.context.tagName;
+    }
+    // Fallback: extract last segment of selector
+    const parts = step.selector.split(' > ');
+    return parts[parts.length - 1] || step.selector;
+  },
+  fill: (step) => {
+    if (step.type !== 'fill') return '';
+    const label = step.context?.label || step.context?.placeholder || '';
+    const target = label ? `"${label.slice(0, 20)}"` : step.selector.split(' > ').pop() || step.selector;
+    return `${target} → "${step.value.slice(0, 30)}"`;
+  },
+  select: (step) => {
+    if (step.type !== 'select') return '';
+    const label = step.context?.label || '';
+    const target = label ? `"${label.slice(0, 20)}"` : step.selector.split(' > ').pop() || step.selector;
+    return `${target} → ${step.value}`;
+  },
   press: (step) => (step.type === 'press' ? step.key : ''),
   wait: (step) => (step.type === 'wait' ? `${String(step.ms)}ms` : ''),
   assert: (step) =>
