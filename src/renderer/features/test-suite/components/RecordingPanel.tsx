@@ -135,6 +135,9 @@ export function RecordingPanel() {
 
   const onStopRecording = () => {
     setRecordingActive(false);
+    if (recordedSteps.length > 0) {
+      setSaveDialogOpen(true);
+    }
   };
 
   return (
