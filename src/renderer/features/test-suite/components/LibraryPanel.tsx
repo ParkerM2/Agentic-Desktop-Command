@@ -38,6 +38,7 @@ import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
+import { useRunScript } from '../api/useRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
 import { buildDefaultConfig, buildStarterTest } from '../lib/starter-test';
@@ -63,6 +64,7 @@ export function LibraryPanel() {
   const { data: watchedScripts = [] } = useWatchedScripts();
   const startWatch = useStartWatch();
   const stopWatch = useStopWatch();
+  const runScript = useRunScript();
   const watchedSet = new Set(watchedScripts);
   const deleteScript = useDeleteScript(projectId ?? '');
   const saveScript = useSaveScript(projectId ?? '');
@@ -240,7 +242,12 @@ export function LibraryPanel() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Button size="icon" title="Run" variant="ghost">
+                    <Button
+                      size="icon"
+                      title="Run"
+                      variant="ghost"
+                      onClick={() => runScript.mutate({ scriptId: script.id })}
+                    >
                       <Play className="h-4 w-4" />
                     </Button>
                     <Button
@@ -319,7 +326,13 @@ export function LibraryPanel() {
       {selected.size > 0 ? (
         <div className="flex items-center gap-3 border-t border-border bg-bg-surface px-4 py-2">
           <span className="text-sm text-text-muted">{selected.size} selected</span>
-          <Button size="sm" variant="ghost">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              for (const id of selected) runScript.mutate({ scriptId: id });
+            }}
+          >
             <Play className="h-3 w-3" /> Run Selected
           </Button>
           <Button
