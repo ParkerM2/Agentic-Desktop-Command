@@ -130,6 +130,7 @@ export function createQaTrigger(deps: {
           try {
             testSuiteService.runner.run({
               scriptId: script.id,
+              projectId: script.projectId,
               filePath: script.filePath,
               projectPath,
               triggeredBy: 'auto-trigger',

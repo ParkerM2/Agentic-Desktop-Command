@@ -68,6 +68,7 @@ export interface TestSuiteRunEvent {
 
 export interface TestSuiteService {
   listScripts: () => Promise<unknown[]>;
+  listScriptsByProject: (projectId: string) => Promise<unknown[]>;
   getScript: (id: string) => Promise<{ filePath?: string } | null>;
   saveScript: (input: {
     id?: string;
@@ -142,8 +143,8 @@ export function registerTestSuiteHandlers(
 
   // ── Invoke handlers ───────────────────────────────────────────
 
-  router.handle(TEST_SUITE.LIST.SCRIPTS, () =>
-    testSuiteService.listScripts() as never,
+  router.handle(TEST_SUITE.LIST.SCRIPTS, ({ projectId }) =>
+    testSuiteService.listScriptsByProject(projectId) as never,
   );
 
   router.handle(TEST_SUITE.GET.SCRIPT, ({ id }) =>

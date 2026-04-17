@@ -101,6 +101,7 @@ export interface TestSuiteService {
 
   // Async facade methods (used by IPC handler layer)
   listScripts: () => Promise<QaScript[]>;
+  listScriptsByProject: (projectId: string) => Promise<QaScript[]>;
   getScript: (id: string) => Promise<QaScript | null>;
   saveScript: (input: {
     id?: string;
@@ -214,15 +215,18 @@ export function createTestSuiteService(
     // Facade methods
     listScripts: () => Promise.resolve(scriptStore.list()),
 
+    listScriptsByProject: (projectId) => Promise.resolve(scriptStore.listByProject(projectId)),
+
     getScript: (id) => Promise.resolve(scriptStore.get(id)),
 
     saveScript: (input) => Promise.resolve(scriptStore.save({
       id: input.id,
       name: input.name,
+      description: input.description,
+      steps: input.steps,
       projectId: input.projectId,
       filePath: input.filePath ?? '',
       targetUrl: '',
-      stepCount: input.steps.length,
     })),
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
@@ -257,6 +261,7 @@ export function createTestSuiteService(
 
       const runId = runner.run({
         scriptId,
+        projectId: script.projectId,
         filePath: script.filePath,
         projectPath,
         triggeredBy,
@@ -286,7 +291,7 @@ export function createTestSuiteService(
         scriptId: script.id,
         scriptName: script.name,
         baseUrl: script.targetUrl,
-        steps: [],
+        steps: script.steps,
         projectPath,
       });
       return Promise.resolve({ filePath: result.filePath });
