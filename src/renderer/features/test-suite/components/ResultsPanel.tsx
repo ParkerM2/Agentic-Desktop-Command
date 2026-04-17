@@ -104,7 +104,11 @@ export function ResultsPanel() {
 
   const handleRun = () => {
     if (scriptId) {
-      runScript.mutate({ scriptId });
+      runScript.mutate({ scriptId }, {
+        onSuccess: (data) => {
+          setSelectedRunId(data.runId);
+        },
+      });
     }
   };
 
