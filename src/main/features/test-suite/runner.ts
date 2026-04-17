@@ -36,6 +36,7 @@ export interface RunnerEventHandlers {
 export interface QaRunner {
   run: (params: {
     scriptId: string;
+    projectId: string;
     filePath: string;
     projectPath: string;
     triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
@@ -60,7 +61,7 @@ function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
     id: row.id,
     scriptId: row.scriptId,
     status: row.status as QaRunRecord['status'],
-    triggeredBy: 'manual',
+    triggeredBy: row.triggeredBy as QaRunRecord['triggeredBy'],
     startedAt: row.startedAt,
     completedAt: row.completedAt ?? undefined,
     outputLines: parsed?.outputLines ?? [],
@@ -73,20 +74,25 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, filePath, projectPath, triggeredBy, taskId: _taskId, screenshotDir, handlers }) {
+    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
       db.insert(testSuiteRuns).values({
         id: runId,
         scriptId,
+        projectId,
         status: 'running',
+        triggeredBy,
         durationMs: 0,
         stepsPassed: 0,
         stepsFailed: 0,
         output: null,
         startedAt: now,
         completedAt: null,
+        taskId: taskId ?? null,
+        sessionId: null,
+        report: null,
       }).run();
 
       const outputLines: string[] = [];
