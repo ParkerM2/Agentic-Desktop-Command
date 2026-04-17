@@ -62,7 +62,7 @@ export class IpcRouter {
     const schema = ipcInvokeContract[channel];
 
     // Store handler for bus registration
-    const wrappedHandler = (input: unknown) => handler(input as InvokeInput<T>) as Promise<unknown>;
+    const wrappedHandler = (input: unknown) => Promise.resolve(handler(input as InvokeInput<T>)) as Promise<unknown>;
     this.registeredHandlers.set(channel, wrappedHandler);
 
     // If bus already attached, register immediately
