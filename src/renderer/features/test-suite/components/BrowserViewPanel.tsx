@@ -1,10 +1,10 @@
-import { ArrowLeft, ArrowRight, RotateCw } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, Monitor, RotateCw } from 'lucide-react';
 
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { Button, Input } from '@ui';
+import { Button, Flex, Input, Stack, Text } from '@ui';
 
 import { useBrowserViewBounds } from '../hooks/useBrowserViewBounds';
 import { useTestSuiteStore } from '../test-suite-store';
@@ -17,33 +17,35 @@ interface Props {
 }
 
 export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
-  const ref = useBrowserViewBounds(true);
   const recording = useTestSuiteStore((s) => s.recordingActive);
+  const ref = useBrowserViewBounds(recording);
 
   return (
-    <div className="flex flex-col flex-1">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => { void ipc(TEST_SUITE['BROWSER-VIEW'].BACK, {}); }}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => { void ipc(TEST_SUITE['BROWSER-VIEW'].FORWARD, {}); }}
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => { void ipc(TEST_SUITE['BROWSER-VIEW'].RELOAD, {}); }}
-        >
-          <RotateCw className="h-4 w-4" />
-        </Button>
+    <Stack className="flex-1 min-w-0" gap="none">
+      <Flex align="center" className="shrink-0 border-b border-border px-2 py-1.5" gap="sm">
+        <Flex align="center" className="gap-1" gap="none">
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => { void ipc(TEST_SUITE['BROWSER-VIEW'].BACK, {}); }}
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => { void ipc(TEST_SUITE['BROWSER-VIEW'].FORWARD, {}); }}
+          >
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => { void ipc(TEST_SUITE['BROWSER-VIEW'].RELOAD, {}); }}
+          >
+            <RotateCw className="h-3.5 w-3.5" />
+          </Button>
+        </Flex>
         <form
           className="flex-1"
           onSubmit={(e) => {
@@ -52,23 +54,38 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
           }}
         >
           <Input
-            className="w-full font-mono"
+            className="h-7 w-full font-mono text-xs"
             value={url}
             onChange={(e) => { onUrlChange(e.target.value); }}
           />
         </form>
-        <span className="text-xs text-text-dim font-mono">
-          {width} × {height}
-        </span>
-      </div>
-      <div className="relative flex-1">
-        <div ref={ref} className="absolute inset-0 bg-bg" />
+        <Text className="shrink-0 font-mono text-xs text-text-muted">
+          {width}&times;{height}
+        </Text>
+      </Flex>
+
+      <div className="relative flex-1 min-h-0">
+        <div ref={ref} className="absolute inset-0" />
+
         {recording ? (
-          <div className="absolute top-3 left-3 flex items-center gap-2 rounded-full bg-destructive/90 px-3 py-1 text-xs font-semibold text-white">
+          <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-destructive/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">
             <span className="h-2 w-2 animate-pulse rounded-full bg-white" /> REC
           </div>
-        ) : null}
+        ) : (
+          <Flex align="center" className="absolute inset-0 bg-card/50" justify="center">
+            <Stack align="center" className="text-center" gap="sm">
+              <Monitor className="h-10 w-10 text-text-muted/40" />
+              <Text className="text-sm text-text-muted">
+                Browser preview appears here during recording
+              </Text>
+              <Flex align="center" className="gap-1 text-xs text-warning" gap="none">
+                <AlertCircle className="h-3.5 w-3.5" />
+                <Text className="text-xs">Make sure your dev server is running</Text>
+              </Flex>
+            </Stack>
+          </Flex>
+        )}
       </div>
-    </div>
+    </Stack>
   );
 }

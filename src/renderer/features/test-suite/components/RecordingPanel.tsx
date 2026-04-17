@@ -231,29 +231,32 @@ export function RecordingPanel() {
         onOpenChange={setDevServerOpen}
       />
 
-      <Flex align="center" className="shrink-0 border-b border-border px-3 py-2" gap="sm">
-        <Heading as="h3" className="text-sm">Recording</Heading>
+      <Flex align="center" className="shrink-0 border-b border-border px-4 py-2" gap="md">
         {recording ? (
           <Button size="sm" variant="destructive" onClick={onStop}>
-            <Circle className="h-3 w-3 fill-current" /> Stop
+            <Circle className="h-3.5 w-3.5 fill-current" /> Stop Recording
           </Button>
         ) : (
           <Button size="sm" onClick={onStart}>
-            <Circle className="h-3 w-3 fill-destructive text-destructive" /> Record
+            <Circle className="h-3.5 w-3.5 fill-destructive text-destructive" /> Resume Recording
           </Button>
         )}
-        <Input
-          className="h-7 w-48"
-          placeholder="Test name..."
-          value={scriptName}
-          onChange={(e) => setScriptName(e.target.value)}
-        />
-        <Button disabled={recordedSteps.length === 0 || saveScript.isPending} size="sm" variant="ghost" onClick={onSave}>
-          <Save className="h-3 w-3" /> Save ({recordedSteps.length})
-        </Button>
-        <Button size="sm" variant="ghost">
-          <Play className="h-3 w-3" /> Run
-        </Button>
+        <Flex align="center" className="flex-1" gap="sm">
+          <Input
+            className="h-8 max-w-xs flex-1"
+            placeholder="Test name..."
+            value={scriptName}
+            onChange={(e) => setScriptName(e.target.value)}
+          />
+        </Flex>
+        <Flex align="center" gap="sm">
+          <Button disabled={recordedSteps.length === 0 || saveScript.isPending} size="sm" variant="outline" onClick={onSave}>
+            <Save className="h-3.5 w-3.5" /> Save ({recordedSteps.length})
+          </Button>
+          <Button size="sm" variant="ghost">
+            <Play className="h-3.5 w-3.5" /> Run
+          </Button>
+        </Flex>
       </Flex>
 
       <Flex className="flex-1 min-h-0">
