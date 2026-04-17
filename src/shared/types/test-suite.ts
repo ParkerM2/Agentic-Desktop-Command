@@ -12,18 +12,21 @@ export interface QaStepNavigate {
 export interface QaStepClick {
   type: 'click';
   selector: string;
+  context?: StepContext;
 }
 
 export interface QaStepFill {
   type: 'fill';
   selector: string;
   value: string;
+  context?: StepContext;
 }
 
 export interface QaStepSelect {
   type: 'select';
   selector: string;
   value: string;
+  context?: StepContext;
 }
 
 export interface QaStepPress {
@@ -40,6 +43,14 @@ export interface QaStepAssert {
   type: 'assert';
   selector: string;
   expected: string;
+}
+
+export interface StepContext {
+  text?: string;        // innerText/textContent, truncated to 80 chars
+  label?: string;       // aria-label or associated label text
+  placeholder?: string; // input placeholder
+  tagName: string;      // 'button', 'input', 'a', 'select', etc.
+  inputType?: string;   // 'text', 'email', 'password' (inputs only)
 }
 
 export type TestSuiteStep =

@@ -23,21 +23,32 @@ export const QaStepNavigateSchema = z.object({
   url: z.string(),
 });
 
+export const StepContextSchema = z.object({
+  text: z.string().optional(),
+  label: z.string().optional(),
+  placeholder: z.string().optional(),
+  tagName: z.string(),
+  inputType: z.string().optional(),
+});
+
 export const QaStepClickSchema = z.object({
   type: z.literal('click'),
   selector: z.string(),
+  context: StepContextSchema.optional(),
 });
 
 export const QaStepFillSchema = z.object({
   type: z.literal('fill'),
   selector: z.string(),
   value: z.string(),
+  context: StepContextSchema.optional(),
 });
 
 export const QaStepSelectSchema = z.object({
   type: z.literal('select'),
   selector: z.string(),
   value: z.string(),
+  context: StepContextSchema.optional(),
 });
 
 export const QaStepPressSchema = z.object({
