@@ -13,6 +13,8 @@ import {
   PenLine,
 } from 'lucide-react';
 
+import type { TestSuiteStep } from '@shared/types/test-suite';
+
 import {
   Badge,
   Flex,
@@ -27,8 +29,6 @@ import {
 } from '@ui';
 
 import { useTestSuiteStore } from '../store';
-
-import type { TestSuiteStep } from '@shared/types/test-suite';
 
 
 // ── Step icon mapping ────────────────────────────────────────────

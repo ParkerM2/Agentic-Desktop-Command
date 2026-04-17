@@ -33,12 +33,12 @@ import {
 } from '@ui';
 
 import { useDeleteScript } from '../api/useDeleteScript';
+import { useRunScript } from '../api/useRuns';
 import { useSaveScript } from '../api/useSaveScript';
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
-import { useRunScript } from '../api/useRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
 import { buildDefaultConfig, buildStarterTest } from '../lib/starter-test';

@@ -4,6 +4,8 @@
 
 import { FileSearch } from 'lucide-react';
 
+import { useLooseParams } from '@renderer/shared/hooks';
+
 import {
   EmptyState,
   Select,
@@ -13,8 +15,6 @@ import {
   SelectValue,
   Spinner,
 } from '@ui';
-
-import { useLooseParams } from '@renderer/shared/hooks';
 
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useTestSuiteStore } from '../store';
