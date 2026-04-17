@@ -7,7 +7,7 @@
 
 import { create } from 'zustand';
 
-import type { TestSuiteStep } from './api/useScriptMutations';
+import type { TestSuiteStep } from '@shared/types/test-suite';
 
 export interface OutputLine {
   id: number;

@@ -14,11 +14,14 @@ import {
   Spinner,
 } from '@ui';
 
-import { useScripts } from '../api/useScripts';
+import { useLooseParams } from '@renderer/shared/hooks';
+
+import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useTestSuiteStore } from '../store';
 
 export function ScriptSelector() {
-  const { data: scripts, isLoading } = useScripts();
+  const { projectId } = useLooseParams();
+  const { data: scripts, isLoading } = useTestSuiteScripts(projectId);
   const selectedScriptId = useTestSuiteStore((s) => s.selectedScriptId);
   const selectScript = useTestSuiteStore((s) => s.selectScript);
 

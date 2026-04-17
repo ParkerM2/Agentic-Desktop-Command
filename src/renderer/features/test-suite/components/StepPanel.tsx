@@ -28,7 +28,7 @@ import {
 
 import { useTestSuiteStore } from '../store';
 
-import type { TestSuiteStep } from '../api/useScriptMutations';
+import type { TestSuiteStep } from '@shared/types/test-suite';
 
 
 // ── Step icon mapping ────────────────────────────────────────────
