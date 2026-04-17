@@ -113,7 +113,7 @@ export const testSuiteKeys = {
 
 **Delete:** `src/renderer/features/test-suite/api/useScripts.ts`
 - Duplicate of `useTestSuiteScripts.ts`
-- Any importers switch to `useTestSuiteScripts`
+- One importer: `ScriptSelector.tsx` — switch to `useTestSuiteScripts(projectId)` with projectId from `useLooseParams()`
 
 **Update hooks importing from `queryKeys`:**
 - `useRuns.ts` → import from `testSuiteKeys`, use `testSuiteKeys.runs(scriptId)`
@@ -170,6 +170,7 @@ onClick={() => {
 | `src/renderer/features/test-suite/api/useTestSuiteScripts.ts` | Pass projectId to IPC |
 | `src/renderer/features/test-suite/api/index.ts` | Update barrel exports |
 | `src/renderer/features/test-suite/components/LibraryPanel.tsx` | Wire Run + Run Selected buttons |
+| `src/renderer/features/test-suite/components/ScriptSelector.tsx` | Switch from useScripts to useTestSuiteScripts(projectId) |
 
 ## Verification
 
