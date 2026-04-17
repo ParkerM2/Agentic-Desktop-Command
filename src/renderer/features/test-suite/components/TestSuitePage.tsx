@@ -5,6 +5,7 @@ import { useLooseParams } from '@renderer/shared/hooks';
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
+import { useTestSuiteEvents } from '../hooks/useTestSuiteEvents';
 import { useTestSuiteShortcuts } from '../hooks/useTestSuiteShortcuts';
 import { useTestSuiteStore } from '../test-suite-store';
 
@@ -34,6 +35,7 @@ export function TestSuitePage() {
   const { activeTab, setActiveTab } = useTestSuiteStore();
 
   useTestSuiteShortcuts();
+  useTestSuiteEvents(projectId ?? '');
 
   if (!projectId) {
     return (
