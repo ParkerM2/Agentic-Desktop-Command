@@ -224,7 +224,7 @@ export function RecordingPanel() {
   }
 
   return (
-    <PageContent className="flex flex-col p-0">
+    <PageContent className="flex h-full flex-col overflow-hidden p-0">
       <DevServerCollapsible
         open={devServerOpen}
         projectId={projectId}
@@ -259,22 +259,20 @@ export function RecordingPanel() {
         </Flex>
       </Flex>
 
-      <Flex className="flex-1 min-h-0">
-        {recordedSteps.length > 0 ? (
-          <Stack className="w-72 shrink-0 border-r border-border overflow-y-auto" gap="none">
-            <Text className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
-              Steps ({recordedSteps.length})
-            </Text>
-            <StepList />
-          </Stack>
-        ) : null}
+      <div className="flex flex-1 overflow-hidden">
+        <Stack className="w-72 shrink-0 border-r border-border overflow-y-auto" gap="none">
+          <Text className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
+            Steps ({recordedSteps.length})
+          </Text>
+          <StepList />
+        </Stack>
         <BrowserViewPanel
           height={config.viewportHeight}
           url={url}
           width={config.viewportWidth}
           onUrlChange={setUrl}
         />
-      </Flex>
+      </div>
     </PageContent>
   );
 }

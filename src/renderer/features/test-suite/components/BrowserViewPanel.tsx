@@ -21,9 +21,9 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
   const ref = useBrowserViewBounds(recording);
 
   return (
-    <Stack className="flex-1 min-w-0" gap="none">
-      <Flex align="center" className="shrink-0 border-b border-border px-2 py-1.5" gap="sm">
-        <Flex align="center" className="gap-1" gap="none">
+    <div className="flex h-full flex-1 flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-1.5">
+        <div className="flex items-center gap-1">
           <Button
             size="icon-sm"
             variant="ghost"
@@ -45,7 +45,7 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
           >
             <RotateCw className="h-3.5 w-3.5" />
           </Button>
-        </Flex>
+        </div>
         <form
           className="flex-1"
           onSubmit={(e) => {
@@ -59,12 +59,12 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
             onChange={(e) => { onUrlChange(e.target.value); }}
           />
         </form>
-        <Text className="shrink-0 font-mono text-xs text-text-muted">
+        <span className="shrink-0 font-mono text-xs text-text-muted">
           {width}&times;{height}
-        </Text>
-      </Flex>
+        </span>
+      </div>
 
-      <div className="relative flex-1 min-h-0">
+      <div className="relative flex-1">
         <div ref={ref} className="absolute inset-0" />
 
         {recording ? (
@@ -78,14 +78,14 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
               <Text className="text-sm text-text-muted">
                 Browser preview appears here during recording
               </Text>
-              <Flex align="center" className="gap-1 text-xs text-warning" gap="none">
+              <div className="flex items-center gap-1 text-xs text-warning">
                 <AlertCircle className="h-3.5 w-3.5" />
                 <Text className="text-xs">Make sure your dev server is running</Text>
-              </Flex>
+              </div>
             </Stack>
           </Flex>
         )}
       </div>
-    </Stack>
+    </div>
   );
 }
