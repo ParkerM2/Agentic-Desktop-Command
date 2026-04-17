@@ -45,7 +45,7 @@ import {
 
 export const testSuiteInvoke = {
   [TEST_SUITE.LIST.SCRIPTS]: {
-    input: z.object({}),
+    input: z.object({ projectId: z.string() }),
     output: z.array(QaScriptSchema),
   },
   [TEST_SUITE.GET.SCRIPT]: {

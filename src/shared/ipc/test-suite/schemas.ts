@@ -82,8 +82,14 @@ export const TestSuiteStepSchema = z.discriminatedUnion('type', [
 export const QaScriptSchema = z.object({
   id: z.string(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullable(),
   steps: z.array(TestSuiteStepSchema),
+  filePath: z.string(),
+  projectId: z.string(),
+  targetUrl: z.string(),
+  stepCount: z.number().int(),
+  lastStatus: z.string().nullable(),
+  lastRunAt: z.string().nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
