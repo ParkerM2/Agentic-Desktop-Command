@@ -21,7 +21,6 @@ import type {
 } from '@shared/types/agent-dashboard';
 
 import { useDebounce } from '@renderer/shared/hooks/useDebounce';
-import { cn } from '@renderer/shared/lib/utils';
 
 import {
   Button,
@@ -33,6 +32,7 @@ import {
   DialogTitle,
   Input,
   Label,
+  PageContent,
   PageHeader,
   PageLayout,
   Select,
@@ -42,10 +42,6 @@ import {
   SelectValue,
   Separator,
   Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Text,
 } from '@ui';
 
@@ -396,55 +392,53 @@ export function AgentDashboardPage({
 
   return (
     <PageLayout className={className}>
-      <PageHeader>
-        <PageHeader.Row>
-          <PageHeader.Title>Agent Dashboard</PageHeader.Title>
-          {activeMainTab === 'agents' ? (
-            <PageHeader.Actions>
-              {hasRunningAgents ? (
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => setIsStopAllDialogOpen(true)}
-                >
-                  <Square className="mr-1.5 h-3.5 w-3.5" />
-                  Stop All ({runningAgents.length})
-                </Button>
-              ) : null}
-              <AgentLayoutToolbar
-                filters={agentUiState.filters}
-                layoutMode={agentUiState.layoutMode}
-                projectOptions={projectOptions}
-                onFilterChange={handleFilterChange}
-                onLayoutChange={handleLayoutChange}
-              />
-            </PageHeader.Actions>
-          ) : null}
-        </PageHeader.Row>
-      </PageHeader>
+      <PageHeader.Tabs
+        value={activeMainTab}
+        onValueChange={(v) => setActiveMainTab(v as 'agents' | 'workflows')}
+      >
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title>Agent Dashboard</PageHeader.Title>
+            {activeMainTab === 'agents' ? (
+              <PageHeader.Actions>
+                {hasRunningAgents ? (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setIsStopAllDialogOpen(true)}
+                  >
+                    <Square className="mr-1.5 h-3.5 w-3.5" />
+                    Stop All ({runningAgents.length})
+                  </Button>
+                ) : null}
+                <AgentLayoutToolbar
+                  filters={agentUiState.filters}
+                  layoutMode={agentUiState.layoutMode}
+                  projectOptions={projectOptions}
+                  onFilterChange={handleFilterChange}
+                  onLayoutChange={handleLayoutChange}
+                />
+              </PageHeader.Actions>
+            ) : null}
+          </PageHeader.Row>
+          <PageHeader.TabList>
+            <PageHeader.Tab value="agents">
+              <Bot className="h-4 w-4" /> Agents
+            </PageHeader.Tab>
+            <PageHeader.Tab value="workflows">Workflows</PageHeader.Tab>
+          </PageHeader.TabList>
+        </PageHeader>
 
-      <div className={cn('min-h-0 flex-1', 'flex flex-col')}>
-        <Tabs
-          className="flex h-full flex-col"
-          value={activeMainTab}
-          onValueChange={(v) => setActiveMainTab(v as 'agents' | 'workflows')}
-        >
-          <div className="shrink-0 px-4">
-            <TabsList>
-              <TabsTrigger value="agents">Agents</TabsTrigger>
-              <TabsTrigger value="workflows">Workflows</TabsTrigger>
-            </TabsList>
-          </div>
+        <PageHeader.TabContent className="flex min-h-0 flex-1 flex-col" value="agents">
+          {renderAgentsContent()}
+        </PageHeader.TabContent>
 
-          <TabsContent className="flex min-h-0 flex-1 flex-col" value="agents">
-            {renderAgentsContent()}
-          </TabsContent>
-
-          <TabsContent className="min-h-0 flex-1 overflow-auto p-4" value="workflows">
+        <PageHeader.TabContent className="min-h-0 flex-1 overflow-auto" value="workflows">
+          <PageContent>
             <WorkflowsTabContent />
-          </TabsContent>
-        </Tabs>
-      </div>
+          </PageContent>
+        </PageHeader.TabContent>
+      </PageHeader.Tabs>
 
       {/* Stop All confirmation dialog */}
       <Dialog

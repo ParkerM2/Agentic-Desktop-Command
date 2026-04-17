@@ -161,7 +161,7 @@ function PageHeaderTabList({ className, ...props }: PageHeaderTabListProps) {
     <TabsPrimitive.List
       data-slot="page-header-tab-list"
       className={cn(
-        'flex w-full items-center gap-0 px-6',
+        '-mb-px flex w-full items-center gap-1 px-6',
         className,
       )}
       {...props}
@@ -178,8 +178,8 @@ function PageHeaderTab({ className, ...props }: PageHeaderTabProps) {
     <TabsPrimitive.Trigger
       data-slot="page-header-tab"
       className={cn(
-        'text-muted-foreground hover:text-foreground relative inline-flex items-center gap-2 border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors',
-        'data-[state=active]:text-foreground data-[state=active]:border-primary',
+        'text-muted-foreground hover:text-foreground hover:bg-muted/50 relative inline-flex items-center gap-2 rounded-t-md border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors',
+        'data-[state=active]:text-foreground data-[state=active]:border-primary data-[state=active]:bg-muted/30',
         className,
       )}
       {...props}
