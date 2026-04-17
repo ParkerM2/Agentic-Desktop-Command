@@ -22,7 +22,7 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden">
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
         <div className="flex items-center gap-1">
           <Button
             size="icon-sm"
