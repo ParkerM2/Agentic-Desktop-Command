@@ -7,18 +7,19 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { Button, Flex, Input, Stack, Text } from '@ui';
 
 import { useBrowserViewBounds } from '../hooks/useBrowserViewBounds';
-import { useTestSuiteStore } from '../test-suite-store';
 
 interface Props {
   url: string;
   width: number;
   height: number;
+  serverRunning: boolean;
+  recording: boolean;
   onUrlChange: (u: string) => void;
 }
 
-export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
-  const recording = useTestSuiteStore((s) => s.recordingActive);
-  const ref = useBrowserViewBounds(recording);
+export function BrowserViewPanel({ url, width, height, serverRunning, recording, onUrlChange }: Props) {
+  const browserActive = serverRunning || recording;
+  const ref = useBrowserViewBounds(browserActive);
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden">
@@ -71,16 +72,18 @@ export function BrowserViewPanel({ url, width, height, onUrlChange }: Props) {
           <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-destructive/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">
             <span className="h-2 w-2 animate-pulse rounded-full bg-white" /> REC
           </div>
-        ) : (
+        ) : null}
+
+        {browserActive ? null : (
           <Flex align="center" className="absolute inset-0 bg-card/50" justify="center">
             <Stack align="center" className="text-center" gap="sm">
               <Monitor className="h-10 w-10 text-text-muted/40" />
               <Text className="text-sm text-text-muted">
-                Browser preview appears here during recording
+                Start your dev server to see the browser preview
               </Text>
               <div className="flex items-center gap-1 text-xs text-warning">
                 <AlertCircle className="h-3.5 w-3.5" />
-                <Text className="text-xs">Make sure your dev server is running</Text>
+                <Text className="text-xs">Click &quot;Start Server&quot; in the toolbar above</Text>
               </div>
             </Stack>
           </Flex>

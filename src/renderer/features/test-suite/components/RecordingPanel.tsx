@@ -38,18 +38,18 @@ import { useTestSuiteStore } from '../test-suite-store';
 import { BrowserViewPanel } from './BrowserViewPanel';
 import { StepList } from './StepList';
 
-function DevServerButton({ projectId }: { projectId: string }) {
+interface DevServerButtonProps {
+  projectId: string;
+  serverRunning: boolean;
+  activeInstanceId: string | undefined;
+}
+
+function DevServerButton({ projectId, serverRunning, activeInstanceId }: DevServerButtonProps) {
   const scope: ScopeRef = useMemo(() => ({ kind: 'project' as const, projectId }), [projectId]);
   const { data: profiles = [] } = useRunnerProfiles(projectId);
-  const { data: instances = [] } = useRunnerInstances(scope);
   const startRunner = useStartRunnerInstance(scope);
   const stopRunner = useStopRunnerInstance(scope);
   const saveProfile = useSaveRunnerProfile(projectId);
-
-  const activeInstance = instances.find(
-    (i) => i.status === 'running' || i.status === 'ready' || i.status === 'starting',
-  );
-  const isRunning = Boolean(activeInstance);
 
   const handleStart = () => {
     if (profiles.length > 0) {
@@ -64,9 +64,9 @@ function DevServerButton({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <span className={`h-2 w-2 shrink-0 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-text-muted/30'}`} />
-      {isRunning && activeInstance ? (
-        <Button className="h-7" size="sm" variant="destructive" onClick={() => stopRunner.mutate(activeInstance.id)}>
+      <span className={`h-2 w-2 shrink-0 rounded-full ${serverRunning ? 'bg-green-500 animate-pulse' : 'bg-text-muted/30'}`} />
+      {serverRunning && activeInstanceId ? (
+        <Button className="h-7" size="sm" variant="destructive" onClick={() => stopRunner.mutate(activeInstanceId)}>
           <Square className="h-3 w-3" /> Stop Server
         </Button>
       ) : (
@@ -97,6 +97,17 @@ export function RecordingPanel() {
   const stopRec = useStopRecording();
   const saveScript = useSaveScript(projectId ?? '');
 
+  // Runner state — shared between DevServerButton and BrowserViewPanel
+  const scope: ScopeRef = useMemo(
+    () => ({ kind: 'project' as const, projectId: projectId ?? '' }),
+    [projectId],
+  );
+  const { data: instances = [] } = useRunnerInstances(scope);
+  const activeInstance = instances.find(
+    (i) => i.status === 'running' || i.status === 'ready' || i.status === 'starting',
+  );
+  const serverRunning = Boolean(activeInstance);
+
   const activeConfig = useMemo((): TestSuiteConfig | null => {
     if (configs.length === 0) return null;
     return configs.find((c) => c.id === selectedConfigId)
@@ -108,7 +119,7 @@ export function RecordingPanel() {
     if (activeConfig) {
       setUrl(activeConfig.targetUrl);
     }
-  }, [activeConfig]);  
+  }, [activeConfig]);
 
   if (!projectId) return null;
 
@@ -166,7 +177,11 @@ export function RecordingPanel() {
           <span className="text-xs text-text-muted">No configs — add one in Settings</span>
         )}
 
-        <DevServerButton projectId={projectId} />
+        <DevServerButton
+          activeInstanceId={activeInstance?.id}
+          projectId={projectId}
+          serverRunning={serverRunning}
+        />
 
         <div className="mx-1 h-4 w-px bg-border" />
 
@@ -211,6 +226,8 @@ export function RecordingPanel() {
         </Stack>
         <BrowserViewPanel
           height={vh}
+          recording={recording}
+          serverRunning={serverRunning}
           url={url}
           width={vw}
           onUrlChange={setUrl}
