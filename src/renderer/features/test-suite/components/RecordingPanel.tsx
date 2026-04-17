@@ -34,6 +34,7 @@ import { useTestSuiteConfigs } from '../api/useTestSuiteConfigs';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { BrowserViewPanel } from './BrowserViewPanel';
+import { SaveRecordingDialog } from './SaveRecordingDialog';
 import { StepList } from './StepList';
 
 interface DevServerButtonProps {
@@ -219,7 +220,14 @@ export function RecordingPanel() {
         />
       </div>
       </div>
-      {/* SaveRecordingDialog will be mounted here */}
+      <SaveRecordingDialog
+        defaultName={scriptName}
+        open={saveDialogOpen}
+        projectId={projectId}
+        steps={recordedSteps}
+        testDirectory={activeConfig?.testDirectory}
+        onOpenChange={setSaveDialogOpen}
+      />
     </PageContent>
   );
 }
