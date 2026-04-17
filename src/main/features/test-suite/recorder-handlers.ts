@@ -222,7 +222,7 @@ export function registerTestSuiteHandlers(
     const config = testSuiteService.configStore.getActive(projectId);
     const testDir = config?.testDirectory ?? 'tests/e2e';
 
-    const scripts = testSuiteService.listScripts() as Promise<Array<{ name: string }>>;
+    const scripts = testSuiteService.listScriptsByProject(projectId) as Promise<Array<{ name: string }>>;
     return scripts.then((list) => {
       const specNames = list.map((s) => s.name);
       return previewWorkflow(projectPath, testDir, specNames);
@@ -236,7 +236,7 @@ export function registerTestSuiteHandlers(
     const config = testSuiteService.configStore.getActive(projectId);
     const testDir = config?.testDirectory ?? 'tests/e2e';
 
-    const scripts = testSuiteService.listScripts() as Promise<Array<{ name: string }>>;
+    const scripts = testSuiteService.listScriptsByProject(projectId) as Promise<Array<{ name: string }>>;
     return scripts.then((list) => {
       const specNames = list.map((s) => s.name);
       return commitWorkflow(projectPath, testDir, specNames);
