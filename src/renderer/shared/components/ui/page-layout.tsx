@@ -178,8 +178,8 @@ function PageHeaderTab({ className, ...props }: PageHeaderTabProps) {
     <TabsPrimitive.Trigger
       data-slot="page-header-tab"
       className={cn(
-        'text-muted-foreground hover:text-foreground hover:bg-muted/50 relative inline-flex items-center gap-2 rounded-t-md border-b-2 border-b-transparent px-3 py-2 text-sm font-medium transition-colors',
-        'data-[state=active]:text-foreground data-[state=active]:border-b-primary data-[state=active]:bg-muted/30',
+        'text-muted-foreground hover:text-foreground hover:bg-muted/50 relative inline-flex items-center gap-2 rounded-t-md px-3 py-2 text-sm font-medium transition-colors',
+        'data-[state=active]:text-foreground data-[state=active]:bg-muted/30',
         className,
       )}
       {...props}

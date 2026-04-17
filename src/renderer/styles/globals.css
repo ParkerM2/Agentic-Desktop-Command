@@ -387,6 +387,19 @@ body {
 }
 
 /* ============================================
+   PAGE HEADER TABS
+   Tailwind v4 JIT does not generate border-b-2/border-b-transparent
+   utilities in this project, so use plain CSS for the tab indicator.
+   ============================================ */
+[data-slot='page-header-tab'] {
+  border-bottom: 2px solid transparent;
+}
+
+[data-slot='page-header-tab'][data-state='active'] {
+  border-bottom-color: var(--primary);
+}
+
+/* ============================================
    ELECTRON WINDOW CONTROLS
    ============================================ */
 .electron-drag {

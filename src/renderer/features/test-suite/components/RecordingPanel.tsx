@@ -102,12 +102,18 @@ export function RecordingPanel() {
     clearSteps();
     start.mutate(
       { url, width: config.viewportWidth, height: config.viewportHeight },
-      { onSuccess: () => setRecordingActive(true) },
+      {
+        onSuccess: () => setRecordingActive(true),
+        onError: () => setRecordingActive(false),
+      },
     );
   };
 
   const onStop = () => {
-    stop.mutate(undefined, { onSuccess: () => setRecordingActive(false) });
+    stop.mutate(undefined, {
+      onSuccess: () => setRecordingActive(false),
+      onError: () => setRecordingActive(false),
+    });
   };
 
   const onSave = () => {
@@ -251,12 +257,14 @@ export function RecordingPanel() {
       </Flex>
 
       <Flex className="flex-1 min-h-0">
-        <Stack className="w-80 border-r border-border overflow-y-auto" gap="none">
-          <Text className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
-            Steps
-          </Text>
-          <StepList />
-        </Stack>
+        {recordedSteps.length > 0 ? (
+          <Stack className="w-72 shrink-0 border-r border-border overflow-y-auto" gap="none">
+            <Text className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
+              Steps ({recordedSteps.length})
+            </Text>
+            <StepList />
+          </Stack>
+        ) : null}
         <BrowserViewPanel
           height={config.viewportHeight}
           url={url}
