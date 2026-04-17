@@ -9,7 +9,7 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 import { testSuiteRuns } from '../../db/schema';
@@ -199,8 +199,8 @@ export function createRunner(db: AdcDatabase): QaRunner {
 
     list(scriptId) {
       const rows = scriptId
-        ? db.select().from(testSuiteRuns).where(eq(testSuiteRuns.scriptId, scriptId)).all()
-        : db.select().from(testSuiteRuns).all();
+        ? db.select().from(testSuiteRuns).where(eq(testSuiteRuns.scriptId, scriptId)).orderBy(desc(testSuiteRuns.startedAt)).all()
+        : db.select().from(testSuiteRuns).orderBy(desc(testSuiteRuns.startedAt)).all();
       return rows.map(toRunRecord);
     },
 
