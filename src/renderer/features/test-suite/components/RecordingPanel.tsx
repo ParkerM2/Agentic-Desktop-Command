@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Circle, Play, Save, Square } from 'lucide-react';
 
 import type { ScopeRef } from '@shared/ipc/runners/schemas';
+import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -20,8 +21,10 @@ import {
 } from '@ui';
 
 import {
+  newRunnerProfile,
   useRunnerInstances,
   useRunnerProfiles,
+  useSaveRunnerProfile,
   useStartRunnerInstance,
   useStopRunnerInstance,
 } from '@features/runners';
@@ -29,45 +32,39 @@ import {
 import { useSaveScript } from '../api/useSaveScript';
 import { useStartRecording } from '../api/useStartRecording';
 import { useStopRecording } from '../api/useStopRecording';
-import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
+import { useTestSuiteConfigs } from '../api/useTestSuiteConfigs';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { BrowserViewPanel } from './BrowserViewPanel';
 import { StepList } from './StepList';
 
-function DevServerToolbar({ projectId }: { projectId: string }) {
+function DevServerButton({ projectId }: { projectId: string }) {
   const scope: ScopeRef = useMemo(() => ({ kind: 'project' as const, projectId }), [projectId]);
   const { data: profiles = [] } = useRunnerProfiles(projectId);
   const { data: instances = [] } = useRunnerInstances(scope);
   const startRunner = useStartRunnerInstance(scope);
   const stopRunner = useStopRunnerInstance(scope);
-  const [selectedId, setSelectedId] = useState<string>();
+  const saveProfile = useSaveRunnerProfile(projectId);
 
-  const effectiveId = selectedId ?? profiles[0]?.id;
   const activeInstance = instances.find(
-    (i) =>
-      i.profileId === effectiveId &&
-      (i.status === 'running' || i.status === 'ready' || i.status === 'starting'),
+    (i) => i.status === 'running' || i.status === 'ready' || i.status === 'starting',
   );
   const isRunning = Boolean(activeInstance);
 
+  const handleStart = () => {
+    if (profiles.length > 0) {
+      startRunner.mutate(profiles[0].id);
+    } else {
+      const profile = newRunnerProfile(projectId);
+      saveProfile.mutate(profile, {
+        onSuccess: () => startRunner.mutate(profile.id),
+      });
+    }
+  };
+
   return (
-    <div className="flex items-center gap-2">
+    <>
       <span className={`h-2 w-2 shrink-0 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-text-muted/30'}`} />
-      {profiles.length > 0 ? (
-        <Select value={effectiveId || ''} onValueChange={setSelectedId}>
-          <SelectTrigger className="h-7 w-40 text-xs">
-            <SelectValue placeholder="Select profile..." />
-          </SelectTrigger>
-          <SelectContent>
-            {profiles.map((p) => (
-              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : (
-        <span className="text-xs text-text-muted">No profiles — add one in settings</span>
-      )}
       {isRunning && activeInstance ? (
         <Button className="h-7" size="sm" variant="destructive" onClick={() => stopRunner.mutate(activeInstance.id)}>
           <Square className="h-3 w-3" /> Stop Server
@@ -75,21 +72,22 @@ function DevServerToolbar({ projectId }: { projectId: string }) {
       ) : (
         <Button
           className="h-7"
-          disabled={!effectiveId || startRunner.isPending}
+          disabled={startRunner.isPending || saveProfile.isPending}
           size="sm"
-          onClick={() => { if (effectiveId) startRunner.mutate(effectiveId); }}
+          onClick={handleStart}
         >
           <Play className="h-3 w-3" /> Start Server
         </Button>
       )}
-    </div>
+    </>
   );
 }
 
 export function RecordingPanel() {
   const { projectId } = useLooseParams();
-  const { data: config } = useTestSuiteConfig(projectId ?? '');
-  const [url, setUrl] = useState(config?.targetUrl ?? '');
+  const { data: configs = [] } = useTestSuiteConfigs(projectId ?? '');
+  const [selectedConfigId, setSelectedConfigId] = useState<string>();
+  const [url, setUrl] = useState('');
   const [scriptName, setScriptName] = useState('');
   const recording = useTestSuiteStore((s) => s.recordingActive);
   const setRecordingActive = useTestSuiteStore((s) => s.setRecordingActive);
@@ -99,12 +97,28 @@ export function RecordingPanel() {
   const stopRec = useStopRecording();
   const saveScript = useSaveScript(projectId ?? '');
 
-  if (!projectId || !config) return null;
+  const activeConfig = useMemo((): TestSuiteConfig | null => {
+    if (configs.length === 0) return null;
+    return configs.find((c) => c.id === selectedConfigId)
+      ?? configs.find((c) => c.isActive)
+      ?? configs[0];
+  }, [configs, selectedConfigId]);
+
+  useEffect(() => {
+    if (activeConfig) {
+      setUrl(activeConfig.targetUrl);
+    }
+  }, [activeConfig]);  
+
+  if (!projectId) return null;
+
+  const vw = activeConfig ? activeConfig.viewportWidth : 1280;
+  const vh = activeConfig ? activeConfig.viewportHeight : 720;
 
   const onStartRecording = () => {
     clearSteps();
     startRec.mutate(
-      { url, width: config.viewportWidth, height: config.viewportHeight },
+      { url, width: vw, height: vh },
       {
         onSuccess: () => setRecordingActive(true),
         onError: () => setRecordingActive(false),
@@ -136,8 +150,23 @@ export function RecordingPanel() {
   return (
     <PageContent className="flex h-full flex-col overflow-hidden p-0">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border px-3 py-1.5">
-        <DevServerToolbar projectId={projectId} />
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
+        {configs.length > 0 && activeConfig ? (
+          <Select value={activeConfig.id} onValueChange={setSelectedConfigId}>
+            <SelectTrigger className="h-7 w-44 text-xs">
+              <SelectValue placeholder="Select config..." />
+            </SelectTrigger>
+            <SelectContent>
+              {configs.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <span className="text-xs text-text-muted">No configs — add one in Settings</span>
+        )}
+
+        <DevServerButton projectId={projectId} />
 
         <div className="mx-1 h-4 w-px bg-border" />
 
@@ -173,7 +202,7 @@ export function RecordingPanel() {
       {/* Main split: steps + browser */}
       <div className="flex flex-1 overflow-hidden">
         <Stack className="w-64 shrink-0 overflow-y-auto border-r border-border" gap="none">
-          <div className="flex items-center border-b border-border px-3 py-1.5">
+          <div className="flex h-10 shrink-0 items-center border-b border-border px-3">
             <Text className="text-xs font-semibold uppercase text-text-muted">
               Steps ({recordedSteps.length})
             </Text>
@@ -181,9 +210,9 @@ export function RecordingPanel() {
           <StepList />
         </Stack>
         <BrowserViewPanel
-          height={config.viewportHeight}
+          height={vh}
           url={url}
-          width={config.viewportWidth}
+          width={vw}
           onUrlChange={setUrl}
         />
       </div>
