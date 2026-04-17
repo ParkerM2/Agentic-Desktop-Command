@@ -14,12 +14,35 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 import { buildSelector } from './selector-builder';
 
+// Duplicated here because preload scripts run in an isolated context and
+// cannot import from @shared.
+interface StepContext {
+  text?: string;
+  label?: string;
+  placeholder?: string;
+  tagName: string;
+  inputType?: string;
+}
+
 type PreloadStep =
   | { type: 'navigate'; url: string }
-  | { type: 'click'; selector: string }
-  | { type: 'fill'; selector: string; value: string }
-  | { type: 'select'; selector: string; value: string }
+  | { type: 'click'; selector: string; context?: StepContext }
+  | { type: 'fill'; selector: string; value: string; context?: StepContext }
+  | { type: 'select'; selector: string; value: string; context?: StepContext }
   | { type: 'press'; key: string };
+
+function extractContext(el: Element): StepContext {
+  const tagName = el.tagName.toLowerCase();
+  const text = el.textContent?.trim().slice(0, 80) || undefined;
+  const label =
+    el.getAttribute('aria-label') ||
+    document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ||
+    undefined;
+  const placeholder = (el as HTMLInputElement).placeholder || undefined;
+  const inputType =
+    tagName === 'input' ? (el as HTMLInputElement).type || 'text' : undefined;
+  return { tagName, text, label, placeholder, inputType };
+}
 
 function send(step: PreloadStep): void {
   ipcRenderer.sendToHost('adc.test-suite.step', step);
@@ -58,7 +81,7 @@ document.addEventListener(
     const el = e.target as Element | null;
     if (el?.nodeType !== 1) return;
     const { selector } = buildSelector(el);
-    send({ type: 'click', selector });
+    send({ type: 'click', selector, context: extractContext(el) });
   },
   true,
 );
@@ -71,10 +94,11 @@ document.addEventListener(
     const el = e.target as (HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement) | null;
     if (!el) return;
     const { selector } = buildSelector(el);
+    const context = extractContext(el);
     if (el.tagName === 'SELECT') {
-      send({ type: 'select', selector, value: el.value });
+      send({ type: 'select', selector, value: el.value, context });
     } else {
-      send({ type: 'fill', selector, value: el.value });
+      send({ type: 'fill', selector, value: el.value, context });
     }
   },
   true,
