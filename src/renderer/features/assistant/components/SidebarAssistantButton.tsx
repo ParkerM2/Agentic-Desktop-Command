@@ -124,13 +124,15 @@ export function SidebarAssistantButton() {
         </div>
       </div>
 
-      {/* Message area — constrained height */}
-      <div className="border-border min-h-0 flex-1 border-t">
+      {/* Message area — scrolls, input stays pinned */}
+      <div className="border-border flex min-h-0 flex-1 flex-col overflow-hidden border-t">
         <WidgetMessageArea />
       </div>
 
-      {/* Input */}
-      <AssistantInputBar compact disabled={isThinking} onSubmit={handleSend} />
+      {/* Input — sticky bottom */}
+      <div className="shrink-0">
+        <AssistantInputBar compact disabled={isThinking} onSubmit={handleSend} />
+      </div>
     </div>
   );
 }
