@@ -5,22 +5,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
-import type { QaRunSchema } from '@shared/ipc/test-suite/schemas';
-
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { testSuiteKeys } from './queryKeys';
-
-import type { z } from 'zod';
-
-export type QaRun = z.infer<typeof QaRunSchema>;
+import { testSuiteKeys } from './testSuiteKeys';
 
 /** Fetch all runs, optionally filtered by scriptId */
 export function useRuns(scriptId?: string) {
   return useQuery({
-    queryKey: scriptId ? testSuiteKeys.runsByScript(scriptId) : testSuiteKeys.runs(),
+    queryKey: scriptId ? testSuiteKeys.runs(scriptId) : testSuiteKeys.all,
     queryFn: () => ipc(TEST_SUITE.LIST.RUNS, { scriptId }),
     staleTime: 10_000,
   });
@@ -49,7 +43,7 @@ export function useRunScript() {
       triggeredBy?: 'manual' | 'scheduled' | 'ci';
     }) => ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, triggeredBy }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.runs() });
+      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.all });
     },
     onError: onError('run QA script'),
   });
