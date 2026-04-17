@@ -33,11 +33,12 @@ type PreloadStep =
 
 function extractContext(el: Element): StepContext {
   const tagName = el.tagName.toLowerCase();
-  const text = el.textContent?.trim().slice(0, 80) || undefined;
+  const rawText = el.textContent.trim().slice(0, 80);
+  const text = rawText || undefined;
+  const labelEl = el.id ? document.querySelector(`label[for="${el.id}"]`) : null;
   const label =
-    el.getAttribute('aria-label') ||
-    document.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ||
-    undefined;
+    el.getAttribute('aria-label') ??
+    (labelEl ? labelEl.textContent.trim() : undefined);
   const placeholder = (el as HTMLInputElement).placeholder || undefined;
   const inputType =
     tagName === 'input' ? (el as HTMLInputElement).type || 'text' : undefined;

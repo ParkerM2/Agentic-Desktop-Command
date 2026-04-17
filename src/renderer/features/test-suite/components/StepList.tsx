@@ -181,23 +181,23 @@ const DETAIL_RENDERERS: Record<TestSuiteStep['type'], DetailRenderer> = {
   click: (step) => {
     if (step.type !== 'click') return '';
     if (step.context?.tagName) {
-      const label = step.context.label || step.context.text || '';
+      const label = step.context.label ?? step.context.text ?? '';
       return label ? `${step.context.tagName} "${label.slice(0, 30)}"` : step.context.tagName;
     }
     // Fallback: extract last segment of selector
     const parts = step.selector.split(' > ');
-    return parts[parts.length - 1] || step.selector;
+    return parts.at(-1) ?? step.selector;
   },
   fill: (step) => {
     if (step.type !== 'fill') return '';
-    const label = step.context?.label || step.context?.placeholder || '';
-    const target = label ? `"${label.slice(0, 20)}"` : step.selector.split(' > ').pop() || step.selector;
+    const label = step.context?.label ?? step.context?.placeholder ?? '';
+    const target = label ? `"${label.slice(0, 20)}"` : step.selector.split(' > ').pop() ?? step.selector;
     return `${target} → "${step.value.slice(0, 30)}"`;
   },
   select: (step) => {
     if (step.type !== 'select') return '';
-    const label = step.context?.label || '';
-    const target = label ? `"${label.slice(0, 20)}"` : step.selector.split(' > ').pop() || step.selector;
+    const label = step.context?.label ?? '';
+    const target = label ? `"${label.slice(0, 20)}"` : step.selector.split(' > ').pop() ?? step.selector;
     return `${target} → ${step.value}`;
   },
   press: (step) => (step.type === 'press' ? step.key : ''),

@@ -124,6 +124,9 @@ export function RecordingPanel() {
   const hasName = scriptName.trim().length > 0;
   const canRecord = hasName && serverRunning;
   const canSave = !recording && recordedSteps.length > 0;
+  let recordTooltip = '';
+  if (!hasName) recordTooltip = 'Enter a test name to start recording';
+  else if (!serverRunning) recordTooltip = 'Start the dev server first';
 
   const onStartRecording = () => {
     clearSteps();
@@ -173,7 +176,7 @@ export function RecordingPanel() {
             <Circle className="h-3.5 w-3.5 fill-current" /> Stop
           </Button>
         ) : (
-          <span title={!hasName ? 'Enter a test name to start recording' : !serverRunning ? 'Start the dev server first' : undefined}>
+          <span title={recordTooltip || undefined}>
             <Button disabled={!canRecord} size="sm" onClick={onStartRecording}>
               <Circle className="h-3.5 w-3.5 fill-destructive text-destructive" /> Record
             </Button>

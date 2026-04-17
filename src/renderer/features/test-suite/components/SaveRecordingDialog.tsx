@@ -1,12 +1,5 @@
 import { useState } from 'react';
 
-import type { RecordedStep } from '../test-suite-store';
-
-import { useSaveScript } from '../api/useSaveScript';
-import { describeStep } from '../lib/describe-step';
-import { generateSpecPreview } from '../lib/generate-spec-preview';
-import { useTestSuiteStore } from '../test-suite-store';
-
 import {
   Button,
   Dialog,
@@ -23,6 +16,14 @@ import {
   Text,
   Textarea,
 } from '@ui';
+
+import { useSaveScript } from '../api/useSaveScript';
+import { describeStep } from '../lib/describe-step';
+import { generateSpecPreview } from '../lib/generate-spec-preview';
+import { useTestSuiteStore } from '../test-suite-store';
+
+import type { RecordedStep } from '../test-suite-store';
+
 
 interface SaveRecordingDialogProps {
   open: boolean;
@@ -79,16 +80,16 @@ export function SaveRecordingDialog({
           <DialogDescription>Review and save your recorded test steps.</DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="info" className="w-full">
+        <Tabs className="w-full" defaultValue="info">
           <TabsList className="w-full">
-            <TabsTrigger value="info" className="flex-1">Info</TabsTrigger>
-            <TabsTrigger value="spec" className="flex-1">Spec File</TabsTrigger>
-            <TabsTrigger value="preview" className="flex-1">Preview</TabsTrigger>
-            <TabsTrigger value="steps" className="flex-1">Steps</TabsTrigger>
+            <TabsTrigger className="flex-1" value="info">Info</TabsTrigger>
+            <TabsTrigger className="flex-1" value="spec">Spec File</TabsTrigger>
+            <TabsTrigger className="flex-1" value="preview">Preview</TabsTrigger>
+            <TabsTrigger className="flex-1" value="steps">Steps</TabsTrigger>
           </TabsList>
 
           {/* Tab 1: Info */}
-          <TabsContent value="info" className="space-y-4 pt-4">
+          <TabsContent className="space-y-4 pt-4" value="info">
             <div className="space-y-2">
               <Text className="text-sm font-medium">Test Name *</Text>
               <Input
@@ -117,14 +118,14 @@ export function SaveRecordingDialog({
           </TabsContent>
 
           {/* Tab 2: Spec File */}
-          <TabsContent value="spec" className="pt-4">
+          <TabsContent className="pt-4" value="spec">
             <pre className="max-h-80 overflow-auto rounded-md border border-border bg-bg-surface p-4 font-mono text-xs">
               {specPreview}
             </pre>
           </TabsContent>
 
           {/* Tab 3: Preview */}
-          <TabsContent value="preview" className="pt-4">
+          <TabsContent className="pt-4" value="preview">
             <div className="max-h-80 space-y-1 overflow-auto">
               {steps.map((s, i) => (
                 <div key={s.stepIndex} className="flex items-baseline gap-2 text-sm">
@@ -136,7 +137,7 @@ export function SaveRecordingDialog({
           </TabsContent>
 
           {/* Tab 4: Steps (raw data) */}
-          <TabsContent value="steps" className="pt-4">
+          <TabsContent className="pt-4" value="steps">
             <div className="max-h-80 overflow-auto">
               <table className="w-full text-xs">
                 <thead>
