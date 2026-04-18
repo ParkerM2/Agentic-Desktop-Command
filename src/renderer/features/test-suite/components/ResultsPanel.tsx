@@ -51,15 +51,8 @@ import { formatDuration, getOutputLineClass, stepToLabel } from '../lib/format';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { RunLogDialog } from './RunLogDialog';
+import { RunStatusBadge, RunStatusDot } from './RunStatusBadge';
 import { StepTimeline } from './StepTimeline';
-
-function StatusBadgeForRun({ status }: { status: string }) {
-  if (status === 'passed') return <Badge className="bg-green-600">Passed</Badge>;
-  if (status === 'failed') return <Badge variant="destructive">Failed</Badge>;
-  if (status === 'running') return <Badge variant="secondary">Running...</Badge>;
-  if (status === 'cancelled') return <Badge variant="secondary">Cancelled</Badge>;
-  return <Badge variant="secondary">No runs</Badge>;
-}
 
 export function ResultsPanel() {
   const { projectId } = useLooseParams();
@@ -225,7 +218,7 @@ export function ResultsPanel() {
               {runs.map((r) => (
                 <SelectItem key={r.id} value={r.id}>
                   <span className="flex items-center gap-1.5">
-                    <StatusDot status={r.status} />
+                    <RunStatusDot status={r.status} />
                     {new Date(r.startedAt).toLocaleTimeString()}
                   </span>
                 </SelectItem>
@@ -257,7 +250,7 @@ export function ResultsPanel() {
           <Play className="h-3 w-3" /> Run
         </Button>
 
-        <StatusBadgeForRun status={runStatus} />
+        <RunStatusBadge status={runStatus} />
 
         <RunLogDialog
           lines={displayLines}
@@ -382,18 +375,6 @@ export function ResultsPanel() {
       </div>
     </PageContent>
   );
-}
-
-const STATUS_DOT_COLORS: Record<string, string> = {
-  passed: 'bg-green-500',
-  failed: 'bg-destructive',
-  running: 'bg-blue-500 animate-pulse',
-  cancelled: 'bg-muted-foreground',
-};
-
-function StatusDot({ status }: { status: string }) {
-  const color = STATUS_DOT_COLORS[status] ?? 'bg-muted-foreground';
-  return <span className={`inline-block h-2 w-2 rounded-full ${color}`} />;
 }
 
 function ViewReportButton({ reportPath }: { reportPath: string }) {
