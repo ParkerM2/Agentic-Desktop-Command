@@ -27,6 +27,9 @@ export interface QaRunRecord {
   outputLines: string[];
   screenshots: string[];
   error?: string;
+  stepsPassed: number;
+  stepsFailed: number;
+  durationMs: number;
 }
 
 export interface RunnerEventHandlers {
@@ -68,6 +71,9 @@ function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
     outputLines: parsed?.outputLines ?? [],
     screenshots: parsed?.screenshots ?? [],
     error: parsed?.error,
+    stepsPassed: row.stepsPassed,
+    stepsFailed: row.stepsFailed,
+    durationMs: row.durationMs,
   };
 }
 
@@ -155,6 +161,9 @@ export function createRunner(db: AdcDatabase): QaRunner {
           outputLines: check.errors,
           screenshots: [],
           error: check.errors.join('; '),
+          stepsPassed: 0,
+          stepsFailed: check.errors.length,
+          durationMs: 0,
         };
 
         handlers?.onComplete?.(runId, 'failed', record);
@@ -242,6 +251,9 @@ export function createRunner(db: AdcDatabase): QaRunner {
           completedAt,
           outputLines,
           screenshots,
+          stepsPassed,
+          stepsFailed,
+          durationMs: endMs - startMs,
         };
 
         handlers?.onComplete?.(runId, status, record);
@@ -272,6 +284,9 @@ export function createRunner(db: AdcDatabase): QaRunner {
           outputLines,
           screenshots,
           error: err.message,
+          stepsPassed: 0,
+          stepsFailed: 1,
+          durationMs: endMs - startMs,
         };
 
         handlers?.onComplete?.(runId, 'failed', record);

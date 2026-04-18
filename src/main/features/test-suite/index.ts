@@ -53,6 +53,9 @@ export interface QaRunIpcRecord {
   outputLines: string[];
   screenshots: string[];
   error?: string;
+  stepsPassed: number;
+  stepsFailed: number;
+  durationMs: number;
 }
 
 // ─── Run event listener type ──────────────────────────────────

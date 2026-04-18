@@ -110,6 +110,9 @@ export const QaRunSchema = z.object({
   outputLines: z.array(z.string()),
   screenshots: z.array(z.string()),
   error: z.string().optional(),
+  stepsPassed: z.number().int().default(0),
+  stepsFailed: z.number().int().default(0),
+  durationMs: z.number().int().default(0),
 });
 
 // ─── Report ───────────────────────────────────────────────────
