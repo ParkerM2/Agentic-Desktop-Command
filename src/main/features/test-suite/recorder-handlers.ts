@@ -169,6 +169,8 @@ export function registerTestSuiteHandlers(
         baseUrl,
         steps,
         screenshotMode: config.screenshotMode,
+        navigationTimeout: config.navigationTimeout,
+        actionTimeout: config.actionTimeout,
       });
 
       ensurePlaywrightConfig({

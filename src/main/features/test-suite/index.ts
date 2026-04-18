@@ -295,6 +295,8 @@ export function createTestSuiteService(
         baseUrl: script.targetUrl,
         steps: script.steps as TestSuiteStep[],
         screenshotMode: config?.screenshotMode,
+        navigationTimeout: config?.navigationTimeout,
+        actionTimeout: config?.actionTimeout,
       });
       return Promise.resolve({ filePath });
     },

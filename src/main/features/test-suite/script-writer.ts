@@ -3,6 +3,11 @@
  *
  * Pure utility: takes recorded steps, writes a valid Playwright test file
  * to `<projectRoot>/<testDir>/scripts/<slugified-name>.spec.ts`.
+ *
+ * Features:
+ * - Smart waits after navigation (waitForLoadState + configurable timeout)
+ * - Playwright-preferred locators (getByTestId > getByLabel > getByPlaceholder > getByRole > getByText > CSS fallback)
+ * - Configurable action timeouts on click/fill/select
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -16,6 +21,14 @@ type TestSuiteStep = typeof TestSuiteStepSchema extends { _output: infer T } ? T
 
 type ScreenshotMode = 'smart' | 'per-click' | 'per-nav' | 'per-form' | 'per-assertion' | 'manual';
 
+interface StepContext {
+  text?: string;
+  label?: string;
+  placeholder?: string;
+  tagName: string;
+  inputType?: string;
+}
+
 export function writeSpecFile(params: {
   projectRoot: string;
   testDir: string;
@@ -23,8 +36,12 @@ export function writeSpecFile(params: {
   baseUrl: string;
   steps: TestSuiteStep[];
   screenshotMode?: ScreenshotMode;
+  navigationTimeout?: number;
+  actionTimeout?: number;
 }): string {
   const mode = params.screenshotMode ?? 'manual';
+  const navigationTimeout = params.navigationTimeout ?? 30_000;
+  const actionTimeout = params.actionTimeout ?? 10_000;
   let ssIdx = 0;
 
   function screenshotLine(stepType: string): string {
@@ -71,16 +88,19 @@ export function writeSpecFile(params: {
   for (const s of params.steps) {
     switch (s.type) {
       case 'navigate':
-        lines.push(`  await page.goto('${escape(s.url)}');`);
+        lines.push(
+          `  await page.goto('${escape(s.url)}');`,
+          `  await page.waitForLoadState('networkidle', { timeout: ${navigationTimeout} });`,
+        );
         break;
       case 'click':
-        lines.push(`  await page.locator('${escape(s.selector)}').click();`);
+        lines.push(`  await ${buildLocator(s.selector, s.context)}.click({ timeout: ${actionTimeout} });`);
         break;
       case 'fill':
-        lines.push(`  await page.locator('${escape(s.selector)}').fill('${escape(s.value)}');`);
+        lines.push(`  await ${buildLocator(s.selector, s.context)}.fill('${escape(s.value)}', { timeout: ${actionTimeout} });`);
         break;
       case 'select':
-        lines.push(`  await page.locator('${escape(s.selector)}').selectOption('${escape(s.value)}');`);
+        lines.push(`  await ${buildLocator(s.selector, s.context)}.selectOption('${escape(s.value)}', { timeout: ${actionTimeout} });`);
         break;
       case 'press':
         lines.push(`  await page.keyboard.press('${escape(s.key)}');`);
@@ -89,7 +109,7 @@ export function writeSpecFile(params: {
         lines.push(`  await page.waitForTimeout(${s.ms});`);
         break;
       case 'assert':
-        lines.push(`  await expect(page.locator('${escape(s.selector)}')).toHaveText('${escape(s.expected)}');`);
+        lines.push(`  await expect(page.locator('${escape(s.selector)}')).toHaveText('${escape(s.expected)}', { timeout: ${actionTimeout} });`);
         break;
     }
 
@@ -111,6 +131,55 @@ export function writeSpecFile(params: {
   writeFileSync(filePath, lines.join('\n'), 'utf8');
 
   return filePath;
+}
+
+// ─── Locator Builder ────────────────────────────────────────
+
+/**
+ * Maps a step's selector + optional context to the best Playwright locator.
+ *
+ * Priority chain (Playwright recommended order):
+ * 1. data-testid  — `page.getByTestId('...')`
+ * 2. label        — `page.getByLabel('...')`
+ * 3. placeholder  — `page.getByPlaceholder('...')`
+ * 4. role+text    — `page.getByRole('button'|'link', { name: '...' })`
+ * 5. short text   — `page.getByText('...')`
+ * 6. CSS fallback — `page.locator('...')`
+ */
+function buildLocator(selector: string, context?: StepContext): string {
+  // Priority 1: data-testid from selector
+  const testIdMatch = /\[data-testid="([^"]+)"\]/.exec(selector);
+  if (testIdMatch) return `page.getByTestId('${escape(testIdMatch[1])}')`;
+
+  if (context) {
+    // Priority 2: label
+    if (context.label) {
+      return `page.getByLabel('${escape(context.label)}')`;
+    }
+
+    // Priority 3: placeholder
+    if (context.placeholder) {
+      return `page.getByPlaceholder('${escape(context.placeholder)}')`;
+    }
+
+    // Priority 4: role-based (buttons, links)
+    if (context.text && ['button', 'a'].includes(context.tagName)) {
+      const role = context.tagName === 'a' ? 'link' : 'button';
+      return `page.getByRole('${role}', { name: '${escape(context.text)}' })`;
+    }
+
+    // Priority 5: text content (short text only, exclude form elements)
+    if (
+      context.text &&
+      context.text.length < 60 &&
+      !['input', 'select', 'textarea'].includes(context.tagName)
+    ) {
+      return `page.getByText('${escape(context.text)}')`;
+    }
+  }
+
+  // Priority 6: CSS fallback
+  return `page.locator('${escape(selector)}')`;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
