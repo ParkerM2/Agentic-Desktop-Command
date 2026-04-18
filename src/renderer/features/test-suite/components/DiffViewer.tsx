@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
   Slider,
+  Text,
 } from '@ui';
 
 interface DiffViewerProps {
@@ -67,7 +68,7 @@ export function DiffViewer({
       {viewMode === 'side-by-side' && (
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <p className="mb-1 text-xs font-semibold text-text-muted">Baseline</p>
+            <Text className="mb-1 font-semibold" size="sm" variant="muted">Baseline</Text>
             <img
               alt="Baseline"
               className="rounded border border-border"
@@ -75,7 +76,7 @@ export function DiffViewer({
             />
           </div>
           <div>
-            <p className="mb-1 text-xs font-semibold text-text-muted">Actual</p>
+            <Text className="mb-1 font-semibold" size="sm" variant="muted">Actual</Text>
             <img
               alt="Actual"
               className="rounded border border-border"
@@ -83,7 +84,7 @@ export function DiffViewer({
             />
           </div>
           <div>
-            <p className="mb-1 text-xs font-semibold text-text-muted">Diff</p>
+            <Text className="mb-1 font-semibold" size="sm" variant="muted">Diff</Text>
             {diffPath ? (
               <img
                 alt="Diff"
@@ -121,9 +122,9 @@ export function DiffViewer({
             value={sliderPosition}
             onValueChange={setSliderPosition}
           />
-          <div className="flex justify-between text-xs text-text-muted">
-            <span>Baseline</span>
-            <span>Actual</span>
+          <div className="flex justify-between">
+            <Text size="sm" variant="muted">Baseline</Text>
+            <Text size="sm" variant="muted">Actual</Text>
           </div>
         </div>
       )}

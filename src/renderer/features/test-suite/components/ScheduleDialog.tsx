@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import { useCreateSchedule } from '../api/useSchedules';
@@ -69,9 +70,9 @@ export function ScheduleDialog({ scriptId, projectId, open, onOpenChange }: Sche
               </SelectContent>
             </Select>
           </div>
-          <p className="text-xs text-text-muted">
+          <Text size="sm" variant="muted">
             Test will run automatically at the selected interval. Desktop notifications will alert on failures.
-          </p>
+          </Text>
           <Button
             className="w-full"
             disabled={createSchedule.isPending}

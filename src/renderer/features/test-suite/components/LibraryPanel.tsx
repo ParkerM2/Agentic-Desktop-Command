@@ -30,6 +30,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Text,
 } from '@ui';
 
 import { useDeleteScript } from '../api/useDeleteScript';
@@ -281,7 +282,7 @@ export function LibraryPanel() {
                     </Badge>
                   ) : null}
                   {script.description ? (
-                    <span className="ml-2 text-sm text-text-muted">{script.description}</span>
+                    <Text className="ml-2" variant="muted">{script.description}</Text>
                   ) : null}
                   {script.tags.map((t) => (
                     <Badge key={t} className="ml-1 text-[10px]" variant="secondary">{t}</Badge>
@@ -362,7 +363,7 @@ export function LibraryPanel() {
                     'No matching tests'
                   ) : (
                     <div className="flex flex-col items-center gap-3">
-                      <span>No tests recorded yet</span>
+                      <Text>No tests recorded yet</Text>
                       <Button
                         data-testid="create-starter-test"
                         disabled={saveScript.isPending || saveConfig.isPending}
@@ -386,7 +387,7 @@ export function LibraryPanel() {
 
       {selected.size > 0 ? (
         <div className="flex items-center gap-3 border-t border-border bg-bg-surface px-4 py-2">
-          <span className="text-sm text-text-muted">{selected.size} selected</span>
+          <Text variant="muted">{selected.size} selected</Text>
           <Button
             disabled={batchRun.isPending}
             size="sm"

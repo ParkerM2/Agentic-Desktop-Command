@@ -28,7 +28,7 @@ import { GripVertical, Pencil, Trash2 } from 'lucide-react';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-import { Button, Input } from '@ui';
+import { Button, Input, Text } from '@ui';
 
 import { useTestSuiteStore } from '../test-suite-store';
 
@@ -126,18 +126,18 @@ function SortableStepItem({ step }: { step: RecordedStep }) {
       className="flex items-start gap-1 rounded border border-border bg-bg-surface px-2 py-1"
       style={style}
     >
-      <span
+      <div
         className="mt-0.5 cursor-grab text-text-dim"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="h-3 w-3" />
-      </span>
-      <span className="w-6 text-xs text-text-dim">{step.stepIndex + 1}</span>
-      <span className="font-mono text-xs uppercase text-accent">{step.step.type}</span>
-      <span className="flex-1 truncate text-xs text-text-muted">
+      </div>
+      <Text className="w-6 text-text-dim" size="sm">{step.stepIndex + 1}</Text>
+      <Text className="font-mono uppercase text-accent" size="sm">{step.step.type}</Text>
+      <Text className="flex-1 truncate" size="sm" variant="muted">
         {editing ? (
-          <span className="flex items-center gap-1">
+          <div className="flex items-center gap-1">
             <Input
               className="h-5 text-xs"
               value={editValue}
@@ -149,12 +149,12 @@ function SortableStepItem({ step }: { step: RecordedStep }) {
             <Button size="icon-xs" variant="ghost" onClick={saveEdit}>
               <Pencil className="h-3 w-3" />
             </Button>
-          </span>
+          </div>
         ) : (
           renderDetail(step.step)
         )}
-      </span>
-      <span className="flex shrink-0 items-center gap-0.5">
+      </Text>
+      <div className="flex shrink-0 items-center gap-0.5">
         {step.step.type === 'fill' && !editing && (
           <Button size="icon-xs" variant="ghost" onClick={startEdit}>
             <Pencil className="h-3 w-3" />
@@ -169,7 +169,7 @@ function SortableStepItem({ step }: { step: RecordedStep }) {
         >
           <Trash2 className="h-3 w-3 text-destructive" />
         </Button>
-      </span>
+      </div>
     </div>
   );
 }

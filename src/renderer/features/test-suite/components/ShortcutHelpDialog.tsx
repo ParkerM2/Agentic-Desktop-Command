@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Text,
 } from '@ui';
 
 import { useTestSuiteStore } from '../test-suite-store';
@@ -32,7 +33,7 @@ export function ShortcutHelpDialog() {
         <div className="space-y-2">
           {SHORTCUTS.map((s) => (
             <div key={s.keys} className="flex items-center justify-between text-sm">
-              <span className="text-text-muted">{s.action}</span>
+              <Text variant="muted">{s.action}</Text>
               <kbd className="rounded border border-border bg-bg-surface px-2 py-0.5 font-mono text-xs">
                 {s.keys}
               </kbd>

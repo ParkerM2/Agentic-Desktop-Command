@@ -63,7 +63,7 @@ function DevServerButton({ projectId, serverRunning, activeInstanceId }: DevServ
 
   return (
     <>
-      <span className={`h-2 w-2 shrink-0 rounded-full ${serverRunning ? 'bg-green-500 animate-pulse' : 'bg-text-muted/30'}`} />
+      <div className={`h-2 w-2 shrink-0 rounded-full ${serverRunning ? 'bg-green-500 animate-pulse' : 'bg-text-muted/30'}`} />
       {serverRunning && activeInstanceId ? (
         <Button className="h-7" size="sm" variant="destructive" onClick={() => stopRunner.mutate(activeInstanceId)}>
           <Square className="h-3 w-3" /> Stop Server
@@ -163,7 +163,7 @@ export function RecordingPanel() {
             </SelectContent>
           </Select>
         ) : (
-          <span className="text-xs text-text-muted">No configs — add one in Settings</span>
+          <Text size="sm" variant="muted">No configs — add one in Settings</Text>
         )}
 
         <DevServerButton
@@ -179,11 +179,11 @@ export function RecordingPanel() {
             <Circle className="h-3.5 w-3.5 fill-current" /> Stop
           </Button>
         ) : (
-          <span title={recordTooltip || undefined}>
+          <div title={recordTooltip || undefined}>
             <Button disabled={!canRecord} size="sm" onClick={onStartRecording}>
               <Circle className="h-3.5 w-3.5 fill-destructive text-destructive" /> Record
             </Button>
-          </span>
+          </div>
         )}
 
         <Input

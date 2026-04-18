@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
   ScrollArea,
+  Text,
 } from '@ui';
 
 import { formatDuration, getOutputLineClass } from '../lib/format';
@@ -66,19 +67,19 @@ export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps
 
         {/* Summary stats */}
         {runRecord ? (
-          <div className="flex items-center gap-4 border-b pb-2 text-xs text-text-muted">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center gap-4 border-b pb-2">
+            <Text className="flex items-center gap-1" size="sm" variant="muted">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
               {runRecord.stepsPassed ?? 0} passed
-            </span>
-            <span className="flex items-center gap-1">
+            </Text>
+            <Text className="flex items-center gap-1" size="sm" variant="muted">
               <XCircle className="h-3.5 w-3.5 text-destructive" />
               {runRecord.stepsFailed ?? 0} failed
-            </span>
-            <span className="flex items-center gap-1">
+            </Text>
+            <Text className="flex items-center gap-1" size="sm" variant="muted">
               <Clock className="h-3.5 w-3.5" />
               {formatDuration(runRecord.durationMs ?? 0)}
-            </span>
+            </Text>
             <Button
               className="ml-auto"
               size="sm"

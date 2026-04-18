@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   PageContent,
+  Text,
 } from '@ui';
 
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
@@ -101,7 +102,7 @@ export function ExportPanel() {
                 <FileCode className="size-3" />
                 test-suite.yml
                 {fileExists ? (
-                  <span className="text-xs text-text-warning">(exists)</span>
+                  <Text className="text-text-warning" size="sm">(exists)</Text>
                 ) : null}
               </div>
             </div>

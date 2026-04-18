@@ -142,9 +142,9 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
             onChange={(e) => { onUrlChange(e.target.value); }}
           />
         </form>
-        <span className="shrink-0 font-mono text-xs text-text-muted">
+        <Text className="shrink-0 font-mono" size="sm" variant="muted">
           {width}&times;{height}
-        </span>
+        </Text>
       </div>
 
       {/* Browser content */}
@@ -161,7 +161,7 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
             />
             {recording ? (
               <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-destructive/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-white" /> REC
+                <div className="h-2 w-2 animate-pulse rounded-full bg-white" /> REC
               </div>
             ) : null}
           </>

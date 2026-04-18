@@ -17,6 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Text,
 } from '@ui';
 
 import { useExecuteDataRun, useParseDataFile } from '../api/useDataRun';
@@ -111,10 +112,10 @@ export function DataRunDialog({ scriptId, open, onOpenChange }: DataRunDialogPro
                 </Table>
               </div>
 
-              <p className="text-xs text-text-muted">
+              <Text size="sm" variant="muted">
                 Use {'{{columnName}}'} in fill step values to substitute data from each row.
                 Test will run once per row.
-              </p>
+              </Text>
 
               <Button
                 className="w-full"

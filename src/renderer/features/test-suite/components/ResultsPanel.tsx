@@ -5,7 +5,7 @@ import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { useLooseParams } from '@renderer/shared/hooks';
 import { useToastStore } from '@renderer/shared/stores';
 
-import { PageContent } from '@ui';
+import { PageContent, Text } from '@ui';
 
 import { useRun, useRunScript } from '../api/useRuns';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
@@ -143,19 +143,19 @@ export function ResultsPanel() {
 
         {/* Run summary bar */}
         {runRecord && runRecord.status !== 'running' ? (
-          <div className="flex items-center gap-4 border-b border-border bg-bg-surface px-4 py-1.5 text-xs">
-            <span className="flex items-center gap-1">
+          <div className="flex items-center gap-4 border-b border-border bg-bg-surface px-4 py-1.5">
+            <Text className="flex items-center gap-1" size="sm" variant="muted">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
               {runRecord.stepsPassed} passed
-            </span>
-            <span className="flex items-center gap-1">
+            </Text>
+            <Text className="flex items-center gap-1" size="sm" variant="muted">
               <XCircle className="h-3.5 w-3.5 text-destructive" />
               {runRecord.stepsFailed} failed
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5 text-text-muted" />
+            </Text>
+            <Text className="flex items-center gap-1" size="sm" variant="muted">
+              <Clock className="h-3.5 w-3.5" />
               {formatDuration(runRecord.durationMs)}
-            </span>
+            </Text>
             {runRecord.reportPath ? (
               <ViewReportButton reportPath={runRecord.reportPath} />
             ) : null}

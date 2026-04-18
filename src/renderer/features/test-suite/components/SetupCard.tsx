@@ -20,6 +20,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
@@ -139,7 +140,7 @@ export function SetupCard({ projectId }: SetupCardProps) {
                 onChange={(event) => setTargetUrl(event.target.value)}
               />
               {urlError ? (
-                <p className="text-destructive text-xs">{urlError}</p>
+                <Text size="sm" variant="error">{urlError}</Text>
               ) : null}
             </div>
 
@@ -199,7 +200,7 @@ export function SetupCard({ projectId }: SetupCardProps) {
             </div>
 
             {setupStatus ? (
-              <p className="text-sm text-text-muted">{setupStatus}</p>
+              <Text variant="muted">{setupStatus}</Text>
             ) : null}
 
             <div className="flex justify-end">

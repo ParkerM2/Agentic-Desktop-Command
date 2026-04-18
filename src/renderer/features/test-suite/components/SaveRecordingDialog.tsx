@@ -22,6 +22,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Text,
   Textarea,
 } from '@ui';
 
@@ -190,9 +191,9 @@ export function SaveRecordingDialog({
               {suggestions.length > 0 && (
                 <div className="space-y-2">
                   <Label>Suggested Assertions</Label>
-                  <p className="text-xs text-text-muted">
+                  <Text size="sm" variant="muted">
                     Check the assertions you want to include in the test.
-                  </p>
+                  </Text>
                   <div className="space-y-1.5">
                     {suggestions.map((s, i) => (
                       // eslint-disable-next-line react/no-array-index-key
@@ -206,7 +207,7 @@ export function SaveRecordingDialog({
                             setSuggestions(next);
                           }}
                         />
-                        <span className="text-text-muted">{s.description}</span>
+                        <Text variant="muted">{s.description}</Text>
                       </label>
                     ))}
                   </div>
@@ -237,8 +238,8 @@ export function SaveRecordingDialog({
             <div className="space-y-1">
               {steps.map((s, i) => (
                 <div key={s.stepIndex} className="flex items-baseline gap-2 text-sm">
-                  <span className="w-6 shrink-0 text-right text-text-dim">{i + 1}.</span>
-                  <span>{describeStep(s.step)}</span>
+                  <Text className="w-6 shrink-0 text-right text-text-dim">{i + 1}.</Text>
+                  <Text>{describeStep(s.step)}</Text>
                 </div>
               ))}
             </div>

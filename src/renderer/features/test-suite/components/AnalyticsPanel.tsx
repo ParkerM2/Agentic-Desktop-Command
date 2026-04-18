@@ -13,6 +13,7 @@ import {
   PageContent,
   ScrollArea,
   Skeleton,
+  Text,
 } from '@ui';
 
 import {
@@ -124,10 +125,10 @@ export function AnalyticsPanel() {
               <div className={`text-6xl font-bold ${health.color}`}>{health.grade}</div>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Test Health Score</span>
-                  <span className={`text-lg font-semibold ${health.color}`}>
+                  <Text className="font-medium">Test Health Score</Text>
+                  <Text className={`text-lg font-semibold ${health.color}`}>
                     {health.score}/100
-                  </span>
+                  </Text>
                 </div>
                 <div className="space-y-1">
                   <ScoreBar label="Pass Rate" max={40} value={health.breakdown.passRate} />
@@ -166,15 +167,15 @@ export function AnalyticsPanel() {
               </CardHeader>
               <CardContent>
                 {topFailures.length === 0 ? (
-                  <p className="text-sm text-text-muted">No failures recorded</p>
+                  <Text variant="muted">No failures recorded</Text>
                 ) : (
                   <div className="space-y-2">
                     {topFailures.map((f) => (
                       <div key={f.scriptId} className="flex items-center justify-between text-sm">
-                        <span className="truncate">{f.scriptName}</span>
-                        <span className="shrink-0 text-text-muted">
+                        <Text className="truncate">{f.scriptName}</Text>
+                        <Text className="shrink-0" variant="muted">
                           {f.failureCount}/{f.totalRuns} ({f.failureRate}%)
-                        </span>
+                        </Text>
                       </div>
                     ))}
                   </div>
@@ -191,15 +192,15 @@ export function AnalyticsPanel() {
               </CardHeader>
               <CardContent>
                 {slowest.length === 0 ? (
-                  <p className="text-sm text-text-muted">No duration data</p>
+                  <Text variant="muted">No duration data</Text>
                 ) : (
                   <div className="space-y-2">
                     {slowest.map((s) => (
                       <div key={s.scriptId} className="flex items-center justify-between text-sm">
-                        <span className="truncate">{s.scriptName}</span>
-                        <span className="shrink-0 text-text-muted">
+                        <Text className="truncate">{s.scriptName}</Text>
+                        <Text className="shrink-0" variant="muted">
                           avg {s.avgDurationMs}ms / max {s.maxDurationMs}ms
-                        </span>
+                        </Text>
                       </div>
                     ))}
                   </div>
@@ -216,16 +217,16 @@ export function AnalyticsPanel() {
               </CardHeader>
               <CardContent>
                 {flakyTests.length === 0 ? (
-                  <p className="text-sm text-text-muted">No flaky tests detected</p>
+                  <Text variant="muted">No flaky tests detected</Text>
                 ) : (
                   <div className="space-y-2">
                     {flakyTests.map((f) => (
                       <div key={f.scriptId} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <Badge variant={severityVariant(f.severity)}>{f.severity}</Badge>
-                          <span className="truncate">{f.scriptName}</span>
+                          <Text className="truncate">{f.scriptName}</Text>
                         </div>
-                        <span className="shrink-0 text-text-muted">{f.flakeRate}% flake rate</span>
+                        <Text className="shrink-0" variant="muted">{f.flakeRate}% flake rate</Text>
                       </div>
                     ))}
                   </div>
@@ -242,18 +243,18 @@ export function AnalyticsPanel() {
               </CardHeader>
               <CardContent>
                 {errorPatterns.length === 0 ? (
-                  <p className="text-sm text-text-muted">No error patterns found</p>
+                  <Text variant="muted">No error patterns found</Text>
                 ) : (
                   <div className="space-y-3">
                     {errorPatterns.map((ep) => (
                       <div key={ep.pattern} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <Badge variant="secondary">{ep.count}x</Badge>
-                          <span className="text-xs text-text-muted">
+                          <Text size="sm" variant="muted">
                             {ep.scriptIds.length} test{ep.scriptIds.length > 1 ? 's' : ''}
-                          </span>
+                          </Text>
                         </div>
-                        <p className="truncate font-mono text-xs text-text-muted">{ep.pattern}</p>
+                        <Text className="truncate font-mono" size="sm" variant="muted">{ep.pattern}</Text>
                       </div>
                     ))}
                   </div>
@@ -271,13 +272,13 @@ function ScoreBar({ label, value, max }: { label: string; value: number; max: nu
   const pct = max > 0 ? (value / max) * 100 : 0;
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-16 text-text-muted">{label}</span>
+      <Text className="w-16" size="sm" variant="muted">{label}</Text>
       <div className="h-1.5 flex-1 rounded-full bg-border">
         <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-8 text-right text-text-muted">
+      <Text className="w-8 text-right" size="sm" variant="muted">
         {value}/{max}
-      </span>
+      </Text>
     </div>
   );
 }

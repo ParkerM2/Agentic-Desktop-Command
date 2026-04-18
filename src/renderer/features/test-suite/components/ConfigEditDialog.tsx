@@ -31,6 +31,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import { SCREENSHOT_MODES } from '../lib/constants';
@@ -180,7 +181,7 @@ export function ConfigEditDialog({
               onChange={(event) => update('targetUrl', event.target.value)}
             />
             {urlError ? (
-              <p className="text-destructive text-xs">{urlError}</p>
+              <Text size="sm" variant="error">{urlError}</Text>
             ) : null}
           </div>
 
@@ -274,7 +275,7 @@ export function ConfigEditDialog({
               value={state.retries}
               onChange={(e) => update('retries', Number(e.target.value))}
             />
-            <p className="text-xs text-text-muted">Number of times to retry a failed test (0 = no retries)</p>
+            <Text size="sm" variant="muted">Number of times to retry a failed test (0 = no retries)</Text>
           </div>
 
           <div className="flex flex-col gap-2">
@@ -328,9 +329,9 @@ export function ConfigEditDialog({
             <Label>Auth State (storageState)</Label>
             {config?.storageStatePath ? (
               <div className="flex items-center gap-2">
-                <span className="flex-1 truncate rounded-md border border-border bg-bg-surface px-3 py-1.5 text-xs">
+                <Text className="flex-1 truncate rounded-md border border-border bg-bg-surface px-3 py-1.5" size="sm">
                   {config.storageStatePath}
-                </span>
+                </Text>
                 <Button
                   size="sm"
                   type="button"
@@ -354,9 +355,9 @@ export function ConfigEditDialog({
                 Capture Auth State
               </Button>
             )}
-            <p className="text-xs text-text-muted">
+            <Text size="sm" variant="muted">
               Saves browser cookies and localStorage for authenticated test runs.
-            </p>
+            </Text>
           </div>
 
           <div className="flex flex-col gap-2">

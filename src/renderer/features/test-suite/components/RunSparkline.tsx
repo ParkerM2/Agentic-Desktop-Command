@@ -1,4 +1,4 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from '@ui';
+import { Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
 
 interface RunSparklineProps {
   results: Array<{ status: string; startedAt: string; durationMs: number }>;
@@ -20,7 +20,7 @@ function getBarColor(status: string, flaky: boolean): string {
 }
 
 export function RunSparkline({ results }: RunSparklineProps) {
-  if (results.length === 0) return <span className="text-xs text-text-muted">—</span>;
+  if (results.length === 0) return <Text size="sm" variant="muted">—</Text>;
 
   const reversed = [...results].reverse();
 
@@ -41,7 +41,7 @@ export function RunSparkline({ results }: RunSparklineProps) {
               />
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p className="text-xs">{label}</p>
+              <Text size="sm">{label}</Text>
             </TooltipContent>
           </Tooltip>
         );

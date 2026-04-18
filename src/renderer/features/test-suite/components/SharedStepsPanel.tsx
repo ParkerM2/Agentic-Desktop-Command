@@ -26,6 +26,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import {
@@ -90,20 +91,20 @@ export function SharedStepsPanel() {
               <Card key={group.id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <Folder className="h-4 w-4 text-text-muted" />
                       {group.name}
-                    </span>
+                    </div>
                     <Badge variant="secondary">{group.domain}</Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {group.description ? (
-                    <p className="mb-2 text-xs text-text-muted">{group.description}</p>
+                    <Text className="mb-2" size="sm" variant="muted">{group.description}</Text>
                   ) : null}
-                  <p className="mb-2 text-xs text-text-muted">
+                  <Text className="mb-2" size="sm" variant="muted">
                     {group.steps.length} steps — used {group.usageCount}x
-                  </p>
+                  </Text>
                   <div className="flex gap-1">
                     <Button
                       size="sm"
@@ -195,9 +196,9 @@ function CreateSharedStepDialog({ projectId }: { projectId: string }) {
               onChange={(e) => { setDescription(e.target.value); }}
             />
           </div>
-          <p className="text-xs text-text-muted">
+          <Text size="sm" variant="muted">
             {recordedSteps.length} steps from current recording will be saved.
-          </p>
+          </Text>
           <Button
             className="w-full"
             disabled={!name.trim() || !domain.trim() || recordedSteps.length === 0}

@@ -1,6 +1,6 @@
 import { Clock } from 'lucide-react';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@ui';
+import { Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
 
 import type { RunStep } from '../hooks/useRunSteps';
 
@@ -32,18 +32,20 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
           <Tooltip key={step.stepIndex}>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2">
-                <span className="w-6 shrink-0 text-right text-xs text-text-dim">
+                <Text className="w-6 shrink-0 text-right text-text-dim" size="sm">
                   {step.stepIndex + 1}
-                </span>
+                </Text>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="truncate text-xs">{step.stepLabel}</span>
+                    <Text className="truncate" size="sm">{step.stepLabel}</Text>
                     {isComplete ? (
-                      <span
-                        className={`shrink-0 text-xs ${isSlow ? 'text-yellow-500' : 'text-text-muted'}`}
+                      <Text
+                        className={`shrink-0 ${isSlow ? 'text-yellow-500' : ''}`}
+                        size="sm"
+                        variant={isSlow ? undefined : 'muted'}
                       >
                         {step.durationMs}ms
-                      </span>
+                      </Text>
                     ) : null}
                     {isLast && runStatus === 'running' ? (
                       <Clock className="h-3 w-3 animate-spin text-text-muted" />
@@ -61,10 +63,10 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">
+              <Text size="sm">
                 Step {step.stepIndex + 1}: {step.stepLabel}
                 {step.durationMs === null ? ' \u2014 in progress' : ` \u2014 ${step.durationMs}ms`}
-              </p>
+              </Text>
             </TooltipContent>
           </Tooltip>
         );
