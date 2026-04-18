@@ -139,6 +139,8 @@ export const TestSuiteConfigSchema = z.object({
   screenshotMode: z.enum(['smart', 'per-click', 'per-nav', 'per-form', 'per-assertion', 'manual']),
   testDirectory: z.string(),
   saveScreenshotsToTemp: z.boolean(),
+  navigationTimeout: z.number().int().min(1000).default(30000),
+  actionTimeout: z.number().int().min(1000).default(10000),
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),

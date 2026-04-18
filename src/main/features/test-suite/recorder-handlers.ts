@@ -171,7 +171,13 @@ export function registerTestSuiteHandlers(
         screenshotMode: config.screenshotMode,
       });
 
-      ensurePlaywrightConfig({ projectRoot: projectPath, testDir, baseUrl });
+      ensurePlaywrightConfig({
+        projectRoot: projectPath,
+        testDir,
+        baseUrl,
+        navigationTimeout: config.navigationTimeout,
+        actionTimeout: config.actionTimeout,
+      });
       writeTestSuiteReadme({ projectRoot: projectPath, testDir });
       writeTestSuiteGitignore({ projectRoot: projectPath, testDir });
     }

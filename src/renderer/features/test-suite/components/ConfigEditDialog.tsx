@@ -119,6 +119,8 @@ export function ConfigEditDialog({
       screenshotMode: state.screenshotMode,
       testDirectory: state.testDirectory,
       saveScreenshotsToTemp: config?.saveScreenshotsToTemp ?? false,
+      navigationTimeout: config?.navigationTimeout ?? 30000,
+      actionTimeout: config?.actionTimeout ?? 10000,
       isActive: config?.isActive ?? false,
       createdAt: config?.createdAt ?? now,
       updatedAt: now,

@@ -75,6 +75,8 @@ export function SetupCard({ projectId }: SetupCardProps) {
       screenshotMode: mode,
       testDirectory,
       saveScreenshotsToTemp: false,
+      navigationTimeout: 30000,
+      actionTimeout: 10000,
       isActive: true,
       createdAt: now,
       updatedAt: now,
