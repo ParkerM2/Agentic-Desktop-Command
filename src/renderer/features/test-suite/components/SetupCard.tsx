@@ -1,6 +1,9 @@
 import { useState } from 'react';
 
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
+import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
+
+import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
   Button,
@@ -28,6 +31,12 @@ import {
   DEFAULT_CONFIG_VIEWPORT_WIDTH,
 } from '../lib/starter-test';
 
+function buttonLabel(settingUp: boolean, saving: boolean): string {
+  if (settingUp) return 'Setting up...';
+  if (saving) return 'Saving...';
+  return 'Save & Start Recording';
+}
+
 interface SetupCardProps {
   projectId: string;
 }
@@ -52,6 +61,8 @@ export function SetupCard({ projectId }: SetupCardProps) {
   const [mode, setMode] = useState<ScreenshotMode>(DEFAULT_CONFIG_SCREENSHOT_MODE);
   const [testDirectory, setTestDirectory] = useState(DEFAULT_CONFIG_TEST_DIRECTORY);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [setupStatus, setSetupStatus] = useState<string | null>(null);
+  const [isSettingUp, setIsSettingUp] = useState(false);
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,31 +75,54 @@ export function SetupCard({ projectId }: SetupCardProps) {
       return;
     }
     setUrlError(null);
+    setIsSettingUp(true);
+    setSetupStatus('Installing Playwright dependencies...');
 
-    const now = new Date().toISOString();
-    const config: TestSuiteConfig = {
-      id: crypto.randomUUID(),
-      name: `${parsedHostname}-default`,
-      targetUrl,
-      viewportWidth: width,
-      viewportHeight: height,
-      screenshotMode: mode,
-      testDirectory,
-      saveScreenshotsToTemp: false,
-      navigationTimeout: 30000,
-      actionTimeout: 10000,
-      browsers: ['chromium'],
-      workers: 1,
-      retries: 1,
-      environments: [],
-      activeEnvironment: undefined,
-      storageStatePath: undefined,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    };
+    void (async () => {
+      try {
+        const result = await ipc(TEST_SUITE.SETUP['ENSURE-DEPS'], { projectId });
+        if (!result.installed) {
+          setSetupStatus(`Failed to install Playwright: ${result.error ?? 'Unknown error'}`);
+          setIsSettingUp(false);
+          return;
+        }
+        setSetupStatus(result.alreadyInstalled ? 'Playwright already installed. Saving config...' : 'Playwright installed. Saving config...');
+      } catch (err) {
+        setSetupStatus(`Setup error: ${err instanceof Error ? err.message : String(err)}`);
+        setIsSettingUp(false);
+        return;
+      }
 
-    save.mutate(config);
+      const now = new Date().toISOString();
+      const config: TestSuiteConfig = {
+        id: crypto.randomUUID(),
+        name: `${parsedHostname}-default`,
+        targetUrl,
+        viewportWidth: width,
+        viewportHeight: height,
+        screenshotMode: mode,
+        testDirectory,
+        saveScreenshotsToTemp: false,
+        navigationTimeout: 30000,
+        actionTimeout: 10000,
+        browsers: ['chromium'],
+        workers: 1,
+        retries: 1,
+        environments: [],
+        activeEnvironment: undefined,
+        storageStatePath: undefined,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      save.mutate(config, {
+        onSettled: () => {
+          setIsSettingUp(false);
+          setSetupStatus(null);
+        },
+      });
+    })();
   };
 
   return (
@@ -172,9 +206,13 @@ export function SetupCard({ projectId }: SetupCardProps) {
               />
             </div>
 
+            {setupStatus ? (
+              <p className="text-sm text-text-muted">{setupStatus}</p>
+            ) : null}
+
             <div className="flex justify-end">
-              <Button disabled={save.isPending} type="submit">
-                {save.isPending ? 'Saving...' : 'Save & Start Recording'}
+              <Button disabled={isSettingUp || save.isPending} type="submit">
+                {buttonLabel(isSettingUp, save.isPending)}
               </Button>
             </div>
           </form>

@@ -338,6 +338,14 @@ export const testSuiteInvoke = {
       total: z.number(),
     }),
   },
+  [TEST_SUITE.SETUP['ENSURE-DEPS']]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.object({
+      installed: z.boolean(),
+      alreadyInstalled: z.boolean(),
+      error: z.string().optional(),
+    }),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────

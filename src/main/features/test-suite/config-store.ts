@@ -39,7 +39,18 @@ export function createConfigStore(db: AdcDatabase): ConfigStore {
       .where(and(eq(settingsKv.category, CATEGORY), like(settingsKv.key, `${projectId}:%`)))
       .all();
 
-    return rows.map((row) => row.settings as TestSuiteConfig);
+    return rows.map((row) => {
+      const raw = row.settings as Record<string, unknown>;
+      return {
+        ...raw,
+        browsers: raw.browsers ?? ['chromium'],
+        workers: raw.workers ?? 1,
+        retries: raw.retries ?? 1,
+        storageStatePath: raw.storageStatePath ?? undefined,
+        environments: raw.environments ?? [],
+        activeEnvironment: raw.activeEnvironment ?? undefined,
+      } as TestSuiteConfig;
+    });
   }
 
   function getActive(projectId: string): TestSuiteConfig | null {

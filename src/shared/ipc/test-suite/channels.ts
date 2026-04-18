@@ -21,6 +21,7 @@ export const TEST_SUITE = domain('test-suite', {
   OPEN: ['report'],
   AUTH: ['save', 'clear'],
   BATCH: ['run'],
+  SETUP: ['ensure-deps'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {

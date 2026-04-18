@@ -684,4 +684,41 @@ export function registerTestSuiteHandlers(
   router.handle(TEST_SUITE.BATCH.RUN, (input) =>
     testSuiteService.batchRun(input),
   );
+
+  // ── Setup: ensure Playwright deps ──────────────────────────────
+
+  router.handle(TEST_SUITE.SETUP['ENSURE-DEPS'], async ({ projectId }) => {
+    const projectPath = testSuiteService.getProjectPath(projectId);
+    if (!projectPath) {
+      return { installed: false, alreadyInstalled: false, error: 'Project path not found' };
+    }
+
+    const { existsSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { execSync } = await import('node:child_process');
+
+    const pwPath = join(projectPath, 'node_modules', '@playwright', 'test');
+    const alreadyInstalled = existsSync(pwPath);
+
+    if (alreadyInstalled) {
+      return { installed: true, alreadyInstalled: true };
+    }
+
+    try {
+      execSync('npm install -D @playwright/test', {
+        cwd: projectPath,
+        timeout: 120_000,
+        stdio: 'pipe',
+      });
+      execSync('npx playwright install chromium', {
+        cwd: projectPath,
+        timeout: 180_000,
+        stdio: 'pipe',
+      });
+      return { installed: true, alreadyInstalled: false };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { installed: false, alreadyInstalled: false, error: msg };
+    }
+  });
 }
