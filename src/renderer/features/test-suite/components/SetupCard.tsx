@@ -23,6 +23,7 @@ import {
 } from '@ui';
 
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
+import { SCREENSHOT_MODES } from '../lib/constants';
 import {
   DEFAULT_CONFIG_SCREENSHOT_MODE,
   DEFAULT_CONFIG_TARGET_URL,
@@ -42,15 +43,6 @@ interface SetupCardProps {
 }
 
 type ScreenshotMode = TestSuiteConfig['screenshotMode'];
-
-const SCREENSHOT_MODES: Array<{ value: ScreenshotMode; label: string }> = [
-  { value: 'smart', label: 'Smart (recommended)' },
-  { value: 'per-click', label: 'Per click' },
-  { value: 'per-nav', label: 'Per navigation' },
-  { value: 'per-form', label: 'Per form' },
-  { value: 'per-assertion', label: 'Per assertion' },
-  { value: 'manual', label: 'Manual' },
-];
 
 export function SetupCard({ projectId }: SetupCardProps) {
   const save = useSaveTestSuiteConfig(projectId);

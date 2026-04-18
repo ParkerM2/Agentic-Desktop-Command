@@ -47,22 +47,11 @@ import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useRunOutput } from '../hooks/useRunOutput';
 import { useRunSteps } from '../hooks/useRunSteps';
+import { formatDuration, getOutputLineClass, stepToLabel } from '../lib/format';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { RunLogDialog } from './RunLogDialog';
 import { StepTimeline } from './StepTimeline';
-
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  const secs = (ms / 1000).toFixed(1);
-  return `${secs}s`;
-}
-
-function getOutputLineClass(line: string): string {
-  if (line.includes('\u2713') || line.includes('passed')) return 'text-green-500';
-  if (line.includes('\u2717') || line.includes('Error') || line.includes('error')) return 'text-destructive';
-  return 'text-text-muted';
-}
 
 function StatusBadgeForRun({ status }: { status: string }) {
   if (status === 'passed') return <Badge className="bg-green-600">Passed</Badge>;
@@ -421,15 +410,3 @@ function ViewReportButton({ reportPath }: { reportPath: string }) {
   );
 }
 
-function stepToLabel(step: { type: string; [key: string]: unknown }): string {
-  switch (step.type) {
-    case 'navigate': return `Navigate \u2192 ${step.url as string}`;
-    case 'click': return `Click ${step.selector as string}`;
-    case 'fill': return `Fill ${step.selector as string}`;
-    case 'select': return `Select ${step.selector as string}`;
-    case 'press': return `Press ${step.key as string}`;
-    case 'wait': return `Wait ${step.ms as number}ms`;
-    case 'assert': return `Assert ${step.selector as string}`;
-    default: return step.type;
-  }
-}

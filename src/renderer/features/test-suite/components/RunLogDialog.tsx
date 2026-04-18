@@ -20,6 +20,8 @@ import {
   ScrollArea,
 } from '@ui';
 
+import { formatDuration, getOutputLineClass } from '../lib/format';
+
 interface RunLogDialogProps {
   lines: Array<{ line: string; timestamp: string }>;
   runRecord: {
@@ -30,19 +32,6 @@ interface RunLogDialogProps {
     error?: string;
   } | null;
   scriptName?: string;
-}
-
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  const secs = (ms / 1000).toFixed(1);
-  return `${secs}s`;
-}
-
-function getLogLineClass(line: string): string {
-  if (line.includes('\u2713') || line.includes('passed')) return 'text-green-500';
-  if (line.includes('\u2717') || line.includes('Error') || line.includes('error'))
-    return 'text-destructive';
-  return 'text-text-muted';
 }
 
 export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps) {
@@ -118,7 +107,7 @@ export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps
         <ScrollArea className="min-h-0 flex-1">
           <pre className="whitespace-pre-wrap p-4 font-mono text-xs">
             {lines.map((l) => (
-              <div key={l.timestamp} className={getLogLineClass(l.line)}>
+              <div key={l.timestamp} className={getOutputLineClass(l.line)}>
                 {l.line}
               </div>
             ))}

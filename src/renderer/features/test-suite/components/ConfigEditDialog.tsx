@@ -33,16 +33,9 @@ import {
   SelectValue,
 } from '@ui';
 
-type ScreenshotMode = TestSuiteConfig['screenshotMode'];
+import { SCREENSHOT_MODES } from '../lib/constants';
 
-const SCREENSHOT_MODES: Array<{ value: ScreenshotMode; label: string }> = [
-  { value: 'smart', label: 'Smart (recommended)' },
-  { value: 'per-click', label: 'Per click' },
-  { value: 'per-nav', label: 'Per navigation' },
-  { value: 'per-form', label: 'Per form' },
-  { value: 'per-assertion', label: 'Per assertion' },
-  { value: 'manual', label: 'Manual' },
-];
+type ScreenshotMode = TestSuiteConfig['screenshotMode'];
 
 interface ConfigEditDialogProps {
   projectId: string;
