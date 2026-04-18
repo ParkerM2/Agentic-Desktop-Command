@@ -40,7 +40,7 @@ export default defineConfig({
   timeout: ${navigationTimeout},
   workers: ${workers},
   use: {
-    baseURL: '${escape(params.baseUrl)}',
+    baseURL: process.env.BASE_URL || '${escape(params.baseUrl)}',
     actionTimeout: ${actionTimeout},
     trace: 'on-first-retry',
   },

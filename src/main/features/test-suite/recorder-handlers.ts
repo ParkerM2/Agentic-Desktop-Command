@@ -80,7 +80,7 @@ export interface TestSuiteService {
     filePath?: string;
   }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
-  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger'; filePathOverride?: string }) => Promise<{ runId: string }>;
+  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger'; filePathOverride?: string; baseUrlOverride?: string }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRun | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;

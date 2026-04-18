@@ -26,6 +26,8 @@ export function buildDefaultConfig(): TestSuiteConfig {
     actionTimeout: 10000,
     browsers: ['chromium'],
     workers: 1,
+    environments: [],
+    activeEnvironment: undefined,
     isActive: true,
     createdAt: now,
     updatedAt: now,

@@ -71,6 +71,7 @@ export const testSuiteInvoke = {
     input: z.object({
       scriptId: z.string(),
       triggeredBy: z.enum(['manual', 'scheduled', 'ci']).default('manual'),
+      baseUrlOverride: z.string().optional(),
     }),
     output: z.object({ runId: z.string() }),
   },
