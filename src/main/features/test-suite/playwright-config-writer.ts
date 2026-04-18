@@ -23,8 +23,14 @@ export function writePlaywrightConfig(params: {
   const workers = params.workers ?? 1;
   const configPath = path.join(params.projectRoot, 'playwright.config.ts');
 
+  const deviceName: Record<string, string> = {
+    chromium: 'Desktop Chrome',
+    firefox: 'Desktop Firefox',
+    webkit: 'Desktop Safari',
+  };
+
   const projects = browsers
-    .map((b) => `    { name: '${b}', use: { ...devices['Desktop ${capitalize(b)}'] } },`)
+    .map((b) => `    { name: '${b}', use: { ...devices['${deviceName[b] ?? `Desktop ${capitalize(b)}`}'] } },`)
     .join('\n');
 
   const content = `import { defineConfig, devices } from '@playwright/test';
