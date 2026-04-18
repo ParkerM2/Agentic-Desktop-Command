@@ -50,3 +50,24 @@ export function useRunScript() {
     onError: onError('run QA script'),
   });
 }
+
+/** Run multiple QA scripts sequentially as a batch */
+export function useBatchRun() {
+  const queryClient = useQueryClient();
+  const { onError } = useMutationErrorToast();
+  return useMutation({
+    mutationFn: (input: {
+      scriptIds: string[];
+      triggeredBy?: 'manual' | 'scheduled' | 'ci';
+      baseUrlOverride?: string;
+    }) => ipc(TEST_SUITE.BATCH.RUN, {
+      scriptIds: input.scriptIds,
+      triggeredBy: input.triggeredBy ?? 'manual',
+      baseUrlOverride: input.baseUrlOverride,
+    }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.all });
+    },
+    onError: onError('batch run scripts'),
+  });
+}

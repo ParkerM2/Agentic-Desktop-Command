@@ -98,6 +98,13 @@ export interface TestSuiteService {
   scheduler: SchedulerService;
   getProjectPath: (projectId: string) => string | undefined;
   db: AdcDatabase;
+  saveAuthState: (projectId: string) => Promise<{ storageStatePath: string }>;
+  clearAuthState: (projectId: string) => Promise<{ success: boolean }>;
+  batchRun: (input: {
+    scriptIds: string[];
+    triggeredBy: 'manual' | 'scheduled' | 'ci';
+    baseUrlOverride?: string;
+  }) => Promise<{ runIds: string[]; total: number }>;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -182,6 +189,7 @@ export function registerTestSuiteHandlers(
         actionTimeout: config.actionTimeout,
         browsers: config.browsers,
         workers: config.workers,
+        storageStatePath: config.storageStatePath,
       });
       writeTestSuiteReadme({ projectRoot: projectPath, testDir });
       writeTestSuiteGitignore({ projectRoot: projectPath, testDir });
@@ -655,4 +663,25 @@ export function registerTestSuiteHandlers(
 
     return { runIds, totalRows: rows.length };
   });
+
+  // ── Open report handler ────────────────────────────────────────
+
+  router.handle(TEST_SUITE.OPEN.REPORT, async ({ reportPath }) => {
+    await shell.openPath(reportPath);
+    return { success: true };
+  });
+
+  // ── Auth state handlers ────────────────────────────────────────
+
+  router.handle(TEST_SUITE.AUTH.SAVE, ({ projectId }) =>
+    testSuiteService.saveAuthState(projectId),
+  );
+
+  router.handle(TEST_SUITE.AUTH.CLEAR, ({ projectId }) =>
+    testSuiteService.clearAuthState(projectId),
+  );
+
+  router.handle(TEST_SUITE.BATCH.RUN, (input) =>
+    testSuiteService.batchRun(input),
+  );
 }

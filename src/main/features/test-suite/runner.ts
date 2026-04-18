@@ -30,6 +30,7 @@ export interface QaRunRecord {
   stepsPassed: number;
   stepsFailed: number;
   durationMs: number;
+  reportPath?: string;
 }
 
 export interface RunnerEventHandlers {
@@ -47,6 +48,7 @@ export interface QaRunner {
     taskId?: string;
     screenshotDir?: string;
     workers?: number;
+    retries?: number;
     baseUrlOverride?: string;
     handlers?: RunnerEventHandlers;
   }) => string;
@@ -56,7 +58,7 @@ export interface QaRunner {
 }
 
 function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
-  interface ParsedOutput { outputLines?: string[]; screenshots?: string[]; error?: string }
+  interface ParsedOutput { outputLines?: string[]; screenshots?: string[]; error?: string; reportPath?: string }
   let parsed: ParsedOutput | null = null;
   try {
     parsed = row.output ? (JSON.parse(row.output) as ParsedOutput) : null;
@@ -76,6 +78,7 @@ function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
     stepsPassed: row.stepsPassed,
     stepsFailed: row.stepsFailed,
     durationMs: row.durationMs,
+    reportPath: parsed?.reportPath,
   };
 }
 
@@ -114,7 +117,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, workers, baseUrlOverride, handlers }) {
+    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, workers, retries, baseUrlOverride, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
@@ -180,11 +183,13 @@ export function createRunner(db: AdcDatabase): QaRunner {
       }
 
       const numWorkers = workers ?? 1;
-      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure', '--retries=1', `--workers=${numWorkers}`];
+      const retryCount = retries ?? 1;
+      const reportDir = join(projectPath, '.playwright-reports', runId);
+      const args = ['playwright', 'test', filePath, '--reporter=json,html', '--screenshot=only-on-failure', `--retries=${retryCount}`, `--workers=${numWorkers}`];
       const child = spawn('npx', args, {
         cwd: projectPath,
         shell: process.platform === 'win32',
-        env: { ...process.env, ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}), ...(baseUrlOverride ? { BASE_URL: baseUrlOverride } : {}) },
+        env: { ...process.env, PLAYWRIGHT_HTML_REPORT: reportDir, ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}), ...(baseUrlOverride ? { BASE_URL: baseUrlOverride } : {}) },
       });
 
       activeProcesses.set(runId, child);
@@ -235,7 +240,8 @@ export function createRunner(db: AdcDatabase): QaRunner {
           stepsFailed = code === 0 ? 0 : 1;
         }
 
-        const output = JSON.stringify({ outputLines, screenshots });
+        const reportPath = join(projectPath, '.playwright-reports', runId, 'index.html');
+        const output = JSON.stringify({ outputLines, screenshots, reportPath });
         db.update(testSuiteRuns).set({
           status,
           completedAt,
@@ -257,6 +263,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
           stepsPassed,
           stepsFailed,
           durationMs: endMs - startMs,
+          reportPath,
         };
 
         handlers?.onComplete?.(runId, status, record);

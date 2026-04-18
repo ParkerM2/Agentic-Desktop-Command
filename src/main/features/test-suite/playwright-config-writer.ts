@@ -16,6 +16,7 @@ export function writePlaywrightConfig(params: {
   actionTimeout?: number;
   browsers?: string[];
   workers?: number;
+  storageStatePath?: string;
 }): string {
   const navigationTimeout = params.navigationTimeout ?? 30000;
   const actionTimeout = params.actionTimeout ?? 10000;
@@ -33,6 +34,10 @@ export function writePlaywrightConfig(params: {
     .map((b) => `    { name: '${b}', use: { ...devices['${deviceName[b] ?? `Desktop ${capitalize(b)}`}'] } },`)
     .join('\n');
 
+  const storageStateLine = params.storageStatePath
+    ? `\n    storageState: '${escape(params.storageStatePath)}',`
+    : '';
+
   const content = `import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -41,7 +46,7 @@ export default defineConfig({
   workers: ${workers},
   use: {
     baseURL: process.env.BASE_URL || '${escape(params.baseUrl)}',
-    actionTimeout: ${actionTimeout},
+    actionTimeout: ${actionTimeout},${storageStateLine}
     trace: 'on-first-retry',
   },
   projects: [

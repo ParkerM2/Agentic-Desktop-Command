@@ -11,8 +11,10 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
+import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { useSaveTestSuiteConfig } from '@renderer/features/test-suite/api/useSaveTestSuiteConfig';
+import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
   Button,
@@ -58,6 +60,7 @@ interface FormState {
   testDirectory: string;
   browsers: Array<'chromium' | 'firefox' | 'webkit'>;
   workers: number;
+  retries: number;
   environments: Array<{ name: string; url: string }>;
 }
 
@@ -72,6 +75,7 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
       testDirectory: config.testDirectory,
       browsers: config.browsers,
       workers: config.workers,
+      retries: config.retries,
       environments: config.environments,
     };
   }
@@ -84,6 +88,7 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
     testDirectory: 'test-suite/',
     browsers: ['chromium'],
     workers: 1,
+    retries: 1,
     environments: [],
   };
 }
@@ -135,8 +140,10 @@ export function ConfigEditDialog({
       actionTimeout: config?.actionTimeout ?? 10000,
       browsers: state.browsers,
       workers: state.workers,
+      retries: state.retries,
       environments: state.environments,
       activeEnvironment: config?.activeEnvironment,
+      storageStatePath: config?.storageStatePath,
       isActive: config?.isActive ?? false,
       createdAt: config?.createdAt ?? now,
       updatedAt: now,
@@ -265,6 +272,19 @@ export function ConfigEditDialog({
           </div>
 
           <div className="flex flex-col gap-2">
+            <Label htmlFor="config-edit-retries">Retries on Failure</Label>
+            <Input
+              id="config-edit-retries"
+              max={5}
+              min={0}
+              type="number"
+              value={state.retries}
+              onChange={(e) => update('retries', Number(e.target.value))}
+            />
+            <p className="text-xs text-text-muted">Number of times to retry a failed test (0 = no retries)</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
             <Label>Environments</Label>
             {state.environments.map((env, i) => (
               // eslint-disable-next-line react/no-array-index-key
@@ -309,6 +329,41 @@ export function ConfigEditDialog({
             >
               <Plus className="h-3 w-3 mr-1" /> Add Environment
             </Button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Auth State (storageState)</Label>
+            {config?.storageStatePath ? (
+              <div className="flex items-center gap-2">
+                <span className="flex-1 truncate rounded-md border border-border bg-bg-surface px-3 py-1.5 text-xs">
+                  {config.storageStatePath}
+                </span>
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    void ipc(TEST_SUITE.AUTH.CLEAR, { projectId });
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void ipc(TEST_SUITE.AUTH.SAVE, { projectId });
+                }}
+              >
+                Capture Auth State
+              </Button>
+            )}
+            <p className="text-xs text-text-muted">
+              Saves browser cookies and localStorage for authenticated test runs.
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">

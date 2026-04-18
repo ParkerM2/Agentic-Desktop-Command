@@ -33,7 +33,7 @@ import {
 } from '@ui';
 
 import { useDeleteScript } from '../api/useDeleteScript';
-import { useRunScript } from '../api/useRuns';
+import { useBatchRun, useRunScript } from '../api/useRuns';
 import { useSaveScript } from '../api/useSaveScript';
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
@@ -65,6 +65,7 @@ export function LibraryPanel() {
   const startWatch = useStartWatch();
   const stopWatch = useStopWatch();
   const runScript = useRunScript();
+  const batchRun = useBatchRun();
   const watchedSet = new Set(watchedScripts);
   const deleteScript = useDeleteScript(projectId ?? '');
   const saveScript = useSaveScript(projectId ?? '');
@@ -204,7 +205,7 @@ export function LibraryPanel() {
           ))}
         </div>
         {allTags.length > 0 && (
-          <div className="flex flex-wrap gap-1 px-4 py-1.5 border-b border-border">
+          <div className="flex flex-wrap items-center gap-1 px-4 py-1.5 border-b border-border">
             {allTags.map((tag) => (
               <Badge
                 key={tag}
@@ -219,6 +220,28 @@ export function LibraryPanel() {
                 {tag}
               </Badge>
             ))}
+            {selectedTags.size > 0 && (
+              <Button
+                className="ml-2"
+                disabled={batchRun.isPending}
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  const taggedScriptIds = scripts
+                    .filter((s) => {
+                      const scriptTags = new Set(s.tags);
+                      for (const t of selectedTags) {
+                        if (!scriptTags.has(t)) return false;
+                      }
+                      return true;
+                    })
+                    .map((s) => s.id);
+                  batchRun.mutate({ scriptIds: taggedScriptIds });
+                }}
+              >
+                <Play className="h-3 w-3 mr-1" /> Run Tagged
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -365,10 +388,11 @@ export function LibraryPanel() {
         <div className="flex items-center gap-3 border-t border-border bg-bg-surface px-4 py-2">
           <span className="text-sm text-text-muted">{selected.size} selected</span>
           <Button
+            disabled={batchRun.isPending}
             size="sm"
             variant="ghost"
             onClick={() => {
-              for (const id of selected) runScript.mutate({ scriptId: id });
+              batchRun.mutate({ scriptIds: Array.from(selected) });
             }}
           >
             <Play className="h-3 w-3" /> Run Selected

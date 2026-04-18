@@ -315,6 +315,29 @@ export const testSuiteInvoke = {
       totalRows: z.number(),
     }),
   },
+  [TEST_SUITE.OPEN.REPORT]: {
+    input: z.object({ reportPath: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
+  [TEST_SUITE.AUTH.SAVE]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.object({ storageStatePath: z.string() }),
+  },
+  [TEST_SUITE.AUTH.CLEAR]: {
+    input: z.object({ projectId: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.BATCH.RUN]: {
+    input: z.object({
+      scriptIds: z.array(z.string()),
+      triggeredBy: z.enum(['manual', 'scheduled', 'ci']).default('manual'),
+      baseUrlOverride: z.string().optional(),
+    }),
+    output: z.object({
+      runIds: z.array(z.string()),
+      total: z.number(),
+    }),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────

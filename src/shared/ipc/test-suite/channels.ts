@@ -18,6 +18,9 @@ export const TEST_SUITE = domain('test-suite', {
   'SHARED-STEPS': ['list', 'get', 'create', 'update', 'delete', 'domains'],
   SCHEDULE: ['list', 'get', 'create', 'update', 'delete', 'trigger-now'],
   'DATA-RUN': ['parse', 'execute'],
+  OPEN: ['report'],
+  AUTH: ['save', 'clear'],
+  BATCH: ['run'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {
