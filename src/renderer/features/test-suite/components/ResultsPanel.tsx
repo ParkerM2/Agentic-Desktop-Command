@@ -22,6 +22,7 @@ import {
 } from '@renderer/features/tasks/api/useProgressMutations';
 import { useLooseParams } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
+import { useToastStore } from '@renderer/shared/stores';
 
 import {
   Badge,
@@ -94,8 +95,29 @@ export function ResultsPanel() {
   // Stored run record from DB (populated for completed runs)
   const { data: runRecord } = useRun(activeRunId);
 
+  const addToast = useToastStore((s) => s.addToast);
+  const activeScript = scripts.find((s) => s.id === scriptId);
   const runScript = useRunScript();
   const outputRef = useRef<HTMLDivElement>(null);
+  const prevStatusRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!runRecord || !activeScript) return;
+    const prevStatus = prevStatusRef.current;
+    prevStatusRef.current = runRecord.status;
+
+    if (prevStatus === 'running' && runRecord.status === 'passed') {
+      addToast(
+        `${activeScript.name} — All tests passed (${formatDuration(runRecord.durationMs)})`,
+        'success',
+      );
+    } else if (prevStatus === 'running' && runRecord.status === 'failed') {
+      addToast(
+        `${activeScript.name} — ${runRecord.stepsFailed} step(s) failed`,
+        'error',
+      );
+    }
+  }, [runRecord, activeScript, addToast]);
 
   // Task/workflow action state
   const [createdTaskSlug, setCreatedTaskSlug] = useState<string | null>(null);
@@ -124,7 +146,6 @@ export function ResultsPanel() {
   }, [liveLines, runRecord?.outputLines]);
 
   // Merge live + stored steps: prefer live if any, else build from script steps for completed runs
-  const activeScript = scripts.find((s) => s.id === scriptId);
   const displaySteps = useMemo(() => {
     if (liveRunSteps.length > 0) return liveRunSteps;
     // For completed runs, reconstruct step timeline from the script's steps
