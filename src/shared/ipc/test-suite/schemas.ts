@@ -145,6 +145,8 @@ export const TestSuiteConfigSchema = z.object({
   saveScreenshotsToTemp: z.boolean(),
   navigationTimeout: z.number().int().min(1000).default(30000),
   actionTimeout: z.number().int().min(1000).default(10000),
+  browsers: z.array(z.enum(['chromium', 'firefox', 'webkit'])).default(['chromium']),
+  workers: z.number().int().min(1).max(16).default(1),
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),

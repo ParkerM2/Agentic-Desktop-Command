@@ -46,6 +46,7 @@ export interface QaRunner {
     triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
     taskId?: string;
     screenshotDir?: string;
+    workers?: number;
     handlers?: RunnerEventHandlers;
   }) => string;
   get: (runId: string) => QaRunRecord | null;
@@ -112,7 +113,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, handlers }) {
+    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, workers, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
@@ -177,7 +178,8 @@ export function createRunner(db: AdcDatabase): QaRunner {
         mkdirSync(screenshotDir, { recursive: true });
       }
 
-      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure', '--retries=1'];
+      const numWorkers = workers ?? 1;
+      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure', '--retries=1', `--workers=${numWorkers}`];
       const child = spawn('npx', args, {
         cwd: projectPath,
         shell: process.platform === 'win32',

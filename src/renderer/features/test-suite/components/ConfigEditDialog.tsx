@@ -14,6 +14,7 @@ import { useSaveTestSuiteConfig } from '@renderer/features/test-suite/api/useSav
 
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -53,6 +54,8 @@ interface FormState {
   viewportHeight: number;
   screenshotMode: ScreenshotMode;
   testDirectory: string;
+  browsers: Array<'chromium' | 'firefox' | 'webkit'>;
+  workers: number;
 }
 
 function defaultsFor(config: TestSuiteConfig | null): FormState {
@@ -64,6 +67,8 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
       viewportHeight: config.viewportHeight,
       screenshotMode: config.screenshotMode,
       testDirectory: config.testDirectory,
+      browsers: config.browsers,
+      workers: config.workers,
     };
   }
   return {
@@ -73,6 +78,8 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
     viewportHeight: 720,
     screenshotMode: 'smart',
     testDirectory: 'test-suite/',
+    browsers: ['chromium'],
+    workers: 1,
   };
 }
 
@@ -121,6 +128,8 @@ export function ConfigEditDialog({
       saveScreenshotsToTemp: config?.saveScreenshotsToTemp ?? false,
       navigationTimeout: config?.navigationTimeout ?? 30000,
       actionTimeout: config?.actionTimeout ?? 10000,
+      browsers: state.browsers,
+      workers: state.workers,
       isActive: config?.isActive ?? false,
       createdAt: config?.createdAt ?? now,
       updatedAt: now,
@@ -216,6 +225,36 @@ export function ConfigEditDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Browsers</Label>
+            <div className="flex gap-3">
+              {(['chromium', 'firefox', 'webkit'] as const).map((b) => (
+                <label key={b} className="flex items-center gap-1.5 text-sm">
+                  <Checkbox
+                    checked={state.browsers.includes(b)}
+                    onCheckedChange={(checked) => {
+                      if (checked === true) update('browsers', [...state.browsers, b]);
+                      else update('browsers', state.browsers.filter((x) => x !== b));
+                    }}
+                  />
+                  {b.charAt(0).toUpperCase() + b.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="config-edit-workers">Parallel Workers</Label>
+            <Input
+              id="config-edit-workers"
+              max={16}
+              min={1}
+              type="number"
+              value={state.workers}
+              onChange={(e) => update('workers', Number(e.target.value))}
+            />
           </div>
 
           <div className="flex flex-col gap-2">

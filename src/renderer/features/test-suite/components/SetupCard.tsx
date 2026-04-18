@@ -77,6 +77,8 @@ export function SetupCard({ projectId }: SetupCardProps) {
       saveScreenshotsToTemp: false,
       navigationTimeout: 30000,
       actionTimeout: 10000,
+      browsers: ['chromium'],
+      workers: 1,
       isActive: true,
       createdAt: now,
       updatedAt: now,

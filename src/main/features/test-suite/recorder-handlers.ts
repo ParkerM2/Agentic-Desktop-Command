@@ -23,7 +23,7 @@ import type {
 
 import { parseDataFile, substituteDataInSteps } from './data-runner';
 import { compareScreenshots } from './diff-engine';
-import { ensurePlaywrightConfig } from './playwright-config-writer';
+import { writePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
 import { testSuiteDiffs } from './schema-baselines';
 import { writeSpecFile } from './script-writer';
@@ -174,12 +174,14 @@ export function registerTestSuiteHandlers(
         actionTimeout: config.actionTimeout,
       });
 
-      ensurePlaywrightConfig({
+      writePlaywrightConfig({
         projectRoot: projectPath,
         testDir,
         baseUrl,
         navigationTimeout: config.navigationTimeout,
         actionTimeout: config.actionTimeout,
+        browsers: config.browsers,
+        workers: config.workers,
       });
       writeTestSuiteReadme({ projectRoot: projectPath, testDir });
       writeTestSuiteGitignore({ projectRoot: projectPath, testDir });

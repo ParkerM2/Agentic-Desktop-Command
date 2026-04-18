@@ -252,6 +252,7 @@ export function createTestSuiteService(
       const config = configStore.getActive(script.projectId);
       const testDir = config?.testDirectory ?? 'tests/e2e';
       const screenshotMode = config?.screenshotMode ?? 'manual';
+      const workers = config?.workers ?? 1;
       let screenshotDir: string | undefined;
 
       if (screenshotMode !== 'manual') {
@@ -271,6 +272,7 @@ export function createTestSuiteService(
         projectPath,
         triggeredBy,
         screenshotDir,
+        workers,
         handlers: sharedHandlers,
       });
 
