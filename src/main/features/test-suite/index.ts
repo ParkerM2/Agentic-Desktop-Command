@@ -113,6 +113,7 @@ export interface TestSuiteService {
   runScript: (input: {
     scriptId: string;
     triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
+    filePathOverride?: string;
   }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRunIpcRecord | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRunIpcRecord[]>;
@@ -230,7 +231,7 @@ export function createTestSuiteService(
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
 
-    runScript({ scriptId, triggeredBy }) {
+    runScript({ scriptId, triggeredBy, filePathOverride }) {
       const script = scriptStore.get(scriptId);
       if (!script) {
         return Promise.reject(new Error(`Script not found: ${scriptId}`));
@@ -261,7 +262,7 @@ export function createTestSuiteService(
       const runId = runner.run({
         scriptId,
         projectId: script.projectId,
-        filePath: script.filePath,
+        filePath: filePathOverride ?? script.filePath,
         projectPath,
         triggeredBy,
         screenshotDir,
