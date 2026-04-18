@@ -4,6 +4,9 @@ export const testSuiteScripts = sqliteTable('test_suite_scripts', {
   id: text('id').primaryKey(),
   projectId: text('project_id').notNull(),
   name: text('name').notNull(),
+  description: text('description'),
+  baseUrl: text('base_url').notNull().default(''),
+  steps: text('steps').notNull().default('[]'),
   filePath: text('file_path').notNull(),
   targetUrl: text('target_url').notNull(),
   stepCount: integer('step_count').notNull().default(0),
@@ -16,7 +19,10 @@ export const testSuiteScripts = sqliteTable('test_suite_scripts', {
 export const testSuiteRuns = sqliteTable('test_suite_runs', {
   id: text('id').primaryKey(),
   scriptId: text('script_id').notNull(),
+  projectId: text('project_id').notNull(),
   status: text('status').notNull(),
+  triggeredBy: text('triggered_by').notNull().default('manual'),
+  report: text('report'),
   durationMs: integer('duration_ms').notNull().default(0),
   stepsPassed: integer('steps_passed').notNull().default(0),
   stepsFailed: integer('steps_failed').notNull().default(0),
@@ -24,6 +30,7 @@ export const testSuiteRuns = sqliteTable('test_suite_runs', {
   startedAt: text('started_at').notNull(),
   completedAt: text('completed_at'),
   taskId: text('task_id'),
+  sessionId: text('session_id'),
 });
 
 export const testSuiteScreenshots = sqliteTable('test_suite_screenshots', {

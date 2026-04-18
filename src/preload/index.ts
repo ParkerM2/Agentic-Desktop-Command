@@ -122,7 +122,7 @@ contextBridge.exposeInMainWorld(APP_INFO_BRIDGE, appInfo);
 // ─── Sibling preload paths ───────────────────────────────
 // Renderer needs file:// URLs to pass as <webview preload="...">
 const preloads = {
-  testSuiteRecorder: pathToFileURL(join(__dirname, 'test-suite-recorder.mjs')).href,
+  testSuiteRecorder: pathToFileURL(join(__dirname, 'test-suite-recorder.cjs')).href,
 };
 
 contextBridge.exposeInMainWorld('preloads', preloads);

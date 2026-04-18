@@ -11,33 +11,40 @@ export interface RunStep {
   durationMs: number | null;
 }
 
+interface StepsState {
+  forRunId: string | null;
+  steps: RunStep[];
+}
+
 export function useRunSteps(runId: string | null) {
-  const [steps, setSteps] = useState<RunStep[]>([]);
+  const [state, setState] = useState<StepsState>({ forRunId: runId, steps: [] });
+
+  const steps = state.forRunId === runId ? state.steps : [];
 
   useIpcEvent(TEST_SUITE_EVENTS.RUN.STEP, (payload) => {
     if (payload.runId !== runId) return;
 
-    setSteps((prev) => {
-      const updated = [...prev];
+    setState((prev) => {
+      const existing = prev.forRunId === runId ? [...prev.steps] : [];
 
-      const last = updated.at(-1);
+      const last = existing.at(-1);
       if (last) {
         const prevTime = new Date(last.timestamp).getTime();
         const currTime = new Date(payload.timestamp).getTime();
-        updated[updated.length - 1] = { ...last, durationMs: currTime - prevTime };
+        existing[existing.length - 1] = { ...last, durationMs: currTime - prevTime };
       }
 
-      updated.push({
+      existing.push({
         stepIndex: payload.stepIndex,
         stepLabel: payload.stepLabel,
         timestamp: payload.timestamp,
         durationMs: null,
       });
 
-      return updated;
+      return { forRunId: runId, steps: existing };
     });
   });
 
-  const clear = () => setSteps([]);
+  const clear = () => setState({ forRunId: runId, steps: [] });
   return { steps, clear };
 }

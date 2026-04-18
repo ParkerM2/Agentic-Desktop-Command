@@ -157,6 +157,7 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
               partition="persist:test-suite"
               preload={preloadUrl}
               src={committedUrl}
+              webpreferences="sandbox=no, contextIsolation=yes"
             />
             {recording ? (
               <div className="pointer-events-none absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-destructive/90 px-3 py-1 text-xs font-semibold text-white shadow-lg">

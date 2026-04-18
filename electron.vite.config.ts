@@ -39,6 +39,10 @@ export default defineConfig({
           index: resolve(__dirname, 'src/preload/index.ts'),
           'test-suite-recorder': resolve(__dirname, 'src/preload/test-suite-recorder.ts'),
         },
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].cjs',
+        },
       },
     },
     resolve: {

@@ -9,15 +9,29 @@ interface OutputLine {
   timestamp: string;
 }
 
+interface OutputState {
+  forRunId: string | null;
+  lines: OutputLine[];
+}
+
 export function useRunOutput(runId: string | null) {
-  const [lines, setLines] = useState<OutputLine[]>([]);
+  const [state, setState] = useState<OutputState>({ forRunId: runId, lines: [] });
+
+  // Derive lines synchronously — returns [] when runId changes, no effect needed
+  const lines = state.forRunId === runId ? state.lines : [];
 
   useIpcEvent(TEST_SUITE_EVENTS.OUTPUT.LINE, (payload) => {
     if (payload.runId === runId) {
-      setLines((prev) => [...prev, { line: payload.line, timestamp: payload.timestamp }]);
+      setState((prev) => ({
+        forRunId: runId,
+        lines: [
+          ...(prev.forRunId === runId ? prev.lines : []),
+          { line: payload.line, timestamp: payload.timestamp },
+        ],
+      }));
     }
   });
 
-  const clear = () => setLines([]);
+  const clear = () => setState({ forRunId: runId, lines: [] });
   return { lines, clear };
 }

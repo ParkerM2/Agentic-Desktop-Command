@@ -104,7 +104,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
 
       const child = spawn('npx', ['playwright', 'test', filePath, '--reporter=line'], {
         cwd: projectPath,
-        shell: false,
+        shell: process.platform === 'win32',
         env: { ...process.env, ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}) },
       });
 

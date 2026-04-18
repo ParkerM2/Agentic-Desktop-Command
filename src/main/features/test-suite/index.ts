@@ -219,15 +219,18 @@ export function createTestSuiteService(
 
     getScript: (id) => Promise.resolve(scriptStore.get(id)),
 
-    saveScript: (input) => Promise.resolve(scriptStore.save({
-      id: input.id,
-      name: input.name,
-      description: input.description,
-      steps: input.steps,
-      projectId: input.projectId,
-      filePath: input.filePath ?? '',
-      targetUrl: '',
-    })),
+    saveScript: (input) => {
+      const config = configStore.getActive(input.projectId);
+      return Promise.resolve(scriptStore.save({
+        id: input.id,
+        name: input.name,
+        description: input.description,
+        steps: input.steps,
+        projectId: input.projectId,
+        filePath: input.filePath ?? '',
+        targetUrl: config?.targetUrl ?? '',
+      }));
+    },
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
 

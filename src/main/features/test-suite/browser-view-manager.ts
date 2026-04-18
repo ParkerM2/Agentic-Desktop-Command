@@ -19,10 +19,10 @@ import { join } from 'node:path';
 import { BrowserView, session } from 'electron';
 import type { BrowserWindow } from 'electron';
 
-// electron-vite emits preloads to out/preload/ as .mjs (see
+// electron-vite emits preloads to out/preload/ as .cjs (see
 // electron.vite.config.ts + src/main/index.ts createWindow for the
-// sibling `../preload/index.mjs` pattern).
-const PRELOAD = join(__dirname, '../preload/test-suite-recorder.mjs');
+// sibling `../preload/index.cjs` pattern).
+const PRELOAD = join(__dirname, '../preload/test-suite-recorder.cjs');
 
 export interface BrowserViewManager {
   create: (url: string, bounds: Electron.Rectangle) => { success: boolean };
