@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -32,6 +33,49 @@ import { useTestSuiteStore } from '../test-suite-store';
 import type { RecordedStep } from '../test-suite-store';
 
 
+interface AssertionSuggestion {
+  selector: string;
+  expected: string;
+  description: string;
+  accepted: boolean;
+}
+
+function generateAssertionSuggestions(steps: RecordedStep[]): AssertionSuggestion[] {
+  const suggestions: AssertionSuggestion[] = [];
+
+  for (const { step } of steps) {
+
+    if (step.type === 'navigate') {
+      suggestions.push({
+        selector: '',
+        expected: step.url,
+        description: `Verify page navigated to ${step.url}`,
+        accepted: false,
+      });
+    }
+
+    if (step.type === 'fill' && 'selector' in step) {
+      suggestions.push({
+        selector: step.selector,
+        expected: step.value,
+        description: `Verify "${step.selector}" contains "${step.value}"`,
+        accepted: false,
+      });
+    }
+
+    if (step.type === 'click' && 'context' in step && step.context?.text) {
+      suggestions.push({
+        selector: step.selector,
+        expected: step.context.text,
+        description: `Verify "${step.context.text}" is visible after click`,
+        accepted: false,
+      });
+    }
+  }
+
+  return suggestions;
+}
+
 interface SaveRecordingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -53,6 +97,9 @@ export function SaveRecordingDialog({
   const [description, setDescription] = useState('');
   const [tagsInput, setTagsInput] = useState('');
   const [testDir, setTestDir] = useState(testDirectory ?? 'tests');
+  const [suggestions, setSuggestions] = useState<AssertionSuggestion[]>(() =>
+    generateAssertionSuggestions(steps),
+  );
   const saveScript = useSaveScript(projectId);
   const clearSteps = useTestSuiteStore((s) => s.clearSteps);
   const saving = saveScript.isPending;
@@ -65,12 +112,22 @@ export function SaveRecordingDialog({
   const handleSave = () => {
     if (!name.trim()) return;
     const tags = tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
+    const assertSteps = suggestions
+      .filter((s) => s.accepted)
+      .map((s) => ({
+        type: 'assert' as const,
+        selector: s.selector || 'body',
+        expected: s.expected,
+      }));
+
+    const allSteps = [...steps.map((s) => s.step), ...assertSteps];
+
     saveScript.mutate(
       {
         projectId,
         name: name.trim(),
         description: description.trim() || undefined,
-        steps: steps.map((s) => s.step),
+        steps: allSteps,
         tags,
       },
       {
@@ -130,6 +187,31 @@ export function SaveRecordingDialog({
                   onChange={(e) => setTagsInput(e.target.value)}
                 />
               </div>
+              {suggestions.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Suggested Assertions</Label>
+                  <p className="text-xs text-text-muted">
+                    Check the assertions you want to include in the test.
+                  </p>
+                  <div className="space-y-1.5">
+                    {suggestions.map((s, i) => (
+                      // eslint-disable-next-line react/no-array-index-key
+                      <label key={`${s.selector}-${s.expected}-${i}`} className="flex items-start gap-2 text-sm">
+                        <Checkbox
+                          checked={s.accepted}
+                          className="mt-0.5"
+                          onCheckedChange={(checked) => {
+                            const next = [...suggestions];
+                            next[i] = { ...next[i], accepted: checked === true };
+                            setSuggestions(next);
+                          }}
+                        />
+                        <span className="text-text-muted">{s.description}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Test Directory</Label>
                 <Input
