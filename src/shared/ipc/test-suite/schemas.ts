@@ -84,6 +84,7 @@ export const QaScriptSchema = z.object({
   name: z.string(),
   description: z.string().nullable(),
   steps: z.array(TestSuiteStepSchema),
+  tags: z.array(z.string()).default([]),
   filePath: z.string(),
   projectId: z.string(),
   targetUrl: z.string(),

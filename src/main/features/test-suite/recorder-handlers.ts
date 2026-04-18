@@ -76,6 +76,7 @@ export interface TestSuiteService {
     name: string;
     description?: string;
     steps: TestSuiteStep[];
+    tags?: string[];
     filePath?: string;
   }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;

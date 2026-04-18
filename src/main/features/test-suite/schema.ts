@@ -9,6 +9,7 @@ export const testSuiteScripts = sqliteTable('test_suite_scripts', {
   steps: text('steps').notNull().default('[]'),
   filePath: text('file_path').notNull(),
   targetUrl: text('target_url').notNull(),
+  tags: text('tags').notNull().default('[]'),
   stepCount: integer('step_count').notNull().default(0),
   lastStatus: text('last_status'),
   lastRunAt: text('last_run_at'),

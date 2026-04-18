@@ -110,6 +110,7 @@ export interface TestSuiteService {
     name: string;
     description?: string;
     steps: TestSuiteStep[];
+    tags?: string[];
     filePath?: string;
   }) => Promise<QaScript>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
@@ -226,6 +227,7 @@ export function createTestSuiteService(
         name: input.name,
         description: input.description,
         steps: input.steps,
+        tags: input.tags,
         projectId: input.projectId,
         filePath: input.filePath ?? '',
         targetUrl: config?.targetUrl ?? '',

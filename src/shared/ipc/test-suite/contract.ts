@@ -59,6 +59,7 @@ export const testSuiteInvoke = {
       name: z.string(),
       description: z.string().optional(),
       steps: z.array(TestSuiteStepSchema),
+      tags: z.array(z.string()).optional(),
     }),
     output: QaScriptSchema,
   },
