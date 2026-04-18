@@ -177,7 +177,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
         mkdirSync(screenshotDir, { recursive: true });
       }
 
-      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure'];
+      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure', '--retries=1'];
       const child = spawn('npx', args, {
         cwd: projectPath,
         shell: process.platform === 'win32',
