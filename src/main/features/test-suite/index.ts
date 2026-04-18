@@ -1,7 +1,7 @@
 /**
  * Test Suite Service — Factory
  *
- * Composes script store, runner, and exporter into a single facade that
+ * Composes script store, runner, and script-writer into a single facade that
  * satisfies the IPC handler interface expected by recorder-handlers.ts.
  */
 
@@ -19,11 +19,11 @@ import { createAnalytics } from './analytics';
 import { createBaselineStore } from './baseline-store';
 import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
-import { createExporter } from './exporter';
 import { createRunner } from './runner';
 import { createScheduler, sendTestNotification } from './scheduler';
 import { createScreenshotStore } from './screenshot-capture';
 import { createScriptStore } from './script-store';
+import { writeSpecFile } from './script-writer';
 import { createSharedStepsStore } from './shared-steps-store';
 import { createFileWatcher } from './watcher';
 
@@ -31,7 +31,6 @@ import type { Analytics } from './analytics';
 import type { BaselineStore } from './baseline-store';
 import type { BrowserViewManager } from './browser-view-manager';
 import type { ConfigStore } from './config-store';
-import type { QaExporter } from './exporter';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
 import type { SchedulerService } from './scheduler';
 import type { ScreenshotStore } from './screenshot-capture';
@@ -87,7 +86,6 @@ export interface TestSuiteService {
   // Sub-services (used by qa-trigger.ts and other internal consumers)
   scriptStore: ScriptStore;
   runner: QaRunner;
-  exporter: QaExporter;
   configStore: ConfigStore;
   browserViewManager: BrowserViewManager;
   screenshotStore: ScreenshotStore;
@@ -188,7 +186,6 @@ export function createTestSuiteService(
   };
 
   const runner = createRunner(db);
-  const exporter = createExporter();
   const configStore = createConfigStore(db);
   const analytics = createAnalytics(db);
   const fileWatcher = createFileWatcher();
@@ -200,7 +197,6 @@ export function createTestSuiteService(
     // Sub-services
     scriptStore,
     runner,
-    exporter,
     configStore,
     browserViewManager,
     screenshotStore,
@@ -290,14 +286,17 @@ export function createTestSuiteService(
       const script = scriptStore.get(run.scriptId);
       if (!script) return Promise.reject(new Error(`Script not found for run ${runId}`));
       const projectPath = deps.getProjectPath(script.projectId) ?? process.cwd();
-      const result = exporter.export({
-        scriptId: script.id,
-        scriptName: script.name,
+      const config = configStore.getActive(script.projectId);
+      const testDir = config?.testDirectory ?? 'tests/e2e';
+      const filePath = writeSpecFile({
+        projectRoot: projectPath,
+        testDir,
+        name: script.name,
         baseUrl: script.targetUrl,
-        steps: script.steps,
-        projectPath,
+        steps: script.steps as TestSuiteStep[],
+        screenshotMode: config?.screenshotMode,
       });
-      return Promise.resolve({ filePath: result.filePath });
+      return Promise.resolve({ filePath });
     },
 
     exportGithub() {
