@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   Calendar,
@@ -79,6 +79,15 @@ export function LibraryPanel() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [scheduleScriptId, setScheduleScriptId] = useState<string | null>(null);
   const [dataRunScriptId, setDataRunScriptId] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const s of scripts) {
+      for (const t of s.tags) tagSet.add(t);
+    }
+    return Array.from(tagSet).sort();
+  }, [scripts]);
 
   const { data: allRuns = [] } = useAllTestSuiteRuns();
   const latestStartByScript = new Map<string, string>();
@@ -114,10 +123,18 @@ export function LibraryPanel() {
 
   const filtered = scripts.filter((s) => {
     if (!matchesSearch(s.name)) return false;
-    if (statusFilter === 'all') return true;
-    if (statusFilter === 'flaky') return flakySet.has(s.id);
-    if (statusFilter === 'no-runs') return !getLastStatus(s.id);
-    return getLastStatus(s.id) === statusFilter;
+    if (statusFilter !== 'all') {
+      if (statusFilter === 'flaky' && !flakySet.has(s.id)) return false;
+      else if (statusFilter === 'no-runs' && getLastStatus(s.id)) return false;
+      else if (statusFilter !== 'flaky' && statusFilter !== 'no-runs' && getLastStatus(s.id) !== statusFilter) return false;
+    }
+    if (selectedTags.size > 0) {
+      const scriptTags = new Set(s.tags);
+      for (const t of selectedTags) {
+        if (!scriptTags.has(t)) return false;
+      }
+    }
+    return true;
   });
 
   const toggleSelect = (id: string) => {
@@ -186,6 +203,24 @@ export function LibraryPanel() {
             </Button>
           ))}
         </div>
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 px-4 py-1.5 border-b border-border">
+            {allTags.map((tag) => (
+              <Badge
+                key={tag}
+                className="cursor-pointer"
+                variant={selectedTags.has(tag) ? 'default' : 'outline'}
+                onClick={() => {
+                  const next = new Set(selectedTags);
+                  if (next.has(tag)) next.delete(tag); else next.add(tag);
+                  setSelectedTags(next);
+                }}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-auto">
@@ -225,6 +260,9 @@ export function LibraryPanel() {
                   {script.description ? (
                     <span className="ml-2 text-sm text-text-muted">{script.description}</span>
                   ) : null}
+                  {script.tags.map((t) => (
+                    <Badge key={t} className="ml-1 text-[10px]" variant="secondary">{t}</Badge>
+                  ))}
                 </TableCell>
                 <TableCell className="text-center">
                   <Badge size="sm" variant="secondary">

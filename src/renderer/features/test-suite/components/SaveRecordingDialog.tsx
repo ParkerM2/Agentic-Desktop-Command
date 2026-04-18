@@ -51,6 +51,7 @@ export function SaveRecordingDialog({
 }: SaveRecordingDialogProps) {
   const [name, setName] = useState(defaultName);
   const [description, setDescription] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
   const [testDir, setTestDir] = useState(testDirectory ?? 'tests');
   const saveScript = useSaveScript(projectId);
   const clearSteps = useTestSuiteStore((s) => s.clearSteps);
@@ -63,12 +64,14 @@ export function SaveRecordingDialog({
 
   const handleSave = () => {
     if (!name.trim()) return;
+    const tags = tagsInput.split(',').map((t) => t.trim()).filter(Boolean);
     saveScript.mutate(
       {
         projectId,
         name: name.trim(),
         description: description.trim() || undefined,
         steps: steps.map((s) => s.step),
+        tags,
       },
       {
         onSuccess: () => {
@@ -117,6 +120,14 @@ export function SaveRecordingDialog({
                   rows={3}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <Input
+                  placeholder="smoke, regression, login (comma-separated)"
+                  value={tagsInput}
+                  onChange={(e) => setTagsInput(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
