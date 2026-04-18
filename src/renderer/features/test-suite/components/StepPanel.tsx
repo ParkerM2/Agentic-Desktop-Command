@@ -28,7 +28,7 @@ import {
   Text,
 } from '@ui';
 
-import { useTestSuiteStore } from '../store';
+import { useTestSuiteStore } from '../test-suite-store';
 
 
 // ── Step icon mapping ────────────────────────────────────────────
@@ -82,9 +82,9 @@ interface StepPanelProps {
 
 export function StepPanel({ steps: propSteps }: StepPanelProps) {
   const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
-  const isRecording = useTestSuiteStore((s) => s.isRecording);
+  const isRecording = useTestSuiteStore((s) => s.recordingActive);
 
-  const steps = propSteps ?? recordedSteps;
+  const steps = propSteps ?? recordedSteps.map((r) => r.step);
 
   return (
     <Card className="flex h-full flex-col" data-testid="step-panel">
