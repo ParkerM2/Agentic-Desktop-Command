@@ -1,57 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  FileText,
-  ListPlus,
-  Play,
-  XCircle,
-  Zap,
-} from 'lucide-react';
+import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 
-import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
-
-import {
-  useCreateProgressTask,
-  useCreatePlan,
-  useRunWorkflow,
-  useSpinUpTeam,
-  useStartResearch,
-} from '@renderer/features/tasks/api/useProgressMutations';
 import { useLooseParams } from '@renderer/shared/hooks';
-import { ipc } from '@renderer/shared/lib/ipc';
 import { useToastStore } from '@renderer/shared/stores';
 
-import {
-  Badge,
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  PageContent,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@ui';
+import { PageContent } from '@ui';
 
-import { useAttachRunToTask } from '../api/useAttachRunToTask';
 import { useRun, useRunScript } from '../api/useRuns';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useRunOutput } from '../hooks/useRunOutput';
 import { useRunSteps } from '../hooks/useRunSteps';
-import { formatDuration, getOutputLineClass, stepToLabel } from '../lib/format';
+import { formatDuration, stepToLabel } from '../lib/format';
 import { useTestSuiteStore } from '../test-suite-store';
 
-import { RunLogDialog } from './RunLogDialog';
-import { RunStatusBadge, RunStatusDot } from './RunStatusBadge';
+import { ResultsOutputLog } from './ResultsOutputLog';
+import { ResultsToolbar, ViewReportButton } from './ResultsToolbar';
+import { ResultsWorkflowActions } from './ResultsWorkflowActions';
 import { StepTimeline } from './StepTimeline';
 
 export function ResultsPanel() {
@@ -101,20 +68,6 @@ export function ResultsPanel() {
     }
   }, [runRecord, activeScript, addToast]);
 
-  // Task/workflow action state
-  const [createdTaskSlug, setCreatedTaskSlug] = useState<string | null>(null);
-  const createTask = useCreateProgressTask();
-  const attachRunToTask = useAttachRunToTask();
-  const runWorkflow = useRunWorkflow();
-  const startResearch = useStartResearch();
-  const createPlan = useCreatePlan();
-  const spinUpTeam = useSpinUpTeam();
-
-  // Reset createdTaskSlug when the selected run changes
-  useEffect(() => {
-    setCreatedTaskSlug(null);
-  }, [activeRunId]);
-
   // Merge live + stored output: prefer live lines if any, else fall back to stored
   const displayLines = useMemo(() => {
     if (liveLines.length > 0) return liveLines;
@@ -130,7 +83,6 @@ export function ResultsPanel() {
   // Merge live + stored steps: prefer live if any, else build from script steps for completed runs
   const displaySteps = useMemo(() => {
     if (liveRunSteps.length > 0) return liveRunSteps;
-    // For completed runs, reconstruct step timeline from the script's steps
     if (runRecord && runRecord.status !== 'running' && activeScript?.steps) {
       return activeScript.steps.map((step, i) => ({
         stepIndex: i,
@@ -142,7 +94,6 @@ export function ResultsPanel() {
     return [];
   }, [liveRunSteps, runRecord, activeScript?.steps]);
 
-  // Use the active run's status, not the first run's
   const runStatus = runRecord?.status ?? (activeRunId ? 'running' : 'pending');
 
   // Auto-scroll output
@@ -156,9 +107,10 @@ export function ResultsPanel() {
 
   const handleRun = () => {
     if (scriptId) {
-      const baseUrlOverride = activeEnv !== 'default' && config?.environments
-        ? config.environments.find((e) => e.name === activeEnv)?.url
-        : undefined;
+      const baseUrlOverride =
+        activeEnv !== 'default' && config?.environments
+          ? config.environments.find((e) => e.name === activeEnv)?.url
+          : undefined;
       runScript.mutate({ scriptId, baseUrlOverride }, {
         onSuccess: (data) => {
           setSelectedRunId(data.runId);
@@ -167,227 +119,76 @@ export function ResultsPanel() {
     }
   };
 
-  const handleCreateTask = () => {
-    if (!activeScript || !runRecord) return;
-    const title = `Fix: ${activeScript.name} test failure`;
-    const errorLines = runRecord.outputLines
-      .filter((l) => l.includes('Error') || l.includes('\u2717'))
-      .join('\n');
-    const errorSummary =
-      runRecord.error
-      ?? (errorLines.length > 0 ? errorLines : 'Test failed — see run output for details');
-    const description = `## Test Failure\n\n**Script:** ${activeScript.name}\n**Status:** ${runRecord.status}\n**Steps passed:** ${runRecord.stepsPassed}\n**Steps failed:** ${runRecord.stepsFailed}\n\n### Error Output\n\n\`\`\`\n${errorSummary}\n\`\`\``;
-
-    createTask.mutate(
-      { title, description, priority: 'high', projectId },
-      {
-        onSuccess: (task) => {
-          setCreatedTaskSlug(task.slug);
-          if (activeRunId) {
-            attachRunToTask.mutate({ runId: activeRunId, taskId: task.slug });
-          }
-        },
-      },
-    );
-  };
-
   return (
     <PageContent className="flex h-full flex-col overflow-hidden p-1">
       <div className="flex h-full flex-col overflow-hidden rounded-md border border-border">
-      {/* Toolbar */}
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
-        <Select value={scriptId ?? ''} onValueChange={setSelectedScriptId}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Select test..." />
-          </SelectTrigger>
-          <SelectContent>
-            {scripts.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {runs.length > 1 && (
-          <Select value={activeRunId ?? ''} onValueChange={setSelectedRunId}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="Select run..." />
-            </SelectTrigger>
-            <SelectContent>
-              {runs.map((r) => (
-                <SelectItem key={r.id} value={r.id}>
-                  <span className="flex items-center gap-1.5">
-                    <RunStatusDot status={r.status} />
-                    {new Date(r.startedAt).toLocaleTimeString()}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        {Boolean(config?.environments.length) && (
-          <Select value={activeEnv} onValueChange={setActiveEnv}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="Environment" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="default">Default ({config?.targetUrl})</SelectItem>
-              {config?.environments.map((env) => (
-                <SelectItem key={env.name} value={env.name}>{env.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
-        <Button
-          disabled={!scriptId || runScript.isPending}
-          size="sm"
-          variant="ghost"
-          onClick={handleRun}
-        >
-          <Play className="h-3 w-3" /> Run
-        </Button>
-
-        <RunStatusBadge status={runStatus} />
-
-        <RunLogDialog
-          lines={displayLines}
-          runRecord={runRecord ?? null}
-          scriptName={activeScript?.name}
+        {/* Toolbar */}
+        <ResultsToolbar
+          activeEnv={activeEnv}
+          activeRunId={activeRunId}
+          activeScriptName={activeScript?.name}
+          config={config}
+          displayLines={displayLines}
+          isRunning={runScript.isPending}
+          runRecord={runRecord}
+          runStatus={runStatus}
+          runs={runs}
+          scriptId={scriptId}
+          scripts={scripts}
+          onEnvChange={setActiveEnv}
+          onRun={handleRun}
+          onRunChange={setSelectedRunId}
+          onScriptChange={setSelectedScriptId}
         />
 
-        {runRecord?.error ? (
-          <Badge className="ml-auto" variant="destructive">
-            <AlertTriangle className="mr-1 h-3 w-3" /> Error
-          </Badge>
-        ) : null}
-      </div>
-
-      {/* Run summary bar */}
-      {runRecord && runRecord.status !== 'running' ? (
-        <div className="flex items-center gap-4 border-b border-border bg-bg-surface px-4 py-1.5 text-xs">
-          <span className="flex items-center gap-1">
-            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-            {runRecord.stepsPassed} passed
-          </span>
-          <span className="flex items-center gap-1">
-            <XCircle className="h-3.5 w-3.5 text-destructive" />
-            {runRecord.stepsFailed} failed
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5 text-text-muted" />
-            {formatDuration(runRecord.durationMs)}
-          </span>
-          {runRecord.reportPath ? (
-            <ViewReportButton reportPath={runRecord.reportPath} />
-          ) : null}
-          {runRecord.status === 'failed' && (
-            <div className="ml-auto flex items-center gap-2">
-              {createdTaskSlug ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Zap className="mr-1 h-3 w-3" /> Start Workflow
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        runWorkflow.mutate({ slug: createdTaskSlug })
-                      }
-                    >
-                      Full Pipeline (Research → Plan → Team)
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() =>
-                        startResearch.mutate({ slug: createdTaskSlug })
-                      }
-                    >
-                      Research Only
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        createPlan.mutate({ slug: createdTaskSlug })
-                      }
-                    >
-                      Plan Only
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() =>
-                        spinUpTeam.mutate({ slug: createdTaskSlug })
-                      }
-                    >
-                      Team Only
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button
-                  disabled={createTask.isPending}
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCreateTask}
-                >
-                  <ListPlus className="mr-1 h-3 w-3" />
-                  {createTask.isPending ? 'Creating...' : 'Create Task'}
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {/* Content split */}
-      <div className="flex flex-1 min-h-0">
-        {/* Step timeline */}
-        <div className="w-80 border-r border-border overflow-y-auto">
-          <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
-            Steps ({displaySteps.length})
-          </div>
-          <StepTimeline runStatus={runStatus} steps={displaySteps} />
-        </div>
-
-        {/* Output log */}
-        <div ref={outputRef} className="flex-1 overflow-y-auto bg-bg-surface p-3">
-          {runRecord?.error ? (
-            <div className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-              {runRecord.error}
-            </div>
-          ) : null}
-          <pre className="font-mono text-xs whitespace-pre-wrap">
-            {displayLines.length > 0 ? (
-              displayLines.map((l, i) => (
-                <div key={l.timestamp === `stored-${i}` ? `stored-${i}` : l.timestamp} className={getOutputLineClass(l.line)}>
-                  {l.line}
-                </div>
-              ))
-            ) : (
-              <span className="text-text-muted">
-                {activeRunId ? 'No output captured for this run.' : 'Run a test to see output here.'}
-              </span>
+        {/* Run summary bar */}
+        {runRecord && runRecord.status !== 'running' ? (
+          <div className="flex items-center gap-4 border-b border-border bg-bg-surface px-4 py-1.5 text-xs">
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+              {runRecord.stepsPassed} passed
+            </span>
+            <span className="flex items-center gap-1">
+              <XCircle className="h-3.5 w-3.5 text-destructive" />
+              {runRecord.stepsFailed} failed
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5 text-text-muted" />
+              {formatDuration(runRecord.durationMs)}
+            </span>
+            {runRecord.reportPath ? (
+              <ViewReportButton reportPath={runRecord.reportPath} />
+            ) : null}
+            {runRecord.status === 'failed' && (
+              <ResultsWorkflowActions
+                activeRunId={activeRunId}
+                activeScript={activeScript}
+                projectId={projectId}
+                runRecord={runRecord}
+              />
             )}
-          </pre>
+          </div>
+        ) : null}
+
+        {/* Content split */}
+        <div className="flex flex-1 min-h-0">
+          {/* Step timeline */}
+          <div className="w-80 border-r border-border overflow-y-auto">
+            <div className="border-b border-border px-3 py-2 text-xs font-semibold uppercase text-text-muted">
+              Steps ({displaySteps.length})
+            </div>
+            <StepTimeline runStatus={runStatus} steps={displaySteps} />
+          </div>
+
+          {/* Output log */}
+          <ResultsOutputLog
+            activeRunId={activeRunId}
+            displayLines={displayLines}
+            errorMessage={runRecord?.error}
+            outputRef={outputRef}
+          />
         </div>
-      </div>
       </div>
     </PageContent>
   );
 }
-
-function ViewReportButton({ reportPath }: { reportPath: string }) {
-  return (
-    <Button
-      size="sm"
-      variant="ghost"
-      onClick={() => {
-        void ipc(TEST_SUITE.OPEN.REPORT, { reportPath });
-      }}
-    >
-      <FileText className="mr-1 h-3 w-3" /> View Report
-    </Button>
-  );
-}
-
