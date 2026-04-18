@@ -35,7 +35,7 @@ export function RunSparkline({ results }: RunSparklineProps) {
         return (
           <Tooltip key={`${r.startedAt}-${r.durationMs}-${r.status}`}>
             <TooltipTrigger asChild>
-              <span
+              <div
                 className={`inline-block h-2.5 w-2.5 rounded-full ${color}`}
                 title={flaky ? 'Flaky' : undefined}
               />

@@ -13,6 +13,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Text,
 } from '@ui';
 
 import { RunLogDialog } from './RunLogDialog';
@@ -92,10 +93,10 @@ export function ResultsToolbar({
           <SelectContent>
             {runs.map((r) => (
               <SelectItem key={r.id} value={r.id}>
-                <span className="flex items-center gap-1.5">
+                <Text className="flex items-center gap-1.5">
                   <RunStatusDot status={r.status} />
                   {new Date(r.startedAt).toLocaleTimeString()}
-                </span>
+                </Text>
               </SelectItem>
             ))}
           </SelectContent>
