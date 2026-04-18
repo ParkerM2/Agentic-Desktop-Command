@@ -26,6 +26,52 @@ import {
 
 import { TrendChart } from './TrendChart';
 
+interface HealthScore {
+  score: number;
+  grade: string;
+  color: string;
+  breakdown: { passRate: number; stability: number; speed: number };
+}
+
+function gradeFromScore(score: number): string {
+  if (score >= 90) return 'A';
+  if (score >= 80) return 'B';
+  if (score >= 70) return 'C';
+  if (score >= 60) return 'D';
+  return 'F';
+}
+
+function colorFromScore(score: number): string {
+  if (score >= 90) return 'text-green-500';
+  if (score >= 80) return 'text-blue-500';
+  if (score >= 70) return 'text-yellow-500';
+  if (score >= 60) return 'text-orange-500';
+  return 'text-destructive';
+}
+
+function speedFromAvgSec(avgSec: number): number {
+  if (avgSec <= 5) return 30;
+  if (avgSec >= 30) return 0;
+  return Math.round(30 * (1 - (avgSec - 5) / 25));
+}
+
+function computeHealthScore(summary: {
+  passRate: number;
+  avgDurationMs: number;
+  flakyCount: number;
+  totalScripts: number;
+}): HealthScore {
+  const passRate = Math.min(40, Math.round(summary.passRate * 0.4));
+  const flakyRatio = summary.totalScripts > 0 ? summary.flakyCount / summary.totalScripts : 0;
+  const stability = Math.max(0, Math.round(30 * (1 - flakyRatio)));
+  const avgSec = summary.avgDurationMs / 1000;
+  const speed = speedFromAvgSec(avgSec);
+  const score = passRate + stability + speed;
+  const grade = gradeFromScore(score);
+  const color = colorFromScore(score);
+  return { score, grade, color, breakdown: { passRate, stability, speed } };
+}
+
 export function AnalyticsPanel() {
   const { projectId } = useLooseParams();
   const { data: summary, isLoading: summaryLoading } = useAnalyticsSummary(projectId);
@@ -60,6 +106,8 @@ export function AnalyticsPanel() {
     );
   }
 
+  const health = computeHealthScore(summary);
+
   const severityVariant = (s: string) => {
     if (s === 'high') return 'destructive' as const;
     if (s === 'medium') return 'secondary' as const;
@@ -70,6 +118,26 @@ export function AnalyticsPanel() {
     <PageContent>
       <ScrollArea className="h-full">
         <div className="space-y-6 p-6">
+          {/* Health score card */}
+          <Card>
+            <CardContent className="flex items-center gap-6 p-6">
+              <div className={`text-6xl font-bold ${health.color}`}>{health.grade}</div>
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Test Health Score</span>
+                  <span className={`text-lg font-semibold ${health.color}`}>
+                    {health.score}/100
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <ScoreBar label="Pass Rate" max={40} value={health.breakdown.passRate} />
+                  <ScoreBar label="Stability" max={30} value={health.breakdown.stability} />
+                  <ScoreBar label="Speed" max={30} value={health.breakdown.speed} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Summary cards */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <MetricCard label="Total Scripts" value={String(summary.totalScripts)} />
@@ -196,5 +264,20 @@ export function AnalyticsPanel() {
         </div>
       </ScrollArea>
     </PageContent>
+  );
+}
+
+function ScoreBar({ label, value, max }: { label: string; value: number; max: number }) {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-16 text-text-muted">{label}</span>
+      <div className="h-1.5 flex-1 rounded-full bg-border">
+        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-8 text-right text-text-muted">
+        {value}/{max}
+      </span>
+    </div>
   );
 }
