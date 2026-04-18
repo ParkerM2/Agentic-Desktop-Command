@@ -137,6 +137,11 @@ export interface TestSuiteService {
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
   saveAuthState: (projectId: string) => Promise<{ storageStatePath: string }>;
   clearAuthState: (projectId: string) => Promise<{ success: boolean }>;
+  batchRun: (input: {
+    scriptIds: string[];
+    triggeredBy: 'manual' | 'scheduled' | 'ci';
+    baseUrlOverride?: string;
+  }) => Promise<{ runIds: string[]; total: number }>;
 }
 
 export function createTestSuiteService(
@@ -380,6 +385,19 @@ const { chromium } = require('@playwright/test');
         configStore.save(projectId, { ...config, storageStatePath: undefined, updatedAt: new Date().toISOString() });
       }
       return Promise.resolve({ success: true });
+    },
+
+    async batchRun({ scriptIds, triggeredBy, baseUrlOverride }) {
+      const runIds: string[] = [];
+      for (const scriptId of scriptIds) {
+        try {
+          const result = await service.runScript({ scriptId, triggeredBy, baseUrlOverride });
+          runIds.push(result.runId);
+        } catch {
+          // Skip scripts that fail to start (missing project path, etc.)
+        }
+      }
+      return { runIds, total: scriptIds.length };
     },
   };
 

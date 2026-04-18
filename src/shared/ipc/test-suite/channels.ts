@@ -20,6 +20,7 @@ export const TEST_SUITE = domain('test-suite', {
   'DATA-RUN': ['parse', 'execute'],
   OPEN: ['report'],
   AUTH: ['save', 'clear'],
+  BATCH: ['run'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {

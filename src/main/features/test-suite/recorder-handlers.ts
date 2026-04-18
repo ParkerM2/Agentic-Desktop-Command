@@ -100,6 +100,11 @@ export interface TestSuiteService {
   db: AdcDatabase;
   saveAuthState: (projectId: string) => Promise<{ storageStatePath: string }>;
   clearAuthState: (projectId: string) => Promise<{ success: boolean }>;
+  batchRun: (input: {
+    scriptIds: string[];
+    triggeredBy: 'manual' | 'scheduled' | 'ci';
+    baseUrlOverride?: string;
+  }) => Promise<{ runIds: string[]; total: number }>;
 }
 
 // ─── Handler Registration ──────────────────────────────────────
@@ -674,5 +679,9 @@ export function registerTestSuiteHandlers(
 
   router.handle(TEST_SUITE.AUTH.CLEAR, ({ projectId }) =>
     testSuiteService.clearAuthState(projectId),
+  );
+
+  router.handle(TEST_SUITE.BATCH.RUN, (input) =>
+    testSuiteService.batchRun(input),
   );
 }
