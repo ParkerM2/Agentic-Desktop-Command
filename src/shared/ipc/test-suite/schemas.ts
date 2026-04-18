@@ -147,6 +147,7 @@ export const TestSuiteConfigSchema = z.object({
   actionTimeout: z.number().int().min(1000).default(10000),
   browsers: z.array(z.enum(['chromium', 'firefox', 'webkit'])).default(['chromium']),
   workers: z.number().int().min(1).max(16).default(1),
+  retries: z.number().int().min(0).max(5).default(1),
   environments: z.array(z.object({
     name: z.string(),
     url: z.url(),

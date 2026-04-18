@@ -47,6 +47,7 @@ export interface QaRunner {
     taskId?: string;
     screenshotDir?: string;
     workers?: number;
+    retries?: number;
     baseUrlOverride?: string;
     handlers?: RunnerEventHandlers;
   }) => string;
@@ -114,7 +115,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
   return {
-    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, workers, baseUrlOverride, handlers }) {
+    run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, workers, retries, baseUrlOverride, handlers }) {
       const runId = nanoid();
       const now = new Date().toISOString();
 
@@ -180,7 +181,8 @@ export function createRunner(db: AdcDatabase): QaRunner {
       }
 
       const numWorkers = workers ?? 1;
-      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure', '--retries=1', `--workers=${numWorkers}`];
+      const retryCount = retries ?? 1;
+      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure', `--retries=${retryCount}`, `--workers=${numWorkers}`];
       const child = spawn('npx', args, {
         cwd: projectPath,
         shell: process.platform === 'win32',

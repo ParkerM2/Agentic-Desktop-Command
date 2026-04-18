@@ -58,6 +58,7 @@ interface FormState {
   testDirectory: string;
   browsers: Array<'chromium' | 'firefox' | 'webkit'>;
   workers: number;
+  retries: number;
   environments: Array<{ name: string; url: string }>;
 }
 
@@ -72,6 +73,7 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
       testDirectory: config.testDirectory,
       browsers: config.browsers,
       workers: config.workers,
+      retries: config.retries,
       environments: config.environments,
     };
   }
@@ -84,6 +86,7 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
     testDirectory: 'test-suite/',
     browsers: ['chromium'],
     workers: 1,
+    retries: 1,
     environments: [],
   };
 }
@@ -135,6 +138,7 @@ export function ConfigEditDialog({
       actionTimeout: config?.actionTimeout ?? 10000,
       browsers: state.browsers,
       workers: state.workers,
+      retries: state.retries,
       environments: state.environments,
       activeEnvironment: config?.activeEnvironment,
       isActive: config?.isActive ?? false,
@@ -262,6 +266,19 @@ export function ConfigEditDialog({
               value={state.workers}
               onChange={(e) => update('workers', Number(e.target.value))}
             />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="config-edit-retries">Retries on Failure</Label>
+            <Input
+              id="config-edit-retries"
+              max={5}
+              min={0}
+              type="number"
+              value={state.retries}
+              onChange={(e) => update('retries', Number(e.target.value))}
+            />
+            <p className="text-xs text-text-muted">Number of times to retry a failed test (0 = no retries)</p>
           </div>
 
           <div className="flex flex-col gap-2">

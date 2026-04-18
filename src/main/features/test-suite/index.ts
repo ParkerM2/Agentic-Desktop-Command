@@ -254,6 +254,7 @@ export function createTestSuiteService(
       const testDir = config?.testDirectory ?? 'tests/e2e';
       const screenshotMode = config?.screenshotMode ?? 'manual';
       const workers = config?.workers ?? 1;
+      const retries = config?.retries ?? 1;
       let screenshotDir: string | undefined;
 
       if (screenshotMode !== 'manual') {
@@ -274,6 +275,7 @@ export function createTestSuiteService(
         triggeredBy,
         screenshotDir,
         workers,
+        retries,
         baseUrlOverride,
         handlers: sharedHandlers,
       });
