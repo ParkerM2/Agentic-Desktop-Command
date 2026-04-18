@@ -7,7 +7,8 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -26,6 +27,9 @@ export interface QaRunRecord {
   outputLines: string[];
   screenshots: string[];
   error?: string;
+  stepsPassed: number;
+  stepsFailed: number;
+  durationMs: number;
 }
 
 export interface RunnerEventHandlers {
@@ -67,7 +71,41 @@ function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
     outputLines: parsed?.outputLines ?? [],
     screenshots: parsed?.screenshots ?? [],
     error: parsed?.error,
+    stepsPassed: row.stepsPassed,
+    stepsFailed: row.stepsFailed,
+    durationMs: row.durationMs,
   };
+}
+
+interface PreflightResult {
+  ok: boolean;
+  errors: string[];
+}
+
+function preflight(filePath: string, projectPath: string): PreflightResult {
+  const errors: string[] = [];
+
+  // 1. Check spec file exists (may be absolute or relative to projectPath)
+  const absolutePath = filePath ? join(projectPath, filePath) : '';
+  if (!filePath || (!existsSync(absolutePath) && !existsSync(filePath))) {
+    errors.push(`Spec file not found: ${filePath || '(empty path)'}`);
+  }
+
+  // 2. Check Playwright is installed in the project
+  const pwPath = join(projectPath, 'node_modules', '@playwright', 'test');
+  if (!existsSync(pwPath)) {
+    errors.push('Playwright is not installed. Run: npm install -D @playwright/test');
+  }
+
+  // 3. Best-effort check for Playwright browsers
+  const homeDir = process.env.USERPROFILE ?? process.env.HOME ?? '';
+  const globalCacheDir = join(homeDir, '.cache', 'ms-playwright');
+  const localCacheDir = join(projectPath, 'node_modules', '.cache', 'ms-playwright');
+  if (!existsSync(globalCacheDir) && !existsSync(localCacheDir)) {
+    errors.push('Playwright browsers may not be installed. Run: npx playwright install');
+  }
+
+  return { ok: errors.length === 0, errors };
 }
 
 export function createRunner(db: AdcDatabase): QaRunner {
@@ -95,6 +133,43 @@ export function createRunner(db: AdcDatabase): QaRunner {
         report: null,
       }).run();
 
+      // ── Pre-flight checks ──────────────────────────────────
+      const check = preflight(filePath, projectPath);
+      if (!check.ok) {
+        const completedAt = new Date().toISOString();
+        const output = JSON.stringify({
+          outputLines: check.errors,
+          screenshots: [],
+          error: check.errors.join('; '),
+        });
+
+        db.update(testSuiteRuns).set({
+          status: 'failed',
+          completedAt,
+          durationMs: 0,
+          stepsFailed: check.errors.length,
+          output,
+        }).where(eq(testSuiteRuns.id, runId)).run();
+
+        const record: QaRunRecord = {
+          id: runId,
+          scriptId,
+          status: 'failed',
+          triggeredBy,
+          startedAt: now,
+          completedAt,
+          outputLines: check.errors,
+          screenshots: [],
+          error: check.errors.join('; '),
+          stepsPassed: 0,
+          stepsFailed: check.errors.length,
+          durationMs: 0,
+        };
+
+        handlers?.onComplete?.(runId, 'failed', record);
+        return runId;
+      }
+
       const outputLines: string[] = [];
       const screenshots: string[] = [];
 
@@ -102,7 +177,8 @@ export function createRunner(db: AdcDatabase): QaRunner {
         mkdirSync(screenshotDir, { recursive: true });
       }
 
-      const child = spawn('npx', ['playwright', 'test', filePath, '--reporter=line'], {
+      const args = ['playwright', 'test', filePath, '--reporter=json', '--screenshot=only-on-failure'];
+      const child = spawn('npx', args, {
         cwd: projectPath,
         shell: process.platform === 'win32',
         env: { ...process.env, ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}) },
@@ -137,11 +213,32 @@ export function createRunner(db: AdcDatabase): QaRunner {
 
         const startMs = new Date(now).getTime();
         const endMs = new Date(completedAt).getTime();
+
+        // ── Parse JSON reporter output for step-level counts ──
+        let stepsPassed = 0;
+        let stepsFailed = 0;
+        const fullOutput = outputLines.join('\n');
+        try {
+          const jsonResult = JSON.parse(fullOutput) as {
+            stats?: { expected?: number; unexpected?: number; flaky?: number };
+          };
+          if (jsonResult.stats) {
+            stepsPassed = jsonResult.stats.expected ?? 0;
+            stepsFailed = (jsonResult.stats.unexpected ?? 0) + (jsonResult.stats.flaky ?? 0);
+          }
+        } catch {
+          // JSON parse failed — Playwright may have crashed or produced non-JSON output
+          stepsPassed = code === 0 ? 1 : 0;
+          stepsFailed = code === 0 ? 0 : 1;
+        }
+
         const output = JSON.stringify({ outputLines, screenshots });
         db.update(testSuiteRuns).set({
           status,
           completedAt,
           durationMs: endMs - startMs,
+          stepsPassed,
+          stepsFailed,
           output,
         }).where(eq(testSuiteRuns.id, runId)).run();
 
@@ -154,6 +251,9 @@ export function createRunner(db: AdcDatabase): QaRunner {
           completedAt,
           outputLines,
           screenshots,
+          stepsPassed,
+          stepsFailed,
+          durationMs: endMs - startMs,
         };
 
         handlers?.onComplete?.(runId, status, record);
@@ -170,6 +270,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
           status: 'failed',
           completedAt,
           durationMs: endMs - startMs,
+          stepsFailed: 1,
           output,
         }).where(eq(testSuiteRuns.id, runId)).run();
 
@@ -183,6 +284,9 @@ export function createRunner(db: AdcDatabase): QaRunner {
           outputLines,
           screenshots,
           error: err.message,
+          stepsPassed: 0,
+          stepsFailed: 1,
+          durationMs: endMs - startMs,
         };
 
         handlers?.onComplete?.(runId, 'failed', record);

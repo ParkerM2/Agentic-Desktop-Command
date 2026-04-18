@@ -22,6 +22,8 @@ export function buildDefaultConfig(): TestSuiteConfig {
     screenshotMode: DEFAULT_CONFIG_SCREENSHOT_MODE,
     testDirectory: DEFAULT_CONFIG_TEST_DIRECTORY,
     saveScreenshotsToTemp: false,
+    navigationTimeout: 30000,
+    actionTimeout: 10000,
     isActive: true,
     createdAt: now,
     updatedAt: now,

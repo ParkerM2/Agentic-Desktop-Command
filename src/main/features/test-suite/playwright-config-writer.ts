@@ -12,7 +12,11 @@ export function ensurePlaywrightConfig(params: {
   projectRoot: string;
   testDir: string;
   baseUrl: string;
+  navigationTimeout?: number;
+  actionTimeout?: number;
 }): string {
+  const navigationTimeout = params.navigationTimeout ?? 30000;
+  const actionTimeout = params.actionTimeout ?? 10000;
   const configPath = path.join(params.projectRoot, 'playwright.config.ts');
 
   if (existsSync(configPath)) {
@@ -23,8 +27,10 @@ export function ensurePlaywrightConfig(params: {
 
 export default defineConfig({
   testDir: '${escape(params.testDir)}',
+  timeout: ${navigationTimeout},
   use: {
     baseURL: '${escape(params.baseUrl)}',
+    actionTimeout: ${actionTimeout},
     trace: 'on-first-retry',
   },
 });

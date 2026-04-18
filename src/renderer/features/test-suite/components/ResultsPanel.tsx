@@ -1,12 +1,32 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { AlertTriangle, Play } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  ListPlus,
+  Play,
+  XCircle,
+  Zap,
+} from 'lucide-react';
 
+import {
+  useCreateProgressTask,
+  useCreatePlan,
+  useRunWorkflow,
+  useSpinUpTeam,
+  useStartResearch,
+} from '@renderer/features/tasks/api/useProgressMutations';
 import { useLooseParams } from '@renderer/shared/hooks';
 
 import {
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   PageContent,
   Select,
   SelectContent,
@@ -15,6 +35,7 @@ import {
   SelectValue,
 } from '@ui';
 
+import { useAttachRunToTask } from '../api/useAttachRunToTask';
 import { useRun, useRunScript } from '../api/useRuns';
 import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
@@ -22,7 +43,14 @@ import { useRunOutput } from '../hooks/useRunOutput';
 import { useRunSteps } from '../hooks/useRunSteps';
 import { useTestSuiteStore } from '../test-suite-store';
 
+import { RunLogDialog } from './RunLogDialog';
 import { StepTimeline } from './StepTimeline';
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const secs = (ms / 1000).toFixed(1);
+  return `${secs}s`;
+}
 
 function getOutputLineClass(line: string): string {
   if (line.includes('\u2713') || line.includes('passed')) return 'text-green-500';
@@ -61,6 +89,20 @@ export function ResultsPanel() {
 
   const runScript = useRunScript();
   const outputRef = useRef<HTMLDivElement>(null);
+
+  // Task/workflow action state
+  const [createdTaskSlug, setCreatedTaskSlug] = useState<string | null>(null);
+  const createTask = useCreateProgressTask();
+  const attachRunToTask = useAttachRunToTask();
+  const runWorkflow = useRunWorkflow();
+  const startResearch = useStartResearch();
+  const createPlan = useCreatePlan();
+  const spinUpTeam = useSpinUpTeam();
+
+  // Reset createdTaskSlug when the selected run changes
+  useEffect(() => {
+    setCreatedTaskSlug(null);
+  }, [activeRunId]);
 
   // Merge live + stored output: prefer live lines if any, else fall back to stored
   const displayLines = useMemo(() => {
@@ -112,6 +154,30 @@ export function ResultsPanel() {
     }
   };
 
+  const handleCreateTask = () => {
+    if (!activeScript || !runRecord) return;
+    const title = `Fix: ${activeScript.name} test failure`;
+    const errorLines = runRecord.outputLines
+      .filter((l) => l.includes('Error') || l.includes('\u2717'))
+      .join('\n');
+    const errorSummary =
+      runRecord.error
+      ?? (errorLines.length > 0 ? errorLines : 'Test failed — see run output for details');
+    const description = `## Test Failure\n\n**Script:** ${activeScript.name}\n**Status:** ${runRecord.status}\n**Steps passed:** ${runRecord.stepsPassed}\n**Steps failed:** ${runRecord.stepsFailed}\n\n### Error Output\n\n\`\`\`\n${errorSummary}\n\`\`\``;
+
+    createTask.mutate(
+      { title, description, priority: 'high', projectId },
+      {
+        onSuccess: (task) => {
+          setCreatedTaskSlug(task.slug);
+          if (activeRunId) {
+            attachRunToTask.mutate({ runId: activeRunId, taskId: task.slug });
+          }
+        },
+      },
+    );
+  };
+
   return (
     <PageContent className="flex h-full flex-col overflow-hidden p-1">
       <div className="flex h-full flex-col overflow-hidden rounded-md border border-border">
@@ -159,12 +225,90 @@ export function ResultsPanel() {
 
         <StatusBadgeForRun status={runStatus} />
 
+        <RunLogDialog
+          lines={displayLines}
+          runRecord={runRecord ?? null}
+          scriptName={activeScript?.name}
+        />
+
         {runRecord?.error ? (
           <Badge className="ml-auto" variant="destructive">
             <AlertTriangle className="mr-1 h-3 w-3" /> Error
           </Badge>
         ) : null}
       </div>
+
+      {/* Run summary bar */}
+      {runRecord && runRecord.status !== 'running' ? (
+        <div className="flex items-center gap-4 border-b border-border bg-bg-surface px-4 py-1.5 text-xs">
+          <span className="flex items-center gap-1">
+            <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            {runRecord.stepsPassed} passed
+          </span>
+          <span className="flex items-center gap-1">
+            <XCircle className="h-3.5 w-3.5 text-destructive" />
+            {runRecord.stepsFailed} failed
+          </span>
+          <span className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5 text-text-muted" />
+            {formatDuration(runRecord.durationMs)}
+          </span>
+          {runRecord.status === 'failed' && (
+            <div className="ml-auto flex items-center gap-2">
+              {createdTaskSlug ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Zap className="mr-1 h-3 w-3" /> Start Workflow
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        runWorkflow.mutate({ slug: createdTaskSlug })
+                      }
+                    >
+                      Full Pipeline (Research → Plan → Team)
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        startResearch.mutate({ slug: createdTaskSlug })
+                      }
+                    >
+                      Research Only
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        createPlan.mutate({ slug: createdTaskSlug })
+                      }
+                    >
+                      Plan Only
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() =>
+                        spinUpTeam.mutate({ slug: createdTaskSlug })
+                      }
+                    >
+                      Team Only
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  disabled={createTask.isPending}
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCreateTask}
+                >
+                  <ListPlus className="mr-1 h-3 w-3" />
+                  {createTask.isPending ? 'Creating...' : 'Create Task'}
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {/* Content split */}
       <div className="flex flex-1 min-h-0">
@@ -217,7 +361,7 @@ function StatusDot({ status }: { status: string }) {
 
 function stepToLabel(step: { type: string; [key: string]: unknown }): string {
   switch (step.type) {
-    case 'navigate': return `Navigate → ${step.url as string}`;
+    case 'navigate': return `Navigate \u2192 ${step.url as string}`;
     case 'click': return `Click ${step.selector as string}`;
     case 'fill': return `Fill ${step.selector as string}`;
     case 'select': return `Select ${step.selector as string}`;

@@ -110,6 +110,9 @@ export const QaRunSchema = z.object({
   outputLines: z.array(z.string()),
   screenshots: z.array(z.string()),
   error: z.string().optional(),
+  stepsPassed: z.number().int().default(0),
+  stepsFailed: z.number().int().default(0),
+  durationMs: z.number().int().default(0),
 });
 
 // ─── Report ───────────────────────────────────────────────────
@@ -139,6 +142,8 @@ export const TestSuiteConfigSchema = z.object({
   screenshotMode: z.enum(['smart', 'per-click', 'per-nav', 'per-form', 'per-assertion', 'manual']),
   testDirectory: z.string(),
   saveScreenshotsToTemp: z.boolean(),
+  navigationTimeout: z.number().int().min(1000).default(30000),
+  actionTimeout: z.number().int().min(1000).default(10000),
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),

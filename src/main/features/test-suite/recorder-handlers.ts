@@ -21,7 +21,7 @@ import type {
   QaRunStatusSchema,
 } from '@shared/ipc/test-suite/schemas';
 
-import { parseDataFile } from './data-runner';
+import { parseDataFile, substituteDataInSteps } from './data-runner';
 import { compareScreenshots } from './diff-engine';
 import { ensurePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
@@ -69,7 +69,7 @@ export interface TestSuiteRunEvent {
 export interface TestSuiteService {
   listScripts: () => Promise<unknown[]>;
   listScriptsByProject: (projectId: string) => Promise<unknown[]>;
-  getScript: (id: string) => Promise<{ filePath?: string } | null>;
+  getScript: (id: string) => Promise<{ filePath?: string; steps: unknown[]; targetUrl: string; name: string; projectId: string } | null>;
   saveScript: (input: {
     id?: string;
     projectId: string;
@@ -79,7 +79,7 @@ export interface TestSuiteService {
     filePath?: string;
   }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
-  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger' }) => Promise<{ runId: string }>;
+  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger'; filePathOverride?: string }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRun | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
@@ -169,9 +169,17 @@ export function registerTestSuiteHandlers(
         baseUrl,
         steps,
         screenshotMode: config.screenshotMode,
+        navigationTimeout: config.navigationTimeout,
+        actionTimeout: config.actionTimeout,
       });
 
-      ensurePlaywrightConfig({ projectRoot: projectPath, testDir, baseUrl });
+      ensurePlaywrightConfig({
+        projectRoot: projectPath,
+        testDir,
+        baseUrl,
+        navigationTimeout: config.navigationTimeout,
+        actionTimeout: config.actionTimeout,
+      });
       writeTestSuiteReadme({ projectRoot: projectPath, testDir });
       writeTestSuiteGitignore({ projectRoot: projectPath, testDir });
     }
@@ -604,12 +612,40 @@ export function registerTestSuiteHandlers(
 
   router.handle(TEST_SUITE['DATA-RUN'].EXECUTE, async ({ scriptId, dataFilePath }) => {
     const rows = parseDataFile(dataFilePath);
+    const script = await testSuiteService.getScript(scriptId);
+    if (!script) throw new Error(`Script not found: ${scriptId}`);
+
+    const projectPath = testSuiteService.getProjectPath(script.projectId);
+    if (!projectPath) throw new Error(`Project path not found for projectId: ${script.projectId}`);
+
+    const config = testSuiteService.configStore.getActive(script.projectId);
+    const testDir = config?.testDirectory ?? 'tests/e2e';
     const runIds: string[] = [];
 
-    for (const _row of rows) {
+    for (const [rowIndex, row] of rows.entries()) {
+      // Substitute {{key}} placeholders in fill-step values
+      const substitutedSteps = substituteDataInSteps(
+        script.steps as Array<{ type: string; value?: string } & Record<string, unknown>>,
+        row,
+      );
+
+      // Write a temporary spec file with the substituted steps
+      const tempFilePath = writeSpecFile({
+        projectRoot: projectPath,
+        testDir,
+        name: `${script.name}-data-${rowIndex}`,
+        baseUrl: script.targetUrl,
+        steps: substitutedSteps as TestSuiteStep[],
+        screenshotMode: config?.screenshotMode,
+        navigationTimeout: config?.navigationTimeout,
+        actionTimeout: config?.actionTimeout,
+      });
+
+      // Run the test using the substituted temp spec
       const { runId } = await testSuiteService.runScript({
         scriptId,
         triggeredBy: 'manual',
+        filePathOverride: tempFilePath,
       });
       runIds.push(runId);
     }

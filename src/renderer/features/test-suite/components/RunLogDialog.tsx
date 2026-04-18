@@ -1,0 +1,130 @@
+/**
+ * RunLogDialog — Full-screen dialog for inspecting test run output in detail.
+ *
+ * Shows run summary stats, error banner, and scrollable log output
+ * with syntax-highlighted lines (pass/fail coloring).
+ */
+
+import { useState } from 'react';
+
+import { CheckCircle2, Clock, Copy, Maximize2, XCircle } from 'lucide-react';
+
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  ScrollArea,
+} from '@ui';
+
+interface RunLogDialogProps {
+  lines: Array<{ line: string; timestamp: string }>;
+  runRecord: {
+    status: string;
+    stepsPassed?: number;
+    stepsFailed?: number;
+    durationMs?: number;
+    error?: string;
+  } | null;
+  scriptName?: string;
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  const secs = (ms / 1000).toFixed(1);
+  return `${secs}s`;
+}
+
+function getLogLineClass(line: string): string {
+  if (line.includes('\u2713') || line.includes('passed')) return 'text-green-500';
+  if (line.includes('\u2717') || line.includes('Error') || line.includes('error'))
+    return 'text-destructive';
+  return 'text-text-muted';
+}
+
+export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    const text = lines.map((l) => l.line).join('\n');
+    void navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="sm" title="Full output" variant="ghost">
+          <Maximize2 className="h-3 w-3" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="flex h-[80vh] max-w-4xl flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {scriptName ?? 'Test'} — Run Output
+            {runRecord?.status === 'passed' && (
+              <Badge variant="success">Passed</Badge>
+            )}
+            {runRecord?.status === 'failed' && (
+              <Badge variant="destructive">Failed</Badge>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Summary stats */}
+        {runRecord ? (
+          <div className="flex items-center gap-4 border-b pb-2 text-xs text-text-muted">
+            <span className="flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+              {runRecord.stepsPassed ?? 0} passed
+            </span>
+            <span className="flex items-center gap-1">
+              <XCircle className="h-3.5 w-3.5 text-destructive" />
+              {runRecord.stepsFailed ?? 0} failed
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              {formatDuration(runRecord.durationMs ?? 0)}
+            </span>
+            <Button
+              className="ml-auto"
+              size="sm"
+              variant="ghost"
+              onClick={handleCopy}
+            >
+              {copied ? (
+                'Copied!'
+              ) : (
+                <>
+                  <Copy className="mr-1 h-3 w-3" /> Copy
+                </>
+              )}
+            </Button>
+          </div>
+        ) : null}
+
+        {/* Error banner */}
+        {runRecord?.error ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            {runRecord.error}
+          </div>
+        ) : null}
+
+        {/* Log output */}
+        <ScrollArea className="min-h-0 flex-1">
+          <pre className="whitespace-pre-wrap p-4 font-mono text-xs">
+            {lines.map((l) => (
+              <div key={l.timestamp} className={getLogLineClass(l.line)}>
+                {l.line}
+              </div>
+            ))}
+          </pre>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
