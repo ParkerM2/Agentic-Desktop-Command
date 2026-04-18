@@ -315,6 +315,10 @@ export const testSuiteInvoke = {
       totalRows: z.number(),
     }),
   },
+  [TEST_SUITE.OPEN.REPORT]: {
+    input: z.object({ reportPath: z.string() }),
+    output: z.object({ success: z.boolean() }),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────

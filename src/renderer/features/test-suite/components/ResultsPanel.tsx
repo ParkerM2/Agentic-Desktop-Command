@@ -4,11 +4,14 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  FileText,
   ListPlus,
   Play,
   XCircle,
   Zap,
 } from 'lucide-react';
+
+import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import {
   useCreateProgressTask,
@@ -18,6 +21,7 @@ import {
   useStartResearch,
 } from '@renderer/features/tasks/api/useProgressMutations';
 import { useLooseParams } from '@renderer/shared/hooks';
+import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
   Badge,
@@ -273,6 +277,9 @@ export function ResultsPanel() {
             <Clock className="h-3.5 w-3.5 text-text-muted" />
             {formatDuration(runRecord.durationMs)}
           </span>
+          {runRecord.reportPath ? (
+            <ViewReportButton reportPath={runRecord.reportPath} />
+          ) : null}
           {runRecord.status === 'failed' && (
             <div className="ml-auto flex items-center gap-2">
               {createdTaskSlug ? (
@@ -377,6 +384,20 @@ const STATUS_DOT_COLORS: Record<string, string> = {
 function StatusDot({ status }: { status: string }) {
   const color = STATUS_DOT_COLORS[status] ?? 'bg-muted-foreground';
   return <span className={`inline-block h-2 w-2 rounded-full ${color}`} />;
+}
+
+function ViewReportButton({ reportPath }: { reportPath: string }) {
+  return (
+    <Button
+      size="sm"
+      variant="ghost"
+      onClick={() => {
+        void ipc(TEST_SUITE.OPEN.REPORT, { reportPath });
+      }}
+    >
+      <FileText className="mr-1 h-3 w-3" /> View Report
+    </Button>
+  );
 }
 
 function stepToLabel(step: { type: string; [key: string]: unknown }): string {

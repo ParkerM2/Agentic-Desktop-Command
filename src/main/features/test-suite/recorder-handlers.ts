@@ -655,4 +655,11 @@ export function registerTestSuiteHandlers(
 
     return { runIds, totalRows: rows.length };
   });
+
+  // ── Open report handler ────────────────────────────────────────
+
+  router.handle(TEST_SUITE.OPEN.REPORT, async ({ reportPath }) => {
+    await shell.openPath(reportPath);
+    return { success: true };
+  });
 }
