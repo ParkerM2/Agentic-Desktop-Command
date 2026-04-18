@@ -13,6 +13,11 @@ export interface RecordedStep {
   timestamp: string;
 }
 
+export interface OutputLine {
+  id: number;
+  text: string;
+}
+
 interface TestSuiteUiState {
   activeTab: TestSuiteTab;
   selectedScriptId: string | null;
@@ -21,17 +26,34 @@ interface TestSuiteUiState {
   recordedSteps: RecordedStep[];
   shortcutHelpOpen: boolean;
   libraryStatusFilter: StatusFilter;
+
+  // Ephemeral run-output state (not persisted)
+  isRunning: boolean;
+  activeRunId: string | null;
+  outputLines: OutputLine[];
+  _lineCounter: number;
+
   setActiveTab: (tab: TestSuiteTab) => void;
   setSelectedScriptId: (id: string | null) => void;
+  /** Alias for setSelectedScriptId — back-compat with old store consumers */
+  selectScript: (id: string | null) => void;
   setSelectedRunId: (id: string | null) => void;
   setRecordingActive: (active: boolean) => void;
   addStep: (step: RecordedStep) => void;
+  /** Append a raw TestSuiteStep captured from the webview preload */
+  appendRawStep: (step: TestSuiteStep) => void;
   removeStep: (stepIndex: number) => void;
   reorderSteps: (fromIndex: number, toIndex: number) => void;
   updateStep: (stepIndex: number, step: TestSuiteStep) => void;
   clearSteps: () => void;
   setShortcutHelpOpen: (open: boolean) => void;
   setLibraryStatusFilter: (filter: StatusFilter) => void;
+
+  // Run output actions
+  setRunning: (running: boolean) => void;
+  setActiveRunId: (runId: string | null) => void;
+  appendOutputLine: (line: string) => void;
+  clearOutputLines: () => void;
 }
 
 export const useTestSuiteStore = create<TestSuiteUiState>()(
@@ -44,10 +66,20 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       recordedSteps: [],
       shortcutHelpOpen: false,
       libraryStatusFilter: 'all' as StatusFilter,
+
+      // Ephemeral run-output state
+      isRunning: false,
+      activeRunId: null,
+      outputLines: [],
+      _lineCounter: 0,
+
       setActiveTab: (activeTab) => {
         set({ activeTab });
       },
       setSelectedScriptId: (selectedScriptId) => {
+        set({ selectedScriptId });
+      },
+      selectScript: (selectedScriptId) => {
         set({ selectedScriptId });
       },
       setSelectedRunId: (selectedRunId) => {
@@ -58,6 +90,13 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       addStep: (step) => {
         set((s) => ({ recordedSteps: [...s.recordedSteps, step] }));
+      },
+      appendRawStep: (step) => {
+        set((s) => {
+          const stepIndex = s.recordedSteps.length;
+          const recorded: RecordedStep = { stepIndex, step, timestamp: new Date().toISOString() };
+          return { recordedSteps: [...s.recordedSteps, recorded] };
+        });
       },
       removeStep: (stepIndex) => {
         set((state) => ({
@@ -92,6 +131,23 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       setLibraryStatusFilter: (libraryStatusFilter) => {
         set({ libraryStatusFilter });
+      },
+
+      // Run output actions
+      setRunning: (isRunning) => {
+        set({ isRunning });
+      },
+      setActiveRunId: (activeRunId) => {
+        set({ activeRunId });
+      },
+      appendOutputLine: (line) => {
+        set((s) => ({
+          outputLines: [...s.outputLines, { id: s._lineCounter, text: line }],
+          _lineCounter: s._lineCounter + 1,
+        }));
+      },
+      clearOutputLines: () => {
+        set({ outputLines: [], _lineCounter: 0 });
       },
     }),
     {

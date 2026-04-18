@@ -11,7 +11,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import { Card, CardContent } from '@ui';
 
-import { useTestSuiteStore } from '../store';
+import { useTestSuiteStore } from '../test-suite-store';
 
 // Electron's webview tag is not in the standard React/HTML JSX namespace.
 // We use a loose ref type and cast at call sites.
@@ -26,8 +26,8 @@ interface WebviewPanelProps {
 }
 
 export function WebviewPanel({ initialUrl = 'about:blank', preloadPath }: WebviewPanelProps) {
-  const isRecording = useTestSuiteStore((s) => s.isRecording);
-  const appendStep = useTestSuiteStore((s) => s.appendStep);
+  const isRecording = useTestSuiteStore((s) => s.recordingActive);
+  const appendRawStep = useTestSuiteStore((s) => s.appendRawStep);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const webviewRef = useRef<any>(null);
 
@@ -39,7 +39,7 @@ export function WebviewPanel({ initialUrl = 'about:blank', preloadPath }: Webvie
     const handleIpcMessage = (event: Electron.IpcMessageEvent) => {
       if (event.channel === 'test-suite:step') {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        appendStep(event.args[0]);
+        appendRawStep(event.args[0]);
       }
     };
 
@@ -47,7 +47,7 @@ export function WebviewPanel({ initialUrl = 'about:blank', preloadPath }: Webvie
     return () => {
       webview.removeEventListener('ipc-message', handleIpcMessage);
     };
-  }, [appendStep]);
+  }, [appendRawStep]);
 
   return (
     <Card

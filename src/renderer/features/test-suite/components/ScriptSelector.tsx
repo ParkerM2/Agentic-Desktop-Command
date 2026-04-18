@@ -17,7 +17,7 @@ import {
 } from '@ui';
 
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
-import { useTestSuiteStore } from '../store';
+import { useTestSuiteStore } from '../test-suite-store';
 
 export function ScriptSelector() {
   const { projectId } = useLooseParams();
