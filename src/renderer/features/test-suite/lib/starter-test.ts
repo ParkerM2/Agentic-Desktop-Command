@@ -29,6 +29,7 @@ export function buildDefaultConfig(): TestSuiteConfig {
     retries: 1,
     environments: [],
     activeEnvironment: undefined,
+    storageStatePath: undefined,
     isActive: true,
     createdAt: now,
     updatedAt: now,

@@ -19,6 +19,7 @@ export const TEST_SUITE = domain('test-suite', {
   SCHEDULE: ['list', 'get', 'create', 'update', 'delete', 'trigger-now'],
   'DATA-RUN': ['parse', 'execute'],
   OPEN: ['report'],
+  AUTH: ['save', 'clear'],
 });
 
 export const TEST_SUITE_EVENTS = events('test-suite', {

@@ -11,8 +11,10 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
+import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { useSaveTestSuiteConfig } from '@renderer/features/test-suite/api/useSaveTestSuiteConfig';
+import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
   Button,
@@ -141,6 +143,7 @@ export function ConfigEditDialog({
       retries: state.retries,
       environments: state.environments,
       activeEnvironment: config?.activeEnvironment,
+      storageStatePath: config?.storageStatePath,
       isActive: config?.isActive ?? false,
       createdAt: config?.createdAt ?? now,
       updatedAt: now,
@@ -326,6 +329,41 @@ export function ConfigEditDialog({
             >
               <Plus className="h-3 w-3 mr-1" /> Add Environment
             </Button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Auth State (storageState)</Label>
+            {config?.storageStatePath ? (
+              <div className="flex items-center gap-2">
+                <span className="flex-1 truncate rounded-md border border-border bg-bg-surface px-3 py-1.5 text-xs">
+                  {config.storageStatePath}
+                </span>
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    void ipc(TEST_SUITE.AUTH.CLEAR, { projectId });
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  void ipc(TEST_SUITE.AUTH.SAVE, { projectId });
+                }}
+              >
+                Capture Auth State
+              </Button>
+            )}
+            <p className="text-xs text-text-muted">
+              Saves browser cookies and localStorage for authenticated test runs.
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">

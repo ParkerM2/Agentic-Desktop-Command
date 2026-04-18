@@ -319,6 +319,14 @@ export const testSuiteInvoke = {
     input: z.object({ reportPath: z.string() }),
     output: z.object({ success: z.boolean() }),
   },
+  [TEST_SUITE.AUTH.SAVE]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.object({ storageStatePath: z.string() }),
+  },
+  [TEST_SUITE.AUTH.CLEAR]: {
+    input: z.object({ projectId: z.string() }),
+    output: SuccessResponseSchema,
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────

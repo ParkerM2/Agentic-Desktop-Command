@@ -5,6 +5,8 @@
  * satisfies the IPC handler interface expected by recorder-handlers.ts.
  */
 
+import { execSync } from 'node:child_process';
+import { mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import type { BrowserWindow } from 'electron';
@@ -133,6 +135,8 @@ export interface TestSuiteService {
   }) => Promise<{ issueUrl: string }>;
   attachRunToTask: (runId: string, taskId: string) => Promise<{ success: boolean }>;
   onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
+  saveAuthState: (projectId: string) => Promise<{ storageStatePath: string }>;
+  clearAuthState: (projectId: string) => Promise<{ success: boolean }>;
 }
 
 export function createTestSuiteService(
@@ -327,6 +331,55 @@ export function createTestSuiteService(
 
     onRunEvent(listener) {
       runEventListeners.push(listener);
+    },
+
+    saveAuthState(projectId) {
+      const projectPath = deps.getProjectPath(projectId);
+      if (!projectPath) return Promise.reject(new Error(`Project path not found: ${projectId}`));
+      const config = configStore.getActive(projectId);
+      const testDir = config?.testDirectory ?? 'tests/e2e';
+      const baseUrl = config?.targetUrl ?? 'http://localhost:3000';
+      const statePath = path.join(projectPath, testDir, '.auth', 'state.json');
+
+      mkdirSync(path.dirname(statePath), { recursive: true });
+
+      const escapedStatePath = statePath.replaceAll('\\', '\\\\');
+      const captureScript = `
+const { chromium } = require('@playwright/test');
+(async () => {
+  const browser = await chromium.launch();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto('${baseUrl}');
+  await page.waitForTimeout(2000);
+  await context.storageState({ path: '${escapedStatePath}' });
+  await browser.close();
+})();
+`;
+      const tmpScript = path.join(projectPath, testDir, '.auth', '_capture.js');
+      writeFileSync(tmpScript, captureScript, 'utf8');
+      try {
+        execSync(`node "${tmpScript}"`, { cwd: projectPath, timeout: 30000 });
+      } finally {
+        try { unlinkSync(tmpScript); } catch { /* ignore */ }
+      }
+
+      if (config) {
+        configStore.save(projectId, { ...config, storageStatePath: statePath, updatedAt: new Date().toISOString() });
+      }
+
+      return Promise.resolve({ storageStatePath: statePath });
+    },
+
+    clearAuthState(projectId) {
+      const projectPath = deps.getProjectPath(projectId);
+      if (!projectPath) return Promise.reject(new Error(`Project path not found: ${projectId}`));
+      const config = configStore.getActive(projectId);
+      if (config?.storageStatePath) {
+        try { unlinkSync(config.storageStatePath); } catch { /* ignore */ }
+        configStore.save(projectId, { ...config, storageStatePath: undefined, updatedAt: new Date().toISOString() });
+      }
+      return Promise.resolve({ success: true });
     },
   };
 
