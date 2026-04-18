@@ -23,7 +23,7 @@ import type {
 
 import { parseDataFile, substituteDataInSteps } from './data-runner';
 import { compareScreenshots } from './diff-engine';
-import { ensurePlaywrightConfig } from './playwright-config-writer';
+import { writePlaywrightConfig } from './playwright-config-writer';
 import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
 import { testSuiteDiffs } from './schema-baselines';
 import { writeSpecFile } from './script-writer';
@@ -76,10 +76,11 @@ export interface TestSuiteService {
     name: string;
     description?: string;
     steps: TestSuiteStep[];
+    tags?: string[];
     filePath?: string;
   }) => Promise<unknown>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
-  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger'; filePathOverride?: string }) => Promise<{ runId: string }>;
+  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger'; filePathOverride?: string; baseUrlOverride?: string }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRun | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
   exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
@@ -173,12 +174,14 @@ export function registerTestSuiteHandlers(
         actionTimeout: config.actionTimeout,
       });
 
-      ensurePlaywrightConfig({
+      writePlaywrightConfig({
         projectRoot: projectPath,
         testDir,
         baseUrl,
         navigationTimeout: config.navigationTimeout,
         actionTimeout: config.actionTimeout,
+        browsers: config.browsers,
+        workers: config.workers,
       });
       writeTestSuiteReadme({ projectRoot: projectPath, testDir });
       writeTestSuiteGitignore({ projectRoot: projectPath, testDir });

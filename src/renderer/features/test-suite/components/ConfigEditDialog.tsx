@@ -8,12 +8,15 @@
 
 import { useEffect, useState } from 'react';
 
+import { Plus, Trash2 } from 'lucide-react';
+
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 
 import { useSaveTestSuiteConfig } from '@renderer/features/test-suite/api/useSaveTestSuiteConfig';
 
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogFooter,
@@ -53,6 +56,9 @@ interface FormState {
   viewportHeight: number;
   screenshotMode: ScreenshotMode;
   testDirectory: string;
+  browsers: Array<'chromium' | 'firefox' | 'webkit'>;
+  workers: number;
+  environments: Array<{ name: string; url: string }>;
 }
 
 function defaultsFor(config: TestSuiteConfig | null): FormState {
@@ -64,6 +70,9 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
       viewportHeight: config.viewportHeight,
       screenshotMode: config.screenshotMode,
       testDirectory: config.testDirectory,
+      browsers: config.browsers,
+      workers: config.workers,
+      environments: config.environments,
     };
   }
   return {
@@ -73,6 +82,9 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
     viewportHeight: 720,
     screenshotMode: 'smart',
     testDirectory: 'test-suite/',
+    browsers: ['chromium'],
+    workers: 1,
+    environments: [],
   };
 }
 
@@ -121,6 +133,10 @@ export function ConfigEditDialog({
       saveScreenshotsToTemp: config?.saveScreenshotsToTemp ?? false,
       navigationTimeout: config?.navigationTimeout ?? 30000,
       actionTimeout: config?.actionTimeout ?? 10000,
+      browsers: state.browsers,
+      workers: state.workers,
+      environments: state.environments,
+      activeEnvironment: config?.activeEnvironment,
       isActive: config?.isActive ?? false,
       createdAt: config?.createdAt ?? now,
       updatedAt: now,
@@ -216,6 +232,83 @@ export function ConfigEditDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Browsers</Label>
+            <div className="flex gap-3">
+              {(['chromium', 'firefox', 'webkit'] as const).map((b) => (
+                <label key={b} className="flex items-center gap-1.5 text-sm">
+                  <Checkbox
+                    checked={state.browsers.includes(b)}
+                    onCheckedChange={(checked) => {
+                      if (checked === true) update('browsers', [...state.browsers, b]);
+                      else update('browsers', state.browsers.filter((x) => x !== b));
+                    }}
+                  />
+                  {b.charAt(0).toUpperCase() + b.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="config-edit-workers">Parallel Workers</Label>
+            <Input
+              id="config-edit-workers"
+              max={16}
+              min={1}
+              type="number"
+              value={state.workers}
+              onChange={(e) => update('workers', Number(e.target.value))}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label>Environments</Label>
+            {state.environments.map((env, i) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <div key={`env-${i}`} className="flex gap-2">
+                <Input
+                  placeholder="Name (e.g. staging)"
+                  value={env.name}
+                  onChange={(e) => {
+                    const envs = [...state.environments];
+                    envs[i] = { ...envs[i], name: e.target.value };
+                    update('environments', envs);
+                  }}
+                />
+                <Input
+                  placeholder="https://staging.example.com"
+                  value={env.url}
+                  onChange={(e) => {
+                    const envs = [...state.environments];
+                    envs[i] = { ...envs[i], url: e.target.value };
+                    update('environments', envs);
+                  }}
+                />
+                <Button
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    update('environments', state.environments.filter((_, j) => j !== i));
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => {
+                update('environments', [...state.environments, { name: '', url: '' }]);
+              }}
+            >
+              <Plus className="h-3 w-3 mr-1" /> Add Environment
+            </Button>
           </div>
 
           <div className="flex flex-col gap-2">

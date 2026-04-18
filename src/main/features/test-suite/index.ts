@@ -110,6 +110,7 @@ export interface TestSuiteService {
     name: string;
     description?: string;
     steps: TestSuiteStep[];
+    tags?: string[];
     filePath?: string;
   }) => Promise<QaScript>;
   deleteScript: (id: string) => Promise<{ success: boolean }>;
@@ -117,6 +118,7 @@ export interface TestSuiteService {
     scriptId: string;
     triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger';
     filePathOverride?: string;
+    baseUrlOverride?: string;
   }) => Promise<{ runId: string }>;
   getRun: (runId: string) => Promise<QaRunIpcRecord | null>;
   listRuns: (input: { scriptId?: string }) => Promise<QaRunIpcRecord[]>;
@@ -226,6 +228,7 @@ export function createTestSuiteService(
         name: input.name,
         description: input.description,
         steps: input.steps,
+        tags: input.tags,
         projectId: input.projectId,
         filePath: input.filePath ?? '',
         targetUrl: config?.targetUrl ?? '',
@@ -234,7 +237,7 @@ export function createTestSuiteService(
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
 
-    runScript({ scriptId, triggeredBy, filePathOverride }) {
+    runScript({ scriptId, triggeredBy, filePathOverride, baseUrlOverride }) {
       const script = scriptStore.get(scriptId);
       if (!script) {
         return Promise.reject(new Error(`Script not found: ${scriptId}`));
@@ -250,6 +253,7 @@ export function createTestSuiteService(
       const config = configStore.getActive(script.projectId);
       const testDir = config?.testDirectory ?? 'tests/e2e';
       const screenshotMode = config?.screenshotMode ?? 'manual';
+      const workers = config?.workers ?? 1;
       let screenshotDir: string | undefined;
 
       if (screenshotMode !== 'manual') {
@@ -269,6 +273,8 @@ export function createTestSuiteService(
         projectPath,
         triggeredBy,
         screenshotDir,
+        workers,
+        baseUrlOverride,
         handlers: sharedHandlers,
       });
 

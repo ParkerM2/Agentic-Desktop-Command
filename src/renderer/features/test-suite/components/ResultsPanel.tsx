@@ -37,6 +37,7 @@ import {
 
 import { useAttachRunToTask } from '../api/useAttachRunToTask';
 import { useRun, useRunScript } from '../api/useRuns';
+import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useRunOutput } from '../hooks/useRunOutput';
@@ -76,6 +77,8 @@ export function ResultsPanel() {
 
   const firstScript = scripts.length > 0 ? scripts[0] : undefined;
   const scriptId = selectedScriptId ?? firstScript?.id ?? null;
+  const { data: config } = useTestSuiteConfig(projectId);
+  const [activeEnv, setActiveEnv] = useState('default');
   const { data: runs = [] } = useTestSuiteRuns(scriptId);
   const firstRun = runs.length > 0 ? runs[0] : undefined;
   const activeRunId = selectedRunId ?? firstRun?.id ?? null;
@@ -146,7 +149,10 @@ export function ResultsPanel() {
 
   const handleRun = () => {
     if (scriptId) {
-      runScript.mutate({ scriptId }, {
+      const baseUrlOverride = activeEnv !== 'default' && config?.environments
+        ? config.environments.find((e) => e.name === activeEnv)?.url
+        : undefined;
+      runScript.mutate({ scriptId, baseUrlOverride }, {
         onSuccess: (data) => {
           setSelectedRunId(data.runId);
         },
@@ -209,6 +215,20 @@ export function ResultsPanel() {
                     {new Date(r.startedAt).toLocaleTimeString()}
                   </span>
                 </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {Boolean(config?.environments.length) && (
+          <Select value={activeEnv} onValueChange={setActiveEnv}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Environment" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">Default ({config?.targetUrl})</SelectItem>
+              {config?.environments.map((env) => (
+                <SelectItem key={env.name} value={env.name}>{env.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>

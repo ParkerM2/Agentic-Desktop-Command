@@ -14,6 +14,7 @@ export interface QaScript {
   name: string;
   description: string | null;
   steps: unknown[];
+  tags: string[];
   filePath: string;
   projectId: string;
   targetUrl: string;
@@ -33,6 +34,7 @@ export interface ScriptStore {
     name: string;
     description?: string;
     steps: unknown[];
+    tags?: string[];
     projectId: string;
     filePath: string;
     targetUrl: string;
@@ -51,11 +53,13 @@ function parseSteps(raw: string): unknown[] {
 
 function toQaScript(row: typeof testSuiteScripts.$inferSelect): QaScript {
   const steps = parseSteps(row.steps);
+  const tags = parseSteps(row.tags) as string[];
   return {
     id: row.id,
     name: row.name,
     description: row.description ?? null,
     steps,
+    tags,
     filePath: row.filePath,
     projectId: row.projectId,
     targetUrl: row.targetUrl,
@@ -86,6 +90,7 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
     save(data) {
       const now = new Date().toISOString();
       const stepsJson = JSON.stringify(data.steps);
+      const tagsJson = JSON.stringify(data.tags ?? []);
       const existing = data.id
         ? db.select().from(testSuiteScripts).where(eq(testSuiteScripts.id, data.id)).all().at(0)
         : undefined;
@@ -96,6 +101,7 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
           name: data.name,
           description: data.description ?? existing.description,
           steps: stepsJson,
+          tags: tagsJson,
           filePath: data.filePath,
           targetUrl: data.targetUrl,
           stepCount: data.steps.length,
@@ -111,6 +117,7 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
         description: data.description ?? null,
         baseUrl: data.targetUrl,
         steps: stepsJson,
+        tags: tagsJson,
         projectId: data.projectId,
         filePath: data.filePath,
         targetUrl: data.targetUrl,

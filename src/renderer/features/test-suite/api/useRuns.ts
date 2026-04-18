@@ -38,10 +38,12 @@ export function useRunScript() {
     mutationFn: ({
       scriptId,
       triggeredBy = 'manual',
+      baseUrlOverride,
     }: {
       scriptId: string;
       triggeredBy?: 'manual' | 'scheduled' | 'ci';
-    }) => ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, triggeredBy }),
+      baseUrlOverride?: string;
+    }) => ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, triggeredBy, baseUrlOverride }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: testSuiteKeys.all });
     },
