@@ -85,7 +85,7 @@ export function ResultsToolbar({
         </SelectContent>
       </Select>
 
-      {runs.length > 1 && (
+      {runs.length > 0 && (
         <Select value={activeRunId ?? ''} onValueChange={onRunChange}>
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Select run..." />

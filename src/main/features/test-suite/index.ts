@@ -21,6 +21,7 @@ import { createAnalytics } from './analytics';
 import { createBaselineStore } from './baseline-store';
 import { createBrowserViewManager } from './browser-view-manager';
 import { createConfigStore } from './config-store';
+import { writePlaywrightConfig } from './playwright-config-writer';
 import { createRunner } from './runner';
 import { createScheduler, sendTestNotification } from './scheduler';
 import { createScreenshotStore } from './screenshot-capture';
@@ -246,16 +247,14 @@ export function createTestSuiteService(
 
     deleteScript: (id) => Promise.resolve(scriptStore.delete(id)),
 
-    runScript({ scriptId, triggeredBy, filePathOverride, baseUrlOverride }) {
+    async runScript({ scriptId, triggeredBy, filePathOverride, baseUrlOverride }) {
       const script = scriptStore.get(scriptId);
       if (!script) {
-        return Promise.reject(new Error(`Script not found: ${scriptId}`));
+        throw new Error(`Script not found: ${scriptId}`);
       }
       const projectPath = deps.getProjectPath(script.projectId);
       if (!projectPath) {
-        return Promise.reject(
-          new Error(`Project path not found for projectId: ${script.projectId}`),
-        );
+        throw new Error(`Project path not found for projectId: ${script.projectId}`);
       }
 
       // Compute screenshot directory from config
@@ -271,15 +270,57 @@ export function createTestSuiteService(
           .toLowerCase()
           .replaceAll(/[^a-z0-9]+/g, '-')
           .replaceAll(/^-|-$/g, '');
-        // Use a temp runId prefix for the dir name (actual runId comes from runner)
         const dirName = `${slug}-screenshots`;
         screenshotDir = path.join(projectPath, testDir, 'screenshots', dirName);
       }
 
+      // Pre-flight: verify target URL is reachable before spawning Playwright
+      const targetUrl = baseUrlOverride ?? config?.targetUrl ?? script.targetUrl;
+      if (targetUrl) {
+        try {
+          await fetch(targetUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+        } catch {
+          throw new Error(`Target URL is not reachable: ${targetUrl} — is your dev server running?`);
+        }
+      }
+
+      // Data-driven runs pass their own spec file; normal runs always
+      // regenerate so script-writer improvements take effect.
+      let resolvedFilePath: string;
+      if (filePathOverride) {
+        resolvedFilePath = filePathOverride;
+      } else {
+        resolvedFilePath = writeSpecFile({
+          projectRoot: projectPath,
+          testDir,
+          name: script.name,
+          baseUrl: targetUrl || script.targetUrl,
+          steps: script.steps as TestSuiteStep[],
+          screenshotMode: config?.screenshotMode,
+          navigationTimeout: config?.navigationTimeout,
+          actionTimeout: config?.actionTimeout,
+        });
+        if (resolvedFilePath !== script.filePath) {
+          scriptStore.save({ ...script, description: script.description ?? undefined, filePath: resolvedFilePath });
+        }
+      }
+
+      // Regenerate playwright.config.ts to reflect current settings
+      writePlaywrightConfig({
+        projectRoot: projectPath,
+        testDir,
+        baseUrl: targetUrl || script.targetUrl,
+        navigationTimeout: config?.navigationTimeout,
+        actionTimeout: config?.actionTimeout,
+        browsers: config?.browsers,
+        workers,
+        storageStatePath: config?.storageStatePath,
+      });
+
       const runId = runner.run({
         scriptId,
         projectId: script.projectId,
-        filePath: filePathOverride ?? script.filePath,
+        filePath: resolvedFilePath,
         projectPath,
         triggeredBy,
         screenshotDir,
@@ -294,7 +335,7 @@ export function createTestSuiteService(
         runScreenshotDirs.set(runId, { screenshotDir, scriptId });
       }
 
-      return Promise.resolve({ runId });
+      return { runId };
     },
 
     getRun: (runId) => Promise.resolve(runner.get(runId) as QaRunIpcRecord | null),

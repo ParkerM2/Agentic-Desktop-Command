@@ -47,6 +47,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL || '${escape(params.baseUrl)}',
     actionTimeout: ${actionTimeout},${storageStateLine}
+    screenshot: 'only-on-failure',
     trace: 'on-first-retry',
   },
   projects: [

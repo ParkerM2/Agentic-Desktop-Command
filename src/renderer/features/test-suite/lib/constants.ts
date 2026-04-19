@@ -13,3 +13,13 @@ export const SCREENSHOT_MODES: ReadonlyArray<{ value: ScreenshotMode; label: str
 
 export const STATUS_FILTERS = ['all', 'passed', 'failed', 'flaky', 'no-runs'] as const;
 export type StatusFilter = (typeof STATUS_FILTERS)[number];
+
+export const TAB = {
+  RECORDING: 'recording',
+  LIBRARY: 'library',
+  RESULTS: 'results',
+  SCREENSHOTS: 'screenshots',
+  EXPORT: 'export',
+  ANALYTICS: 'analytics',
+  SHARED_STEPS: 'shared-steps',
+} as const;

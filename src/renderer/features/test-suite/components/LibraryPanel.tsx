@@ -42,6 +42,7 @@ import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
+import { TAB } from '../lib/constants';
 import { buildDefaultConfig, buildStarterTest } from '../lib/starter-test';
 import { useTestSuiteStore } from '../test-suite-store';
 
@@ -155,7 +156,7 @@ export function LibraryPanel() {
 
   const onNewTest = () => {
     setSelectedScriptId(null);
-    setActiveTab('recording');
+    setActiveTab(TAB.RECORDING);
   };
 
   const onCreateStarterTest = async () => {
@@ -168,7 +169,16 @@ export function LibraryPanel() {
 
   const onEdit = (id: string) => {
     setSelectedScriptId(id);
-    setActiveTab('recording');
+    setActiveTab(TAB.RECORDING);
+  };
+
+  const onRun = (scriptId: string) => {
+    setSelectedScriptId(scriptId);
+    runScript.mutate({ scriptId }, {
+      onSuccess: () => {
+        setActiveTab(TAB.RESULTS);
+      },
+    });
   };
 
   const formatDate = (dateStr: string) => {
@@ -308,7 +318,7 @@ export function LibraryPanel() {
                       size="icon"
                       title="Run"
                       variant="ghost"
-                      onClick={() => runScript.mutate({ scriptId: script.id })}
+                      onClick={() => onRun(script.id)}
                     >
                       <Play className="h-4 w-4" />
                     </Button>

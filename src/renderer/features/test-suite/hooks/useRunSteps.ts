@@ -6,6 +6,7 @@ import { useIpcEvent } from '@renderer/shared/hooks';
 
 export interface RunStep {
   stepIndex: number;
+  stepType: string;
   stepLabel: string;
   timestamp: string;
   durationMs: number | null;
@@ -34,8 +35,13 @@ export function useRunSteps(runId: string | null) {
         existing[existing.length - 1] = { ...last, durationMs: currTime - prevTime };
       }
 
+      // Extract type from the label prefix ("Click ...", "Navigate ...", etc.)
+      const spaceIdx = payload.stepLabel.indexOf(' ');
+      const parsedType = spaceIdx > 0 ? payload.stepLabel.slice(0, spaceIdx).toLowerCase() : '';
+
       existing.push({
         stepIndex: payload.stepIndex,
+        stepType: parsedType,
         stepLabel: payload.stepLabel,
         timestamp: payload.timestamp,
         durationMs: null,

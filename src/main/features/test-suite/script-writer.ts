@@ -83,6 +83,16 @@ export function writeSpecFile(params: {
     `test('${escape(params.name)}', async ({ page }) => {`,
   ];
 
+  // If the first step isn't a navigate, inject page.goto(baseUrl) so Playwright
+  // doesn't run against a blank page.
+  const firstStep = params.steps.at(0);
+  if (firstStep?.type !== 'navigate' && params.baseUrl) {
+    lines.push(
+      `  await page.goto('${escape(params.baseUrl)}');`,
+      `  await page.waitForLoadState('networkidle', { timeout: ${navigationTimeout} });`,
+    );
+  }
+
   let prevType: string | null = null;
 
   for (const s of params.steps) {
@@ -147,8 +157,11 @@ export function writeSpecFile(params: {
  * 6. CSS fallback — `page.locator('...')`
  */
 function buildLocator(selector: string, context?: StepContext): string {
+  // Strip SVG/path children — clicks on icons should target the parent button/link
+  const cleanedSelector = selector.replace(/\s*>\s*(svg|path)(\s*>\s*(svg|path))*$/i, '');
+
   // Priority 1: data-testid from selector
-  const testIdMatch = /\[data-testid="([^"]+)"\]/.exec(selector);
+  const testIdMatch = /\[data-testid="([^"]+)"\]/.exec(cleanedSelector);
   if (testIdMatch) return `page.getByTestId('${escape(testIdMatch[1])}')`;
 
   if (context) {
@@ -162,10 +175,15 @@ function buildLocator(selector: string, context?: StepContext): string {
       return `page.getByPlaceholder('${escape(context.placeholder)}')`;
     }
 
-    // Priority 4: role-based (buttons, links)
-    if (context.text && ['button', 'a'].includes(context.tagName)) {
-      const role = context.tagName === 'a' ? 'link' : 'button';
-      return `page.getByRole('${role}', { name: '${escape(context.text)}' })`;
+    // Priority 4: role-based (buttons, links) — also match when click target was SVG/path inside button
+    const isIconClick = ['svg', 'path'].includes(context.tagName);
+    if (context.text && (['button', 'a'].includes(context.tagName) || isIconClick)) {
+      // For icon clicks, check if the cleaned selector ends with a button/link
+      const parentIsClickable = isIconClick && /\b(button|a)\b/i.test(cleanedSelector);
+      if (!isIconClick || parentIsClickable) {
+        const role = context.tagName === 'a' || /\ba\b/.test(cleanedSelector) ? 'link' : 'button';
+        return `page.getByRole('${role}', { name: '${escape(context.text)}' })`;
+      }
     }
 
     // Priority 5: text content (short text only, exclude form elements)
@@ -178,8 +196,8 @@ function buildLocator(selector: string, context?: StepContext): string {
     }
   }
 
-  // Priority 6: CSS fallback
-  return `page.locator('${escape(selector)}')`;
+  // Priority 6: CSS fallback — use cleaned selector (SVG/path stripped)
+  return `page.locator('${escape(cleanedSelector)}')`;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────

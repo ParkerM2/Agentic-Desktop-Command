@@ -8,12 +8,14 @@
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { isAbsolute, join, relative } from 'node:path';
 
 import { desc, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 import { testSuiteRuns } from '../../db/schema';
+
+import { testSuiteScripts } from './schema';
 
 import type { AdcDatabase } from '../../db';
 
@@ -82,6 +84,19 @@ function toRunRecord(row: typeof testSuiteRuns.$inferSelect): QaRunRecord {
   };
 }
 
+const PW_BROWSER_CACHE_DIR = 'ms-playwright';
+
+function findPlaywrightBrowserCache(projectPath: string): boolean {
+  const homeDir = process.env.USERPROFILE ?? process.env.HOME ?? '';
+  const candidates = [
+    join(projectPath, 'node_modules', '.cache', PW_BROWSER_CACHE_DIR),
+    join(homeDir, '.cache', PW_BROWSER_CACHE_DIR),                          // Linux
+    join(homeDir, 'Library', 'Caches', PW_BROWSER_CACHE_DIR),               // macOS
+    ...(process.env.LOCALAPPDATA ? [join(process.env.LOCALAPPDATA, PW_BROWSER_CACHE_DIR)] : []), // Windows
+  ];
+  return candidates.some((dir) => existsSync(dir));
+}
+
 interface PreflightResult {
   ok: boolean;
   errors: string[];
@@ -103,10 +118,7 @@ function preflight(filePath: string, projectPath: string): PreflightResult {
   }
 
   // 3. Best-effort check for Playwright browsers
-  const homeDir = process.env.USERPROFILE ?? process.env.HOME ?? '';
-  const globalCacheDir = join(homeDir, '.cache', 'ms-playwright');
-  const localCacheDir = join(projectPath, 'node_modules', '.cache', 'ms-playwright');
-  if (!existsSync(globalCacheDir) && !existsSync(localCacheDir)) {
+  if (!findPlaywrightBrowserCache(projectPath)) {
     errors.push('Playwright browsers may not be installed. Run: npx playwright install');
   }
 
@@ -185,11 +197,28 @@ export function createRunner(db: AdcDatabase): QaRunner {
       const numWorkers = workers ?? 1;
       const retryCount = retries ?? 1;
       const reportDir = join(projectPath, '.playwright-reports', runId);
-      const args = ['playwright', 'test', filePath, '--reporter=json,html', '--screenshot=only-on-failure', `--retries=${retryCount}`, `--workers=${numWorkers}`];
+
+      // Playwright CLI treats file args as regex filters against discovered paths.
+      // Absolute Windows paths (backslashes) break regex matching — use relative forward-slash path.
+      const specFilter = (isAbsolute(filePath) ? relative(projectPath, filePath) : filePath)
+        .replaceAll('\\', '/');
+
+      const args = [
+        'playwright', 'test', specFilter,
+        `--reporter=json,html`,
+        `--retries=${retryCount}`,
+        `--workers=${numWorkers}`,
+      ];
+      const env = {
+        ...process.env,
+        PLAYWRIGHT_HTML_REPORT: reportDir,
+        ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}),
+        ...(baseUrlOverride ? { BASE_URL: baseUrlOverride } : {}),
+      };
       const child = spawn('npx', args, {
         cwd: projectPath,
         shell: process.platform === 'win32',
-        env: { ...process.env, PLAYWRIGHT_HTML_REPORT: reportDir, ...(screenshotDir ? { SCREENSHOT_DIR: screenshotDir } : {}), ...(baseUrlOverride ? { BASE_URL: baseUrlOverride } : {}) },
+        env,
       });
 
       activeProcesses.set(runId, child);
@@ -222,22 +251,39 @@ export function createRunner(db: AdcDatabase): QaRunner {
         const startMs = new Date(now).getTime();
         const endMs = new Date(completedAt).getTime();
 
-        // ── Parse JSON reporter output for step-level counts ──
-        let stepsPassed = 0;
-        let stepsFailed = 0;
-        const fullOutput = outputLines.join('\n');
-        try {
-          const jsonResult = JSON.parse(fullOutput) as {
-            stats?: { expected?: number; unexpected?: number; flaky?: number };
-          };
-          if (jsonResult.stats) {
-            stepsPassed = jsonResult.stats.expected ?? 0;
-            stepsFailed = (jsonResult.stats.unexpected ?? 0) + (jsonResult.stats.flaky ?? 0);
+        // ── Determine step-level pass/fail counts ──
+        // Playwright's JSON stats count test *cases*, not steps within a test.
+        // Look up the script's actual step count from the DB for accurate reporting.
+        const scriptRow = db.select().from(testSuiteScripts).where(eq(testSuiteScripts.id, scriptId)).all().at(0);
+        const totalSteps = scriptRow?.stepCount ?? 1;
+        let stepsPassed: number;
+        let stepsFailed: number;
+
+        if (code === 0) {
+          stepsPassed = totalSteps;
+          stepsFailed = 0;
+        } else {
+          // Parse JSON output to determine how many tests failed vs passed
+          stepsPassed = 0;
+          stepsFailed = totalSteps;
+          try {
+            const fullOutput = outputLines.join('\n');
+            const jsonResult = JSON.parse(fullOutput) as {
+              stats?: { expected?: number; unexpected?: number };
+            };
+            if (jsonResult.stats?.expected !== undefined) {
+              // At least some tests passed — partial failure
+              const passedTests = jsonResult.stats.expected;
+              const failedTests = jsonResult.stats.unexpected ?? 0;
+              const total = passedTests + failedTests;
+              if (total > 0) {
+                stepsPassed = Math.round((passedTests / total) * totalSteps);
+                stepsFailed = totalSteps - stepsPassed;
+              }
+            }
+          } catch {
+            // JSON parse failed — all steps counted as failed
           }
-        } catch {
-          // JSON parse failed — Playwright may have crashed or produced non-JSON output
-          stepsPassed = code === 0 ? 1 : 0;
-          stepsFailed = code === 0 ? 0 : 1;
         }
 
         const reportPath = join(projectPath, '.playwright-reports', runId, 'index.html');

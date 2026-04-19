@@ -15,15 +15,48 @@ export function getOutputLineClass(line: string): string {
   return 'text-text-muted';
 }
 
+interface StepLike {
+  type: string;
+  url?: string;
+  selector?: string;
+  value?: string;
+  key?: string;
+  ms?: number;
+  expected?: string;
+  context?: { text?: string; label?: string; placeholder?: string; tagName?: string };
+}
+
+function shortTarget(step: StepLike): string {
+  const ctx = step.context;
+  if (ctx) {
+    if (ctx.label) return `"${ctx.label}"`;
+    if (ctx.text && ctx.text.length < 40) return `"${ctx.text}"`;
+    if (ctx.placeholder) return `"${ctx.placeholder}"`;
+    if (ctx.tagName) return ctx.tagName;
+  }
+  // Fallback: last segment of CSS selector
+  const sel = step.selector ?? '';
+  const parts = sel.split(' > ');
+  return parts.at(-1) ?? sel;
+}
+
 export function stepToLabel(step: { type: string; [key: string]: unknown }): string {
-  switch (step.type) {
-    case 'navigate': return `Navigate \u2192 ${step.url as string}`;
-    case 'click': return `Click ${step.selector as string}`;
-    case 'fill': return `Fill ${step.selector as string}`;
-    case 'select': return `Select ${step.selector as string}`;
-    case 'press': return `Press ${step.key as string}`;
-    case 'wait': return `Wait ${step.ms as number}ms`;
-    case 'assert': return `Assert ${step.selector as string}`;
-    default: return step.type;
+  const s = step as StepLike;
+  switch (s.type) {
+    case 'navigate': return `Navigate \u2192 ${s.url ?? ''}`;
+    case 'click': return `Click ${shortTarget(s)}`;
+    case 'fill': {
+      const target = shortTarget(s);
+      const val = (s.value ?? '').slice(0, 30);
+      return `Fill ${target} \u2192 "${val}"`;
+    }
+    case 'select': {
+      const target = shortTarget(s);
+      return `Select ${target} \u2192 ${s.value ?? ''}`;
+    }
+    case 'press': return `Press ${s.key ?? ''}`;
+    case 'wait': return `Wait ${s.ms ?? 0}ms`;
+    case 'assert': return `Assert ${shortTarget(s)} = "${s.expected ?? ''}"`;
+    default: return s.type;
   }
 }

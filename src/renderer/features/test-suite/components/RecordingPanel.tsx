@@ -121,12 +121,9 @@ export function RecordingPanel() {
 
   if (!projectId) return null;
 
-  const hasName = scriptName.trim().length > 0;
-  const canRecord = hasName && serverRunning;
+  const canRecord = serverRunning;
   const canSave = !recording && recordedSteps.length > 0;
-  let recordTooltip = '';
-  if (!hasName) recordTooltip = 'Enter a test name to start recording';
-  else if (!serverRunning) recordTooltip = 'Start the dev server first';
+  const recordTooltip = serverRunning ? '' : 'Start the dev server first';
 
   const onStartRecording = () => {
     clearSteps();
@@ -188,7 +185,7 @@ export function RecordingPanel() {
 
         <Input
           className="h-7 max-w-[200px] flex-1 text-xs"
-          placeholder="Test name (required)..."
+          placeholder="Test name (optional)..."
           readOnly={recording}
           value={scriptName}
           onChange={(e) => setScriptName(e.target.value)}

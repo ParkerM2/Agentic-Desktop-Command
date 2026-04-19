@@ -31,6 +31,28 @@ type PreloadStep =
   | { type: 'select'; selector: string; value: string; context?: StepContext }
   | { type: 'press'; key: string };
 
+/** Tags that represent interactive elements — click targets should resolve to these. */
+const INTERACTIVE_TAGS = new Set(['button', 'a', 'input', 'select', 'textarea']);
+
+/**
+ * If `el` is a non-interactive child (svg, path, span, img inside a button/link),
+ * climb up to the nearest interactive ancestor so we capture meaningful context.
+ */
+function resolveClickTarget(el: Element): Element {
+  const tag = el.tagName.toLowerCase();
+  if (INTERACTIVE_TAGS.has(tag)) return el;
+
+  let cursor: Element | null = el.parentElement;
+  while (cursor) {
+    if (INTERACTIVE_TAGS.has(cursor.tagName.toLowerCase())) return cursor;
+    // Also check for role="button" or role="link"
+    const role = cursor.getAttribute('role');
+    if (role === 'button' || role === 'link') return cursor;
+    cursor = cursor.parentElement;
+  }
+  return el; // no interactive ancestor found — use original
+}
+
 function extractContext(el: Element): StepContext {
   const tagName = el.tagName.toLowerCase();
   const rawText = el.textContent.trim().slice(0, 80);
@@ -79,8 +101,9 @@ history.replaceState = function (...args: Parameters<History['replaceState']>) {
 document.addEventListener(
   'click',
   (e) => {
-    const el = e.target as Element | null;
-    if (el?.nodeType !== 1) return;
+    const raw = e.target as Element | null;
+    if (raw?.nodeType !== 1) return;
+    const el = resolveClickTarget(raw);
     const { selector } = buildSelector(el);
     send({ type: 'click', selector, context: extractContext(el) });
   },
