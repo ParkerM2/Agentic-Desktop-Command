@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Flex,
 } from '@ui';
 
 import { useAttachRunToTask } from '../api/useAttachRunToTask';
@@ -83,7 +84,7 @@ export function ResultsWorkflowActions({
   };
 
   return (
-    <div className="ml-auto flex items-center gap-2">
+    <Flex align="center" className="ml-auto" gap="sm" wrap="nowrap">
       {createdTaskSlug ? (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -126,6 +127,6 @@ export function ResultsWorkflowActions({
           {createTask.isPending ? 'Creating...' : 'Create Task'}
         </Button>
       )}
-    </div>
+    </Flex>
   );
 }

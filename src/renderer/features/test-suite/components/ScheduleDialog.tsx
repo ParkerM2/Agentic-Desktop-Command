@@ -12,6 +12,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Stack,
   Text,
 } from '@ui';
 
@@ -51,8 +52,8 @@ export function ScheduleDialog({ scriptId, projectId, open, onOpenChange }: Sche
         <DialogHeader>
           <DialogTitle>Schedule Test Run</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
+        <Stack gap="md">
+          <Stack gap="sm">
             <Label>Run Interval</Label>
             <Select
               value={String(intervalMs)}
@@ -69,7 +70,7 @@ export function ScheduleDialog({ scriptId, projectId, open, onOpenChange }: Sche
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Stack>
           <Text size="sm" variant="muted">
             Test will run automatically at the selected interval. Desktop notifications will alert on failures.
           </Text>
@@ -80,7 +81,7 @@ export function ScheduleDialog({ scriptId, projectId, open, onOpenChange }: Sche
           >
             Create Schedule
           </Button>
-        </div>
+        </Stack>
       </DialogContent>
     </Dialog>
   );

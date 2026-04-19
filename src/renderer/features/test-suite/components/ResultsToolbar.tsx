@@ -8,6 +8,7 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import {
   Badge,
   Button,
+  Flex,
   Select,
   SelectContent,
   SelectItem,
@@ -71,7 +72,7 @@ export function ResultsToolbar({
   onRun,
 }: ResultsToolbarProps) {
   return (
-    <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+    <Flex align="center" className="border-b border-border px-4 py-2" gap="sm" wrap="nowrap">
       <Select value={scriptId ?? ''} onValueChange={onScriptChange}>
         <SelectTrigger className="w-48">
           <SelectValue placeholder="Select test..." />
@@ -139,7 +140,7 @@ export function ResultsToolbar({
           <AlertTriangle className="mr-1 h-3 w-3" /> Error
         </Badge>
       ) : null}
-    </div>
+    </Flex>
   );
 }
 

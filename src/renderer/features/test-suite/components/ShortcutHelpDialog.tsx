@@ -3,6 +3,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Flex,
+  Stack,
   Text,
 } from '@ui';
 
@@ -30,16 +32,16 @@ export function ShortcutHelpDialog() {
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
+        <Stack gap="sm">
           {SHORTCUTS.map((s) => (
-            <div key={s.keys} className="flex items-center justify-between text-sm">
-              <Text variant="muted">{s.action}</Text>
+            <Flex key={s.keys} align="center" justify="between">
+              <Text size="sm" variant="muted">{s.action}</Text>
               <kbd className="rounded border border-border bg-bg-surface px-2 py-0.5 font-mono text-xs">
                 {s.keys}
               </kbd>
-            </div>
+            </Flex>
           ))}
-        </div>
+        </Stack>
       </DialogContent>
     </Dialog>
   );

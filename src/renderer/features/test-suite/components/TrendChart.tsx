@@ -1,5 +1,7 @@
 import type { TrendPointSchema } from '@shared/ipc/test-suite/analytics-schemas';
 
+import { Flex, Text } from '@ui';
+
 import type { z } from 'zod';
 
 type TrendPointType = z.infer<typeof TrendPointSchema>;
@@ -13,9 +15,9 @@ interface TrendChartProps {
 export function TrendChart({ data, width = 500, height = 200 }: TrendChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center text-sm text-text-muted">
-        No trend data yet
-      </div>
+      <Flex align="center" className="h-48" justify="center">
+        <Text size="sm" variant="muted">No trend data yet</Text>
+      </Flex>
     );
   }
 

@@ -2,7 +2,7 @@ import { BarChart3, Blocks, FileCode, List, PlayCircle, Camera, Upload } from 'l
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
-import { PageContent, PageHeader, PageLayout } from '@ui';
+import { PageContent, PageHeader, PageLayout, Text } from '@ui';
 
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
 import { useTestSuiteEvents } from '../hooks/useTestSuiteEvents';
@@ -46,13 +46,13 @@ export function TestSuitePage() {
           </PageHeader.Row>
         </PageHeader>
         <PageContent>
-          <div className="p-6 text-text-muted">No project selected.</div>
+          <Text className="p-6" variant="muted">No project selected.</Text>
         </PageContent>
       </PageLayout>
     );
   }
 
-  if (isLoading) return <PageLayout><div className="p-6">Loading…</div></PageLayout>;
+  if (isLoading) return <PageLayout><Text className="p-6">Loading…</Text></PageLayout>;
   if (!config) {
     return (
       <PageLayout>
