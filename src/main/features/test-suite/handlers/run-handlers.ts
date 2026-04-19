@@ -6,6 +6,8 @@
  * TEST_SUITE_EVENTS.RUN.STARTED after the run is initiated.
  */
 
+import { existsSync } from 'node:fs';
+
 import { shell } from 'electron';
 
 import { TEST_SUITE, TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
@@ -44,6 +46,9 @@ export function registerRunHandlers(
   );
 
   router.handle(TEST_SUITE.OPEN.REPORT, async ({ reportPath }) => {
+    if (!existsSync(reportPath)) {
+      throw new Error(`Report not found: ${reportPath}`);
+    }
     await shell.openPath(reportPath);
     return { success: true };
   });

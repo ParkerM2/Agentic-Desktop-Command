@@ -41,6 +41,23 @@ export interface ScreenshotService {
   get: (id: string) => ScreenshotRecord | null;
 }
 
+// ─── Helpers ────────────────────────────────────────────────
+
+/** Read width × height from a PNG file's IHDR chunk (bytes 16-23). */
+function readPngDimensions(filePath: string): { width: number; height: number } {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(24);
+    fs.readSync(fd, buf, 0, 24, 0);
+    fs.closeSync(fd);
+    const width = buf.readUInt32BE(16);
+    const height = buf.readUInt32BE(20);
+    return { width, height };
+  } catch {
+    return { width: 0, height: 0 };
+  }
+}
+
 // ─── Factory ────────────────────────────────────────────────
 
 export function createScreenshotService(db: AdcDatabase): ScreenshotService {
@@ -79,6 +96,9 @@ export function createScreenshotService(db: AdcDatabase): ScreenshotService {
         const triggerRaw = match ? match[2] : 'manual';
         const trigger = mapTrigger(triggerRaw);
 
+        const fullPath = path.join(params.screenshotDir, file);
+        const { width, height } = readPngDimensions(fullPath);
+
         return {
           id: generateId(),
           runId: params.runId,
@@ -86,9 +106,9 @@ export function createScreenshotService(db: AdcDatabase): ScreenshotService {
           stepIndex,
           stepLabel: `${trigger} step ${stepIndex}`,
           trigger,
-          filePath: path.join(params.screenshotDir, file),
-          width: 0,
-          height: 0,
+          filePath: fullPath,
+          width,
+          height,
           capturedAt: new Date().toISOString(),
         };
       });
@@ -140,7 +160,7 @@ export function createScreenshotService(db: AdcDatabase): ScreenshotService {
   };
 }
 
-// ─── Helpers ────────────────────────────────────────────────
+// ─── Trigger mapping ────────────────────────────────────────
 
 function mapTrigger(raw: string): ScreenshotRecord['trigger'] {
   if (raw === 'navigate') return 'nav';
