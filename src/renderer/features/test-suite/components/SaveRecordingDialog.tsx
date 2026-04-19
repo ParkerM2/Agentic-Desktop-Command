@@ -30,55 +30,12 @@ import {
 } from '@ui';
 
 import { useSaveScript } from '../api/useSaveScript';
+import { generateAssertionSuggestions, type AssertionSuggestion } from '../lib/assertion-suggestions';
 import { describeStep } from '../lib/describe-step';
 import { generateSpecPreview } from '../lib/generate-spec-preview';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import type { RecordedStep } from '../test-suite-store';
-
-
-interface AssertionSuggestion {
-  selector: string;
-  expected: string;
-  description: string;
-  accepted: boolean;
-}
-
-function generateAssertionSuggestions(steps: RecordedStep[]): AssertionSuggestion[] {
-  const suggestions: AssertionSuggestion[] = [];
-
-  for (const { step } of steps) {
-
-    if (step.type === 'navigate') {
-      suggestions.push({
-        selector: '',
-        expected: step.url,
-        description: `Verify page navigated to ${step.url}`,
-        accepted: false,
-      });
-    }
-
-    if (step.type === 'fill' && 'selector' in step) {
-      suggestions.push({
-        selector: step.selector,
-        expected: step.value,
-        description: `Verify "${step.selector}" contains "${step.value}"`,
-        accepted: false,
-      });
-    }
-
-    if (step.type === 'click' && 'context' in step && step.context?.text) {
-      suggestions.push({
-        selector: step.selector,
-        expected: step.context.text,
-        description: `Verify "${step.context.text}" is visible after click`,
-        accepted: false,
-      });
-    }
-  }
-
-  return suggestions;
-}
 
 interface SaveRecordingDialogProps {
   open: boolean;
