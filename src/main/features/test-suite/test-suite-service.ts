@@ -315,6 +315,7 @@ export function createTestSuiteService(
         browsers: config?.browsers,
         workers,
         storageStatePath: config?.storageStatePath,
+        screenshotMode: config?.screenshotMode,
       });
 
       const runId = runner.run({

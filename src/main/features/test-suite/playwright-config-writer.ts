@@ -8,6 +8,22 @@
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+function mapScreenshotConfig(mode: string | undefined): string {
+  switch (mode) {
+    case 'manual':
+      return "'off'";
+    case 'smart':
+    case 'per-click':
+    case 'per-nav':
+    case 'per-form':
+    case 'per-assertion':
+      return "'on'";
+    case undefined:
+    default:
+      return "'only-on-failure'";
+  }
+}
+
 export function writePlaywrightConfig(params: {
   projectRoot: string;
   testDir: string;
@@ -17,6 +33,7 @@ export function writePlaywrightConfig(params: {
   browsers?: string[];
   workers?: number;
   storageStatePath?: string;
+  screenshotMode?: string;
 }): string {
   const navigationTimeout = params.navigationTimeout ?? 30000;
   const actionTimeout = params.actionTimeout ?? 10000;
@@ -47,7 +64,7 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL || '${escape(params.baseUrl)}',
     actionTimeout: ${actionTimeout},${storageStateLine}
-    screenshot: 'only-on-failure',
+    screenshot: ${mapScreenshotConfig(params.screenshotMode)},
     trace: 'on-first-retry',
   },
   projects: [
