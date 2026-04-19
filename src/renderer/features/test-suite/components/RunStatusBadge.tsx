@@ -1,15 +1,20 @@
-import { Badge } from '@ui';
+import { Badge, StatusIndicator } from '@ui';
 
-const STATUS_DOT_COLORS: Record<string, string> = {
-  passed: 'bg-green-500',
-  failed: 'bg-destructive',
-  running: 'bg-blue-500 animate-pulse',
-  cancelled: 'bg-muted-foreground',
+const STATUS_VARIANT: Record<string, 'success' | 'error' | 'info' | 'warning' | 'neutral'> = {
+  passed: 'success',
+  failed: 'error',
+  running: 'info',
+  cancelled: 'neutral',
 };
 
 export function RunStatusDot({ status }: { status: string }) {
-  const color = STATUS_DOT_COLORS[status] ?? 'bg-muted-foreground';
-  return <div className={`inline-block h-2 w-2 rounded-full ${color}`} />;
+  const variant = STATUS_VARIANT[status] ?? 'neutral';
+  return (
+    <StatusIndicator
+      variant={variant}
+      className={status === 'running' ? 'animate-pulse' : undefined}
+    />
+  );
 }
 
 export function RunStatusBadge({ status }: { status: string }) {

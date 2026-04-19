@@ -12,6 +12,7 @@ import { CheckCircle2, Clock, Copy, Maximize2, XCircle } from 'lucide-react';
 import {
   Badge,
   Button,
+  Code,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -102,13 +103,13 @@ export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps
 
         {/* Log output */}
         <ScrollArea className="min-h-0 flex-1">
-          <pre className="whitespace-pre-wrap p-4 font-mono text-xs">
+          <Code className="block whitespace-pre-wrap p-4">
             {lines.map((l) => (
-              <div key={l.timestamp} className={getOutputLineClass(l.line)}>
+              <span key={l.timestamp} className={`block ${getOutputLineClass(l.line)}`}>
                 {l.line}
-              </div>
+              </span>
             ))}
-          </pre>
+          </Code>
         </ScrollArea>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
 
-import { Badge, Flex, Icon, Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
+import { Badge, Flex, Icon, Stack, Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
 
 import type { RunStep } from '../hooks/useRunSteps';
 
@@ -50,7 +50,7 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
   const maxDuration = Math.max(...steps.map((s) => s.durationMs ?? 0), 1);
 
   return (
-    <div className="flex flex-col gap-1 overflow-y-auto p-3">
+    <Stack gap="none" className="gap-1 overflow-y-auto p-3">
       {steps.map((step, i) => {
         const isLast = i === steps.length - 1;
         const isComplete = step.durationMs !== null;
@@ -100,6 +100,6 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
           </Tooltip>
         );
       })}
-    </div>
+    </Stack>
   );
 }

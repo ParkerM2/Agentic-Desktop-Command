@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   Button,
   Checkbox,
+  Code,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -229,9 +230,9 @@ export function SaveRecordingDialog({
           {/* Tab 2: Spec File */}
           <TabsContent className="min-h-0 flex-1 pt-4" value="spec">
             <ScrollArea className="h-full">
-              <pre className="whitespace-pre-wrap break-words rounded-md border border-border bg-bg-surface p-4 font-mono text-xs">
+              <Code className="block whitespace-pre-wrap break-words rounded-md border border-border bg-bg-surface p-4">
                 {specPreview}
-              </pre>
+              </Code>
             </ScrollArea>
           </TabsContent>
 

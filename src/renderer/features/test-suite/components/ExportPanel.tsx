@@ -14,12 +14,15 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Code,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   Flex,
   Grid,
+  MetadataItem,
+  MetadataList,
   PageContent,
   Text,
 } from '@ui';
@@ -147,38 +150,19 @@ export function ExportPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <dl className="space-y-3 text-sm">
-              <Flex justify="between">
-                <dt className="text-text-muted">Trigger</dt>
-                <dd className="font-medium text-text-primary">pull_request</dd>
-              </Flex>
-              <Flex justify="between">
-                <dt className="text-text-muted">Paths</dt>
-                <dd className="font-medium text-text-primary">
-                  {`${testDir}/**, src/**`}
-                </dd>
-              </Flex>
-              <Flex justify="between">
-                <dt className="text-text-muted">Runner</dt>
-                <dd className="font-medium text-text-primary">ubuntu-latest</dd>
-              </Flex>
-              <Flex justify="between">
-                <dt className="text-text-muted">Node Version</dt>
-                <dd className="font-medium text-text-primary">22</dd>
-              </Flex>
-              <Flex justify="between">
-                <dt className="text-text-muted">Artifacts</dt>
-                <dd className="font-medium text-text-primary">
-                  {testDir}/screenshots/, playwright-report/
-                </dd>
-              </Flex>
-              <Flex justify="between">
-                <dt className="text-text-muted">Tests Included</dt>
-                <dd className="font-medium text-text-primary">
-                  {scriptCount} {scriptCount === 1 ? 'script' : 'scripts'}
-                </dd>
-              </Flex>
-            </dl>
+            <MetadataList variant="stacked" className="text-sm">
+              <MetadataItem variant="inline" label="Trigger" value="pull_request" className="justify-between" />
+              <MetadataItem variant="inline" label="Paths" value={`${testDir}/**, src/**`} className="justify-between" />
+              <MetadataItem variant="inline" label="Runner" value="ubuntu-latest" className="justify-between" />
+              <MetadataItem variant="inline" label="Node Version" value="22" className="justify-between" />
+              <MetadataItem variant="inline" label="Artifacts" value={`${testDir}/screenshots/, playwright-report/`} className="justify-between" />
+              <MetadataItem
+                variant="inline"
+                label="Tests Included"
+                value={`${scriptCount} ${scriptCount === 1 ? 'script' : 'scripts'}`}
+                className="justify-between"
+              />
+            </MetadataList>
           </CardContent>
         </Card>
       </Grid>
@@ -189,9 +173,7 @@ export function ExportPanel() {
           <DialogHeader>
             <DialogTitle>Workflow YAML Preview</DialogTitle>
           </DialogHeader>
-          <pre className="max-h-96 overflow-auto rounded-md border border-border bg-surface-base p-4 font-mono text-xs leading-relaxed">
-            {yamlPreview}
-          </pre>
+          <Code className="max-h-96 overflow-auto">{yamlPreview}</Code>
         </DialogContent>
       </Dialog>
     </PageContent>
