@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   Flex,
+  Grid,
   PageContent,
   Text,
 } from '@ui';
@@ -80,7 +81,7 @@ export function ExportPanel() {
 
   return (
     <PageContent>
-      <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
+      <Grid className="p-6" cols={2} gap="lg">
         {/* Left column: File tree + actions */}
         <Card>
           <CardHeader>
@@ -180,7 +181,7 @@ export function ExportPanel() {
             </dl>
           </CardContent>
         </Card>
-      </div>
+      </Grid>
 
       {/* YAML Preview Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
