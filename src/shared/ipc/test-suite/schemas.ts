@@ -189,3 +189,117 @@ export const BrowserViewCreateInputSchema = z.object({
   url: z.url(),
   bounds: BrowserViewBoundsSchema,
 });
+
+// ─── Analytics ───────────────────────────────────────────────
+
+export const TrendPointSchema = z.object({
+  date: z.string(),
+  passed: z.number(),
+  failed: z.number(),
+  flaky: z.number(),
+  total: z.number(),
+});
+
+export const TopFailureSchema = z.object({
+  scriptId: z.string(),
+  scriptName: z.string(),
+  failureCount: z.number(),
+  totalRuns: z.number(),
+  failureRate: z.number(),
+});
+
+export const SlowestTestSchema = z.object({
+  scriptId: z.string(),
+  scriptName: z.string(),
+  avgDurationMs: z.number(),
+  maxDurationMs: z.number(),
+  runCount: z.number(),
+});
+
+export const ErrorPatternSchema = z.object({
+  pattern: z.string(),
+  count: z.number(),
+  scriptIds: z.array(z.string()),
+  lastSeen: z.string(),
+});
+
+export const FlakySeveritySchema = z.enum(['low', 'medium', 'high']);
+
+export const FlakyTestSchema = z.object({
+  scriptId: z.string(),
+  scriptName: z.string(),
+  flakeRate: z.number(),
+  severity: FlakySeveritySchema,
+  recentResults: z.array(z.enum(['passed', 'failed'])),
+});
+
+export const AnalyticsSummarySchema = z.object({
+  totalScripts: z.number(),
+  totalRuns: z.number(),
+  passRate: z.number(),
+  avgDurationMs: z.number(),
+  flakyCount: z.number(),
+});
+
+export const RunHistoryEntrySchema = z.object({
+  status: z.string(),
+  startedAt: z.string(),
+  durationMs: z.number(),
+});
+
+// ─── Baselines & Diffs ───────────────────────────────────────
+
+export const BaselineRecordSchema = z.object({
+  id: z.string(),
+  scriptId: z.string(),
+  stepIndex: z.number(),
+  stepLabel: z.string(),
+  filePath: z.string(),
+  width: z.number(),
+  height: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const DiffSensitivitySchema = z.enum(['strict', 'balanced', 'relaxed']);
+
+export const DiffResultSchema = z.object({
+  id: z.string(),
+  runId: z.string(),
+  baselineId: z.string(),
+  screenshotId: z.string(),
+  diffFilePath: z.string(),
+  mismatchPercentage: z.number(),
+  mismatchPixels: z.number(),
+  threshold: z.number(),
+  status: z.enum(['match', 'mismatch', 'size-mismatch']),
+  createdAt: z.string(),
+});
+
+// ─── Shared Steps, Schedules, Data Rows ──────────────────────
+
+export const SharedStepGroupSchema = z.object({
+  id: z.string(),
+  projectId: z.string(),
+  name: z.string(),
+  domain: z.string(),
+  description: z.string().nullable(),
+  steps: z.array(TestSuiteStepSchema),
+  usageCount: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const ScheduleRecordSchema = z.object({
+  id: z.string(),
+  scriptId: z.string(),
+  projectId: z.string(),
+  intervalMs: z.number(),
+  enabled: z.boolean(),
+  lastRunAt: z.string().nullable(),
+  nextRunAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const DataRowSchema = z.record(z.string(), z.string());

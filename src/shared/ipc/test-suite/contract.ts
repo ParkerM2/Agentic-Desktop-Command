@@ -9,36 +9,30 @@ import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import {
-  AnalyticsSummarySchema,
-  ErrorPatternSchema,
-  FlakyTestSchema,
-  RunHistoryEntrySchema,
-  SlowestTestSchema,
-  TopFailureSchema,
-  TrendPointSchema,
-} from './analytics-schemas';
-import {
-  BaselineRecordSchema,
-  DiffResultSchema,
-  DiffSensitivitySchema,
-} from './baseline-schemas';
 import { TEST_SUITE, TEST_SUITE_EVENTS } from './channels';
 import {
-  DataRowSchema,
-  ScheduleRecordSchema,
-  SharedStepGroupSchema,
-} from './power-schemas';
-import {
+  AnalyticsSummarySchema,
+  BaselineRecordSchema,
   BrowserViewBoundsSchema,
   BrowserViewCreateInputSchema,
+  DataRowSchema,
+  DiffResultSchema,
+  DiffSensitivitySchema,
+  ErrorPatternSchema,
+  FlakyTestSchema,
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
   QaScriptSchema,
+  RunHistoryEntrySchema,
+  ScheduleRecordSchema,
+  SharedStepGroupSchema,
+  SlowestTestSchema,
   TestSuiteConfigSchema,
   TestSuiteScreenshotSchema,
   TestSuiteStepSchema,
+  TopFailureSchema,
+  TrendPointSchema,
 } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
