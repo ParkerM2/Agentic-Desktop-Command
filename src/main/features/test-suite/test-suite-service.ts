@@ -2,7 +2,7 @@
  * Test Suite Service — Factory
  *
  * Composes script store, runner, and script-writer into a single facade that
- * satisfies the IPC handler interface expected by recorder-handlers.ts.
+ * satisfies the IPC handler interface expected by test-suite-handlers.ts.
  */
 
 import { execSync } from 'node:child_process';
@@ -86,7 +86,7 @@ export interface TestSuiteRunEvent {
   };
 }
 
-// ─── Facade interface (satisfies recorder-handlers.ts) ────────
+// ─── Facade interface (satisfies test-suite-handlers.ts) ────────
 
 export interface TestSuiteService {
   // Sub-services (used by qa-trigger.ts and other internal consumers)

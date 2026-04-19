@@ -8,7 +8,7 @@
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import type { IpcRouter } from '../../../ipc/router';
-import type { TestSuiteService } from '../recorder-handlers';
+import type { TestSuiteService } from '../test-suite-handlers';
 
 export function registerAnalyticsHandlers(
   router: IpcRouter,

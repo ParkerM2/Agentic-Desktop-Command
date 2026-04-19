@@ -3,7 +3,7 @@
  *
  * Owns a single Electron WebContentsView overlaid on the main window so the
  * test-suite recorder can display the user's running app inside our UI.
- * Handlers in `recorder-handlers.ts` drive this via the BROWSER-VIEW IPC
+ * Handlers in `test-suite-handlers.ts` drive this via the BROWSER-VIEW IPC
  * channels.
  *
  * Migrated from the deprecated BrowserView API to WebContentsView (Electron 39+).

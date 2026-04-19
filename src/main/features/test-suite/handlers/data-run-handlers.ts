@@ -13,7 +13,7 @@ import { parseDataFile, substituteDataInSteps } from '../data-runner';
 import { writeSpecFile } from '../script-writer';
 
 import type { IpcRouter } from '../../../ipc/router';
-import type { TestSuiteService } from '../recorder-handlers';
+import type { TestSuiteService } from '../test-suite-handlers';
 
 type TestSuiteStep = (typeof TestSuiteStepSchema)['_output'];
 

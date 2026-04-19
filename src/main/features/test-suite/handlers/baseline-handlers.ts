@@ -2,7 +2,7 @@
  * Baseline & Diff IPC Handlers
  *
  * Registers BASELINE.LIST/SET/DELETE and DIFF.COMPARE/LIST handlers.
- * DIFF.COMPARE contains significant logic — copied verbatim from recorder-handlers.ts.
+ * DIFF.COMPARE contains significant logic — copied verbatim from test-suite-handlers.ts.
  */
 
 import path from 'node:path';
@@ -16,7 +16,7 @@ import { compareScreenshots } from '../diff-engine';
 import { testSuiteDiffs } from '../schema-baselines';
 
 import type { IpcRouter } from '../../../ipc/router';
-import type { TestSuiteService } from '../recorder-handlers';
+import type { TestSuiteService } from '../test-suite-handlers';
 
 const SENSITIVITY_THRESHOLDS = { strict: 0, balanced: 5, relaxed: 15 } as const;
 

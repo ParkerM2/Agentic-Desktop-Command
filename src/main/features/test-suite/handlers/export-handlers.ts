@@ -11,7 +11,7 @@ import { commitWorkflow, previewWorkflow } from '../workflow-exporter';
 
 import type { IpcRouter } from '../../../ipc/router';
 import type { ProjectService } from '../../projects/project-service';
-import type { TestSuiteService } from '../recorder-handlers';
+import type { TestSuiteService } from '../test-suite-handlers';
 
 export function registerExportHandlers(
   router: IpcRouter,
