@@ -2,12 +2,15 @@ import { useState } from 'react';
 
 import {
   Badge,
+  Flex,
+  Grid,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
   Slider,
+  Stack,
   Text,
 } from '@ui';
 
@@ -46,9 +49,9 @@ export function DiffViewer({
   const sliderValue = sliderPosition[0] ?? 50;
 
   return (
-    <div className="space-y-3">
+    <Stack gap="md">
       {/* Controls */}
-      <div className="flex items-center gap-3">
+      <Flex align="center" gap="md">
         <Badge className={statusColor}>
           {status === 'match' ? 'Match' : `${mismatchPercentage}% diff`}
         </Badge>
@@ -62,28 +65,28 @@ export function DiffViewer({
             <SelectItem value="diff-only">Diff Only</SelectItem>
           </SelectContent>
         </Select>
-      </div>
+      </Flex>
 
       {/* View modes */}
       {viewMode === 'side-by-side' && (
-        <div className="grid grid-cols-3 gap-2">
-          <div>
+        <Grid cols={3} gap="sm">
+          <Stack gap="sm">
             <Text className="mb-1 font-semibold" size="sm" variant="muted">Baseline</Text>
             <img
               alt="Baseline"
               className="rounded border border-border"
               src={toFileUrl(baselinePath)}
             />
-          </div>
-          <div>
+          </Stack>
+          <Stack gap="sm">
             <Text className="mb-1 font-semibold" size="sm" variant="muted">Actual</Text>
             <img
               alt="Actual"
               className="rounded border border-border"
               src={toFileUrl(actualPath)}
             />
-          </div>
-          <div>
+          </Stack>
+          <Stack gap="sm">
             <Text className="mb-1 font-semibold" size="sm" variant="muted">Diff</Text>
             {diffPath ? (
               <img
@@ -92,16 +95,16 @@ export function DiffViewer({
                 src={toFileUrl(diffPath)}
               />
             ) : (
-              <div className="flex h-full items-center justify-center rounded border border-border text-sm text-text-muted">
-                No diff image
-              </div>
+              <Flex align="center" className="h-full rounded border border-border" justify="center">
+                <Text size="sm" variant="muted">No diff image</Text>
+              </Flex>
             )}
-          </div>
-        </div>
+          </Stack>
+        </Grid>
       )}
 
       {viewMode === 'slider' && (
-        <div className="space-y-2">
+        <Stack gap="sm">
           <div className="relative overflow-hidden rounded border border-border">
             <img alt="Actual" className="block w-full" src={toFileUrl(actualPath)} />
             <div
@@ -122,15 +125,15 @@ export function DiffViewer({
             value={sliderPosition}
             onValueChange={setSliderPosition}
           />
-          <div className="flex justify-between">
+          <Flex justify="between">
             <Text size="sm" variant="muted">Baseline</Text>
             <Text size="sm" variant="muted">Actual</Text>
-          </div>
-        </div>
+          </Flex>
+        </Stack>
       )}
 
       {viewMode === 'diff-only' && (
-        <div>
+        <Stack gap="sm">
           {diffPath ? (
             <img
               alt="Diff"
@@ -138,12 +141,12 @@ export function DiffViewer({
               src={toFileUrl(diffPath)}
             />
           ) : (
-            <div className="flex h-48 items-center justify-center rounded border border-border text-sm text-text-muted">
-              No diff image available
-            </div>
+            <Flex align="center" className="h-48 rounded border border-border" justify="center">
+              <Text size="sm" variant="muted">No diff image available</Text>
+            </Flex>
           )}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

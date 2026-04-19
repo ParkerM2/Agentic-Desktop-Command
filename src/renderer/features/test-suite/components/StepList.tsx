@@ -28,7 +28,7 @@ import { GripVertical, Pencil, Trash2 } from 'lucide-react';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-import { Button, Input, Text } from '@ui';
+import { Button, Flex, Input, Stack, Text } from '@ui';
 
 import { useTestSuiteStore } from '../test-suite-store';
 
@@ -56,7 +56,7 @@ export function StepList() {
   };
 
   return (
-    <div className="flex flex-col gap-1 overflow-y-auto p-3 text-sm">
+    <Stack className="overflow-y-auto p-3 text-sm" gap="sm">
       <DndContext
         collisionDetection={closestCenter}
         sensors={sensors}
@@ -71,7 +71,7 @@ export function StepList() {
           ))}
         </SortableContext>
       </DndContext>
-    </div>
+    </Stack>
   );
 }
 
@@ -137,7 +137,7 @@ function SortableStepItem({ step }: { step: RecordedStep }) {
       <Text className="font-mono uppercase text-accent" size="sm">{step.step.type}</Text>
       <Text className="flex-1 truncate" size="sm" variant="muted">
         {editing ? (
-          <div className="flex items-center gap-1">
+          <Flex align="center" gap="sm">
             <Input
               className="h-5 text-xs"
               value={editValue}
@@ -149,12 +149,12 @@ function SortableStepItem({ step }: { step: RecordedStep }) {
             <Button size="icon-xs" variant="ghost" onClick={saveEdit}>
               <Pencil className="h-3 w-3" />
             </Button>
-          </div>
+          </Flex>
         ) : (
           renderDetail(step.step)
         )}
       </Text>
-      <div className="flex shrink-0 items-center gap-0.5">
+      <Flex align="center" className="shrink-0" gap="none">
         {step.step.type === 'fill' && !editing && (
           <Button size="icon-xs" variant="ghost" onClick={startEdit}>
             <Pencil className="h-3 w-3" />
@@ -169,7 +169,7 @@ function SortableStepItem({ step }: { step: RecordedStep }) {
         >
           <Trash2 className="h-3 w-3 text-destructive" />
         </Button>
-      </div>
+      </Flex>
     </div>
   );
 }

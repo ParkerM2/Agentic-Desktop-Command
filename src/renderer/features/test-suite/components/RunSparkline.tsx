@@ -1,4 +1,4 @@
-import { Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
+import { Flex, Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
 
 interface RunSparklineProps {
   results: Array<{ status: string; startedAt: string; durationMs: number }>;
@@ -25,7 +25,7 @@ export function RunSparkline({ results }: RunSparklineProps) {
   const reversed = [...results].reverse();
 
   return (
-    <div className="flex items-center gap-0.5">
+    <Flex align="center" gap="none">
       {reversed.map((r, i) => {
         const flaky = isFlaky(reversed, i);
         const color = getBarColor(r.status, flaky);
@@ -46,6 +46,6 @@ export function RunSparkline({ results }: RunSparklineProps) {
           </Tooltip>
         );
       })}
-    </div>
+    </Flex>
   );
 }

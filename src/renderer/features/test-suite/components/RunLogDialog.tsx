@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Flex,
   ScrollArea,
   Text,
 } from '@ui';
@@ -67,7 +68,7 @@ export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps
 
         {/* Summary stats */}
         {runRecord ? (
-          <div className="flex items-center gap-4 border-b pb-2">
+          <Flex align="center" className="border-b pb-2" gap="lg" wrap="nowrap">
             <Text className="flex items-center gap-1" size="sm" variant="muted">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
               {runRecord.stepsPassed ?? 0} passed
@@ -94,14 +95,14 @@ export function RunLogDialog({ lines, runRecord, scriptName }: RunLogDialogProps
                 </>
               )}
             </Button>
-          </div>
+          </Flex>
         ) : null}
 
         {/* Error banner */}
         {runRecord?.error ? (
-          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <Text className="rounded-md border border-destructive/30 bg-destructive/10 p-3" size="sm" variant="error">
             {runRecord.error}
-          </div>
+          </Text>
         ) : null}
 
         {/* Log output */}

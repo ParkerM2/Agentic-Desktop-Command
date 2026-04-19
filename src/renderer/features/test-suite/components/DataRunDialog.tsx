@@ -9,8 +9,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Flex,
   Input,
   Label,
+  ScrollArea,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -55,10 +58,10 @@ export function DataRunDialog({ scriptId, open, onOpenChange }: DataRunDialogPro
             <FileSpreadsheet className="h-4 w-4" /> Data-Driven Run
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
+        <Stack gap="md">
+          <Stack gap="sm">
             <Label>Data File (CSV or JSON)</Label>
-            <div className="flex gap-2">
+            <Flex gap="sm" wrap="nowrap">
               <Input
                 placeholder="/path/to/data.csv"
                 value={filePath}
@@ -67,17 +70,17 @@ export function DataRunDialog({ scriptId, open, onOpenChange }: DataRunDialogPro
               <Button variant="outline" onClick={handleParse}>
                 Parse
               </Button>
-            </div>
-          </div>
+            </Flex>
+          </Stack>
 
           {parsed ? (
             <>
-              <div className="flex items-center gap-2">
+              <Flex align="center" gap="sm">
                 <Badge variant="secondary">{parsed.rowCount} rows</Badge>
                 <Badge variant="secondary">{parsed.headers.length} columns</Badge>
-              </div>
+              </Flex>
 
-              <div className="max-h-48 overflow-auto rounded border border-border">
+              <ScrollArea className="max-h-48 rounded border border-border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -110,7 +113,7 @@ export function DataRunDialog({ scriptId, open, onOpenChange }: DataRunDialogPro
                     ) : null}
                   </TableBody>
                 </Table>
-              </div>
+              </ScrollArea>
 
               <Text size="sm" variant="muted">
                 Use {'{{columnName}}'} in fill step values to substitute data from each row.
@@ -126,7 +129,7 @@ export function DataRunDialog({ scriptId, open, onOpenChange }: DataRunDialogPro
               </Button>
             </>
           ) : null}
-        </div>
+        </Stack>
       </DialogContent>
     </Dialog>
   );
