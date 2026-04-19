@@ -35,7 +35,7 @@ export interface ScreenshotRecord {
 // ─── Service interface ────────────────────────────────────────
 
 export interface ScreenshotService {
-  index: (params: { runId: string; scriptId: string; screenshotDir: string }) => ScreenshotRecord[];
+  index: (params: { runId: string; scriptId: string; screenshotDir: string; projectPath?: string }) => ScreenshotRecord[];
   list: (runId: string) => ScreenshotRecord[];
   listByScript: (scriptId: string) => ScreenshotRecord[];
   get: (id: string) => ScreenshotRecord | null;
@@ -82,42 +82,80 @@ export function createScreenshotService(db: AdcDatabase): ScreenshotService {
      * into records, and persist them to the database.
      */
     index(params) {
-      if (!fs.existsSync(params.screenshotDir)) return [];
-
-      const files = fs
-        .readdirSync(params.screenshotDir)
-        .filter((f) => f.endsWith('.png'))
-        .sort();
-
-      const records: ScreenshotRecord[] = files.map((file) => {
-        // Parse filename: "01-navigate.png" -> stepIndex=1, trigger=navigate
-        const match = /^(\d+)-(\w+)\.png$/.exec(file);
-        const stepIndex = match ? parseInt(match[1], 10) : 0;
-        const triggerRaw = match ? match[2] : 'manual';
-        const trigger = mapTrigger(triggerRaw);
-
-        const fullPath = path.join(params.screenshotDir, file);
-        const { width, height } = readPngDimensions(fullPath);
-
-        return {
-          id: generateId(),
-          runId: params.runId,
-          scriptId: params.scriptId,
-          stepIndex,
-          stepLabel: `${trigger} step ${stepIndex}`,
-          trigger,
-          filePath: fullPath,
-          width,
-          height,
-          capturedAt: new Date().toISOString(),
-        };
+      console.warn('[screenshot-service] index() called:', {
+        runId: params.runId,
+        scriptId: params.scriptId,
+        screenshotDir: params.screenshotDir,
+        exists: fs.existsSync(params.screenshotDir),
+        projectPath: params.projectPath,
       });
+
+      const records: ScreenshotRecord[] = [];
+
+      // 1. Scan our custom SCREENSHOT_DIR for files like "01-navigate.png"
+      if (fs.existsSync(params.screenshotDir)) {
+        const allFiles = fs.readdirSync(params.screenshotDir);
+        const files = allFiles.filter((f) => f.endsWith('.png')).sort();
+        console.warn('[screenshot-service] custom dir files:', { total: allFiles.length, pngs: files.length, files });
+
+        for (const file of files) {
+          const match = /^(\d+)-(\w+)\.png$/.exec(file);
+          const stepIndex = match ? parseInt(match[1], 10) : 0;
+          const triggerRaw = match ? match[2] : 'manual';
+          const trigger = mapTrigger(triggerRaw);
+          const fullPath = path.join(params.screenshotDir, file);
+          const { width, height } = readPngDimensions(fullPath);
+
+          records.push({
+            id: generateId(),
+            runId: params.runId,
+            scriptId: params.scriptId,
+            stepIndex,
+            stepLabel: `${trigger} step ${stepIndex}`,
+            trigger,
+            filePath: fullPath,
+            width,
+            height,
+            capturedAt: new Date().toISOString(),
+          });
+        }
+      } else {
+        console.warn('[screenshot-service] screenshotDir does not exist:', params.screenshotDir);
+      }
+
+      // 2. Fallback: scan Playwright's test-results/ for built-in screenshots
+      if (records.length === 0 && params.projectPath) {
+        const testResultsDir = path.join(params.projectPath, 'test-results');
+        console.warn('[screenshot-service] fallback: scanning test-results/', { exists: fs.existsSync(testResultsDir) });
+        if (fs.existsSync(testResultsDir)) {
+          const pngs = findPngsRecursive(testResultsDir);
+          console.warn('[screenshot-service] found in test-results:', pngs.length);
+          let idx = 0;
+          for (const fullPath of pngs) {
+            const { width, height } = readPngDimensions(fullPath);
+            const baseName = path.basename(fullPath, '.png');
+            records.push({
+              id: generateId(),
+              runId: params.runId,
+              scriptId: params.scriptId,
+              stepIndex: idx++,
+              stepLabel: baseName,
+              trigger: 'manual',
+              filePath: fullPath,
+              width,
+              height,
+              capturedAt: new Date().toISOString(),
+            });
+          }
+        }
+      }
 
       // Batch insert into SQLite
       for (const record of records) {
         db.insert(testSuiteScreenshots).values(record).run();
       }
 
+      console.warn('[screenshot-service] indexed total:', records.length);
       return records;
     },
 
@@ -158,6 +196,26 @@ export function createScreenshotService(db: AdcDatabase): ScreenshotService {
       return row ? toRecord(row) : null;
     },
   };
+}
+
+// ─── Recursive PNG finder ──────────────────────────────────
+
+/** Recursively find all .png files in a directory (for Playwright test-results). */
+function findPngsRecursive(dir: string): string[] {
+  const results: string[] = [];
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        results.push(...findPngsRecursive(fullPath));
+      } else if (entry.name.endsWith('.png')) {
+        results.push(fullPath);
+      }
+    }
+  } catch {
+    // Directory access error — skip
+  }
+  return results;
 }
 
 // ─── Trigger mapping ────────────────────────────────────────

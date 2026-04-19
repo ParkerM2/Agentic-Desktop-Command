@@ -160,7 +160,7 @@ export function createTestSuiteService(
   const runEventListeners: Array<(event: TestSuiteRunEvent) => void> = [];
 
   // Tracks screenshotDir per runId so onComplete can index screenshots
-  const runScreenshotDirs = new Map<string, { screenshotDir: string; scriptId: string }>();
+  const runScreenshotDirs = new Map<string, { screenshotDir: string; scriptId: string; projectPath: string }>();
 
   const sharedHandlers: RunnerEventHandlers = {
     onLine(runId, line, timestamp) {
@@ -181,12 +181,20 @@ export function createTestSuiteService(
     onComplete(runId, status, record) {
       // Index screenshots if a screenshot dir was configured for this run
       const ssMeta = runScreenshotDirs.get(runId);
+      console.warn('[test-suite-service] onComplete:', {
+        runId,
+        status,
+        hasScreenshotDir: !!ssMeta,
+        screenshotDir: ssMeta?.screenshotDir,
+      });
       if (ssMeta) {
-        screenshotStore.index({
+        const indexed = screenshotStore.index({
           runId,
           scriptId: ssMeta.scriptId,
           screenshotDir: ssMeta.screenshotDir,
+          projectPath: ssMeta.projectPath,
         });
+        console.warn('[test-suite-service] indexed screenshots:', indexed.length);
         runScreenshotDirs.delete(runId);
       }
 
@@ -345,8 +353,18 @@ export function createTestSuiteService(
       });
 
       // Track screenshot dir for post-run indexing
-      if (screenshotDir) {
-        runScreenshotDirs.set(runId, { screenshotDir, scriptId });
+      console.warn('[test-suite-service] runScript:', {
+        scriptId,
+        screenshotMode,
+        screenshotDir: screenshotDir ?? '(none - manual mode)',
+        runId,
+      });
+      if (screenshotMode !== 'manual') {
+        runScreenshotDirs.set(runId, {
+          screenshotDir: screenshotDir ?? path.join(projectPath, 'test-results'),
+          scriptId,
+          projectPath,
+        });
       }
 
       return { runId };
