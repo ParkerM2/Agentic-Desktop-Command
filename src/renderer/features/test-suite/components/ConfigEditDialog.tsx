@@ -13,7 +13,6 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
-import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
@@ -37,6 +36,7 @@ import {
   Text,
 } from '@ui';
 
+import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import {
   DEFAULT_ACTION_TIMEOUT,
   DEFAULT_NAVIGATION_TIMEOUT,

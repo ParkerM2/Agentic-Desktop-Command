@@ -11,8 +11,8 @@ export function RunStatusDot({ status }: { status: string }) {
   const variant = STATUS_VARIANT[status] ?? 'neutral';
   return (
     <StatusIndicator
-      variant={variant}
       className={status === 'running' ? 'animate-pulse' : undefined}
+      variant={variant}
     />
   );
 }

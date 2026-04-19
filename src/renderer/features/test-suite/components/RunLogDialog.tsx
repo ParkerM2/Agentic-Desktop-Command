@@ -24,6 +24,7 @@ import {
 } from '@ui';
 
 import { formatDuration, getOutputLineClass } from '../lib/format';
+
 import type { RunRecord } from '../lib/types';
 
 interface RunLogDialogProps {

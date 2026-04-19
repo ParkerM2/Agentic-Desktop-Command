@@ -19,6 +19,7 @@ import {
 } from '@ui';
 
 import { getOutputLineClass } from '../lib/format';
+
 import type { RunRecord, StreamOutputLine } from '../lib/types';
 
 interface ResultsOutputLogProps {

@@ -50,7 +50,7 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
   const maxDuration = Math.max(...steps.map((s) => s.durationMs ?? 0), 1);
 
   return (
-    <Stack gap="none" className="gap-1 overflow-y-auto p-3">
+    <Stack className="gap-1 overflow-y-auto p-3" gap="none">
       {steps.map((step, i) => {
         const isLast = i === steps.length - 1;
         const isComplete = step.durationMs !== null;

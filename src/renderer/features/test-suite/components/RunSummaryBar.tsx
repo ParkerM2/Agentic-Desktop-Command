@@ -3,10 +3,12 @@ import { CheckCircle2, Clock, ListPlus, XCircle } from 'lucide-react';
 import { Button, Flex, Text } from '@ui';
 
 import { formatDuration } from '../lib/format';
-import type { RunRecord } from '../lib/types';
+
 
 import { ViewReportButton } from './ResultsToolbar';
 import { ResultsWorkflowActions } from './ResultsWorkflowActions';
+
+import type { RunRecord } from '../lib/types';
 
 interface RunSummaryBarProps {
   runRecord: RunRecord;

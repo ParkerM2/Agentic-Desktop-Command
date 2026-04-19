@@ -24,12 +24,12 @@ import { registerSetupHandlers } from './handlers/setup-handlers';
 import { registerSharedStepsHandlers } from './handlers/shared-steps-handlers';
 import { registerWatchHandlers } from './handlers/watch-handlers';
 
+import type { TestSuiteService } from './test-suite-service';
 import type { IpcRouter } from '../../ipc/router';
 import type { ProjectService } from '../projects/project-service';
 
-export type { TestSuiteService, TestSuiteRunEvent } from './test-suite-service';
 
-import type { TestSuiteService } from './test-suite-service';
+export type { TestSuiteService, TestSuiteRunEvent } from './test-suite-service';
 
 // ─── Handler Registration ──────────────────────────────────────
 

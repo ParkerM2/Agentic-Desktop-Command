@@ -19,7 +19,7 @@ function ScoreBar({ label, max, value }: ScoreBarProps) {
       <Text className="w-16" size="sm" variant="muted">
         {label}
       </Text>
-      <Progress value={pct} size="sm" className="flex-1" />
+      <Progress className="flex-1" size="sm" value={pct} />
       <Text className="w-8 text-right" size="sm" variant="muted">
         {value}/{max}
       </Text>

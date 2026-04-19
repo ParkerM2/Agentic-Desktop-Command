@@ -1,8 +1,9 @@
 import type { TestSuiteConfig, TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
+import { DEFAULT_VIEWPORT_HEIGHT, DEFAULT_VIEWPORT_WIDTH } from './constants';
+
 import type { z } from 'zod';
 
-import { DEFAULT_VIEWPORT_HEIGHT, DEFAULT_VIEWPORT_WIDTH } from './constants';
 
 type TestSuiteStep = z.infer<typeof TestSuiteStepSchema>;
 

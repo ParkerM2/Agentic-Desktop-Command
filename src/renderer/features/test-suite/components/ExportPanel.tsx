@@ -150,17 +150,17 @@ export function ExportPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <MetadataList variant="stacked" className="text-sm">
-              <MetadataItem variant="inline" label="Trigger" value="pull_request" className="justify-between" />
-              <MetadataItem variant="inline" label="Paths" value={`${testDir}/**, src/**`} className="justify-between" />
-              <MetadataItem variant="inline" label="Runner" value="ubuntu-latest" className="justify-between" />
-              <MetadataItem variant="inline" label="Node Version" value="22" className="justify-between" />
-              <MetadataItem variant="inline" label="Artifacts" value={`${testDir}/screenshots/, playwright-report/`} className="justify-between" />
+            <MetadataList className="text-sm" variant="stacked">
+              <MetadataItem className="justify-between" label="Trigger" value="pull_request" variant="inline" />
+              <MetadataItem className="justify-between" label="Paths" value={`${testDir}/**, src/**`} variant="inline" />
+              <MetadataItem className="justify-between" label="Runner" value="ubuntu-latest" variant="inline" />
+              <MetadataItem className="justify-between" label="Node Version" value="22" variant="inline" />
+              <MetadataItem className="justify-between" label="Artifacts" value={`${testDir}/screenshots/, playwright-report/`} variant="inline" />
               <MetadataItem
-                variant="inline"
+                className="justify-between"
                 label="Tests Included"
                 value={`${scriptCount} ${scriptCount === 1 ? 'script' : 'scripts'}`}
-                className="justify-between"
+                variant="inline"
               />
             </MetadataList>
           </CardContent>

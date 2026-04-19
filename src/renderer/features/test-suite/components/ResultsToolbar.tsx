@@ -17,10 +17,11 @@ import {
   Text,
 } from '@ui';
 
-import type { RunRecord } from '../lib/types';
 
 import { RunLogDialog } from './RunLogDialog';
 import { RunStatusBadge, RunStatusDot } from './RunStatusBadge';
+
+import type { RunRecord } from '../lib/types';
 
 interface Script {
   id: string;

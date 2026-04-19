@@ -6,8 +6,8 @@
  */
 
 import { eq, and, sql } from 'drizzle-orm';
-import { generateId } from '@shared/lib/id';
 
+import { generateId } from '@shared/lib/id';
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
 import { testSuiteSharedSteps } from './schema';

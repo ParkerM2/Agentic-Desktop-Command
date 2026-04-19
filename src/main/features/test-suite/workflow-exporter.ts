@@ -13,7 +13,6 @@ const WORKFLOW_PATH = '.github/workflows/test-suite.yml';
 export function previewWorkflow(
   projectRoot: string,
   testDir: string,
-  specNames: string[],
 ): { yaml: string; filePath: string; exists: boolean } {
   const yaml = renderYaml(testDir);
   const exists = fs.existsSync(path.join(projectRoot, WORKFLOW_PATH));
@@ -23,7 +22,6 @@ export function previewWorkflow(
 export function commitWorkflow(
   projectRoot: string,
   testDir: string,
-  specNames: string[],
 ): { filePath: string; committed: boolean } {
   const fullPath = path.join(projectRoot, WORKFLOW_PATH);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });

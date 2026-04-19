@@ -1,4 +1,5 @@
 import { formatDuration } from './format';
+
 import type { RunRecord } from './types';
 
 export function buildDefaultDescription(

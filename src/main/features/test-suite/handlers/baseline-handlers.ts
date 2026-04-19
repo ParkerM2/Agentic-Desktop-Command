@@ -61,7 +61,7 @@ export function registerBaselineHandlers(
 
   router.handle(TEST_SUITE.DIFF.COMPARE, async ({ runId, sensitivity }) => {
     const screenshots = testSuiteService.screenshotStore.list(runId);
-    return testSuiteService.baselineStore.compareDiffs({
+    return await testSuiteService.baselineStore.compareDiffs({
       runId,
       sensitivity,
       screenshots,
