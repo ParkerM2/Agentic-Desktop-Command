@@ -207,7 +207,7 @@ export function RecordingPanel() {
       </Flex>
 
       {/* Main split: steps + browser */}
-      <Flex className="flex-1 overflow-hidden" gap="none" wrap="nowrap">
+      <Flex align="stretch" className="flex-1 overflow-hidden" gap="none" wrap="nowrap">
         <Stack className="w-64 shrink-0 overflow-y-auto border-r border-border" gap="none">
           <Flex align="center" className="h-10 shrink-0 border-b border-border px-3" gap="none">
             <Text className="text-xs font-semibold uppercase text-text-muted">
