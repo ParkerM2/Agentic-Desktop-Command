@@ -76,6 +76,7 @@ export const TestSuiteStepSchema = z.discriminatedUnion('type', [
   QaStepWaitSchema,
   QaStepAssertSchema,
 ]);
+export type TestSuiteStep = z.infer<typeof TestSuiteStepSchema>;
 
 // ─── Script ───────────────────────────────────────────────────
 
@@ -94,10 +95,15 @@ export const QaScriptSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+export type QaScript = z.infer<typeof QaScriptSchema>;
 
 // ─── Run Status ───────────────────────────────────────────────
 
 export const QaRunStatusSchema = z.enum(['running', 'passed', 'failed', 'cancelled']);
+export type QaRunStatus = z.infer<typeof QaRunStatusSchema>;
+
+export const TriggeredBySchema = z.enum(['manual', 'scheduled', 'ci']);
+export type TriggeredBy = z.infer<typeof TriggeredBySchema>;
 
 // ─── Run ──────────────────────────────────────────────────────
 
@@ -107,7 +113,7 @@ export const QaRunSchema = z.object({
   status: QaRunStatusSchema,
   startedAt: z.string(),
   completedAt: z.string().optional(),
-  triggeredBy: z.enum(['manual', 'scheduled', 'ci']),
+  triggeredBy: TriggeredBySchema,
   outputLines: z.array(z.string()),
   screenshots: z.array(z.string()),
   error: z.string().optional(),
@@ -116,6 +122,7 @@ export const QaRunSchema = z.object({
   durationMs: z.number().int().default(0),
   reportPath: z.string().optional(),
 });
+export type QaRun = z.infer<typeof QaRunSchema>;
 
 // ─── Report ───────────────────────────────────────────────────
 
@@ -132,6 +139,7 @@ export const QaRunReportSchema = z.object({
   startedAt: z.string(),
   completedAt: z.string().optional(),
 });
+export type QaRunReport = z.infer<typeof QaRunReportSchema>;
 
 // ─── Config ───────────────────────────────────────────────────
 
@@ -199,6 +207,7 @@ export const TrendPointSchema = z.object({
   flaky: z.number(),
   total: z.number(),
 });
+export type TrendPoint = z.infer<typeof TrendPointSchema>;
 
 export const TopFailureSchema = z.object({
   scriptId: z.string(),
@@ -240,9 +249,10 @@ export const AnalyticsSummarySchema = z.object({
   avgDurationMs: z.number(),
   flakyCount: z.number(),
 });
+export type AnalyticsSummary = z.infer<typeof AnalyticsSummarySchema>;
 
 export const RunHistoryEntrySchema = z.object({
-  status: z.string(),
+  status: QaRunStatusSchema,
   startedAt: z.string(),
   durationMs: z.number(),
 });
@@ -260,6 +270,7 @@ export const BaselineRecordSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+export type BaselineRecord = z.infer<typeof BaselineRecordSchema>;
 
 export const DiffSensitivitySchema = z.enum(['strict', 'balanced', 'relaxed']);
 
@@ -275,6 +286,7 @@ export const DiffResultSchema = z.object({
   status: z.enum(['match', 'mismatch', 'size-mismatch']),
   createdAt: z.string(),
 });
+export type DiffResult = z.infer<typeof DiffResultSchema>;
 
 // ─── Shared Steps, Schedules, Data Rows ──────────────────────
 
@@ -289,6 +301,7 @@ export const SharedStepGroupSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+export type SharedStepGroup = z.infer<typeof SharedStepGroupSchema>;
 
 export const ScheduleRecordSchema = z.object({
   id: z.string(),
@@ -301,5 +314,6 @@ export const ScheduleRecordSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+export type ScheduleRecord = z.infer<typeof ScheduleRecordSchema>;
 
 export const DataRowSchema = z.record(z.string(), z.string());

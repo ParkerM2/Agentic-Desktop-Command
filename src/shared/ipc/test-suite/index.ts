@@ -36,5 +36,21 @@ export {
   TestSuiteStepSchema,
   TopFailureSchema,
   TrendPointSchema,
+  TriggeredBySchema,
 } from './schemas';
-export type { TestSuiteConfig, TestSuiteScreenshot } from './schemas';
+export type {
+  AnalyticsSummary,
+  BaselineRecord,
+  DiffResult,
+  QaRun,
+  QaRunReport,
+  QaRunStatus,
+  QaScript,
+  ScheduleRecord,
+  SharedStepGroup,
+  TestSuiteConfig,
+  TestSuiteScreenshot,
+  TestSuiteStep,
+  TrendPoint,
+  TriggeredBy,
+} from './schemas';
