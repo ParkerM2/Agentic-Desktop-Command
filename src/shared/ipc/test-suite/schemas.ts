@@ -77,7 +77,7 @@ export const QaStepAssertSchema = z.object({
   type: z.literal('assert'),
   selector: z.string(),
   expected: z.string(),
-  assertMethod: AssertMethodSchema.default('toHaveText'),
+  assertMethod: AssertMethodSchema.optional(),
   attribute: z.string().optional(),
 });
 
