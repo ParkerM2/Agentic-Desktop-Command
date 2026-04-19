@@ -23,3 +23,43 @@ export const TAB = {
   ANALYTICS: 'analytics',
   SHARED_STEPS: 'shared-steps',
 } as const;
+
+// ── Default timeouts (ms) ──
+export const DEFAULT_NAVIGATION_TIMEOUT = 30_000;
+export const DEFAULT_ACTION_TIMEOUT = 10_000;
+
+// ── Default viewport ──
+export const DEFAULT_VIEWPORT_WIDTH = 1280;
+export const DEFAULT_VIEWPORT_HEIGHT = 720;
+export const MIN_VIEWPORT_WIDTH = 320;
+export const MIN_VIEWPORT_HEIGHT = 240;
+
+// ── Playwright config ──
+export const MAX_WORKERS = 16;
+export const MAX_RETRIES = 5;
+
+// ── Analytics thresholds ──
+export const GRADE_THRESHOLDS = [
+  { min: 90, grade: 'A', color: 'text-green-500' },
+  { min: 80, grade: 'B', color: 'text-blue-500' },
+  { min: 70, grade: 'C', color: 'text-yellow-500' },
+  { min: 60, grade: 'D', color: 'text-orange-500' },
+  { min: 0, grade: 'F', color: 'text-destructive' },
+] as const;
+
+export const HEALTH_WEIGHTS = {
+  passRate: 40,
+  stability: 30,
+  speed: 30,
+} as const;
+
+export const SPEED_THRESHOLDS = {
+  fast: 5,
+  medium: 30,
+  curve: 25,
+} as const;
+
+// ── UI constants ──
+export const COPY_FEEDBACK_MS = 2_000;
+export const ERROR_LINE_TRUNCATION = 20;
+export const SPARKLINE_RUN_LIMIT = 10;
