@@ -8,7 +8,7 @@
 import { Notification } from 'electron';
 
 import { eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { generateId } from '@shared/lib/id';
 
 import { testSuiteSchedules } from './schema';
 
@@ -104,7 +104,7 @@ export function createScheduler(db: AdcDatabase): SchedulerService {
     create(params) {
       const now = new Date().toISOString();
       const nextRun = new Date(Date.now() + params.intervalMs).toISOString();
-      const id = nanoid();
+      const id = generateId();
 
       const record: ScheduleRecord = {
         id,

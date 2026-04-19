@@ -3,7 +3,7 @@
  */
 
 import { eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { generateId } from '@shared/lib/id';
 
 import { testSuiteScripts } from '../../db/schema';
 
@@ -112,7 +112,7 @@ export function createScriptService(db: AdcDatabase): ScriptService {
       }
 
       const record = {
-        id: data.id ?? nanoid(),
+        id: data.id ?? generateId(),
         name: data.name,
         description: data.description ?? null,
         baseUrl: data.targetUrl,

@@ -6,7 +6,7 @@
  */
 
 import { eq, and, sql } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { generateId } from '@shared/lib/id';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
@@ -102,7 +102,7 @@ export function createSharedStepsService(db: AdcDatabase): SharedStepsService {
 
     create(params) {
       const now = new Date().toISOString();
-      const id = nanoid();
+      const id = generateId();
 
       const record = {
         id,

@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { generateId } from '@shared/lib/id';
 
 import { testSuiteScreenshots } from '../../db/schema';
 
@@ -79,7 +79,7 @@ export function createScreenshotService(db: AdcDatabase): ScreenshotService {
         const trigger = mapTrigger(triggerRaw);
 
         return {
-          id: nanoid(),
+          id: generateId(),
           runId: params.runId,
           scriptId: params.scriptId,
           stepIndex,

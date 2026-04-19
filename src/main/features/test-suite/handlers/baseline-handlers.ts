@@ -8,7 +8,7 @@
 import path from 'node:path';
 
 import { eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { generateId } from '@shared/lib/id';
 
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
@@ -92,7 +92,7 @@ export function registerBaselineHandlers(
       });
 
       const record = {
-        id: nanoid(),
+        id: generateId(),
         runId,
         baselineId: baseline.id,
         screenshotId: ss.id,
