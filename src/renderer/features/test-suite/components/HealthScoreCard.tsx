@@ -1,5 +1,7 @@
 import { Card, CardContent, Flex, Stack, Text } from '@ui';
 
+import { HEALTH_WEIGHTS } from '../lib/constants';
+
 import type { HealthScore } from '../lib/health-score';
 
 // ─── ScoreBar ────────────────────────────────────────────
@@ -38,16 +40,16 @@ export function HealthScoreCard({ health }: HealthScoreCardProps) {
     <Card>
       <CardContent className="p-6">
         <Flex align="center" gap="lg" wrap="nowrap">
-          <div className={`text-6xl font-bold ${health.color}`}>{health.grade}</div>
+          <Text className={`text-6xl font-bold ${health.color}`}>{health.grade}</Text>
           <Stack className="flex-1" gap="sm">
             <Flex align="center" justify="between" wrap="nowrap">
               <Text className="font-medium">Test Health Score</Text>
               <Text className={`text-lg font-semibold ${health.color}`}>{health.score}/100</Text>
             </Flex>
             <Stack gap="none">
-              <ScoreBar label="Pass Rate" max={40} value={health.breakdown.passRate} />
-              <ScoreBar label="Stability" max={30} value={health.breakdown.stability} />
-              <ScoreBar label="Speed" max={30} value={health.breakdown.speed} />
+              <ScoreBar label="Pass Rate" max={HEALTH_WEIGHTS.passRate} value={health.breakdown.passRate} />
+              <ScoreBar label="Stability" max={HEALTH_WEIGHTS.stability} value={health.breakdown.stability} />
+              <ScoreBar label="Speed" max={HEALTH_WEIGHTS.speed} value={health.breakdown.speed} />
             </Stack>
           </Stack>
         </Flex>
