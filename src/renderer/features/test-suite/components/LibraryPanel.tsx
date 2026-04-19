@@ -10,12 +10,11 @@ import {
 } from '@ui';
 
 import { useDeleteScript } from '../api/useDeleteScript';
-import { useBatchRun, useRunScript } from '../api/useRuns';
+import { useBatchRun, useRuns, useRunScript } from '../api/useRuns';
 import { useSaveScript } from '../api/useSaveScript';
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { useFlakyTests, useRunHistory } from '../api/useTestSuiteAnalytics';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
-import { useAllTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useStartWatch, useStopWatch, useWatchedScripts } from '../api/useWatchMode';
 import { useLibraryFilters } from '../hooks/useLibraryFilters';
@@ -42,7 +41,7 @@ export function LibraryPanel() {
   const { data: flakyTests = [] } = useFlakyTests(projectId);
   const flakySet = new Set(flakyTests.map((f) => f.scriptId));
   const { data: watchedScripts = [] } = useWatchedScripts();
-  const { data: allRuns = [] } = useAllTestSuiteRuns();
+  const { data: allRuns = [] } = useRuns();
   const { data: config } = useTestSuiteConfig(projectId);
 
   const startWatch = useStartWatch();

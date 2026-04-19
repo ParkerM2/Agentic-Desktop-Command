@@ -4,14 +4,11 @@ import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-const baselineKeys = {
-  list: (scriptId: string) => ['test-suite', 'baselines', scriptId] as const,
-  diffs: (runId: string) => ['test-suite', 'diffs', runId] as const,
-};
+import { testSuiteKeys } from './testSuiteKeys';
 
 export function useBaselines(scriptId: string | undefined) {
   return useQuery({
-    queryKey: baselineKeys.list(scriptId ?? ''),
+    queryKey: testSuiteKeys.baselines(scriptId ?? ''),
     queryFn: () => ipc(TEST_SUITE.BASELINE.LIST, { scriptId: scriptId ?? '' }),
     enabled: !!scriptId,
     staleTime: 30_000,
@@ -24,7 +21,7 @@ export function useSetBaseline() {
     mutationFn: (input: { scriptId: string; screenshotId: string }) =>
       ipc(TEST_SUITE.BASELINE.SET, input),
     onSuccess: (_data, variables) => {
-      void qc.invalidateQueries({ queryKey: baselineKeys.list(variables.scriptId) });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.baselines(variables.scriptId) });
     },
   });
 }
@@ -34,14 +31,14 @@ export function useDeleteBaselines() {
   return useMutation({
     mutationFn: (scriptId: string) => ipc(TEST_SUITE.BASELINE.DELETE, { scriptId }),
     onSuccess: (_data, scriptId) => {
-      void qc.invalidateQueries({ queryKey: baselineKeys.list(scriptId) });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.baselines(scriptId) });
     },
   });
 }
 
 export function useRunDiffs(runId: string | undefined) {
   return useQuery({
-    queryKey: baselineKeys.diffs(runId ?? ''),
+    queryKey: testSuiteKeys.diffs(runId ?? ''),
     queryFn: () => ipc(TEST_SUITE.DIFF.LIST, { runId: runId ?? '' }),
     enabled: !!runId,
     staleTime: 10_000,
@@ -57,7 +54,7 @@ export function useCompareDiffs() {
         sensitivity: input.sensitivity ?? 'balanced',
       }),
     onSuccess: (_data, variables) => {
-      void qc.invalidateQueries({ queryKey: baselineKeys.diffs(variables.runId) });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.diffs(variables.runId) });
     },
   });
 }

@@ -2,7 +2,7 @@ export { TestSuitePage } from './components/TestSuitePage';
 export { useTestSuiteStore } from './test-suite-store';
 export {
   useTestSuiteScripts,
-  useTestSuiteRuns,
+  useRuns,
   useTestSuiteScreenshots,
   useTestSuiteConfig,
 } from './api';

@@ -4,9 +4,8 @@ import { useLooseParams } from '@renderer/shared/hooks';
 
 import { Flex, PageContent, Stack, Text } from '@ui';
 
-import { useRun, useRunScript } from '../api/useRuns';
+import { useRun, useRuns, useRunScript } from '../api/useRuns';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
-import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useDisplayLines } from '../hooks/useDisplayLines';
 import { useDisplaySteps } from '../hooks/useDisplaySteps';
@@ -38,7 +37,7 @@ function ResultsPanelInner({ projectId }: { projectId: string }) {
   const activeScript = scripts.find((s) => s.id === scriptId);
 
   const { data: config } = useTestSuiteConfig(projectId);
-  const { data: runs = [] } = useTestSuiteRuns(scriptId);
+  const { data: runs = [] } = useRuns(scriptId);
   const [activeEnv, setActiveEnv] = useState('default');
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
