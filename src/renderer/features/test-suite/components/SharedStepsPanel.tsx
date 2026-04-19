@@ -18,6 +18,7 @@ import {
   DialogTrigger,
   EmptyState,
   Flex,
+  Grid,
   Input,
   Label,
   PageContent,
@@ -88,7 +89,7 @@ export function SharedStepsPanel() {
             title="No shared steps"
           />
         ) : (
-          <div className="grid gap-3 p-4 md:grid-cols-2">
+          <Grid className="p-4" cols={2} gap="md">
             {filtered.map((group) => (
               <Card key={group.id}>
                 <CardHeader className="pb-2">
@@ -126,7 +127,7 @@ export function SharedStepsPanel() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </Grid>
         )}
       </ScrollArea>
     </PageContent>
