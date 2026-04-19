@@ -12,6 +12,7 @@ import { ImageIcon } from 'lucide-react';
 
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
+import { useLooseParams } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { EmptyState, Flex, PageContent, Spinner, Stack } from '@ui';
@@ -24,6 +25,7 @@ import {
 } from '../api/useBaselines';
 import { useRuns } from '../api/useRuns';
 import { useTestSuiteScreenshots } from '../api/useTestSuiteScreenshots';
+import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { ScreenshotPreview } from './ScreenshotPreview';
@@ -37,10 +39,12 @@ type Sensitivity = 'strict' | 'balanced' | 'relaxed';
 // ─── Component ────────────────────────────────────────────────
 
 export function ScreenshotsPanel() {
+  const { projectId } = useLooseParams();
   const selectedRunId = useTestSuiteStore((s) => s.selectedRunId);
   const setSelectedRunId = useTestSuiteStore((s) => s.setSelectedRunId);
 
   const { data: runs, isLoading: runsLoading } = useRuns();
+  const { data: scripts } = useTestSuiteScripts(projectId);
   const { data: screenshots, isLoading: screenshotsLoading } = useTestSuiteScreenshots(selectedRunId);
 
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -155,10 +159,15 @@ export function ScreenshotsPanel() {
           isComparePending={compareDiffs.isPending}
           isSetBaselinePending={setBaseline.isPending}
           openFolderDisabled={!selectedRunId || !hasScreenshots}
-          runs={runs ?? []}
           selectedRunId={selectedRunId}
           sensitivity={sensitivity}
           setBaselineDisabled={selected === null}
+          runs={(runs ?? []).map((r) => ({
+            id: r.id,
+            status: r.status,
+            startedAt: r.startedAt,
+            scriptName: scripts?.find((s) => s.id === r.scriptId)?.name,
+          }))}
           onCompare={handleCompare}
           onCopy={() => void handleCopy()}
           onOpenFolder={() => void handleOpenFolder()}

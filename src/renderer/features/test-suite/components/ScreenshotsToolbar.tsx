@@ -20,6 +20,13 @@ import {
 
 type Sensitivity = 'strict' | 'balanced' | 'relaxed';
 
+interface RunItem {
+  id: string;
+  status: string;
+  startedAt?: string;
+  scriptName?: string;
+}
+
 interface ScreenshotsToolbarProps {
   compareDisabled: boolean;
   copyDisabled: boolean;
@@ -32,7 +39,7 @@ interface ScreenshotsToolbarProps {
   onSensitivityChange: (value: Sensitivity) => void;
   onSetBaseline: () => void;
   openFolderDisabled: boolean;
-  runs: Array<{ id: string; status: string }>;
+  runs: RunItem[];
   selectedRunId: string | null;
   sensitivity: Sensitivity;
   setBaselineDisabled: boolean;
@@ -67,11 +74,21 @@ export function ScreenshotsToolbar({
           <SelectValue placeholder="Select a run..." />
         </SelectTrigger>
         <SelectContent>
-          {runs.map((run) => (
-            <SelectItem key={run.id} value={run.id}>
-              {run.id.slice(0, 8)} — {run.status}
-            </SelectItem>
-          ))}
+          {runs.map((run) => {
+            const date = run.startedAt
+              ? new Date(run.startedAt).toLocaleString(undefined, {
+                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                })
+              : run.id.slice(0, 8);
+            const label = run.scriptName
+              ? `${run.scriptName} — ${date} (${run.status})`
+              : `${date} — ${run.status}`;
+            return (
+              <SelectItem key={run.id} value={run.id}>
+                {label}
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
 

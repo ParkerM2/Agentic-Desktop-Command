@@ -1,6 +1,6 @@
 import { type RefObject, useMemo, useState } from 'react';
 
-import { Check, ClipboardCopy, FileCode, FileText } from 'lucide-react';
+import { Check, ClipboardCopy, FileCode, FileText, ImageIcon } from 'lucide-react';
 
 import {
   Button,
@@ -10,6 +10,7 @@ import {
   InlineAlert,
   MetricCard,
   ScrollArea,
+  SectionHeader,
   Stack,
   Tabs,
   TabsContent,
@@ -20,7 +21,18 @@ import {
 
 import { getOutputLineClass } from '../lib/format';
 
+import { ScreenshotGallery } from './ScreenshotGallery';
+
 import type { RunRecord, StreamOutputLine } from '../lib/types';
+
+interface ScreenshotItem {
+  id: string;
+  stepIndex: number;
+  stepLabel: string;
+  trigger: string;
+  filePath: string;
+  capturedAt: string;
+}
 
 interface ResultsOutputLogProps {
   displayLines: StreamOutputLine[];
@@ -28,11 +40,13 @@ interface ResultsOutputLogProps {
   activeRunId: string | null;
   errorMessage?: string;
   runRecord?: RunRecord | null;
+  screenshots?: ScreenshotItem[];
   scriptName?: string;
 }
 
 const OUTPUT_VIEW = {
   SUMMARY: 'summary',
+  SCREENSHOTS: 'screenshots',
   JSON: 'json',
   RAW: 'raw',
 } as const;
@@ -138,6 +152,7 @@ export function ResultsOutputLog({
   activeRunId,
   errorMessage,
   runRecord,
+  screenshots = [],
   scriptName,
 }: ResultsOutputLogProps) {
   const [view, setView] = useState<string>(OUTPUT_VIEW.SUMMARY);
@@ -174,6 +189,9 @@ export function ResultsOutputLog({
               <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.SUMMARY}>
                 <FileText className="h-3 w-3" /> Summary
               </TabsTrigger>
+              <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.SCREENSHOTS}>
+                <ImageIcon className="h-3 w-3" /> Screenshots{screenshots.length > 0 ? ` (${screenshots.length})` : ''}
+              </TabsTrigger>
               <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.JSON}>
                 <FileCode className="h-3 w-3" /> JSON
               </TabsTrigger>
@@ -188,8 +206,13 @@ export function ResultsOutputLog({
             <SummaryView
               displayLines={displayLines}
               runRecord={runRecord}
+              screenshots={screenshots}
               scriptName={scriptName}
             />
+          </TabsContent>
+
+          <TabsContent className="flex-1 overflow-y-auto p-3 mt-0" value={OUTPUT_VIEW.SCREENSHOTS}>
+            <ScreenshotGallery screenshots={screenshots} />
           </TabsContent>
 
           <TabsContent className="flex-1 overflow-y-auto p-3 mt-0" value={OUTPUT_VIEW.JSON}>
@@ -229,10 +252,12 @@ function SummaryView({
   runRecord,
   scriptName,
   displayLines,
+  screenshots = [],
 }: {
   runRecord?: RunRecord | null;
   scriptName?: string;
   displayLines: StreamOutputLine[];
+  screenshots?: ScreenshotItem[];
 }) {
   if (!runRecord) {
     return <Text variant="muted">Waiting for results...</Text>;
@@ -305,6 +330,14 @@ function SummaryView({
             </Code>
           </Stack>
         </InlineAlert>
+      ) : null}
+
+      {/* Screenshot preview strip */}
+      {screenshots.length > 0 ? (
+        <Stack gap="sm">
+          <SectionHeader title={`Screenshots (${screenshots.length})`} />
+          <ScreenshotGallery screenshots={screenshots} />
+        </Stack>
       ) : null}
     </Stack>
   );

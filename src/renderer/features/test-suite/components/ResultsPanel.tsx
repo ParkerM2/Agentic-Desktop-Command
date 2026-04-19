@@ -6,6 +6,7 @@ import { Flex, PageContent, Stack, Text } from '@ui';
 
 import { useRun, useRuns, useRunScript } from '../api/useRuns';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
+import { useTestSuiteScreenshots } from '../api/useTestSuiteScreenshots';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useDisplayLines } from '../hooks/useDisplayLines';
 import { useDisplaySteps } from '../hooks/useDisplaySteps';
@@ -47,6 +48,7 @@ function ResultsPanelInner({ projectId }: { projectId: string }) {
 
   const displayLines = useDisplayLines(activeRunId);
   const displaySteps = useDisplaySteps(activeRunId, activeScript?.steps);
+  const { data: screenshots } = useTestSuiteScreenshots(activeRunId);
 
   const runStatus = runRecord?.status ?? (activeRunId ? 'running' : 'pending');
   const runScript = useRunScript();
@@ -123,6 +125,7 @@ function ResultsPanelInner({ projectId }: { projectId: string }) {
             errorMessage={runRecord?.error}
             outputRef={outputRef}
             runRecord={runRecord}
+            screenshots={screenshots ?? []}
             scriptName={activeScript?.name}
           />
         </Flex>
