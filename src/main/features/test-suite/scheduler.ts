@@ -10,7 +10,7 @@ import { Notification } from 'electron';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
-import { testSuiteSchedules } from './schema-schedules';
+import { testSuiteSchedules } from './schema';
 
 import type { AdcDatabase } from '../../db';
 

@@ -13,7 +13,7 @@ import { nanoid } from 'nanoid';
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { compareScreenshots } from '../diff-engine';
-import { testSuiteDiffs } from '../schema-baselines';
+import { testSuiteDiffs } from '../schema';
 
 import type { IpcRouter } from '../../../ipc/router';
 import type { TestSuiteService } from '../test-suite-handlers';

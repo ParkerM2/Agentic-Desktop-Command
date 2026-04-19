@@ -8,7 +8,7 @@ import path from 'node:path';
 import { eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
-import { testSuiteBaselines } from './schema-baselines';
+import { testSuiteBaselines } from './schema';
 
 import type { AdcDatabase } from '../../db';
 

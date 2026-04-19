@@ -46,3 +46,52 @@ export const testSuiteScreenshots = sqliteTable('test_suite_screenshots', {
   height: integer('height').notNull(),
   capturedAt: text('captured_at').notNull(),
 });
+
+export const testSuiteBaselines = sqliteTable('test_suite_baselines', {
+  id: text('id').primaryKey(),
+  scriptId: text('script_id').notNull(),
+  stepIndex: integer('step_index').notNull(),
+  stepLabel: text('step_label').notNull(),
+  filePath: text('file_path').notNull(),
+  width: integer('width').notNull(),
+  height: integer('height').notNull(),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const testSuiteDiffs = sqliteTable('test_suite_diffs', {
+  id: text('id').primaryKey(),
+  runId: text('run_id').notNull(),
+  baselineId: text('baseline_id').notNull(),
+  screenshotId: text('screenshot_id').notNull(),
+  diffFilePath: text('diff_file_path').notNull(),
+  mismatchPercentage: integer('mismatch_percentage').notNull(),
+  mismatchPixels: integer('mismatch_pixels').notNull(),
+  threshold: integer('threshold').notNull(),
+  status: text('status').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const testSuiteSchedules = sqliteTable('test_suite_schedules', {
+  id: text('id').primaryKey(),
+  scriptId: text('script_id').notNull(),
+  projectId: text('project_id').notNull(),
+  intervalMs: integer('interval_ms').notNull(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  lastRunAt: text('last_run_at'),
+  nextRunAt: text('next_run_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+export const testSuiteSharedSteps = sqliteTable('test_suite_shared_steps', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull(),
+  name: text('name').notNull(),
+  domain: text('domain').notNull(),
+  description: text('description'),
+  steps: text('steps').notNull(),
+  usageCount: integer('usage_count').notNull().default(0),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});

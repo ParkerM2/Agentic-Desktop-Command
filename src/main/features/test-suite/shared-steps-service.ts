@@ -10,7 +10,7 @@ import { nanoid } from 'nanoid';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-import { testSuiteSharedSteps } from './schema-shared-steps';
+import { testSuiteSharedSteps } from './schema';
 
 import type { AdcDatabase } from '../../db';
 
