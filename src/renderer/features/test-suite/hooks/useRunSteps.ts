@@ -29,23 +29,21 @@ export function useRunSteps(runId: string | null) {
     setState((prev) => {
       const existing = prev.forRunId === runId ? [...prev.steps] : [];
 
+      // Mark previous step as passed (it completed without error)
       const last = existing.at(-1);
       if (last) {
         const prevTime = new Date(last.timestamp).getTime();
         const currTime = new Date(payload.timestamp).getTime();
-        existing[existing.length - 1] = { ...last, durationMs: currTime - prevTime };
+        existing[existing.length - 1] = { ...last, durationMs: currTime - prevTime, status: 'passed' };
       }
-
-      // Extract type from the label prefix ("Click ...", "Navigate ...", etc.)
-      const spaceIdx = payload.stepLabel.indexOf(' ');
-      const parsedType = spaceIdx > 0 ? payload.stepLabel.slice(0, spaceIdx).toLowerCase() : '';
 
       existing.push({
         stepIndex: payload.stepIndex,
-        stepType: parsedType,
+        stepType: payload.stepType,
         stepLabel: payload.stepLabel,
         timestamp: payload.timestamp,
         durationMs: null,
+        status: undefined,
       });
 
       return { forRunId: runId, steps: existing };

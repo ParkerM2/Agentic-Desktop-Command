@@ -38,6 +38,7 @@ export interface QaRunRecord {
 
 export interface RunnerEventHandlers {
   onLine?: (runId: string, line: string, timestamp: string) => void;
+  onStep?: (runId: string, stepIndex: number, stepLabel: string, stepType: string, timestamp: string) => void;
   onComplete?: (runId: string, status: QaRunRecord['status'], record: QaRunRecord) => void;
 }
 
@@ -126,6 +127,26 @@ function preflight(filePath: string, projectPath: string): PreflightResult {
   return { ok: errors.length === 0, errors };
 }
 
+const PW_ACTION_STEP_TYPES: Record<string, string> = {
+  goto: 'navigate',
+  click: 'click',
+  fill: 'fill',
+  selectOption: 'select',
+  keyboard: 'press',
+  waitFor: 'wait',
+  expect: 'assert',
+  screenshot: 'screenshot',
+};
+
+const PW_ACTION_PATTERN = /^\s*(page\.goto|page\.click|page\.fill|page\.locator|expect|page\.keyboard|page\.waitFor|page\.selectOption|page\.screenshot)/;
+
+function resolveStepType(keyword: string): string {
+  for (const [fragment, type] of Object.entries(PW_ACTION_STEP_TYPES)) {
+    if (keyword.includes(fragment)) return type;
+  }
+  return 'unknown';
+}
+
 export function createRunner(db: AdcDatabase): QaRunner {
   const activeProcesses = new Map<string, ReturnType<typeof spawn>>();
 
@@ -190,6 +211,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
 
       const outputLines: string[] = [];
       const screenshots: string[] = [];
+      let stepCounter = 0;
 
       if (screenshotDir) {
         mkdirSync(screenshotDir, { recursive: true });
@@ -233,7 +255,16 @@ export function createRunner(db: AdcDatabase): QaRunner {
       child.stdout.on('data', (chunk: Buffer) => {
         const text = chunk.toString();
         for (const line of text.split('\n')) {
-          if (line.trim()) emitLine(line);
+          if (line.trim()) {
+            emitLine(line);
+            // Detect step progress from Playwright action output
+            const actionMatch = PW_ACTION_PATTERN.exec(line);
+            if (actionMatch) {
+              const stepType = resolveStepType(actionMatch[1]);
+              handlers?.onStep?.(runId, stepCounter, line.trim(), stepType, new Date().toISOString());
+              stepCounter++;
+            }
+          }
         }
       });
 

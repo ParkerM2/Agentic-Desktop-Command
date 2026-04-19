@@ -63,6 +63,21 @@ export function registerTestSuiteHandlers(
       });
     }
 
+    if (
+      event.type === 'step' &&
+      event.stepIndex !== undefined &&
+      event.stepLabel !== undefined &&
+      event.timestamp !== undefined
+    ) {
+      router.emit(TEST_SUITE_EVENTS.RUN.STEP, {
+        runId: event.runId,
+        stepIndex: event.stepIndex,
+        stepLabel: event.stepLabel,
+        stepType: event.stepType ?? '',
+        timestamp: event.timestamp,
+      });
+    }
+
     if (event.type === 'complete' && event.status !== undefined && event.report !== undefined) {
       router.emit(TEST_SUITE_EVENTS.RUN.COMPLETED, {
         runId: event.runId,

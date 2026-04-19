@@ -64,12 +64,14 @@ export interface QaRunIpcRecord {
 // ─── Run event listener type ──────────────────────────────────
 
 export interface TestSuiteRunEvent {
-  type: 'output' | 'screenshot' | 'complete';
+  type: 'output' | 'screenshot' | 'step' | 'complete';
   runId: string;
   line?: string;
   timestamp?: string;
   screenshotPath?: string;
   stepIndex?: number;
+  stepLabel?: string;
+  stepType?: string;
   status?: QaRunRecord['status'];
   report?: {
     runId: string;
@@ -163,6 +165,17 @@ export function createTestSuiteService(
   const sharedHandlers: RunnerEventHandlers = {
     onLine(runId, line, timestamp) {
       const event: TestSuiteRunEvent = { type: 'output', runId, line, timestamp };
+      for (const listener of runEventListeners) listener(event);
+    },
+    onStep(runId, stepIndex, stepLabel, stepType, timestamp) {
+      const event: TestSuiteRunEvent = {
+        type: 'step',
+        runId,
+        stepIndex,
+        stepLabel,
+        stepType,
+        timestamp,
+      };
       for (const listener of runEventListeners) listener(event);
     },
     onComplete(runId, status, record) {

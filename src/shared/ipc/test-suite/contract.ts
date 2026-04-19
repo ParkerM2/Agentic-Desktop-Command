@@ -374,7 +374,10 @@ export const testSuiteEvents = {
       runId: z.string(),
       stepIndex: z.number().int(),
       stepLabel: z.string(),
+      stepType: z.string(),
       timestamp: z.string(),
+      status: z.enum(['running', 'passed', 'failed']).optional(),
+      durationMs: z.number().int().optional(),
     }),
   },
   [TEST_SUITE_EVENTS.RUN.COMPLETED]: {
