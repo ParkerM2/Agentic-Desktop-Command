@@ -24,6 +24,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Flex,
+  Grid,
   Input,
   Label,
   Select,
@@ -31,10 +33,21 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Stack,
   Text,
 } from '@ui';
 
-import { SCREENSHOT_MODES } from '../lib/constants';
+import {
+  DEFAULT_ACTION_TIMEOUT,
+  DEFAULT_NAVIGATION_TIMEOUT,
+  DEFAULT_VIEWPORT_HEIGHT,
+  DEFAULT_VIEWPORT_WIDTH,
+  MAX_RETRIES,
+  MAX_WORKERS,
+  MIN_VIEWPORT_HEIGHT,
+  MIN_VIEWPORT_WIDTH,
+  SCREENSHOT_MODES,
+} from '../lib/constants';
 
 type ScreenshotMode = TestSuiteConfig['screenshotMode'];
 
@@ -76,8 +89,8 @@ function defaultsFor(config: TestSuiteConfig | null): FormState {
   return {
     name: 'new-config',
     targetUrl: 'http://localhost:3000',
-    viewportWidth: 1280,
-    viewportHeight: 720,
+    viewportWidth: DEFAULT_VIEWPORT_WIDTH,
+    viewportHeight: DEFAULT_VIEWPORT_HEIGHT,
     screenshotMode: 'smart',
     testDirectory: 'test-suite/',
     browsers: ['chromium'],
@@ -130,8 +143,8 @@ export function ConfigEditDialog({
       screenshotMode: state.screenshotMode,
       testDirectory: state.testDirectory,
       saveScreenshotsToTemp: config?.saveScreenshotsToTemp ?? false,
-      navigationTimeout: config?.navigationTimeout ?? 30000,
-      actionTimeout: config?.actionTimeout ?? 10000,
+      navigationTimeout: config?.navigationTimeout ?? DEFAULT_NAVIGATION_TIMEOUT,
+      actionTimeout: config?.actionTimeout ?? DEFAULT_ACTION_TIMEOUT,
       browsers: state.browsers,
       workers: state.workers,
       retries: state.retries,
@@ -159,7 +172,7 @@ export function ConfigEditDialog({
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label htmlFor="config-edit-name">Name</Label>
             <Input
               required
@@ -168,9 +181,9 @@ export function ConfigEditDialog({
               value={state.name}
               onChange={(event) => update('name', event.target.value)}
             />
-          </div>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label htmlFor="config-edit-target-url">Target URL</Label>
             <Input
               required
@@ -183,38 +196,38 @@ export function ConfigEditDialog({
             {urlError ? (
               <Text size="sm" variant="error">{urlError}</Text>
             ) : null}
-          </div>
+          </Stack>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-2">
+          <Grid cols={2} gap="md">
+            <Stack gap="sm">
               <Label htmlFor="config-edit-width">Width</Label>
               <Input
                 required
                 id="config-edit-width"
-                min={320}
+                min={MIN_VIEWPORT_WIDTH}
                 type="number"
                 value={state.viewportWidth}
                 onChange={(event) =>
                   update('viewportWidth', Number(event.target.value))
                 }
               />
-            </div>
-            <div className="flex flex-col gap-2">
+            </Stack>
+            <Stack gap="sm">
               <Label htmlFor="config-edit-height">Height</Label>
               <Input
                 required
                 id="config-edit-height"
-                min={240}
+                min={MIN_VIEWPORT_HEIGHT}
                 type="number"
                 value={state.viewportHeight}
                 onChange={(event) =>
                   update('viewportHeight', Number(event.target.value))
                 }
               />
-            </div>
-          </div>
+            </Stack>
+          </Grid>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label htmlFor="config-edit-mode">Screenshot Mode</Label>
             <Select
               value={state.screenshotMode}
@@ -233,13 +246,13 @@ export function ConfigEditDialog({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label>Browsers</Label>
-            <div className="flex gap-3">
+            <Flex gap="md">
               {(['chromium', 'firefox', 'webkit'] as const).map((b) => (
-                <label key={b} className="flex items-center gap-1.5 text-sm">
+                <Label key={b} className="flex items-center gap-1.5 text-sm">
                   <Checkbox
                     checked={state.browsers.includes(b)}
                     onCheckedChange={(checked) => {
@@ -248,41 +261,41 @@ export function ConfigEditDialog({
                     }}
                   />
                   {b.charAt(0).toUpperCase() + b.slice(1)}
-                </label>
+                </Label>
               ))}
-            </div>
-          </div>
+            </Flex>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label htmlFor="config-edit-workers">Parallel Workers</Label>
             <Input
               id="config-edit-workers"
-              max={16}
+              max={MAX_WORKERS}
               min={1}
               type="number"
               value={state.workers}
               onChange={(e) => update('workers', Number(e.target.value))}
             />
-          </div>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label htmlFor="config-edit-retries">Retries on Failure</Label>
             <Input
               id="config-edit-retries"
-              max={5}
+              max={MAX_RETRIES}
               min={0}
               type="number"
               value={state.retries}
               onChange={(e) => update('retries', Number(e.target.value))}
             />
             <Text size="sm" variant="muted">Number of times to retry a failed test (0 = no retries)</Text>
-          </div>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label>Environments</Label>
             {state.environments.map((env, i) => (
               // eslint-disable-next-line react/no-array-index-key
-              <div key={`env-${i}`} className="flex gap-2">
+              <Flex key={`env-${i}`} gap="sm">
                 <Input
                   placeholder="Name (e.g. staging)"
                   value={env.name}
@@ -311,7 +324,7 @@ export function ConfigEditDialog({
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
-              </div>
+              </Flex>
             ))}
             <Button
               size="sm"
@@ -323,12 +336,12 @@ export function ConfigEditDialog({
             >
               <Plus className="h-3 w-3 mr-1" /> Add Environment
             </Button>
-          </div>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label>Auth State (storageState)</Label>
             {config?.storageStatePath ? (
-              <div className="flex items-center gap-2">
+              <Flex align="center" gap="sm">
                 <Text className="flex-1 truncate rounded-md border border-border bg-bg-surface px-3 py-1.5" size="sm">
                   {config.storageStatePath}
                 </Text>
@@ -342,7 +355,7 @@ export function ConfigEditDialog({
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
-              </div>
+              </Flex>
             ) : (
               <Button
                 size="sm"
@@ -358,9 +371,9 @@ export function ConfigEditDialog({
             <Text size="sm" variant="muted">
               Saves browser cookies and localStorage for authenticated test runs.
             </Text>
-          </div>
+          </Stack>
 
-          <div className="flex flex-col gap-2">
+          <Stack gap="sm">
             <Label htmlFor="config-edit-directory">Test Directory</Label>
             <Input
               required
@@ -369,7 +382,7 @@ export function ConfigEditDialog({
               value={state.testDirectory}
               onChange={(event) => update('testDirectory', event.target.value)}
             />
-          </div>
+          </Stack>
 
           <DialogFooter>
             <Button

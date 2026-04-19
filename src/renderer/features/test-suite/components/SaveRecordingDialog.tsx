@@ -9,9 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Flex,
   Input,
   Label,
   ScrollArea,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -162,16 +164,16 @@ export function SaveRecordingDialog({
 
           {/* Tab 1: Info */}
           <TabsContent className="flex-1 overflow-auto pt-4" value="info">
-            <div className="space-y-4">
-              <div className="space-y-2">
+            <Stack gap="md">
+              <Stack gap="sm">
                 <Label>Test Name *</Label>
                 <Input
                   placeholder="e.g. Login flow"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
-              </div>
-              <div className="space-y-2">
+              </Stack>
+              <Stack gap="sm">
                 <Label>Description</Label>
                 <Textarea
                   placeholder="Optional description..."
@@ -179,25 +181,25 @@ export function SaveRecordingDialog({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-              </div>
-              <div className="space-y-2">
+              </Stack>
+              <Stack gap="sm">
                 <Label>Tags</Label>
                 <Input
                   placeholder="smoke, regression, login (comma-separated)"
                   value={tagsInput}
                   onChange={(e) => setTagsInput(e.target.value)}
                 />
-              </div>
+              </Stack>
               {suggestions.length > 0 && (
-                <div className="space-y-2">
+                <Stack gap="sm">
                   <Label>Suggested Assertions</Label>
                   <Text size="sm" variant="muted">
                     Check the assertions you want to include in the test.
                   </Text>
-                  <div className="space-y-1.5">
+                  <Stack gap="sm">
                     {suggestions.map((s, i) => (
                       // eslint-disable-next-line react/no-array-index-key
-                      <label key={`${s.selector}-${s.expected}-${i}`} className="flex items-start gap-2 text-sm">
+                      <Label key={`${s.selector}-${s.expected}-${i}`} className="flex items-start gap-2 text-sm">
                         <Checkbox
                           checked={s.accepted}
                           className="mt-0.5"
@@ -208,20 +210,20 @@ export function SaveRecordingDialog({
                           }}
                         />
                         <Text variant="muted">{s.description}</Text>
-                      </label>
+                      </Label>
                     ))}
-                  </div>
-                </div>
+                  </Stack>
+                </Stack>
               )}
-              <div className="space-y-2">
+              <Stack gap="sm">
                 <Label>Test Directory</Label>
                 <Input
                   placeholder="tests"
                   value={testDir}
                   onChange={(e) => setTestDir(e.target.value)}
                 />
-              </div>
-            </div>
+              </Stack>
+            </Stack>
           </TabsContent>
 
           {/* Tab 2: Spec File */}
@@ -235,14 +237,14 @@ export function SaveRecordingDialog({
 
           {/* Tab 3: Preview */}
           <TabsContent className="min-h-0 flex-1 overflow-auto pt-4" value="preview">
-            <div className="space-y-1">
+            <Stack gap="sm">
               {steps.map((s, i) => (
-                <div key={s.stepIndex} className="flex items-baseline gap-2 text-sm">
+                <Flex key={s.stepIndex} align="baseline" gap="sm">
                   <Text className="w-6 shrink-0 text-right text-text-dim">{i + 1}.</Text>
                   <Text>{describeStep(s.step)}</Text>
-                </div>
+                </Flex>
               ))}
-            </div>
+            </Stack>
           </TabsContent>
 
           {/* Tab 4: Steps (raw data) */}
