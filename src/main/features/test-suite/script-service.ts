@@ -25,7 +25,7 @@ export interface QaScript {
   updatedAt: string;
 }
 
-export interface ScriptStore {
+export interface ScriptService {
   list: () => QaScript[];
   listByProject: (projectId: string) => QaScript[];
   get: (id: string) => QaScript | null;
@@ -71,7 +71,7 @@ function toQaScript(row: typeof testSuiteScripts.$inferSelect): QaScript {
   };
 }
 
-export function createScriptStore(db: AdcDatabase): ScriptStore {
+export function createScriptService(db: AdcDatabase): ScriptService {
   return {
     list() {
       return db.select().from(testSuiteScripts).all().map(toQaScript);

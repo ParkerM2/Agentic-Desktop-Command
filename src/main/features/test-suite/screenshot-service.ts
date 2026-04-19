@@ -31,9 +31,9 @@ export interface ScreenshotRecord {
   capturedAt: string;
 }
 
-// ─── Store interface ────────────────────────────────────────
+// ─── Service interface ────────────────────────────────────────
 
-export interface ScreenshotStore {
+export interface ScreenshotService {
   index: (params: { runId: string; scriptId: string; screenshotDir: string }) => ScreenshotRecord[];
   list: (runId: string) => ScreenshotRecord[];
   listByScript: (scriptId: string) => ScreenshotRecord[];
@@ -42,7 +42,7 @@ export interface ScreenshotStore {
 
 // ─── Factory ────────────────────────────────────────────────
 
-export function createScreenshotStore(db: AdcDatabase): ScreenshotStore {
+export function createScreenshotService(db: AdcDatabase): ScreenshotService {
   function toRecord(row: typeof testSuiteScreenshots.$inferSelect): ScreenshotRecord {
     return {
       id: row.id,

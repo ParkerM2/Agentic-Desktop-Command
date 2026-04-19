@@ -24,7 +24,7 @@ export interface BaselineRecord {
   updatedAt: string;
 }
 
-export interface BaselineStore {
+export interface BaselineService {
   get: (scriptId: string, stepIndex: number) => BaselineRecord | null;
   listByScript: (scriptId: string) => BaselineRecord[];
   setBaseline: (params: {
@@ -39,8 +39,8 @@ export interface BaselineStore {
   deleteByScript: (scriptId: string) => void;
 }
 
-export function createBaselineStore(db: AdcDatabase): BaselineStore {
-  const store: BaselineStore = {
+export function createBaselineService(db: AdcDatabase): BaselineService {
+  const store: BaselineService = {
     get(scriptId, stepIndex) {
       const rows = db
         .select()

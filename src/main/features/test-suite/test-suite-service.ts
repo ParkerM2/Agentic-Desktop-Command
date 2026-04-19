@@ -18,27 +18,27 @@ import type { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 import { testSuiteRuns } from '../../db/schema';
 
 import { createAnalytics } from './analytics';
-import { createBaselineStore } from './baseline-store';
+import { createBaselineService } from './baseline-service';
 import { createBrowserViewManager } from './browser-view-manager';
-import { createConfigStore } from './config-store';
+import { createConfigService } from './config-service';
 import { writePlaywrightConfig } from './playwright-config-writer';
 import { createRunner } from './runner';
 import { createScheduler, sendTestNotification } from './scheduler';
-import { createScreenshotStore } from './screenshot-capture';
-import { createScriptStore } from './script-store';
+import { createScreenshotService } from './screenshot-service';
+import { createScriptService } from './script-service';
 import { writeSpecFile } from './script-writer';
-import { createSharedStepsStore } from './shared-steps-store';
+import { createSharedStepsService } from './shared-steps-service';
 import { createFileWatcher } from './watcher';
 
 import type { Analytics } from './analytics';
-import type { BaselineStore } from './baseline-store';
+import type { BaselineService } from './baseline-service';
 import type { BrowserViewManager } from './browser-view-manager';
-import type { ConfigStore } from './config-store';
+import type { ConfigService } from './config-service';
 import type { QaRunner, QaRunRecord, RunnerEventHandlers } from './runner';
 import type { SchedulerService } from './scheduler';
-import type { ScreenshotStore } from './screenshot-capture';
-import type { ScriptStore, QaScript } from './script-store';
-import type { SharedStepsStore } from './shared-steps-store';
+import type { ScreenshotService } from './screenshot-service';
+import type { ScriptService, QaScript } from './script-service';
+import type { SharedStepsService } from './shared-steps-service';
 import type { FileWatcher } from './watcher';
 import type { AdcDatabase } from '../../db';
 
@@ -90,15 +90,15 @@ export interface TestSuiteRunEvent {
 
 export interface TestSuiteService {
   // Sub-services (used by qa-trigger.ts and other internal consumers)
-  scriptStore: ScriptStore;
+  scriptStore: ScriptService;
   runner: QaRunner;
-  configStore: ConfigStore;
+  configStore: ConfigService;
   browserViewManager: BrowserViewManager;
-  screenshotStore: ScreenshotStore;
+  screenshotStore: ScreenshotService;
   analytics: Analytics;
   fileWatcher: FileWatcher;
-  baselineStore: BaselineStore;
-  sharedStepsStore: SharedStepsStore;
+  baselineStore: BaselineService;
+  sharedStepsStore: SharedStepsService;
   scheduler: SchedulerService;
   getProjectPath: (projectId: string) => string | undefined;
   db: AdcDatabase;
@@ -152,8 +152,8 @@ export function createTestSuiteService(
     getProjectPath: (projectId: string) => string | undefined;
   },
 ): TestSuiteService {
-  const scriptStore = createScriptStore(db);
-  const screenshotStore = createScreenshotStore(db);
+  const scriptStore = createScriptService(db);
+  const screenshotStore = createScreenshotService(db);
   const browserViewManager = createBrowserViewManager(deps.getMainWindow);
   const runEventListeners: Array<(event: TestSuiteRunEvent) => void> = [];
 
@@ -202,11 +202,11 @@ export function createTestSuiteService(
   };
 
   const runner = createRunner(db);
-  const configStore = createConfigStore(db);
+  const configStore = createConfigService(db);
   const analytics = createAnalytics(db);
   const fileWatcher = createFileWatcher();
-  const baselineStore = createBaselineStore(db);
-  const sharedStepsStore = createSharedStepsStore(db);
+  const baselineStore = createBaselineService(db);
+  const sharedStepsStore = createSharedStepsService(db);
   const scheduler = createScheduler(db);
 
   const service: TestSuiteService = {

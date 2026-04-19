@@ -10,8 +10,8 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createScriptStore } from '@main/features/test-suite/script-store';
-import type { QaScript, ScriptStore } from '@main/features/test-suite/script-store';
+import { createScriptService } from '@main/features/test-suite/script-service';
+import type { QaScript, ScriptService } from '@main/features/test-suite/script-service';
 
 // ── DB stub factory ────────────────────────────────────────────────────────
 
@@ -83,13 +83,13 @@ function makeRow(overrides: Partial<Record<string, unknown>> = {}): Record<strin
 
 // ── Tests ──────────────────────────────────────────────────────────────────
 
-describe('ScriptStore', () => {
+describe('ScriptService', () => {
   let db: DbStub;
-  let store: ScriptStore;
+  let store: ScriptService;
 
   beforeEach(() => {
     db = createDbStub();
-    store = createScriptStore(db as never);
+    store = createScriptService(db as never);
   });
 
   // ── list() ─────────────────────────────────────────────────────────────

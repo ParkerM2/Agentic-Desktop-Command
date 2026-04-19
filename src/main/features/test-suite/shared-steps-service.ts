@@ -26,7 +26,7 @@ export interface SharedStepGroup {
   updatedAt: string;
 }
 
-export interface SharedStepsStore {
+export interface SharedStepsService {
   list: (projectId: string) => SharedStepGroup[];
   listByDomain: (projectId: string, domain: string) => SharedStepGroup[];
   get: (id: string) => SharedStepGroup | null;
@@ -65,8 +65,8 @@ function rowToGroup(row: typeof testSuiteSharedSteps.$inferSelect): SharedStepGr
   };
 }
 
-export function createSharedStepsStore(db: AdcDatabase): SharedStepsStore {
-  const store: SharedStepsStore = {
+export function createSharedStepsService(db: AdcDatabase): SharedStepsService {
+  const store: SharedStepsService = {
     list(projectId) {
       return db
         .select()

@@ -2,8 +2,8 @@
  * Test Suite Power Feature Schemas
  *
  * Zod schemas for shared step groups, scheduled runs, and data-driven rows.
- * Mirrored by main-side store/service types in
- * `src/main/features/test-suite/{shared-steps-store,scheduler,data-runner}.ts`.
+ * Mirrored by main-side service types in
+ * `src/main/features/test-suite/{shared-steps-service,scheduler,data-runner}.ts`.
  */
 
 import { z } from 'zod';
