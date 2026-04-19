@@ -39,10 +39,14 @@ export interface QaStepWait {
   ms: number;
 }
 
+export type AssertMethod = 'toHaveText' | 'toContainText' | 'toBeVisible' | 'toBeHidden' | 'toHaveCount' | 'toHaveAttribute' | 'toHaveURL' | 'toHaveTitle';
+
 export interface QaStepAssert {
   type: 'assert';
   selector: string;
   expected: string;
+  assertMethod?: AssertMethod;
+  attribute?: string;
 }
 
 export interface StepContext {

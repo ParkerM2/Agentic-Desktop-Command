@@ -61,10 +61,24 @@ export const QaStepWaitSchema = z.object({
   ms: z.number().int().min(0),
 });
 
+export const AssertMethodSchema = z.enum([
+  'toHaveText',
+  'toContainText',
+  'toBeVisible',
+  'toBeHidden',
+  'toHaveCount',
+  'toHaveAttribute',
+  'toHaveURL',
+  'toHaveTitle',
+]);
+export type AssertMethod = z.infer<typeof AssertMethodSchema>;
+
 export const QaStepAssertSchema = z.object({
   type: z.literal('assert'),
   selector: z.string(),
   expected: z.string(),
+  assertMethod: AssertMethodSchema.default('toHaveText'),
+  attribute: z.string().optional(),
 });
 
 export const TestSuiteStepSchema = z.discriminatedUnion('type', [
