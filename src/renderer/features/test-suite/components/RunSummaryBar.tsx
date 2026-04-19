@@ -3,19 +3,13 @@ import { CheckCircle2, Clock, ListPlus, XCircle } from 'lucide-react';
 import { Button, Flex, Text } from '@ui';
 
 import { formatDuration } from '../lib/format';
+import type { RunRecord } from '../lib/types';
 
 import { ViewReportButton } from './ResultsToolbar';
 import { ResultsWorkflowActions } from './ResultsWorkflowActions';
 
 interface RunSummaryBarProps {
-  runRecord: {
-    status: string;
-    stepsPassed: number;
-    stepsFailed: number;
-    durationMs: number;
-    reportPath?: string;
-    outputLines: string[];
-  };
+  runRecord: RunRecord;
   activeRunId: string | null;
   activeScript?: { id: string; name: string; steps: unknown[] };
   projectId: string;
@@ -35,15 +29,15 @@ export function RunSummaryBar({
     <Flex align="center" className="border-b border-border bg-bg-surface px-4 py-1.5" gap="lg" wrap="nowrap">
       <Text className="flex items-center gap-1" size="sm" variant="muted">
         <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
-        {runRecord.stepsPassed} passed
+        {runRecord.stepsPassed ?? 0} passed
       </Text>
       <Text className="flex items-center gap-1" size="sm" variant="muted">
         <XCircle className="h-3.5 w-3.5 text-destructive" />
-        {runRecord.stepsFailed} failed
+        {runRecord.stepsFailed ?? 0} failed
       </Text>
       <Text className="flex items-center gap-1" size="sm" variant="muted">
         <Clock className="h-3.5 w-3.5" />
-        {formatDuration(runRecord.durationMs)}
+        {formatDuration(runRecord.durationMs ?? 0)}
       </Text>
       {runRecord.reportPath ? (
         <ViewReportButton reportPath={runRecord.reportPath} />

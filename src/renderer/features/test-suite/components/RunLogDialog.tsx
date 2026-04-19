@@ -23,16 +23,11 @@ import {
 } from '@ui';
 
 import { formatDuration, getOutputLineClass } from '../lib/format';
+import type { RunRecord } from '../lib/types';
 
 interface RunLogDialogProps {
   lines: Array<{ line: string; timestamp: string }>;
-  runRecord: {
-    status: string;
-    stepsPassed?: number;
-    stepsFailed?: number;
-    durationMs?: number;
-    error?: string;
-  } | null;
+  runRecord: RunRecord | null;
   scriptName?: string;
 }
 
