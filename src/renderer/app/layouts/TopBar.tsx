@@ -118,15 +118,23 @@ export function TopBar() {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
           return (
-            <button
+            <div
               key={project.id}
               className={cn(
-                'border-border group flex h-full shrink-0 items-center gap-1.5 border-r px-3 text-xs transition-colors',
+                'border-border group flex h-full shrink-0 cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors',
                 isActive
                   ? 'bg-background text-foreground'
                   : 'bg-card text-muted-foreground hover:text-foreground',
               )}
+              role="tab"
+              tabIndex={0}
               onClick={() => handleSelectProject(project.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectProject(project.id);
+                }
+              }}
             >
               {isActive ? (
                 <FolderOpen className="text-primary h-3 w-3 shrink-0" />
@@ -145,7 +153,7 @@ export function TopBar() {
               >
                 <X className="h-3 w-3" />
               </button>
-            </button>
+            </div>
           );
         })}
 
