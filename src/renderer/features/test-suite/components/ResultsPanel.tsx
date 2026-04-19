@@ -47,7 +47,7 @@ function ResultsPanelInner({ projectId }: { projectId: string }) {
   const { data: runRecord } = useRun(activeRunId);
 
   const displayLines = useDisplayLines(activeRunId);
-  const displaySteps = useDisplaySteps(activeRunId, activeScript?.steps as Array<{ type: string; [key: string]: unknown }> | undefined);
+  const displaySteps = useDisplaySteps(activeRunId, activeScript?.steps);
 
   const runStatus = runRecord?.status ?? (activeRunId ? 'running' : 'pending');
   const runScript = useRunScript();

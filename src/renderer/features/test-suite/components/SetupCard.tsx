@@ -30,6 +30,8 @@ import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import {
   DEFAULT_ACTION_TIMEOUT,
   DEFAULT_NAVIGATION_TIMEOUT,
+  DEFAULT_VIEWPORT_HEIGHT,
+  DEFAULT_VIEWPORT_WIDTH,
   MIN_VIEWPORT_HEIGHT,
   MIN_VIEWPORT_WIDTH,
   SCREENSHOT_MODES,
@@ -38,8 +40,6 @@ import {
   DEFAULT_CONFIG_SCREENSHOT_MODE,
   DEFAULT_CONFIG_TARGET_URL,
   DEFAULT_CONFIG_TEST_DIRECTORY,
-  DEFAULT_CONFIG_VIEWPORT_HEIGHT,
-  DEFAULT_CONFIG_VIEWPORT_WIDTH,
 } from '../lib/starter-test';
 
 function buttonLabel(settingUp: boolean, saving: boolean): string {
@@ -58,8 +58,8 @@ export function SetupCard({ projectId }: SetupCardProps) {
   const save = useSaveTestSuiteConfig(projectId);
 
   const [targetUrl, setTargetUrl] = useState(DEFAULT_CONFIG_TARGET_URL);
-  const [width, setWidth] = useState(DEFAULT_CONFIG_VIEWPORT_WIDTH);
-  const [height, setHeight] = useState(DEFAULT_CONFIG_VIEWPORT_HEIGHT);
+  const [width, setWidth] = useState(DEFAULT_VIEWPORT_WIDTH);
+  const [height, setHeight] = useState(DEFAULT_VIEWPORT_HEIGHT);
   const [mode, setMode] = useState<ScreenshotMode>(DEFAULT_CONFIG_SCREENSHOT_MODE);
   const [testDirectory, setTestDirectory] = useState(DEFAULT_CONFIG_TEST_DIRECTORY);
   const [urlError, setUrlError] = useState<string | null>(null);

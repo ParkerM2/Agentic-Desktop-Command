@@ -2,12 +2,11 @@ import type { TestSuiteConfig, TestSuiteStepSchema } from '@shared/ipc/test-suit
 
 import type { z } from 'zod';
 
+import { DEFAULT_VIEWPORT_HEIGHT, DEFAULT_VIEWPORT_WIDTH } from './constants';
 
 type TestSuiteStep = z.infer<typeof TestSuiteStepSchema>;
 
 export const DEFAULT_CONFIG_TARGET_URL = 'http://localhost:3000';
-export const DEFAULT_CONFIG_VIEWPORT_WIDTH = 1280;
-export const DEFAULT_CONFIG_VIEWPORT_HEIGHT = 720;
 export const DEFAULT_CONFIG_SCREENSHOT_MODE: TestSuiteConfig['screenshotMode'] = 'smart';
 export const DEFAULT_CONFIG_TEST_DIRECTORY = 'test-suite/';
 
@@ -17,8 +16,8 @@ export function buildDefaultConfig(): TestSuiteConfig {
     id: crypto.randomUUID(),
     name: 'localhost-default',
     targetUrl: DEFAULT_CONFIG_TARGET_URL,
-    viewportWidth: DEFAULT_CONFIG_VIEWPORT_WIDTH,
-    viewportHeight: DEFAULT_CONFIG_VIEWPORT_HEIGHT,
+    viewportWidth: DEFAULT_VIEWPORT_WIDTH,
+    viewportHeight: DEFAULT_VIEWPORT_HEIGHT,
     screenshotMode: DEFAULT_CONFIG_SCREENSHOT_MODE,
     testDirectory: DEFAULT_CONFIG_TEST_DIRECTORY,
     saveScreenshotsToTemp: false,

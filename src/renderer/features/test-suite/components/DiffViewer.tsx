@@ -14,6 +14,8 @@ import {
   Text,
 } from '@ui';
 
+import { fileUrl } from '../lib/screenshot-utils';
+
 interface DiffViewerProps {
   baselinePath: string;
   actualPath: string;
@@ -23,10 +25,6 @@ interface DiffViewerProps {
 }
 
 type ViewMode = 'side-by-side' | 'slider' | 'diff-only';
-
-function toFileUrl(filePath: string): string {
-  return `file://${filePath.replaceAll('\\', '/')}`;
-}
 
 function getStatusColor(status: string): string {
   if (status === 'match') return 'bg-green-600';
@@ -75,7 +73,7 @@ export function DiffViewer({
             <img
               alt="Baseline"
               className="rounded border border-border"
-              src={toFileUrl(baselinePath)}
+              src={fileUrl(baselinePath)}
             />
           </Stack>
           <Stack gap="sm">
@@ -83,7 +81,7 @@ export function DiffViewer({
             <img
               alt="Actual"
               className="rounded border border-border"
-              src={toFileUrl(actualPath)}
+              src={fileUrl(actualPath)}
             />
           </Stack>
           <Stack gap="sm">
@@ -92,7 +90,7 @@ export function DiffViewer({
               <img
                 alt="Diff"
                 className="rounded border border-border"
-                src={toFileUrl(diffPath)}
+                src={fileUrl(diffPath)}
               />
             ) : (
               <Flex align="center" className="h-full rounded border border-border" justify="center">
@@ -106,12 +104,12 @@ export function DiffViewer({
       {viewMode === 'slider' && (
         <Stack gap="sm">
           <div className="relative overflow-hidden rounded border border-border">
-            <img alt="Actual" className="block w-full" src={toFileUrl(actualPath)} />
+            <img alt="Actual" className="block w-full" src={fileUrl(actualPath)} />
             <div
               className="absolute inset-0 overflow-hidden"
               style={{ width: `${sliderValue}%` }}
             >
-              <img alt="Baseline" className="block w-full" src={toFileUrl(baselinePath)} />
+              <img alt="Baseline" className="block w-full" src={fileUrl(baselinePath)} />
             </div>
             <div
               className="absolute inset-y-0 w-0.5 bg-accent"
@@ -138,7 +136,7 @@ export function DiffViewer({
             <img
               alt="Diff"
               className="rounded border border-border"
-              src={toFileUrl(diffPath)}
+              src={fileUrl(diffPath)}
             />
           ) : (
             <Flex align="center" className="h-48 rounded border border-border" justify="center">

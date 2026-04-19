@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 
+import type { TestSuiteStep } from '@shared/types/test-suite';
+
 import { useRun } from '../api/useRuns';
-import { stepToLabel } from '../lib/format';
+import { describeStep } from '../lib/describe-step';
 
 import { useRunSteps } from './useRunSteps';
 
@@ -9,7 +11,7 @@ import type { RunStep } from './useRunSteps';
 
 export function useDisplaySteps(
   runId: string | null,
-  scriptSteps: Array<{ type: string; [key: string]: unknown }> | undefined,
+  scriptSteps: TestSuiteStep[] | undefined,
 ): RunStep[] {
   const { steps: liveRunSteps } = useRunSteps(runId);
   const { data: runRecord } = useRun(runId);
@@ -27,7 +29,7 @@ export function useDisplaySteps(
       return scriptSteps.map((step, i) => ({
         stepIndex: i,
         stepType: step.type,
-        stepLabel: stepToLabel(step),
+        stepLabel: describeStep(step),
         timestamp: runRecord?.startedAt ?? '',
         durationMs: isComplete ? Math.round(runDurationMs / totalSteps) : null,
         status: isComplete ? (i >= failStart && stepsFailed > 0 ? 'failed' : 'passed') : undefined,
