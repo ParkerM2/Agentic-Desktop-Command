@@ -113,7 +113,7 @@ export function TopBar() {
       </div>
 
       {/* Project tabs — VSCode-style: right border per tab, horizontal scroll */}
-      <div className="electron-no-drag flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden">
+      <div className="electron-no-drag flex min-w-0 items-stretch overflow-x-auto overflow-y-hidden">
         {openProjects.map((project) => {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
@@ -169,9 +169,10 @@ export function TopBar() {
           <Plus className="h-3.5 w-3.5" />
         </Button>
 
-        {/* Drag spacer fills remaining space */}
-        <div className="flex-1" />
       </div>
+
+      {/* Drag spacer fills remaining space — must be outside electron-no-drag */}
+      <div className="electron-drag flex-1" />
 
       {/* Utility buttons — same w-10 sizing as window controls */}
       <div className="electron-no-drag flex h-full items-center">
