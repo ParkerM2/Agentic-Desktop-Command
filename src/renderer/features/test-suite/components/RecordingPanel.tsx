@@ -8,6 +8,7 @@ import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 import { useLooseParams } from '@renderer/shared/hooks';
 
 import {
+  Badge,
   Button,
   Flex,
   Input,
@@ -165,6 +166,12 @@ export function RecordingPanel() {
         ) : (
           <Text size="sm" variant="muted">No configs — add one in Settings</Text>
         )}
+
+        {activeConfig ? (
+          <Badge className="shrink-0 text-xs" variant="outline">
+            {activeConfig.screenshotMode === 'manual' ? 'No Screenshots' : `Screenshots: ${activeConfig.screenshotMode}`}
+          </Badge>
+        ) : null}
 
         <DevServerButton
           activeInstanceId={activeInstance?.id}
