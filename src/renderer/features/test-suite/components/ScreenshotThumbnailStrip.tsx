@@ -7,7 +7,7 @@
 
 import { Button, ScrollArea, Stack, Text } from '@ui';
 
-import { fileUrl } from './screenshot-utils';
+import { fileUrl } from '../lib/screenshot-utils';
 
 // ─── Types ────────────────────────────────────────────────────
 

@@ -32,7 +32,7 @@ interface WebviewElement {
   removeEventListener: (type: string, listener: (...args: unknown[]) => void) => void;
 }
 
-interface Props {
+interface BrowserViewPanelProps {
   url: string;
   width: number;
   height: number;
@@ -41,7 +41,7 @@ interface Props {
   onUrlChange: (u: string) => void;
 }
 
-export function BrowserViewPanel({ url, width, height, serverRunning, recording, onUrlChange }: Props) {
+export function BrowserViewPanel({ url, width, height, serverRunning, recording, onUrlChange }: BrowserViewPanelProps) {
   const browserActive = serverRunning || recording;
   const webviewRef = useRef<WebviewElement | null>(null);
   const addStep = useTestSuiteStore((s) => s.addStep);

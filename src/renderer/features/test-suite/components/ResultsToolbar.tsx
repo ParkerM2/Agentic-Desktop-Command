@@ -17,8 +17,11 @@ import {
   Text,
 } from '@ui';
 
+
 import { RunLogDialog } from './RunLogDialog';
 import { RunStatusBadge, RunStatusDot } from './RunStatusBadge';
+
+import type { RunRecord } from '../lib/types';
 
 interface Script {
   id: string;
@@ -41,12 +44,7 @@ interface ResultsToolbarProps {
   activeEnv: string;
   isRunning: boolean;
   displayLines: Array<{ line: string; timestamp: string }>;
-  runRecord: {
-    error?: string;
-    outputLines: string[];
-    status: string;
-    durationMs: number;
-  } | null | undefined;
+  runRecord: RunRecord | null | undefined;
   activeScriptName: string | undefined;
   onScriptChange: (id: string) => void;
   onRunChange: (id: string) => void;

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   Button,
   Checkbox,
+  Code,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -29,55 +30,12 @@ import {
 } from '@ui';
 
 import { useSaveScript } from '../api/useSaveScript';
+import { generateAssertionSuggestions, type AssertionSuggestion } from '../lib/assertion-suggestions';
 import { describeStep } from '../lib/describe-step';
 import { generateSpecPreview } from '../lib/generate-spec-preview';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import type { RecordedStep } from '../test-suite-store';
-
-
-interface AssertionSuggestion {
-  selector: string;
-  expected: string;
-  description: string;
-  accepted: boolean;
-}
-
-function generateAssertionSuggestions(steps: RecordedStep[]): AssertionSuggestion[] {
-  const suggestions: AssertionSuggestion[] = [];
-
-  for (const { step } of steps) {
-
-    if (step.type === 'navigate') {
-      suggestions.push({
-        selector: '',
-        expected: step.url,
-        description: `Verify page navigated to ${step.url}`,
-        accepted: false,
-      });
-    }
-
-    if (step.type === 'fill' && 'selector' in step) {
-      suggestions.push({
-        selector: step.selector,
-        expected: step.value,
-        description: `Verify "${step.selector}" contains "${step.value}"`,
-        accepted: false,
-      });
-    }
-
-    if (step.type === 'click' && 'context' in step && step.context?.text) {
-      suggestions.push({
-        selector: step.selector,
-        expected: step.context.text,
-        description: `Verify "${step.context.text}" is visible after click`,
-        accepted: false,
-      });
-    }
-  }
-
-  return suggestions;
-}
 
 interface SaveRecordingDialogProps {
   open: boolean;
@@ -229,9 +187,9 @@ export function SaveRecordingDialog({
           {/* Tab 2: Spec File */}
           <TabsContent className="min-h-0 flex-1 pt-4" value="spec">
             <ScrollArea className="h-full">
-              <pre className="whitespace-pre-wrap break-words rounded-md border border-border bg-bg-surface p-4 font-mono text-xs">
+              <Code className="block whitespace-pre-wrap break-words rounded-md border border-border bg-bg-surface p-4">
                 {specPreview}
-              </pre>
+              </Code>
             </ScrollArea>
           </TabsContent>
 

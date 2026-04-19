@@ -1,4 +1,4 @@
-import { Card, CardContent, Flex, Stack, Text } from '@ui';
+import { Card, CardContent, Flex, Progress, Stack, Text } from '@ui';
 
 import { HEALTH_WEIGHTS } from '../lib/constants';
 
@@ -19,9 +19,7 @@ function ScoreBar({ label, max, value }: ScoreBarProps) {
       <Text className="w-16" size="sm" variant="muted">
         {label}
       </Text>
-      <div className="h-1.5 flex-1 rounded-full bg-border">
-        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-      </div>
+      <Progress className="flex-1" size="sm" value={pct} />
       <Text className="w-8 text-right" size="sm" variant="muted">
         {value}/{max}
       </Text>

@@ -12,10 +12,11 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { testSuiteKeys } from './testSuiteKeys';
 
 /** Fetch all runs, optionally filtered by scriptId */
-export function useRuns(scriptId?: string) {
+export function useRuns(scriptId?: string | null) {
+  const id = scriptId ?? undefined;
   return useQuery({
-    queryKey: scriptId ? testSuiteKeys.runs(scriptId) : testSuiteKeys.all,
-    queryFn: () => ipc(TEST_SUITE.LIST.RUNS, { scriptId }),
+    queryKey: id ? testSuiteKeys.runs(id) : testSuiteKeys.allRuns('all'),
+    queryFn: () => ipc(TEST_SUITE.LIST.RUNS, { scriptId: id }),
     staleTime: 10_000,
   });
 }

@@ -10,7 +10,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { buildSelector } from '@main/features/test-suite/selector-builder';
+import { buildSelector } from '@features/test-suite/lib/selector-builder';
 
 // ── Minimal DOM mock ───────────────────────────────────────────────────────
 

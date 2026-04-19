@@ -5,18 +5,11 @@ import type { TestSuiteStep } from '@shared/types/test-suite';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-const TEST_SUITE_KEY = 'test-suite';
-const SHARED_STEPS_KEY = 'shared-steps';
-
-const sharedStepKeys = {
-  all: (projectId: string) => [TEST_SUITE_KEY, SHARED_STEPS_KEY, projectId] as const,
-  domains: (projectId: string) =>
-    [TEST_SUITE_KEY, SHARED_STEPS_KEY, 'domains', projectId] as const,
-};
+import { testSuiteKeys } from './testSuiteKeys';
 
 export function useSharedSteps(projectId: string | undefined) {
   return useQuery({
-    queryKey: sharedStepKeys.all(projectId ?? ''),
+    queryKey: testSuiteKeys.sharedSteps(projectId ?? ''),
     queryFn: () => ipc(TEST_SUITE['SHARED-STEPS'].LIST, { projectId: projectId ?? '' }),
     enabled: !!projectId,
     staleTime: 30_000,
@@ -25,7 +18,7 @@ export function useSharedSteps(projectId: string | undefined) {
 
 export function useSharedStepDomains(projectId: string | undefined) {
   return useQuery({
-    queryKey: sharedStepKeys.domains(projectId ?? ''),
+    queryKey: testSuiteKeys.sharedStepDomains(projectId ?? ''),
     queryFn: () => ipc(TEST_SUITE['SHARED-STEPS'].DOMAINS, { projectId: projectId ?? '' }),
     enabled: !!projectId,
     staleTime: 30_000,
@@ -43,8 +36,8 @@ export function useCreateSharedSteps() {
       steps: TestSuiteStep[];
     }) => ipc(TEST_SUITE['SHARED-STEPS'].CREATE, input),
     onSuccess: (_data, variables) => {
-      void qc.invalidateQueries({ queryKey: sharedStepKeys.all(variables.projectId) });
-      void qc.invalidateQueries({ queryKey: sharedStepKeys.domains(variables.projectId) });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.sharedSteps(variables.projectId) });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.sharedStepDomains(variables.projectId) });
     },
   });
 }
@@ -60,7 +53,7 @@ export function useUpdateSharedSteps() {
       steps?: TestSuiteStep[];
     }) => ipc(TEST_SUITE['SHARED-STEPS'].UPDATE, input),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [TEST_SUITE_KEY, SHARED_STEPS_KEY] });
+      void qc.invalidateQueries({ queryKey: [...testSuiteKeys.all, 'shared-steps'] });
     },
   });
 }
@@ -70,7 +63,7 @@ export function useDeleteSharedSteps() {
   return useMutation({
     mutationFn: (id: string) => ipc(TEST_SUITE['SHARED-STEPS'].DELETE, { id }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [TEST_SUITE_KEY, SHARED_STEPS_KEY] });
+      void qc.invalidateQueries({ queryKey: [...testSuiteKeys.all, 'shared-steps'] });
     },
   });
 }

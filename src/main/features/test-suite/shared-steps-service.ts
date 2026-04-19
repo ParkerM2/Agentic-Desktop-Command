@@ -6,11 +6,11 @@
  */
 
 import { eq, and, sql } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
 
+import { generateId } from '@shared/lib/id';
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-import { testSuiteSharedSteps } from './schema-shared-steps';
+import { testSuiteSharedSteps } from './schema';
 
 import type { AdcDatabase } from '../../db';
 
@@ -26,7 +26,7 @@ export interface SharedStepGroup {
   updatedAt: string;
 }
 
-export interface SharedStepsStore {
+export interface SharedStepsService {
   list: (projectId: string) => SharedStepGroup[];
   listByDomain: (projectId: string, domain: string) => SharedStepGroup[];
   get: (id: string) => SharedStepGroup | null;
@@ -65,8 +65,8 @@ function rowToGroup(row: typeof testSuiteSharedSteps.$inferSelect): SharedStepGr
   };
 }
 
-export function createSharedStepsStore(db: AdcDatabase): SharedStepsStore {
-  const store: SharedStepsStore = {
+export function createSharedStepsService(db: AdcDatabase): SharedStepsService {
+  const store: SharedStepsService = {
     list(projectId) {
       return db
         .select()
@@ -102,7 +102,7 @@ export function createSharedStepsStore(db: AdcDatabase): SharedStepsStore {
 
     create(params) {
       const now = new Date().toISOString();
-      const id = nanoid();
+      const id = generateId();
 
       const record = {
         id,

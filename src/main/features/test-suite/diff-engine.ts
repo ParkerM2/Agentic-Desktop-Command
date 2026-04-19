@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { nanoid } from 'nanoid';
+import { generateId } from '@shared/lib/id';
 
 import type SharpModule from 'sharp';
 
@@ -116,7 +116,7 @@ export async function compareScreenshots(params: {
     }
   }
 
-  const diffFileName = `diff-${nanoid(8)}.png`;
+  const diffFileName = `diff-${generateId()}.png`;
   const diffFilePath = path.join(outputDir, diffFileName);
 
   await sharp(diffBuffer, { raw: { width, height, channels: 4 } })

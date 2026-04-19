@@ -25,18 +25,9 @@ import {
 } from '@ui';
 
 import { useAttachRunToTask } from '../api/useAttachRunToTask';
-import { formatDuration } from '../lib/format';
+import { buildDefaultDescription } from '../lib/run-description';
 
-interface RunRecord {
-  status: string;
-  stepsPassed: number;
-  stepsFailed: number;
-  durationMs: number;
-  error?: string;
-  outputLines: string[];
-  startedAt: string;
-  completedAt?: string;
-}
+import type { RunRecord } from '../lib/types';
 
 interface CreateTaskFromRunDialogProps {
   open: boolean;
@@ -48,48 +39,6 @@ interface CreateTaskFromRunDialogProps {
 }
 
 const PRIORITIES = ['low', 'normal', 'high', 'urgent'] as const;
-
-function buildDefaultDescription(
-  scriptName: string,
-  runRecord: RunRecord,
-): string {
-  const errorLines = runRecord.outputLines
-    .filter((l) => l.includes('Error') || l.includes('\u2717') || l.includes('FAIL'))
-    .slice(0, 30);
-
-  let errorSection = 'Test failed — see run output for details';
-  if (runRecord.error) {
-    errorSection = runRecord.error;
-  } else if (errorLines.length > 0) {
-    errorSection = errorLines.join('\n');
-  }
-
-  return [
-    `## Test Failure Report`,
-    '',
-    `**Script:** ${scriptName}`,
-    `**Status:** ${runRecord.status}`,
-    `**Steps Passed:** ${runRecord.stepsPassed}`,
-    `**Steps Failed:** ${runRecord.stepsFailed}`,
-    `**Duration:** ${formatDuration(runRecord.durationMs)}`,
-    `**Run Date:** ${new Date(runRecord.startedAt).toLocaleString()}`,
-    '',
-    `### Error Output`,
-    '',
-    '```',
-    errorSection,
-    '```',
-    '',
-    `### Full Output`,
-    '',
-    '```',
-    ...runRecord.outputLines.slice(0, 100),
-    ...(runRecord.outputLines.length > 100
-      ? [`... (${runRecord.outputLines.length - 100} more lines)`]
-      : []),
-    '```',
-  ].join('\n');
-}
 
 export function CreateTaskFromRunDialog({
   open,

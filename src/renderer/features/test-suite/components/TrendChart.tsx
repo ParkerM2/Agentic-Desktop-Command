@@ -1,4 +1,4 @@
-import type { TrendPointSchema } from '@shared/ipc/test-suite/analytics-schemas';
+import type { TrendPointSchema } from '@shared/ipc/test-suite';
 
 import { Flex, Text } from '@ui';
 

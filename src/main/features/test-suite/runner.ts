@@ -11,7 +11,8 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'node:path';
 
 import { desc, eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+
+import { generateId } from '@shared/lib/id';
 
 import { testSuiteRuns } from '../../db/schema';
 
@@ -130,7 +131,7 @@ export function createRunner(db: AdcDatabase): QaRunner {
 
   return {
     run({ scriptId, projectId, filePath, projectPath, triggeredBy, taskId, screenshotDir, workers, retries, baseUrlOverride, handlers }) {
-      const runId = nanoid();
+      const runId = generateId();
       const now = new Date().toISOString();
 
       db.insert(testSuiteRuns).values({

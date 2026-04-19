@@ -7,8 +7,9 @@
 
 import { Flex, ScrollArea, Stack, Text } from '@ui';
 
+import { fileUrl } from '../lib/screenshot-utils';
+
 import { DiffViewer } from './DiffViewer';
-import { fileUrl } from './screenshot-utils';
 
 // ─── Types ────────────────────────────────────────────────────
 

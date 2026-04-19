@@ -23,7 +23,7 @@ function keyFor(projectId: string, configId: string): string {
   return `${projectId}:${configId}`;
 }
 
-export interface ConfigStore {
+export interface ConfigService {
   list: (projectId: string) => TestSuiteConfig[];
   getActive: (projectId: string) => TestSuiteConfig | null;
   save: (projectId: string, config: TestSuiteConfig) => TestSuiteConfig;
@@ -31,7 +31,7 @@ export interface ConfigStore {
   setActive: (projectId: string, configId: string) => void;
 }
 
-export function createConfigStore(db: AdcDatabase): ConfigStore {
+export function createConfigService(db: AdcDatabase): ConfigService {
   function list(projectId: string): TestSuiteConfig[] {
     const rows = db
       .select()

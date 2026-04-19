@@ -8,12 +8,6 @@
  */
 
 import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
-import type {
-  QaRunReportSchema,
-  QaRunSchema,
-  QaRunStatusSchema,
-  TestSuiteStepSchema,
-} from '@shared/ipc/test-suite/schemas';
 
 import { registerAnalyticsHandlers } from './handlers/analytics-handlers';
 import { registerAuthHandlers } from './handlers/auth-handlers';
@@ -30,83 +24,12 @@ import { registerSetupHandlers } from './handlers/setup-handlers';
 import { registerSharedStepsHandlers } from './handlers/shared-steps-handlers';
 import { registerWatchHandlers } from './handlers/watch-handlers';
 
-import type { Analytics } from './analytics';
-import type { BaselineStore } from './baseline-store';
-import type { BrowserViewManager } from './browser-view-manager';
-import type { ConfigStore } from './config-store';
-import type { SchedulerService } from './scheduler';
-import type { ScreenshotStore } from './screenshot-capture';
-import type { ScriptStore } from './script-store';
-import type { SharedStepsStore } from './shared-steps-store';
-import type { FileWatcher } from './watcher';
-import type { AdcDatabase } from '../../db';
+import type { TestSuiteService } from './test-suite-service';
 import type { IpcRouter } from '../../ipc/router';
 import type { ProjectService } from '../projects/project-service';
 
-// ─── Locally-inferred types from shared schemas ────────────────
-// These use `infer` to avoid importing zod directly in main/.
 
-type InferZodType<T extends { _output: unknown }> = T['_output'];
-
-type QaRun = InferZodType<typeof QaRunSchema>;
-type QaRunStatus = InferZodType<typeof QaRunStatusSchema>;
-type QaRunReport = InferZodType<typeof QaRunReportSchema>;
-type TestSuiteStep = InferZodType<typeof TestSuiteStepSchema>;
-
-// ─── Service Interface ─────────────────────────────────────────
-// Defined locally until Task #34 merges.
-
-export interface TestSuiteRunEvent {
-  type: 'output' | 'screenshot' | 'complete';
-  runId: string;
-  line?: string;
-  timestamp?: string;
-  screenshotPath?: string;
-  stepIndex?: number;
-  status?: QaRunStatus;
-  report?: QaRunReport;
-}
-
-export interface TestSuiteService {
-  listScripts: () => Promise<unknown[]>;
-  listScriptsByProject: (projectId: string) => Promise<unknown[]>;
-  getScript: (id: string) => Promise<{ filePath?: string; steps: unknown[]; targetUrl: string; name: string; projectId: string } | null>;
-  saveScript: (input: {
-    id?: string;
-    projectId: string;
-    name: string;
-    description?: string;
-    steps: TestSuiteStep[];
-    tags?: string[];
-    filePath?: string;
-  }) => Promise<unknown>;
-  deleteScript: (id: string) => Promise<{ success: boolean }>;
-  runScript: (input: { scriptId: string; triggeredBy: 'manual' | 'scheduled' | 'ci' | 'auto-trigger'; filePathOverride?: string; baseUrlOverride?: string }) => Promise<{ runId: string }>;
-  getRun: (runId: string) => Promise<QaRun | null>;
-  listRuns: (input: { scriptId?: string }) => Promise<QaRun[]>;
-  exportFile: (input: { runId: string; format: 'json' | 'html' | 'csv' }) => Promise<{ filePath: string }>;
-  exportGithub: (input: { runId: string; owner: string; repo: string }) => Promise<{ issueUrl: string }>;
-  attachRunToTask: (runId: string, taskId: string) => Promise<{ success: boolean }>;
-  onRunEvent: (listener: (event: TestSuiteRunEvent) => void) => void;
-  configStore: ConfigStore;
-  browserViewManager: BrowserViewManager;
-  screenshotStore: ScreenshotStore;
-  analytics: Analytics;
-  fileWatcher: FileWatcher;
-  baselineStore: BaselineStore;
-  scriptStore: ScriptStore;
-  sharedStepsStore: SharedStepsStore;
-  scheduler: SchedulerService;
-  getProjectPath: (projectId: string) => string | undefined;
-  db: AdcDatabase;
-  saveAuthState: (projectId: string) => Promise<{ storageStatePath: string }>;
-  clearAuthState: (projectId: string) => Promise<{ success: boolean }>;
-  batchRun: (input: {
-    scriptIds: string[];
-    triggeredBy: 'manual' | 'scheduled' | 'ci';
-    baseUrlOverride?: string;
-  }) => Promise<{ runIds: string[]; total: number }>;
-}
+export type { TestSuiteService, TestSuiteRunEvent } from './test-suite-service';
 
 // ─── Handler Registration ──────────────────────────────────────
 

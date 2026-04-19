@@ -3,7 +3,8 @@
  */
 
 import { eq } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+
+import { generateId } from '@shared/lib/id';
 
 import { testSuiteScripts } from '../../db/schema';
 
@@ -25,7 +26,7 @@ export interface QaScript {
   updatedAt: string;
 }
 
-export interface ScriptStore {
+export interface ScriptService {
   list: () => QaScript[];
   listByProject: (projectId: string) => QaScript[];
   get: (id: string) => QaScript | null;
@@ -71,7 +72,7 @@ function toQaScript(row: typeof testSuiteScripts.$inferSelect): QaScript {
   };
 }
 
-export function createScriptStore(db: AdcDatabase): ScriptStore {
+export function createScriptService(db: AdcDatabase): ScriptService {
   return {
     list() {
       return db.select().from(testSuiteScripts).all().map(toQaScript);
@@ -112,7 +113,7 @@ export function createScriptStore(db: AdcDatabase): ScriptStore {
       }
 
       const record = {
-        id: data.id ?? nanoid(),
+        id: data.id ?? generateId(),
         name: data.name,
         description: data.description ?? null,
         baseUrl: data.targetUrl,

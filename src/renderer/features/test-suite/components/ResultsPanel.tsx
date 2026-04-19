@@ -4,9 +4,8 @@ import { useLooseParams } from '@renderer/shared/hooks';
 
 import { Flex, PageContent, Stack, Text } from '@ui';
 
-import { useRun, useRunScript } from '../api/useRuns';
+import { useRun, useRuns, useRunScript } from '../api/useRuns';
 import { useTestSuiteConfig } from '../api/useTestSuiteConfig';
-import { useTestSuiteRuns } from '../api/useTestSuiteRuns';
 import { useTestSuiteScripts } from '../api/useTestSuiteScripts';
 import { useDisplayLines } from '../hooks/useDisplayLines';
 import { useDisplaySteps } from '../hooks/useDisplaySteps';
@@ -38,7 +37,7 @@ function ResultsPanelInner({ projectId }: { projectId: string }) {
   const activeScript = scripts.find((s) => s.id === scriptId);
 
   const { data: config } = useTestSuiteConfig(projectId);
-  const { data: runs = [] } = useTestSuiteRuns(scriptId);
+  const { data: runs = [] } = useRuns(scriptId);
   const [activeEnv, setActiveEnv] = useState('default');
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
 
@@ -47,7 +46,7 @@ function ResultsPanelInner({ projectId }: { projectId: string }) {
   const { data: runRecord } = useRun(activeRunId);
 
   const displayLines = useDisplayLines(activeRunId);
-  const displaySteps = useDisplaySteps(activeRunId, activeScript?.steps as Array<{ type: string; [key: string]: unknown }> | undefined);
+  const displaySteps = useDisplaySteps(activeRunId, activeScript?.steps);
 
   const runStatus = runRecord?.status ?? (activeRunId ? 'running' : 'pending');
   const runScript = useRunScript();

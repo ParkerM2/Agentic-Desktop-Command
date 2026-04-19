@@ -1,44 +1,40 @@
 /**
  * Test Suite IPC Contract
  *
- * Defines invoke channels for managing scripts, runs, configs, screenshots,
- * browser view, and export operations. Event channels for streaming run output.
+ * Defines invoke and event channels for: scripts, runs, configs, screenshots,
+ * browser view, export, analytics, watch mode, baselines, diffs, shared steps,
+ * schedules, data-driven runs, auth state, batch runs, and dependency setup.
  */
 
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import {
-  AnalyticsSummarySchema,
-  ErrorPatternSchema,
-  FlakyTestSchema,
-  RunHistoryEntrySchema,
-  SlowestTestSchema,
-  TopFailureSchema,
-  TrendPointSchema,
-} from './analytics-schemas';
-import {
-  BaselineRecordSchema,
-  DiffResultSchema,
-  DiffSensitivitySchema,
-} from './baseline-schemas';
 import { TEST_SUITE, TEST_SUITE_EVENTS } from './channels';
 import {
-  DataRowSchema,
-  ScheduleRecordSchema,
-  SharedStepGroupSchema,
-} from './power-schemas';
-import {
+  AnalyticsSummarySchema,
+  BaselineRecordSchema,
   BrowserViewBoundsSchema,
   BrowserViewCreateInputSchema,
+  DataRowSchema,
+  DiffResultSchema,
+  DiffSensitivitySchema,
+  ErrorPatternSchema,
+  FlakyTestSchema,
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
   QaScriptSchema,
+  RunHistoryEntrySchema,
+  ScheduleRecordSchema,
+  SharedStepGroupSchema,
+  SlowestTestSchema,
   TestSuiteConfigSchema,
   TestSuiteScreenshotSchema,
   TestSuiteStepSchema,
+  TopFailureSchema,
+  TrendPointSchema,
+  TriggeredBySchema,
 } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
@@ -70,7 +66,7 @@ export const testSuiteInvoke = {
   [TEST_SUITE.RUN.SCRIPT]: {
     input: z.object({
       scriptId: z.string(),
-      triggeredBy: z.enum(['manual', 'scheduled', 'ci']).default('manual'),
+      triggeredBy: TriggeredBySchema.default('manual'),
       baseUrlOverride: z.string().optional(),
     }),
     output: z.object({ runId: z.string() }),
@@ -105,31 +101,31 @@ export const testSuiteInvoke = {
   },
   [TEST_SUITE['BROWSER-VIEW'].CREATE]: {
     input: BrowserViewCreateInputSchema,
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].NAVIGATE]: {
     input: z.object({ url: z.url() }),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].BACK]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].FORWARD]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].RELOAD]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS']]: {
     input: BrowserViewBoundsSchema,
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].DESTROY]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE.CONFIG.GET]: {
     input: z.object({ projectId: z.string() }),
@@ -317,7 +313,7 @@ export const testSuiteInvoke = {
   },
   [TEST_SUITE.OPEN.REPORT]: {
     input: z.object({ reportPath: z.string() }),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE.AUTH.SAVE]: {
     input: z.object({ projectId: z.string() }),
@@ -330,7 +326,7 @@ export const testSuiteInvoke = {
   [TEST_SUITE.BATCH.RUN]: {
     input: z.object({
       scriptIds: z.array(z.string()),
-      triggeredBy: z.enum(['manual', 'scheduled', 'ci']).default('manual'),
+      triggeredBy: TriggeredBySchema.default('manual'),
       baseUrlOverride: z.string().optional(),
     }),
     output: z.object({

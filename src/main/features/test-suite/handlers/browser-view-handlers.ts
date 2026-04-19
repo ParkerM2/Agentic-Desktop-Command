@@ -11,7 +11,7 @@ import { TEST_SUITE, TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 import { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
 
 import type { IpcRouter } from '../../../ipc/router';
-import type { TestSuiteService } from '../recorder-handlers';
+import type { TestSuiteService } from '../test-suite-handlers';
 
 type TestSuiteStep = (typeof TestSuiteStepSchema)['_output'];
 

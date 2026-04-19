@@ -5,7 +5,7 @@ import type {
   FlakyTestSchema,
   SlowestTestSchema,
   TopFailureSchema,
-} from '@shared/ipc/test-suite/analytics-schemas';
+} from '@shared/ipc/test-suite';
 
 import {
   Badge,

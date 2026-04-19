@@ -22,18 +22,11 @@ import {
 
 import { useAttachRunToTask } from '../api/useAttachRunToTask';
 
+import type { RunRecord } from '../lib/types';
+
 interface ActiveScript {
   id: string;
   name: string;
-}
-
-interface RunRecord {
-  status: string;
-  outputLines: string[];
-  stepsPassed: number;
-  stepsFailed: number;
-  error?: string;
-  durationMs: number;
 }
 
 interface ResultsWorkflowActionsProps {
@@ -62,13 +55,13 @@ export function ResultsWorkflowActions({
   const handleCreateTask = () => {
     if (!activeScript) return;
     const title = `Fix: ${activeScript.name} test failure`;
-    const errorLines = runRecord.outputLines
+    const errorLines = (runRecord.outputLines ?? [])
       .filter((l) => l.includes('Error') || l.includes('\u2717'))
       .join('\n');
     const errorSummary =
       runRecord.error
       ?? (errorLines.length > 0 ? errorLines : 'Test failed — see run output for details');
-    const description = `## Test Failure\n\n**Script:** ${activeScript.name}\n**Status:** ${runRecord.status}\n**Steps passed:** ${runRecord.stepsPassed}\n**Steps failed:** ${runRecord.stepsFailed}\n\n### Error Output\n\n\`\`\`\n${errorSummary}\n\`\`\``;
+    const description = `## Test Failure\n\n**Script:** ${activeScript.name}\n**Status:** ${runRecord.status}\n**Steps passed:** ${runRecord.stepsPassed ?? 0}\n**Steps failed:** ${runRecord.stepsFailed ?? 0}\n\n### Error Output\n\n\`\`\`\n${errorSummary}\n\`\`\``;
 
     createTask.mutate(
       { title, description, priority: 'high', projectId },

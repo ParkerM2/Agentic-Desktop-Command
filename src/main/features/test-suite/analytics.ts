@@ -115,7 +115,7 @@ export interface Analytics {
   errorPatterns: (projectId: string, limit?: number) => ErrorPattern[];
   flakyTests: (projectId: string) => FlakyTest[];
   runHistory: (scriptId: string, limit?: number) => Array<{
-    status: string;
+    status: 'running' | 'passed' | 'failed' | 'cancelled';
     startedAt: string;
     durationMs: number;
   }>;
@@ -374,7 +374,7 @@ export function createAnalytics(db: AdcDatabase): Analytics {
       .where(eq(testSuiteRuns.scriptId, scriptId))
       .orderBy(desc(testSuiteRuns.startedAt))
       .limit(limit)
-      .all();
+      .all() as Array<{ status: 'running' | 'passed' | 'failed' | 'cancelled'; startedAt: string; durationMs: number }>;
   }
 
   return {

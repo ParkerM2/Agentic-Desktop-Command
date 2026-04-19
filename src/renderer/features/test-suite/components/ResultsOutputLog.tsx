@@ -20,23 +20,10 @@ import {
 
 import { getOutputLineClass } from '../lib/format';
 
-interface OutputLine { line: string; timestamp: string }
-
-interface RunRecord {
-  status: string;
-  stepsPassed: number;
-  stepsFailed: number;
-  durationMs: number;
-  error?: string;
-  outputLines: string[];
-  startedAt: string;
-  completedAt?: string;
-  triggeredBy?: string;
-  scriptId?: string;
-}
+import type { RunRecord, StreamOutputLine } from '../lib/types';
 
 interface ResultsOutputLogProps {
-  displayLines: OutputLine[];
+  displayLines: StreamOutputLine[];
   outputRef: RefObject<HTMLDivElement | null>;
   activeRunId: string | null;
   errorMessage?: string;
@@ -53,11 +40,11 @@ const OUTPUT_VIEW = {
 function buildSummaryMarkdown(
   runRecord: RunRecord,
   scriptName: string | undefined,
-  displayLines: OutputLine[],
+  displayLines: StreamOutputLine[],
 ): string {
-  const totalSteps = runRecord.stepsPassed + runRecord.stepsFailed;
-  const durationSec = (runRecord.durationMs / 1000).toFixed(1);
-  const startDate = new Date(runRecord.startedAt).toLocaleString();
+  const totalSteps = (runRecord.stepsPassed ?? 0) + (runRecord.stepsFailed ?? 0);
+  const durationSec = ((runRecord.durationMs ?? 0) / 1000).toFixed(1);
+  const startDate = runRecord.startedAt ? new Date(runRecord.startedAt).toLocaleString() : 'N/A';
 
   const lines: string[] = [
     `## ${scriptName ?? 'Test Run'} — ${runRecord.status.toUpperCase()}`,
@@ -66,8 +53,8 @@ function buildSummaryMarkdown(
     `|--------|-------|`,
     `| Status | **${runRecord.status}** |`,
     `| Duration | ${durationSec}s |`,
-    `| Steps Passed | ${runRecord.stepsPassed} / ${totalSteps} |`,
-    `| Steps Failed | ${runRecord.stepsFailed} / ${totalSteps} |`,
+    `| Steps Passed | ${runRecord.stepsPassed ?? 0} / ${totalSteps} |`,
+    `| Steps Failed | ${runRecord.stepsFailed ?? 0} / ${totalSteps} |`,
     `| Started | ${startDate} |`,
   ];
 
@@ -97,7 +84,7 @@ function buildSummaryMarkdown(
   return lines.join('\n');
 }
 
-function buildJsonOutput(runRecord: RunRecord, displayLines: OutputLine[]): string {
+function buildJsonOutput(runRecord: RunRecord, displayLines: StreamOutputLine[]): string {
   return JSON.stringify(
     {
       status: runRecord.status,
@@ -245,15 +232,15 @@ function SummaryView({
 }: {
   runRecord?: RunRecord | null;
   scriptName?: string;
-  displayLines: OutputLine[];
+  displayLines: StreamOutputLine[];
 }) {
   if (!runRecord) {
     return <Text variant="muted">Waiting for results...</Text>;
   }
 
-  const totalSteps = runRecord.stepsPassed + runRecord.stepsFailed;
-  const passRate = totalSteps > 0 ? Math.round((runRecord.stepsPassed / totalSteps) * 100) : 0;
-  const durationSec = (runRecord.durationMs / 1000).toFixed(1);
+  const totalSteps = (runRecord.stepsPassed ?? 0) + (runRecord.stepsFailed ?? 0);
+  const passRate = totalSteps > 0 ? Math.round(((runRecord.stepsPassed ?? 0) / totalSteps) * 100) : 0;
+  const durationSec = ((runRecord.durationMs ?? 0) / 1000).toFixed(1);
   const isPassed = runRecord.status === 'passed';
 
   const errorLines = displayLines
@@ -280,7 +267,7 @@ function SummaryView({
             {scriptName ?? 'Test Run'} — {runRecord.status.toUpperCase()}
           </Text>
           <Text size="sm" variant="muted">
-            {new Date(runRecord.startedAt).toLocaleString()} \u00b7 {durationSec}s
+            {runRecord.startedAt ? new Date(runRecord.startedAt).toLocaleString() : 'N/A'} \u00b7 {durationSec}s
           </Text>
         </Stack>
       </Flex>
@@ -288,8 +275,8 @@ function SummaryView({
       {/* Metrics grid */}
       <Grid cols={4} gap="sm">
         <MetricCard label="Pass Rate" value={`${passRate}%`} variant="compact" />
-        <MetricCard label="Passed" subtitle="steps" value={String(runRecord.stepsPassed)} variant="compact" />
-        <MetricCard label="Failed" subtitle="steps" value={String(runRecord.stepsFailed)} variant="compact" />
+        <MetricCard label="Passed" subtitle="steps" value={String(runRecord.stepsPassed ?? 0)} variant="compact" />
+        <MetricCard label="Failed" subtitle="steps" value={String(runRecord.stepsFailed ?? 0)} variant="compact" />
         <MetricCard label="Duration" value={`${durationSec}s`} variant="compact" />
       </Grid>
 

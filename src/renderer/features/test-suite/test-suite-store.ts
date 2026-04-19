@@ -3,19 +3,17 @@ import { persist } from 'zustand/middleware';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics' | 'shared-steps';
+import type { StatusFilter } from './lib/constants';
+import type { StoreOutputLine } from './lib/types';
 
-export type StatusFilter = 'all' | 'passed' | 'failed' | 'flaky' | 'no-runs';
+export type { StatusFilter } from './lib/constants';
+
+export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics' | 'shared-steps';
 
 export interface RecordedStep {
   stepIndex: number;
   step: TestSuiteStep;
   timestamp: string;
-}
-
-export interface OutputLine {
-  id: number;
-  text: string;
 }
 
 interface TestSuiteUiState {
@@ -30,13 +28,11 @@ interface TestSuiteUiState {
   // Ephemeral run-output state (not persisted)
   isRunning: boolean;
   activeRunId: string | null;
-  outputLines: OutputLine[];
+  outputLines: StoreOutputLine[];
   _lineCounter: number;
 
   setActiveTab: (tab: TestSuiteTab) => void;
   setSelectedScriptId: (id: string | null) => void;
-  /** Alias for setSelectedScriptId — back-compat with old store consumers */
-  selectScript: (id: string | null) => void;
   setSelectedRunId: (id: string | null) => void;
   setRecordingActive: (active: boolean) => void;
   addStep: (step: RecordedStep) => void;
@@ -77,9 +73,6 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
         set({ activeTab });
       },
       setSelectedScriptId: (selectedScriptId) => {
-        set({ selectedScriptId });
-      },
-      selectScript: (selectedScriptId) => {
         set({ selectedScriptId });
       },
       setSelectedRunId: (selectedRunId) => {

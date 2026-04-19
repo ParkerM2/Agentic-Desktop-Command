@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { Folder, Plus, Trash2 } from 'lucide-react';
+import { Folder, Trash2 } from 'lucide-react';
 
 import { useLooseParams } from '@renderer/shared/hooks';
 
@@ -11,16 +11,9 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
   EmptyState,
   Flex,
   Grid,
-  Input,
-  Label,
   PageContent,
   ScrollArea,
   Select,
@@ -28,17 +21,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Stack,
   Text,
 } from '@ui';
 
 import {
-  useCreateSharedSteps,
   useDeleteSharedSteps,
   useSharedStepDomains,
   useSharedSteps,
 } from '../api/useSharedSteps';
 import { useTestSuiteStore } from '../test-suite-store';
+
+import { CreateSharedStepDialog } from './CreateSharedStepDialog';
 
 export function SharedStepsPanel() {
   const { projectId } = useLooseParams();
@@ -131,86 +124,5 @@ export function SharedStepsPanel() {
         )}
       </ScrollArea>
     </PageContent>
-  );
-}
-
-function CreateSharedStepDialog({ projectId }: { projectId: string }) {
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [domain, setDomain] = useState('');
-  const [description, setDescription] = useState('');
-  const createSharedSteps = useCreateSharedSteps();
-  const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
-
-  const handleCreate = () => {
-    if (!name.trim() || !domain.trim() || recordedSteps.length === 0) return;
-    createSharedSteps.mutate(
-      {
-        projectId,
-        name: name.trim(),
-        domain: domain.trim(),
-        description: description.trim() || undefined,
-        steps: recordedSteps.map((r) => r.step),
-      },
-      {
-        onSuccess: () => {
-          setOpen(false);
-          setName('');
-          setDomain('');
-          setDescription('');
-        },
-      },
-    );
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4" /> Save Current Steps
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Save as Shared Steps</DialogTitle>
-        </DialogHeader>
-        <Stack gap="md">
-          <Stack gap="sm">
-            <Label>Name</Label>
-            <Input
-              placeholder="Login flow"
-              value={name}
-              onChange={(e) => { setName(e.target.value); }}
-            />
-          </Stack>
-          <Stack gap="sm">
-            <Label>Domain</Label>
-            <Input
-              placeholder="Auth"
-              value={domain}
-              onChange={(e) => { setDomain(e.target.value); }}
-            />
-          </Stack>
-          <Stack gap="sm">
-            <Label>Description (optional)</Label>
-            <Input
-              placeholder="Standard login with email/password"
-              value={description}
-              onChange={(e) => { setDescription(e.target.value); }}
-            />
-          </Stack>
-          <Text size="sm" variant="muted">
-            {recordedSteps.length} steps from current recording will be saved.
-          </Text>
-          <Button
-            className="w-full"
-            disabled={!name.trim() || !domain.trim() || recordedSteps.length === 0}
-            onClick={handleCreate}
-          >
-            Save Shared Steps
-          </Button>
-        </Stack>
-      </DialogContent>
-    </Dialog>
   );
 }
