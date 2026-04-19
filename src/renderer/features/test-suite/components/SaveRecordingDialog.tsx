@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import type { AssertMethod } from '@shared/types/test-suite';
+
 import {
   Button,
   Checkbox,
@@ -14,6 +16,11 @@ import {
   Input,
   Label,
   ScrollArea,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Stack,
   Table,
   TableBody,
@@ -61,6 +68,11 @@ export function SaveRecordingDialog({
   const [suggestions, setSuggestions] = useState<AssertionSuggestion[]>(() =>
     generateAssertionSuggestions(steps),
   );
+  const [showAddAssertion, setShowAddAssertion] = useState(false);
+  const [newSelector, setNewSelector] = useState('');
+  const [newExpected, setNewExpected] = useState('');
+  const [newMethod, setNewMethod] = useState<AssertMethod>('toHaveText');
+  const [newAttribute, setNewAttribute] = useState('');
   const saveScript = useSaveScript(projectId);
   const clearSteps = useTestSuiteStore((s) => s.clearSteps);
   const saving = saveScript.isPending;
@@ -79,6 +91,8 @@ export function SaveRecordingDialog({
         type: 'assert' as const,
         selector: s.selector || 'body',
         expected: s.expected,
+        assertMethod: s.assertMethod,
+        ...(s.attribute ? { attribute: s.attribute } : {}),
       }));
 
     const allSteps = [...steps.map((s) => s.step), ...assertSteps];
@@ -148,16 +162,98 @@ export function SaveRecordingDialog({
                   onChange={(e) => setTagsInput(e.target.value)}
                 />
               </Stack>
-              {suggestions.length > 0 && (
-                <Stack gap="sm">
-                  <Label>Suggested Assertions</Label>
-                  <Text size="sm" variant="muted">
-                    Check the assertions you want to include in the test.
-                  </Text>
+              <Stack gap="sm">
+                <Flex align="center" justify="between">
+                  <Label>Assertions</Label>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowAddAssertion(!showAddAssertion)}
+                  >
+                    {showAddAssertion ? 'Cancel' : 'Add Assertion'}
+                  </Button>
+                </Flex>
+
+                {showAddAssertion ? (
+                  <Stack className="rounded-md border border-border p-3" gap="sm">
+                    <Flex gap="sm" wrap="wrap">
+                      <Select value={newMethod} onValueChange={(v) => setNewMethod(v as AssertMethod)}>
+                        <SelectTrigger className="h-7 w-40 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="toHaveText">Has Text</SelectItem>
+                          <SelectItem value="toContainText">Contains Text</SelectItem>
+                          <SelectItem value="toBeVisible">Is Visible</SelectItem>
+                          <SelectItem value="toBeHidden">Is Hidden</SelectItem>
+                          <SelectItem value="toHaveCount">Has Count</SelectItem>
+                          <SelectItem value="toHaveAttribute">Has Attribute</SelectItem>
+                          <SelectItem value="toHaveURL">Has URL</SelectItem>
+                          <SelectItem value="toHaveTitle">Has Title</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {!['toHaveURL', 'toHaveTitle'].includes(newMethod) && (
+                        <Input
+                          className="h-7 flex-1 text-xs"
+                          placeholder="CSS selector (e.g. table tbody tr)"
+                          value={newSelector}
+                          onChange={(e) => setNewSelector(e.target.value)}
+                        />
+                      )}
+                      {newMethod === 'toHaveAttribute' && (
+                        <Input
+                          className="h-7 w-32 text-xs"
+                          placeholder="Attribute name"
+                          value={newAttribute}
+                          onChange={(e) => setNewAttribute(e.target.value)}
+                        />
+                      )}
+                      {!['toBeVisible', 'toBeHidden'].includes(newMethod) && (
+                        <Input
+                          className="h-7 flex-1 text-xs"
+                          placeholder="Expected value"
+                          value={newExpected}
+                          onChange={(e) => setNewExpected(e.target.value)}
+                        />
+                      )}
+                    </Flex>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        let desc = `Verify ${newSelector} ${newMethod} "${newExpected}"`;
+                        if (newMethod === 'toBeVisible') desc = `Verify ${newSelector} is visible`;
+                        if (newMethod === 'toBeHidden') desc = `Verify ${newSelector} is hidden`;
+                        setSuggestions((prev) => [...prev, {
+                          selector: newSelector,
+                          expected: newExpected,
+                          assertMethod: newMethod,
+                          attribute: newAttribute || undefined,
+                          description: desc,
+                          accepted: true,
+                        }]);
+                        setNewSelector('');
+                        setNewExpected('');
+                        setNewAttribute('');
+                        setShowAddAssertion(false);
+                      }}
+                    >
+                      Add
+                    </Button>
+                  </Stack>
+                ) : null}
+
+                {suggestions.length > 0 ? (
                   <Stack gap="sm">
+                    <Text size="sm" variant="muted">
+                      Check the assertions to include. Click to edit selector or expected value.
+                    </Text>
                     {suggestions.map((s, i) => (
-                      // eslint-disable-next-line react/no-array-index-key
-                      <Label key={`${s.selector}-${s.expected}-${i}`} className="flex items-start gap-2 text-sm">
+                      <Flex
+                        // eslint-disable-next-line react/no-array-index-key
+                        key={`${s.selector}-${s.assertMethod}-${i}`}
+                        align="start"
+                        className="gap-2 text-sm"
+                      >
                         <Checkbox
                           checked={s.accepted}
                           className="mt-0.5"
@@ -167,12 +263,42 @@ export function SaveRecordingDialog({
                             setSuggestions(next);
                           }}
                         />
-                        <Text variant="muted">{s.description}</Text>
-                      </Label>
+                        <Stack className="flex-1" gap="sm">
+                          <Text variant="muted">{s.description}</Text>
+                          {s.accepted ? (
+                            <Flex gap="sm" wrap="wrap">
+                              {!['toHaveURL', 'toHaveTitle'].includes(s.assertMethod) && (
+                                <Input
+                                  className="h-6 w-48 text-xs"
+                                  placeholder="Selector"
+                                  value={s.selector}
+                                  onChange={(e) => {
+                                    const next = [...suggestions];
+                                    next[i] = { ...next[i], selector: e.target.value };
+                                    setSuggestions(next);
+                                  }}
+                                />
+                              )}
+                              {!['toBeVisible', 'toBeHidden'].includes(s.assertMethod) && (
+                                <Input
+                                  className="h-6 flex-1 text-xs"
+                                  placeholder="Expected"
+                                  value={s.expected}
+                                  onChange={(e) => {
+                                    const next = [...suggestions];
+                                    next[i] = { ...next[i], expected: e.target.value };
+                                    setSuggestions(next);
+                                  }}
+                                />
+                              )}
+                            </Flex>
+                          ) : null}
+                        </Stack>
+                      </Flex>
                     ))}
                   </Stack>
-                </Stack>
-              )}
+                ) : null}
+              </Stack>
               <Stack gap="sm">
                 <Label>Test Directory</Label>
                 <Input
