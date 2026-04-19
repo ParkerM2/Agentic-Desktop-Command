@@ -9,6 +9,7 @@ import { useLooseParams } from '@renderer/shared/hooks';
 
 import {
   Button,
+  Flex,
   Input,
   PageContent,
   Select,
@@ -16,6 +17,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
   Stack,
   Text,
 } from '@ui';
@@ -31,6 +33,7 @@ import {
 
 import { useSaveScript } from '../api/useSaveScript';
 import { useTestSuiteConfigs } from '../api/useTestSuiteConfigs';
+import { DEFAULT_VIEWPORT_HEIGHT, DEFAULT_VIEWPORT_WIDTH } from '../lib/constants';
 import { useTestSuiteStore } from '../test-suite-store';
 
 import { BrowserViewPanel } from './BrowserViewPanel';
@@ -112,8 +115,8 @@ export function RecordingPanel() {
       ?? configs[0];
   }, [configs, selectedConfigId]);
 
-  const vw = activeConfig ? activeConfig.viewportWidth : 1280;
-  const vh = activeConfig ? activeConfig.viewportHeight : 720;
+  const vw = activeConfig ? activeConfig.viewportWidth : DEFAULT_VIEWPORT_WIDTH;
+  const vh = activeConfig ? activeConfig.viewportHeight : DEFAULT_VIEWPORT_HEIGHT;
 
   // URL state — initialized from active config, editable via address bar
   const [urlOverride, setUrlOverride] = useState<string>();
@@ -139,9 +142,9 @@ export function RecordingPanel() {
 
   return (
     <PageContent className="flex h-full flex-col overflow-hidden p-1">
-      <div className="flex h-full flex-col overflow-hidden rounded-md border border-border">
+      <Stack className="h-full overflow-hidden rounded-md border border-border" gap="none">
       {/* Toolbar */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-1.5">
+      <Flex align="center" className="shrink-0 border-b border-border px-3 py-1.5" gap="sm" wrap="nowrap">
         {configs.length > 0 && activeConfig ? (
           <Select
             value={activeConfig.id}
@@ -169,7 +172,7 @@ export function RecordingPanel() {
           serverRunning={serverRunning}
         />
 
-        <div className="mx-1 h-4 w-px bg-border" />
+        <Separator className="mx-1 h-4" orientation="vertical" />
 
         {recording ? (
           <Button size="sm" variant="destructive" onClick={onStopRecording}>
@@ -191,7 +194,7 @@ export function RecordingPanel() {
           onChange={(e) => setScriptName(e.target.value)}
         />
 
-        <div className="ml-auto flex items-center gap-2">
+        <Flex align="center" className="ml-auto" gap="sm" wrap="nowrap">
           <Button
             disabled={!canSave || saveScript.isPending}
             size="sm"
@@ -200,17 +203,17 @@ export function RecordingPanel() {
           >
             <Save className="h-3.5 w-3.5" /> Save ({recordedSteps.length})
           </Button>
-        </div>
-      </div>
+        </Flex>
+      </Flex>
 
       {/* Main split: steps + browser */}
-      <div className="flex flex-1 overflow-hidden">
+      <Flex className="flex-1 overflow-hidden" gap="none" wrap="nowrap">
         <Stack className="w-64 shrink-0 overflow-y-auto border-r border-border" gap="none">
-          <div className="flex h-10 shrink-0 items-center border-b border-border px-3">
+          <Flex align="center" className="h-10 shrink-0 border-b border-border px-3" gap="none">
             <Text className="text-xs font-semibold uppercase text-text-muted">
               Steps ({recordedSteps.length})
             </Text>
-          </div>
+          </Flex>
           <StepList />
         </Stack>
         <BrowserViewPanel
@@ -221,8 +224,8 @@ export function RecordingPanel() {
           width={vw}
           onUrlChange={setUrlOverride}
         />
-      </div>
-      </div>
+      </Flex>
+      </Stack>
       <SaveRecordingDialog
         defaultName={scriptName}
         open={saveDialogOpen}

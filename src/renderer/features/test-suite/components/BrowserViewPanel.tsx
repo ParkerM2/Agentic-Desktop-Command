@@ -109,10 +109,10 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
   }, [recording, addStep, onUrlChange]);
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden">
+    <Stack className="h-full flex-1 overflow-hidden" gap="none">
       {/* Address bar */}
-      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-3">
-        <div className="flex items-center gap-1">
+      <Flex align="center" className="h-10 shrink-0 border-b border-border px-3" gap="sm" wrap="nowrap">
+        <Flex align="center" gap="sm">
           <Button
             size="icon-sm"
             variant="ghost"
@@ -134,7 +134,7 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
           >
             <RotateCw className="h-3.5 w-3.5" />
           </Button>
-        </div>
+        </Flex>
         <form className="flex-1" onSubmit={handleSubmit}>
           <Input
             className="h-7 w-full font-mono text-xs"
@@ -145,7 +145,7 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
         <Text className="shrink-0 font-mono" size="sm" variant="muted">
           {width}&times;{height}
         </Text>
-      </div>
+      </Flex>
 
       {/* Browser content */}
       <div className="relative flex-1 overflow-hidden">
@@ -172,14 +172,14 @@ export function BrowserViewPanel({ url, width, height, serverRunning, recording,
               <Text className="text-sm text-text-muted">
                 Start your dev server to see the browser preview
               </Text>
-              <div className="flex items-center gap-1 text-xs text-warning">
-                <AlertCircle className="h-3.5 w-3.5" />
-                <Text className="text-xs">Click &quot;Start Server&quot; in the toolbar above</Text>
-              </div>
+              <Flex align="center" gap="sm">
+                <AlertCircle className="h-3.5 w-3.5 text-warning" />
+                <Text className="text-xs text-warning">Click &quot;Start Server&quot; in the toolbar above</Text>
+              </Flex>
             </Stack>
           </Flex>
         )}
       </div>
-    </div>
+    </Stack>
   );
 }

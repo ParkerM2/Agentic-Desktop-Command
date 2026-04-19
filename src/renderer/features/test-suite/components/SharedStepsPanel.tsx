@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
   EmptyState,
+  Flex,
   Input,
   Label,
   PageContent,
@@ -26,6 +27,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Stack,
   Text,
 } from '@ui';
 
@@ -63,7 +65,7 @@ export function SharedStepsPanel() {
 
   return (
     <PageContent>
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+      <Flex align="center" className="border-b border-border px-4 py-3" gap="sm" wrap="nowrap">
         <Select value={domainFilter} onValueChange={setDomainFilter}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Filter domain..." />
@@ -77,7 +79,7 @@ export function SharedStepsPanel() {
         </Select>
 
         <CreateSharedStepDialog projectId={projectId} />
-      </div>
+      </Flex>
 
       <ScrollArea className="flex-1">
         {filtered.length === 0 ? (
@@ -91,10 +93,10 @@ export function SharedStepsPanel() {
               <Card key={group.id}>
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
+                    <Flex align="center" gap="sm">
                       <Folder className="h-4 w-4 text-text-muted" />
                       {group.name}
-                    </div>
+                    </Flex>
                     <Badge variant="secondary">{group.domain}</Badge>
                   </CardTitle>
                 </CardHeader>
@@ -105,7 +107,7 @@ export function SharedStepsPanel() {
                   <Text className="mb-2" size="sm" variant="muted">
                     {group.steps.length} steps — used {group.usageCount}x
                   </Text>
-                  <div className="flex gap-1">
+                  <Flex gap="sm">
                     <Button
                       size="sm"
                       variant="outline"
@@ -120,7 +122,7 @@ export function SharedStepsPanel() {
                     >
                       <Trash2 className="h-3 w-3 text-destructive" />
                     </Button>
-                  </div>
+                  </Flex>
                 </CardContent>
               </Card>
             ))}
@@ -171,31 +173,31 @@ function CreateSharedStepDialog({ projectId }: { projectId: string }) {
         <DialogHeader>
           <DialogTitle>Save as Shared Steps</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
+        <Stack gap="md">
+          <Stack gap="sm">
             <Label>Name</Label>
             <Input
               placeholder="Login flow"
               value={name}
               onChange={(e) => { setName(e.target.value); }}
             />
-          </div>
-          <div>
+          </Stack>
+          <Stack gap="sm">
             <Label>Domain</Label>
             <Input
               placeholder="Auth"
               value={domain}
               onChange={(e) => { setDomain(e.target.value); }}
             />
-          </div>
-          <div>
+          </Stack>
+          <Stack gap="sm">
             <Label>Description (optional)</Label>
             <Input
               placeholder="Standard login with email/password"
               value={description}
               onChange={(e) => { setDescription(e.target.value); }}
             />
-          </div>
+          </Stack>
           <Text size="sm" variant="muted">
             {recordedSteps.length} steps from current recording will be saved.
           </Text>
@@ -206,7 +208,7 @@ function CreateSharedStepDialog({ projectId }: { projectId: string }) {
           >
             Save Shared Steps
           </Button>
-        </div>
+        </Stack>
       </DialogContent>
     </Dialog>
   );

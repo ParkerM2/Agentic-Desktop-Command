@@ -12,6 +12,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Flex,
+  Grid,
   Input,
   Label,
   PageContent,
@@ -20,11 +22,18 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Stack,
   Text,
 } from '@ui';
 
 import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
-import { SCREENSHOT_MODES } from '../lib/constants';
+import {
+  DEFAULT_ACTION_TIMEOUT,
+  DEFAULT_NAVIGATION_TIMEOUT,
+  MIN_VIEWPORT_HEIGHT,
+  MIN_VIEWPORT_WIDTH,
+  SCREENSHOT_MODES,
+} from '../lib/constants';
 import {
   DEFAULT_CONFIG_SCREENSHOT_MODE,
   DEFAULT_CONFIG_TARGET_URL,
@@ -96,8 +105,8 @@ export function SetupCard({ projectId }: SetupCardProps) {
         screenshotMode: mode,
         testDirectory,
         saveScreenshotsToTemp: false,
-        navigationTimeout: 30000,
-        actionTimeout: 10000,
+        navigationTimeout: DEFAULT_NAVIGATION_TIMEOUT,
+        actionTimeout: DEFAULT_ACTION_TIMEOUT,
         browsers: ['chromium'],
         workers: 1,
         retries: 1,
@@ -129,7 +138,7 @@ export function SetupCard({ projectId }: SetupCardProps) {
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-2">
+            <Stack gap="sm">
               <Label htmlFor="setup-target-url">Target URL</Label>
               <Input
                 required
@@ -142,34 +151,34 @@ export function SetupCard({ projectId }: SetupCardProps) {
               {urlError ? (
                 <Text size="sm" variant="error">{urlError}</Text>
               ) : null}
-            </div>
+            </Stack>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
+            <Grid cols={2} gap="md">
+              <Stack gap="sm">
                 <Label htmlFor="setup-viewport-width">Width</Label>
                 <Input
                   required
                   id="setup-viewport-width"
-                  min={320}
+                  min={MIN_VIEWPORT_WIDTH}
                   type="number"
                   value={width}
                   onChange={(event) => setWidth(Number(event.target.value))}
                 />
-              </div>
-              <div className="flex flex-col gap-2">
+              </Stack>
+              <Stack gap="sm">
                 <Label htmlFor="setup-viewport-height">Height</Label>
                 <Input
                   required
                   id="setup-viewport-height"
-                  min={240}
+                  min={MIN_VIEWPORT_HEIGHT}
                   type="number"
                   value={height}
                   onChange={(event) => setHeight(Number(event.target.value))}
                 />
-              </div>
-            </div>
+              </Stack>
+            </Grid>
 
-            <div className="flex flex-col gap-2">
+            <Stack gap="sm">
               <Label htmlFor="setup-screenshot-mode">Screenshot Mode</Label>
               <Select
                 value={mode}
@@ -186,9 +195,9 @@ export function SetupCard({ projectId }: SetupCardProps) {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </Stack>
 
-            <div className="flex flex-col gap-2">
+            <Stack gap="sm">
               <Label htmlFor="setup-test-directory">Test Directory</Label>
               <Input
                 required
@@ -197,17 +206,17 @@ export function SetupCard({ projectId }: SetupCardProps) {
                 value={testDirectory}
                 onChange={(event) => setTestDirectory(event.target.value)}
               />
-            </div>
+            </Stack>
 
             {setupStatus ? (
               <Text variant="muted">{setupStatus}</Text>
             ) : null}
 
-            <div className="flex justify-end">
+            <Flex justify="end">
               <Button disabled={isSettingUp || save.isPending} type="submit">
                 {buttonLabel(isSettingUp, save.isPending)}
               </Button>
-            </div>
+            </Flex>
           </form>
         </CardContent>
       </Card>

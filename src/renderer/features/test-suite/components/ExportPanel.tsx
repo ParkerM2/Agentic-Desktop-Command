@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  Flex,
   PageContent,
   Text,
 } from '@ui';
@@ -90,30 +91,30 @@ export function ExportPanel() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-md border border-border bg-surface-base p-3 font-mono text-sm">
-              <div className="flex items-center gap-2 text-text-muted">
+              <Flex align="center" className="text-text-muted" gap="sm">
                 <FolderTree className="size-3" />
                 .github/
-              </div>
-              <div className="ml-4 flex items-center gap-2 text-text-muted">
+              </Flex>
+              <Flex align="center" className="ml-4 text-text-muted" gap="sm">
                 <FolderTree className="size-3" />
                 workflows/
-              </div>
-              <div className="ml-8 flex items-center gap-2 text-text-primary">
+              </Flex>
+              <Flex align="center" className="ml-8 text-text-primary" gap="sm">
                 <FileCode className="size-3" />
                 test-suite.yml
                 {fileExists ? (
                   <Text className="text-text-warning" size="sm">(exists)</Text>
                 ) : null}
-              </div>
+              </Flex>
             </div>
 
             {committed ? (
-              <div className="rounded-md border border-border-success bg-surface-success/10 p-3 text-sm text-text-success">
+              <Text className="rounded-md border border-border-success bg-surface-success/10 p-3" size="sm" variant="success">
                 Workflow file written to {filePath}
-              </div>
+              </Text>
             ) : null}
 
-            <div className="flex gap-2">
+            <Flex gap="sm">
               <Button
                 disabled={loading || !projectId}
                 size="sm"
@@ -132,7 +133,7 @@ export function ExportPanel() {
                 <Download className="mr-1.5 size-3.5" />
                 Export &amp; Commit
               </Button>
-            </div>
+            </Flex>
           </CardContent>
         </Card>
 
@@ -146,36 +147,36 @@ export function ExportPanel() {
           </CardHeader>
           <CardContent>
             <dl className="space-y-3 text-sm">
-              <div className="flex justify-between">
+              <Flex justify="between">
                 <dt className="text-text-muted">Trigger</dt>
                 <dd className="font-medium text-text-primary">pull_request</dd>
-              </div>
-              <div className="flex justify-between">
+              </Flex>
+              <Flex justify="between">
                 <dt className="text-text-muted">Paths</dt>
                 <dd className="font-medium text-text-primary">
                   {`${testDir}/**, src/**`}
                 </dd>
-              </div>
-              <div className="flex justify-between">
+              </Flex>
+              <Flex justify="between">
                 <dt className="text-text-muted">Runner</dt>
                 <dd className="font-medium text-text-primary">ubuntu-latest</dd>
-              </div>
-              <div className="flex justify-between">
+              </Flex>
+              <Flex justify="between">
                 <dt className="text-text-muted">Node Version</dt>
                 <dd className="font-medium text-text-primary">22</dd>
-              </div>
-              <div className="flex justify-between">
+              </Flex>
+              <Flex justify="between">
                 <dt className="text-text-muted">Artifacts</dt>
                 <dd className="font-medium text-text-primary">
                   {testDir}/screenshots/, playwright-report/
                 </dd>
-              </div>
-              <div className="flex justify-between">
+              </Flex>
+              <Flex justify="between">
                 <dt className="text-text-muted">Tests Included</dt>
                 <dd className="font-medium text-text-primary">
                   {scriptCount} {scriptCount === 1 ? 'script' : 'scripts'}
                 </dd>
-              </div>
+              </Flex>
             </dl>
           </CardContent>
         </Card>
