@@ -7,30 +7,28 @@
  * Domain-specific handler groups are registered via sub-modules in ./handlers/.
  */
 
-import { copyFile, mkdir } from 'node:fs/promises';
-import path from 'node:path';
-
-import { shell } from 'electron';
-
-import { TEST_SUITE, TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
-import { TestSuiteStepSchema } from '@shared/ipc/test-suite/schemas';
+import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 import type {
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
+  TestSuiteStepSchema,
 } from '@shared/ipc/test-suite/schemas';
 
-import { parseDataFile, substituteDataInSteps } from './data-runner';
 import { registerAnalyticsHandlers } from './handlers/analytics-handlers';
+import { registerAuthHandlers } from './handlers/auth-handlers';
 import { registerBaselineHandlers } from './handlers/baseline-handlers';
+import { registerBrowserViewHandlers } from './handlers/browser-view-handlers';
+import { registerConfigHandlers } from './handlers/config-handlers';
+import { registerDataRunHandlers } from './handlers/data-run-handlers';
+import { registerExportHandlers } from './handlers/export-handlers';
+import { registerRunHandlers } from './handlers/run-handlers';
 import { registerScheduleHandlers } from './handlers/schedule-handlers';
+import { registerScreenshotHandlers } from './handlers/screenshot-handlers';
+import { registerScriptHandlers } from './handlers/script-handlers';
 import { registerSetupHandlers } from './handlers/setup-handlers';
 import { registerSharedStepsHandlers } from './handlers/shared-steps-handlers';
 import { registerWatchHandlers } from './handlers/watch-handlers';
-import { writePlaywrightConfig } from './playwright-config-writer';
-import { writeTestSuiteGitignore, writeTestSuiteReadme } from './readme-writer';
-import { writeSpecFile } from './script-writer';
-import { commitWorkflow, previewWorkflow } from './workflow-exporter';
 
 import type { Analytics } from './analytics';
 import type { BaselineStore } from './baseline-store';
@@ -151,301 +149,16 @@ export function registerTestSuiteHandlers(
     }
   });
 
-  // ── Invoke handlers ───────────────────────────────────────────
-
-  router.handle(TEST_SUITE.LIST.SCRIPTS, ({ projectId }) =>
-    testSuiteService.listScriptsByProject(projectId) as never,
-  );
-
-  router.handle(TEST_SUITE.GET.SCRIPT, ({ id }) =>
-    testSuiteService.getScript(id) as never,
-  );
-
-  router.handle(TEST_SUITE.SAVE.SCRIPT, (input) => {
-    const { projectId, steps } = input;
-    const projectPath = projectService.getProjectPath(projectId);
-    const config = testSuiteService.configStore.getActive(projectId);
-
-    // If we have both a project path and an active config, write files to disk
-    let filePath = '';
-    if (projectPath && config) {
-      const testDir = config.testDirectory || 'tests/e2e';
-      const baseUrl = config.targetUrl;
-
-      filePath = writeSpecFile({
-        projectRoot: projectPath,
-        testDir,
-        name: input.name,
-        baseUrl,
-        steps,
-        screenshotMode: config.screenshotMode,
-        navigationTimeout: config.navigationTimeout,
-        actionTimeout: config.actionTimeout,
-      });
-
-      writePlaywrightConfig({
-        projectRoot: projectPath,
-        testDir,
-        baseUrl,
-        navigationTimeout: config.navigationTimeout,
-        actionTimeout: config.actionTimeout,
-        browsers: config.browsers,
-        workers: config.workers,
-        storageStatePath: config.storageStatePath,
-      });
-      writeTestSuiteReadme({ projectRoot: projectPath, testDir });
-      writeTestSuiteGitignore({ projectRoot: projectPath, testDir });
-    }
-
-    return testSuiteService.saveScript({ ...input, filePath }) as never;
-  });
-
-  router.handle(TEST_SUITE.DELETE.SCRIPT, ({ id }) =>
-    testSuiteService.deleteScript(id),
-  );
-
-  router.handle(TEST_SUITE.RUN.SCRIPT, async (input) => {
-    const result = await testSuiteService.runScript(input);
-    router.emit(TEST_SUITE_EVENTS.RUN.STARTED, {
-      runId: result.runId,
-      scriptId: input.scriptId,
-      timestamp: new Date().toISOString(),
-    });
-    return result;
-  });
-
-  router.handle(TEST_SUITE.GET.RUN, ({ runId }) =>
-    testSuiteService.getRun(runId),
-  );
-
-  router.handle(TEST_SUITE.LIST.RUNS, (input) =>
-    testSuiteService.listRuns(input),
-  );
-
-  router.handle(TEST_SUITE.EXPORT.FILE, (input) =>
-    testSuiteService.exportFile(input),
-  );
-
-  router.handle(TEST_SUITE.EXPORT.GITHUB, (input) =>
-    testSuiteService.exportGithub(input),
-  );
-
-  router.handle(TEST_SUITE.TASK['ATTACH-RUN'], ({ runId, taskId }) =>
-    testSuiteService.attachRunToTask(runId, taskId),
-  );
-
-  // ── CI export handlers ────────────────────────────────────────
-
-  router.handle(TEST_SUITE.EXPORT['CI-PREVIEW'], ({ projectId }) => {
-    const projectPath = projectService.getProjectPath(projectId);
-    if (!projectPath) return Promise.resolve({ yaml: '', filePath: '', exists: false });
-
-    const config = testSuiteService.configStore.getActive(projectId);
-    const testDir = config?.testDirectory ?? 'tests/e2e';
-
-    const scripts = testSuiteService.listScriptsByProject(projectId) as Promise<Array<{ name: string }>>;
-    return scripts.then((list) => {
-      const specNames = list.map((s) => s.name);
-      return previewWorkflow(projectPath, testDir, specNames);
-    });
-  });
-
-  router.handle(TEST_SUITE.EXPORT['CI-COMMIT'], ({ projectId }) => {
-    const projectPath = projectService.getProjectPath(projectId);
-    if (!projectPath) return Promise.resolve({ filePath: '', committed: false });
-
-    const config = testSuiteService.configStore.getActive(projectId);
-    const testDir = config?.testDirectory ?? 'tests/e2e';
-
-    const scripts = testSuiteService.listScriptsByProject(projectId) as Promise<Array<{ name: string }>>;
-    return scripts.then((list) => {
-      const specNames = list.map((s) => s.name);
-      return commitWorkflow(projectPath, testDir, specNames);
-    });
-  });
-
-  const { browserViewManager: bvm } = testSuiteService;
-
-  // ── Recorder step forwarding ─────────────────────────────────
-  // Preload emits steps in contract-normalized shape; we validate,
-  // wrap with stepIndex + timestamp, and forward to renderer.
-
-  const recorderEmittableTypes = new Set(['navigate', 'click', 'fill', 'select', 'press']);
-  let recorderStepIndex = 0;
-
-  function normalizeStep(raw: unknown): TestSuiteStep | null {
-    const parsed = TestSuiteStepSchema.safeParse(raw);
-    if (!parsed.success) return null;
-    if (!recorderEmittableTypes.has(parsed.data.type)) return null;
-    return parsed.data;
-  }
-
-  bvm.setStepEmitter((raw) => {
-    const step = normalizeStep(raw);
-    if (!step) return;
-    router.emit(TEST_SUITE_EVENTS.RECORDER.STEP, {
-      stepIndex: recorderStepIndex++,
-      step,
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  router.handle(TEST_SUITE['BROWSER-VIEW'].CREATE, ({ url, bounds }) =>
-    Promise.resolve(bvm.create(url, bounds)),
-  );
-
-  router.handle(TEST_SUITE['BROWSER-VIEW'].NAVIGATE, ({ url }) =>
-    Promise.resolve(bvm.navigate(url)),
-  );
-
-  router.handle(TEST_SUITE['BROWSER-VIEW'].BACK, () =>
-    Promise.resolve(bvm.back()),
-  );
-
-  router.handle(TEST_SUITE['BROWSER-VIEW'].FORWARD, () =>
-    Promise.resolve(bvm.forward()),
-  );
-
-  router.handle(TEST_SUITE['BROWSER-VIEW'].RELOAD, () =>
-    Promise.resolve(bvm.reload()),
-  );
-
-  router.handle(TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS'], (bounds) =>
-    Promise.resolve(bvm.setBounds(bounds)),
-  );
-
-  router.handle(TEST_SUITE['BROWSER-VIEW'].DESTROY, () =>
-    Promise.resolve(bvm.destroy()),
-  );
-
-  const { configStore } = testSuiteService;
-
-  router.handle(TEST_SUITE.CONFIG.GET, ({ projectId }) =>
-    Promise.resolve(configStore.getActive(projectId)),
-  );
-
-  router.handle(TEST_SUITE.CONFIG.LIST, ({ projectId }) =>
-    Promise.resolve(configStore.list(projectId)),
-  );
-
-  router.handle(TEST_SUITE.CONFIG.SAVE, ({ projectId, config }) =>
-    Promise.resolve(configStore.save(projectId, config)),
-  );
-
-  router.handle(TEST_SUITE.CONFIG.DELETE, ({ projectId, configId }) => {
-    configStore.delete(projectId, configId);
-    return Promise.resolve({ success: true });
-  });
-
-  router.handle(TEST_SUITE.CONFIG['SET-ACTIVE'], ({ projectId, configId }) => {
-    configStore.setActive(projectId, configId);
-    const active = configStore.getActive(projectId);
-    if (active) {
-      router.emit(TEST_SUITE_EVENTS.CONFIG.CHANGED, { config: active });
-    }
-    return Promise.resolve({ success: true });
-  });
-
-  router.handle(TEST_SUITE.SCREENSHOT.LIST, ({ runId, scriptId }) => {
-    if (runId) return Promise.resolve(testSuiteService.screenshotStore.list(runId));
-    if (scriptId) return Promise.resolve(testSuiteService.screenshotStore.listByScript(scriptId));
-    return Promise.resolve([]);
-  });
-
-  router.handle(TEST_SUITE.SCREENSHOT['EXPORT-ZIP'], async ({ runId }) => {
-    const screenshots = testSuiteService.screenshotStore.list(runId);
-    if (screenshots.length === 0) return { filePath: '' };
-
-    // Return the parent directory of the screenshots and open it in the file manager
-    const dir = path.dirname(screenshots[0].filePath);
-    await shell.openPath(dir);
-    return { filePath: dir };
-  });
-
-  router.handle(TEST_SUITE.SCREENSHOT.COPY, async ({ id, destPath }) => {
-    const screenshot = testSuiteService.screenshotStore.get(id);
-    if (!screenshot) return { filePath: '' };
-
-    // Ensure destination directory exists
-    await mkdir(path.dirname(destPath), { recursive: true });
-    await copyFile(screenshot.filePath, destPath);
-    return { filePath: destPath };
-  });
-
-  // ── Data-driven run handlers ───────────────────────────────────
-
-  router.handle(TEST_SUITE['DATA-RUN'].PARSE, ({ filePath }) => {
-    const rows = parseDataFile(filePath);
-    const headers = rows.length > 0 ? Object.keys(rows[0]) : [];
-    return Promise.resolve({ rows, headers, rowCount: rows.length });
-  });
-
-  router.handle(TEST_SUITE['DATA-RUN'].EXECUTE, async ({ scriptId, dataFilePath }) => {
-    const rows = parseDataFile(dataFilePath);
-    const script = await testSuiteService.getScript(scriptId);
-    if (!script) throw new Error(`Script not found: ${scriptId}`);
-
-    const projectPath = testSuiteService.getProjectPath(script.projectId);
-    if (!projectPath) throw new Error(`Project path not found for projectId: ${script.projectId}`);
-
-    const config = testSuiteService.configStore.getActive(script.projectId);
-    const testDir = config?.testDirectory ?? 'tests/e2e';
-    const runIds: string[] = [];
-
-    for (const [rowIndex, row] of rows.entries()) {
-      // Substitute {{key}} placeholders in fill-step values
-      const substitutedSteps = substituteDataInSteps(
-        script.steps as Array<{ type: string; value?: string } & Record<string, unknown>>,
-        row,
-      );
-
-      // Write a temporary spec file with the substituted steps
-      const tempFilePath = writeSpecFile({
-        projectRoot: projectPath,
-        testDir,
-        name: `${script.name}-data-${rowIndex}`,
-        baseUrl: script.targetUrl,
-        steps: substitutedSteps as TestSuiteStep[],
-        screenshotMode: config?.screenshotMode,
-        navigationTimeout: config?.navigationTimeout,
-        actionTimeout: config?.actionTimeout,
-      });
-
-      // Run the test using the substituted temp spec
-      const { runId } = await testSuiteService.runScript({
-        scriptId,
-        triggeredBy: 'manual',
-        filePathOverride: tempFilePath,
-      });
-      runIds.push(runId);
-    }
-
-    return { runIds, totalRows: rows.length };
-  });
-
-  // ── Open report handler ────────────────────────────────────────
-
-  router.handle(TEST_SUITE.OPEN.REPORT, async ({ reportPath }) => {
-    await shell.openPath(reportPath);
-    return { success: true };
-  });
-
-  // ── Auth state handlers ────────────────────────────────────────
-
-  router.handle(TEST_SUITE.AUTH.SAVE, ({ projectId }) =>
-    testSuiteService.saveAuthState(projectId),
-  );
-
-  router.handle(TEST_SUITE.AUTH.CLEAR, ({ projectId }) =>
-    testSuiteService.clearAuthState(projectId),
-  );
-
-  router.handle(TEST_SUITE.BATCH.RUN, (input) =>
-    testSuiteService.batchRun(input),
-  );
-
   // ── Domain-specific handler groups ────────────────────────────
 
+  registerScriptHandlers(router, testSuiteService, projectService);
+  registerRunHandlers(router, testSuiteService);
+  registerExportHandlers(router, testSuiteService, projectService);
+  registerBrowserViewHandlers(router, testSuiteService);
+  registerConfigHandlers(router, testSuiteService);
+  registerScreenshotHandlers(router, testSuiteService);
+  registerDataRunHandlers(router, testSuiteService);
+  registerAuthHandlers(router, testSuiteService);
   registerAnalyticsHandlers(router, testSuiteService);
   registerWatchHandlers(router, testSuiteService);
   registerBaselineHandlers(router, testSuiteService);
