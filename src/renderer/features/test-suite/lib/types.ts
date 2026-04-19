@@ -2,6 +2,18 @@
  * Shared types for the test-suite feature renderer layer.
  */
 
+/** Output line with sequential ID for store-based rendering */
+export interface StoreOutputLine {
+  id: number;
+  text: string;
+}
+
+/** Output line from IPC event stream */
+export interface StreamOutputLine {
+  line: string;
+  timestamp: string;
+}
+
 /** Run record shape used by results/output components */
 export interface RunRecord {
   id?: string;

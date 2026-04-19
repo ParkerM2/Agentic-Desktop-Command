@@ -19,12 +19,10 @@ import {
 } from '@ui';
 
 import { getOutputLineClass } from '../lib/format';
-import type { RunRecord } from '../lib/types';
-
-interface OutputLine { line: string; timestamp: string }
+import type { RunRecord, StreamOutputLine } from '../lib/types';
 
 interface ResultsOutputLogProps {
-  displayLines: OutputLine[];
+  displayLines: StreamOutputLine[];
   outputRef: RefObject<HTMLDivElement | null>;
   activeRunId: string | null;
   errorMessage?: string;
@@ -41,7 +39,7 @@ const OUTPUT_VIEW = {
 function buildSummaryMarkdown(
   runRecord: RunRecord,
   scriptName: string | undefined,
-  displayLines: OutputLine[],
+  displayLines: StreamOutputLine[],
 ): string {
   const totalSteps = (runRecord.stepsPassed ?? 0) + (runRecord.stepsFailed ?? 0);
   const durationSec = ((runRecord.durationMs ?? 0) / 1000).toFixed(1);
@@ -85,7 +83,7 @@ function buildSummaryMarkdown(
   return lines.join('\n');
 }
 
-function buildJsonOutput(runRecord: RunRecord, displayLines: OutputLine[]): string {
+function buildJsonOutput(runRecord: RunRecord, displayLines: StreamOutputLine[]): string {
   return JSON.stringify(
     {
       status: runRecord.status,
@@ -233,7 +231,7 @@ function SummaryView({
 }: {
   runRecord?: RunRecord | null;
   scriptName?: string;
-  displayLines: OutputLine[];
+  displayLines: StreamOutputLine[];
 }) {
   if (!runRecord) {
     return <Text variant="muted">Waiting for results...</Text>;

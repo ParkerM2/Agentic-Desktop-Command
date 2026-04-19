@@ -4,14 +4,11 @@ import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
-interface OutputLine {
-  line: string;
-  timestamp: string;
-}
+import type { StreamOutputLine } from '../lib/types';
 
 interface OutputState {
   forRunId: string | null;
-  lines: OutputLine[];
+  lines: StreamOutputLine[];
 }
 
 export function useRunOutput(runId: string | null) {
