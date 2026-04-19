@@ -1,0 +1,57 @@
+import { Card, CardContent, Flex, Stack, Text } from '@ui';
+
+import type { HealthScore } from '../lib/health-score';
+
+// ─── ScoreBar ────────────────────────────────────────────
+
+interface ScoreBarProps {
+  label: string;
+  max: number;
+  value: number;
+}
+
+function ScoreBar({ label, max, value }: ScoreBarProps) {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <Flex align="center" gap="sm" wrap="nowrap">
+      <Text className="w-16" size="sm" variant="muted">
+        {label}
+      </Text>
+      <div className="h-1.5 flex-1 rounded-full bg-border">
+        <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
+      </div>
+      <Text className="w-8 text-right" size="sm" variant="muted">
+        {value}/{max}
+      </Text>
+    </Flex>
+  );
+}
+
+// ─── HealthScoreCard ─────────────────────────────────────
+
+interface HealthScoreCardProps {
+  health: HealthScore;
+}
+
+export function HealthScoreCard({ health }: HealthScoreCardProps) {
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <Flex align="center" gap="lg" wrap="nowrap">
+          <div className={`text-6xl font-bold ${health.color}`}>{health.grade}</div>
+          <Stack className="flex-1" gap="sm">
+            <Flex align="center" justify="between" wrap="nowrap">
+              <Text className="font-medium">Test Health Score</Text>
+              <Text className={`text-lg font-semibold ${health.color}`}>{health.score}/100</Text>
+            </Flex>
+            <Stack gap="none">
+              <ScoreBar label="Pass Rate" max={40} value={health.breakdown.passRate} />
+              <ScoreBar label="Stability" max={30} value={health.breakdown.stability} />
+              <ScoreBar label="Speed" max={30} value={health.breakdown.speed} />
+            </Stack>
+          </Stack>
+        </Flex>
+      </CardContent>
+    </Card>
+  );
+}
