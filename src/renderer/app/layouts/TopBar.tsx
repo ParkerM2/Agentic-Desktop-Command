@@ -19,7 +19,7 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import { Badge } from '@ui';
+import { Badge, Button } from '@ui';
 
 import { useProjects } from '@features/projects';
 import { HealthIndicator } from '@features/settings';
@@ -102,14 +102,14 @@ export function TopBar() {
     <div className={cn('electron-drag flex shrink-0 items-stretch', TOOLBAR_CLASSES[toolbarStyle])}>
       {/* Sidebar toggle */}
       <div className="electron-no-drag flex shrink-0 items-stretch">
-        <button
+        <Button
           aria-label="Toggle sidebar"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-r"
-          type="button"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center rounded-none border-r"
+          variant="ghost"
           onClick={toggleSidebar}
         >
           <PanelLeft className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* Project tabs — VSCode-style: right border per tab, horizontal scroll */}
@@ -120,14 +120,14 @@ export function TopBar() {
           return (
             <div
               key={project.id}
+              role="tab"
+              tabIndex={0}
               className={cn(
                 'border-border group flex h-full shrink-0 cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors',
                 isActive
                   ? 'bg-background text-foreground'
                   : 'bg-card text-muted-foreground hover:text-foreground',
               )}
-              role="tab"
-              tabIndex={0}
               onClick={() => handleSelectProject(project.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -142,30 +142,32 @@ export function TopBar() {
                 <Folder className="h-3 w-3 shrink-0" />
               )}
               <span className="max-w-32 truncate">{project.name}</span>
-              <button
+              <Button
                 aria-label={`Close ${project.name} tab`}
-                className="text-muted-foreground hover:text-foreground ml-0.5 flex h-4 w-4 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
-                type="button"
+                className="text-muted-foreground hover:text-foreground ml-0.5 h-4 w-4 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                size="icon"
+                variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeProjectTab(project.id);
                 }}
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </div>
           );
         })}
 
         {/* Add tab — sticky, grows with list until hitting settings */}
-        <button
-          className="border-border text-muted-foreground hover:text-foreground flex h-full shrink-0 items-center border-r px-3 transition-colors"
+        <Button
+          aria-label="Open project"
+          className="border-border text-muted-foreground hover:text-foreground h-full shrink-0 rounded-none border-r px-3"
           title="Open project"
-          type="button"
+          variant="ghost"
           onClick={handleAddProject}
         >
           <Plus className="h-3.5 w-3.5" />
-        </button>
+        </Button>
 
         {/* Drag spacer fills remaining space */}
         <div className="flex-1" />
@@ -175,14 +177,14 @@ export function TopBar() {
       <div className="electron-no-drag flex h-full items-center">
         <Badge display={window.appInfo.devMode} size="sm" value="DEV" variant="warning" />
         <WorkflowStatusBar />
-        <button
+        <Button
           aria-label="Settings"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground h-full w-10 rounded-none border-l"
+          variant="ghost"
           onClick={() => void navigate({ to: ROUTES.SETTINGS })}
         >
           <Settings className="h-3.5 w-3.5" />
-        </button>
+        </Button>
         <TitleBarScreenshot />
         <div className="border-border flex h-full items-center border-l px-2">
           <HealthIndicator />
@@ -191,18 +193,18 @@ export function TopBar() {
 
       {/* Window controls — left border per button */}
       <div className="electron-no-drag flex h-full items-center">
-        <button
+        <Button
           aria-label="Minimize window"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground h-full w-10 rounded-none border-l"
+          variant="ghost"
           onClick={handleMinimize}
         >
           <Minus className="h-3.5 w-3.5" />
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground h-full w-10 rounded-none border-l"
+          variant="ghost"
           onClick={handleMaximize}
         >
           {isMaximized ? (
@@ -220,15 +222,15 @@ export function TopBar() {
           ) : (
             <Square className="h-3 w-3" />
           )}
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label="Close window"
-          className="border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          className="border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground h-full w-10 rounded-none border-l"
+          variant="ghost"
           onClick={handleClose}
         >
           <X className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
     </div>
   );
