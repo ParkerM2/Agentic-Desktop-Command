@@ -37,7 +37,6 @@ export function RunSparkline({ results }: RunSparklineProps) {
             <TooltipTrigger asChild>
               <div
                 className={`inline-block h-2.5 w-2.5 rounded-full ${color}`}
-                title={flaky ? 'Flaky' : undefined}
               />
             </TooltipTrigger>
             <TooltipContent side="top">

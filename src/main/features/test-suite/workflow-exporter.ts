@@ -15,7 +15,7 @@ export function previewWorkflow(
   testDir: string,
   specNames: string[],
 ): { yaml: string; filePath: string; exists: boolean } {
-  const yaml = renderYaml(testDir, specNames);
+  const yaml = renderYaml(testDir);
   const exists = fs.existsSync(path.join(projectRoot, WORKFLOW_PATH));
   return { yaml, filePath: WORKFLOW_PATH, exists };
 }
@@ -27,11 +27,11 @@ export function commitWorkflow(
 ): { filePath: string; committed: boolean } {
   const fullPath = path.join(projectRoot, WORKFLOW_PATH);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-  fs.writeFileSync(fullPath, renderYaml(testDir, specNames), 'utf8');
+  fs.writeFileSync(fullPath, renderYaml(testDir), 'utf8');
   return { filePath: fullPath, committed: true };
 }
 
-function renderYaml(testDir: string, _specNames: string[]): string {
+function renderYaml(testDir: string): string {
   return `name: Test Suite
 on:
   pull_request:

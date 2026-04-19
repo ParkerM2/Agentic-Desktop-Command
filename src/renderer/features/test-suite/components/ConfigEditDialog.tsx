@@ -13,7 +13,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
-import { useSaveTestSuiteConfig } from '@renderer/features/test-suite/api/useSaveTestSuiteConfig';
+import { useSaveTestSuiteConfig } from '../api/useSaveTestSuiteConfig';
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import {
