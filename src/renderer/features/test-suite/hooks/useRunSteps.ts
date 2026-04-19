@@ -10,6 +10,7 @@ export interface RunStep {
   stepLabel: string;
   timestamp: string;
   durationMs: number | null;
+  status?: 'passed' | 'failed';
 }
 
 interface StepsState {

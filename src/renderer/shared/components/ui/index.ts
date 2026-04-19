@@ -272,6 +272,9 @@ export type { StatusBadgeProps } from './status-badge';
 export { StatusIndicator, statusIndicatorVariants } from './status-indicator';
 export type { StatusIndicatorProps } from './status-indicator';
 
+export { Icon, iconVariants } from './icon';
+export type { IconProps } from './icon';
+
 export { MetricCard, metricCardVariants } from './metric-card';
 export type { MetricCardProps, MetricCardTrend, TrendDirection } from './metric-card';
 

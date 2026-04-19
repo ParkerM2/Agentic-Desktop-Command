@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
 
-import { Badge, Flex, Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
+import { Badge, Flex, Icon, Text, Tooltip, TooltipContent, TooltipTrigger } from '@ui';
 
 import type { RunStep } from '../hooks/useRunSteps';
 
@@ -29,22 +29,12 @@ function formatDetail(label: string): string {
   return label;
 }
 
-function StepStatusIcon({ runStatus, isLast, isComplete }: {
-  runStatus: string;
-  isLast: boolean;
-  isComplete: boolean;
-}) {
-  if (isLast && runStatus === 'running') {
-    return <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-accent" />;
-  }
-  if (isComplete) {
-    return <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />;
-  }
-  if (runStatus === 'failed') {
-    return <XCircle className="h-3.5 w-3.5 shrink-0 text-destructive" />;
-  }
-  return <Clock className="h-3.5 w-3.5 shrink-0 text-text-dim" />;
-}
+const stepIcons = {
+  passed: CheckCircle2,
+  failed: XCircle,
+  pending: Clock,
+  running: Loader2,
+};
 
 export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
   if (steps.length === 0) {
@@ -68,6 +58,7 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
         const isSlow = (step.durationMs ?? 0) > 5000;
         const typeLabel = STEP_TYPE_LABEL[step.stepType] ?? step.stepType.toUpperCase();
         const detail = formatDetail(step.stepLabel);
+        const variant = step.status ?? (isLast && runStatus === 'running' ? 'running' : 'pending');
 
         return (
           <Tooltip key={step.stepIndex}>
@@ -83,11 +74,7 @@ export function StepTimeline({ steps, runStatus }: StepTimelineProps) {
                   <Text className="flex-1 truncate" size="sm" variant="muted">
                     {detail}
                   </Text>
-                  <StepStatusIcon
-                    isComplete={isComplete}
-                    isLast={isLast}
-                    runStatus={runStatus}
-                  />
+                  <Icon component={stepIcons[variant]} variant={variant} />
                 </Flex>
                 {isComplete ? (
                   <Flex align="center" className="ml-7" gap="sm" wrap="nowrap">
