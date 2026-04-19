@@ -118,9 +118,38 @@ export function writeSpecFile(params: {
       case 'wait':
         lines.push(`  await page.waitForTimeout(${s.ms});`);
         break;
-      case 'assert':
-        lines.push(`  await expect(page.locator('${escape(s.selector)}')).toHaveText('${escape(s.expected)}', { timeout: ${actionTimeout} });`);
+      case 'assert': {
+        const method = s.assertMethod ?? 'toHaveText';
+        const locator = `page.locator('${escape(s.selector)}')`;
+        switch (method) {
+          case 'toBeVisible':
+            lines.push(`  await expect(${locator}).toBeVisible({ timeout: ${actionTimeout} });`);
+            break;
+          case 'toBeHidden':
+            lines.push(`  await expect(${locator}).toBeHidden({ timeout: ${actionTimeout} });`);
+            break;
+          case 'toContainText':
+            lines.push(`  await expect(${locator}).toContainText('${escape(s.expected)}', { timeout: ${actionTimeout} });`);
+            break;
+          case 'toHaveCount':
+            lines.push(`  await expect(${locator}).toHaveCount(${Number.isNaN(parseInt(s.expected, 10)) ? 0 : parseInt(s.expected, 10)}, { timeout: ${actionTimeout} });`);
+            break;
+          case 'toHaveAttribute':
+            lines.push(`  await expect(${locator}).toHaveAttribute('${escape(s.attribute ?? '')}', '${escape(s.expected)}', { timeout: ${actionTimeout} });`);
+            break;
+          case 'toHaveURL':
+            lines.push(`  await expect(page).toHaveURL('${escape(s.expected)}', { timeout: ${actionTimeout} });`);
+            break;
+          case 'toHaveTitle':
+            lines.push(`  await expect(page).toHaveTitle('${escape(s.expected)}', { timeout: ${actionTimeout} });`);
+            break;
+          case 'toHaveText':
+          default:
+            lines.push(`  await expect(${locator}).toHaveText('${escape(s.expected)}', { timeout: ${actionTimeout} });`);
+            break;
+        }
         break;
+      }
     }
 
     if (shouldCapture(s, prevType)) {

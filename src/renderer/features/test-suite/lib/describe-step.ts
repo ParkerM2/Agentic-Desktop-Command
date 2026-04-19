@@ -34,7 +34,27 @@ export function describeStep(step: TestSuiteStep): string {
       return `Press ${step.key}`;
     case 'wait':
       return `Wait ${step.ms}ms`;
-    case 'assert':
-      return `Assert "${step.selector}" equals "${step.expected}"`;
+    case 'assert': {
+      const sel = cleanSelector(step.selector);
+      switch (step.assertMethod ?? 'toHaveText') {
+        case 'toBeVisible':
+          return `Assert ${sel} is visible`;
+        case 'toBeHidden':
+          return `Assert ${sel} is hidden`;
+        case 'toContainText':
+          return `Assert ${sel} contains "${step.expected}"`;
+        case 'toHaveCount':
+          return `Assert ${sel} count = ${step.expected}`;
+        case 'toHaveAttribute':
+          return `Assert ${sel} [${step.attribute ?? ''}] = "${step.expected}"`;
+        case 'toHaveURL':
+          return `Assert URL = "${step.expected}"`;
+        case 'toHaveTitle':
+          return `Assert title = "${step.expected}"`;
+        case 'toHaveText':
+        default:
+          return `Assert ${sel} = "${step.expected}"`;
+      }
+    }
   }
 }
