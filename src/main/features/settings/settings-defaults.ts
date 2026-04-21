@@ -16,6 +16,7 @@ export const DEFAULT_AGENT_SETTINGS: AgentSettings = {
 export const DEFAULT_SETTINGS: AppSettings = {
   theme: 'system',
   colorTheme: 'default',
+  customThemes: [],
   language: 'en',
   uiScale: 100,
   onboardingCompleted: false,

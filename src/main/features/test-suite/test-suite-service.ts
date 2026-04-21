@@ -281,7 +281,7 @@ export function createTestSuiteService(
       // Compute screenshot directory from config
       const config = configStore.getActive(script.projectId);
       const testDir = config?.testDirectory ?? 'tests/e2e';
-      const screenshotMode = config?.screenshotMode ?? 'manual';
+      const screenshotMode = config?.screenshotMode ?? 'smart';
       const workers = config?.workers ?? 1;
       const retries = config?.retries ?? 1;
       let screenshotDir: string | undefined;
@@ -317,7 +317,7 @@ export function createTestSuiteService(
           name: script.name,
           baseUrl: targetUrl || script.targetUrl,
           steps: script.steps as TestSuiteStep[],
-          screenshotMode: config?.screenshotMode,
+          screenshotMode,
           navigationTimeout: config?.navigationTimeout,
           actionTimeout: config?.actionTimeout,
         });
@@ -336,7 +336,7 @@ export function createTestSuiteService(
         browsers: config?.browsers,
         workers,
         storageStatePath: config?.storageStatePath,
-        screenshotMode: config?.screenshotMode,
+        screenshotMode,
       });
 
       const runId = runner.run({
@@ -388,7 +388,7 @@ export function createTestSuiteService(
         name: script.name,
         baseUrl: script.targetUrl,
         steps: script.steps as TestSuiteStep[],
-        screenshotMode: config?.screenshotMode,
+        screenshotMode: config?.screenshotMode ?? 'smart',
         navigationTimeout: config?.navigationTimeout,
         actionTimeout: config?.actionTimeout,
       });

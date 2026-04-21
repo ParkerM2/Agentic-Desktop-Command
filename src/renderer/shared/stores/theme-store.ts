@@ -19,7 +19,6 @@ interface ThemeState {
   setColorTheme: (theme: string) => void;
   setUiScale: (scale: number) => void;
   setCustomThemes: (themes: CustomTheme[]) => void;
-  hydrate: (settings: { theme?: string; colorTheme?: string; uiScale?: number }) => void;
 }
 
 function resolveEffectiveMode(mode: ThemeMode): 'light' | 'dark' {
@@ -109,14 +108,5 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (colorTheme !== 'default') {
       applyCustomTokens(colorTheme, customThemes, mode);
     }
-  },
-  hydrate: (settings) => {
-    const mode = (settings.theme as ThemeMode | undefined) ?? 'dark';
-    const colorTheme = settings.colorTheme ?? 'default';
-    const uiScale = Math.max(75, Math.min(150, settings.uiScale ?? 100));
-    set({ mode, colorTheme, uiScale });
-    applyMode(mode);
-    applyCustomTokens(colorTheme, get().customThemes, mode);
-    applyUiScale(uiScale);
   },
 }));

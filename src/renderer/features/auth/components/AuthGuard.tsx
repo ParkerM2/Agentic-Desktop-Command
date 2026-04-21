@@ -12,8 +12,6 @@ import { Outlet, useNavigate } from '@tanstack/react-router';
 
 import { ROUTES } from '@shared/constants';
 
-import { useThemeSync } from '@renderer/shared/hooks';
-
 import { Spinner } from '@ui';
 
 import { useAuthInit } from '../hooks/useAuthEvents';
@@ -25,9 +23,6 @@ export function AuthGuard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isInitializing = useAuthStore((s) => s.isInitializing);
   const navigate = useNavigate();
-
-  // Apply theme before RootLayout mounts (AuthGuard wraps it)
-  useThemeSync();
 
   // Restore session via auth.restore IPC on app startup
   useAuthInit();

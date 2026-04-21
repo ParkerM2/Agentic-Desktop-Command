@@ -39,7 +39,7 @@ export function writeSpecFile(params: {
   navigationTimeout?: number;
   actionTimeout?: number;
 }): string {
-  const mode = params.screenshotMode ?? 'manual';
+  const mode = params.screenshotMode ?? 'smart';
   const navigationTimeout = params.navigationTimeout ?? 30_000;
   const actionTimeout = params.actionTimeout ?? 10_000;
   let ssIdx = 0;
@@ -67,10 +67,12 @@ export function writeSpecFile(params: {
         // click that follows one or more fills = form submit heuristic
         return step.type === 'click' && prevType === 'fill';
       case 'smart':
+        // Smart mode captures after every actionable step
         if (step.type === 'navigate') return true;
+        if (step.type === 'click') return true;
+        if (step.type === 'fill') return true;
+        if (step.type === 'select') return true;
         if (step.type === 'assert') return true;
-        // click after fill(s) = form submit heuristic
-        if (step.type === 'click' && prevType === 'fill') return true;
         return false;
       default:
         return false;

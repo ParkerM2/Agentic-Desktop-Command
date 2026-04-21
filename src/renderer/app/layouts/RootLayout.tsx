@@ -20,7 +20,7 @@ import { EventBridge } from '@renderer/shared/components/EventBridge';
 import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { MutationErrorToast } from '@renderer/shared/components/MutationErrorToast';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
-import { useLayoutSync, useThemeSync } from '@renderer/shared/hooks';
+import { useLayoutSync } from '@renderer/shared/hooks';
 import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
@@ -40,8 +40,7 @@ export function RootLayout() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const pushRoute = useRouteHistoryStore((s) => s.pushRoute);
 
-  // Sync theme & layout from IPC settings into Zustand stores
-  useThemeSync();
+  // Sync layout from IPC settings into Zustand store (theme sync handled by useSettings queryFn)
   useLayoutSync();
 
   // Activate error/health event listeners

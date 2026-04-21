@@ -1,9 +1,6 @@
-import { type RefObject, useMemo, useState } from 'react';
-
-import { Check, ClipboardCopy, FileCode, FileText, ImageIcon } from 'lucide-react';
+import { type RefObject, useMemo } from 'react';
 
 import {
-  Button,
   Code,
   Flex,
   Grid,
@@ -12,14 +9,10 @@ import {
   ScrollArea,
   SectionHeader,
   Stack,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Text,
 } from '@ui';
 
-import { getOutputLineClass } from '../lib/format';
+import { buildJsonOutput, getOutputLineClass } from '../lib/format';
 
 import { ScreenshotGallery } from './ScreenshotGallery';
 
@@ -38,138 +31,26 @@ interface ResultsOutputLogProps {
   displayLines: StreamOutputLine[];
   outputRef: RefObject<HTMLDivElement | null>;
   activeRunId: string | null;
+  view: string;
   errorMessage?: string;
   runRecord?: RunRecord | null;
   screenshots?: ScreenshotItem[];
   scriptName?: string;
 }
 
-const OUTPUT_VIEW = {
-  SUMMARY: 'summary',
-  SCREENSHOTS: 'screenshots',
-  JSON: 'json',
-  RAW: 'raw',
-} as const;
-
-function buildSummaryMarkdown(
-  runRecord: RunRecord,
-  scriptName: string | undefined,
-  displayLines: StreamOutputLine[],
-): string {
-  const totalSteps = (runRecord.stepsPassed ?? 0) + (runRecord.stepsFailed ?? 0);
-  const durationSec = ((runRecord.durationMs ?? 0) / 1000).toFixed(1);
-  const startDate = runRecord.startedAt ? new Date(runRecord.startedAt).toLocaleString() : 'N/A';
-
-  const lines: string[] = [
-    `## ${scriptName ?? 'Test Run'} — ${runRecord.status.toUpperCase()}`,
-    '',
-    `| Metric | Value |`,
-    `|--------|-------|`,
-    `| Status | **${runRecord.status}** |`,
-    `| Duration | ${durationSec}s |`,
-    `| Steps Passed | ${runRecord.stepsPassed ?? 0} / ${totalSteps} |`,
-    `| Steps Failed | ${runRecord.stepsFailed ?? 0} / ${totalSteps} |`,
-    `| Started | ${startDate} |`,
-  ];
-
-  if (runRecord.triggeredBy) {
-    lines.push(`| Triggered By | ${runRecord.triggeredBy} |`);
-  }
-
-  if (runRecord.error) {
-    lines.push('', '### Error', '', '```', runRecord.error, '```');
-  }
-
-  const errorLines = displayLines
-    .map((l) => l.line)
-    .filter((l) => l.includes('Error') || l.includes('\u2717') || l.includes('FAIL'));
-
-  if (errorLines.length > 0 && !runRecord.error) {
-    lines.push('', '### Failures', '', '```');
-    for (const line of errorLines.slice(0, 20)) {
-      lines.push(line);
-    }
-    if (errorLines.length > 20) {
-      lines.push(`... and ${errorLines.length - 20} more`);
-    }
-    lines.push('```');
-  }
-
-  return lines.join('\n');
-}
-
-function buildJsonOutput(runRecord: RunRecord, displayLines: StreamOutputLine[]): string {
-  return JSON.stringify(
-    {
-      status: runRecord.status,
-      stepsPassed: runRecord.stepsPassed,
-      stepsFailed: runRecord.stepsFailed,
-      durationMs: runRecord.durationMs,
-      startedAt: runRecord.startedAt,
-      completedAt: runRecord.completedAt,
-      triggeredBy: runRecord.triggeredBy,
-      error: runRecord.error ?? null,
-      outputLines: displayLines.map((l) => l.line),
-    },
-    null,
-    2,
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    void navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <Button size="sm" variant="ghost" onClick={handleCopy}>
-      {copied ? (
-        <>
-          <Check className="mr-1 h-3 w-3 text-green-500" /> Copied
-        </>
-      ) : (
-        <>
-          <ClipboardCopy className="mr-1 h-3 w-3" /> Copy
-        </>
-      )}
-    </Button>
-  );
-}
-
-function getCopyText(view: string, summary: string, json: string, raw: string): string {
-  if (view === OUTPUT_VIEW.SUMMARY) return summary;
-  if (view === OUTPUT_VIEW.JSON) return json;
-  return raw;
-}
-
 export function ResultsOutputLog({
   displayLines,
   outputRef,
   activeRunId,
+  view,
   errorMessage,
   runRecord,
   screenshots = [],
   scriptName,
 }: ResultsOutputLogProps) {
-  const [view, setView] = useState<string>(OUTPUT_VIEW.SUMMARY);
-
-  const summaryText = useMemo(
-    () => (runRecord ? buildSummaryMarkdown(runRecord, scriptName, displayLines) : ''),
-    [runRecord, scriptName, displayLines],
-  );
-
   const jsonText = useMemo(
     () => (runRecord ? buildJsonOutput(runRecord, displayLines) : '{}'),
     [runRecord, displayLines],
-  );
-
-  const rawText = useMemo(
-    () => displayLines.map((l) => l.line).join('\n'),
-    [displayLines],
   );
 
   const hasContent = displayLines.length > 0 || runRecord !== undefined;
@@ -183,58 +64,48 @@ export function ResultsOutputLog({
       ) : null}
 
       {hasContent ? (
-        <Tabs className="flex flex-1 flex-col overflow-hidden" value={view} onValueChange={setView}>
-          <Flex className="border-b border-border px-3 py-1" justify="between" wrap="nowrap">
-            <TabsList className="h-8">
-              <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.SUMMARY}>
-                <FileText className="h-3 w-3" /> Summary
-              </TabsTrigger>
-              <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.SCREENSHOTS}>
-                <ImageIcon className="h-3 w-3" /> Screenshots{screenshots.length > 0 ? ` (${screenshots.length})` : ''}
-              </TabsTrigger>
-              <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.JSON}>
-                <FileCode className="h-3 w-3" /> JSON
-              </TabsTrigger>
-              <TabsTrigger className="gap-1 text-xs" value={OUTPUT_VIEW.RAW}>
-                Raw Log
-              </TabsTrigger>
-            </TabsList>
-            <CopyButton text={getCopyText(view, summaryText, jsonText, rawText)} />
-          </Flex>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {view === 'summary' && (
+            <div className="flex-1 overflow-y-auto p-3">
+              <SummaryView
+                displayLines={displayLines}
+                runRecord={runRecord}
+                screenshots={screenshots}
+                scriptName={scriptName}
+              />
+            </div>
+          )}
 
-          <TabsContent className="flex-1 overflow-y-auto p-3 mt-0" value={OUTPUT_VIEW.SUMMARY}>
-            <SummaryView
-              displayLines={displayLines}
-              runRecord={runRecord}
-              screenshots={screenshots}
-              scriptName={scriptName}
-            />
-          </TabsContent>
+          {view === 'screenshots' && (
+            <div className="flex-1 overflow-y-auto p-3">
+              <ScreenshotGallery screenshots={screenshots} />
+            </div>
+          )}
 
-          <TabsContent className="flex-1 overflow-y-auto p-3 mt-0" value={OUTPUT_VIEW.SCREENSHOTS}>
-            <ScreenshotGallery screenshots={screenshots} />
-          </TabsContent>
+          {view === 'json' && (
+            <div className="flex-1 overflow-y-auto p-3">
+              <Code className="text-xs whitespace-pre-wrap">
+                {jsonText}
+              </Code>
+            </div>
+          )}
 
-          <TabsContent className="flex-1 overflow-y-auto p-3 mt-0" value={OUTPUT_VIEW.JSON}>
-            <Code className="text-xs whitespace-pre-wrap">
-              {jsonText}
-            </Code>
-          </TabsContent>
-
-          <TabsContent className="flex-1 overflow-y-auto p-3 mt-0" value={OUTPUT_VIEW.RAW}>
-            <Code className="text-xs whitespace-pre-wrap">
-              {displayLines.map((l, i) => (
-                <Text
-                  key={l.timestamp === `stored-${i}` ? `stored-${i}` : l.timestamp}
-                  className={getOutputLineClass(l.line)}
-                >
-                  {l.line}
-                  {'\n'}
-                </Text>
-              ))}
-            </Code>
-          </TabsContent>
-        </Tabs>
+          {view === 'raw' && (
+            <div className="flex-1 overflow-y-auto p-3">
+              <Code className="text-xs whitespace-pre-wrap">
+                {displayLines.map((l, i) => (
+                  <Text
+                    key={l.timestamp === `stored-${i}` ? `stored-${i}` : l.timestamp}
+                    className={getOutputLineClass(l.line)}
+                  >
+                    {l.line}
+                    {'\n'}
+                  </Text>
+                ))}
+              </Code>
+            </div>
+          )}
+        </div>
       ) : (
         <Flex align="center" className="h-full p-3" justify="center">
           <Text size="sm" variant="muted">

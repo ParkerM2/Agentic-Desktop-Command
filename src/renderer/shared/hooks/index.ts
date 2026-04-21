@@ -8,4 +8,3 @@ export { useLayoutSync } from './useLayoutSync';
 export { useLooseParams } from './useLooseParams';
 export { useMutationErrorToast } from './useMutationErrorToast';
 export { useOAuthStatus } from './useOAuthStatus';
-export { useThemeSync } from './useThemeSync';

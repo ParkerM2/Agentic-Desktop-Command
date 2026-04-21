@@ -104,11 +104,12 @@ export function TopBar() {
       <div className="electron-no-drag flex shrink-0 items-stretch">
         <Button
           aria-label="Toggle sidebar"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center rounded-none border-r"
-          variant="ghost"
+          className="border-r border-l-0"
+          size="toolbar"
+          variant="toolbar"
           onClick={toggleSidebar}
         >
-          <PanelLeft className="h-3.5 w-3.5" />
+          <PanelLeft />
         </Button>
       </div>
 
@@ -166,7 +167,7 @@ export function TopBar() {
           variant="ghost"
           onClick={handleAddProject}
         >
-          <Plus className="h-3.5 w-3.5" />
+          <Plus className="h-4 w-4" />
         </Button>
 
       </div>
@@ -180,11 +181,11 @@ export function TopBar() {
         <WorkflowStatusBar />
         <Button
           aria-label="Settings"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground h-full w-10 rounded-none border-l"
-          variant="ghost"
+          size="toolbar"
+          variant="toolbar"
           onClick={() => void navigate({ to: ROUTES.SETTINGS })}
         >
-          <Settings className="h-3.5 w-3.5" />
+          <Settings />
         </Button>
         <TitleBarScreenshot />
         <div className="border-border flex h-full items-center border-l px-2">
@@ -196,22 +197,21 @@ export function TopBar() {
       <div className="electron-no-drag flex h-full items-center">
         <Button
           aria-label="Minimize window"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground h-full w-10 rounded-none border-l"
-          variant="ghost"
+          size="toolbar"
+          variant="toolbar"
           onClick={handleMinimize}
         >
-          <Minus className="h-3.5 w-3.5" />
+          <Minus />
         </Button>
         <Button
           aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground h-full w-10 rounded-none border-l"
-          variant="ghost"
+          size="toolbar"
+          variant="toolbar"
           onClick={handleMaximize}
         >
           {isMaximized ? (
             <svg
               aria-hidden="true"
-              className="h-3 w-3"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
@@ -221,16 +221,17 @@ export function TopBar() {
               <path d="M2.5 2.5V1a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-.5.5H8" />
             </svg>
           ) : (
-            <Square className="h-3 w-3" />
+            <Square />
           )}
         </Button>
         <Button
           aria-label="Close window"
-          className="border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground h-full w-10 rounded-none border-l"
-          variant="ghost"
+          className="hover:bg-destructive hover:text-destructive-foreground"
+          size="toolbar"
+          variant="toolbar"
           onClick={handleClose}
         >
-          <X className="h-3.5 w-3.5" />
+          <X />
         </Button>
       </div>
     </div>
