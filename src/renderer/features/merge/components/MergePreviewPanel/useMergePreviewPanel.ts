@@ -2,57 +2,16 @@
  * useMergePreviewPanel — Logic hook for MergePreviewPanel
  */
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { DiffModeEnum } from '@git-diff-view/react';
 
-import { useThemeStore } from '@renderer/shared/stores/theme-store';
+import { useDarkMode } from '@renderer/shared/hooks/useDarkMode';
+import { useFileLang } from '@renderer/shared/hooks/useFileLangMap';
 
 import { useFileDiff, useMergeDiff } from '../../api/useMerge';
 
-export function getFileLang(filePath: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
-  const langMap: Record<string, string> = {
-    ts: 'typescript',
-    tsx: 'tsx',
-    js: 'javascript',
-    jsx: 'jsx',
-    json: 'json',
-    css: 'css',
-    scss: 'scss',
-    less: 'less',
-    html: 'xml',
-    xml: 'xml',
-    md: 'markdown',
-    py: 'python',
-    rs: 'rust',
-    go: 'go',
-    java: 'java',
-    rb: 'ruby',
-    sh: 'bash',
-    bash: 'bash',
-    zsh: 'bash',
-    yml: 'yaml',
-    yaml: 'yaml',
-    sql: 'sql',
-    graphql: 'graphql',
-    swift: 'swift',
-    kt: 'kotlin',
-    c: 'c',
-    cpp: 'cpp',
-    h: 'c',
-    hpp: 'cpp',
-    cs: 'csharp',
-    php: 'php',
-    lua: 'lua',
-    r: 'r',
-    toml: 'ini',
-    ini: 'ini',
-    dockerfile: 'dockerfile',
-    makefile: 'makefile',
-  };
-  return langMap[ext] ?? 'plaintext';
-}
+export { useFileLang as getFileLang };
 
 export function getFileName(filePath: string): string {
   const parts = filePath.split('/');
@@ -76,13 +35,7 @@ export function useMergePreviewPanel({ repoPath, sourceBranch, targetBranch }: U
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<DiffModeEnum>(DiffModeEnum.SplitGitHub);
 
-  const themeMode = useThemeStore((s) => s.mode);
-  const isDark = useMemo(() => {
-    if (themeMode === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return themeMode === 'dark';
-  }, [themeMode]);
+  const isDark = useDarkMode();
 
   const {
     data: fileDiffData,

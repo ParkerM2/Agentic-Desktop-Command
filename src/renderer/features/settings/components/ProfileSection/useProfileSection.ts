@@ -6,6 +6,8 @@ import { useState } from 'react';
 
 import type { Profile } from '@shared/types';
 
+import { useModalWithEditState } from '@renderer/shared/hooks/useModalWithEditState';
+
 import {
   useCreateProfile,
   useDeleteProfile,
@@ -28,20 +30,15 @@ export function useProfileSection() {
   const deleteProfile = useDeleteProfile();
   const setDefaultProfile = useSetDefaultProfile();
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+  const {
+    open: modalOpen,
+    editing: editingProfile,
+    handleAdd,
+    handleEdit,
+    handleClose: handleCloseModal,
+  } = useModalWithEditState<Profile>();
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  function handleAdd() {
-    setEditingProfile(null);
-    setModalOpen(true);
-  }
-
-  function handleEdit(profile: Profile) {
-    setEditingProfile(profile);
-    setModalOpen(true);
-  }
 
   function handleDeleteRequest(id: string) {
     setErrorMessage(null);
@@ -75,13 +72,7 @@ export function useProfileSection() {
     } else {
       updateProfile.mutate({ id: editingProfile.id, updates: data }, errorHandler);
     }
-    setModalOpen(false);
-    setEditingProfile(null);
-  }
-
-  function handleCloseModal() {
-    setModalOpen(false);
-    setEditingProfile(null);
+    handleCloseModal();
   }
 
   return {

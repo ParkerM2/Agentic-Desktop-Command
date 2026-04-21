@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 
@@ -9,8 +9,10 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { useWorkspaces } from '@features/workspace';
 
 import { useAddProject, useCreateSubProject, useSetupExisting } from '../../api/useProjects';
+import { useWizardNavigation } from '../../hooks/useWizardNavigation';
 
 const STEP_LABELS = ['Select Folder', 'Detection', 'Sub-Repos', 'Configure', 'Confirm'] as const;
+const TOTAL_STEPS = STEP_LABELS.length;
 
 function getVisibleSteps(hasChildRepos: boolean): number[] {
   if (hasChildRepos) return [0, 1, 2, 3, 4];
@@ -23,7 +25,8 @@ interface UseProjectInitWizardProps {
 }
 
 export function useProjectInitWizard({ onClose, onSetupStarted }: UseProjectInitWizardProps) {
-  const [step, setStep] = useState(0);
+  const { step, setStep } = useWizardNavigation(TOTAL_STEPS);
+
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [repoType, setRepoType] = useState('single');
   const [selectedRepos, setSelectedRepos] = useState<Set<string>>(new Set());
@@ -68,19 +71,19 @@ export function useProjectInitWizard({ onClose, onSetupStarted }: UseProjectInit
     }
   }
 
-  function handleNext() {
+  const handleNext = useCallback(() => {
     const nextIndex = currentVisibleIndex + 1;
     if (nextIndex < visibleSteps.length) {
       setStep(visibleSteps[nextIndex]);
     }
-  }
+  }, [currentVisibleIndex, visibleSteps, setStep]);
 
-  function handleBack() {
+  const handleBack = useCallback(() => {
     const prevIndex = currentVisibleIndex - 1;
     if (prevIndex >= 0) {
       setStep(visibleSteps[prevIndex]);
     }
-  }
+  }, [currentVisibleIndex, visibleSteps, setStep]);
 
   async function handleConfirm() {
     if (!selectedPath) return;

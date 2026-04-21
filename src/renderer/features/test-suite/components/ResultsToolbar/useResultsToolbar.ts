@@ -1,7 +1,6 @@
-import { useState } from 'react';
-
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
+import { useClipboardCopy } from '@renderer/shared/hooks/useClipboardCopy';
 import { ipc } from '@renderer/shared/lib/ipc';
 
 interface UseResultsToolbarProps {
@@ -10,13 +9,9 @@ interface UseResultsToolbarProps {
 }
 
 export function useResultsToolbar({ copyText, runRecord }: UseResultsToolbarProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, handleCopy: copy } = useClipboardCopy();
 
-  const handleCopy = () => {
-    void navigator.clipboard.writeText(copyText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCopy = () => copy(copyText);
 
   const handleOpenReport = () => {
     void ipc(TEST_SUITE.OPEN.REPORT, { reportPath: runRecord?.reportPath ?? '' });

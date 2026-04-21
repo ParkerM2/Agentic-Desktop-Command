@@ -2,102 +2,60 @@
  * useDiscordActionModal — Logic hook for DiscordActionModal
  */
 
-import type { ChangeEvent } from 'react';
-import { useState } from 'react';
-
-import { useMcpToolCall } from '../../api/useMcpTool';
+import { useModalToolAction } from '../../hooks/useModalToolAction';
 
 export type DiscordActionType = 'send_message' | 'call_user' | 'list_servers' | 'set_status';
-
-type DiscordStatus = 'online' | 'dnd' | 'idle' | 'invisible';
 
 export interface DiscordFormState {
   channelId: string;
   content: string;
   userId: string;
-  status: DiscordStatus;
+  status: string;
   activityName: string;
 }
 
 export function useDiscordActionModal(actionType: DiscordActionType | null) {
-  const [form, setForm] = useState<DiscordFormState>({
+  const {
+    form,
+    result,
+    error,
+    mcpCall,
+    handleInputChange,
+    updateField,
+    handleSubmit: submitTool,
+  } = useModalToolAction<DiscordFormState>({
     channelId: '',
     content: '',
     userId: '',
     status: 'online',
     activityName: '',
   });
-  const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const mcpCall = useMcpToolCall();
-
-  function handleInputChange(
-    field: keyof DiscordFormState,
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void {
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-    setError(null);
-    setResult(null);
-  }
 
   function handleStatusChange(value: string): void {
-    setForm((prev) => ({ ...prev, status: value as DiscordStatus }));
-    setError(null);
-    setResult(null);
+    updateField('status', value);
   }
 
   async function handleSubmit(): Promise<void> {
     if (!actionType) return;
 
-    setError(null);
-    setResult(null);
-
-    try {
-      let toolName: string;
-      let args: Record<string, unknown>;
-
+    await submitTool((f) => {
       switch (actionType) {
         case 'send_message':
-          toolName = 'discord_send_message';
-          args = { channelId: form.channelId, content: form.content };
-          break;
+          return { server: 'discord', tool: 'discord_send_message', args: { channelId: f.channelId, content: f.content } };
         case 'call_user':
-          toolName = 'discord_call_user';
-          args = { userId: form.userId };
-          break;
+          return { server: 'discord', tool: 'discord_call_user', args: { userId: f.userId } };
         case 'list_servers':
-          toolName = 'discord_list_servers';
-          args = {};
-          break;
+          return { server: 'discord', tool: 'discord_list_servers', args: {} };
         case 'set_status':
-          toolName = 'discord_set_status';
-          args = {
-            status: form.status,
-            activityName: form.activityName.length > 0 ? form.activityName : undefined,
+          return {
+            server: 'discord',
+            tool: 'discord_set_status',
+            args: { status: f.status, activityName: f.activityName.length > 0 ? f.activityName : undefined },
           };
-          break;
         default:
-          return;
+          return null;
       }
-
-      const response = await mcpCall.mutateAsync({
-        server: 'discord',
-        tool: toolName,
-        args,
-      });
-
-      if (response.isError) {
-        const errorText = response.content[0]?.text ?? 'Unknown error';
-        setError(errorText);
-      } else {
-        const resultText = response.content[0]?.text ?? 'Success';
-        setResult(resultText);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(message);
-    }
+    });
   }
 
   return {

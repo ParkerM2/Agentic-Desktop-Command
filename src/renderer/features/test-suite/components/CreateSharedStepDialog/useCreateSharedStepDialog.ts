@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useCreateSharedSteps } from '../../api/useSharedSteps';
+import { useMutationWithDialogClose } from '../../hooks/useMutationWithDialogClose';
 import { useTestSuiteStore } from '../../test-suite-store';
 
 export function useCreateSharedStepDialog(projectId: string) {
@@ -11,25 +12,27 @@ export function useCreateSharedStepDialog(projectId: string) {
   const createSharedSteps = useCreateSharedSteps();
   const recordedSteps = useTestSuiteStore((s) => s.recordedSteps);
 
+  const resetFields = useCallback(() => {
+    setName('');
+    setDomain('');
+    setDescription('');
+  }, []);
+
+  const { handleMutate } = useMutationWithDialogClose(
+    createSharedSteps,
+    () => setOpen(false),
+    resetFields,
+  );
+
   const handleCreate = () => {
     if (!name.trim() || !domain.trim() || recordedSteps.length === 0) return;
-    createSharedSteps.mutate(
-      {
-        projectId,
-        name: name.trim(),
-        domain: domain.trim(),
-        description: description.trim() || undefined,
-        steps: recordedSteps.map((r) => r.step),
-      },
-      {
-        onSuccess: () => {
-          setOpen(false);
-          setName('');
-          setDomain('');
-          setDescription('');
-        },
-      },
-    );
+    handleMutate({
+      projectId,
+      name: name.trim(),
+      domain: domain.trim(),
+      description: description.trim() || undefined,
+      steps: recordedSteps.map((r) => r.step),
+    });
   };
 
   const canCreate = !!name.trim() && !!domain.trim() && recordedSteps.length > 0;

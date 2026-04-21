@@ -2,11 +2,14 @@ import { useCallback, useState } from 'react';
 
 import type { BodyMeasurement } from '@shared/types';
 
+import { useToday } from '@renderer/shared/hooks/useToday';
+
 import { useDeleteMeasurement, useLogMeasurement, useMeasurements } from '../../api/useFitness';
 
 export function useBodyComposition() {
   const { data: measurements } = useMeasurements(30);
   const logMeasurement = useLogMeasurement();
+  const today = useToday();
 
   const [showForm, setShowForm] = useState(false);
   const [weight, setWeight] = useState('');
@@ -33,7 +36,7 @@ export function useBodyComposition() {
 
     logMeasurement.mutate(
       {
-        date: new Date().toISOString().split('T')[0],
+        date: today,
         weight: weightNum,
         bodyFat: bodyFatNum,
         source: 'manual',

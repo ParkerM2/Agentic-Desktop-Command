@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useCreateSchedule } from '../../api/useSchedules';
+import { useMutationWithDialogClose } from '../../hooks/useMutationWithDialogClose';
 
 const INTERVALS = [
   { label: 'Every 5 minutes', value: 300_000 },
@@ -21,19 +22,18 @@ interface UseScheduleDialogProps {
 export function useScheduleDialog({ scriptId, projectId, onOpenChange }: UseScheduleDialogProps) {
   const [intervalMs, setIntervalMs] = useState(3_600_000);
   const createSchedule = useCreateSchedule();
+  const { handleMutate, isPending } = useMutationWithDialogClose(
+    createSchedule,
+    () => onOpenChange(false),
+  );
 
-  const handleCreate = () => {
-    createSchedule.mutate(
-      { scriptId, projectId, intervalMs },
-      { onSuccess: () => onOpenChange(false) },
-    );
-  };
+  const handleCreate = () => handleMutate({ scriptId, projectId, intervalMs });
 
   return {
     intervalMs,
     setIntervalMs,
     intervals: INTERVALS,
-    creating: createSchedule.isPending,
+    creating: isPending,
     handleCreate,
   };
 }

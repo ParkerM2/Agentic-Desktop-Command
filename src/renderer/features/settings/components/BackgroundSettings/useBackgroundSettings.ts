@@ -2,50 +2,61 @@
  * useBackgroundSettings — logic hook for BackgroundSettings
  */
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
 import { APP } from '@shared/ipc/app/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { useSettings, useUpdateSettings } from '../../api/useSettings';
+import { useBooleanSettingsSync } from '../../hooks/useBooleanSettingsSync';
+
+const FIELDS = ['openAtLogin', 'minimizeToTray', 'startMinimized', 'keepRunning'] as const;
+const DEFAULTS: Record<(typeof FIELDS)[number], boolean> = {
+  openAtLogin: false,
+  minimizeToTray: false,
+  startMinimized: false,
+  keepRunning: true,
+};
 
 export function useBackgroundSettings() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  const [openAtLogin, setOpenAtLogin] = useState(false);
-  const [minimizeToTray, setMinimizeToTray] = useState(false);
-  const [startMinimized, setStartMinimized] = useState(false);
-  const [keepRunning, setKeepRunning] = useState(true);
+  const source = useMemo(
+    () =>
+      settings
+        ? {
+            openAtLogin: settings.openAtLogin ?? undefined,
+            minimizeToTray: settings.minimizeToTray ?? undefined,
+            startMinimized: settings.startMinimized ?? undefined,
+            keepRunning: settings.keepRunning ?? undefined,
+          }
+        : undefined,
+    [settings],
+  );
 
-  useEffect(() => {
-    if (settings) {
-      setMinimizeToTray(settings.minimizeToTray ?? false);
-      setStartMinimized(settings.startMinimized ?? false);
-      setKeepRunning(settings.keepRunning ?? true);
-      setOpenAtLogin(settings.openAtLogin ?? false);
-    }
-  }, [settings]);
+  const { openAtLogin, minimizeToTray, startMinimized, keepRunning, setField } =
+    useBooleanSettingsSync(FIELDS, source, DEFAULTS);
 
   function handleOpenAtLogin(checked: boolean) {
-    setOpenAtLogin(checked);
+    setField('openAtLogin', checked);
     void ipc(APP.SET['LOGIN-SETTING'], { enabled: checked });
     updateSettings.mutate({ openAtLogin: checked });
   }
 
   function handleMinimizeToTray(checked: boolean) {
-    setMinimizeToTray(checked);
+    setField('minimizeToTray', checked);
     updateSettings.mutate({ minimizeToTray: checked });
   }
 
   function handleStartMinimized(checked: boolean) {
-    setStartMinimized(checked);
+    setField('startMinimized', checked);
     updateSettings.mutate({ startMinimized: checked });
   }
 
   function handleKeepRunning(checked: boolean) {
-    setKeepRunning(checked);
+    setField('keepRunning', checked);
     updateSettings.mutate({ keepRunning: checked });
   }
 

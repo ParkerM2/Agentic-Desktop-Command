@@ -1,3 +1,5 @@
+import { useToday } from '@renderer/shared/hooks/useToday';
+
 import { useAllAgents } from '@features/agents';
 import { useAllTasks } from '@features/my-work';
 
@@ -9,7 +11,7 @@ export function useDailyStats() {
   const { data: tasks } = useAllTasks();
 
   const captureCount = captures?.length ?? 0;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = useToday();
 
   const tasksCompleted =
     tasks?.filter((task) => task.status === 'done' && task.updatedAt.startsWith(todayStr)).length ??

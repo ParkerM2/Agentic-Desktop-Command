@@ -1,4 +1,5 @@
 import { useTasksForFeature } from '../../api/useTaskProgress';
+import { useAsyncRender } from '../../hooks/useAsyncRender';
 import { useProgressEvents } from '../../hooks/useProgressEvents';
 
 interface UseTasksTabParams {
@@ -6,15 +7,11 @@ interface UseTasksTabParams {
   taskId?: string;
 }
 
-interface UseTasksTabReturn {
-  tasks: ReturnType<typeof useTasksForFeature>['data'];
-  isLoading: boolean;
-}
-
-export function useTasksTab({ featureSlug }: UseTasksTabParams): UseTasksTabReturn {
-  const { data: tasks, isLoading } = useTasksForFeature(featureSlug);
+export function useTasksTab({ featureSlug }: UseTasksTabParams) {
+  const query = useTasksForFeature(featureSlug);
+  const { data: tasks, isLoading, isEmpty } = useAsyncRender(query);
 
   useProgressEvents();
 
-  return { tasks, isLoading };
+  return { tasks, isLoading, isEmpty };
 }

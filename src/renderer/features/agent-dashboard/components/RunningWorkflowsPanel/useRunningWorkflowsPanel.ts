@@ -1,20 +1,14 @@
 import { useStopWorkflow, useWorkflowRuns } from '../../api/useWorkflowEngine';
+import { useAsyncRender } from '../../hooks/useAsyncRender';
 
-interface UseRunningWorkflowsPanelReturn {
-  runs: ReturnType<typeof useWorkflowRuns>['data'];
-  isLoading: boolean;
-  isError: boolean;
-  stopWorkflow: ReturnType<typeof useStopWorkflow>;
-  handleStop: (runId: string) => void;
-}
-
-export function useRunningWorkflowsPanel(): UseRunningWorkflowsPanelReturn {
-  const { data: runs, isLoading, isError } = useWorkflowRuns();
+export function useRunningWorkflowsPanel() {
+  const query = useWorkflowRuns();
+  const { data: runs, isLoading, isError, isEmpty } = useAsyncRender(query);
   const stopWorkflow = useStopWorkflow();
 
   function handleStop(runId: string) {
     stopWorkflow.mutate(runId);
   }
 
-  return { runs, isLoading, isError, stopWorkflow, handleStop };
+  return { runs, isLoading, isError, isEmpty, stopWorkflow, handleStop };
 }

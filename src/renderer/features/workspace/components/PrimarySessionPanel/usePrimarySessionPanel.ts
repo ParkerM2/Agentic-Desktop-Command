@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
 import { useWorkspaceSend } from '../../api/useWorkspace';
+import { useSessionMessageInput } from '../../hooks/useSessionMessageInput';
 import { useSessionThinking } from '../../hooks/useSessionThinking';
 import { messagesToChatItems } from '../../lib/chat-utils';
 import { useWorkspaceStore } from '../../store';
@@ -35,19 +36,13 @@ export function usePrimarySessionPanel({ sessionId, status }: UsePrimarySessionP
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [chatItems.length]);
 
-  function handleSend() {
-    const message = draft.trim();
-    if (message.length === 0 || status !== 'live') return;
-    send.mutate({ sessionId, message });
-    clearDraft(sessionId);
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }
+  const { handleSend, handleKeyDown } = useSessionMessageInput({
+    sessionId,
+    draft,
+    status,
+    send,
+    clearDraft,
+  });
 
   return {
     send,

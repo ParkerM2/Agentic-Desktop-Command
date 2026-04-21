@@ -4,19 +4,20 @@
  * Bridges Hub WebSocket events to React Query cache for workspaces.
  */
 
-import { useQueryClient } from '@tanstack/react-query';
-
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 
-import { useHubEvent } from '@renderer/shared/hooks';
+import { rule, useQueryInvalidator } from '@renderer/features/agent-dashboard/hooks/useQueryInvalidator';
 
 import { workspaceKeys } from '../api/workspacesQueryKeys';
 
+const INVALIDATION_RULES = [
+  rule({
+    channel: HUB_EVENTS.WORKSPACE.UPDATED,
+    queryKeys: () => [workspaceKeys.list()],
+  }),
+];
+
 /** Subscribe to hub workspace events and invalidate queries */
 export function useWorkspaceEvents() {
-  const queryClient = useQueryClient();
-
-  useHubEvent(HUB_EVENTS.WORKSPACE.UPDATED, () => {
-    void queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
-  });
+  useQueryInvalidator(INVALIDATION_RULES);
 }

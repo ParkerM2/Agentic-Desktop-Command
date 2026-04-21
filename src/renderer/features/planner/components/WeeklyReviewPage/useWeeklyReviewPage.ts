@@ -4,38 +4,34 @@
 
 import { useState } from 'react';
 
+import { useToday } from '@renderer/shared/hooks/useToday';
+
 import { useGenerateWeeklyReview, useWeeklyReview } from '../../api/useWeeklyReview';
+import { useWeekDayNavigation } from '../../hooks/useWeekDayNavigation';
 import { getWeekMonday } from '../weekly-review-utils';
 
 export function useWeeklyReviewPage() {
-  const [weekStart, setWeekStart] = useState(() =>
-    getWeekMonday(new Date().toISOString().slice(0, 10)),
-  );
+  const today = useToday();
+
+  const [weekStart, setWeekStart] = useState(() => getWeekMonday(today));
 
   const { data: review, isLoading } = useWeeklyReview(weekStart);
   const generateReview = useGenerateWeeklyReview();
 
-  function handlePrevWeek() {
-    const date = new Date(`${weekStart}T00:00:00`);
-    date.setDate(date.getDate() - 7);
-    setWeekStart(date.toISOString().slice(0, 10));
-  }
-
-  function handleNextWeek() {
-    const date = new Date(`${weekStart}T00:00:00`);
-    date.setDate(date.getDate() + 7);
-    setWeekStart(date.toISOString().slice(0, 10));
-  }
+  const { handlePrevWeek, handleNextWeek } = useWeekDayNavigation({
+    currentDate: weekStart,
+    onDateChange: setWeekStart,
+  });
 
   function handleGoThisWeek() {
-    setWeekStart(getWeekMonday(new Date().toISOString().slice(0, 10)));
+    setWeekStart(getWeekMonday(today));
   }
 
   function handleRefresh() {
     generateReview.mutate(weekStart);
   }
 
-  const isThisWeek = weekStart === getWeekMonday(new Date().toISOString().slice(0, 10));
+  const isThisWeek = weekStart === getWeekMonday(today);
 
   return {
     weekStart,

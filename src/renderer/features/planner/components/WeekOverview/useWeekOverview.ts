@@ -4,6 +4,10 @@
 
 import { useMemo } from 'react';
 
+import { useToday } from '@renderer/shared/hooks/useToday';
+
+import { useWeekDayNavigation } from '../../hooks/useWeekDayNavigation';
+
 interface WeekDay {
   date: string;
   dayLabel: string;
@@ -11,13 +15,12 @@ interface WeekDay {
   isToday: boolean;
 }
 
-function getWeekDays(centerDate: string): WeekDay[] {
+function getWeekDays(centerDate: string, today: string): WeekDay[] {
   const center = new Date(`${centerDate}T00:00:00`);
   const dayOfWeek = center.getDay();
   const monday = new Date(center);
   monday.setDate(center.getDate() - ((dayOfWeek + 6) % 7));
 
-  const today = new Date().toISOString().slice(0, 10);
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const days: WeekDay[] = [];
@@ -52,20 +55,14 @@ function formatWeekRange(days: WeekDay[]): string {
 }
 
 export function useWeekOverview(selectedDate: string, onSelectDate: (date: string) => void) {
-  const days = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
+  const today = useToday();
+  const days = useMemo(() => getWeekDays(selectedDate, today), [selectedDate, today]);
   const weekLabel = useMemo(() => formatWeekRange(days), [days]);
 
-  function handlePrevWeek() {
-    const current = new Date(`${selectedDate}T00:00:00`);
-    current.setDate(current.getDate() - 7);
-    onSelectDate(current.toISOString().slice(0, 10));
-  }
-
-  function handleNextWeek() {
-    const current = new Date(`${selectedDate}T00:00:00`);
-    current.setDate(current.getDate() + 7);
-    onSelectDate(current.toISOString().slice(0, 10));
-  }
+  const { handlePrevWeek, handleNextWeek } = useWeekDayNavigation({
+    currentDate: selectedDate,
+    onDateChange: onSelectDate,
+  });
 
   return {
     days,

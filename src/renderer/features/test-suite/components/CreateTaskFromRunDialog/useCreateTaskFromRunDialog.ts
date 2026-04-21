@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react';
-
 import {
   useCreateProgressTask,
 } from '@renderer/features/tasks/api/useProgressMutations';
 
 import { useAttachRunToTask } from '../../api/useAttachRunToTask';
+import { useFormWithReset } from '../../hooks/useFormWithReset';
 import { buildDefaultDescription } from '../../lib/run-description';
 
 import type { RunRecord } from '../../lib/types';
@@ -28,24 +27,22 @@ export function useCreateTaskFromRunDialog({
   projectId,
   runId,
 }: UseCreateTaskFromRunDialogProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<(typeof PRIORITIES)[number]>('high');
-
   const createTask = useCreateProgressTask();
   const attachRunToTask = useAttachRunToTask();
 
-  useEffect(() => {
-    if (open) {
-      setTitle(`Fix: ${scriptName} test failure`);
-      setDescription(buildDefaultDescription(scriptName, runRecord));
-      setPriority('high');
-    }
-  }, [open, scriptName, runRecord]);
+  const { values, update } = useFormWithReset(
+    {
+      title: `Fix: ${scriptName} test failure`,
+      description: buildDefaultDescription(scriptName, runRecord),
+      priority: 'high' as (typeof PRIORITIES)[number],
+    },
+    open,
+    [scriptName, runRecord],
+  );
 
   const handleCreate = () => {
     createTask.mutate(
-      { title, description, priority, projectId },
+      { title: values.title, description: values.description, priority: values.priority, projectId },
       {
         onSuccess: (task) => {
           attachRunToTask.mutate({ runId, taskId: task.slug });
@@ -56,15 +53,15 @@ export function useCreateTaskFromRunDialog({
   };
 
   return {
-    title,
-    setTitle,
-    description,
-    setDescription,
-    priority,
-    setPriority,
+    title: values.title,
+    setTitle: (v: string) => update('title', v),
+    description: values.description,
+    setDescription: (v: string) => update('description', v),
+    priority: values.priority,
+    setPriority: (v: (typeof PRIORITIES)[number]) => update('priority', v),
     priorities: PRIORITIES,
     creating: createTask.isPending,
-    canCreate: !!title.trim(),
+    canCreate: !!values.title.trim(),
     handleCreate,
   };
 }

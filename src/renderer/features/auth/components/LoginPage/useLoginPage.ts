@@ -2,12 +2,11 @@
  * useLoginPage — all logic for LoginPage
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-
 import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 
 import { useLogin } from '../../api/useAuth';
+import { useCooldown } from '../../hooks/useCooldown';
 import { useSavedLogins } from '../../hooks/useSavedLogins';
 
 const MAX_ATTEMPTS = 5;
@@ -23,35 +22,12 @@ interface UseLoginPageParams {
 }
 
 export function useLoginPage({ onSuccess }: UseLoginPageParams) {
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [cooldownRemaining, setCooldownRemaining] = useState(0);
-  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const login = useLogin();
   const { logins: savedLogins, saveLogin, removeLogin } = useSavedLogins();
-
-  const isCoolingDown = cooldownRemaining > 0;
-
-  const startCooldown = useCallback(() => {
-    setCooldownRemaining(COOLDOWN_SECONDS);
-
-    if (cooldownTimerRef.current !== null) {
-      clearInterval(cooldownTimerRef.current);
-    }
-
-    cooldownTimerRef.current = setInterval(() => {
-      setCooldownRemaining((prev) => {
-        if (prev <= 1) {
-          if (cooldownTimerRef.current !== null) {
-            clearInterval(cooldownTimerRef.current);
-            cooldownTimerRef.current = null;
-          }
-          setFailedAttempts(0);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, []);
+  const { failedAttempts, cooldownRemaining, isCoolingDown, recordFailure } = useCooldown(
+    MAX_ATTEMPTS,
+    COOLDOWN_SECONDS,
+  );
 
   const form = useForm({
     defaultValues: {
@@ -70,25 +46,11 @@ export function useLoginPage({ onSuccess }: UseLoginPageParams) {
           onSuccess();
         },
         onError: () => {
-          setFailedAttempts((prev) => {
-            const next = prev + 1;
-            if (next >= MAX_ATTEMPTS) {
-              startCooldown();
-            }
-            return next;
-          });
+          recordFailure();
         },
       });
     },
   });
-
-  useEffect(() => {
-    return () => {
-      if (cooldownTimerRef.current !== null) {
-        clearInterval(cooldownTimerRef.current);
-      }
-    };
-  }, []);
 
   function handleFormSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();

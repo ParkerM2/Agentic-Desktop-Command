@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-
 import type { TestSuiteConfig } from '@shared/ipc/test-suite';
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { useSaveTestSuiteConfig } from '../../api/useSaveTestSuiteConfig';
+import { useFormWithReset } from '../../hooks/useFormWithReset';
+import { useUrlValidation } from '../../hooks/useUrlValidation';
 import {
   DEFAULT_ACTION_TIMEOUT,
   DEFAULT_NAVIGATION_TIMEOUT,
@@ -71,31 +71,17 @@ export function useConfigEditDialog({
   onOpenChange,
 }: UseConfigEditDialogProps) {
   const save = useSaveTestSuiteConfig(projectId);
-  const [state, setState] = useState<FormState>(() => defaultsFor(config));
-  const [urlError, setUrlError] = useState<string | null>(null);
-
-  // Reset form when opening, or when switching between configs.
-  useEffect(() => {
-    if (open) {
-      setState(defaultsFor(config));
-      setUrlError(null);
-    }
-  }, [open, config]);
-
-  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setState((prev) => ({ ...prev, [key]: value }));
-  };
+  const { values: state, update } = useFormWithReset<FormState>(
+    defaultsFor(config),
+    open,
+    [config],
+  );
+  const { urlError, validate: validateUrl } = useUrlValidation();
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    try {
-      new URL(state.targetUrl);
-    } catch {
-      setUrlError('Enter a valid URL (e.g. http://localhost:3000)');
-      return;
-    }
-    setUrlError(null);
+    if (!validateUrl(state.targetUrl)) return;
 
     const now = new Date().toISOString();
     const merged: TestSuiteConfig = {

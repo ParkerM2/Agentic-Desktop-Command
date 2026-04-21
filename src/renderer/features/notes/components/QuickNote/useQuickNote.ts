@@ -4,27 +4,38 @@
 
 import { useState } from 'react';
 
+import { useDialogWithMutation } from '@renderer/shared/hooks/useDialogWithMutation';
+import { useModalFormState } from '@renderer/shared/hooks/useModalFormState';
+
 import { useCreateNote } from '../../api/useNotes';
+
+interface QuickNoteFormValues {
+  title: string;
+  content: string;
+}
+
+const QUICK_NOTE_DEFAULTS: QuickNoteFormValues = {
+  title: '',
+  content: '',
+};
 
 export function useQuickNote() {
   const [isOpen, setIsOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
   const createNote = useCreateNote();
 
-  function handleSubmit() {
-    if (title.trim().length === 0) return;
+  const { values, update, reset } = useModalFormState<QuickNoteFormValues>(
+    isOpen,
+    QUICK_NOTE_DEFAULTS,
+  );
 
-    createNote.mutate(
-      { title: title.trim(), content: content.trim() },
-      {
-        onSuccess: () => {
-          setTitle('');
-          setContent('');
-          setIsOpen(false);
-        },
-      },
-    );
+  const { handleSubmit: submitMutation, isPending } = useDialogWithMutation(createNote, {
+    onClose: () => setIsOpen(false),
+    resetForm: reset,
+  });
+
+  function handleSubmit() {
+    if (values.title.trim().length === 0) return;
+    submitMutation({ title: values.title.trim(), content: values.content.trim() });
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -35,11 +46,12 @@ export function useQuickNote() {
 
   return {
     isOpen,
-    title,
-    content,
+    title: values.title,
+    content: values.content,
+    isPending,
     setIsOpen,
-    setTitle,
-    setContent,
+    setTitle: (v: string) => update('title', v),
+    setContent: (v: string) => update('content', v),
     handleSubmit,
     handleKeyDown,
   };

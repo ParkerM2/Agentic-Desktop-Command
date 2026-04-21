@@ -2,54 +2,10 @@ import { useMemo } from 'react';
 
 import { DiffModeEnum } from '@git-diff-view/react';
 
-import { useThemeStore } from '@renderer/shared/stores/theme-store';
+import { useDarkMode } from '@renderer/shared/hooks/useDarkMode';
+import { useFileLang } from '@renderer/shared/hooks/useFileLangMap';
 
 import type { DiffViewMode } from '../../store';
-
-/** Map file extension to a language hint for syntax highlighting */
-function getFileLang(filePath: string): string {
-  const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
-  const langMap: Record<string, string> = {
-    ts: 'typescript',
-    tsx: 'tsx',
-    js: 'javascript',
-    jsx: 'jsx',
-    json: 'json',
-    css: 'css',
-    scss: 'scss',
-    less: 'less',
-    html: 'xml',
-    xml: 'xml',
-    md: 'markdown',
-    py: 'python',
-    rs: 'rust',
-    go: 'go',
-    java: 'java',
-    rb: 'ruby',
-    sh: 'bash',
-    bash: 'bash',
-    zsh: 'bash',
-    yml: 'yaml',
-    yaml: 'yaml',
-    sql: 'sql',
-    graphql: 'graphql',
-    swift: 'swift',
-    kt: 'kotlin',
-    c: 'c',
-    cpp: 'cpp',
-    h: 'c',
-    hpp: 'cpp',
-    cs: 'csharp',
-    php: 'php',
-    lua: 'lua',
-    r: 'r',
-    toml: 'ini',
-    ini: 'ini',
-    dockerfile: 'dockerfile',
-    makefile: 'makefile',
-  };
-  return langMap[ext] ?? 'plaintext';
-}
 
 /** Parse a unified diff to extract hunk strings for @git-diff-view/react */
 function parseHunks(diffText: string): string[] {
@@ -83,17 +39,10 @@ function toDiffModeEnum(viewMode: DiffViewMode): DiffModeEnum {
 }
 
 export function useDiffViewer(diffText: string, filePath: string, viewMode: DiffViewMode) {
-  const themeMode = useThemeStore((s) => s.mode);
-
-  const isDark = useMemo(() => {
-    if (themeMode === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return themeMode === 'dark';
-  }, [themeMode]);
+  const isDark = useDarkMode();
 
   const hunks = useMemo(() => parseHunks(diffText), [diffText]);
-  const lang = useMemo(() => getFileLang(filePath), [filePath]);
+  const lang = useFileLang(filePath);
   const diffMode = toDiffModeEnum(viewMode);
   const theme: 'dark' | 'light' = isDark ? 'dark' : 'light';
 

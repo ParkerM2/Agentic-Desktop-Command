@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { BodyMeasurement } from '@shared/types';
 
 import { useUpdateMeasurement } from '../../api/useFitness';
+import { useEditDialog } from '../../hooks/useEditDialog';
 
 interface UseMeasurementEditDialogOptions {
   measurement: BodyMeasurement;
@@ -35,19 +36,18 @@ export function useMeasurementEditDialog({
     measurement.visceralFat === undefined ? '' : String(measurement.visceralFat),
   );
 
-  const hasAnyValue =
-    weight !== '' ||
-    bodyFat !== '' ||
-    muscleMass !== '' ||
-    boneMass !== '' ||
-    waterPercentage !== '' ||
-    visceralFat !== '';
-
-  function handleSave(): void {
-    if (!hasAnyValue) return;
-
-    updateMeasurement.mutate(
-      {
+  const { isSaveDisabled, handleSave } = useEditDialog({
+    mutation: updateMeasurement,
+    buildInput: () => {
+      const hasAnyValue =
+        weight !== '' ||
+        bodyFat !== '' ||
+        muscleMass !== '' ||
+        boneMass !== '' ||
+        waterPercentage !== '' ||
+        visceralFat !== '';
+      if (!hasAnyValue) return null;
+      return {
         id: measurement.id,
         date,
         weight: weight === '' ? undefined : Number(weight),
@@ -56,16 +56,10 @@ export function useMeasurementEditDialog({
         boneMass: boneMass === '' ? undefined : Number(boneMass),
         waterPercentage: waterPercentage === '' ? undefined : Number(waterPercentage),
         visceralFat: visceralFat === '' ? undefined : Number(visceralFat),
-      },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-        },
-      },
-    );
-  }
-
-  const isSaveDisabled = !hasAnyValue || updateMeasurement.isPending;
+      };
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   return {
     date,

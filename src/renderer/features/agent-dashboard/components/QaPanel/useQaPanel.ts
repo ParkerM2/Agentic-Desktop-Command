@@ -1,19 +1,16 @@
 import { useQaSession } from '../../api/useQaSession';
+import { useAsyncRender } from '../../hooks/useAsyncRender';
 import { useQaEvents } from '../../hooks/useQaEvents';
 
 interface UseQaPanelParams {
   taskId?: string;
 }
 
-interface UseQaPanelReturn {
-  session: ReturnType<typeof useQaSession>['data'];
-  isLoading: boolean;
-}
-
-export function useQaPanel({ taskId }: UseQaPanelParams): UseQaPanelReturn {
-  const { data: session, isLoading } = useQaSession(taskId);
+export function useQaPanel({ taskId }: UseQaPanelParams) {
+  const query = useQaSession(taskId);
+  const { data: session, isLoading, isEmpty } = useAsyncRender(query);
 
   useQaEvents();
 
-  return { session, isLoading };
+  return { session, isLoading, isEmpty };
 }

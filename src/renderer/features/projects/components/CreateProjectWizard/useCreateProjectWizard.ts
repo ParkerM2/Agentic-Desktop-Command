@@ -7,6 +7,8 @@ import type { CreateProjectInput } from '@shared/types/project-setup';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
+import { useWizardNavigation } from '../../hooks/useWizardNavigation';
+
 const STEP_LABELS = ['Details', 'Tech Stack', 'GitHub', 'Review'] as const;
 const TOTAL_STEPS = STEP_LABELS.length;
 
@@ -33,7 +35,9 @@ interface UseCreateProjectWizardProps {
 }
 
 export function useCreateProjectWizard({ open, onClose, onProjectCreated }: UseCreateProjectWizardProps) {
-  const [step, setStep] = useState(0);
+  const { step, setStep, handleNext, handleBack, isFirst: isFirstStep, isLast: isLastStep } =
+    useWizardNavigation(TOTAL_STEPS);
+
   const [state, setState] = useState<WizardState>({
     name: '',
     description: '',
@@ -50,21 +54,6 @@ export function useCreateProjectWizard({ open, onClose, onProjectCreated }: UseC
   const createProject = useMutation({
     mutationFn: (input: CreateProjectInput) => ipc(PROJECTS.CREATE.NEW, input),
   });
-
-  const isLastStep = step === TOTAL_STEPS - 1;
-  const isFirstStep = step === 0;
-
-  function handleNext() {
-    if (step < TOTAL_STEPS - 1) {
-      setStep(step + 1);
-    }
-  }
-
-  function handleBack() {
-    if (step > 0) {
-      setStep(step - 1);
-    }
-  }
 
   async function handleSelectFolder() {
     const result = await selectDirectory.mutateAsync();
@@ -105,6 +94,7 @@ export function useCreateProjectWizard({ open, onClose, onProjectCreated }: UseC
 
   return {
     step,
+    setStep,
     state,
     setState,
     selectDirectory,

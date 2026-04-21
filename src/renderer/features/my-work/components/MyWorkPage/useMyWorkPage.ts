@@ -12,7 +12,7 @@ import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
 import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/types/progress';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
-import { useDebounce } from '@renderer/shared/hooks/useDebounce';
+import { useFilteredList } from '@renderer/shared/hooks/useFilteredList';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
 import { myWorkKeys } from '../../api/queryKeys';
@@ -135,10 +135,7 @@ export function useMyWorkPage() {
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<SortField>('priority');
-
-  const debouncedSearch = useDebounce(searchQuery, 250);
 
   const { data: tasks, isLoading: tasksLoading, isError: tasksError } = useAllTasks();
 
@@ -165,18 +162,43 @@ export function useMyWorkPage() {
     });
   }
 
-  const processedTasks = useMemo(() => {
-    const statusFiltered = filterByStatus(tasks ?? [], statusFilter);
-    const searchFiltered = filterBySearch(statusFiltered, debouncedSearch);
-    return sortTasks(searchFiltered, sortField);
-  }, [tasks, statusFilter, debouncedSearch, sortField]);
+  // Status-filtered input for useFilteredList
+  const statusFiltered = useMemo(
+    () => filterByStatus(tasks ?? [], statusFilter),
+    [tasks, statusFilter],
+  );
+
+  const filterConfig = useMemo(
+    () => ({
+      searchFn: (t: ProgressTask, query: string) => {
+        const lower = query.toLowerCase();
+        return t.title.toLowerCase().includes(lower) || t.description.toLowerCase().includes(lower);
+      },
+      sortFn: (a: ProgressTask, b: ProgressTask) => {
+        if (sortField === 'priority') {
+          return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+        }
+        if (sortField === 'updatedAt') {
+          return b.updatedAt.localeCompare(a.updatedAt);
+        }
+        return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+      },
+    }),
+    [sortField],
+  );
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    filtered: processedTasks,
+  } = useFilteredList(statusFiltered, filterConfig);
 
   const taskGroups = useMemo(() => {
     return groupTasksByTeam(processedTasks);
   }, [processedTasks]);
 
   const totalTasks = processedTasks.length;
-  const hasFilter = statusFilter !== 'all' || debouncedSearch.trim().length > 0;
+  const hasFilter = statusFilter !== 'all' || searchQuery.trim().length > 0;
 
   return {
     statusFilter,

@@ -6,6 +6,7 @@ import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 import { ipc } from '@renderer/shared/lib/ipc';
 
 import { useSaveTestSuiteConfig } from '../../api/useSaveTestSuiteConfig';
+import { useUrlValidation } from '../../hooks/useUrlValidation';
 import {
   DEFAULT_ACTION_TIMEOUT,
   DEFAULT_NAVIGATION_TIMEOUT,
@@ -34,21 +35,15 @@ export function useSetupCard(projectId: string) {
   const [height, setHeight] = useState(DEFAULT_VIEWPORT_HEIGHT);
   const [mode, setMode] = useState<ScreenshotMode>(DEFAULT_CONFIG_SCREENSHOT_MODE);
   const [testDirectory, setTestDirectory] = useState(DEFAULT_CONFIG_TEST_DIRECTORY);
-  const [urlError, setUrlError] = useState<string | null>(null);
+  const { urlError, validate: validateUrl } = useUrlValidation();
   const [setupStatus, setSetupStatus] = useState<string | null>(null);
   const [isSettingUp, setIsSettingUp] = useState(false);
 
   const handleSubmit = (event: React.SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    let parsedHostname: string;
-    try {
-      ({ hostname: parsedHostname } = new URL(targetUrl));
-    } catch {
-      setUrlError('Enter a valid URL (e.g. http://localhost:3000)');
-      return;
-    }
-    setUrlError(null);
+    if (!validateUrl(targetUrl)) return;
+    const { hostname: parsedHostname } = new URL(targetUrl);
     setIsSettingUp(true);
     setSetupStatus('Installing Playwright dependencies...');
 

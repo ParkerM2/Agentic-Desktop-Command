@@ -15,6 +15,7 @@ import {
   useHubStatus,
   useHubSync,
 } from '../../api/useHub';
+import { useAsyncOperation } from '../../hooks/useAsyncOperation';
 
 export function useHubSettings() {
   const { data: hubStatus, isLoading } = useHubStatus();
@@ -52,7 +53,7 @@ export function useAutoSetupPanel({ onConnected }: UseAutoSetupPanelParams) {
   const { data: dockerStatus } = useDockerStatus();
   const setupMutation = useDockerSetupHub();
   const resetMutation = useDockerResetHub();
-  const [error, setError] = useState<string | null>(null);
+  const { error, setError, execute } = useAsyncOperation();
   const [showReset, setShowReset] = useState(false);
 
   const docker = dockerStatus ?? { installed: false, running: false };
@@ -67,39 +68,29 @@ export function useAutoSetupPanel({ onConnected }: UseAutoSetupPanelParams) {
   }
 
   const handleSetup = useCallback(async () => {
-    setError(null);
     setShowReset(false);
-    try {
-      const result = await setupMutation.mutateAsync();
-      if (!result.success || !result.url || !result.apiKey) {
-        setError(result.error ?? 'Setup failed.');
-        if (result.step === 'api-key') {
-          setShowReset(true);
-        }
-        return;
+    const result = await execute(() => setupMutation.mutateAsync());
+    if (!result) return;
+    if (!result.success || !result.url || !result.apiKey) {
+      setError(result.error ?? 'Setup failed.');
+      if (result.step === 'api-key') {
+        setShowReset(true);
       }
-      onConnected(result.url, result.apiKey);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(`Setup failed: ${message}`);
+      return;
     }
-  }, [setupMutation, onConnected]);
+    onConnected(result.url, result.apiKey);
+  }, [setupMutation, onConnected, execute, setError]);
 
   const handleReset = useCallback(async () => {
-    setError(null);
-    try {
-      const result = await resetMutation.mutateAsync();
-      if (!result.success || !result.url || !result.apiKey) {
-        setError(result.error ?? 'Reset failed.');
-        return;
-      }
-      setShowReset(false);
-      onConnected(result.url, result.apiKey);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setError(`Reset failed: ${message}`);
+    const result = await execute(() => resetMutation.mutateAsync());
+    if (!result) return;
+    if (!result.success || !result.url || !result.apiKey) {
+      setError(result.error ?? 'Reset failed.');
+      return;
     }
-  }, [resetMutation, onConnected]);
+    setShowReset(false);
+    onConnected(result.url, result.apiKey);
+  }, [resetMutation, onConnected, execute, setError]);
 
   return {
     dockerReady,
@@ -123,11 +114,11 @@ interface UseGenerateKeyPanelParams {
 
 export function useGenerateKeyPanel({ hubUrl, onGenerated }: UseGenerateKeyPanelParams) {
   const { generateKeyMutation } = useHubSettings();
+  const { error, setError } = useAsyncOperation();
 
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState(hubUrl);
   const [secret, setSecret] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [urlTouched, setUrlTouched] = useState(false);
 
   // Keep the generator URL in sync with the parent URL until the user overrides it
@@ -145,25 +136,18 @@ export function useGenerateKeyPanel({ hubUrl, onGenerated }: UseGenerateKeyPanel
   }, []);
 
   const handleGenerate = useCallback(async () => {
-    setError(null);
     if (!url.trim()) {
       setError('Enter the Hub URL first.');
       return;
     }
 
+    setError(null);
+    let result: Awaited<ReturnType<typeof generateKeyMutation.mutateAsync>> | null = null;
     try {
-      const result = await generateKeyMutation.mutateAsync({
+      result = await generateKeyMutation.mutateAsync({
         url: url.trim(),
         bootstrapSecret: secret.trim(),
       });
-
-      if (!result.success || !result.key) {
-        setError(result.error ?? 'Failed to generate key.');
-        return;
-      }
-
-      setSecret('');
-      onGenerated(url.trim(), result.key);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       if (message.includes('Unknown IPC channel') || message.includes('No handler')) {
@@ -173,8 +157,17 @@ export function useGenerateKeyPanel({ hubUrl, onGenerated }: UseGenerateKeyPanel
       } else {
         setError(`Request failed: ${message}`);
       }
+      return;
     }
-  }, [url, secret, generateKeyMutation, onGenerated]);
+
+    if (!result.success || !result.key) {
+      setError(result.error ?? 'Failed to generate key.');
+      return;
+    }
+
+    setSecret('');
+    onGenerated(url.trim(), result.key);
+  }, [url, secret, generateKeyMutation, onGenerated, setError]);
 
   return {
     open,

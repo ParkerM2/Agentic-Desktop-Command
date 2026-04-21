@@ -3,26 +3,12 @@ import {
   useDuplicateTemplate,
   useWorkflowTemplates,
 } from '../../api/useWorkflowTemplates';
+import { useAsyncRender } from '../../hooks/useAsyncRender';
 import { useAgentDashboardStore } from '../../store';
 
-interface UseTemplateListPanelReturn {
-  templates: ReturnType<typeof useWorkflowTemplates>['data'];
-  isLoading: boolean;
-  isError: boolean;
-  deleteTemplate: ReturnType<typeof useDeleteTemplate>;
-  duplicateTemplate: ReturnType<typeof useDuplicateTemplate>;
-  selectedTemplateId: string | null;
-  handleSelect: (id: string) => void;
-  handleEdit: (id: string) => void;
-  handleDuplicate: (id: string) => void;
-  handleDelete: (id: string) => void;
-  handleLaunch: (id: string) => void;
-  handleKeyDown: (event: React.KeyboardEvent, id: string) => void;
-  openEditor: (id: string | null) => void;
-}
-
-export function useTemplateListPanel(): UseTemplateListPanelReturn {
-  const { data: templates, isLoading, isError } = useWorkflowTemplates();
+export function useTemplateListPanel() {
+  const query = useWorkflowTemplates();
+  const { data: templates, isLoading, isError, isEmpty } = useAsyncRender(query);
   const deleteTemplate = useDeleteTemplate();
   const duplicateTemplate = useDuplicateTemplate();
 
@@ -62,6 +48,7 @@ export function useTemplateListPanel(): UseTemplateListPanelReturn {
     templates,
     isLoading,
     isError,
+    isEmpty,
     deleteTemplate,
     duplicateTemplate,
     selectedTemplateId,

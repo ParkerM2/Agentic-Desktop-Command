@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 
 import type { Project } from '@shared/types';
 
+import { useDialogWithMutation } from '@renderer/shared/hooks/useDialogWithMutation';
+
 import { useWorkspaces } from '@features/workspace';
 
 import { useRemoveProject, useUpdateProject } from '../../api/useProjects';
@@ -23,6 +25,17 @@ export function useProjectEditDialog({ project, onClose }: UseProjectEditDialogP
   const updateProject = useUpdateProject();
   const removeProject = useRemoveProject();
   const { data: workspaces } = useWorkspaces();
+
+  const { handleSubmit: submitUpdate } = useDialogWithMutation(updateProject, {
+    onClose,
+  });
+
+  const { handleSubmit: submitDelete } = useDialogWithMutation(removeProject, {
+    onClose: () => {
+      setDeleteConfirmOpen(false);
+      onClose();
+    },
+  });
 
   useEffect(() => {
     if (project !== null) {
@@ -66,17 +79,7 @@ export function useProjectEditDialog({ project, onClose }: UseProjectEditDialogP
       return;
     }
 
-    updateProject.mutate(
-      { projectId: project.id, ...updates },
-      {
-        onSuccess: () => {
-          onClose();
-        },
-        onError: (error) => {
-          setErrorMessage(error instanceof Error ? error.message : 'Failed to update project');
-        },
-      },
-    );
+    submitUpdate({ projectId: project.id, ...updates });
   }
 
   function handleDeleteConfirm() {
@@ -84,18 +87,7 @@ export function useProjectEditDialog({ project, onClose }: UseProjectEditDialogP
       return;
     }
 
-    removeProject.mutate(project.id, {
-      onSuccess: () => {
-        setDeleteConfirmOpen(false);
-        onClose();
-      },
-      onError: (error) => {
-        setErrorMessage(
-          error instanceof Error ? error.message : 'Failed to delete project',
-        );
-        setDeleteConfirmOpen(false);
-      },
-    });
+    submitDelete(project.id);
   }
 
   return {

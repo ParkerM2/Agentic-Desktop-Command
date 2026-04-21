@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+
+import { useDialogWithMutation } from '@renderer/shared/hooks/useDialogWithMutation';
 
 import { useCreatePr } from '../../api/useGit';
 
@@ -11,36 +13,35 @@ export function useCreatePrDialog() {
   const [prError, setPrError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
+  const resetForm = useCallback(() => {
+    setPrTitle('');
+    setPrBody('');
+    setPrBaseBranch('main');
+    setPrError(null);
+  }, []);
+
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (!next) {
-      setPrTitle('');
-      setPrBody('');
-      setPrBaseBranch('main');
-      setPrError(null);
+      resetForm();
     }
   }
+
+  const { handleSubmit: submitMutation, isPending } = useDialogWithMutation(createPr, {
+    onClose: () => handleOpenChange(false),
+    resetForm,
+  });
 
   function handleCreatePr(repoPath: string, headBranch: string) {
     if (prTitle.trim().length === 0) return;
     setPrError(null);
-    createPr.mutate(
-      {
-        projectPath: repoPath,
-        title: prTitle.trim(),
-        body: prBody.trim(),
-        baseBranch: prBaseBranch.trim() || 'main',
-        headBranch,
-      },
-      {
-        onSuccess: () => {
-          handleOpenChange(false);
-        },
-        onError: (err) => {
-          setPrError(err instanceof Error ? err.message : 'Failed to create PR');
-        },
-      },
-    );
+    submitMutation({
+      projectPath: repoPath,
+      title: prTitle.trim(),
+      body: prBody.trim(),
+      baseBranch: prBaseBranch.trim() || 'main',
+      headBranch,
+    });
   }
 
   return {
@@ -52,7 +53,7 @@ export function useCreatePrDialog() {
     setPrBaseBranch,
     prError,
     open,
-    isPending: createPr.isPending,
+    isPending,
     handleOpenChange,
     handleCreatePr,
   };

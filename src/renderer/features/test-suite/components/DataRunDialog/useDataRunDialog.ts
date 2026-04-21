@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { useExecuteDataRun, useParseDataFile } from '../../api/useDataRun';
+import { useMutationWithDialogClose } from '../../hooks/useMutationWithDialogClose';
 
 interface UseDataRunDialogProps {
   scriptId: string;
@@ -11,18 +12,17 @@ export function useDataRunDialog({ scriptId, onOpenChange }: UseDataRunDialogPro
   const [filePath, setFilePath] = useState('');
   const parseFile = useParseDataFile();
   const executeRun = useExecuteDataRun();
+  const { handleMutate, isPending } = useMutationWithDialogClose(
+    executeRun,
+    () => onOpenChange(false),
+  );
 
   const handleParse = () => {
     if (!filePath.trim()) return;
     parseFile.mutate(filePath.trim());
   };
 
-  const handleExecute = () => {
-    executeRun.mutate(
-      { scriptId, dataFilePath: filePath.trim() },
-      { onSuccess: () => onOpenChange(false) },
-    );
-  };
+  const handleExecute = () => handleMutate({ scriptId, dataFilePath: filePath.trim() });
 
   const parsed = parseFile.data;
 
@@ -30,7 +30,7 @@ export function useDataRunDialog({ scriptId, onOpenChange }: UseDataRunDialogPro
     filePath,
     setFilePath,
     parsed,
-    executing: executeRun.isPending,
+    executing: isPending,
     handleParse,
     handleExecute,
   };

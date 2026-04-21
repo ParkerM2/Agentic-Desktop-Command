@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { FitnessGoal, FitnessGoalType } from '@shared/types';
 
 import { useUpdateGoal } from '../../api/useFitness';
+import { useEditDialog } from '../../hooks/useEditDialog';
 
 interface UseGoalEditDialogOptions {
   goal: FitnessGoal;
@@ -17,28 +18,20 @@ export function useGoalEditDialog({ goal, onOpenChange }: UseGoalEditDialogOptio
   const [unit, setUnit] = useState(goal.unit);
   const [deadline, setDeadline] = useState(goal.deadline ?? '');
 
-  const isValid = Number(target) > 0 && unit.trim().length > 0;
-
-  function handleSave(): void {
-    if (!isValid) return;
-
-    updateGoal.mutate(
-      {
+  const { isSaveDisabled, handleSave } = useEditDialog({
+    mutation: updateGoal,
+    buildInput: () => {
+      if (Number(target) <= 0 || unit.trim().length === 0) return null;
+      return {
         id: goal.id,
         type: goalType,
         target: Number(target),
         unit: unit.trim(),
         deadline: deadline.trim().length > 0 ? deadline.trim() : null,
-      },
-      {
-        onSuccess: () => {
-          onOpenChange(false);
-        },
-      },
-    );
-  }
-
-  const isSaveDisabled = !isValid || updateGoal.isPending;
+      };
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   return {
     goalType,

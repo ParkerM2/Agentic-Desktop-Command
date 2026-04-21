@@ -1,18 +1,13 @@
-import { useState } from 'react';
+import { useClipboardCopy } from '@renderer/shared/hooks/useClipboardCopy';
 
 interface UseRunLogDialogProps {
   lines: Array<{ line: string; timestamp: string }>;
 }
 
 export function useRunLogDialog({ lines }: UseRunLogDialogProps) {
-  const [copied, setCopied] = useState(false);
+  const { copied, handleCopy: copy } = useClipboardCopy();
 
-  const handleCopy = () => {
-    const text = lines.map((l) => l.line).join('\n');
-    void navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCopy = () => copy(lines.map((l) => l.line).join('\n'));
 
   return {
     copied,
