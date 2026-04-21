@@ -13,7 +13,7 @@ import { AppBreadcrumbs } from './AppBreadcrumbs';
 
 export function ContentHeader() {
   return (
-    <header className="border-border flex h-10 shrink-0 items-center gap-2 border-b px-3">
+    <header className="border-border flex h-10 shrink-0 items-center gap-[var(--layout-gap)] border-b px-[var(--layout-gap-lg)]">
       <SidebarTrigger className="-ml-1" />
       <Separator className="bg-border mr-2 h-4 w-px" orientation="vertical" />
       <AppBreadcrumbs />

@@ -4,30 +4,41 @@
 
 import { create } from 'zustand';
 
-interface ResponseEntry {
+interface UserEntry {
+  kind: 'user';
   id: string;
   input: string;
+  timestamp: string;
+}
+
+interface ResponseEntry {
+  kind: 'response';
+  id: string;
   response: string;
   type: 'text' | 'error';
   timestamp: string;
 }
 
+type ChatEntry = UserEntry | ResponseEntry;
+
 interface AssistantState {
   isThinking: boolean;
   currentResponse: string;
   commandDraft: string;
-  responseHistory: ResponseEntry[];
+  responseHistory: ChatEntry[];
   unreadCount: number;
   setIsThinking: (isThinking: boolean) => void;
   setCurrentResponse: (response: string) => void;
   clearCurrentResponse: () => void;
   setCommandDraft: (draft: string) => void;
-  addResponseEntry: (entry: Omit<ResponseEntry, 'id' | 'timestamp'>) => void;
+  addUserEntry: (input: string) => void;
+  addResponseEntry: (entry: { response: string; type: 'text' | 'error' }) => void;
+  clearHistory: () => void;
   incrementUnread: () => void;
   resetUnread: () => void;
 }
 
-export type { ResponseEntry };
+export type { ChatEntry, ResponseEntry, UserEntry };
 
 export const useAssistantStore = create<AssistantState>((set) => ({
   isThinking: false,
@@ -44,17 +55,34 @@ export const useAssistantStore = create<AssistantState>((set) => ({
 
   setCommandDraft: (draft) => set({ commandDraft: draft }),
 
-  addResponseEntry: (entry) =>
+  addUserEntry: (input) =>
     set((state) => ({
       responseHistory: [
         ...state.responseHistory,
         {
-          ...entry,
+          kind: 'user' as const,
           id: crypto.randomUUID(),
+          input,
           timestamp: new Date().toISOString(),
         },
       ],
     })),
+
+  addResponseEntry: ({ response, type }) =>
+    set((state) => ({
+      responseHistory: [
+        ...state.responseHistory,
+        {
+          kind: 'response' as const,
+          id: crypto.randomUUID(),
+          response,
+          type,
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    })),
+
+  clearHistory: () => set({ responseHistory: [] }),
 
   incrementUnread: () => set((state) => ({ unreadCount: state.unreadCount + 1 })),
 

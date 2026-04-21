@@ -14,6 +14,8 @@ import { ROUTES } from '@shared/constants';
 
 import { useOAuthStatus } from '@renderer/shared/hooks';
 
+import { Button } from '@ui';
+
 // ── Types ─────────────────────────────────────────────────────
 
 interface IntegrationRequiredProps {
@@ -55,16 +57,16 @@ export function IntegrationRequired({
       <p className="text-muted-foreground mt-2 text-xs">
         {isConfigured ? 'Authentication required' : 'Not configured'}
       </p>
-      <button
-        className="bg-primary text-primary-foreground hover:bg-primary/90 mt-3 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-        type="button"
+      <Button
+        className="mt-3"
+        variant="primary"
         onClick={() => {
           void navigate({ to: ROUTES.SETTINGS });
         }}
       >
-        <Settings className="h-4 w-4" />
+        <Settings className="h-4 w-4 shrink-0" />
         {isConfigured ? 'Connect' : 'Set Up in Settings'}
-      </button>
+      </Button>
     </div>
   );
 }

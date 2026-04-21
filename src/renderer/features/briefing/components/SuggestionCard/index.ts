@@ -1,0 +1,1 @@
+export { SuggestionCard } from './SuggestionCard';

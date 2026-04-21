@@ -1,0 +1,1 @@
+export { AgentPanelCompact } from './AgentPanelCompact';

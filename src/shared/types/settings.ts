@@ -42,6 +42,8 @@ export interface AppSettings {
   sidebarCollapsed?: boolean;
   toolbarStyle?: string;
   contentLayout?: string;
+  layoutGap?: number;
+  iconButtonShape?: 'rounded' | 'square' | 'pill';
 }
 
 /** All CSS variable tokens that make up a color theme */

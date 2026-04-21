@@ -36,7 +36,7 @@ export function ActionBar({ actions, className }: ActionBarProps) {
     <div
       data-testid="action-bar"
       className={cn(
-        'border-border bg-card sticky bottom-0 flex items-center justify-end gap-2 border-t px-4 py-3',
+        'border-border bg-card sticky bottom-0 flex items-center justify-end gap-[var(--layout-gap)] border-t px-[var(--layout-pad-md)] py-[var(--layout-gap-lg)]',
         className,
       )}
     >

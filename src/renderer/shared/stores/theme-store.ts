@@ -10,15 +10,21 @@ import { create } from 'zustand';
 import { THEME_TOKEN_KEYS } from '@shared/constants/themes';
 import type { CustomTheme, ThemeMode } from '@shared/types';
 
+export type IconButtonShape = 'rounded' | 'square' | 'pill';
+
 interface ThemeState {
   mode: ThemeMode;
   colorTheme: string;
   uiScale: number;
   customThemes: CustomTheme[];
+  layoutGap: number;
+  iconButtonShape: IconButtonShape;
   setMode: (mode: ThemeMode) => void;
   setColorTheme: (theme: string) => void;
   setUiScale: (scale: number) => void;
   setCustomThemes: (themes: CustomTheme[]) => void;
+  setLayoutGap: (gap: number) => void;
+  setIconButtonShape: (shape: IconButtonShape) => void;
 }
 
 function resolveEffectiveMode(mode: ThemeMode): 'light' | 'dark' {
@@ -77,11 +83,40 @@ function applyUiScale(scale: number): void {
   document.documentElement.setAttribute('data-ui-scale', String(scale));
 }
 
+function applyLayoutGap(gap: number): void {
+  const root = document.documentElement;
+  root.style.setProperty('--layout-gap', `${gap / 16}rem`);
+  root.style.setProperty('--layout-gap-sm', `${(gap * 0.75) / 16}rem`);
+  root.style.setProperty('--layout-gap-lg', `${(gap * 1.5) / 16}rem`);
+  root.style.setProperty('--layout-pad-x', `${(gap * 3) / 16}rem`);
+  root.style.setProperty('--layout-pad-y', `${(gap * 2) / 16}rem`);
+}
+
+const BUTTON_SHAPE_RADIUS: Record<IconButtonShape, string> = {
+  rounded: '0.375rem',
+  square: '0rem',
+  pill: '9999px',
+};
+
+const ICON_BUTTON_SHAPE_RADIUS: Record<IconButtonShape, string> = {
+  rounded: '0.125rem',
+  square: '0rem',
+  pill: '9999px',
+};
+
+function applyIconButtonShape(shape: IconButtonShape): void {
+  const root = document.documentElement;
+  root.style.setProperty('--btn-radius', BUTTON_SHAPE_RADIUS[shape]);
+  root.style.setProperty('--btn-icon-radius', ICON_BUTTON_SHAPE_RADIUS[shape]);
+}
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: 'dark',
   colorTheme: 'default',
   uiScale: 100,
   customThemes: [],
+  layoutGap: 8,
+  iconButtonShape: 'rounded',
   setMode: (mode) => {
     set({ mode });
     applyMode(mode);
@@ -108,5 +143,14 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     if (colorTheme !== 'default') {
       applyCustomTokens(colorTheme, customThemes, mode);
     }
+  },
+  setLayoutGap: (gap) => {
+    const layoutGap = Math.max(0, Math.min(16, gap));
+    set({ layoutGap });
+    applyLayoutGap(layoutGap);
+  },
+  setIconButtonShape: (iconButtonShape) => {
+    set({ iconButtonShape });
+    applyIconButtonShape(iconButtonShape);
   },
 }));

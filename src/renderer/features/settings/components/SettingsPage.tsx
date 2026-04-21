@@ -25,6 +25,7 @@ import { HubSettings } from './HubSettings';
 import { LayoutSection } from './LayoutSection';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
+import { SpacingSection } from './SpacingSection';
 import { StorageManagementSection } from './StorageManagementSection';
 import { TestingSettingsTab } from './TestingSettingsTab';
 import { TypographySection } from './TypographySection';
@@ -50,7 +51,7 @@ const SETTINGS_TABS = [
 export function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { mode, uiScale, setMode, setUiScale } = useThemeStore();
+  const { mode, uiScale, layoutGap, setMode, setUiScale, setLayoutGap } = useThemeStore();
 
   const currentFontFamily = settings?.fontFamily ?? 'system-ui';
   const currentFontSize = settings?.fontSize ?? 14;
@@ -64,6 +65,12 @@ export function SettingsPage() {
     const scale = Number(event.target.value);
     setUiScale(scale);
     updateSettings.mutate({ uiScale: scale });
+  }
+
+  function handleLayoutGapChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const gap = Number(event.target.value);
+    setLayoutGap(gap);
+    updateSettings.mutate({ layoutGap: gap });
   }
 
   function handleFontFamilyChange(fontFamily: string) {
@@ -106,6 +113,7 @@ export function SettingsPage() {
             <LayoutSection />
             <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
             <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
+            <SpacingSection currentGap={layoutGap} onGapChange={handleLayoutGapChange} />
             <TypographySection
               currentFontFamily={currentFontFamily}
               currentFontSize={currentFontSize}

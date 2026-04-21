@@ -20,6 +20,7 @@ import { ROUTES } from '@shared/constants';
 import type { ContentLayoutId, SidebarLayoutId, ToolbarStyleId } from '@shared/types/layout';
 import { CONTENT_LAYOUTS, SIDEBAR_LAYOUTS, TOOLBAR_STYLES } from '@shared/types/layout';
 
+import type { IconButtonShape } from '@renderer/shared/stores';
 import { useLayoutStore, useThemeStore } from '@renderer/shared/stores';
 
 import {
@@ -244,7 +245,7 @@ export function LayoutSection() {
     toolbarStyle, setToolbarStyle,
     contentLayout, setContentLayout,
   } = useLayoutStore();
-  const { colorTheme, setColorTheme, customThemes } = useThemeStore();
+  const { colorTheme, setColorTheme, customThemes, iconButtonShape, setIconButtonShape } = useThemeStore();
   const updateSettings = useUpdateSettings();
   const navigate = useNavigate();
 
@@ -270,6 +271,11 @@ export function LayoutSection() {
   function handleThemeChange(value: string) {
     setColorTheme(value);
     updateSettings.mutate({ colorTheme: value });
+  }
+
+  function handleIconShapeChange(value: string) {
+    setIconButtonShape(value as IconButtonShape);
+    updateSettings.mutate({ iconButtonShape: value });
   }
 
   function handleCustomizeTheme() {
@@ -412,6 +418,28 @@ export function LayoutSection() {
               <Text className="text-[9px]" variant="muted">Content</Text>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Icon Shape ─────────────────────────── */}
+      <div className="border-border mt-0 overflow-hidden rounded-b-lg border border-t-0 p-4">
+        <div className="flex flex-col gap-3">
+          <Label htmlFor="icon-button-shape">Icon Shape</Label>
+          <Select value={iconButtonShape} onValueChange={handleIconShapeChange}>
+            <SelectTrigger id="icon-button-shape">
+              <SelectValue placeholder="Select shape" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="rounded">Rounded</SelectItem>
+              <SelectItem value="square">Square</SelectItem>
+              <SelectItem value="pill">Pill</SelectItem>
+            </SelectContent>
+          </Select>
+          <Text className="text-xs" variant="muted">
+            {iconButtonShape === 'rounded' ? 'Slightly rounded corners on icon buttons.' : null}
+            {iconButtonShape === 'square' ? 'Sharp corners on icon buttons.' : null}
+            {iconButtonShape === 'pill' ? 'Fully rounded pill shape on icon buttons.' : null}
+          </Text>
         </div>
       </div>
     </section>

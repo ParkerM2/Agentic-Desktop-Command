@@ -1,0 +1,1 @@
+export { SpotifyWidget } from './SpotifyWidget';
