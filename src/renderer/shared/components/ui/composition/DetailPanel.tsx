@@ -60,7 +60,7 @@ export function DetailPanel({
         )}
       >
         {/* Header */}
-        <div className="border-border flex shrink-0 items-center justify-between border-b px-4 py-3">
+        <div className="border-border flex shrink-0 items-center justify-between border-b px-[var(--layout-pad-md)] py-[var(--layout-gap-lg)]">
           <Heading as="h3" className="truncate">{title}</Heading>
           <Button
             aria-label="Close panel"
@@ -73,7 +73,7 @@ export function DetailPanel({
         </div>
 
         {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <div className="min-h-0 flex-1 overflow-y-auto px-[var(--layout-pad-md)] py-[var(--layout-pad-md)]">
           {children}
         </div>
       </div>

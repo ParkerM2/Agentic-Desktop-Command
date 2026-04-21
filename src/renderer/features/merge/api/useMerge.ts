@@ -12,7 +12,7 @@ import { gitKeys } from '@features/projects';
 
 import { mergeKeys } from './queryKeys';
 
-interface MergeBranchParams {
+export interface MergeBranchParams {
   repoPath: string;
   sourceBranch: string;
   targetBranch: string;

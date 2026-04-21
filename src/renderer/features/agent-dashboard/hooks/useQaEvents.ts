@@ -5,24 +5,23 @@
  * invalidates the relevant QA queries in React Query cache.
  */
 
-import { useQueryClient } from '@tanstack/react-query';
-
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
-
-import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { agentDashboardKeys } from '../api/queryKeys';
 
+import { rule, useQueryInvalidator } from './useQueryInvalidator';
+
+const INVALIDATION_RULES = [
+  rule({
+    channel: AGENT_DASHBOARD_EVENTS.QA['SESSION-UPDATED'],
+    queryKeys: (session) => [
+      agentDashboardKeys.qaSession(session.taskId),
+      agentDashboardKeys.qaSessions(),
+    ],
+  }),
+];
+
 /** Subscribe to QA session update events and invalidate QA queries */
 export function useQaEvents() {
-  const queryClient = useQueryClient();
-
-  useIpcEvent(AGENT_DASHBOARD_EVENTS.QA['SESSION-UPDATED'], (session) => {
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.qaSession(session.taskId),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.qaSessions(),
-    });
-  });
+  useQueryInvalidator(INVALIDATION_RULES);
 }

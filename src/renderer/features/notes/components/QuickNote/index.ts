@@ -1,0 +1,1 @@
+export { QuickNote } from './QuickNote';

@@ -15,6 +15,8 @@ import { WEBHOOK_EVENTS } from '@shared/ipc/webhook';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
+import { Button } from '@ui';
+
 // ── Types ─────────────────────────────────────────────────────
 
 interface WebhookNotificationItem {
@@ -101,16 +103,17 @@ export function WebhookNotification() {
         >
           <SourceIcon source={item.source} />
           <p className="min-w-0 flex-1 text-sm">{buildSummary(item)}</p>
-          <button
+          <Button
             aria-label="Dismiss webhook notification"
-            className="text-muted-foreground hover:text-foreground shrink-0 p-0.5"
-            type="button"
+            className="shrink-0"
+            size="icon-xs"
+            variant="ghost"
             onClick={() => {
               handleDismiss(item.id);
             }}
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            <X className="h-3.5 w-3.5 shrink-0" />
+          </Button>
         </div>
       ))}
     </div>

@@ -1,0 +1,1 @@
+export { BriefingPage } from './BriefingPage';

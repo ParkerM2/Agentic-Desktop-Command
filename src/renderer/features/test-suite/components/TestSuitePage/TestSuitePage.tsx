@@ -1,0 +1,85 @@
+import { BarChart3, Blocks, FileCode, List, PlayCircle, Camera, Upload } from 'lucide-react';
+
+import { PageContent, PageHeader, PageLayout, Text } from '@ui';
+
+import { AnalyticsPanel } from '../AnalyticsPanel';
+import { ExportPanel } from '../ExportPanel';
+import { LibraryPanel } from '../LibraryPanel';
+import { RecordingPanel } from '../RecordingPanel';
+import { ResultsPanel } from '../ResultsPanel';
+import { ScreenshotsPanel } from '../ScreenshotsPanel';
+import { SetupCard } from '../SetupCard';
+import { SharedStepsPanel } from '../SharedStepsPanel';
+import { ShortcutHelpDialog } from '../ShortcutHelpDialog';
+
+import { useTestSuitePage } from './useTestSuitePage';
+
+const TABS = [
+  { id: 'recording' as const, label: 'Recording', icon: PlayCircle },
+  { id: 'library' as const, label: 'Library', icon: List },
+  { id: 'results' as const, label: 'Results', icon: FileCode },
+  { id: 'screenshots' as const, label: 'Screenshots', icon: Camera },
+  { id: 'analytics' as const, label: 'Analytics', icon: BarChart3 },
+  { id: 'shared-steps' as const, label: 'Shared Steps', icon: Blocks },
+  { id: 'export' as const, label: 'CI Export', icon: Upload },
+];
+
+export function TestSuitePage() {
+  const vm = useTestSuitePage();
+
+  if (!vm.projectId) {
+    return (
+      <PageLayout>
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title>Test Suite</PageHeader.Title>
+          </PageHeader.Row>
+        </PageHeader>
+        <PageContent>
+          <Text className="p-6" variant="muted">No project selected.</Text>
+        </PageContent>
+      </PageLayout>
+    );
+  }
+
+  if (vm.isLoading) return <PageLayout><Text className="p-6">Loading…</Text></PageLayout>;
+  if (!vm.config) {
+    return (
+      <PageLayout>
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Set up testing for this project">Test Suite</PageHeader.Title>
+          </PageHeader.Row>
+        </PageHeader>
+        <SetupCard projectId={vm.projectId} />
+      </PageLayout>
+    );
+  }
+
+  return (
+    <PageLayout>
+      <PageHeader.Tabs value={vm.activeTab} onValueChange={(v) => vm.setActiveTab(v as typeof vm.activeTab)}>
+        <PageHeader>
+          <PageHeader.Row>
+            <PageHeader.Title description="Record, run, and export Playwright tests">Test Suite</PageHeader.Title>
+          </PageHeader.Row>
+          <PageHeader.TabList>
+            {TABS.map((t) => (
+              <PageHeader.Tab key={t.id} value={t.id}>
+                <t.icon className="h-4 w-4" />{t.label}
+              </PageHeader.Tab>
+            ))}
+          </PageHeader.TabList>
+        </PageHeader>
+        <PageHeader.TabContent value="recording"><RecordingPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="library"><LibraryPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="results"><ResultsPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="screenshots"><ScreenshotsPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="analytics"><AnalyticsPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="shared-steps"><SharedStepsPanel /></PageHeader.TabContent>
+        <PageHeader.TabContent value="export"><ExportPanel /></PageHeader.TabContent>
+      </PageHeader.Tabs>
+      <ShortcutHelpDialog />
+    </PageLayout>
+  );
+}

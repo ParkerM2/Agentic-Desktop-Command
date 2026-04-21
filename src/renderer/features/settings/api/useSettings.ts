@@ -21,7 +21,7 @@ export const settingsKeys = {
 
 /** Fetch app settings */
 export function useSettings() {
-  const { setMode, setColorTheme, setUiScale, setCustomThemes } = useThemeStore();
+  const { setMode, setColorTheme, setUiScale, setCustomThemes, setLayoutGap, setIconButtonShape } = useThemeStore();
   const { setSidebarLayout } = useLayoutStore();
 
   return useQuery({
@@ -36,6 +36,8 @@ export function useSettings() {
       if (settings.sidebarLayout) {
         setSidebarLayout(settings.sidebarLayout as SidebarLayoutId);
       }
+      if (settings.layoutGap !== undefined) setLayoutGap(settings.layoutGap);
+      if (settings.iconButtonShape !== undefined) setIconButtonShape(settings.iconButtonShape);
       if (settings.fontFamily) {
         document.documentElement.style.setProperty('--app-font-sans', settings.fontFamily);
       }

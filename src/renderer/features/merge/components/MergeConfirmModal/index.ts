@@ -1,0 +1,1 @@
+export { MergeConfirmModal } from './MergeConfirmModal';

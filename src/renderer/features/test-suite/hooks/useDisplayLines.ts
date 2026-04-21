@@ -4,7 +4,7 @@ import { useRun } from '../api/useRuns';
 
 import { useRunOutput } from './useRunOutput';
 
-interface DisplayLine {
+export interface DisplayLine {
   line: string;
   timestamp: string;
 }

@@ -1,0 +1,1 @@
+export { BriefingConfigPanel } from './BriefingConfigPanel';

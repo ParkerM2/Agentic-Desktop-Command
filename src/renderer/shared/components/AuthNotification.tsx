@@ -14,6 +14,8 @@ import { ROUTES } from '@shared/constants';
 
 import { useClaudeAuth } from '@renderer/shared/hooks';
 
+import { Button } from '@ui';
+
 // ── Component ────────────────────────────────────────────────
 
 export function AuthNotification() {
@@ -50,14 +52,14 @@ export function AuthNotification() {
           </p>
           <div className="mt-2 flex items-center gap-3">
             {isInstalled ? (
-              <button
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                type="button"
+              <Button
+                className="h-auto gap-1 p-0 text-xs font-medium"
+                variant="link"
                 onClick={handleGoToSettings}
               >
-                <Settings className="size-3" />
+                <Settings className="size-3 shrink-0" />
                 Authorize in Settings
-              </button>
+              </Button>
             ) : (
               <a
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
@@ -71,16 +73,17 @@ export function AuthNotification() {
             )}
           </div>
         </div>
-        <button
+        <Button
           aria-label="Dismiss notification"
-          className="shrink-0 p-1 text-muted-foreground hover:text-foreground"
-          type="button"
+          className="shrink-0"
+          size="icon-xs"
+          variant="ghost"
           onClick={() => {
             setIsDismissed(true);
           }}
         >
-          <X className="size-4" />
-        </button>
+          <X className="size-4 shrink-0" />
+        </Button>
       </div>
     </div>
   );

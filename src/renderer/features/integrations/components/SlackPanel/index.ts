@@ -1,0 +1,1 @@
+export { SlackPanel } from './SlackPanel';

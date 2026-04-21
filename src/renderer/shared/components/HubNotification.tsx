@@ -14,6 +14,8 @@ import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 
+import { Button } from '@ui';
+
 // ── Types ─────────────────────────────────────────────────────
 
 interface HubNotificationItem {
@@ -122,16 +124,17 @@ export function HubNotification() {
         >
           {getStatusIcon(item.status)}
           <p className="min-w-0 flex-1 text-sm">{item.message}</p>
-          <button
+          <Button
             aria-label="Dismiss hub notification"
-            className="text-muted-foreground hover:text-foreground shrink-0 p-0.5"
-            type="button"
+            className="shrink-0"
+            size="icon-xs"
+            variant="ghost"
             onClick={() => {
               handleDismiss(item.id);
             }}
           >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            <X className="h-3.5 w-3.5 shrink-0" />
+          </Button>
         </div>
       ))}
     </div>
