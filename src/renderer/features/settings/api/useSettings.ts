@@ -5,7 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { SETTINGS } from '@shared/ipc/settings/channels';
-import type { SidebarLayoutId } from '@shared/types/layout';
+import type { LayoutPreset } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 import { useLayoutStore, useThemeStore } from '@renderer/shared/stores';
@@ -21,8 +21,8 @@ export const settingsKeys = {
 
 /** Fetch app settings */
 export function useSettings() {
-  const { setMode, setColorTheme, setUiScale, setCustomThemes, setLayoutGap, setIconButtonShape } = useThemeStore();
-  const { setSidebarLayout } = useLayoutStore();
+  const { setMode, setColorTheme, setUiScale, setCustomThemes, setLayoutGap } = useThemeStore();
+  const { setLayoutPreset } = useLayoutStore();
 
   return useQuery({
     queryKey: settingsKeys.app(),
@@ -33,11 +33,10 @@ export function useSettings() {
       setMode(settings.theme);
       setColorTheme(settings.colorTheme);
       setUiScale(settings.uiScale);
-      if (settings.sidebarLayout) {
-        setSidebarLayout(settings.sidebarLayout as SidebarLayoutId);
+      if (settings.layoutPreset) {
+        setLayoutPreset(settings.layoutPreset as LayoutPreset);
       }
       if (settings.layoutGap !== undefined) setLayoutGap(settings.layoutGap);
-      if (settings.iconButtonShape !== undefined) setIconButtonShape(settings.iconButtonShape);
       if (settings.fontFamily) {
         document.documentElement.style.setProperty('--app-font-sans', settings.fontFamily);
       }
