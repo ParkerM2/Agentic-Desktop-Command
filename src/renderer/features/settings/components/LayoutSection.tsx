@@ -17,8 +17,7 @@ import { ROUTES } from '@shared/constants';
 import type { LayoutPreset } from '@shared/types/layout';
 import { LAYOUT_PRESETS, getPresetConfig } from '@shared/types/layout';
 
-import { useLayoutStore } from '@renderer/shared/stores';
-import { useThemeStore } from '@renderer/shared/stores';
+import { useLayoutStore, useThemeStore } from '@renderer/shared/stores';
 
 import {
   Button,

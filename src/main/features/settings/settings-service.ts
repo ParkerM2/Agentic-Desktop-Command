@@ -228,13 +228,10 @@ export function createSettingsService(deps: { db: AdcDatabase; dataDir: string }
 
     getLayout() {
       // Migration: map legacy individual fields to nearest preset
-      const legacy = store.settings as Record<string, unknown>;
+      const legacy = store.settings as unknown as Record<string, unknown>;
       let preset = (store.settings.layoutPreset as string | undefined) ?? 'default';
-      if (!store.settings.layoutPreset) {
-        // Migrate from old individual fields
-        if (legacy.toolbarStyle === 'floating' || legacy.sidebarLayout === 'sidebar-04') {
-          preset = 'floating';
-        }
+      if (!store.settings.layoutPreset && (legacy.toolbarStyle === 'floating' || legacy.sidebarLayout === 'sidebar-04')) {
+        preset = 'floating';
       }
       return {
         openProjectTabs: store.settings.openProjectTabs ?? [],
