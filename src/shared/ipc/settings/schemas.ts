@@ -82,6 +82,7 @@ export const AppSettingsSchema = z.object({
   activeProjectId: z.string().nullable().optional(),
   lastRoutePerProject: z.record(z.string(), z.string()).optional(),
   sidebarCollapsed: z.boolean().optional(),
+  layoutGap: z.number().min(0).max(16).optional(),
 });
 
 // ── Profile Schemas ─────────────────────────────────────────────

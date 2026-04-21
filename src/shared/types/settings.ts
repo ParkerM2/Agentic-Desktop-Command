@@ -40,6 +40,7 @@ export interface AppSettings {
   activeProjectId?: string | null;
   lastRoutePerProject?: Record<string, string>;
   sidebarCollapsed?: boolean;
+  layoutGap?: number;
 }
 
 /** All CSS variable tokens that make up a color theme */
