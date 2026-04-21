@@ -27,7 +27,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export function AgentDashboard() {
-  const { sessions, isLoading, stopAgent } = useAgentDashboard();
+  const { sessions, isLoading, stopAgent, projectNameMap } = useAgentDashboard();
 
   if (isLoading) {
     return (
@@ -50,7 +50,11 @@ export function AgentDashboard() {
       <PageContent>
         {sessionList.length > 0 ? (
           <div className="space-y-3">
-            {sessionList.map((session) => (
+            {sessionList.map((session) => {
+              const projectName = session.projectId
+                ? (projectNameMap.get(session.projectId) ?? 'Unknown Project')
+                : null;
+              return (
               <div
                 key={session.id}
                 className="border-border flex items-center justify-between rounded-lg border p-4"
@@ -59,9 +63,11 @@ export function AgentDashboard() {
                   <Bot className={cn('h-5 w-5', statusColors[session.status] ?? 'text-zinc-400')} />
                   <div>
                     <p className="text-sm font-medium">
-                      {session.name} — {session.type}
+                      {projectName ?? session.name}
                     </p>
                     <p className="text-muted-foreground text-xs">
+                      {session.type}
+                      {' · '}
                       {statusLabels[session.status] ?? session.status}
                       {session.model ? ` · ${session.model}` : ''}
                     </p>
@@ -87,7 +93,8 @@ export function AgentDashboard() {
                   ) : null}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <EmptyState
