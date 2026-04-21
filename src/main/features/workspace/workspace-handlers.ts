@@ -29,6 +29,10 @@ export function registerWorkspaceHandlers(
     return await workspace.stopTeamLead(projectId, index);
   });
 
+  router.handle(WORKSPACE.STOP.PROJECT, async ({ projectId }) => {
+    return await workspace.stopProject(projectId);
+  });
+
   router.handle(WORKSPACE.SEND.MESSAGE, async ({ sessionId, message }) => {
     return await workspace.sendMessage(sessionId, message);
   });
