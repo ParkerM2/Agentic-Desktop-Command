@@ -33,7 +33,7 @@ import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 const TOOLBAR_CLASSES: Record<ToolbarStyleId, string> = {
   default: 'h-10 bg-card border border-border',
-  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm [&_.electron-no-drag_button]:rounded-md',
+  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden',
 };
 
 export function TopBar() {

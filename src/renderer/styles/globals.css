@@ -255,10 +255,6 @@
   --layout-pad-x: 1.5rem;
   --layout-pad-y: 1rem;
   --layout-pad-md: calc(var(--layout-gap) * 2);
-
-  /* Button shape tokens */
-  --btn-radius: 0.375rem;
-  --btn-icon-radius: 0.125rem;
 }
 
 /* ============================================
