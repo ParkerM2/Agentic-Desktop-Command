@@ -1,8 +1,10 @@
 /**
  * Layout Store — Global layout/navigation state
  *
- * Sidebar collapsed state, active project, panel layout, etc.
- * Everything that affects the app shell but isn't feature-specific.
+ * Preset-based layout system: a single layoutPreset value drives
+ * sidebar, toolbar, and content styles. Derived getters let downstream
+ * components (TopBar, ContentAreaContainer, AppSidebar) read individual
+ * values without knowing about presets.
  *
  * Persists layout state to settings.json via IPC with 500ms debounce.
  */
@@ -11,7 +13,8 @@ import { create } from 'zustand';
 
 import { SETTINGS } from '@shared/ipc/settings/channels';
 import { WORKSPACE } from '@shared/ipc/workspace/channels';
-import type { ContentLayoutId, SidebarLayoutId, ToolbarStyleId } from '@shared/types/layout';
+import type { ContentLayoutId, LayoutPreset, SidebarLayoutId, ToolbarStyleId } from '@shared/types/layout';
+import { getPresetConfig } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
@@ -19,18 +22,19 @@ import type { Layout } from 'react-resizable-panels';
 
 interface LayoutState {
   sidebarCollapsed: boolean;
-  sidebarLayout: SidebarLayoutId;
-  toolbarStyle: ToolbarStyleId;
-  contentLayout: ContentLayoutId;
+  layoutPreset: LayoutPreset;
   activeProjectId: string | null;
   projectTabOrder: string[];
   panelLayout: Layout | null;
 
+  // Derived from layoutPreset — read-only for consumers
+  sidebarLayout: SidebarLayoutId;
+  toolbarStyle: ToolbarStyleId;
+  contentLayout: ContentLayoutId;
+
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  setSidebarLayout: (id: SidebarLayoutId) => void;
-  setToolbarStyle: (id: ToolbarStyleId) => void;
-  setContentLayout: (id: ContentLayoutId) => void;
+  setLayoutPreset: (preset: LayoutPreset) => void;
   setActiveProject: (projectId: string | null) => void;
   setProjectTabOrder: (order: string[]) => void;
   addProjectTab: (projectId: string) => void;
@@ -41,9 +45,7 @@ interface LayoutState {
     activeProjectId: string | null;
     lastRoutePerProject: Record<string, string>;
     sidebarCollapsed: boolean;
-    sidebarLayout: string;
-    toolbarStyle?: string;
-    contentLayout?: string;
+    layoutPreset: string;
   }) => void;
   clearLayout: () => void;
 }
@@ -58,27 +60,40 @@ function persistLayout() {
 
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    const { sidebarCollapsed, sidebarLayout, toolbarStyle, contentLayout, activeProjectId, projectTabOrder } =
+    const { sidebarCollapsed, layoutPreset, activeProjectId, projectTabOrder } =
       useLayoutStore.getState();
     void ipc(SETTINGS.SAVE.LAYOUT, {
       sidebarCollapsed,
-      sidebarLayout,
-      toolbarStyle,
-      contentLayout,
+      layoutPreset,
       activeProjectId,
       openProjectTabs: projectTabOrder,
     });
   }, 500);
 }
 
+/** Derive individual layout values from a preset ID */
+function deriveFromPreset(preset: LayoutPreset) {
+  const config = getPresetConfig(preset);
+  return {
+    sidebarLayout: config.sidebar,
+    toolbarStyle: config.toolbar,
+    contentLayout: config.content,
+  };
+}
+
+const defaultDerived = deriveFromPreset('default');
+
 export const useLayoutStore = create<LayoutState>((set) => ({
   sidebarCollapsed: false,
-  sidebarLayout: 'sidebar-07',
-  toolbarStyle: 'default',
-  contentLayout: 'flush',
+  layoutPreset: 'default',
   activeProjectId: null,
   projectTabOrder: [],
   panelLayout: null,
+
+  // Derived initial values
+  sidebarLayout: defaultDerived.sidebarLayout,
+  toolbarStyle: defaultDerived.toolbarStyle,
+  contentLayout: defaultDerived.contentLayout,
 
   toggleSidebar: () => {
     set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed }));
@@ -88,16 +103,8 @@ export const useLayoutStore = create<LayoutState>((set) => ({
     set({ sidebarCollapsed: collapsed });
     persistLayout();
   },
-  setSidebarLayout: (id) => {
-    set({ sidebarLayout: id });
-    persistLayout();
-  },
-  setToolbarStyle: (id) => {
-    set({ toolbarStyle: id });
-    persistLayout();
-  },
-  setContentLayout: (id) => {
-    set({ contentLayout: id });
+  setLayoutPreset: (preset) => {
+    set({ layoutPreset: preset, ...deriveFromPreset(preset) });
     persistLayout();
   },
 
@@ -132,20 +139,19 @@ export const useLayoutStore = create<LayoutState>((set) => ({
       };
     });
     persistLayout();
-    // Kill all Claude sessions for this project
     void ipc(WORKSPACE.STOP.PROJECT, { projectId });
   },
 
   setPanelLayout: (layout) => set({ panelLayout: layout }),
 
   hydrate: (state) => {
+    const preset = (state.layoutPreset === 'floating' ? 'floating' : 'default') as LayoutPreset;
     set({
       projectTabOrder: state.openProjectTabs,
       activeProjectId: state.activeProjectId,
       sidebarCollapsed: state.sidebarCollapsed,
-      sidebarLayout: state.sidebarLayout as SidebarLayoutId,
-      toolbarStyle: (state.toolbarStyle as ToolbarStyleId | undefined) ?? 'default',
-      contentLayout: (state.contentLayout as ContentLayoutId | undefined) ?? 'flush',
+      layoutPreset: preset,
+      ...deriveFromPreset(preset),
     });
     hydrated = true;
   },
@@ -155,9 +161,8 @@ export const useLayoutStore = create<LayoutState>((set) => ({
     if (debounceTimer) clearTimeout(debounceTimer);
     set({
       sidebarCollapsed: false,
-      sidebarLayout: 'sidebar-07',
-      toolbarStyle: 'default',
-      contentLayout: 'flush',
+      layoutPreset: 'default',
+      ...deriveFromPreset('default'),
       activeProjectId: null,
       projectTabOrder: [],
       panelLayout: null,
