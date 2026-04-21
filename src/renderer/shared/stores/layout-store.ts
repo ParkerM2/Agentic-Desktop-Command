@@ -10,6 +10,7 @@
 import { create } from 'zustand';
 
 import { SETTINGS } from '@shared/ipc/settings/channels';
+import { WORKSPACE } from '@shared/ipc/workspace/channels';
 import type { ContentLayoutId, SidebarLayoutId, ToolbarStyleId } from '@shared/types/layout';
 
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -131,6 +132,8 @@ export const useLayoutStore = create<LayoutState>((set) => ({
       };
     });
     persistLayout();
+    // Kill all Claude sessions for this project
+    void ipc(WORKSPACE.STOP.PROJECT, { projectId });
   },
 
   setPanelLayout: (layout) => set({ panelLayout: layout }),
