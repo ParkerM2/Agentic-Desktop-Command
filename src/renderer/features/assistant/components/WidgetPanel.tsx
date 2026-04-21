@@ -21,6 +21,7 @@ import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantStore } from '../store';
 
 import { AssistantInputBar } from './AssistantInputBar';
+import { ProjectSelector } from './ProjectSelector';
 import { WidgetMessageArea } from './WidgetMessageArea';
 
 interface WidgetPanelProps {
@@ -35,6 +36,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
   const voiceOutputEnabled = useAssistantWidgetStore((s) => s.voiceOutputEnabled);
   const toggleVoiceOutput = useAssistantWidgetStore((s) => s.toggleVoiceOutput);
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
+  const setActiveProject = useLayoutStore((s) => s.setActiveProject);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
@@ -82,7 +84,13 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
     >
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-3 py-2">
-        <Heading as="h2" className="text-sm">Assistant</Heading>
+        <div className="flex items-center gap-2">
+          <Heading as="h2" className="text-sm">Assistant</Heading>
+          <ProjectSelector
+            selectedProjectId={activeProjectId}
+            onSelect={(id) => setActiveProject(id)}
+          />
+        </div>
         <div className="flex items-center gap-1">
           <Button
             aria-label={voiceOutputEnabled ? 'Disable voice output' : 'Enable voice output'}
