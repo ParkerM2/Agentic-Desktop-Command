@@ -20,6 +20,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Heading,
   Text,
 } from '@ui';
 
@@ -45,10 +46,10 @@ export function VersionCard({ entry }: VersionCardProps) {
 
       {/* Version header */}
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-foreground text-lg font-semibold">
+        <Heading as="h3">
           {entry.version}{' '}
           <span className="text-muted-foreground text-sm font-normal">-- {entry.date}</span>
-        </h3>
+        </Heading>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

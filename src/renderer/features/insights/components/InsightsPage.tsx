@@ -5,6 +5,7 @@ import type { InsightMetrics, TaskDistribution } from '@shared/types';
 import {
   Card,
   CardContent,
+  Heading,
   MetricCard,
   Progress,
   Text,
@@ -117,7 +118,7 @@ export function InsightsPage() {
                 <CardContent className="p-4">
                   <div className="mb-4 flex items-center gap-2">
                     <Activity className="text-muted-foreground h-4 w-4" />
-                    <h2 className="text-foreground text-sm font-semibold">Task Distribution</h2>
+                    <Heading as="h2" className="text-sm">Task Distribution</Heading>
                   </div>
                   {distItems.length > 0 ? (
                     <div className="space-y-3">
@@ -136,7 +137,7 @@ export function InsightsPage() {
                 <CardContent className="p-4">
                   <div className="mb-4 flex items-center gap-2">
                     <BarChart3 className="text-muted-foreground h-4 w-4" />
-                    <h2 className="text-foreground text-sm font-semibold">Project Breakdown</h2>
+                    <Heading as="h2" className="text-sm">Project Breakdown</Heading>
                   </div>
                   {projectItems.length > 0 ? (
                     <div className="space-y-3">

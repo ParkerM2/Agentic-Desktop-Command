@@ -7,6 +7,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import {
   Button,
   Checkbox,
+  Heading,
   Input,
   Select,
   SelectContent,
@@ -32,7 +33,7 @@ export function NotificationRules() {
 
   return (
     <div className="bg-card border-border rounded-lg border p-4">
-      <h3 className="text-foreground mb-3 text-sm font-semibold">Notification Rules</h3>
+      <Heading as="h3" className="mb-3 text-sm">Notification Rules</Heading>
       <p className="text-muted-foreground mb-4 text-xs">
         Filter notifications by keyword pattern. Matching messages will trigger desktop alerts.
       </p>

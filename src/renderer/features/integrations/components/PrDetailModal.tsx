@@ -4,7 +4,7 @@
 
 import { GitMerge, GitPullRequest } from 'lucide-react';
 
-import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, ScrollArea, Text } from '@ui';
+import { Badge, Dialog, DialogContent, DialogHeader, DialogTitle, Heading, ScrollArea, Text } from '@ui';
 
 import { useGitHubPrDetail } from '../api/useGitHub';
 
@@ -59,7 +59,7 @@ function PrDetailContent({ pr }: { pr: GitHubPr }) {
     <div>
       {/* Title and status */}
       <div className="mb-4 flex items-start gap-3">
-        <h2 className="flex-1 text-lg font-semibold">{pr.title}</h2>
+        <Heading as="h2" className="flex-1 text-lg">{pr.title}</Heading>
         <Badge variant={getPrStatusVariant(pr)}>{getPrStatusLabel(pr)}</Badge>
       </div>
 

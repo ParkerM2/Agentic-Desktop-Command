@@ -8,6 +8,7 @@ import type { WorkoutType } from '@shared/types';
 
 import {
   Button,
+  Heading,
   Input,
   Label,
   Select,
@@ -57,7 +58,7 @@ export function WorkoutForm() {
     <div className="bg-card border-border rounded-lg border">
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-foreground text-sm font-semibold">Log Workout</h3>
+        <Heading as="h3" className="text-sm">Log Workout</Heading>
         <Button
           aria-label="Close form"
           size="icon"
