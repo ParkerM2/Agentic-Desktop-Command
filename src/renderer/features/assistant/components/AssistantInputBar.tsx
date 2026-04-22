@@ -17,6 +17,7 @@ import { useLayoutStore } from '@renderer/shared/stores';
 import { useProjects } from '@features/projects/api/useProjects';
 
 import { Button } from '@ui/button';
+import { Separator } from '@ui/separator';
 import { Textarea } from '@ui/textarea';
 
 import { QuickActionChips } from './QuickActionChips';
@@ -75,7 +76,8 @@ export function AssistantInputBar({ onSubmit, disabled, compact }: AssistantInpu
   }
 
   return (
-    <div className={cn('border-border border-t', compact ? 'space-y-0' : 'space-y-0.5')}>
+    <div className={cn('shrink-0', compact ? 'space-y-0' : 'space-y-0.5')}>
+      <Separator />
       {/* Row 1: textarea + send */}
       <div className={cn('flex items-end gap-1', compact ? 'p-1.5' : 'p-2')}>
         <Textarea
