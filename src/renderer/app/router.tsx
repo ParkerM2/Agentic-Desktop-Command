@@ -19,7 +19,7 @@ import { ROUTES } from '@shared/constants';
 
 import { RootErrorBoundary } from '@renderer/shared/components/error-boundaries';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 import { AuthGuard } from '@features/auth';
 
@@ -57,9 +57,9 @@ function DefaultErrorComponent({ error, reset }: ErrorComponentProps) {
         <div className="bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-full">
           <AlertTriangle aria-hidden="true" className="text-destructive h-6 w-6" />
         </div>
-        <h2 className="text-foreground text-lg font-semibold">
+        <Heading as="h2" className="text-lg">
           Failed to load page
-        </h2>
+        </Heading>
         <p className="text-muted-foreground text-sm">
           {error.message || 'An unexpected error occurred.'}
         </p>
