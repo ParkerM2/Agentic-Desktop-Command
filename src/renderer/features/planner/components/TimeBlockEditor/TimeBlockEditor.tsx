@@ -8,6 +8,7 @@ import type { TimeBlock } from '@shared/types';
 
 import {
   Button,
+  Heading,
   Input,
   Label,
   Select,
@@ -59,9 +60,9 @@ export function TimeBlockEditor({ editingBlock, onSave, onCancel }: TimeBlockEdi
   return (
     <form className="border-border bg-card space-y-3 rounded-lg border p-4" onSubmit={handleSubmit}>
       <div className="flex items-center justify-between">
-        <h4 className="text-foreground text-sm font-medium">
+        <Heading as="h4" className="text-sm font-medium">
           {editingBlock ? 'Edit Time Block' : 'New Time Block'}
-        </h4>
+        </Heading>
         <Button
           aria-label="Cancel"
           size="icon"

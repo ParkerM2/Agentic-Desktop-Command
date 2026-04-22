@@ -4,7 +4,7 @@
 
 import { MessageSquare } from 'lucide-react';
 
-import { Button, Card, CardContent, Textarea } from '@ui';
+import { Button, Card, CardContent, Heading, Textarea } from '@ui';
 
 import { useWeeklyReflectionSection } from './useWeeklyReflectionSection';
 
@@ -39,7 +39,7 @@ export function WeeklyReflectionSection({ weekStart, reflection }: WeeklyReflect
     <Card>
       <CardContent className="p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-foreground text-sm font-semibold">Weekly Reflection</h2>
+          <Heading as="h2" className="text-sm">Weekly Reflection</Heading>
           {isEditing ? null : (
             <Button
               className="text-muted-foreground hover:text-primary h-auto gap-1 p-0 text-xs"

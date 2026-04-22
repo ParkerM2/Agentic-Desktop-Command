@@ -4,6 +4,8 @@
 
 import { Check, FolderOpen, GitBranch, Layers } from 'lucide-react';
 
+import { Heading } from '@ui';
+
 interface StepReviewProps {
   name: string;
   description: string;
@@ -23,7 +25,7 @@ export function StepReview({
 }: StepReviewProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Review &amp; Create</h3>
+      <Heading as="h3" className="text-sm font-medium">Review &amp; Create</Heading>
       <p className="text-muted-foreground text-xs">
         Review your project settings before creating.
       </p>

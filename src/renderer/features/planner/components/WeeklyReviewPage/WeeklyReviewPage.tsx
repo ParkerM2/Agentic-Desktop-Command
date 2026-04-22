@@ -19,7 +19,7 @@ import { ROUTES } from '@shared/constants';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, PageHeader, PageLayout } from '@ui';
+import { Button, Heading, PageHeader, PageLayout } from '@ui';
 
 import { CategoryBar } from '../CategoryBar';
 import { DayCompact } from '../DayCompact';
@@ -156,9 +156,9 @@ export function WeeklyReviewPage() {
 
           {/* Category breakdown */}
           <div className="bg-card border-border rounded-lg border p-4">
-            <h2 className="text-foreground mb-4 text-sm font-semibold">
+            <Heading as="h2" className="mb-4 text-sm">
               Time Distribution by Category
-            </h2>
+            </Heading>
             <div className="space-y-3">
               <CategoryBar
                 colorClass="bg-primary"
@@ -189,7 +189,7 @@ export function WeeklyReviewPage() {
 
           {/* Daily overview grid */}
           <div>
-            <h2 className="text-foreground mb-3 text-sm font-semibold">Daily Overview</h2>
+            <Heading as="h2" className="mb-3 text-sm">Daily Overview</Heading>
             <div className="grid grid-cols-7 gap-3">
               {review?.days.map((day) => <DayCompact key={day.date} plan={day} />)}
             </div>
