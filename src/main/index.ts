@@ -32,7 +32,7 @@ import type { SettingsService } from './features/settings/settings-service';
 // path resolution picks up the renamed app. Channels isolate userData,
 // cache, logs, crashDumps, the single-instance lock, and Claude CLI state.
 const CHANNEL = resolveChannel({
-  envChannel: process.env[ENV_VARS.ADC_CHANNEL],
+  envChannel: process.env[ENV_VARS.ADC_CHANNEL] || __ADC_CHANNEL__ || undefined,
   devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
   isPackaged: app.isPackaged,
 });
