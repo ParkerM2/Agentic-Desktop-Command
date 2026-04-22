@@ -79,7 +79,9 @@ function TokenUsageSection({ inputTokens, outputTokens }: TokenUsageSectionProps
   const costLabel = formatCost(cost);
 
   return (
-    <div className="border-t px-4 py-2">
+    <>
+    <Separator />
+    <div className="px-4 py-2">
       <Text className="mb-1.5 font-medium" size="sm">Token Usage</Text>
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
@@ -102,6 +104,7 @@ function TokenUsageSection({ inputTokens, outputTokens }: TokenUsageSectionProps
         ) : null}
       </div>
     </div>
+    </>
   );
 }
 
@@ -139,14 +142,17 @@ export function AgentPanelExpanded({
       </CardHeader>
 
       {agent.taskName !== undefined && agent.taskName.length > 0 ? (
-        <div className="border-t px-4 py-2">
-          <Text className="text-xs text-muted-foreground">
-            Task: {agent.taskName}
-            {agent.branch !== undefined && agent.branch.length > 0 ? (
-              <span className="ml-2">Branch: {agent.branch}</span>
-            ) : null}
-          </Text>
-        </div>
+        <>
+          <Separator />
+          <div className="px-4 py-2">
+            <Text className="text-xs text-muted-foreground">
+              Task: {agent.taskName}
+              {agent.branch !== undefined && agent.branch.length > 0 ? (
+                <span className="ml-2">Branch: {agent.branch}</span>
+              ) : null}
+            </Text>
+          </div>
+        </>
       ) : null}
 
       <TokenUsageSection
@@ -206,9 +212,12 @@ export function AgentPanelExpanded({
       </Tabs>
 
       {agent.taskId === undefined ? null : (
-        <div className="border-t p-3">
-          <QaPanel taskId={agent.taskId} />
-        </div>
+        <>
+          <Separator />
+          <div className="p-3">
+            <QaPanel taskId={agent.taskId} />
+          </div>
+        </>
       )}
     </Card>
   );

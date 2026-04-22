@@ -285,9 +285,12 @@ export function AgentPanelPopup({
         </Tabs>
 
         {agent.taskId === undefined ? null : (
-          <div className="border-t px-6 py-4">
-            <QaPanel taskId={agent.taskId} />
-          </div>
+          <>
+            <Separator />
+            <div className="px-6 py-4">
+              <QaPanel taskId={agent.taskId} />
+            </div>
+          </>
         )}
       </DialogContent>
     </Dialog>

@@ -6,7 +6,7 @@
 
 import { Send } from 'lucide-react';
 
-import { Button, Input, StatusIndicator, Text, ThinkingIndicator } from '@ui';
+import { Button, Input, Separator, StatusIndicator, Text, ThinkingIndicator } from '@ui';
 
 import { AgentChatPanel } from '@features/agent-dashboard';
 
@@ -70,13 +70,17 @@ export function PrimarySessionPanel({
 
       {/* Thinking indicator */}
       {showThinking ? (
-        <div className="border-border border-t px-4 py-2">
-          <ThinkingIndicator label={`Primary · ${projectName}`} size="sm" />
-        </div>
+        <>
+          <Separator />
+          <div className="px-4 py-2">
+            <ThinkingIndicator label={`Primary · ${projectName}`} size="sm" />
+          </div>
+        </>
       ) : null}
 
       {/* Input */}
-      <div className="border-border flex gap-2 border-t p-3">
+      <Separator />
+      <div className="flex gap-2 p-3">
         <Input
           className="flex-1"
           disabled={status !== 'live'}
