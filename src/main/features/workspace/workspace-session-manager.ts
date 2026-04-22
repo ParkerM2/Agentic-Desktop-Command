@@ -441,7 +441,7 @@ export function createWorkspaceSessionManager(
       return Promise.resolve({ success: stopped });
     },
 
-    async stopProject(projectId) {
+    stopProject(projectId) {
       const projectSessions = [...sessions.entries()].filter(
         ([, s]) => s.key.projectId === projectId,
       );
@@ -462,7 +462,7 @@ export function createWorkspaceSessionManager(
       }
 
       // Clean up any teammate worktrees for this project
-      for (const [lookupKey, projectPath] of [...teammateSlugs.entries()]) {
+      for (const [lookupKey, projectPath] of teammateSlugs.entries()) {
         if (lookupKey.startsWith(`${projectId}:`)) {
           const slug = lookupKey.split(':').slice(1).join(':');
           provisioner.teardown(projectPath, slug);
@@ -474,7 +474,7 @@ export function createWorkspaceSessionManager(
         `[WorkspaceSessionManager] All sessions stopped for project ${projectId} (${String(projectSessions.length)} sessions)`,
       );
 
-      return { success: true };
+      return Promise.resolve({ success: true });
     },
 
     sendMessage(sessionId, message) {
