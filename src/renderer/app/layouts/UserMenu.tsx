@@ -15,6 +15,7 @@ import { cn } from '@renderer/shared/lib/utils';
 
 import {
   Badge,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -62,13 +63,12 @@ export function UserMenu({ collapsed }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
+        <Button
           aria-label={collapsed ? `User menu for ${displayLabel}` : undefined}
           title={collapsed ? displayLabel : undefined}
-          type="button"
+          variant="ghost-muted"
           className={cn(
-            'group flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
-            'text-muted-foreground hover:bg-accent hover:text-foreground',
+            'group w-full gap-3 px-2.5 py-2 font-normal',
             collapsed && 'justify-center px-0',
           )}
         >
@@ -85,7 +85,7 @@ export function UserMenu({ collapsed }: UserMenuProps) {
               <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
             </>
           )}
-        </button>
+        </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
