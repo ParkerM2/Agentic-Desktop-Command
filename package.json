@@ -45,6 +45,8 @@
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs && npm run validate:tracker",
     "icons:generate": "node scripts/generate-logo-svg.js && svgo resources/icon.svg -o resources/icon-optimized.svg && node scripts/build-icons.js",
     "icons:channels": "node scripts/build-channel-icons.mjs",
+    "reset:local": "node scripts/reset-channel.mjs local",
+    "reset:dev": "node scripts/reset-channel.mjs dev",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
