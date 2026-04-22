@@ -21,6 +21,7 @@ import { Button, Separator } from '@ui';
 
 import { HealthIndicator } from '@features/settings';
 
+import { ChannelBadge } from './ChannelBadge';
 import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 export function TitleBar() {
@@ -73,6 +74,7 @@ export function TitleBar() {
         <span className="text-muted-foreground select-none text-xs font-semibold tracking-wide">
           ADC
         </span>
+        <ChannelBadge />
       </div>
 
       {/* Spacer — fills remaining drag area */}
