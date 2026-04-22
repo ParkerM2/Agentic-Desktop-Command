@@ -8,22 +8,20 @@
  * 4. Write enforcement hooks into .claude/settings.local.json
  * 5. Clean up worktree on session end
  *
- * Each provisioned worktree gets its own .claude/ directory so hooks
- * and settings are scoped to that agent process — no bleed-through.
+ * All IO is asynchronous so the Electron main process message pump stays
+ * responsive while git worktrees and setup scripts run. `execSync` here
+ * would block window events and surface as "(Not Responding)" on Windows.
  */
 
-import { execSync } from 'node:child_process';
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { exec } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
 
 import { agentLogger } from '@main/lib/logger';
+
+const execAsync = promisify(exec);
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -57,9 +55,9 @@ export interface ProvisionResult {
 
 export interface WorktreeProvisioner {
   /** Create and provision a worktree for an agent */
-  provision: (config: ProvisionConfig) => ProvisionResult;
+  provision: (config: ProvisionConfig) => Promise<ProvisionResult>;
   /** Remove a provisioned worktree and its branch */
-  teardown: (projectPath: string, slug: string) => void;
+  teardown: (projectPath: string, slug: string) => Promise<void>;
   /** Check if a worktree exists for the given slug */
   exists: (projectPath: string, slug: string) => boolean;
 }
@@ -104,14 +102,13 @@ function stripFrontmatter(content: string): string {
  * Read the project's CLAUDE.md, stripping any auto-generated guidelines section
  * to keep the agent's CLAUDE.md focused on rules.
  */
-function readProjectRules(projectPath: string): string {
+async function readProjectRules(projectPath: string): Promise<string> {
   const claudeMdPath = join(projectPath, 'CLAUDE.md');
   if (!existsSync(claudeMdPath)) {
     return '';
   }
   try {
-    const content = readFileSync(claudeMdPath, 'utf-8');
-    // Keep the rules section (# ADC — Project Rules), drop auto-generated guidelines
+    const content = await readFile(claudeMdPath, 'utf-8');
     const guidelinesMarker = '# ADC — Guidelines';
     const markerIndex = content.indexOf(guidelinesMarker);
     if (markerIndex > 0) {
@@ -126,14 +123,14 @@ function readProjectRules(projectPath: string): string {
 /**
  * Read the agent definition file and strip its YAML frontmatter.
  */
-function readAgentDefinition(projectPath: string, agentRole: string): string {
+async function readAgentDefinition(projectPath: string, agentRole: string): Promise<string> {
   const agentFile = join(projectPath, '.claude', 'agents', `${agentRole}.md`);
   if (!existsSync(agentFile)) {
     agentLogger.warn(`[WorktreeProvisioner] Agent file not found: ${agentFile}`);
     return '';
   }
   try {
-    const content = readFileSync(agentFile, 'utf-8');
+    const content = await readFile(agentFile, 'utf-8');
     return stripFrontmatter(content);
   } catch {
     return '';
@@ -254,19 +251,23 @@ function generateClaudeMd(config: ProvisionConfig, projectRules: string, agentBo
  * Fallback: manually copy .claude/ directories and files when the shared
  * setup script is unavailable or fails.
  */
-function fallbackCopyClaudeContext(sourceClaudeDir: string, targetClaudeDir: string): void {
+async function fallbackCopyClaudeContext(sourceClaudeDir: string, targetClaudeDir: string): Promise<void> {
+  // dereference: true resolves symlinks to their real content. Needed on Windows
+  // where creating symlinks requires admin privileges — otherwise cp fails with
+  // EPERM for any .claude/ entry that is itself a symlink (Claude Code 2.0
+  // consolidates skills/agents via symlinks into ~/.agents and ~/.skills).
   for (const dir of CLAUDE_DIRS_TO_COPY) {
     const source = join(sourceClaudeDir, dir);
     const target = join(targetClaudeDir, dir);
     if (existsSync(source)) {
-      cpSync(source, target, { recursive: true });
+      await cp(source, target, { recursive: true, dereference: true });
     }
   }
   for (const file of CLAUDE_FILES_TO_COPY) {
     const source = join(sourceClaudeDir, file);
     const target = join(targetClaudeDir, file);
     if (existsSync(source)) {
-      cpSync(source, target);
+      await cp(source, target, { dereference: true });
     }
   }
 }
@@ -275,7 +276,7 @@ function fallbackCopyClaudeContext(sourceClaudeDir: string, targetClaudeDir: str
 
 export function createWorktreeProvisioner(): WorktreeProvisioner {
   return {
-    provision(config) {
+    async provision(config) {
       const { projectPath, agentType, agentRole, slug } = config;
       const worktreeBase = join(projectPath, WORKTREE_DIR);
       const worktreePath = resolve(join(worktreeBase, slug));
@@ -284,38 +285,35 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
       agentLogger.info(`[WorktreeProvisioner] Provisioning worktree: ${slug} at ${worktreePath}`);
 
       // ── 1. Create git worktree ──────────────────────────────
-      mkdirSync(worktreeBase, { recursive: true });
+      await mkdir(worktreeBase, { recursive: true });
 
       // Clean up stale worktree if it exists
       if (existsSync(worktreePath)) {
         agentLogger.info(`[WorktreeProvisioner] Removing stale worktree: ${worktreePath}`);
         try {
-          execSync(`git worktree remove --force "${worktreePath}"`, {
+          await execAsync(`git worktree remove --force "${worktreePath}"`, {
             cwd: projectPath,
             timeout: 15_000,
-            stdio: 'pipe',
           });
         } catch {
           // Worktree may not be registered in git — force-remove the directory
-          rmSync(worktreePath, { recursive: true, force: true });
+          await rm(worktreePath, { recursive: true, force: true });
         }
       }
 
       // Delete branch if it exists from a previous run
       try {
-        execSync(`git branch -D "${branch}"`, {
+        await execAsync(`git branch -D "${branch}"`, {
           cwd: projectPath,
           timeout: 10_000,
-          stdio: 'pipe',
         });
       } catch {
         // Branch doesn't exist — that's fine
       }
 
-      execSync(`git worktree add "${worktreePath}" -b "${branch}"`, {
+      await execAsync(`git worktree add "${worktreePath}" -b "${branch}"`, {
         cwd: projectPath,
         timeout: 30_000,
-        stdio: 'pipe',
       });
 
       agentLogger.info(`[WorktreeProvisioner] Git worktree created on branch: ${branch}`);
@@ -324,29 +322,29 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
       // Copies gitignored config (.claude/settings.json, .env) and installs deps
       const sourceClaudeDir = join(projectPath, '.claude');
       const targetClaudeDir = join(worktreePath, '.claude');
-      mkdirSync(targetClaudeDir, { recursive: true });
+      await mkdir(targetClaudeDir, { recursive: true });
 
       try {
-        execSync(
+        await execAsync(
           `bash scripts/worktree-setup.sh "${worktreePath}" "${projectPath}"`,
-          { cwd: projectPath, timeout: 120_000, stdio: 'pipe' },
+          { cwd: projectPath, timeout: 120_000 },
         );
         agentLogger.info('[WorktreeProvisioner] Shared setup script completed');
       } catch (setupError) {
         agentLogger.warn('[WorktreeProvisioner] Setup script failed, falling back to manual copy', {
           error: setupError,
         });
-        fallbackCopyClaudeContext(sourceClaudeDir, targetClaudeDir);
+        await fallbackCopyClaudeContext(sourceClaudeDir, targetClaudeDir);
       }
 
       agentLogger.info('[WorktreeProvisioner] .claude/ context copied');
 
       // ── 3. Generate agent-specific CLAUDE.md ────────────────
-      const projectRules = readProjectRules(projectPath);
-      const agentBody = readAgentDefinition(projectPath, agentRole);
+      const projectRules = await readProjectRules(projectPath);
+      const agentBody = await readAgentDefinition(projectPath, agentRole);
       const claudeMdContent = generateClaudeMd(config, projectRules, agentBody);
       const claudeMdPath = join(worktreePath, 'CLAUDE.md');
-      writeFileSync(claudeMdPath, claudeMdContent, 'utf-8');
+      await writeFile(claudeMdPath, claudeMdContent, 'utf-8');
 
       agentLogger.info(`[WorktreeProvisioner] CLAUDE.md generated for ${agentRole}`);
 
@@ -355,18 +353,17 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
         const hooks = generateTeamLeadHooks();
         const settingsLocalPath = join(targetClaudeDir, 'settings.local.json');
 
-        // Merge with any existing settings.local.json
         let existing: Record<string, unknown> = {};
         if (existsSync(settingsLocalPath)) {
           try {
-            existing = JSON.parse(readFileSync(settingsLocalPath, 'utf-8')) as Record<string, unknown>;
+            existing = JSON.parse(await readFile(settingsLocalPath, 'utf-8')) as Record<string, unknown>;
           } catch {
             // Malformed — start fresh
           }
         }
 
         const merged = { ...existing, ...hooks };
-        writeFileSync(settingsLocalPath, JSON.stringify(merged, null, 2), 'utf-8');
+        await writeFile(settingsLocalPath, JSON.stringify(merged, null, 2), 'utf-8');
 
         agentLogger.info('[WorktreeProvisioner] Team-lead enforcement hooks written');
       }
@@ -374,43 +371,36 @@ export function createWorktreeProvisioner(): WorktreeProvisioner {
       return { worktreePath, branch, claudeMdPath };
     },
 
-    teardown(projectPath, slug) {
+    async teardown(projectPath, slug) {
       const worktreePath = resolve(join(projectPath, WORKTREE_DIR, slug));
       const branch = `worktree/${slug}`;
 
       agentLogger.info(`[WorktreeProvisioner] Tearing down worktree: ${slug}`);
 
-      // Remove the worktree
       try {
-        execSync(`git worktree remove --force "${worktreePath}"`, {
+        await execAsync(`git worktree remove --force "${worktreePath}"`, {
           cwd: projectPath,
           timeout: 15_000,
-          stdio: 'pipe',
         });
       } catch {
-        // Force-remove if git fails
         if (existsSync(worktreePath)) {
-          rmSync(worktreePath, { recursive: true, force: true });
+          await rm(worktreePath, { recursive: true, force: true });
         }
       }
 
-      // Prune stale worktree entries
       try {
-        execSync('git worktree prune', {
+        await execAsync('git worktree prune', {
           cwd: projectPath,
           timeout: 10_000,
-          stdio: 'pipe',
         });
       } catch {
         // Non-critical
       }
 
-      // Delete the branch
       try {
-        execSync(`git branch -D "${branch}"`, {
+        await execAsync(`git branch -D "${branch}"`, {
           cwd: projectPath,
           timeout: 10_000,
-          stdio: 'pipe',
         });
       } catch {
         // Branch may already be gone

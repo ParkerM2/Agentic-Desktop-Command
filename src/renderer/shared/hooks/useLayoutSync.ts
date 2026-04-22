@@ -7,9 +7,13 @@
  *
  * Call once in the root layout so the layout store picks up persisted sidebar
  * state, project tabs, and active project before first paint.
+ *
+ * Returns `initState` so the root layout can show a loading overlay while
+ * workspace sessions spawn — each team-lead requires git-worktree provisioning
+ * and a setup script, which can take 10–30s per project.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 
 import { ASSISTANT } from '@shared/ipc/assistant/channels';
@@ -21,8 +25,16 @@ import { ipc } from '@renderer/shared/lib/ipc';
 
 import { useLayoutStore } from '../stores/layout-store';
 
-export function useLayoutSync(): void {
+export type WorkspaceInitPhase = 'idle' | 'starting' | 'done';
+
+export interface LayoutSyncState {
+  phase: WorkspaceInitPhase;
+  projectCount: number;
+}
+
+export function useLayoutSync(): LayoutSyncState {
   const hydrate = useLayoutStore((s) => s.hydrate);
+  const [state, setState] = useState<LayoutSyncState>({ phase: 'idle', projectCount: 0 });
 
   useEffect(() => {
     void (async () => {
@@ -50,13 +62,18 @@ export function useLayoutSync(): void {
         // WorkspacePage also calls WORKSPACE.INIT.PROJECT per tab, so this
         // handles the case where tabs were open at last shutdown.
         if (openTabProjects.length > 0) {
+          setState({ phase: 'starting', projectCount: openTabProjects.length });
           await ipc(WORKSPACE.INIT['ALL-PROJECTS'], {
             projects: openTabProjects.map((p) => ({ id: p.id, path: p.path })),
           });
         }
+        setState({ phase: 'done', projectCount: openTabProjects.length });
       } catch {
-        // Settings unavailable — keep defaults
+        // Settings unavailable — keep defaults and don't block the UI
+        setState({ phase: 'done', projectCount: 0 });
       }
     })();
   }, [hydrate]);
+
+  return state;
 }
