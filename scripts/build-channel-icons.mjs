@@ -3,7 +3,7 @@
  *
  * Produces per-channel Windows ICO variants for taskbar disambiguation:
  *   resources/icon-local.ico  — orange-tinted (hue +30°)  — local production builds
- *   resources/icon-dev.ico    — green-tinted  (hue +120°) — dev/HMR builds
+ *   resources/icon-dev.ico    — green-tinted  (hue +140°) — dev/HMR builds
  *
  * Source: resources/icon-optimized.svg (same authoritative SVG used by build-icons.js).
  * Pipeline: sharp rasterizes the SVG at each ICO size and applies .modulate({ hue, saturation })
