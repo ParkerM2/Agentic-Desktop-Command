@@ -27,6 +27,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Separator,
   Text,
   Tooltip,
   TooltipContent,
@@ -226,7 +227,8 @@ export function LayoutSection() {
         </div>
 
         {/* Bottom: SVG preview */}
-        <div className="border-border border-t p-4">
+        <Separator />
+        <div className="p-4">
           <div className="h-[90px] w-full">
             <LayoutPreview preset={layoutPreset} />
           </div>

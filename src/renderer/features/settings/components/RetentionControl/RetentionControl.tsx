@@ -7,7 +7,7 @@ import type { DataStoreEntry, DataStoreUsage, RetentionPolicy } from '@shared/ty
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Checkbox, Input, Label, Spinner } from '@ui';
+import { Button, Checkbox, Input, Label, Separator, Spinner } from '@ui';
 
 import { useRetentionControl } from './useRetentionControl';
 
@@ -161,7 +161,9 @@ export function RetentionControl(props: RetentionControlProps) {
 
         {/* Clear button */}
         {entry.canClear ? (
-          <div className="mt-3 border-t border-border pt-3">
+          <>
+            <Separator className="mt-3" />
+            <div className="pt-3">
             <Button
               className="text-destructive hover:bg-destructive/10"
               disabled={clearPending}
@@ -174,7 +176,8 @@ export function RetentionControl(props: RetentionControlProps) {
               {clearPending ? <Spinner size="sm" /> : null}
               Clear store data
             </Button>
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
 

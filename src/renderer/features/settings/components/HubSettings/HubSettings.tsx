@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Form, FormInput, Input, Label, Spinner } from '@ui';
+import { Button, Form, FormInput, Input, Label, Separator, Spinner } from '@ui';
 
 import {
   useAutoSetupPanel,
@@ -147,7 +147,9 @@ function GenerateKeyPanel({ hubUrl, onGenerated }: GenerateKeyPanelProps) {
       </Button>
 
       {open ? (
-        <div className="border-border space-y-3 border-t p-3">
+        <>
+          <Separator />
+          <div className="space-y-3 p-3">
           <p className="text-muted-foreground text-xs">
             The Hub can mint an API key for you. First-time setup usually needs no secret — leave
             the field blank. If your Hub is locked down with a{' '}
@@ -192,7 +194,8 @@ function GenerateKeyPanel({ hubUrl, onGenerated }: GenerateKeyPanelProps) {
           </Button>
 
           {error === null ? null : <p className="text-destructive text-sm">{error}</p>}
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );
@@ -411,7 +414,8 @@ export function HubSettings() {
               connectMutation.mutate({ url, apiKey });
             }}
           />
-          <div className="border-border border-t pt-4">
+          <Separator />
+          <div className="pt-4">
             <p className="text-muted-foreground mb-3 text-xs uppercase tracking-wide">
               Or connect manually
             </p>

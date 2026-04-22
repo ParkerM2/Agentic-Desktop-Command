@@ -9,7 +9,7 @@ import { Check, ChevronDown } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Spinner } from '@ui';
+import { Button, Separator, Spinner } from '@ui';
 
 import { OAuthConnectionStatus } from '../OAuthConnectionStatus';
 import { OAuthProviderForm } from '../OAuthProviderForm';
@@ -82,8 +82,10 @@ export function OAuthProviderSettings() {
             </Button>
 
             {isExpanded ? (
-              <div className="border-border border-t px-4 pb-4">
-                <OAuthProviderForm
+              <>
+                <Separator />
+                <div className="px-4 pb-4">
+                  <OAuthProviderForm
                   isPending={saveMutation.isPending}
                   name={provider.name}
                   onSave={(clientId, clientSecret) => {
@@ -94,7 +96,8 @@ export function OAuthProviderSettings() {
                   hasCredentials={provider.hasCredentials}
                   provider={provider.name}
                 />
-              </div>
+                </div>
+              </>
             ) : null}
           </div>
         );

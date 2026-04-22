@@ -17,7 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-import { Button, Card, CardContent, InlineAlert, Input, Label } from '@ui';
+import { Button, Card, CardContent, Heading, InlineAlert, Input, Label, Separator } from '@ui';
 
 import { useHubSetupPage } from './useHubSetupPage';
 
@@ -229,7 +229,7 @@ export function HubSetupPage({ onSuccess, onNavigateToLogin, onSkip }: HubSetupP
             <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-lg bg-primary/10">
               <Server className="text-primary size-6" />
             </div>
-            <h1 className="text-card-foreground text-2xl font-bold">Welcome to ADC</h1>
+            <Heading as="h1" className="text-card-foreground font-bold">Welcome to ADC</Heading>
             <p className="text-muted-foreground text-sm">
               ADC Hub is your personal server that syncs tasks, projects, and agent
               activity across devices. Let&apos;s get it running.
@@ -249,7 +249,8 @@ export function HubSetupPage({ onSuccess, onNavigateToLogin, onSkip }: HubSetupP
           />
 
           {/* Manual connection — collapsible for advanced users */}
-          <div className="border-border border-t pt-4">
+          <Separator />
+          <div className="pt-4">
             <Button
               className="text-muted-foreground hover:text-card-foreground w-full justify-start gap-2"
               type="button"
