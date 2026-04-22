@@ -14,7 +14,7 @@ import { Trash2, Volume2, VolumeX, X } from 'lucide-react';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
-import { Button, Heading } from '@ui';
+import { Button, Heading, Separator } from '@ui';
 
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
@@ -83,7 +83,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
       )}
     >
       {/* Header */}
-      <div className="border-border flex items-center justify-between border-b px-3 py-2">
+      <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
           <Heading as="h2" className="text-sm">Assistant</Heading>
           <ProjectSelector
@@ -130,6 +130,7 @@ export function WidgetPanel({ onClose }: WidgetPanelProps) {
           </Button>
         </div>
       </div>
+      <Separator />
 
       {/* Message area */}
       <WidgetMessageArea />

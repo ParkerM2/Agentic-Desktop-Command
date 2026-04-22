@@ -15,6 +15,7 @@ import { cn } from '@renderer/shared/lib/utils';
 import { VoiceButton } from '@features/settings';
 
 import { Button } from '@ui/button';
+import { Separator } from '@ui/separator';
 import { Textarea } from '@ui/textarea';
 
 interface WidgetInputProps {
@@ -60,36 +61,39 @@ export function WidgetInput({ disabled, onSubmit }: WidgetInputProps) {
   }
 
   return (
-    <div className="border-border flex items-end gap-2 border-t p-2.5">
-      <Textarea
-        ref={textareaRef}
-        aria-label="Message assistant"
-        disabled={disabled}
-        placeholder="Ask anything..."
-        resize="none"
-        rows={1}
-        value={draft}
-        className={cn(
-          'max-h-20 min-h-0 flex-1 px-2.5 py-1.5 text-xs',
-        )}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-      <VoiceButton
-        disabled={disabled}
-        size="sm"
-        onTranscript={handleVoiceTranscript}
-      />
-      <Button
-        aria-label="Send message"
-        className="h-7 w-7 shrink-0 p-1.5"
-        disabled={disabled === true || draft.trim().length === 0}
-        size="icon"
-        variant="primary"
-        onClick={handleSubmit}
-      >
-        <ArrowUp className="h-3.5 w-3.5" />
-      </Button>
-    </div>
+    <>
+      <Separator />
+      <div className="flex items-end gap-2 p-2.5">
+        <Textarea
+          ref={textareaRef}
+          aria-label="Message assistant"
+          disabled={disabled}
+          placeholder="Ask anything..."
+          resize="none"
+          rows={1}
+          value={draft}
+          className={cn(
+            'max-h-20 min-h-0 flex-1 px-2.5 py-1.5 text-xs',
+          )}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <VoiceButton
+          disabled={disabled}
+          size="sm"
+          onTranscript={handleVoiceTranscript}
+        />
+        <Button
+          aria-label="Send message"
+          className="h-7 w-7 shrink-0 p-1.5"
+          disabled={disabled === true || draft.trim().length === 0}
+          size="icon"
+          variant="primary"
+          onClick={handleSubmit}
+        >
+          <ArrowUp className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </>
   );
 }
