@@ -15,6 +15,7 @@ import { app } from 'electron';
 
 import { APP_EVENTS } from '@shared/ipc/app/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
+import type { AppChannel } from '@shared/types/channel';
 
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
@@ -160,6 +161,7 @@ export interface ServiceRegistryResult {
 export function createServiceRegistry(
   getMainWindow: () => Electron.BrowserWindow | null,
   agentHostClient: AgentHostClient,
+  channel: AppChannel,
 ): ServiceRegistryResult {
   // ─── Tier 0: Eager — Router, DB, Auth, Settings, Error/Health, Project ───
 
@@ -454,7 +456,7 @@ export function createServiceRegistry(
 
   // ─── Tier 1: App update + hotkeys ────────────────────────────
 
-  const appUpdateService = lazyService(() => createAppUpdateService(router));
+  const appUpdateService = lazyService(() => createAppUpdateService({ router, channel }));
 
   const quickInput = lazyService(() =>
     createQuickInputWindow({

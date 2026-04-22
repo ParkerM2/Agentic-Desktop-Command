@@ -23,6 +23,8 @@ import type {
   EventPayload,
 } from '@shared/ipc-contract';
 import { ipcInvokeContract, ipcEventContract } from '@shared/ipc-contract';
+import { isAppChannel } from '@shared/types/channel';
+import type { AppChannel } from '@shared/types/channel';
 
 // ─── Channel Allowlists (defense-in-depth) ──────────────────
 const ALLOWED_INVOKE = new Set(Object.keys(ipcInvokeContract));
@@ -110,11 +112,20 @@ const agentHostBridge = {
 
 contextBridge.exposeInMainWorld('agentHost', agentHostBridge);
 
+function resolveAppChannel(): AppChannel {
+  const envValue = process.env[ENV_VARS.ADC_CHANNEL] ?? '';
+  if (isAppChannel(envValue)) return envValue;
+  if (isAppChannel(__ADC_CHANNEL__)) return __ADC_CHANNEL__;
+  return process.env[ENV_VARS.ADC_DEV_MODE] === 'true' ? 'dev' : 'release';
+}
+const channel: AppChannel = resolveAppChannel();
+
 const appInfo = {
   devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
   version: process.env.npm_package_version ?? 'unknown',
   devEmail: process.env[ENV_VARS.ADC_DEV_EMAIL] ?? '',
   devPassword: process.env[ENV_VARS.ADC_DEV_PASSWORD] ?? '',
+  channel,
 } as const;
 
 contextBridge.exposeInMainWorld(APP_INFO_BRIDGE, appInfo);
@@ -139,6 +150,7 @@ declare global {
       version: string;
       devEmail: string;
       devPassword: string;
+      channel: AppChannel;
     };
     preloads: {
       testSuiteRecorder: string;
