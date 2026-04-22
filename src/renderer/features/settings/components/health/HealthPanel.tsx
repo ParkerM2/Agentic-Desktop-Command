@@ -23,7 +23,7 @@ import type { ErrorEntry, ErrorSeverity } from '@shared/types';
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
-import { Badge, Button, ScrollArea, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { Badge, Button, Heading, ScrollArea, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import {
   useClearErrorLog,
@@ -277,9 +277,9 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
     >
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-foreground text-sm font-semibold">
+        <Heading as="h3" className="text-sm">
           System Health
-        </h3>
+        </Heading>
         <Button
           aria-label="Close health panel"
           size="icon"
@@ -294,9 +294,9 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
       {/* Service Health Table */}
       {services.length > 0 ? (
         <div className="border-border border-b px-4 py-3">
-          <h4 className="text-muted-foreground mb-2 text-[10px] font-semibold uppercase tracking-wide">
+          <Heading as="h4" className="text-muted-foreground mb-2 text-[10px] uppercase tracking-wide">
             Services
-          </h4>
+          </Heading>
           <div className="space-y-1.5">
             {services.map((svc) => {
               const statusConfig = SERVICE_STATUS_CONFIG[svc.status];

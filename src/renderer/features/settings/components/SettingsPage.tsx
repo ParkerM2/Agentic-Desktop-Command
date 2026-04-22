@@ -10,7 +10,7 @@ import type { ThemeMode } from '@shared/types';
 
 import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
-import { PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
+import { Heading, PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
@@ -121,9 +121,9 @@ export function SettingsPage() {
               onFontSizeChange={handleFontSizeChange}
             />
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Language
-              </h2>
+              </Heading>
               <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
                 <span>English</span>
                 <span className="text-muted-foreground text-xs">Only language available</span>
@@ -140,30 +140,30 @@ export function SettingsPage() {
 
           <PageHeader.TabContent value="hub">
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Hub Connection
-              </h2>
+              </Heading>
               <HubSettings />
             </section>
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="integrations">
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Claude Code
-              </h2>
+              </Heading>
               <ClaudeAuthSettings />
             </section>
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 GitHub
-              </h2>
+              </Heading>
               <GitHubAuthSettings />
             </section>
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 OAuth Providers
-              </h2>
+              </Heading>
               <OAuthProviderSettings />
             </section>
           </PageHeader.TabContent>
@@ -171,9 +171,9 @@ export function SettingsPage() {
           <PageHeader.TabContent value="storage">
             <DataLocationSection />
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Storage Management
-              </h2>
+              </Heading>
               <StorageManagementSection />
             </section>
           </PageHeader.TabContent>
@@ -207,9 +207,9 @@ function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
     <>
       <BackgroundSettings />
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           AI Assistant
-        </h2>
+        </Heading>
         <div className="border-border bg-card space-y-4 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -246,24 +246,24 @@ function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
       </section>
       <AppBehaviorSection />
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Assistant &amp; Webhooks
-        </h2>
+        </Heading>
         <WebhookSettings />
       </section>
       <HotkeySettings />
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Voice
-        </h2>
+        </Heading>
         <div className="border-border bg-card rounded-lg border p-4">
           <VoiceSettings />
         </div>
       </section>
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           About
-        </h2>
+        </Heading>
         <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
       </section>
     </>

@@ -21,6 +21,7 @@ import { useLayoutStore, useThemeStore } from '@renderer/shared/stores';
 
 import {
   Button,
+  Heading,
   Label,
   Select,
   SelectContent,
@@ -154,9 +155,9 @@ export function LayoutSection() {
 
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+      <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         Layout
-      </h2>
+      </Heading>
 
       <div className="border-border overflow-hidden rounded-lg border">
         {/* Top row: preset + theme */}

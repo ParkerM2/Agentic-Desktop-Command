@@ -21,6 +21,7 @@ import {
   Card,
   CardContent,
   CardHeader,
+  Heading,
   Input,
   Label,
   PageContent,
@@ -82,9 +83,9 @@ export function TestingSettingsTab() {
         {/* ── Section 1: Test Environment ───────────────────────────── */}
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold uppercase text-text-muted">
+            <Heading as="h2" className="text-sm uppercase text-text-muted">
               Test Environment
-            </h2>
+            </Heading>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
@@ -112,9 +113,9 @@ export function TestingSettingsTab() {
         {/* ── Section 2: BrowserView Dimensions ─────────────────────── */}
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold uppercase text-text-muted">
+            <Heading as="h2" className="text-sm uppercase text-text-muted">
               BrowserView Dimensions
-            </h2>
+            </Heading>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
@@ -149,9 +150,9 @@ export function TestingSettingsTab() {
         {/* ── Section 3: Screenshot Capture ─────────────────────────── */}
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold uppercase text-text-muted">
+            <Heading as="h2" className="text-sm uppercase text-text-muted">
               Screenshot Capture
-            </h2>
+            </Heading>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
@@ -188,9 +189,9 @@ export function TestingSettingsTab() {
         {/* ── Section 4: Saved Configurations ───────────────────────── */}
         <Card>
           <CardHeader>
-            <h2 className="text-sm font-semibold uppercase text-text-muted">
+            <Heading as="h2" className="text-sm uppercase text-text-muted">
               Saved Configurations
-            </h2>
+            </Heading>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">

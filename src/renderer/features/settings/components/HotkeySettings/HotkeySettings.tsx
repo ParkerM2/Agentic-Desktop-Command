@@ -9,7 +9,7 @@ import { Keyboard, RotateCcw } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Input } from '@ui';
+import { Button, Heading, Input } from '@ui';
 
 import { DEFAULT_HOTKEYS, useHotkeyRow, useHotkeySettings } from './useHotkeySettings';
 
@@ -79,10 +79,10 @@ export function HotkeySettings() {
   return (
     <section className="mb-8">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-muted-foreground flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground flex items-center gap-2 text-sm font-medium tracking-wider uppercase">
           <Keyboard className="h-4 w-4" />
           Global Hotkeys
-        </h2>
+        </Heading>
         <Button
           aria-label="Reset hotkeys to defaults"
           size="sm"

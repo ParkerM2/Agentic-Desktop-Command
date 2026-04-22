@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Form, FormInput, Spinner } from '@ui';
+import { Button, Form, FormInput, Heading, Spinner } from '@ui';
 
 import { CollapsibleInstructions } from '../CollapsibleInstructions';
 import { GitHubSetupInstructions } from '../GitHubSetupInstructions';
@@ -191,7 +191,7 @@ export function WebhookSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-foreground text-lg font-semibold">Assistant &amp; Webhooks</h3>
+        <Heading as="h3">Assistant &amp; Webhooks</Heading>
         <p className="text-muted-foreground text-sm">
           Configure Slack and GitHub integrations for external task creation.
         </p>
@@ -199,7 +199,7 @@ export function WebhookSettings() {
 
       {/* Slack Integration */}
       <div className="border-border rounded-lg border p-4">
-        <h4 className="text-foreground mb-3 text-sm font-semibold">Slack Integration</h4>
+        <Heading as="h4" className="mb-3 text-sm">Slack Integration</Heading>
         <div className="flex items-center gap-2">
           <span
             className={cn(
@@ -244,7 +244,7 @@ export function WebhookSettings() {
 
       {/* GitHub Integration */}
       <div className="border-border rounded-lg border p-4">
-        <h4 className="text-foreground mb-3 text-sm font-semibold">GitHub Integration</h4>
+        <Heading as="h4" className="mb-3 text-sm">GitHub Integration</Heading>
         <div className="flex items-center gap-2">
           <span
             className={cn(

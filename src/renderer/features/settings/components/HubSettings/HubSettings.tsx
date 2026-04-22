@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Form, FormInput, Input, Label, Separator, Spinner } from '@ui';
+import { Button, Form, FormInput, Heading, Input, Label, Separator, Spinner } from '@ui';
 
 import {
   useAutoSetupPanel,
@@ -67,7 +67,7 @@ function AutoSetupPanel({ onConnected }: AutoSetupPanelProps) {
       <div className="flex items-start gap-3">
         <Sparkles className="text-primary mt-0.5 h-5 w-5" />
         <div className="flex-1">
-          <h4 className="text-foreground text-sm font-semibold">Set up Hub automatically</h4>
+          <Heading as="h4" className="text-sm">Set up Hub automatically</Heading>
           <p className="text-muted-foreground text-xs">
             Pulls the Hub image, starts the container, generates an API key, and connects — no
             terminal needed.
@@ -355,7 +355,7 @@ export function HubSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-foreground text-lg font-semibold">Hub Connection</h3>
+        <Heading as="h3">Hub Connection</Heading>
         <p className="text-muted-foreground text-sm">
           Connect to an ADC Hub server for cross-device sync and centralized data.
         </p>
