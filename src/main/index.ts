@@ -265,7 +265,7 @@ function initializeApp(): void {
   agentHostClientRef = agentHostClient;
 
   // ── Initialize services ───────────────────────────────────
-  const registry = createServiceRegistry(getMainWindow, agentHostClient);
+  const registry = createServiceRegistry(getMainWindow, agentHostClient, CHANNEL);
 
   // Store refs for createWindow() settings checks and global error reporting
   settingsServiceRef = registry.settingsService;

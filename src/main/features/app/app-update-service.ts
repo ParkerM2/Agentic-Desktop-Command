@@ -6,6 +6,7 @@
  */
 
 import { APP_EVENTS } from '@shared/ipc/app/channels';
+import type { AppChannel } from '@shared/types/channel';
 
 import { appLogger } from '@main/lib/logger';
 
@@ -58,13 +59,32 @@ function loadAutoUpdater(): AutoUpdaterLike | null {
 
 // ── Factory ──────────────────────────────────────────────────
 
-export function createAppUpdateService(router: IpcRouter): AppUpdateService {
+export interface AppUpdateServiceDeps {
+  router: IpcRouter;
+  channel: AppChannel;
+}
+
+export function createAppUpdateService(deps: AppUpdateServiceDeps): AppUpdateService {
+  const { router, channel } = deps;
+
   const status: UpdateStatus = {
     checking: false,
     updateAvailable: false,
     downloading: false,
     downloaded: false,
   };
+
+  // Non-release channels are local binaries — self-update would
+  // overwrite them with the real release build. Always no-op.
+  if (channel !== 'release') {
+    appLogger.info(`[AppUpdateService] Auto-updater disabled on channel=${channel}`);
+    return {
+      checkForUpdates: () => ({ updateAvailable: false }),
+      downloadUpdate: () => ({ success: false }),
+      quitAndInstall: () => ({ success: false }),
+      getStatus: () => ({ ...status }),
+    };
+  }
 
   const updater = loadAutoUpdater();
 
