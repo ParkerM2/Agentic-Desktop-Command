@@ -20,6 +20,7 @@ import {
   wireEventForwarding,
   wireIpcHandlers,
 } from './bootstrap';
+import { getChannelConfig, resolveChannel } from './lib/channel';
 import { appLogger } from './lib/logger';
 import { createTrayManager } from './tray/tray-manager';
 
@@ -27,12 +28,26 @@ import type { AgentHostClient } from './agent-host/agent-host-client';
 import type { ErrorCollector } from './features/app/health';
 import type { SettingsService } from './features/settings/settings-service';
 
-// Dev mode: rename app before any app.getPath('userData') calls so data isolates to %APPDATA%/ADC-Dev/
-const isDevMode = process.env[ENV_VARS.ADC_DEV_MODE] === 'true' || !app.isPackaged;
+// Resolve channel BEFORE any app.getPath() or app.whenReady() so Electron's
+// path resolution picks up the renamed app. Channels isolate userData,
+// cache, logs, crashDumps, the single-instance lock, and Claude CLI state.
+const CHANNEL = resolveChannel({
+  envChannel: process.env[ENV_VARS.ADC_CHANNEL],
+  devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
+  isPackaged: app.isPackaged,
+});
+const CHANNEL_CFG = getChannelConfig(CHANNEL);
 
-if (isDevMode) {
-  app.setName('ADC-Dev');
-}
+app.setName(CHANNEL_CFG.name);
+app.setAppUserModelId(CHANNEL_CFG.aumid);
+
+// Isolate Claude CLI state per channel. CLAUDE_CONFIG_DIR is honored by the
+// Claude CLI for every ~/.claude/* path (sessions, MCP auth, hooks).
+// process.env propagates to utilityProcess.fork and child_process.spawn
+// automatically — see process-manager.ts buildCleanEnv.
+process.env.CLAUDE_CONFIG_DIR ??= join(app.getPath('userData'), '.claude');
+
+appLogger.info(`[Main] Starting ADC on channel=${CHANNEL} (name=${CHANNEL_CFG.name}, aumid=${CHANNEL_CFG.aumid})`);
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
