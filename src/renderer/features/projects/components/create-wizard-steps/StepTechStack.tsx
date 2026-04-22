@@ -4,7 +4,7 @@
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 const TECH_STACK_OPTIONS = [
   { category: 'Frontend', items: ['React', 'Vue', 'Next.js', 'Svelte'] },
@@ -30,7 +30,7 @@ export function StepTechStack({ techStack, onTechStackChange }: StepTechStackPro
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium">Tech Stack</h3>
+        <Heading as="h3" className="text-sm font-medium">Tech Stack</Heading>
         <p className="text-muted-foreground mt-1 text-xs">
           Select the technologies this project will use. These hints help generate CLAUDE.md and
           documentation.

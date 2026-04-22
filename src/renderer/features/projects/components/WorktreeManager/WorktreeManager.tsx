@@ -4,7 +4,7 @@
 
 import { FolderGit2, GitBranch, GitMerge, Plus, Trash2 } from 'lucide-react';
 
-import { Button, Input, Spinner } from '@ui';
+import { Button, Heading, Input, Spinner } from '@ui';
 
 import { MergeConfirmModal } from '@features/merge';
 
@@ -46,10 +46,10 @@ export function WorktreeManager({ projectId, repoPath }: WorktreeManagerProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-2 text-sm font-medium">
+        <Heading as="h3" className="flex items-center gap-2 text-sm font-medium">
           <FolderGit2 className="h-4 w-4" />
           Worktrees
-        </h3>
+        </Heading>
         <Button
           className="text-muted-foreground hover:text-foreground gap-1 text-xs"
           size="sm"

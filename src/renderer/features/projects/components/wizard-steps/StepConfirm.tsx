@@ -2,6 +2,8 @@
  * StepConfirm — Wizard step for reviewing and confirming project setup
  */
 
+import { Heading } from '@ui';
+
 interface WorkspaceOption {
   id: string;
   name: string;
@@ -32,7 +34,7 @@ export function StepConfirm({
 }: StepConfirmProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Confirm Project Setup</h3>
+      <Heading as="h3" className="text-sm font-medium">Confirm Project Setup</Heading>
       <div className="border-border rounded-lg border p-4">
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between">
