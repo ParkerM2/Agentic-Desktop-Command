@@ -4,6 +4,7 @@ import type { ScopeRef } from '@shared/ipc/runners/schemas';
 
 import {
   Button,
+  Heading,
   Select,
   SelectContent,
   SelectItem,
@@ -42,7 +43,7 @@ export function RunnerPanel({ scope, heading = 'Dev Server' }: Props) {
   return (
     <div className="flex flex-col rounded-md border border-border bg-surface">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <h3 className="text-sm font-semibold">{heading}</h3>
+        <Heading as="h3" className="text-sm">{heading}</Heading>
         <span className="text-xs text-text-muted">({scopeLabel})</span>
 
         <Select value={selectedProfileId ?? ''} onValueChange={setSelectedProfileId}>

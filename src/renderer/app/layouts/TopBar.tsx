@@ -33,13 +33,7 @@ import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 const TOOLBAR_CLASSES: Record<ToolbarStyleId, string> = {
   default: 'h-10 bg-card border border-border',
-  compact: 'h-8 bg-card border border-border',
-  spacious: 'h-12 bg-card border border-border',
-  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm',
-  bordered: 'h-10 bg-card border-2 border-border',
-  glass: 'h-10 bg-card/60 backdrop-blur-md border border-border/50',
-  minimal: 'h-8 bg-transparent',
-  inset: 'h-10 bg-muted/40 border border-border',
+  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden',
 };
 
 export function TopBar() {

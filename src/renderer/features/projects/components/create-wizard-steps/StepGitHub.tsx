@@ -6,7 +6,7 @@ import { AlertTriangle } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Input, Label, Switch } from '@ui';
+import { Heading, Input, Label, Switch } from '@ui';
 
 interface StepGitHubProps {
   createGitHubRepo: boolean;
@@ -23,7 +23,7 @@ export function StepGitHub({
 }: StepGitHubProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">GitHub Repository</h3>
+      <Heading as="h3" className="text-sm font-medium">GitHub Repository</Heading>
 
       {/* Toggle: Create GitHub repo */}
       <div className="flex items-center justify-between">

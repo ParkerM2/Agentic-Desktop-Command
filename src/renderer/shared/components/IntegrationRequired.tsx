@@ -14,7 +14,7 @@ import { ROUTES } from '@shared/constants';
 
 import { useOAuthStatus } from '@renderer/shared/hooks';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export function IntegrationRequired({
       {IconComponent ? (
         <IconComponent className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
       ) : null}
-      <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+      <Heading as="h3" className="text-sm">{title}</Heading>
       <p className="text-muted-foreground mx-auto mt-1 max-w-xs text-xs">{description}</p>
       <p className="text-muted-foreground mt-2 text-xs">
         {isConfigured ? 'Authentication required' : 'Not configured'}

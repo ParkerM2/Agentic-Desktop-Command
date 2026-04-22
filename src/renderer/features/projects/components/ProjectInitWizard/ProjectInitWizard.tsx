@@ -13,7 +13,7 @@ import { Check, ChevronLeft, ChevronRight, Loader2, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 import {
   StepConfigure,
@@ -76,7 +76,7 @@ export function ProjectInitWizard({ onClose, onSetupStarted }: ProjectInitWizard
       <div className="bg-card border-border mx-4 flex max-h-[90vh] w-full max-w-lg flex-col rounded-xl border shadow-xl">
         {/* Header */}
         <div className="border-border flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">Initialize Project</h2>
+          <Heading as="h2" className="text-lg">Initialize Project</Heading>
           <Button
             aria-label="Close"
             className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"

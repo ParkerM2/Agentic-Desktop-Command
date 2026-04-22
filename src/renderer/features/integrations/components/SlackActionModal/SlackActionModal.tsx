@@ -7,7 +7,7 @@ import type { ChangeEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 
-import { Button, Input, Label, Textarea } from '@ui';
+import { Button, Input, Label, Separator, Textarea } from '@ui';
 
 import { useSlackActionModal } from './useSlackActionModal';
 
@@ -154,7 +154,7 @@ export function SlackActionModal({ actionType, onClose }: SlackActionModalProps)
           className="bg-background border-border fixed top-1/2 left-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 max-h-[80vh] overflow-y-auto rounded-lg border shadow-2xl"
         >
           {/* Header */}
-          <div className="border-border flex items-center justify-between border-b p-4">
+          <div className="flex items-center justify-between p-4">
             <div>
               <Dialog.Title className="text-lg font-semibold">
                 {actionType ? ACTION_LABELS[actionType] : ''}
@@ -174,6 +174,7 @@ export function SlackActionModal({ actionType, onClose }: SlackActionModalProps)
               </Button>
             </Dialog.Close>
           </div>
+          <Separator />
 
           {/* Form */}
           <div className="space-y-4 p-4">{renderForm()}</div>
@@ -193,7 +194,8 @@ export function SlackActionModal({ actionType, onClose }: SlackActionModalProps)
           ) : null}
 
           {/* Actions */}
-          <div className="border-border flex justify-end gap-2 border-t p-4">
+          <Separator />
+          <div className="flex justify-end gap-2 p-4">
             <Button
               type="button"
               variant="outline"

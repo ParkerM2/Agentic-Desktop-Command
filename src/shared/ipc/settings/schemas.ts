@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 
-import { SIDEBAR_LAYOUT_IDS } from '@shared/types/layout';
+import { LAYOUT_PRESET_IDS } from '@shared/types/layout';
 
 import { DataRetentionSettingsSchema } from '../data-management/schemas';
 
@@ -66,7 +66,7 @@ export const AppSettingsSchema = z.object({
   customThemes: z.array(CustomThemeSchema).optional(),
   language: z.string(),
   uiScale: z.number(),
-  sidebarLayout: z.enum(SIDEBAR_LAYOUT_IDS as [string, ...string[]]).optional(),
+  layoutPreset: z.enum(LAYOUT_PRESET_IDS).optional(),
   onboardingCompleted: z.boolean(),
   fontFamily: z.string().optional(),
   fontSize: z.number().optional(),
@@ -83,7 +83,6 @@ export const AppSettingsSchema = z.object({
   lastRoutePerProject: z.record(z.string(), z.string()).optional(),
   sidebarCollapsed: z.boolean().optional(),
   layoutGap: z.number().min(0).max(16).optional(),
-  iconButtonShape: z.enum(['rounded', 'square', 'pill']).optional(),
 });
 
 // ── Profile Schemas ─────────────────────────────────────────────
@@ -119,9 +118,7 @@ export const LayoutStateSchema = z.object({
   activeProjectId: z.string().nullable(),
   lastRoutePerProject: z.record(z.string(), z.string()),
   sidebarCollapsed: z.boolean(),
-  sidebarLayout: z.string(),
-  toolbarStyle: z.string().optional(),
-  contentLayout: z.string().optional(),
+  layoutPreset: z.string(),
 });
 
 export const LayoutUpdateSchema = z.object({
@@ -129,9 +126,7 @@ export const LayoutUpdateSchema = z.object({
   activeProjectId: z.string().nullable().optional(),
   lastRoutePerProject: z.record(z.string(), z.string()).optional(),
   sidebarCollapsed: z.boolean().optional(),
-  sidebarLayout: z.string().optional(),
-  toolbarStyle: z.string().optional(),
-  contentLayout: z.string().optional(),
+  layoutPreset: z.string().optional(),
 });
 
 // ── Data Directory Schemas ─────────────────────────────────────

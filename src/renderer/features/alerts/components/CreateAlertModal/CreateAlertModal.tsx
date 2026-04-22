@@ -4,7 +4,7 @@
 
 import { Bell, Calendar, Clock, Repeat, X } from 'lucide-react';
 
-import { Button, Checkbox, Input, Label } from '@ui';
+import { Button, Checkbox, Heading, Input, Label } from '@ui';
 
 import { useCreateAlertModal } from './useCreateAlertModal';
 
@@ -55,7 +55,7 @@ export function CreateAlertModal() {
       {/* Modal */}
       <div className="bg-card border-border relative z-10 w-full max-w-md rounded-lg border p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-foreground text-lg font-semibold">Create Alert</h2>
+          <Heading as="h2" className="text-lg">Create Alert</Heading>
           <Button
             className="h-7 w-7 text-muted-foreground"
             size="icon"

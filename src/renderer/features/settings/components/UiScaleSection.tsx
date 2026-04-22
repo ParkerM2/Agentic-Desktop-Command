@@ -2,7 +2,7 @@
  * UiScaleSection — UI scale percentage slider
  */
 
-import { Input } from '@ui';
+import { Heading, Input } from '@ui';
 
 // ── Constants ───────────────────────────────────────────────
 
@@ -20,9 +20,9 @@ interface UiScaleSectionProps {
 export function UiScaleSection({ currentScale, onScaleChange }: UiScaleSectionProps) {
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+      <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         UI Scale
-      </h2>
+      </Heading>
       <div className="flex items-center gap-4">
         <span className="text-muted-foreground w-10 text-sm">{UI_SCALE_MIN}%</span>
         <Input

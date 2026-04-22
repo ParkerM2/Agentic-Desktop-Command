@@ -10,7 +10,7 @@ import type { Screenshot } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 interface ScreenshotViewerProps {
   screenshot: Screenshot | null;
@@ -134,7 +134,7 @@ export function ScreenshotViewer({ screenshot, onClose, className }: ScreenshotV
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-4 py-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-foreground truncate text-sm font-medium">{screenshot.source.name}</h3>
+          <Heading as="h3" className="truncate text-sm font-medium">{screenshot.source.name}</Heading>
           <p className="text-muted-foreground text-xs">
             {screenshot.width} x {screenshot.height} - {formattedTime}
           </p>

@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Form, FormInput, Input, Label, Spinner } from '@ui';
+import { Button, Form, FormInput, Heading, Input, Label, Separator, Spinner } from '@ui';
 
 import {
   useAutoSetupPanel,
@@ -67,7 +67,7 @@ function AutoSetupPanel({ onConnected }: AutoSetupPanelProps) {
       <div className="flex items-start gap-3">
         <Sparkles className="text-primary mt-0.5 h-5 w-5" />
         <div className="flex-1">
-          <h4 className="text-foreground text-sm font-semibold">Set up Hub automatically</h4>
+          <Heading as="h4" className="text-sm">Set up Hub automatically</Heading>
           <p className="text-muted-foreground text-xs">
             Pulls the Hub image, starts the container, generates an API key, and connects — no
             terminal needed.
@@ -147,7 +147,9 @@ function GenerateKeyPanel({ hubUrl, onGenerated }: GenerateKeyPanelProps) {
       </Button>
 
       {open ? (
-        <div className="border-border space-y-3 border-t p-3">
+        <>
+          <Separator />
+          <div className="space-y-3 p-3">
           <p className="text-muted-foreground text-xs">
             The Hub can mint an API key for you. First-time setup usually needs no secret — leave
             the field blank. If your Hub is locked down with a{' '}
@@ -192,7 +194,8 @@ function GenerateKeyPanel({ hubUrl, onGenerated }: GenerateKeyPanelProps) {
           </Button>
 
           {error === null ? null : <p className="text-destructive text-sm">{error}</p>}
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );
@@ -352,7 +355,7 @@ export function HubSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-foreground text-lg font-semibold">Hub Connection</h3>
+        <Heading as="h3">Hub Connection</Heading>
         <p className="text-muted-foreground text-sm">
           Connect to an ADC Hub server for cross-device sync and centralized data.
         </p>
@@ -411,7 +414,8 @@ export function HubSettings() {
               connectMutation.mutate({ url, apiKey });
             }}
           />
-          <div className="border-border border-t pt-4">
+          <Separator />
+          <div className="pt-4">
             <p className="text-muted-foreground mb-3 text-xs uppercase tracking-wide">
               Or connect manually
             </p>

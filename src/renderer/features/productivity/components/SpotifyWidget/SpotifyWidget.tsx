@@ -7,7 +7,7 @@ import { Music, Pause, Play, SkipBack, SkipForward, Volume2 } from 'lucide-react
 import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Card, CardContent, SearchInput, Slider } from '@ui';
+import { Button, Card, CardContent, Heading, SearchInput, Slider } from '@ui';
 
 import { useSpotifyWidget } from './useSpotifyWidget';
 
@@ -166,7 +166,7 @@ export function SpotifyWidget() {
           provider="spotify"
           title="Connect Spotify"
         />
-        <h3 className="text-foreground text-sm font-semibold">Spotify</h3>
+        <Heading as="h3" className="text-sm">Spotify</Heading>
 
         {/* Now Playing */}
         {isLoading ? <p className="text-muted-foreground text-sm">Loading playback...</p> : null}

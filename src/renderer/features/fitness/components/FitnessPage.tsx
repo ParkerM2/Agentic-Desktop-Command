@@ -4,7 +4,7 @@
 
 import { Dumbbell, Plus, Scale, Target, TrendingUp } from 'lucide-react';
 
-import { Button, PageContent, PageHeader, PageLayout } from '@ui';
+import { Button, Heading, PageContent, PageHeader, PageLayout } from '@ui';
 
 import { useFitnessEvents } from '../hooks/useFitnessEvents';
 import { useFitnessUI } from '../store';
@@ -92,7 +92,7 @@ function OverviewTab() {
     <div className="space-y-6">
       <StatsOverview />
       <div>
-        <h3 className="text-foreground mb-3 text-sm font-semibold">Recent Workouts</h3>
+        <Heading as="h3" className="mb-3 text-sm">Recent Workouts</Heading>
         <div className="bg-card border-border rounded-lg border">
           <WorkoutLog />
         </div>

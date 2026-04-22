@@ -16,6 +16,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Heading,
   Input,
   Label,
   ScrollArea,
@@ -119,7 +120,7 @@ interface SectionProps {
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-3 text-sm font-semibold text-foreground">{children}</h3>;
+  return <Heading as="h3" className="mb-3 text-sm">{children}</Heading>;
 }
 
 function FieldRow({ children, className }: { children: React.ReactNode; className?: string }) {

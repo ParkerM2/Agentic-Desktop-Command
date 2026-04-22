@@ -17,6 +17,8 @@ import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 // eslint-disable-next-line boundaries/dependencies -- TODO: fix shared->features violation
 import { useHubStatus, hubKeys } from '@features/settings/api/useHub';
 
@@ -70,13 +72,12 @@ export function HubConnectionIndicator({ collapsed }: HubConnectionIndicatorProp
 
   return (
     <div className="relative">
-      <button
+      <Button
         aria-label={tooltipText}
         title={collapsed ? tooltipText : undefined}
-        type="button"
+        variant="ghost-muted"
         className={cn(
-          'flex w-full items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors',
-          'text-muted-foreground hover:bg-accent hover:text-foreground',
+          'w-full gap-3 px-2.5 py-2 font-normal',
           collapsed && 'justify-center px-0',
         )}
         onClick={handleClick}
@@ -88,7 +89,7 @@ export function HubConnectionIndicator({ collapsed }: HubConnectionIndicatorProp
           className={cn('h-2.5 w-2.5 shrink-0 rounded-full', config.color)}
         />
         {collapsed ? null : <span>Hub</span>}
-      </button>
+      </Button>
 
       {/* Tooltip (only when expanded, since collapsed uses native title) */}
       {!collapsed && tooltipVisible ? (

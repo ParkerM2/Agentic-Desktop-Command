@@ -7,7 +7,7 @@ import { Check, Plus, Trash2, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Input } from '@ui';
+import { Button, Heading, Input } from '@ui';
 
 import { useGoalsList } from './useGoalsList';
 
@@ -30,7 +30,7 @@ export function GoalsList({ goals, completedGoals, onUpdate, onToggle }: GoalsLi
 
   return (
     <div className="space-y-3">
-      <h3 className="text-foreground text-sm font-semibold">Daily Goals</h3>
+      <Heading as="h3" className="text-sm">Daily Goals</Heading>
 
       {goals.length === 0 ? (
         <p className="text-muted-foreground text-xs">No goals set for today.</p>

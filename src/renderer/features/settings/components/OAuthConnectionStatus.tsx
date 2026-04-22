@@ -7,7 +7,7 @@ import { LogIn, LogOut } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Spinner } from '@ui';
+import { Button, Separator, Spinner } from '@ui';
 
 
 import { useOAuthAuthorize, useOAuthRevoke, useOAuthStatus } from '../api/useOAuth';
@@ -61,8 +61,10 @@ export function OAuthConnectionStatus({ provider, hasCredentials }: OAuthConnect
   }
 
   return (
-    <div className="border-border flex items-center justify-between border-t pt-3">
-      {/* Status indicator */}
+    <>
+      <Separator />
+      <div className="flex items-center justify-between pt-3">
+        {/* Status indicator */}
       <div className="flex items-center gap-2">
         <StatusIndicator isAuthenticated={isAuthenticated} isLoading={isStatusLoading} />
       </div>
@@ -102,6 +104,7 @@ export function OAuthConnectionStatus({ provider, hasCredentials }: OAuthConnect
           Connect
         </Button>
       )}
-    </div>
+      </div>
+    </>
   );
 }

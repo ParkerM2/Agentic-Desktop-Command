@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 import { FileText, MessageSquare, Play, X } from 'lucide-react';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 import { PlanFeedbackDialog } from './PlanFeedbackDialog';
 
@@ -49,10 +49,10 @@ export function PlanViewer({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-foreground flex items-center gap-1.5 text-sm font-medium">
+        <Heading as="h4" className="flex items-center gap-1.5 text-sm font-medium">
           <FileText className="h-4 w-4" />
           Agent Plan
-        </h4>
+        </Heading>
         {showActions ? (
           <div className="flex items-center gap-2">
             <Button

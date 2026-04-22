@@ -11,7 +11,7 @@ import type { PhaseStatus, TaskCriterion, TaskPhase } from '@shared/types/agent-
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Progress, ScrollArea } from '@ui';
+import { Heading, Progress, ScrollArea } from '@ui';
 
 import { useTasksTab } from './useTasksTab';
 
@@ -141,7 +141,7 @@ export function TasksTab({ taskId, featureSlug, className }: TasksTabProps) {
       <div className="space-y-4 p-4">
         {/* Task header + progress */}
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-foreground">{task.taskName}</h3>
+          <Heading as="h3" className="text-sm font-medium">{task.taskName}</Heading>
           <div className="flex items-center gap-2">
             <Progress className="flex-1" size="sm" value={progressPercent} />
             <span className="shrink-0 text-xs text-muted-foreground">

@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lastRoutePerProject: {},
   sidebarCollapsed: false,
   layoutGap: 8,
-  iconButtonShape: 'rounded',
+  layoutPreset: 'default',
 };
 
 export const DEFAULT_PROFILES: Profile[] = [{ id: 'default', name: 'Default', isDefault: true }];

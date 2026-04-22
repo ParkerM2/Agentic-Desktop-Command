@@ -8,7 +8,7 @@
 
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2, Terminal } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader } from '@ui';
+import { Button, Card, CardContent, CardHeader, Heading } from '@ui';
 
 import { useClaudeCliStep } from './useClaudeCliStep';
 
@@ -26,7 +26,7 @@ export function ClaudeCliStep({ onNext, onBack }: ClaudeCliStepProps) {
 
   return (
     <div className="flex flex-col items-center">
-      <h2 className="mb-2 text-2xl font-bold text-foreground">Claude Code Setup</h2>
+      <Heading as="h2" className="mb-2 text-2xl font-bold">Claude Code Setup</Heading>
       <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
         ADC uses Claude Code to run autonomous coding agents. Authorize to connect your Anthropic
         account.

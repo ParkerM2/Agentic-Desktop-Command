@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { MessageSquare } from 'lucide-react';
 
-import { Button, Spinner, Textarea } from '@ui';
+import { Button, Heading, Spinner, Textarea } from '@ui';
 
 interface PlanFeedbackDialogProps {
   open: boolean;
@@ -99,7 +99,7 @@ export function PlanFeedbackDialog({
             <MessageSquare className="text-warning h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-foreground text-lg font-semibold">Request Changes</h2>
+            <Heading as="h2" className="text-lg">Request Changes</Heading>
             <p className="text-muted-foreground text-sm">
               Describe what changes you&apos;d like to see in the plan.
             </p>

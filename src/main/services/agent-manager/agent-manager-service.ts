@@ -41,6 +41,7 @@ export interface ProjectOwnerConfig {
   prompt: string;
   model?: string;
   name?: string;
+  projectId?: string;
 }
 
 /** Config for spawning a Team Lead session */
@@ -50,6 +51,7 @@ export interface TeamLeadConfig {
   prompt: string;
   model?: string;
   name?: string;
+  projectId?: string;
 }
 
 // ── Event Types ──────────────────────────────────────────────
@@ -228,7 +230,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
 
   function createSessionObject(
     type: AgentSessionType,
-    config: { name?: string; model?: string; teamName?: string; projectPath?: string },
+    config: { name?: string; model?: string; teamName?: string; projectPath?: string; projectId?: string },
   ): AgentSession {
     const now = new Date().toISOString();
     return {
@@ -238,6 +240,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       status: 'running',
       model: config.model ?? 'claude-sonnet-4-6',
       teamName: config.teamName,
+      projectId: config.projectId,
       branch: undefined,
       sessionJsonlPath: undefined,
       tokenUsage: { input: 0, output: 0 },
@@ -320,6 +323,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
       const session = createSessionObject('project-owner', {
         name: config.name,
         model: config.model,
+        projectId: config.projectId,
       });
 
       const managedProcess = processManager.spawn({
@@ -362,6 +366,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
         name: config.name,
         model: config.model,
         teamName: config.teamName,
+        projectId: config.projectId,
       });
 
       // Team-lead is spawned as a TOP-LEVEL session (no agentFlags).

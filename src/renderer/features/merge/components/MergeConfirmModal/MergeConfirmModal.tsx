@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
   ScrollArea,
+  Separator,
   Tabs,
   TabsContent,
   TabsList,
@@ -150,7 +151,8 @@ export function MergeConfirmModal({
         )}
 
         {/* Footer */}
-        <div className="border-border flex shrink-0 items-center justify-between border-t px-6 py-4">
+        <Separator />
+        <div className="flex shrink-0 items-center justify-between px-6 py-4">
           <div className="text-muted-foreground text-xs">{getFooterMessage()}</div>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => handleOpenChange(false)}>

@@ -4,7 +4,7 @@
 
 import { Plus, Server } from 'lucide-react';
 
-import { Button, Spinner } from '@ui';
+import { Button, Heading, Spinner } from '@ui';
 
 import { WorkspaceCard } from '../WorkspaceCard';
 import { WorkspaceEditor } from '../WorkspaceEditor';
@@ -37,9 +37,9 @@ export function WorkspacesTab() {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
           Workspaces
-        </h2>
+        </Heading>
         <Button size="sm" variant="primary" onClick={handleAddWorkspace}>
           <Plus className="h-3.5 w-3.5" />
           Add Workspace

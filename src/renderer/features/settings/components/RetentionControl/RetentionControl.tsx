@@ -7,7 +7,7 @@ import type { DataStoreEntry, DataStoreUsage, RetentionPolicy } from '@shared/ty
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Checkbox, Input, Label, Spinner } from '@ui';
+import { Button, Checkbox, Heading, Input, Label, Separator, Spinner } from '@ui';
 
 import { useRetentionControl } from './useRetentionControl';
 
@@ -74,7 +74,7 @@ export function RetentionControl(props: RetentionControlProps) {
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="text-foreground truncate text-sm font-medium">{entry.label}</h3>
+              <Heading as="h3" className="truncate text-sm font-medium">{entry.label}</Heading>
               <span
                 className={cn(
                   'inline-flex shrink-0 rounded px-1.5 py-0.5 text-xs font-medium',
@@ -161,7 +161,9 @@ export function RetentionControl(props: RetentionControlProps) {
 
         {/* Clear button */}
         {entry.canClear ? (
-          <div className="mt-3 border-t border-border pt-3">
+          <>
+            <Separator className="mt-3" />
+            <div className="pt-3">
             <Button
               className="text-destructive hover:bg-destructive/10"
               disabled={clearPending}
@@ -174,7 +176,8 @@ export function RetentionControl(props: RetentionControlProps) {
               {clearPending ? <Spinner size="sm" /> : null}
               Clear store data
             </Button>
-          </div>
+            </div>
+          </>
         ) : null}
       </div>
 

@@ -11,6 +11,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  Separator,
   Skeleton,
   Spinner,
   Text,
@@ -113,7 +114,8 @@ function DiffFileItem({ file }: { file: PrDiffFile }) {
       </CollapsibleTrigger>
 
       <CollapsibleContent>
-        <div className="border-border border-t">
+        <Separator />
+        <div>
           {hasPatch ? (
             <pre className="overflow-x-auto p-0 font-mono text-xs leading-5">
               {lines.map(({ lineKey, content }) => {

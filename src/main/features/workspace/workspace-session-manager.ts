@@ -75,6 +75,8 @@ export interface WorkspaceSessionManager {
   getSessions: (projectId: string) => WorkspaceSession[];
   spawnTeamLead: (projectId: string, planPath?: string) => Promise<WorkspaceSession>;
   stopTeamLead: (projectId: string, index: number) => Promise<{ success: boolean }>;
+  /** Stop all sessions (primary + all team-leads) for a project and clean up worktrees */
+  stopProject: (projectId: string) => Promise<{ success: boolean }>;
   sendMessage: (sessionId: string, message: string) => Promise<{ success: boolean }>;
   /** Hand off a plan file to an idle team-lead or spawn a new one */
   handOffPlan: (
@@ -437,6 +439,42 @@ export function createWorkspaceSessionManager(
         sessions.delete(keyStr);
       }
       return Promise.resolve({ success: stopped });
+    },
+
+    stopProject(projectId) {
+      const projectSessions = [...sessions.entries()].filter(
+        ([, s]) => s.key.projectId === projectId,
+      );
+
+      for (const [keyStr, session] of projectSessions) {
+        if (session.agentSessionId) {
+          agentManager.stopSession(session.agentSessionId);
+        }
+        // Clean up worktrees for team-leads
+        if (session.key.type === SESSION_TYPE_TEAM_LEAD) {
+          const slug = worktreeSlugs.get(keyStr);
+          if (slug) {
+            provisioner.teardown(session.projectPath, slug);
+            worktreeSlugs.delete(keyStr);
+          }
+        }
+        sessions.delete(keyStr);
+      }
+
+      // Clean up any teammate worktrees for this project
+      for (const [lookupKey, projectPath] of teammateSlugs.entries()) {
+        if (lookupKey.startsWith(`${projectId}:`)) {
+          const slug = lookupKey.split(':').slice(1).join(':');
+          provisioner.teardown(projectPath, slug);
+          teammateSlugs.delete(lookupKey);
+        }
+      }
+
+      agentLogger.info(
+        `[WorkspaceSessionManager] All sessions stopped for project ${projectId} (${String(projectSessions.length)} sessions)`,
+      );
+
+      return Promise.resolve({ success: true });
     },
 
     sendMessage(sessionId, message) {

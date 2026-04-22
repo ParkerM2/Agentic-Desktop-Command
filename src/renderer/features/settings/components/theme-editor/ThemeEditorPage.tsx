@@ -23,6 +23,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  Heading,
   Input,
   Label,
   PageHeader,
@@ -174,7 +175,7 @@ export function ThemeEditorPage() {
           <Button aria-label="Back to settings" size="icon" variant="ghost" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-foreground text-lg font-semibold">Theme Editor</h1>
+          <Heading as="h1" className="text-lg">Theme Editor</Heading>
         </div>
 
         <div className="flex items-center gap-2">

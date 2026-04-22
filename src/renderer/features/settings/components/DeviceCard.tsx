@@ -8,6 +8,8 @@ import type { Device } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Heading } from '@ui';
+
 interface DeviceCardProps {
   device: Device;
 }
@@ -57,7 +59,7 @@ export function DeviceCard({ device }: DeviceCardProps) {
         {/* Details */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-sm font-semibold">{device.deviceName}</h3>
+            <Heading as="h3" className="truncate text-sm">{device.deviceName}</Heading>
             <span className="text-muted-foreground text-xs">({device.deviceType})</span>
           </div>
 

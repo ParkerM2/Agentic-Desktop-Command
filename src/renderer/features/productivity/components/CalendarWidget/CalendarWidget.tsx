@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, Trash2 } from 'lucide-react';
 
 import { IntegrationRequired } from '@renderer/shared/components/IntegrationRequired';
 
-import { Button, Card, CardContent } from '@ui';
+import { Button, Card, CardContent, Heading } from '@ui';
 
 import { useCalendarWidget } from './useCalendarWidget';
 
@@ -46,7 +46,7 @@ export function CalendarWidget() {
         />
         <div className="flex items-center gap-2">
           <Calendar className="text-primary h-4 w-4" />
-          <h3 className="text-foreground text-sm font-semibold">Today&apos;s Schedule</h3>
+          <Heading as="h3" className="text-sm">Today&apos;s Schedule</Heading>
           <span className="text-muted-foreground text-xs">
             {new Date().toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
           </span>

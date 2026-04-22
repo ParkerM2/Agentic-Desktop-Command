@@ -21,7 +21,7 @@ import type { AgentTextMessage } from '@shared/types/agent-dashboard';
 import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui/button';
+import { Button, Separator } from '@ui';
 
 import { useTextMessage } from './useTextMessage';
 
@@ -165,7 +165,8 @@ export function TextMessage({ message, className, showHandOff = true }: TextMess
   );
 
   const handOffButton = (shouldShowHandOff && activeProjectId !== null && planPath !== null) ? (
-    <div className="border-border/30 mt-2 border-t pt-2">
+    <div className="mt-2">
+      <Separator className="mb-2 opacity-30" />
       <Button
         className="h-7 gap-1.5 text-xs"
         size="sm"

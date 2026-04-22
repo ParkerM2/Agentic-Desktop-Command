@@ -9,7 +9,7 @@ import { ChevronDown, ChevronUp, Send, X } from 'lucide-react';
 
 import type { WorkspaceSession } from '@shared/ipc/workspace';
 
-import { Button, Input, StatusIndicator, Text, ThinkingIndicator } from '@ui';
+import { Button, Input, Separator, StatusIndicator, Text, ThinkingIndicator } from '@ui';
 
 import { AgentChatPanel } from '@features/agent-dashboard';
 
@@ -92,8 +92,8 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
       {/* Collapsible body */}
       {!isCollapsed && (
         <>
+          <Separator />
           <div
-            className="border-border border-t"
             style={{ height: messageHeight }}
           >
             {chatItems.length === 0 ? (
@@ -107,13 +107,17 @@ export function TeamLeadPanel({ session }: TeamLeadPanelProps) {
 
           {/* Thinking indicator */}
           {showThinking ? (
-            <div className="border-border border-t px-3 py-1.5">
-              <ThinkingIndicator label={label} size="xs" />
-            </div>
+            <>
+              <Separator />
+              <div className="px-3 py-1.5">
+                <ThinkingIndicator label={label} size="xs" />
+              </div>
+            </>
           ) : null}
 
           {/* Input */}
-          <div className="border-border flex gap-2 border-t p-2">
+          <Separator />
+          <div className="flex gap-2 p-2">
             <Input
               className="h-7 flex-1 text-xs"
               disabled={status !== 'live'}

@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 
 import type { Workspace } from '@shared/types';
 
-import { Button, Input, Label, Switch, Textarea } from '@ui';
+import { Button, Heading, Input, Label, Switch, Textarea } from '@ui';
 
 import { DeviceSelector } from '../DeviceSelector';
 
@@ -46,9 +46,9 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
       <div className="bg-card border-border mx-4 w-full max-w-md rounded-xl border p-6 shadow-xl">
         {/* Header */}
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
+          <Heading as="h2" className="text-lg">
             {isEditing ? 'Edit Workspace' : 'New Workspace'}
-          </h2>
+          </Heading>
           <Button
             aria-label="Close"
             size="icon"
@@ -100,9 +100,9 @@ export function WorkspaceEditor({ workspace, onClose }: WorkspaceEditorProps) {
 
           {/* Settings */}
           <div className="border-border rounded-lg border p-3">
-            <h3 className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wider">
+            <Heading as="h3" className="text-muted-foreground mb-3 text-xs font-medium uppercase tracking-wider">
               Settings
-            </h3>
+            </Heading>
 
             {/* Auto-start toggle */}
             <div className="mb-3 flex items-center justify-between">

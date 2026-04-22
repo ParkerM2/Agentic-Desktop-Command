@@ -19,7 +19,7 @@ import {
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, ScrollArea } from '@ui';
+import { Button, ScrollArea, Separator } from '@ui';
 
 import { useFileDiff } from '../../api/useMerge';
 import { FileDiffViewer } from '../FileDiffViewer';
@@ -241,7 +241,8 @@ export function ConflictResolver({
 
               {/* Expanded diff view */}
               {isExpanded ? (
-                <div className="border-border border-t">
+                <div>
+                  <Separator />
                   <ConflictFileDiff
                     filePath={file}
                     isDark={isDark}

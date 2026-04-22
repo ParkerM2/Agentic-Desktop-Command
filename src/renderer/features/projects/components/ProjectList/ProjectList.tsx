@@ -8,7 +8,7 @@ import type { Project } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Badge, Button } from '@ui';
+import { Badge, Button, Heading } from '@ui';
 
 import { useGitStatus } from '../../api/useGit';
 
@@ -57,7 +57,7 @@ export function ProjectList() {
   return (
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Projects</h1>
+        <Heading as="h1" className="text-lg">Projects</Heading>
         <Button size="sm" onClick={handleAdd}>
           <Plus className="h-4 w-4" />
           Add Project

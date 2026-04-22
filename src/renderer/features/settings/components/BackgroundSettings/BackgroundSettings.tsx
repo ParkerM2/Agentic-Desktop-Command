@@ -5,7 +5,7 @@
  * keep running in background. Loads initial values from settings.
  */
 
-import { Switch } from '@ui';
+import { Heading, Switch } from '@ui';
 
 import { useBackgroundSettings } from './useBackgroundSettings';
 
@@ -52,9 +52,9 @@ export function BackgroundSettings() {
 
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+      <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         Background &amp; Startup
-      </h2>
+      </Heading>
       <div className="border-border bg-card divide-border divide-y rounded-lg border px-4">
         <ToggleRow
           checked={openAtLogin}
