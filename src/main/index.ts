@@ -99,6 +99,7 @@ function createWindow(): void {
     minHeight: 600,
     frame: false,
     show: false,
+    title: CHANNEL_CFG.label,
     webPreferences: {
       preload: join(__dirname, '../preload/index.cjs'),
       sandbox: false,
@@ -106,6 +107,11 @@ function createWindow(): void {
       nodeIntegration: false,
       webviewTag: true,
     },
+  });
+
+  // Keep title pinned — renderer HTML setting <title> would overwrite it.
+  mainWindow.on('page-title-updated', (event) => {
+    event.preventDefault();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -169,7 +175,7 @@ function createWindow(): void {
     if (rendererCrashCount >= MAX_CONSECUTIVE_CRASHES) {
       const choice = dialog.showMessageBoxSync({
         type: 'error',
-        title: 'ADC — Renderer Crashed',
+        title: `${CHANNEL_CFG.label} — Renderer Crashed`,
         message: 'The app keeps crashing. Would you like to restart or quit?',
         buttons: ['Restart', 'Quit'],
         defaultId: 0,
