@@ -76,7 +76,7 @@ export function WidgetMessageArea() {
       <div
         aria-label="Assistant messages"
         aria-live="polite"
-        className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center"
+        className="text-muted-foreground flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center"
         role="log"
       >
         <MessageSquare className="h-8 w-8 opacity-30" />
@@ -90,7 +90,7 @@ export function WidgetMessageArea() {
       ref={scrollRef}
       aria-label="Assistant messages"
       aria-live="polite"
-      className="flex-1 overflow-y-auto p-3"
+      className="min-h-0 flex-1 overflow-y-auto p-3"
       role="log"
     >
       <div className="space-y-3">

@@ -15,7 +15,9 @@ import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore, useLayoutStore } from '@renderer/shared/stores';
 
 import { Button } from '@ui/button';
+import { Separator } from '@ui/separator';
 import {
+  SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -95,9 +97,11 @@ export function SidebarAssistantButton() {
 
   // ── Expanded sidebar + inline mode → embedded chat ──────
   return (
-    <div className="assistant-inline border-border flex flex-1 flex-col border-t">
+    <div className="assistant-inline flex min-h-0 flex-1 flex-col overflow-hidden">
+      <Separator className="bg-muted-foreground/30" />
+
       {/* Header bar */}
-      <div className="flex items-center justify-between px-2 py-1.5">
+      <div className="flex shrink-0 items-center justify-between px-2 py-1.5">
         <ProjectSelector
           selectedProjectId={activeProjectId}
           onSelect={(id) => setActiveProject(id)}
@@ -124,15 +128,15 @@ export function SidebarAssistantButton() {
         </div>
       </div>
 
+      <Separator />
+
       {/* Message area — scrolls, input stays pinned */}
-      <div className="border-border flex min-h-0 flex-1 flex-col overflow-hidden border-t">
+      <SidebarGroupContent className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <WidgetMessageArea />
-      </div>
+      </SidebarGroupContent>
 
       {/* Input — sticky bottom */}
-      <div className="shrink-0">
-        <AssistantInputBar compact disabled={isThinking} onSubmit={handleSend} />
-      </div>
+      <AssistantInputBar compact disabled={isThinking} onSubmit={handleSend} />
     </div>
   );
 }
