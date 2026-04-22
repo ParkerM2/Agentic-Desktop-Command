@@ -112,10 +112,13 @@ const agentHostBridge = {
 
 contextBridge.exposeInMainWorld('agentHost', agentHostBridge);
 
-const rawChannel = process.env[ENV_VARS.ADC_CHANNEL] || __ADC_CHANNEL__ || '';
-const channel: AppChannel = isAppChannel(rawChannel)
-  ? rawChannel
-  : (process.env[ENV_VARS.ADC_DEV_MODE] === 'true' ? 'dev' : 'release');
+function resolveAppChannel(): AppChannel {
+  const envValue = process.env[ENV_VARS.ADC_CHANNEL] ?? '';
+  if (isAppChannel(envValue)) return envValue;
+  if (isAppChannel(__ADC_CHANNEL__)) return __ADC_CHANNEL__;
+  return process.env[ENV_VARS.ADC_DEV_MODE] === 'true' ? 'dev' : 'release';
+}
+const channel: AppChannel = resolveAppChannel();
 
 const appInfo = {
   devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',

@@ -31,8 +31,15 @@ import type { SettingsService } from './features/settings/settings-service';
 // Resolve channel BEFORE any app.getPath() or app.whenReady() so Electron's
 // path resolution picks up the renamed app. Channels isolate userData,
 // cache, logs, crashDumps, the single-instance lock, and Claude CLI state.
+const envChannelRaw = process.env[ENV_VARS.ADC_CHANNEL] ?? '';
+const bakedChannelRaw = __ADC_CHANNEL__;
+function pickChannelSource(): string | undefined {
+  if (envChannelRaw !== '') return envChannelRaw;
+  if (bakedChannelRaw !== '') return bakedChannelRaw;
+  return undefined;
+}
 const CHANNEL = resolveChannel({
-  envChannel: process.env[ENV_VARS.ADC_CHANNEL] || __ADC_CHANNEL__ || undefined,
+  envChannel: pickChannelSource(),
   devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
   isPackaged: app.isPackaged,
 });
