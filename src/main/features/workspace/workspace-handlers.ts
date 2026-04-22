@@ -50,11 +50,11 @@ export function registerWorkspaceHandlers(
     return workspace.executeTask(projectId, taskDescription, planPath);
   });
 
-  router.handle(WORKSPACE.PROVISION.TEAMMATE, ({ projectId, agentRole, slug, teamName, taskInstructions }) => {
-    return Promise.resolve(workspace.provisionTeammate(projectId, agentRole, slug, teamName, taskInstructions));
+  router.handle(WORKSPACE.PROVISION.TEAMMATE, async ({ projectId, agentRole, slug, teamName, taskInstructions }) => {
+    return await workspace.provisionTeammate(projectId, agentRole, slug, teamName, taskInstructions);
   });
 
-  router.handle(WORKSPACE.TEARDOWN.TEAMMATE, ({ projectId, slug }) => {
-    return Promise.resolve(workspace.teardownTeammate(projectId, slug));
+  router.handle(WORKSPACE.TEARDOWN.TEAMMATE, async ({ projectId, slug }) => {
+    return await workspace.teardownTeammate(projectId, slug);
   });
 }
