@@ -87,6 +87,16 @@ Use `codebase-nav` skill to locate any domain across layers.
 @ui        -> src/renderer/shared/components/ui
 ```
 
+## Channels
+
+Three data-isolated channels run side-by-side. See `docs/architecture/channels.md`.
+
+- `npm run dev` → `ADC-Dev`, `%APPDATA%/ADC-Dev/`
+- `npm run build:local` → `ADC-Local`, `%APPDATA%/ADC-Local/` (local prod smoke test)
+- Installed release → `ADC`, `%APPDATA%/ADC/`
+
+Channel is resolved by `src/main/lib/channel.ts::resolveChannel`. Bake at build time via `ADC_CHANNEL=<channel> electron-vite build`.
+
 ## Codebase Reference (read these FIRST before exploring files)
 
 Pre-built index files in `.claude/codex/` — auto-regenerated on every commit via lefthook:

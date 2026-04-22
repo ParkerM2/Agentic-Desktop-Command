@@ -16,6 +16,8 @@
     "dev:mcp": "electron-vite dev -- --remote-debugging-port=9222",
     "dev:kill": "node scripts/kill-dev.mjs",
     "build": "electron-vite build",
+    "build:local": "cross-env ADC_CHANNEL=local electron-vite build && electron-builder --win --dir --config.productName=ADC-Local --config.appId=com.adc.app.local --config.win.icon=resources/icon-local.ico --config.nsis.artifactName=ADC-Local-Setup-${version}.${ext} --config.extraMetadata.name=adc-local",
+    "build:local:installer": "cross-env ADC_CHANNEL=local electron-vite build && electron-builder --win --config.productName=ADC-Local --config.appId=com.adc.app.local --config.win.icon=resources/icon-local.ico --config.nsis.artifactName=ADC-Local-Setup-${version}.${ext} --config.extraMetadata.name=adc-local",
     "start": "electron .",
     "preview": "electron-vite preview",
     "lint": "eslint src/",
@@ -42,6 +44,9 @@
     "validate:tracker": "node scripts/validate-tracker.mjs",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs && npm run validate:tracker",
     "icons:generate": "node scripts/generate-logo-svg.js && svgo resources/icon.svg -o resources/icon-optimized.svg && node scripts/build-icons.js",
+    "icons:channels": "node scripts/build-channel-icons.mjs",
+    "reset:local": "node scripts/reset-channel.mjs local",
+    "reset:dev": "node scripts/reset-channel.mjs dev",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
@@ -129,6 +134,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.16",
     "autoprefixer": "^10.4.22",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
     "electron": "39.2.7",
     "electron-builder": "^26.4.0",
