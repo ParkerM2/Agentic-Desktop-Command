@@ -8,7 +8,7 @@ import { ChevronDown } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Separator } from '@ui';
 
 
 interface CollapsibleInstructionsProps {
@@ -40,7 +40,12 @@ export function CollapsibleInstructions({
           )}
         />
       </Button>
-      {isOpen ? <div className="border-border border-t px-3 py-3">{children}</div> : null}
+      {isOpen ? (
+        <>
+          <Separator />
+          <div className="px-3 py-3">{children}</div>
+        </>
+      ) : null}
     </div>
   );
 }

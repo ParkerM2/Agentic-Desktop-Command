@@ -53,7 +53,7 @@ import { registerVoiceHandlers } from '../features/settings/voice';
 import { registerWebhookSettingsHandlers } from '../features/settings/webhook-settings-handlers';
 import { registerSpotifyHandlers } from '../features/spotify';
 import { registerTerminalHandlers } from '../features/terminals/terminals-handlers';
-import { registerTestSuiteHandlers } from '../features/test-suite/recorder-handlers';
+import { registerTestSuiteHandlers } from '../features/test-suite/test-suite-handlers';
 import { registerVisualizationHandlers } from '../features/visualization/visualization-handlers';
 import { registerWorkflowHandlers } from '../features/workflow/workflow-handlers';
 import { registerWorkspaceHandlers } from '../features/workspace/workspace-handlers';

@@ -18,6 +18,9 @@ const buttonVariants = cva(
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         'ghost-muted': 'text-muted-foreground hover:bg-accent hover:text-foreground',
         'ghost-destructive': 'text-muted-foreground hover:bg-destructive/10 hover:text-destructive',
+        toolbar: 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        control:
+          'border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground',
         outline:
           'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
@@ -29,6 +32,7 @@ const buttonVariants = cva(
         icon: 'h-9 w-9',
         'icon-sm': 'h-7 w-7 rounded-sm [&_svg]:h-3.5 [&_svg]:w-3.5',
         'icon-xs': 'h-6 w-6 rounded-sm p-1 [&_svg]:h-3.5 [&_svg]:w-3.5',
+        toolbar: 'h-full w-10 rounded-none border-border border-l [&_svg]:h-4 [&_svg]:w-4',
       },
     },
     defaultVariants: {

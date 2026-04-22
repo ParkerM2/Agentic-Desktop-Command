@@ -175,6 +175,12 @@
     "extraResources": [
       "drizzle/**"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "ParkerM2",
+      "repo": "Agentic-Desktop-Command",
+      "releaseType": "draft"
+    },
     "win": {
       "icon": "resources/icon.ico",
       "target": [
@@ -184,7 +190,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "artifactName": "ADC-Setup-${version}-${arch}.${ext}"
     },
     "mac": {
       "icon": "resources/icon.icns",
@@ -196,8 +203,16 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
-      ]
+      ],
+      "artifactName": "ADC-${version}-${arch}.${ext}"
     },
     "linux": {
       "icon": "resources/icon.png",

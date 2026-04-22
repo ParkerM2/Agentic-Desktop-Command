@@ -1,26 +1,13 @@
 /**
- * Sidebar Layout Types
+ * Layout Types — Preset-based layout system
  *
- * Defines the 16 available sidebar layout variants and their metadata.
+ * Two layout presets (default, floating) each map to a fixed
+ * sidebar + toolbar + content combination.
  */
 
-export type SidebarLayoutId =
-  | 'sidebar-01'
-  | 'sidebar-02'
-  | 'sidebar-03'
-  | 'sidebar-04'
-  | 'sidebar-05'
-  | 'sidebar-06'
-  | 'sidebar-07'
-  | 'sidebar-08'
-  | 'sidebar-09'
-  | 'sidebar-10'
-  | 'sidebar-11'
-  | 'sidebar-12'
-  | 'sidebar-13'
-  | 'sidebar-14'
-  | 'sidebar-15'
-  | 'sidebar-16';
+// ── Sidebar ────────────────────────────────────────────────
+
+export type SidebarLayoutId = 'sidebar-04' | 'sidebar-07';
 
 export interface SidebarLayoutMeta {
   id: SidebarLayoutId;
@@ -29,42 +16,17 @@ export interface SidebarLayoutMeta {
 }
 
 export const SIDEBAR_LAYOUTS: SidebarLayoutMeta[] = [
-  { id: 'sidebar-01', label: 'Grouped', description: 'Simple sidebar with navigation grouped by section' },
-  { id: 'sidebar-02', label: 'Collapsible Sections', description: 'Sidebar with collapsible sections' },
-  { id: 'sidebar-03', label: 'Submenus', description: 'Sidebar with inline expandable sub-items' },
-  { id: 'sidebar-04', label: 'Floating', description: 'Floating sidebar with detached visual style' },
-  { id: 'sidebar-05', label: 'Collapsible Submenus', description: 'Sidebar with collapsible sub-items and search' },
-  { id: 'sidebar-06', label: 'Dropdown Submenus', description: 'Sidebar with submenus as dropdowns' },
   { id: 'sidebar-07', label: 'Icon Collapse', description: 'Sidebar that collapses to icons' },
-  { id: 'sidebar-08', label: 'Inset + Secondary', description: 'Inset sidebar with secondary navigation' },
-  { id: 'sidebar-09', label: 'Nested', description: 'Collapsible nested sidebars' },
-  { id: 'sidebar-10', label: 'Popover', description: 'Sidebar in a popover panel' },
-  { id: 'sidebar-11', label: 'File Tree', description: 'Sidebar with collapsible file tree' },
-  { id: 'sidebar-12', label: 'Calendar', description: 'Sidebar with calendar widget' },
-  { id: 'sidebar-13', label: 'Dialog', description: 'Modal-based navigation sidebar' },
-  { id: 'sidebar-14', label: 'Right Side', description: 'Right-aligned sidebar' },
-  { id: 'sidebar-15', label: 'Dual', description: 'Left and right sidebar layout' },
-  { id: 'sidebar-16', label: 'Sticky Header', description: 'Sidebar with persistent header above' },
+  { id: 'sidebar-04', label: 'Floating', description: 'Floating sidebar with detached visual style' },
 ];
 
 export const SIDEBAR_LAYOUT_IDS: [SidebarLayoutId, ...SidebarLayoutId[]] = [
-  'sidebar-01', 'sidebar-02', 'sidebar-03', 'sidebar-04',
-  'sidebar-05', 'sidebar-06', 'sidebar-07', 'sidebar-08',
-  'sidebar-09', 'sidebar-10', 'sidebar-11', 'sidebar-12',
-  'sidebar-13', 'sidebar-14', 'sidebar-15', 'sidebar-16',
+  'sidebar-04', 'sidebar-07',
 ];
 
-// ── Top Toolbar Style ───────────────────────────────────────
+// ── Toolbar ────────────────────────────────────────────────
 
-export type ToolbarStyleId =
-  | 'default'
-  | 'compact'
-  | 'spacious'
-  | 'floating'
-  | 'bordered'
-  | 'glass'
-  | 'minimal'
-  | 'inset';
+export type ToolbarStyleId = 'default' | 'floating';
 
 export interface ToolbarStyleMeta {
   id: ToolbarStyleId;
@@ -74,23 +36,16 @@ export interface ToolbarStyleMeta {
 
 export const TOOLBAR_STYLES: ToolbarStyleMeta[] = [
   { id: 'default', label: 'Standard', description: 'Default toolbar with solid background and bottom border' },
-  { id: 'compact', label: 'Compact', description: 'Reduced height with tighter spacing' },
-  { id: 'spacious', label: 'Spacious', description: 'Taller toolbar with extra breathing room' },
   { id: 'floating', label: 'Floating', description: 'Detached bar with rounded corners and shadow' },
-  { id: 'bordered', label: 'Bordered', description: 'Prominent bottom border separation' },
-  { id: 'glass', label: 'Glass', description: 'Semi-transparent background with backdrop blur' },
-  { id: 'minimal', label: 'Minimal', description: 'Transparent background, no visible border' },
-  { id: 'inset', label: 'Inset', description: 'Recessed bar with muted background tint' },
 ];
 
 export const TOOLBAR_STYLE_IDS: [ToolbarStyleId, ...ToolbarStyleId[]] = [
-  'default', 'compact', 'spacious', 'floating',
-  'bordered', 'glass', 'minimal', 'inset',
+  'default', 'floating',
 ];
 
-// ── Content Area Style ──────────────────────────────────────
+// ── Content ────────────────────────────────────────────────
 
-export type ContentLayoutId = 'flush' | 'padded' | 'bordered' | 'inset';
+export type ContentLayoutId = 'flush' | 'bordered';
 
 export interface ContentLayoutMeta {
   id: ContentLayoutId;
@@ -100,11 +55,50 @@ export interface ContentLayoutMeta {
 
 export const CONTENT_LAYOUTS: ContentLayoutMeta[] = [
   { id: 'flush', label: 'Flush', description: 'No padding — content extends edge to edge' },
-  { id: 'padded', label: 'Padded', description: 'Subtle inner padding around content' },
   { id: 'bordered', label: 'Bordered', description: 'Rounded border with inner spacing' },
-  { id: 'inset', label: 'Inset', description: 'Recessed content area with rounded corners' },
 ];
 
 export const CONTENT_LAYOUT_IDS: [ContentLayoutId, ...ContentLayoutId[]] = [
-  'flush', 'padded', 'bordered', 'inset',
+  'flush', 'bordered',
 ];
+
+// ── Layout Presets ─────────────────────────────────────────
+
+export type LayoutPreset = 'default' | 'floating';
+
+export interface LayoutPresetConfig {
+  id: LayoutPreset;
+  label: string;
+  description: string;
+  sidebar: SidebarLayoutId;
+  toolbar: ToolbarStyleId;
+  content: ContentLayoutId;
+}
+
+export const LAYOUT_PRESETS: LayoutPresetConfig[] = [
+  {
+    id: 'default',
+    label: 'Default',
+    description: 'Icon-collapse sidebar, flush content, standard toolbar',
+    sidebar: 'sidebar-07',
+    toolbar: 'default',
+    content: 'flush',
+  },
+  {
+    id: 'floating',
+    label: 'Floating',
+    description: 'Floating sidebar and toolbar, bordered content area',
+    sidebar: 'sidebar-04',
+    toolbar: 'floating',
+    content: 'bordered',
+  },
+];
+
+export const LAYOUT_PRESET_IDS: [LayoutPreset, ...LayoutPreset[]] = [
+  'default', 'floating',
+];
+
+/** Look up a preset config by ID, falling back to 'default' */
+export function getPresetConfig(id: LayoutPreset): LayoutPresetConfig {
+  return LAYOUT_PRESETS.find((p) => p.id === id) ?? LAYOUT_PRESETS[0];
+}

@@ -8,7 +8,7 @@ import type { ThemeMode } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 
 // ── Constants ───────────────────────────────────────────────
@@ -33,9 +33,9 @@ interface AppearanceModeSectionProps {
 export function AppearanceModeSection({ currentMode, onModeChange }: AppearanceModeSectionProps) {
   return (
     <section className="mb-8">
-      <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+      <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
         Appearance
-      </h2>
+      </Heading>
       <div className="flex gap-3">
         {THEME_MODE_OPTIONS.map((opt) => (
           <Button

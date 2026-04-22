@@ -4,16 +4,11 @@ import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-const TEST_SUITE_KEY = 'test-suite';
-const SCHEDULES_KEY = 'schedules';
-
-const scheduleKeys = {
-  all: (projectId: string) => [TEST_SUITE_KEY, SCHEDULES_KEY, projectId] as const,
-};
+import { testSuiteKeys } from './testSuiteKeys';
 
 export function useSchedules(projectId: string | undefined) {
   return useQuery({
-    queryKey: scheduleKeys.all(projectId ?? ''),
+    queryKey: testSuiteKeys.schedules(projectId ?? ''),
     queryFn: () => ipc(TEST_SUITE.SCHEDULE.LIST, { projectId: projectId ?? '' }),
     enabled: !!projectId,
     staleTime: 10_000,
@@ -26,7 +21,7 @@ export function useCreateSchedule() {
     mutationFn: (input: { scriptId: string; projectId: string; intervalMs: number }) =>
       ipc(TEST_SUITE.SCHEDULE.CREATE, input),
     onSuccess: (_data, variables) => {
-      void qc.invalidateQueries({ queryKey: scheduleKeys.all(variables.projectId) });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.schedules(variables.projectId) });
     },
   });
 }
@@ -37,7 +32,7 @@ export function useUpdateSchedule() {
     mutationFn: (input: { id: string; intervalMs?: number; enabled?: boolean }) =>
       ipc(TEST_SUITE.SCHEDULE.UPDATE, input),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [TEST_SUITE_KEY, SCHEDULES_KEY] });
+      void qc.invalidateQueries({ queryKey: [...testSuiteKeys.all, 'schedules'] });
     },
   });
 }
@@ -47,7 +42,7 @@ export function useDeleteSchedule() {
   return useMutation({
     mutationFn: (id: string) => ipc(TEST_SUITE.SCHEDULE.DELETE, { id }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [TEST_SUITE_KEY, SCHEDULES_KEY] });
+      void qc.invalidateQueries({ queryKey: [...testSuiteKeys.all, 'schedules'] });
     },
   });
 }
@@ -57,7 +52,7 @@ export function useTriggerScheduleNow() {
   return useMutation({
     mutationFn: (id: string) => ipc(TEST_SUITE.SCHEDULE['TRIGGER-NOW'], { id }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [TEST_SUITE_KEY, SCHEDULES_KEY] });
+      void qc.invalidateQueries({ queryKey: [...testSuiteKeys.all, 'schedules'] });
     },
   });
 }

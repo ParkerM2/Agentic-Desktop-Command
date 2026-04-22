@@ -4,13 +4,11 @@ import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-const watchKeys = {
-  list: ['test-suite', 'watch', 'list'] as const,
-};
+import { testSuiteKeys } from './testSuiteKeys';
 
 export function useWatchedScripts() {
   return useQuery({
-    queryKey: watchKeys.list,
+    queryKey: testSuiteKeys.watchList,
     queryFn: () => ipc(TEST_SUITE.WATCH.LIST, {}),
     staleTime: 5_000,
   });
@@ -21,7 +19,7 @@ export function useStartWatch() {
   return useMutation({
     mutationFn: (scriptId: string) => ipc(TEST_SUITE.WATCH.START, { scriptId }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: watchKeys.list });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.watchList });
     },
   });
 }
@@ -31,7 +29,7 @@ export function useStopWatch() {
   return useMutation({
     mutationFn: (scriptId: string) => ipc(TEST_SUITE.WATCH.STOP, { scriptId }),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: watchKeys.list });
+      void qc.invalidateQueries({ queryKey: testSuiteKeys.watchList });
     },
   });
 }

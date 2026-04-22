@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { generateId } from '@shared/lib/id';
 import type { AppSettings, Profile } from '@shared/types';
@@ -76,13 +76,40 @@ function decryptWebhookValue(
   return { decrypted: '', needsMigration: false };
 }
 
+const SETTINGS_KEY = 'app-settings';
+const SETTINGS_CATEGORY = 'settings';
+
 // ── JSON Migration ─────────────────────────────────────────────
 
 /** One-time migration from legacy settings.json into SQLite tables. */
 export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
-  // Only migrate if settingsKv is empty
-  const existing = db.select().from(settingsKv).limit(1).all();
-  if (existing.length > 0) return;
+  // Only migrate if no app-settings row exists
+  const existing = db
+    .select()
+    .from(settingsKv)
+    .where(and(eq(settingsKv.key, SETTINGS_KEY), eq(settingsKv.category, SETTINGS_CATEGORY)))
+    .get();
+  if (existing) return;
+
+  // Also check for legacy 'default' key that may have been overwritten by hub config
+  const legacyRow = db
+    .select()
+    .from(settingsKv)
+    .where(and(eq(settingsKv.key, 'default'), eq(settingsKv.category, SETTINGS_CATEGORY)))
+    .get();
+  if (legacyRow) {
+    // Migrate the row to the new key
+    db.insert(settingsKv)
+      .values({
+        id: generateId(),
+        key: SETTINGS_KEY,
+        category: SETTINGS_CATEGORY,
+        settings: legacyRow.settings,
+        updatedAt: legacyRow.updatedAt,
+      })
+      .run();
+    return;
+  }
 
   const jsonPath = join(dataDir, 'settings.json');
   if (!existsSync(jsonPath)) return;
@@ -96,7 +123,7 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
 
     // Insert settings blob as-is (webhook secrets stay encrypted in JSON)
     db.insert(settingsKv)
-      .values({ id: generateId(), key: 'default', settings: settingsRaw, updatedAt: now })
+      .values({ id: generateId(), key: SETTINGS_KEY, category: SETTINGS_CATEGORY, settings: settingsRaw, updatedAt: now })
       .run();
 
     // Insert profiles
@@ -136,7 +163,11 @@ export function migrateFromJson(db: AdcDatabase, dataDir: string): void {
 export function loadSettingsFile(db: AdcDatabase): { data: SettingsFile; needsMigration: boolean } {
   try {
     // ── Load settings blob ──
-    const row = db.select().from(settingsKv).where(eq(settingsKv.key, 'default')).get();
+    const row = db
+      .select()
+      .from(settingsKv)
+      .where(and(eq(settingsKv.key, SETTINGS_KEY), eq(settingsKv.category, SETTINGS_CATEGORY)))
+      .get();
 
     let settings: Record<string, unknown> = { ...DEFAULT_SETTINGS };
     let needsMigration = false;
@@ -213,7 +244,7 @@ export function saveSettingsFile(db: AdcDatabase, data: SettingsFile): void {
 
   // Upsert settings blob
   db.insert(settingsKv)
-    .values({ id: generateId(), key: 'default', settings: encryptedSettings, updatedAt: now })
+    .values({ id: generateId(), key: SETTINGS_KEY, category: SETTINGS_CATEGORY, settings: encryptedSettings, updatedAt: now })
     .onConflictDoUpdate({
       target: settingsKv.key,
       set: { settings: encryptedSettings, updatedAt: now },

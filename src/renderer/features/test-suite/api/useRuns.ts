@@ -5,23 +5,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { TEST_SUITE } from '@shared/ipc/test-suite/channels';
-import type { QaRunSchema } from '@shared/ipc/test-suite/schemas';
-
 
 import { useMutationErrorToast } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { testSuiteKeys } from './queryKeys';
-
-import type { z } from 'zod';
-
-export type QaRun = z.infer<typeof QaRunSchema>;
+import { testSuiteKeys } from './testSuiteKeys';
 
 /** Fetch all runs, optionally filtered by scriptId */
-export function useRuns(scriptId?: string) {
+export function useRuns(scriptId?: string | null) {
+  const id = scriptId ?? undefined;
   return useQuery({
-    queryKey: scriptId ? testSuiteKeys.runsByScript(scriptId) : testSuiteKeys.runs(),
-    queryFn: () => ipc(TEST_SUITE.LIST.RUNS, { scriptId }),
+    queryKey: id ? testSuiteKeys.runs(id) : testSuiteKeys.allRuns('all'),
+    queryFn: () => ipc(TEST_SUITE.LIST.RUNS, { scriptId: id }),
     staleTime: 10_000,
   });
 }
@@ -44,13 +39,36 @@ export function useRunScript() {
     mutationFn: ({
       scriptId,
       triggeredBy = 'manual',
+      baseUrlOverride,
     }: {
       scriptId: string;
       triggeredBy?: 'manual' | 'scheduled' | 'ci';
-    }) => ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, triggeredBy }),
+      baseUrlOverride?: string;
+    }) => ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, triggeredBy, baseUrlOverride }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.runs() });
+      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.all });
     },
     onError: onError('run QA script'),
+  });
+}
+
+/** Run multiple QA scripts sequentially as a batch */
+export function useBatchRun() {
+  const queryClient = useQueryClient();
+  const { onError } = useMutationErrorToast();
+  return useMutation({
+    mutationFn: (input: {
+      scriptIds: string[];
+      triggeredBy?: 'manual' | 'scheduled' | 'ci';
+      baseUrlOverride?: string;
+    }) => ipc(TEST_SUITE.BATCH.RUN, {
+      scriptIds: input.scriptIds,
+      triggeredBy: input.triggeredBy ?? 'manual',
+      baseUrlOverride: input.baseUrlOverride,
+    }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: testSuiteKeys.all });
+    },
+    onError: onError('batch run scripts'),
   });
 }

@@ -15,6 +15,8 @@ import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from '@ui';
+
 // eslint-disable-next-line boundaries/dependencies -- TODO: fix shared->features violation
 import { hubKeys, useHubStatus } from '@features/settings/api/useHub';
 
@@ -63,14 +65,11 @@ export function HubStatus() {
   }
 
   return (
-    <button
+    <Button
       aria-label={config.label}
+      className={cn('gap-1.5 px-2 py-1 text-xs font-normal')}
       title={config.label}
-      type="button"
-      className={cn(
-        'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
-        'text-muted-foreground hover:bg-accent hover:text-foreground',
-      )}
+      variant="ghost-muted"
       onClick={handleClick}
     >
       {config.showSpinner ? (
@@ -82,6 +81,6 @@ export function HubStatus() {
         />
       )}
       <span>Hub</span>
-    </button>
+    </Button>
   );
 }

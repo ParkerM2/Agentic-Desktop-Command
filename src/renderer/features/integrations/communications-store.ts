@@ -23,7 +23,7 @@ export type IntegrationsTab =
   | 'email'
   | 'notifications';
 
-interface NotificationRule {
+export interface NotificationRule {
   id: string;
   service: 'slack' | 'discord';
   pattern: string;

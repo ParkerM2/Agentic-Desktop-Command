@@ -21,17 +21,13 @@ import { useLayoutStore } from '@renderer/shared/stores';
 /** Applied to the root container — insets both toolbar and content equally */
 const CONTAINER_STYLE: Record<ContentLayoutId, string> = {
   flush: '',
-  padded: 'p-2 gap-2',
-  bordered: 'p-2 gap-2',
-  inset: 'p-3 gap-3',
+  bordered: 'p-[var(--layout-gap)] gap-[var(--layout-gap)]',
 };
 
 /** Applied to the inner content wrapper — decoration only */
 const INNER_STYLE: Record<ContentLayoutId, string> = {
   flush: '',
-  padded: '',
   bordered: 'border-border rounded-lg border',
-  inset: 'bg-muted/30 border-border rounded-xl border',
 };
 
 // ── Sub-components ──────────────────────────────────────────

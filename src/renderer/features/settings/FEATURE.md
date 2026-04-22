@@ -11,7 +11,7 @@ Application settings page with sections for appearance, Hub connection, OAuth pr
 ## Page and Sections
 
 - **`components/SettingsPage.tsx`** — Main settings view composing all section components below
-- Appearance: **`AppearanceModeSection.tsx`**, **`ColorThemeSection.tsx`**, **`UiScaleSection.tsx`**, **`TypographySection.tsx`**, **`BackgroundSettings.tsx`**
+- Appearance: **`AppearanceModeSection.tsx`**, **`LayoutSection.tsx`** (includes color theme selector), **`UiScaleSection.tsx`**, **`TypographySection.tsx`**, **`BackgroundSettings.tsx`**
 - **`components/HotkeySettings.tsx`** — Keyboard shortcut configuration
 - **`components/HubSettings.tsx`** — Hub server connection and status display
 - **`components/ProfileSection.tsx`** — Profile management with **`ProfileCard.tsx`** and **`ProfileFormModal.tsx`**

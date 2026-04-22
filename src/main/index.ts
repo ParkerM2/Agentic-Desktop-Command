@@ -5,9 +5,10 @@
  * Logic lives in bootstrap modules and services — this file orchestrates startup.
  */
 
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { app, BrowserWindow, dialog, MessageChannelMain, shell, session, utilityProcess } from 'electron';
+import { app, BrowserWindow, dialog, MessageChannelMain, protocol, shell, session, utilityProcess } from 'electron';
 
 import { ENV_VARS } from '@shared/constants/env';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
@@ -35,6 +36,11 @@ if (isDevMode) {
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
+
+// Register custom protocol scheme before app is ready (required by Electron)
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'local-file', privileges: { bypassCSP: true, stream: true, supportFetchAPI: true } },
+]);
 
 // Single-instance lock: second invocation exits immediately and focuses the first.
 // Prevents duplicate Electron trees accumulating across `npm run dev` re-runs,
@@ -79,7 +85,7 @@ function createWindow(): void {
     frame: false,
     show: false,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.cjs'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
@@ -318,6 +324,25 @@ void (async () => {
   });
 
   await app.whenReady();
+
+  // Register local-file:// protocol to serve local screenshots securely.
+  // The renderer can't load file:// URLs when served from http://localhost (dev mode),
+  // so we proxy through a custom scheme that Electron allows.
+  protocol.handle('local-file', async (request) => {
+    // URL format: local-file:///C:/Users/.../screenshot.png
+    const filePath = decodeURIComponent(new URL(request.url).pathname);
+    // On Windows the pathname starts with /C:/... — strip the leading slash
+    const normalized = process.platform === 'win32' ? filePath.replace(/^\//, '') : filePath;
+    try {
+      const data = await readFile(normalized);
+      const ext = normalized.split('.').pop()?.toLowerCase() ?? '';
+      const MIME_TYPES: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
+      const mime = MIME_TYPES[ext] ?? 'application/octet-stream';
+      return new Response(data, { headers: { 'Content-Type': mime } });
+    } catch {
+      return new Response('Not found', { status: 404 });
+    }
+  });
 
   // Bypass certificate errors for localhost webview content only
   session.defaultSession.setCertificateVerifyProc((request, callback) => {

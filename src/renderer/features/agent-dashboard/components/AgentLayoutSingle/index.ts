@@ -1,0 +1,1 @@
+export { AgentLayoutSingle } from './AgentLayoutSingle';

@@ -1,0 +1,118 @@
+/**
+ * DiscordPanel — Quick Discord actions and status display
+ */
+
+import { MessageSquare, Phone, Server, Settings, UserCircle } from 'lucide-react';
+
+import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, StatusIndicator } from '@ui';
+
+
+import { DiscordActionModal } from '../DiscordActionModal';
+
+import { useDiscordPanel } from './useDiscordPanel';
+
+import type { DiscordActionType } from '../DiscordActionModal';
+
+type ServiceStatus = 'connected' | 'disconnected' | 'error';
+
+const STATUS_VARIANT: Record<ServiceStatus, 'success' | 'neutral' | 'error'> = {
+  connected: 'success',
+  disconnected: 'neutral',
+  error: 'error',
+};
+
+interface QuickAction {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  actionType: DiscordActionType;
+}
+
+const discordActions: QuickAction[] = [
+  {
+    label: 'Send Message',
+    icon: MessageSquare,
+    description: 'Send to a channel',
+    actionType: 'send_message',
+  },
+  {
+    label: 'Call User',
+    icon: Phone,
+    description: 'Start a voice/video call',
+    actionType: 'call_user',
+  },
+  {
+    label: 'List Servers',
+    icon: Server,
+    description: 'Browse your servers',
+    actionType: 'list_servers',
+  },
+  {
+    label: 'Set Status',
+    icon: UserCircle,
+    description: 'Update your presence',
+    actionType: 'set_status',
+  },
+];
+
+export function DiscordPanel() {
+  const { discordStatus, activeAction, handleAction, handleConnect, handleCloseModal } =
+    useDiscordPanel();
+
+  return (
+    <>
+      <div className="bg-card border-border rounded-lg border p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-foreground text-sm font-semibold">Discord</span>
+            <StatusIndicator
+              label={discordStatus}
+              size="sm"
+              variant={STATUS_VARIANT[discordStatus]}
+            />
+          </div>
+          {discordStatus === 'disconnected' ? (
+            <Button
+              size="sm"
+              type="button"
+              variant="ghost"
+              onClick={handleConnect}
+            >
+              <Settings className="h-3 w-3" />
+              Connect
+            </Button>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {discordActions.map((action) => (
+            <Button
+              key={action.label}
+              disabled={discordStatus === 'error'}
+              type="button"
+              variant="ghost"
+              className={cn(
+                'border-border flex h-auto items-start gap-2 rounded-md border p-3 text-left',
+                'hover:bg-accent transition-colors',
+                'disabled:pointer-events-none disabled:opacity-40',
+              )}
+              onClick={() => {
+                handleAction(action.actionType);
+              }}
+            >
+              <action.icon className="text-muted-foreground mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="text-foreground text-xs font-medium">{action.label}</p>
+                <p className="text-muted-foreground text-xs">{action.description}</p>
+              </div>
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <DiscordActionModal actionType={activeAction} onClose={handleCloseModal} />
+    </>
+  );
+}

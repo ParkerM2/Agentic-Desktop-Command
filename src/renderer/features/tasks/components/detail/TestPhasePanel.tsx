@@ -17,7 +17,7 @@ import { TEST_SUITE_EVENTS } from '@shared/ipc/test-suite/channels';
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { useLayoutStore } from '@renderer/shared/stores/layout-store';
 
-import { Badge, Button, Checkbox, Spinner, Stack, Text } from '@ui';
+import { Badge, Button, Checkbox, Label, Spinner, Stack, Text } from '@ui';
 
 import { useAttachRunToTask } from '@features/test-suite/api/useAttachRunToTask';
 import { useRunScript } from '@features/test-suite/api/useRuns';
@@ -239,7 +239,7 @@ export function TestPhasePanel({ taskId }: TestPhasePanelProps) {
               {scripts.map((script) => {
                 const result = results.find((r) => r.scriptId === script.id);
                 return (
-                  <label
+                  <Label
                     key={script.id}
                     className="flex cursor-pointer items-center gap-3 border-b border-border px-3 py-2.5 hover:bg-muted/50"
                   >
@@ -260,7 +260,7 @@ export function TestPhasePanel({ taskId }: TestPhasePanelProps) {
                       ) : null}
                     </div>
                     {result ? <RunStatusIcon status={result.status} /> : null}
-                  </label>
+                  </Label>
                 );
               })}
             </div>

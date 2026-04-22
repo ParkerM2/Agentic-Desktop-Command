@@ -3,6 +3,7 @@
  */
 
 import {
+  Heading,
   Input,
   Label,
   Select,
@@ -47,7 +48,7 @@ export function StepConfigure({
 }: StepConfigureProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Project Settings</h3>
+      <Heading as="h3" className="text-sm font-medium">Project Settings</Heading>
       <div>
         <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-name">
           Project Name

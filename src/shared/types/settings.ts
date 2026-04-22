@@ -3,7 +3,7 @@
  */
 
 import type { DataRetentionSettings } from './data-management';
-import type { SidebarLayoutId } from './layout';
+import type { LayoutPreset } from './layout';
 import type { SecuritySettings } from './security';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -20,7 +20,7 @@ export interface AppSettings {
   customThemes?: CustomTheme[];
   language: string;
   uiScale: number;
-  sidebarLayout?: SidebarLayoutId;
+  layoutPreset?: LayoutPreset;
   onboardingCompleted: boolean;
   seenVersionWarnings?: string[];
   fontFamily?: string;
@@ -40,6 +40,7 @@ export interface AppSettings {
   activeProjectId?: string | null;
   lastRoutePerProject?: Record<string, string>;
   sidebarCollapsed?: boolean;
+  layoutGap?: number;
 }
 
 /** All CSS variable tokens that make up a color theme */

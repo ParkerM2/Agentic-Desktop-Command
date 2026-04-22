@@ -8,7 +8,7 @@ import { X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Card, ScrollArea } from '@ui';
+import { Button, Card, Heading, ScrollArea } from '@ui';
 
 import { useAgentTeams, useCodebaseGraph } from '../../api/useVisualization';
 import { useVisualizationStore } from '../../store';
@@ -70,7 +70,7 @@ export function NodeDetailPanel({ projectId }: NodeDetailPanelProps) {
     >
       <Card className="flex h-full flex-col rounded-none border-0">
         <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
-          <h3 className="truncate text-sm font-semibold">{getPanelTitle(node)}</h3>
+          <Heading as="h3" className="truncate text-sm">{getPanelTitle(node)}</Heading>
           <Button
             aria-label="Close detail panel"
             size="icon"

@@ -164,7 +164,7 @@ export function FilterBar({ filters, values, onChange, onClear, className }: Fil
 
   return (
     <div
-      className={cn('flex flex-wrap items-center gap-3 px-4 py-3', className)}
+      className={cn('flex flex-wrap items-center gap-[var(--layout-gap-lg)] px-[var(--layout-pad-md)] py-[var(--layout-gap-lg)]', className)}
       data-testid="filter-bar"
     >
       {filters.map((filter) => renderFilter(filter))}

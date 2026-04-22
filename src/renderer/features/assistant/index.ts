@@ -9,7 +9,7 @@ export { SidebarAssistantButton } from './components/SidebarAssistantButton';
 
 // Store
 export { useAssistantStore } from './store';
-export type { ResponseEntry } from './store';
+export type { ChatEntry, ResponseEntry, UserEntry } from './store';
 
 // API
 export { assistantKeys } from './api/queryKeys';

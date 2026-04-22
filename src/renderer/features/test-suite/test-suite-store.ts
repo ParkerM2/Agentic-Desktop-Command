@@ -3,9 +3,12 @@ import { persist } from 'zustand/middleware';
 
 import type { TestSuiteStep } from '@shared/types/test-suite';
 
-export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics' | 'shared-steps';
+import type { StatusFilter } from './lib/constants';
+import type { StoreOutputLine } from './lib/types';
 
-export type StatusFilter = 'all' | 'passed' | 'failed' | 'flaky' | 'no-runs';
+export type { StatusFilter } from './lib/constants';
+
+export type TestSuiteTab = 'recording' | 'library' | 'results' | 'screenshots' | 'export' | 'analytics' | 'shared-steps';
 
 export interface RecordedStep {
   stepIndex: number;
@@ -21,17 +24,32 @@ interface TestSuiteUiState {
   recordedSteps: RecordedStep[];
   shortcutHelpOpen: boolean;
   libraryStatusFilter: StatusFilter;
+
+  // Ephemeral run-output state (not persisted)
+  isRunning: boolean;
+  activeRunId: string | null;
+  outputLines: StoreOutputLine[];
+  _lineCounter: number;
+
   setActiveTab: (tab: TestSuiteTab) => void;
   setSelectedScriptId: (id: string | null) => void;
   setSelectedRunId: (id: string | null) => void;
   setRecordingActive: (active: boolean) => void;
   addStep: (step: RecordedStep) => void;
+  /** Append a raw TestSuiteStep captured from the webview preload */
+  appendRawStep: (step: TestSuiteStep) => void;
   removeStep: (stepIndex: number) => void;
   reorderSteps: (fromIndex: number, toIndex: number) => void;
   updateStep: (stepIndex: number, step: TestSuiteStep) => void;
   clearSteps: () => void;
   setShortcutHelpOpen: (open: boolean) => void;
   setLibraryStatusFilter: (filter: StatusFilter) => void;
+
+  // Run output actions
+  setRunning: (running: boolean) => void;
+  setActiveRunId: (runId: string | null) => void;
+  appendOutputLine: (line: string) => void;
+  clearOutputLines: () => void;
 }
 
 export const useTestSuiteStore = create<TestSuiteUiState>()(
@@ -44,6 +62,13 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       recordedSteps: [],
       shortcutHelpOpen: false,
       libraryStatusFilter: 'all' as StatusFilter,
+
+      // Ephemeral run-output state
+      isRunning: false,
+      activeRunId: null,
+      outputLines: [],
+      _lineCounter: 0,
+
       setActiveTab: (activeTab) => {
         set({ activeTab });
       },
@@ -58,6 +83,13 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       addStep: (step) => {
         set((s) => ({ recordedSteps: [...s.recordedSteps, step] }));
+      },
+      appendRawStep: (step) => {
+        set((s) => {
+          const stepIndex = s.recordedSteps.length;
+          const recorded: RecordedStep = { stepIndex, step, timestamp: new Date().toISOString() };
+          return { recordedSteps: [...s.recordedSteps, recorded] };
+        });
       },
       removeStep: (stepIndex) => {
         set((state) => ({
@@ -92,6 +124,23 @@ export const useTestSuiteStore = create<TestSuiteUiState>()(
       },
       setLibraryStatusFilter: (libraryStatusFilter) => {
         set({ libraryStatusFilter });
+      },
+
+      // Run output actions
+      setRunning: (isRunning) => {
+        set({ isRunning });
+      },
+      setActiveRunId: (activeRunId) => {
+        set({ activeRunId });
+      },
+      appendOutputLine: (line) => {
+        set((s) => ({
+          outputLines: [...s.outputLines, { id: s._lineCounter, text: line }],
+          _lineCounter: s._lineCounter + 1,
+        }));
+      },
+      clearOutputLines: () => {
+        set({ outputLines: [], _lineCounter: 0 });
       },
     }),
     {

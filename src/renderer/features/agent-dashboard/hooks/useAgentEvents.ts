@@ -16,58 +16,38 @@ import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { agentDashboardKeys } from '../api/queryKeys';
 
+import { rule, useQueryInvalidator } from './useQueryInvalidator';
+
+const INVALIDATION_RULES = [
+  rule({
+    channel: AGENT_DASHBOARD_EVENTS.SESSION.STARTED,
+    queryKeys: (session) => [agentDashboardKeys.sessions(), agentDashboardKeys.session(session.id)],
+  }),
+  rule({
+    channel: AGENT_DASHBOARD_EVENTS.SESSION.ENDED,
+    queryKeys: (p) => [agentDashboardKeys.sessions(), agentDashboardKeys.session(p.sessionId)],
+  }),
+  rule({
+    channel: AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED'],
+    queryKeys: (p) => [agentDashboardKeys.sessions(), agentDashboardKeys.session(p.sessionId)],
+  }),
+  rule({
+    channel: AGENT_DASHBOARD_EVENTS.TEAMMATE.JOINED,
+    queryKeys: () => [agentDashboardKeys.sessions()],
+  }),
+  rule({
+    channel: AGENT_DASHBOARD_EVENTS.TEAMMATE.LEFT,
+    queryKeys: () => [agentDashboardKeys.sessions()],
+  }),
+];
+
 export function useAgentDashboardEvents() {
   const queryClient = useQueryClient();
 
-  // ── Session lifecycle ──
+  // ── Declarative invalidation rules ──
+  useQueryInvalidator(INVALIDATION_RULES);
 
-  /** New session spawned or detected -> refresh session list */
-  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION.STARTED, (session) => {
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.sessions(),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.session(session.id),
-    });
-  });
-
-  /** Session ended -> refresh session list and detail */
-  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION.ENDED, (payload) => {
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.sessions(),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.session(payload.sessionId),
-    });
-  });
-
-  /** Session status changed -> refresh that session's detail */
-  useIpcEvent(AGENT_DASHBOARD_EVENTS.SESSION['STATUS-CHANGED'], (payload) => {
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.sessions(),
-    });
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.session(payload.sessionId),
-    });
-  });
-
-  // ── Team membership ──
-
-  /** Teammate joined -> refresh session list */
-  useIpcEvent(AGENT_DASHBOARD_EVENTS.TEAMMATE.JOINED, (_member) => {
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.sessions(),
-    });
-  });
-
-  /** Teammate left -> refresh session list */
-  useIpcEvent(AGENT_DASHBOARD_EVENTS.TEAMMATE.LEFT, (_payload) => {
-    void queryClient.invalidateQueries({
-      queryKey: agentDashboardKeys.sessions(),
-    });
-  });
-
-  // ── Messages ──
+  // ── Messages (uses setQueryData, not invalidation) ──
 
   /** New message received -> append to that session's message cache */
   useIpcEvent(AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED, (message) => {

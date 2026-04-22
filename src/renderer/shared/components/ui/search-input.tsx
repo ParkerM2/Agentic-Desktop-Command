@@ -2,6 +2,7 @@ import { Search, X } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
+import { Button } from './button';
 import { Input } from './input';
 
 import type { InputProps } from './input';
@@ -35,14 +36,15 @@ function SearchInput({ className, value, onClear, showClear, size, ...props }: S
         {...props}
       />
       {hasValue && onClear !== undefined ? (
-        <button
+        <Button
           aria-label="Clear search"
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-          type="button"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2"
+          size="icon-xs"
+          variant="ghost"
           onClick={onClear}
         >
-          <X aria-hidden="true" className={cn(size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
-        </button>
+          <X aria-hidden="true" className={cn('shrink-0', size === 'sm' ? 'h-3 w-3' : 'h-4 w-4')} />
+        </Button>
       ) : null}
     </div>
   );

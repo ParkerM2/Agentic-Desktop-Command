@@ -24,7 +24,7 @@ export interface LayoutState {
   activeProjectId: string | null;
   lastRoutePerProject: Record<string, string>;
   sidebarCollapsed: boolean;
-  sidebarLayout: string;
+  layoutPreset: string;
 }
 
 export interface LayoutUpdate {
@@ -32,7 +32,7 @@ export interface LayoutUpdate {
   activeProjectId?: string | null;
   lastRoutePerProject?: Record<string, string>;
   sidebarCollapsed?: boolean;
-  sidebarLayout?: string;
+  layoutPreset?: string;
 }
 
 export interface SettingsService {
@@ -227,12 +227,18 @@ export function createSettingsService(deps: { db: AdcDatabase; dataDir: string }
     },
 
     getLayout() {
+      // Migration: map legacy individual fields to nearest preset
+      const legacy = store.settings as unknown as Record<string, unknown>;
+      let preset = (store.settings.layoutPreset as string | undefined) ?? 'default';
+      if (!store.settings.layoutPreset && (legacy.toolbarStyle === 'floating' || legacy.sidebarLayout === 'sidebar-04')) {
+        preset = 'floating';
+      }
       return {
         openProjectTabs: store.settings.openProjectTabs ?? [],
         activeProjectId: store.settings.activeProjectId ?? null,
         lastRoutePerProject: store.settings.lastRoutePerProject ?? {},
         sidebarCollapsed: store.settings.sidebarCollapsed ?? false,
-        sidebarLayout: store.settings.sidebarLayout ?? 'sidebar-01',
+        layoutPreset: preset,
       };
     },
 
@@ -249,8 +255,8 @@ export function createSettingsService(deps: { db: AdcDatabase; dataDir: string }
       if (updates.sidebarCollapsed !== undefined) {
         store.settings.sidebarCollapsed = updates.sidebarCollapsed;
       }
-      if (updates.sidebarLayout !== undefined) {
-        store.settings.sidebarLayout = updates.sidebarLayout as AppSettings['sidebarLayout'];
+      if (updates.layoutPreset !== undefined) {
+        store.settings.layoutPreset = updates.layoutPreset as AppSettings['layoutPreset'];
       }
       persist();
       return { success: true };

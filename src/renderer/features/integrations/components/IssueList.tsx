@@ -6,7 +6,7 @@ import { CircleDot, MessageSquare, Plus } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Badge, Button, Card, EmptyState } from '@ui';
+import { Badge, Button, Card, EmptyState, Heading } from '@ui';
 
 import { useGitHubStore } from '../store';
 
@@ -41,9 +41,9 @@ export function IssueList({ issues }: IssueListProps) {
     <div>
       {/* Header with New Issue button */}
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-foreground text-sm font-medium">
+        <Heading as="h3" className="text-sm font-medium">
           {issues.length > 0 ? `${String(issues.length)} issues` : 'Issues'}
-        </h3>
+        </Heading>
         <Button
           type="button"
           onClick={() => setIssueCreateDialogOpen(true)}

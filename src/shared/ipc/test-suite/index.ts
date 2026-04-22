@@ -2,13 +2,18 @@
  * Test Suite IPC — Barrel Export
  */
 
-export * from './analytics-schemas';
-export * from './baseline-schemas';
-export * from './power-schemas';
 export { testSuiteEvents, testSuiteInvoke } from './contract';
 export {
+  AnalyticsSummarySchema,
+  BaselineRecordSchema,
   BrowserViewBoundsSchema,
   BrowserViewCreateInputSchema,
+  DataRowSchema,
+  DiffResultSchema,
+  DiffSensitivitySchema,
+  ErrorPatternSchema,
+  FlakySeveritySchema,
+  FlakyTestSchema,
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
@@ -21,8 +26,31 @@ export {
   QaStepSelectSchema,
   QaStepTypeSchema,
   QaStepWaitSchema,
+  RunHistoryEntrySchema,
+  ScheduleRecordSchema,
+  SharedStepGroupSchema,
+  SlowestTestSchema,
+  StepContextSchema,
   TestSuiteConfigSchema,
   TestSuiteScreenshotSchema,
   TestSuiteStepSchema,
+  TopFailureSchema,
+  TrendPointSchema,
+  TriggeredBySchema,
 } from './schemas';
-export type { TestSuiteConfig, TestSuiteScreenshot } from './schemas';
+export type {
+  AnalyticsSummary,
+  BaselineRecord,
+  DiffResult,
+  QaRun,
+  QaRunReport,
+  QaRunStatus,
+  QaScript,
+  ScheduleRecord,
+  SharedStepGroup,
+  TestSuiteConfig,
+  TestSuiteScreenshot,
+  TestSuiteStep,
+  TrendPoint,
+  TriggeredBy,
+} from './schemas';

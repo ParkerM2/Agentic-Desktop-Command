@@ -1,51 +1,47 @@
 /**
  * Test Suite IPC Contract
  *
- * Defines invoke channels for managing scripts, runs, configs, screenshots,
- * browser view, and export operations. Event channels for streaming run output.
+ * Defines invoke and event channels for: scripts, runs, configs, screenshots,
+ * browser view, export, analytics, watch mode, baselines, diffs, shared steps,
+ * schedules, data-driven runs, auth state, batch runs, and dependency setup.
  */
 
 import { z } from 'zod';
 
 import { SuccessResponseSchema } from '../common/schemas';
 
-import {
-  AnalyticsSummarySchema,
-  ErrorPatternSchema,
-  FlakyTestSchema,
-  RunHistoryEntrySchema,
-  SlowestTestSchema,
-  TopFailureSchema,
-  TrendPointSchema,
-} from './analytics-schemas';
-import {
-  BaselineRecordSchema,
-  DiffResultSchema,
-  DiffSensitivitySchema,
-} from './baseline-schemas';
 import { TEST_SUITE, TEST_SUITE_EVENTS } from './channels';
 import {
-  DataRowSchema,
-  ScheduleRecordSchema,
-  SharedStepGroupSchema,
-} from './power-schemas';
-import {
+  AnalyticsSummarySchema,
+  BaselineRecordSchema,
   BrowserViewBoundsSchema,
   BrowserViewCreateInputSchema,
+  DataRowSchema,
+  DiffResultSchema,
+  DiffSensitivitySchema,
+  ErrorPatternSchema,
+  FlakyTestSchema,
   QaRunReportSchema,
   QaRunSchema,
   QaRunStatusSchema,
   QaScriptSchema,
+  RunHistoryEntrySchema,
+  ScheduleRecordSchema,
+  SharedStepGroupSchema,
+  SlowestTestSchema,
   TestSuiteConfigSchema,
   TestSuiteScreenshotSchema,
   TestSuiteStepSchema,
+  TopFailureSchema,
+  TrendPointSchema,
+  TriggeredBySchema,
 } from './schemas';
 
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const testSuiteInvoke = {
   [TEST_SUITE.LIST.SCRIPTS]: {
-    input: z.object({}),
+    input: z.object({ projectId: z.string() }),
     output: z.array(QaScriptSchema),
   },
   [TEST_SUITE.GET.SCRIPT]: {
@@ -59,6 +55,7 @@ export const testSuiteInvoke = {
       name: z.string(),
       description: z.string().optional(),
       steps: z.array(TestSuiteStepSchema),
+      tags: z.array(z.string()).optional(),
     }),
     output: QaScriptSchema,
   },
@@ -69,7 +66,8 @@ export const testSuiteInvoke = {
   [TEST_SUITE.RUN.SCRIPT]: {
     input: z.object({
       scriptId: z.string(),
-      triggeredBy: z.enum(['manual', 'scheduled', 'ci']).default('manual'),
+      triggeredBy: TriggeredBySchema.default('manual'),
+      baseUrlOverride: z.string().optional(),
     }),
     output: z.object({ runId: z.string() }),
   },
@@ -103,31 +101,31 @@ export const testSuiteInvoke = {
   },
   [TEST_SUITE['BROWSER-VIEW'].CREATE]: {
     input: BrowserViewCreateInputSchema,
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].NAVIGATE]: {
     input: z.object({ url: z.url() }),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].BACK]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].FORWARD]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].RELOAD]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW']['SET-BOUNDS']]: {
     input: BrowserViewBoundsSchema,
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE['BROWSER-VIEW'].DESTROY]: {
     input: z.object({}),
-    output: z.object({ success: z.boolean() }),
+    output: SuccessResponseSchema,
   },
   [TEST_SUITE.CONFIG.GET]: {
     input: z.object({ projectId: z.string() }),
@@ -313,6 +311,37 @@ export const testSuiteInvoke = {
       totalRows: z.number(),
     }),
   },
+  [TEST_SUITE.OPEN.REPORT]: {
+    input: z.object({ reportPath: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.AUTH.SAVE]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.object({ storageStatePath: z.string() }),
+  },
+  [TEST_SUITE.AUTH.CLEAR]: {
+    input: z.object({ projectId: z.string() }),
+    output: SuccessResponseSchema,
+  },
+  [TEST_SUITE.BATCH.RUN]: {
+    input: z.object({
+      scriptIds: z.array(z.string()),
+      triggeredBy: TriggeredBySchema.default('manual'),
+      baseUrlOverride: z.string().optional(),
+    }),
+    output: z.object({
+      runIds: z.array(z.string()),
+      total: z.number(),
+    }),
+  },
+  [TEST_SUITE.SETUP['ENSURE-DEPS']]: {
+    input: z.object({ projectId: z.string() }),
+    output: z.object({
+      installed: z.boolean(),
+      alreadyInstalled: z.boolean(),
+      error: z.string().optional(),
+    }),
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────
@@ -345,7 +374,10 @@ export const testSuiteEvents = {
       runId: z.string(),
       stepIndex: z.number().int(),
       stepLabel: z.string(),
+      stepType: z.string(),
       timestamp: z.string(),
+      status: z.enum(['running', 'passed', 'failed']).optional(),
+      durationMs: z.number().int().optional(),
     }),
   },
   [TEST_SUITE_EVENTS.RUN.COMPLETED]: {

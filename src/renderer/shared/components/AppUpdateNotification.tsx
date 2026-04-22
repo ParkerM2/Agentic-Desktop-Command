@@ -15,6 +15,8 @@ import { APP, APP_EVENTS } from '@shared/ipc/app/channels';
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
 
+import { Button } from '@ui';
+
 // -- Types --
 
 type UpdatePhase = 'available' | 'downloaded';
@@ -79,31 +81,34 @@ export function AppUpdateNotification() {
       </div>
 
       {isDownloaded ? (
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-          type="button"
+        <Button
+          className="shrink-0"
+          size="sm"
+          variant="primary"
           onClick={handleRestart}
         >
           Restart
-        </button>
+        </Button>
       ) : (
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-          type="button"
+        <Button
+          className="shrink-0"
+          size="sm"
+          variant="primary"
           onClick={handleDownload}
         >
           Download
-        </button>
+        </Button>
       )}
 
-      <button
+      <Button
         aria-label="Dismiss update notification"
-        className="text-muted-foreground hover:text-foreground shrink-0 p-0.5"
-        type="button"
+        className="shrink-0"
+        size="icon-xs"
+        variant="ghost"
         onClick={handleDismiss}
       >
-        <X className="h-3.5 w-3.5" />
-      </button>
+        <X className="h-3.5 w-3.5 shrink-0" />
+      </Button>
     </div>
   );
 }
