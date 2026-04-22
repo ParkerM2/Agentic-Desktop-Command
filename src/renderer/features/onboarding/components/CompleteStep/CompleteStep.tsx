@@ -6,7 +6,7 @@
 
 import { Check, Loader2, Rocket } from 'lucide-react';
 
-import { Button, Card, CardContent } from '@ui';
+import { Button, Card, CardContent, Heading } from '@ui';
 
 import { useCompleteStep } from './useCompleteStep';
 
@@ -28,7 +28,7 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
         <Check className="text-success h-10 w-10" />
       </div>
 
-      <h2 className="text-foreground mb-3 text-3xl font-bold">You&apos;re All Set!</h2>
+      <Heading as="h2" className="mb-3 text-3xl font-bold">You&apos;re All Set!</Heading>
 
       <p className="text-muted-foreground mb-8 max-w-md text-lg">
         ADC is ready to help you manage your coding projects with AI-powered agents.
@@ -37,7 +37,7 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
       {/* Quick tips */}
       <Card className="mb-8 w-full max-w-md text-left">
         <CardContent className="p-6">
-          <h3 className="text-foreground mb-4 font-semibold">Quick Tips</h3>
+          <Heading as="h3" className="mb-4">Quick Tips</Heading>
           <ul className="text-muted-foreground space-y-3 text-sm">
             <li className="flex gap-3">
               <Rocket className="text-primary mt-0.5 h-4 w-4 shrink-0" />

@@ -4,7 +4,7 @@
 
 import type { ThemeTokens } from '@shared/types';
 
-import { Separator } from '@ui';
+import { Heading, Separator } from '@ui';
 
 import { ColorControl } from './ColorControl';
 
@@ -23,9 +23,9 @@ interface ColorSectionProps {
 export function ColorSection({ title, tokens, values, onChange }: ColorSectionProps) {
   return (
     <div className="mb-6">
-      <h3 className="text-muted-foreground mb-2 text-xs font-semibold tracking-wider uppercase">
+      <Heading as="h3" className="text-muted-foreground mb-2 text-xs tracking-wider uppercase">
         {title}
-      </h3>
+      </Heading>
       <Separator className="mb-3" />
       <div className="grid grid-cols-2 gap-3">
         {tokens.map((token) => (

@@ -7,7 +7,7 @@
 
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 
-import { Button, Card, CardContent, CardHeader } from '@ui';
+import { Button, Card, CardContent, CardHeader, Heading } from '@ui';
 
 import { useIntegrationsStep } from './useIntegrationsStep';
 
@@ -95,7 +95,7 @@ export function IntegrationsStep({ onBack, onNext, onSkip }: IntegrationsStepPro
 
   return (
     <div className="flex flex-col items-center">
-      <h2 className="mb-2 text-2xl font-bold text-foreground">Integrations</h2>
+      <Heading as="h2" className="mb-2 text-2xl font-bold">Integrations</Heading>
       <p className="mb-6 max-w-md text-center text-sm text-muted-foreground">
         Connect your accounts to unlock additional features. You can always configure these later in
         Settings.
