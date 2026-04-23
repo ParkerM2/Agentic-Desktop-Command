@@ -1,4 +1,11 @@
-import { createHash } from 'node:crypto';
+import {
+  createHash,
+  createPublicKey,
+  randomBytes,
+  verify,
+} from 'node:crypto';
+
+import { ulid } from 'ulid';
 
 import { createNonceStore, type NonceStore } from '../lib/nonce-store.js';
 import {
@@ -26,10 +33,19 @@ interface PairInitBody {
   displayName?: string;
 }
 
+interface PairConfirmBody {
+  clientId: string;
+  nonce: string;
+  signature: string;
+  displayName?: string;
+}
+
 const DEFAULT_INIT_LIMIT = 20;
 const DEFAULT_INIT_WINDOW_MS = 60 * 60 * 1000;
 const DEFAULT_CONFIRM_LIMIT = 20;
 const DEFAULT_CONFIRM_WINDOW_MS = 60 * 60 * 1000;
+
+const EVENT_PAIR_REJECT = 'pair.reject' as const;
 
 const pairInitBodySchema = {
   type: 'object',
@@ -38,6 +54,18 @@ const pairInitBodySchema = {
   properties: {
     clientId: { type: 'string', minLength: 1, maxLength: 64 },
     clientPubKey: { type: 'string', minLength: 1, maxLength: 256 },
+    displayName: { type: 'string', maxLength: 64 },
+  },
+} as const;
+
+const pairConfirmBodySchema = {
+  type: 'object',
+  required: ['clientId', 'nonce', 'signature'],
+  additionalProperties: false,
+  properties: {
+    clientId: { type: 'string', minLength: 1, maxLength: 64 },
+    nonce: { type: 'string', minLength: 1, maxLength: 128 },
+    signature: { type: 'string', minLength: 1, maxLength: 256 },
     displayName: { type: 'string', maxLength: 64 },
   },
 } as const;
@@ -73,7 +101,7 @@ function computePubkeyFingerprint(clientPubKey: string): string | null {
  * in `middleware/api-key.ts`.
  */
 export function createPairRoutes(deps: PairRoutesDeps): FastifyPluginAsync {
-  const { db, audit } = deps;
+  const { db, audit, hubId } = deps;
 
   const initLimit =
     deps.initLimit ??
@@ -108,10 +136,19 @@ export function createPairRoutes(deps: PairRoutesDeps): FastifyPluginAsync {
     `INSERT OR IGNORE INTO client_bindings (client_id, pubkey_der, created_at)
        VALUES (?, ?, ?)`,
   );
-
-  // Reference confirmLimit so it's retained as a closure binding for Task 10.
-  // The `void` keeps ESLint happy without resorting to an `_unused` rename.
-  void confirmLimit;
+  const selectBinding = db.prepare(
+    `SELECT pubkey_der FROM client_bindings WHERE client_id = ?`,
+  );
+  const revokePrevKeys = db.prepare(
+    `UPDATE api_keys
+        SET revoked_at = ?, revoked_reason = ?
+      WHERE client_id = ? AND revoked_at IS NULL`,
+  );
+  const insertKey = db.prepare(
+    `INSERT INTO api_keys
+       (id, key_hash, name, created_at, client_id, display_name, pubkey_fp)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  );
 
   // Plugin body intentionally has no top-level awaits; the Fastify plugin
   // contract requires an async function for typing, but route registration
@@ -181,6 +218,116 @@ export function createPairRoutes(deps: PairRoutesDeps): FastifyPluginAsync {
         });
 
         await reply.status(200).send({ nonce, expiresAt });
+      },
+    );
+
+    app.post<{ Body: PairConfirmBody }>(
+      '/api/pair/confirm',
+      { schema: { body: pairConfirmBodySchema } },
+      async (request, reply) => {
+        const { clientId, nonce, signature, displayName: bodyDisplayName } =
+          request.body;
+
+        const limitResult = confirmLimit.take(clientId);
+        if (!limitResult.allowed) {
+          auditEvent(request, EVENT_PAIR_REJECT, 'rate_limited', {
+            clientId,
+            reason: 'rate_limit_exceeded',
+          });
+          if (typeof limitResult.retryAfterMs === 'number') {
+            void reply.header(
+              'retry-after',
+              Math.ceil(limitResult.retryAfterMs / 1000).toString(),
+            );
+          }
+          await reply.status(429).send({
+            error: 'RateLimited',
+            retryAfterMs: limitResult.retryAfterMs,
+          });
+          return;
+        }
+
+        const binding = selectBinding.get(clientId) as
+          | { pubkey_der: Buffer }
+          | undefined;
+        if (binding === undefined) {
+          auditEvent(request, EVENT_PAIR_REJECT, 'bad_signature', {
+            clientId,
+            reason: 'no_binding',
+          });
+          await reply.status(401).send({ error: 'UnknownClient' });
+          return;
+        }
+
+        let sigOk = false;
+        try {
+          const pubKey = createPublicKey({
+            key: binding.pubkey_der,
+            format: 'der',
+            type: 'spki',
+          });
+          sigOk = verify(
+            null,
+            Buffer.from(nonce, 'base64url'),
+            pubKey,
+            Buffer.from(signature, 'base64url'),
+          );
+        } catch {
+          sigOk = false;
+        }
+        if (!sigOk) {
+          auditEvent(request, EVENT_PAIR_REJECT, 'bad_signature', {
+            clientId,
+            reason: 'signature_verify_failed',
+          });
+          await reply.status(401).send({ error: 'BadSignature' });
+          return;
+        }
+
+        if (!nonces.has(clientId, nonce)) {
+          auditEvent(request, EVENT_PAIR_REJECT, 'expired_nonce', {
+            clientId,
+            reason: 'nonce_not_found_or_expired',
+          });
+          await reply.status(401).send({ error: 'ExpiredNonce' });
+          return;
+        }
+        nonces.consume(clientId, nonce);
+
+        revokePrevKeys.run(Date.now(), 'superseded', clientId);
+
+        const key = randomBytes(32).toString('hex');
+        const keyHash = createHash('sha256').update(key).digest('hex');
+        const pubkeyFp = createHash('sha256')
+          .update(binding.pubkey_der)
+          .digest('hex');
+        const resolvedDisplayName =
+          bodyDisplayName?.trim() !== undefined &&
+          bodyDisplayName.trim().length > 0
+            ? bodyDisplayName.trim()
+            : `Client ${clientId.slice(0, 8)}`;
+
+        insertKey.run(
+          ulid(),
+          keyHash,
+          resolvedDisplayName,
+          new Date().toISOString(),
+          clientId,
+          resolvedDisplayName,
+          pubkeyFp,
+        );
+
+        auditEvent(request, 'pair.confirm', 'success', {
+          clientId,
+          displayName: resolvedDisplayName,
+          pubkeyFp,
+        });
+
+        await reply.status(200).send({
+          hubId,
+          displayName: resolvedDisplayName,
+          key,
+        });
       },
     );
   };
