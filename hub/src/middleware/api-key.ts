@@ -3,6 +3,12 @@ import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type Database from 'better-sqlite3';
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    clientId?: string;
+  }
+}
+
 function hashKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
@@ -69,12 +75,32 @@ export function createApiKeyMiddleware(db: Database.Database) {
 
     const keyHash = hashKey(apiKey);
     const row = db
-      .prepare('SELECT id FROM api_keys WHERE key_hash = ?')
-      .get(keyHash) as { id: string } | undefined;
+      .prepare(
+        'SELECT id, client_id, revoked_at, revoked_reason FROM api_keys WHERE key_hash = ?',
+      )
+      .get(keyHash) as
+      | {
+          id: string;
+          client_id: string | null;
+          revoked_at: number | null;
+          revoked_reason: string | null;
+        }
+      | undefined;
 
     if (!row) {
       await reply.status(401).send({ error: 'Invalid API key' });
       return;
+    }
+
+    if (row.revoked_at !== null) {
+      await reply.status(401).send({
+        error: `Key revoked: ${row.revoked_reason ?? 'no reason'}`,
+      });
+      return;
+    }
+
+    if (row.client_id !== null) {
+      request.clientId = row.client_id;
     }
   };
 }

@@ -3,10 +3,12 @@ import { join } from 'node:path';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
-import Fastify from 'fastify';
+import Fastify, { type FastifyInstance } from 'fastify';
 
 import { createDatabase } from './db/database.js';
+import { resolveHubId } from './lib/hub-id.js';
 import { verifyAccessToken } from './lib/jwt.js';
+import { resolveTls, type TlsMaterial } from './lib/tls.js';
 import { createApiKeyMiddleware, hashKey } from './middleware/api-key.js';
 import { createJwtAuthMiddleware } from './middleware/jwt-auth.js';
 import { agentRoutes } from './routes/agents.js';
@@ -185,11 +187,37 @@ function handleWebSocketAuth(
   });
 }
 
-export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fastify>> {
-  const app = Fastify({ logger: true });
+export interface BuildAppOptions {
+  /** Directory used for hub-id, TLS material, and (by default) the SQLite db. */
+  dataDir?: string;
+  /** Explicit SQLite path override; defaults to `<dataDir>/claude-ui.db`. */
+  dbPath?: string;
+  /** Reserved — advertised listen port for downstream consumers. Not used here. */
+  port?: number;
+}
+
+export interface BuiltApp {
+  app: FastifyInstance;
+  hubId: string;
+  tls: TlsMaterial;
+}
+
+export async function buildApp(options?: BuildAppOptions | string): Promise<BuiltApp> {
+  // Backward-compatible: accept a bare dbPath string in addition to the options object.
+  const opts: BuildAppOptions =
+    typeof options === 'string' ? { dbPath: options } : options ?? {};
+
+  const dataDir = opts.dataDir ?? join(process.cwd(), 'data');
+  const hubId = resolveHubId(dataDir);
+  const tls = await resolveTls(dataDir, hubId);
+
+  const app = Fastify({
+    logger: true,
+    https: { cert: tls.cert, key: tls.key },
+  });
 
   // Database
-  const resolvedDbPath = dbPath ?? join(process.cwd(), 'data', 'claude-ui.db');
+  const resolvedDbPath = opts.dbPath ?? join(dataDir, 'claude-ui.db');
   const db = createDatabase(resolvedDbPath);
 
   // Decorate Fastify instance with db
@@ -263,5 +291,5 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
-  return app;
+  return { app, hubId, tls };
 }
