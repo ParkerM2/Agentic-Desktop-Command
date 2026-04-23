@@ -114,11 +114,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Promote draft release to published
+      - name: Attach macOS install script and promote release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ needs.read-version.outputs.tag }}"
+          # Attach the curl-based macOS installer so users can bypass the
+          # Gatekeeper "damaged" dialog without an Apple Developer subscription.
+          gh release upload "$TAG" scripts/install-mac.sh --clobber
           # electron-builder creates a draft release — publish it now that all platforms succeeded
           if gh release view "$TAG" --json isDraft --jq '.isDraft' | grep -q true; then
             gh release edit "$TAG" --draft=false
