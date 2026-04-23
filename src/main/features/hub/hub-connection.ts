@@ -187,6 +187,7 @@ export function createHubConnectionManager(
         void performConnect();
       }
     },
+    getActiveHubId: () => config.activeHubId,
   });
 
   async function performConnect(): Promise<{ success: boolean; error?: string }> {
