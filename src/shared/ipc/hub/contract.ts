@@ -18,6 +18,66 @@ import {
   HubSyncOutputSchema,
 } from './schemas';
 
+// ─── Hub Discovery / Pair Schemas ─────────────────────────────
+
+export const hubRecordSchema = z.object({
+  hubId: z.string(),
+  displayName: z.string(),
+  lastKnownUrl: z.string().nullable(),
+  pinnedFingerprint: z.string().nullable(),
+  addedAt: z.string(),
+  lastConnectedAt: z.string().nullable(),
+  status: z.enum(['connected', 'disconnected', 'connecting', 'error']),
+});
+
+export const discoveredHubSchema = z.object({
+  hubId: z.string(),
+  displayName: z.string(),
+  version: z.string(),
+  channel: z.string(),
+  addresses: z.array(z.string()),
+  port: z.number(),
+  fingerprint: z.string(),
+  lastSeenAt: z.string(),
+  stale: z.boolean(),
+});
+
+export const hubDiscoveredListOutputSchema = z.object({
+  paired: z.array(hubRecordSchema),
+  discovered: z.array(discoveredHubSchema),
+  activeHubId: z.string().nullable(),
+});
+
+export const hubPairRequestInputSchema = z.object({
+  hubId: z.string(),
+  displayName: z.string().optional(),
+});
+
+export const hubPairRequestOutputSchema = z.discriminatedUnion('ok', [
+  z.object({ ok: z.literal(true), hubId: z.string() }),
+  z.object({ ok: z.literal(false), error: z.string() }),
+]);
+
+export const hubSwitchActiveInputSchema = z.object({ hubId: z.string() });
+
+export const hubManualPairInputSchema = z.object({
+  url: z.url(),
+  displayName: z.string().optional(),
+});
+
+export const hubRemoveRecordInputSchema = z.object({ hubId: z.string() });
+
+export const hubDiscoveryChangedEventSchema = hubDiscoveredListOutputSchema;
+
+export const hubActiveChangedEventSchema = z.object({
+  activeHubId: z.string().nullable(),
+});
+
+export const hubRevokedEventSchema = z.object({
+  hubId: z.string(),
+  reason: z.string(),
+});
+
 // ─── Invoke Channels ──────────────────────────────────────────
 
 export const hubInvoke = {
@@ -56,6 +116,26 @@ export const hubInvoke = {
       error: z.string().optional(),
     }),
   },
+  [HUB.DISCOVERED.LIST]: {
+    input: z.object({}),
+    output: hubDiscoveredListOutputSchema,
+  },
+  [HUB.PAIR.REQUEST]: {
+    input: hubPairRequestInputSchema,
+    output: hubPairRequestOutputSchema,
+  },
+  [HUB.SWITCH.ACTIVE]: {
+    input: hubSwitchActiveInputSchema,
+    output: SuccessResponseSchema,
+  },
+  [HUB.REMOVE.RECORD]: {
+    input: hubRemoveRecordInputSchema,
+    output: SuccessResponseSchema,
+  },
+  [HUB.MANUAL.PAIR]: {
+    input: hubManualPairInputSchema,
+    output: hubPairRequestOutputSchema,
+  },
 } as const;
 
 // ─── Event Channels ───────────────────────────────────────────
@@ -80,6 +160,15 @@ export const hubEvents = {
   },
   [HUB_EVENTS.PROJECT.UPDATED]: {
     payload: z.object({ projectId: z.string() }),
+  },
+  [HUB_EVENTS.DISCOVERY.CHANGED]: {
+    payload: hubDiscoveryChangedEventSchema,
+  },
+  [HUB_EVENTS.ACTIVE.CHANGED]: {
+    payload: hubActiveChangedEventSchema,
+  },
+  [HUB_EVENTS.REVOKED]: {
+    payload: hubRevokedEventSchema,
   },
 } as const;
 
