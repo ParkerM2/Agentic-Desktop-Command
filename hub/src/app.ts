@@ -6,6 +6,7 @@ import websocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { createDatabase } from './db/database.js';
+import { resolveAdminKey } from './lib/admin-key.js';
 import { createAuditRepo, type AuditRepo } from './lib/audit-repo.js';
 import { resolveHubId } from './lib/hub-id.js';
 import { verifyAccessToken } from './lib/jwt.js';
@@ -14,6 +15,7 @@ import { revokeClient as revokeClientFn } from './lib/revoke-client.js';
 import { resolveTls, type TlsMaterial } from './lib/tls.js';
 import { createApiKeyMiddleware, hashKey } from './middleware/api-key.js';
 import { createJwtAuthMiddleware } from './middleware/jwt-auth.js';
+import { createAdminRoutes } from './routes/admin/index.js';
 import { agentRoutes } from './routes/agents.js';
 import { authRoutes } from './routes/auth.js';
 import { captureRoutes } from './routes/captures.js';
@@ -353,6 +355,23 @@ export async function buildApp(options?: BuildAppOptions | string): Promise<Buil
   const boundRevokeClient = (clientId: string, reason: string): { updated: number } =>
     revokeClientFn({ db, bus: revocationBus, audit: auditRepo }, clientId, reason);
   await app.register(createPairRoutes({ db, audit: auditRepo, hubId }));
+
+  // Admin routes — gated by X-Admin-Key. The current admin key is held in a
+  // mutable closure slot so /rotate-admin-key can swap it atomically.
+  let currentAdminKey = resolveAdminKey(dataDir);
+  await app.register(
+    createAdminRoutes({
+      db,
+      audit: auditRepo,
+      revokeClient: boundRevokeClient,
+      dataDir,
+      getCurrentAdminKey: () => currentAdminKey,
+      onKeyRotated: (newKey) => {
+        currentAdminKey = newKey;
+      },
+    }),
+    { prefix: '/api/admin' },
+  );
 
   // REST routes
   await app.register(projectRoutes);

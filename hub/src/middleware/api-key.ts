@@ -26,7 +26,8 @@ const JWT_AUTH_ROUTES = [
 // Routes that bypass API-key auth entirely. /api/pair/* is the
 // unauthenticated pairing handshake: clients cannot have an API key before
 // they pair, so requiring one here would be a chicken-and-egg deadlock.
-const BYPASS_AUTH_ROUTES = ['/api/pair/'];
+// /api/admin/* uses its own X-Admin-Key auth instead of X-API-Key.
+const BYPASS_AUTH_ROUTES = ['/api/pair/', '/api/admin/'];
 
 function isJwtAuthRoute(url: string): boolean {
   return JWT_AUTH_ROUTES.some((route) => url.startsWith(route));
