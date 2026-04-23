@@ -6,6 +6,7 @@ import websocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { createDatabase } from './db/database.js';
+import { createAuditRepo } from './lib/audit-repo.js';
 import { resolveHubId } from './lib/hub-id.js';
 import { verifyAccessToken } from './lib/jwt.js';
 import { resolveTls, type TlsMaterial } from './lib/tls.js';
@@ -15,6 +16,7 @@ import { agentRoutes } from './routes/agents.js';
 import { authRoutes } from './routes/auth.js';
 import { captureRoutes } from './routes/captures.js';
 import { deviceRoutes } from './routes/devices.js';
+import { createPairRoutes } from './routes/pair.js';
 import { plannerRoutes } from './routes/planner.js';
 import { projectRoutes } from './routes/projects.js';
 import { workspaceRoutes } from './routes/workspaces.js';
@@ -262,6 +264,11 @@ export async function buildApp(options?: BuildAppOptions | string): Promise<Buil
       handleWebSocketAuth(socket, db);
     });
   });
+
+  // Pairing routes — unauthenticated (bypass-listed in api-key middleware).
+  // Must be registered after the auth hooks so the skip-list runs first.
+  const auditRepo = createAuditRepo(db);
+  await app.register(createPairRoutes({ db, audit: auditRepo, hubId }));
 
   // REST routes
   await app.register(projectRoutes);

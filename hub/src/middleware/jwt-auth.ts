@@ -23,6 +23,7 @@ const PUBLIC_ROUTES = [
   '/api/health',
   '/api/auth/generate-key', // Legacy API key generation
   '/api/auth/keys', // Legacy API key listing
+  '/api/pair/', // Unauthenticated pairing handshake (init/confirm)
 ];
 
 // Routes that accept either API key OR JWT auth

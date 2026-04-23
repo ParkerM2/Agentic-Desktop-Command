@@ -23,8 +23,17 @@ const JWT_AUTH_ROUTES = [
   '/api/health',
 ];
 
+// Routes that bypass API-key auth entirely. /api/pair/* is the
+// unauthenticated pairing handshake: clients cannot have an API key before
+// they pair, so requiring one here would be a chicken-and-egg deadlock.
+const BYPASS_AUTH_ROUTES = ['/api/pair/'];
+
 function isJwtAuthRoute(url: string): boolean {
   return JWT_AUTH_ROUTES.some((route) => url.startsWith(route));
+}
+
+function isBypassAuthRoute(url: string): boolean {
+  return BYPASS_AUTH_ROUTES.some((route) => url.startsWith(route));
 }
 
 export function createApiKeyMiddleware(db: Database.Database) {
@@ -34,6 +43,11 @@ export function createApiKeyMiddleware(db: Database.Database) {
   ): Promise<void> {
     // Skip for routes that use JWT auth instead of API keys
     if (isJwtAuthRoute(request.url)) {
+      return;
+    }
+
+    // Skip for routes that bypass authentication entirely (e.g., pair handshake)
+    if (isBypassAuthRoute(request.url)) {
       return;
     }
 
