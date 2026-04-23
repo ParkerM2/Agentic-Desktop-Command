@@ -70,23 +70,42 @@ jobs:
       - name: Build application
         run: npm run build
 
+      # Only populate signing env vars when the corresponding secrets are set.
+      # electron-builder treats an empty CSC_LINK as a path and errors with
+      # "not a file" if the variable is present but blank — so we omit it
+      # entirely for ad-hoc signed builds (mac.identity: "-" in package.json
+      # handles the signature without a cert).
+      - name: Configure signing env
+        shell: bash
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PW_SECRET: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_SECRET: ${{ secrets.APPLE_TEAM_ID }}
+          WIN_CSC_LINK_SECRET: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PW_SECRET: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if [ -n "$MAC_CSC_LINK" ]; then
+            echo "CSC_LINK=$MAC_CSC_LINK" >> "$GITHUB_ENV"
+            echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$APPLE_ID_SECRET" ]; then
+            echo "APPLE_ID=$APPLE_ID_SECRET" >> "$GITHUB_ENV"
+            echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_PW_SECRET" >> "$GITHUB_ENV"
+            echo "APPLE_TEAM_ID=$APPLE_TEAM_SECRET" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$WIN_CSC_LINK_SECRET" ]; then
+            echo "WIN_CSC_LINK=$WIN_CSC_LINK_SECRET" >> "$GITHUB_ENV"
+            echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PW_SECRET" >> "$GITHUB_ENV"
+          fi
+
       - name: Package and publish (${{ matrix.os }})
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS signing (optional — leave secrets unset to produce an ad-hoc
-          # signed build. mac.identity is "-" in package.json, which satisfies
-          # macOS's arm64 signature requirement and prevents the "damaged" dialog)
-          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-          # Disable keychain discovery so the ad-hoc identity in package.json is
-          # always used when no real signing secrets are provided
+          # Disable keychain discovery so ad-hoc signing (mac.identity: "-" in
+          # package.json) is used when no real CSC_LINK was exported above.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # Windows signing (optional)
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
         run: npx electron-builder ${{ matrix.build-flag }} --publish always
 
   finalize-release:
