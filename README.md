@@ -156,7 +156,32 @@ graph LR
 
 ---
 
-## Quick Start
+## Install (Pre-built)
+
+Download the latest installer from [GitHub Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest).
+
+ADC is currently distributed unsigned. The first launch shows a security warning on both platforms — this is expected. Once bypassed, the OS remembers the choice for future launches.
+
+### Windows
+
+1. Download `ADC-Setup-<version>-x64.exe`
+2. Double-click to run
+3. SmartScreen will show **"Windows protected your PC"** → click **More info** → **Run anyway**
+4. Walk through the installer wizard
+5. Auto-updates work normally after install
+
+### macOS
+
+1. Download `ADC-<version>-arm64.dmg` (Apple Silicon) or `ADC-<version>-x64.dmg` (Intel)
+2. Open the DMG and drag **ADC.app** to **Applications**
+3. **Right-click** ADC.app in Applications → **Open** → **Open** in the dialog
+   (Double-clicking the first time will show "ADC can't be opened because Apple cannot check it for malicious software" with no Open button — the right-click bypass is required.)
+4. After the first launch, double-click works normally
+5. Updates are **manual** on macOS — when a new version is available, ADC shows a notification with a Download button that opens the releases page. Drag the new app over the old one to update. Your data persists in `~/Library/Application Support/ADC/`.
+
+---
+
+## Quick Start (Development)
 
 ```bash
 git clone https://github.com/ParkerM2/Agentic-Desktop-Command.git

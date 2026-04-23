@@ -16,13 +16,28 @@ jobs:
       tag: ${{ steps.pkg.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - id: pkg
         shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building release for v$VERSION"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Building release for $TAG"
+          # Reject the release if this version was already published.
+          # Forces the dev to bump package.json version before merging to production.
+          if git tag --list | grep -qx "$TAG"; then
+            echo "::error::Tag $TAG already exists. Bump package.json version before pushing to production."
+            exit 1
+          fi
+          if gh release view "$TAG" --json id >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists on GitHub. Bump package.json version."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     needs: read-version
