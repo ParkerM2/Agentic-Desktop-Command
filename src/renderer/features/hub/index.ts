@@ -3,6 +3,7 @@
  */
 
 export { HubSetupPage } from './components/HubSetupPage';
+export { HubPickerPanel } from './components/HubPickerPanel';
 export { validateHubUrl } from './lib/validateHubUrl';
 
 export { hubDiscoveryKeys, useHubDiscovery } from './api/useHubDiscovery';
