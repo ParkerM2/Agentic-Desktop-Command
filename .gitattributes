@@ -1,0 +1,6 @@
+# Shell scripts must be LF on all platforms — CRLF breaks bash's shebang
+# parsing on macOS/Linux.
+*.sh text eol=lf
+
+# Same for files run by bash (no extension, shebang-only). If added later,
+# include them by path.
