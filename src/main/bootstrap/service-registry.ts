@@ -9,6 +9,7 @@
  *                    on first property access (first IPC call).
  */
 
+import { existsSync } from 'node:fs';
 import { hostname } from 'node:os';
 
 import { app } from 'electron';
@@ -59,6 +60,7 @@ import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
 import { createGitHubService } from '../features/github';
+import { LEGACY_HUB_ID, LOCAL_HUB_ID, migrateLegacyDb, resolveActiveDbPath } from '../features/hub/db-migrator';
 import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
@@ -177,7 +179,23 @@ export function createServiceRegistry(
   }
 
   const dataDir = configReader.resolveDataDir();
-  const db = initDatabase(dataDir);
+
+  // Move any pre-existing top-level adc.db into hubs/legacy/adc.db before
+  // the DB opens. Task 16's config-store migrator writes hubId='legacy'
+  // into the v2 blob, so once the DB is open at the new location the
+  // records line up.
+  //
+  // Boot-time hub selection: if a 'legacy' per-hub DB exists (either from
+  // this boot's move or a prior boot), open there; otherwise fall back to
+  // 'local' for fresh installs. activeHubId from the v2 config is only
+  // readable once the DB is open, so a full multi-hub active-hub lookup
+  // lives in Task 23.
+  // TODO: Task 23 switch active hub — read activeHubId from hub-config
+  // and reopen the DB at the selected hub's path on switch.
+  migrateLegacyDb(dataDir);
+  const legacyDbPath = resolveActiveDbPath(dataDir, LEGACY_HUB_ID);
+  const bootHubId = existsSync(legacyDbPath) ? LEGACY_HUB_ID : LOCAL_HUB_ID;
+  const db = initDatabase(dataDir, { activeHubId: bootHubId });
 
   const errorCollector = createErrorCollector(dataDir, {
     onError: (entry) => { router.emit(APP_EVENTS.ERROR.OCCURRED, entry); },
