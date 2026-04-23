@@ -172,12 +172,19 @@ ADC is currently distributed unsigned. The first launch shows a security warning
 
 ### macOS
 
-1. Download `ADC-<version>-arm64.dmg` (Apple Silicon) or `ADC-<version>-x64.dmg` (Intel)
-2. Open the DMG and drag **ADC.app** to **Applications**
-3. **Right-click** ADC.app in Applications → **Open** → **Open** in the dialog
-   (Double-clicking the first time will show "ADC can't be opened because Apple cannot check it for malicious software" with no Open button — the right-click bypass is required.)
-4. After the first launch, double-click works normally
-5. Updates are **manual** on macOS — when a new version is available, ADC shows a notification with a Download button that opens the releases page. Drag the new app over the old one to update. Your data persists in `~/Library/Application Support/ADC/`.
+Run this single command in Terminal — it downloads the latest release, installs it to `/Applications`, and strips the Gatekeeper quarantine attribute so macOS doesn't falsely claim the app is "damaged":
+
+```sh
+curl -sSL https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest/download/install-mac.sh | bash
+```
+
+The script auto-detects arm64 vs x64 and launches ADC when done. After this, double-clicking the app works normally.
+
+> **Why the script?** Browser downloads set `com.apple.quarantine` on the DMG, which on recent macOS (Sonoma 14.5+ / Sequoia) triggers a blanket "damaged" Gatekeeper rejection for any app that isn't Apple-notarized. Notarization requires a paid Apple Developer subscription. Using `curl` bypasses browser quarantine, and the final `xattr -cr` scrubs anything still attached — no paid subscription needed.
+>
+> **Manual install (if you prefer):** Download the DMG from [Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest), drag ADC.app to /Applications, then run `xattr -cr /Applications/ADC.app` in Terminal.
+
+Updates are **manual** on macOS — when a new version is available, ADC shows a notification with a Download button that opens the releases page. Run the install script again to update. Your data persists in `~/Library/Application Support/ADC/`.
 
 ---
 
