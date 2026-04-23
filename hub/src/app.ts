@@ -6,9 +6,11 @@ import websocket from '@fastify/websocket';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { createDatabase } from './db/database.js';
-import { createAuditRepo } from './lib/audit-repo.js';
+import { createAuditRepo, type AuditRepo } from './lib/audit-repo.js';
 import { resolveHubId } from './lib/hub-id.js';
 import { verifyAccessToken } from './lib/jwt.js';
+import { createRevocationBus, type RevocationBus } from './lib/revocation-bus.js';
+import { revokeClient as revokeClientFn } from './lib/revoke-client.js';
 import { resolveTls, type TlsMaterial } from './lib/tls.js';
 import { createApiKeyMiddleware, hashKey } from './middleware/api-key.js';
 import { createJwtAuthMiddleware } from './middleware/jwt-auth.js';
@@ -26,6 +28,7 @@ import { webhookRoutes } from './routes/webhooks/index.js';
 import { addAuthenticatedClient } from './ws/broadcaster.js';
 
 import type Database from 'better-sqlite3';
+import type { WebSocket as WsWebSocket } from 'ws';
 
 /**
  * Validate CORS origin.
@@ -63,9 +66,41 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 /** WebSocket close codes for authentication errors. */
 const WS_CLOSE_INVALID_KEY = 4001;
 const WS_CLOSE_AUTH_TIMEOUT = 4002;
+/** Close code fired when an admin revokes the client's API key. */
+const WS_CLOSE_REVOKED = 4003;
 
 /** Timeout for receiving auth message (5 seconds). */
 const WS_AUTH_TIMEOUT_MS = 5000;
+
+/** Tracks live authenticated sockets keyed by API-key clientId. */
+type WsConnectionMap = Map<string, Set<WsWebSocket>>;
+
+function registerRevokableSocket(
+  map: WsConnectionMap,
+  clientId: string,
+  socket: WsWebSocket,
+): void {
+  let bucket = map.get(clientId);
+  if (bucket === undefined) {
+    bucket = new Set();
+    map.set(clientId, bucket);
+  }
+  bucket.add(socket);
+
+  const cleanup = (): void => {
+    const current = map.get(clientId);
+    if (current === undefined) {
+      return;
+    }
+    current.delete(socket);
+    if (current.size === 0) {
+      map.delete(clientId);
+    }
+  };
+
+  socket.on('close', cleanup);
+  socket.on('error', cleanup);
+}
 
 interface WsApiKeyAuthMessage {
   type: 'auth';
@@ -103,6 +138,7 @@ function isValidAuthMessage(data: unknown): data is WsAuthMessage {
 function handleWebSocketAuth(
   socket: import('ws').WebSocket,
   db: Database.Database,
+  wsConnections: WsConnectionMap,
 ): void {
   let authenticated = false;
 
@@ -114,11 +150,14 @@ function handleWebSocketAuth(
     }
   }, WS_AUTH_TIMEOUT_MS);
 
-  function authSuccess(): void {
+  function authSuccess(clientId?: string | null): void {
     authenticated = true;
     clearTimeout(timeoutId);
     console.log('[WS] Client authenticated');
     addAuthenticatedClient(socket);
+    if (clientId !== undefined && clientId !== null && clientId !== '') {
+      registerRevokableSocket(wsConnections, clientId, socket);
+    }
   }
 
   function authFailure(reason: string): void {
@@ -163,15 +202,29 @@ function handleWebSocketAuth(
       if ('apiKey' in data && typeof data.apiKey === 'string') {
         const keyHash = hashKey(data.apiKey);
         const row = db
-          .prepare('SELECT id FROM api_keys WHERE key_hash = ?')
-          .get(keyHash) as { id: string } | undefined;
+          .prepare(
+            'SELECT id, client_id, revoked_at FROM api_keys WHERE key_hash = ?',
+          )
+          .get(keyHash) as
+          | { id: string; client_id: string | null; revoked_at: number | null }
+          | undefined;
 
         if (!row) {
           authFailure('Invalid API key');
           return;
         }
 
-        authSuccess();
+        if (row.revoked_at !== null) {
+          authFailure('Key revoked');
+          return;
+        }
+
+        authSuccess(row.client_id);
+        try {
+          socket.send(JSON.stringify({ type: 'auth_ok' }));
+        } catch {
+          /* client may already be closing — ignore */
+        }
         return;
       }
 
@@ -202,6 +255,16 @@ export interface BuiltApp {
   app: FastifyInstance;
   hubId: string;
   tls: TlsMaterial;
+  /** In-process bus for revocation events. Exposed so admin endpoints can fire. */
+  revocationBus: RevocationBus;
+  /**
+   * Bound helper that revokes every live API key for a client, records a
+   * `key.revoke` audit event, and broadcasts to the revocation bus (which
+   * closes any live WS connections with code 4003).
+   */
+  revokeClient: (clientId: string, reason: string) => { updated: number };
+  /** Shared audit repo — exposed for admin routes that emit non-pair events. */
+  audit: AuditRepo;
 }
 
 export async function buildApp(options?: BuildAppOptions | string): Promise<BuiltApp> {
@@ -258,16 +321,37 @@ export async function buildApp(options?: BuildAppOptions | string): Promise<Buil
   // JWT auth middleware (for new user-based auth)
   app.addHook('onRequest', createJwtAuthMiddleware());
 
+  // Revocation plumbing — bus + live-socket map keyed by clientId.
+  const revocationBus = createRevocationBus();
+  const wsConnections: WsConnectionMap = new Map();
+
+  revocationBus.onRevoke((clientId, reason) => {
+    const sockets = wsConnections.get(clientId);
+    if (sockets === undefined) {
+      return;
+    }
+    const payload = JSON.stringify({ reason });
+    for (const socket of sockets) {
+      try {
+        socket.close(WS_CLOSE_REVOKED, payload);
+      } catch {
+        /* socket may already be gone — cleanup listeners handle the Map */
+      }
+    }
+  });
+
   // WebSocket route with first-message auth protocol
   app.register(async (wsApp) => {
     wsApp.get('/ws', { websocket: true }, (socket) => {
-      handleWebSocketAuth(socket, db);
+      handleWebSocketAuth(socket, db, wsConnections);
     });
   });
 
   // Pairing routes — unauthenticated (bypass-listed in api-key middleware).
   // Must be registered after the auth hooks so the skip-list runs first.
   const auditRepo = createAuditRepo(db);
+  const boundRevokeClient = (clientId: string, reason: string): { updated: number } =>
+    revokeClientFn({ db, bus: revocationBus, audit: auditRepo }, clientId, reason);
   await app.register(createPairRoutes({ db, audit: auditRepo, hubId }));
 
   // REST routes
@@ -298,5 +382,12 @@ export async function buildApp(options?: BuildAppOptions | string): Promise<Buil
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
-  return { app, hubId, tls };
+  return {
+    app,
+    hubId,
+    tls,
+    revocationBus,
+    revokeClient: boundRevokeClient,
+    audit: auditRepo,
+  };
 }
