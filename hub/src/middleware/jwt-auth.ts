@@ -25,6 +25,7 @@ const PUBLIC_ROUTES = [
   '/api/auth/keys', // Legacy API key listing
   '/api/pair/', // Unauthenticated pairing handshake (init/confirm)
   '/api/admin/', // Admin endpoints use X-Admin-Key, not JWT
+  '/admin', // Admin UI uses HTTP basic auth (per-route preHandler)
 ];
 
 // Routes that accept either API key OR JWT auth

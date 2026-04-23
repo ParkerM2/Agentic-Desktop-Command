@@ -1,9 +1,14 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+} from 'fastify';
 
 import { createDatabase } from './db/database.js';
 import { resolveAdminKey } from './lib/admin-key.js';
@@ -13,6 +18,7 @@ import { verifyAccessToken } from './lib/jwt.js';
 import { createRevocationBus, type RevocationBus } from './lib/revocation-bus.js';
 import { revokeClient as revokeClientFn } from './lib/revoke-client.js';
 import { resolveTls, type TlsMaterial } from './lib/tls.js';
+import { createAdminBasicAuth } from './middleware/admin-auth.js';
 import { createApiKeyMiddleware, hashKey } from './middleware/api-key.js';
 import { createJwtAuthMiddleware } from './middleware/jwt-auth.js';
 import { createAdminRoutes } from './routes/admin/index.js';
@@ -372,6 +378,44 @@ export async function buildApp(options?: BuildAppOptions | string): Promise<Buil
     }),
     { prefix: '/api/admin' },
   );
+
+  // Admin UI — single-file HTML served at /admin under HTTP basic auth.
+  // Reads the source at `src/ui/admin/index.html` in dev (tsx) and falls back
+  // to the equivalent copy beside the compiled JS at `dist/ui/admin/index.html`
+  // in production (operators are expected to copy the file at build time; see
+  // package.json build script).
+  const adminUiCandidates = [
+    join(import.meta.dirname, 'ui', 'admin', 'index.html'),
+    join(import.meta.dirname, '..', 'src', 'ui', 'admin', 'index.html'),
+  ];
+  const adminUiPath = adminUiCandidates.find((p) => existsSync(p));
+  const adminUiHtml: string | null =
+    adminUiPath === undefined ? null : readFileSync(adminUiPath, 'utf8');
+
+  const adminBasicAuth = createAdminBasicAuth(
+    process.env.HUB_ADMIN_USER,
+    process.env.HUB_ADMIN_PASSWORD_HASH,
+  );
+
+  async function serveAdminUi(
+    _req: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> {
+    if (adminUiHtml === null) {
+      await reply
+        .status(500)
+        .send({ error: 'Admin UI bundle missing (hub/src/ui/admin/index.html)' });
+      return;
+    }
+    await reply.type('text/html; charset=utf-8').send(adminUiHtml);
+  }
+
+  // Fastify's preHandler accepts async functions; its typings list a
+  // void-returning variant that eslint's no-misused-promises flags. Safe.
+  /* eslint-disable @typescript-eslint/no-misused-promises */
+  app.get('/admin', { preHandler: adminBasicAuth }, serveAdminUi);
+  app.get('/admin/', { preHandler: adminBasicAuth }, serveAdminUi);
+  /* eslint-enable @typescript-eslint/no-misused-promises */
 
   // REST routes
   await app.register(projectRoutes);
