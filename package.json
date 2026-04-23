@@ -179,7 +179,9 @@
       "out/**/*"
     ],
     "extraResources": [
-      "drizzle/**"
+      "drizzle/**",
+      { "from": "resources/icon-16.png", "to": "icon-16.png" },
+      { "from": "resources/icon-32.png", "to": "icon-32.png" }
     ],
     "publish": {
       "provider": "github",
@@ -202,7 +204,7 @@
     "mac": {
       "icon": "resources/icon.icns",
       "category": "public.app-category.developer-tools",
-      "identity": null,
+      "identity": "-",
       "gatekeeperAssess": false,
       "target": [
         {
