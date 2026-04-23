@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildApp } from './app.js';
+import { scheduleAuditRetention } from './lib/audit-retention.js';
 import { createAdvertiser } from './mdns/advertiser.js';
 
 const PORT_ENV = process.env.PORT;
@@ -31,7 +32,7 @@ function resolveChannel(): 'release' | 'local' | 'dev' {
 }
 
 async function start(): Promise<void> {
-  const { app, hubId, tls } = await buildApp({ port: PORT });
+  const { app, hubId, tls, audit } = await buildApp({ port: PORT });
 
   try {
     await app.listen({ port: PORT, host: HOST });
@@ -42,6 +43,22 @@ async function start(): Promise<void> {
     app.log.error(error);
     process.exit(1);
   }
+
+  // Audit retention — purge old pairing_events rows at startup and every 6h.
+  const retentionDaysRaw = process.env.HUB_AUDIT_RETENTION_DAYS;
+  const parsedRetentionDays =
+    retentionDaysRaw === undefined || retentionDaysRaw === ''
+      ? 90
+      : Number(retentionDaysRaw);
+  const retentionDays = Number.isFinite(parsedRetentionDays) ? parsedRetentionDays : 90;
+  const stopRetention = scheduleAuditRetention(audit, {
+    retentionDays,
+    onPurge: (count) => {
+      if (count > 0) {
+        app.log.info({ purged: count, retentionDays }, 'audit retention purge');
+      }
+    },
+  });
 
   const advertiser = createAdvertiser({
     hubId,
@@ -66,6 +83,11 @@ async function start(): Promise<void> {
     shuttingDown = true;
     app.log.info(`Received ${sig} — shutting down`);
     void (async () => {
+      try {
+        stopRetention();
+      } catch (error) {
+        app.log.warn({ err: error }, 'audit retention stop failed');
+      }
       try {
         await advertiser.stop();
       } catch (error) {
