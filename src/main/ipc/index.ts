@@ -88,6 +88,7 @@ import type { DeviceService } from '../features/hub/device';
 import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { HubAuthService } from '../features/hub/hub-auth-service';
 import type { HubConnectionManager } from '../features/hub/hub-connection';
+import type { HubDiscovery } from '../features/hub/hub-discovery';
 import type { HubSyncService } from '../features/hub/hub-sync';
 import type { IdeasService } from '../features/ideas/ideas-service';
 import type { InsightsService } from '../features/insights/insights-service';
@@ -134,6 +135,8 @@ export interface Services {
   fitnessService: FitnessService | null;
   healthRegistry: HealthRegistryHandler;
   hubConnectionManager: HubConnectionManager;
+  hubDiscovery: HubDiscovery;
+  hubsDir: string;
   hubSyncService: HubSyncService;
   ideasService: IdeasService | null;
   insightsService: InsightsService;
@@ -263,6 +266,8 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     services.hubConnectionManager,
     services.hubSyncService,
     services.hubApiClient,
+    services.hubDiscovery,
+    services.hubsDir,
   );
   registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);

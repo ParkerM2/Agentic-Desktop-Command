@@ -11,10 +11,12 @@
 
 import { existsSync } from 'node:fs';
 import { hostname } from 'node:os';
+import { join } from 'node:path';
 
 import { app } from 'electron';
 
 import { APP_EVENTS } from '@shared/ipc/app/channels';
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import type { AppChannel } from '@shared/types/channel';
 
@@ -65,7 +67,9 @@ import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
 import { createHubConnectionManager } from '../features/hub/hub-connection';
+import { createHubDiscovery } from '../features/hub/hub-discovery';
 import { createHubSyncService } from '../features/hub/hub-sync';
+import { createNetworkWatcher } from '../features/hub/network-watcher';
 import { createWebhookRelay } from '../features/hub/webhook-relay';
 import { createIdeasService } from '../features/ideas/ideas-service';
 import { createInsightsService } from '../features/insights/insights-service';
@@ -259,6 +263,12 @@ export function createServiceRegistry(
         void registerDeviceAndStartHeartbeat(hubApiClient);
       }
     });
+    // Forward active-hub changes to the renderer so UIs can react
+    // without polling. Subscribed here so the lazy proxy doesn't have
+    // to be force-initialised from outside.
+    mgr.onBeforeActiveHubChange(({ to }) => {
+      router.emit(HUB_EVENTS.ACTIVE.CHANGED, { activeHubId: to });
+    });
     return mgr;
   });
 
@@ -277,6 +287,52 @@ export function createServiceRegistry(
   );
 
   const hubSyncService = lazyService(() => createHubSyncService(hubConnectionManager, db));
+
+  // ─── Tier 1: Hub discovery (mDNS) + network change watcher ────
+  //
+  // Discovery surfaces mDNS-advertised hubs on the same channel; the
+  // network watcher restarts discovery whenever interfaces change so a
+  // VPN connect / Wi-Fi switch gives an immediate refresh instead of
+  // waiting for the browser's next poll.
+  const hubsDir = join(dataDir, 'hubs');
+  const hubDiscovery = createHubDiscovery({ channel });
+  hubDiscovery.start();
+  hubDiscovery.on('changed', () => {
+    const activeHubId = hubConnectionManager.getActiveHubId();
+    const status = hubConnectionManager.getStatus();
+    const paired = hubConnectionManager.listHubs().map((r) => ({
+      hubId: r.hubId,
+      displayName: r.displayName,
+      lastKnownUrl: r.lastKnownUrl,
+      pinnedFingerprint: r.pinnedFingerprint,
+      addedAt: r.addedAt,
+      lastConnectedAt: r.lastConnectedAt,
+      status:
+        activeHubId !== null && activeHubId === r.hubId
+          ? status
+          : ('disconnected' as const),
+    }));
+    const discovered = hubDiscovery.getSnapshot().map((d) => ({
+      hubId: d.hubId,
+      displayName: d.displayName,
+      version: d.version,
+      channel: d.channel,
+      addresses: d.addresses,
+      port: d.port,
+      fingerprint: d.fingerprint,
+      lastSeenAt: d.lastSeenAt,
+      stale: d.stale,
+    }));
+    router.emit(HUB_EVENTS.DISCOVERY.CHANGED, { paired, discovered, activeHubId });
+  });
+  createNetworkWatcher(() => {
+    hubDiscovery.clear();
+    // Restart the browser to repopulate on the new interfaces.
+    void (async () => {
+      await hubDiscovery.stop();
+      hubDiscovery.start();
+    })();
+  });
 
   // ─── Device + heartbeat (stateful, kept at module scope) ─────
 
@@ -575,6 +631,8 @@ export function createServiceRegistry(
     fitnessService,
     healthRegistry,
     hubConnectionManager,
+    hubDiscovery,
+    hubsDir,
     hubSyncService,
     ideasService,
     insightsService,
