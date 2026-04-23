@@ -5,12 +5,19 @@
  * return no-op/stub values so the app continues to function.
  */
 
+import { app, shell } from 'electron';
+
 import { APP_EVENTS } from '@shared/ipc/app/channels';
 import type { AppChannel } from '@shared/types/channel';
 
 import { appLogger } from '@main/lib/logger';
 
 import type { IpcRouter } from '../../ipc/router';
+
+const GITHUB_RELEASES_API =
+  'https://api.github.com/repos/ParkerM2/Agentic-Desktop-Command/releases/latest';
+const GITHUB_RELEASES_PAGE =
+  'https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -42,6 +49,48 @@ export interface AppUpdateService {
 }
 
 // ── Helpers ──────────────────────────────────────────────────
+
+function isNewerSemver(remote: string, current: string): boolean {
+  const parse = (v: string): number[] =>
+    v
+      .replace(/^v/, '')
+      .split('.')
+      .map((p) => {
+        const n = Number.parseInt(p, 10);
+        return Number.isNaN(n) ? 0 : n;
+      });
+  const r = parse(remote);
+  const c = parse(current);
+  for (let i = 0; i < Math.max(r.length, c.length); i++) {
+    const ri = r[i] ?? 0;
+    const ci = c[i] ?? 0;
+    if (ri !== ci) return ri > ci;
+  }
+  return false;
+}
+
+interface GitHubReleaseInfo {
+  version: string;
+  htmlUrl: string;
+}
+
+async function fetchLatestGitHubRelease(): Promise<GitHubReleaseInfo | null> {
+  try {
+    const res = await fetch(GITHUB_RELEASES_API, {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) {
+      appLogger.warn(`[AppUpdateService] GitHub releases API responded ${res.status}`);
+      return null;
+    }
+    const data = (await res.json()) as { tag_name?: string; html_url?: string };
+    if (!data.tag_name || !data.html_url) return null;
+    return { version: data.tag_name.replace(/^v/, ''), htmlUrl: data.html_url };
+  } catch (err) {
+    appLogger.warn('[AppUpdateService] GitHub releases fetch failed:', err);
+    return null;
+  }
+}
 
 function loadAutoUpdater(): AutoUpdaterLike | null {
   try {
@@ -81,6 +130,47 @@ export function createAppUpdateService(deps: AppUpdateServiceDeps): AppUpdateSer
     return {
       checkForUpdates: () => ({ updateAvailable: false }),
       downloadUpdate: () => ({ success: false }),
+      quitAndInstall: () => ({ success: false }),
+      getStatus: () => ({ ...status }),
+    };
+  }
+
+  // macOS unsigned builds cannot use Squirrel.Mac (signature required).
+  // Fall back to manual flow: poll GitHub Releases API and open the
+  // download page in the browser. User drags the new .app to /Applications.
+  if (process.platform === 'darwin') {
+    appLogger.info('[AppUpdateService] macOS manual-update mode — unsigned build');
+    let downloadUrl: string = GITHUB_RELEASES_PAGE;
+
+    async function runCheck(): Promise<void> {
+      status.checking = true;
+      status.error = undefined;
+      const latest = await fetchLatestGitHubRelease();
+      status.checking = false;
+      if (!latest) return;
+      const current = app.getVersion();
+      if (!isNewerSemver(latest.version, current)) {
+        appLogger.info(
+          `[AppUpdateService] No update (current=${current}, latest=${latest.version})`,
+        );
+        return;
+      }
+      status.updateAvailable = true;
+      status.version = latest.version;
+      downloadUrl = latest.htmlUrl;
+      appLogger.info(`[AppUpdateService] Manual update available: ${latest.version}`);
+      router.emit(APP_EVENTS.UPDATE.AVAILABLE, { version: latest.version });
+    }
+
+    return {
+      checkForUpdates() {
+        void runCheck();
+        return { updateAvailable: status.updateAvailable, version: status.version };
+      },
+      downloadUpdate() {
+        void shell.openExternal(downloadUrl);
+        return { success: true };
+      },
       quitAndInstall: () => ({ success: false }),
       getStatus: () => ({ ...status }),
     };
