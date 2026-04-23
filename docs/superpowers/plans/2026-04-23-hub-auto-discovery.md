@@ -57,6 +57,18 @@
 
 ---
 
+## Hub codebase reality (read this before any hub-side task)
+
+The `hub/` package does NOT use Drizzle ORM. Plan snippets that mention Drizzle `schema.ts` are aspirational — adapt to what's actually there:
+
+- **Migrations:** raw SQL in `hub/src/db/migrations/` with a 3-digit prefix (`001_…`, `002_…`, `005_…`). Next free number: `006_`.
+- **Migration runner:** `hub/src/db/migration-runner.ts` exports `runMigrations(db, migrationsDir)`.
+- **Schema reference:** `hub/src/db/schema.sql` is a reference file, not a Drizzle-generated artifact. Do not create `hub/src/db/schema.ts`; skip any plan step that says to modify it.
+- **Test runner:** `hub/` has no vitest. Use Node's built-in `node:test` + `node:assert`, write tests as `.test.mjs` or `.test.ts` (tsx is already a devDependency) under `hub/test/`. Add a `test` script in `hub/package.json` if one isn't already present.
+- **When adding devDependencies,** install only into `hub/`, not the root repo.
+
+The **client** (`src/main/`, `src/renderer/`) does use Vitest + Drizzle — those plan snippets are correct as-is.
+
 ## Conventions
 
 - **TDD always:** write the failing test, run it to see it fail with the expected message, write the minimum code to pass, run it green, commit. No exceptions.
