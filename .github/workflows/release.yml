@@ -62,7 +62,7 @@ jobs:
         run: npm ci
 
       - name: Rebuild native modules for Electron
-        run: npm rebuild better-sqlite3
+        run: npm run rebuild:sqlite:electron
 
       - name: Typecheck
         run: npm run typecheck
