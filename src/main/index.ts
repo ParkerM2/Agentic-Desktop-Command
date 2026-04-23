@@ -22,6 +22,7 @@ import {
 } from './bootstrap';
 import { getChannelConfig, resolveChannel } from './lib/channel';
 import { appLogger } from './lib/logger';
+import { inheritShellPath } from './lib/shell-path';
 import { createTrayManager } from './tray/tray-manager';
 
 import type { AgentHostClient } from './agent-host/agent-host-client';
@@ -55,6 +56,11 @@ app.setAppUserModelId(CHANNEL_CFG.aumid);
 process.env.CLAUDE_CONFIG_DIR ??= join(app.getPath('userData'), '.claude');
 
 appLogger.info(`[Main] Starting ADC on channel=${CHANNEL} (name=${CHANNEL_CFG.name}, aumid=${CHANNEL_CFG.aumid})`);
+
+// On macOS/Linux, a packaged .app launched from Finder has a minimal PATH.
+// Pull the user's login-shell PATH + common bin dirs so `which claude` (and
+// any other user-installed CLI we spawn) resolves correctly.
+inheritShellPath();
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');

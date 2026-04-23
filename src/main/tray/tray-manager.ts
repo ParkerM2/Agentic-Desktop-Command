@@ -82,13 +82,26 @@ function createStatusIcon(color: { r: number; g: number; b: number }): NativeIma
   });
 }
 
+function resolveIconPath(): string {
+  // In packaged builds the icons live beside app.asar under resources/ (via
+  // electron-builder extraResources). In dev they live at the repo root.
+  const fileName = 'icon-16.png';
+  return app.isPackaged
+    ? join(process.resourcesPath, fileName)
+    : join(__dirname, '../../resources', fileName);
+}
+
 function loadResourceIcon(): NativeImage {
-  const resourcePath = join(__dirname, '../../resources/icon-16.png');
-  const image = nativeImage.createFromPath(resourcePath);
+  const image = nativeImage.createFromPath(resolveIconPath());
 
   if (image.isEmpty()) {
-    // Fallback: create a default icon programmatically
-    return createStatusIcon({ r: 45, g: 212, b: 191 }); // #2DD4BF — Command teal
+    // Fallback: programmatic circle. Template on darwin so the menu bar
+    // renders it as a monochrome silhouette instead of a raw colored blob.
+    const fallback = createStatusIcon({ r: 45, g: 212, b: 191 }); // #2DD4BF — Command teal
+    if (process.platform === 'darwin') {
+      fallback.setTemplateImage(true);
+    }
+    return fallback;
   }
 
   if (process.platform === 'darwin') {
