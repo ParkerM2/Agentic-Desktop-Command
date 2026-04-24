@@ -70,6 +70,9 @@ import { createInsightsService } from '../features/insights/insights-service';
 import { createIntegrationsService } from '../features/integrations/integrations-service';
 import { createMergeService } from '../features/merge/merge-service';
 import { createNotesService } from '../features/notes/notes-service';
+import { loadPhase1PeerConfig } from '../features/peers/peer-config';
+import { createReplicationEngine } from '../features/peers/replication-engine';
+import { createWsTransport } from '../features/peers/ws-transport';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
 import { createClaudeMdGenerator } from '../features/projects/claudemd-generator';
@@ -519,7 +522,29 @@ export function createServiceRegistry(
   const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
   const fileTreeService = lazyService(() => createFileTreeService());
   const visualizationService = lazyService(() => createVisualizationService(agentHostClient));
-  const progressService = lazyService(() => createProgressService(process.cwd(), agentHostClient, db));
+  // ─── Peer replication (Phase 1) ──────────────────────────────
+  const peerConfig = loadPhase1PeerConfig();
+  const replicationEngine = createReplicationEngine({
+    db,
+    peerIdShort: peerConfig.peerIdShort,
+    peerIdFull: peerConfig.peerIdFull,
+  });
+
+  if (peerConfig.listenPort > 0) {
+    // Fire-and-forget: WS transport is optional and starts asynchronously.
+    // Errors are logged; replication-engine remains functional without it.
+    createWsTransport({
+      engine: replicationEngine,
+      listenPort: peerConfig.listenPort,
+      remoteUrl: peerConfig.remoteUrl,
+    }).catch((err: unknown) => {
+      appLogger.error(`[Bootstrap] WS transport failed to start: ${String(err)}`);
+    });
+  }
+
+  const progressService = lazyService(() =>
+    createProgressService(process.cwd(), agentHostClient, db, replicationEngine),
+  );
 
   // ─── User session change handling ────────────────────────────
 

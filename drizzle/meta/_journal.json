@@ -183,6 +183,13 @@
       "when": 1776500000000,
       "tag": "0025_test_suite_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1776600000000,
+      "tag": "0026_op_log_and_row_meta",
+      "breakpoints": true
     }
   ]
 }
