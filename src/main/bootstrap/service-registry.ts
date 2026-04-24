@@ -99,6 +99,7 @@ import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
+import { shouldEnableDiscovery } from '../lib/hub-discovery-flag';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
@@ -294,45 +295,56 @@ export function createServiceRegistry(
   // network watcher restarts discovery whenever interfaces change so a
   // VPN connect / Wi-Fi switch gives an immediate refresh instead of
   // waiting for the browser's next poll.
+  //
+  // Emergency rollback: `ENABLE_HUB_DISCOVERY=false` skips starting the
+  // browser + network watcher and suppresses `HUB_EVENTS.DISCOVERY.CHANGED`
+  // emissions. The legacy `HUB.CONNECT.SERVER` URL+key flow keeps working.
   const hubsDir = join(dataDir, 'hubs');
   const hubDiscovery = createHubDiscovery({ channel });
-  hubDiscovery.start();
-  hubDiscovery.on('changed', () => {
-    const activeHubId = hubConnectionManager.getActiveHubId();
-    const status = hubConnectionManager.getStatus();
-    const paired = hubConnectionManager.listHubs().map((r) => ({
-      hubId: r.hubId,
-      displayName: r.displayName,
-      lastKnownUrl: r.lastKnownUrl,
-      pinnedFingerprint: r.pinnedFingerprint,
-      addedAt: r.addedAt,
-      lastConnectedAt: r.lastConnectedAt,
-      status:
-        activeHubId !== null && activeHubId === r.hubId
-          ? status
-          : ('disconnected' as const),
-    }));
-    const discovered = hubDiscovery.getSnapshot().map((d) => ({
-      hubId: d.hubId,
-      displayName: d.displayName,
-      version: d.version,
-      channel: d.channel,
-      addresses: d.addresses,
-      port: d.port,
-      fingerprint: d.fingerprint,
-      lastSeenAt: d.lastSeenAt,
-      stale: d.stale,
-    }));
-    router.emit(HUB_EVENTS.DISCOVERY.CHANGED, { paired, discovered, activeHubId });
-  });
-  createNetworkWatcher(() => {
-    hubDiscovery.clear();
-    // Restart the browser to repopulate on the new interfaces.
-    void (async () => {
-      await hubDiscovery.stop();
-      hubDiscovery.start();
-    })();
-  });
+  const discoveryEnabled = shouldEnableDiscovery();
+  if (discoveryEnabled) {
+    hubDiscovery.start();
+    hubDiscovery.on('changed', () => {
+      const activeHubId = hubConnectionManager.getActiveHubId();
+      const status = hubConnectionManager.getStatus();
+      const paired = hubConnectionManager.listHubs().map((r) => ({
+        hubId: r.hubId,
+        displayName: r.displayName,
+        lastKnownUrl: r.lastKnownUrl,
+        pinnedFingerprint: r.pinnedFingerprint,
+        addedAt: r.addedAt,
+        lastConnectedAt: r.lastConnectedAt,
+        status:
+          activeHubId !== null && activeHubId === r.hubId
+            ? status
+            : ('disconnected' as const),
+      }));
+      const discovered = hubDiscovery.getSnapshot().map((d) => ({
+        hubId: d.hubId,
+        displayName: d.displayName,
+        version: d.version,
+        channel: d.channel,
+        addresses: d.addresses,
+        port: d.port,
+        fingerprint: d.fingerprint,
+        lastSeenAt: d.lastSeenAt,
+        stale: d.stale,
+      }));
+      router.emit(HUB_EVENTS.DISCOVERY.CHANGED, { paired, discovered, activeHubId });
+    });
+    createNetworkWatcher(() => {
+      hubDiscovery.clear();
+      // Restart the browser to repopulate on the new interfaces.
+      void (async () => {
+        await hubDiscovery.stop();
+        hubDiscovery.start();
+      })();
+    });
+  } else {
+    appLogger.warn(
+      '[Hub] ENABLE_HUB_DISCOVERY=false — mDNS discovery and network-watcher disabled; legacy HUB.CONNECT.SERVER flow remains available',
+    );
+  }
 
   // ─── Device + heartbeat (stateful, kept at module scope) ─────
 
