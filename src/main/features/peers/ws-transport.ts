@@ -10,6 +10,7 @@ export interface WsTransportDeps {
   engine: ReplicationEngine;
   listenPort: number; // 0 = OS-assigned
   remoteUrl: string;  // '' = don't connect out
+  schemaHash: string;
 }
 
 export interface WsTransport {
@@ -21,6 +22,10 @@ export interface WsTransport {
 interface WireFrame {
   type: 'HELLO' | 'OPS' | 'PING';
   payload?: unknown;
+}
+
+interface HelloPayload {
+  schemaHash: string;
 }
 
 function dataToString(data: RawData): string {
@@ -61,11 +66,23 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
     }
   }
 
-  function handleFrame(raw: string): void {
+  function handleFrame(ws: WebSocket, raw: string): void {
     let frame: WireFrame;
     try {
       frame = JSON.parse(raw) as WireFrame;
     } catch {
+      return;
+    }
+    if (frame.type === 'HELLO') {
+      const helloPayload = frame.payload as HelloPayload | undefined;
+      if (!helloPayload || helloPayload.schemaHash !== deps.schemaHash) {
+        serviceLogger.warn(
+          { local: deps.schemaHash, remote: helloPayload?.schemaHash },
+          'peers.wsTransport schema mismatch — closing socket',
+        );
+        ws.close(4001, 'schema mismatch');
+        return;
+      }
       return;
     }
     if (frame.type === 'OPS') {
@@ -82,14 +99,17 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
         }
       }
     }
-    // HELLO and PING are no-ops in Phase 1
+    // PING is a no-op in Phase 1
   }
 
   wss.on('connection', (ws) => {
     incomingSockets.add(ws);
-    ws.on('message', (data: RawData) => handleFrame(dataToString(data)));
+    ws.on('message', (data: RawData) => { handleFrame(ws, dataToString(data)); });
     ws.on('close', () => incomingSockets.delete(ws));
-    send(ws, { type: 'HELLO' });
+    send(ws, {
+      type: 'HELLO',
+      payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
+    });
   });
 
   let shuttingDown = false;
@@ -98,9 +118,12 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
     const ws = new WebSocket(remoteUrl);
     outSocket = ws;
     ws.on('open', () => {
-      send(ws, { type: 'HELLO' });
+      send(ws, {
+        type: 'HELLO',
+        payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
+      });
     });
-    ws.on('message', (data: RawData) => handleFrame(dataToString(data)));
+    ws.on('message', (data: RawData) => { handleFrame(ws, dataToString(data)); });
     ws.on('close', () => {
       outSocket = null;
       if (!shuttingDown) {

@@ -41,12 +41,15 @@ describe('ws-transport roundtrip', () => {
     engineA = createReplicationEngine({ db: dbA, peerIdShort: 'aaaaaaaa', peerIdFull: 'peer-a' });
     engineB = createReplicationEngine({ db: dbB, peerIdShort: 'bbbbbbbb', peerIdFull: 'peer-b' });
 
-    transportA = await createWsTransport({ engine: engineA, listenPort: 0, remoteUrl: '' });
+    transportA = await createWsTransport({
+      engine: engineA, listenPort: 0, remoteUrl: '', schemaHash: 'match',
+    });
     const portA = transportA.listenPort();
     transportB = await createWsTransport({
       engine: engineB,
       listenPort: 0,
       remoteUrl: `ws://127.0.0.1:${String(portA)}`,
+      schemaHash: 'match',
     });
 
     await waitFor(() => (transportB.isConnected() && transportA.isConnected() ? true : undefined));
@@ -124,5 +127,41 @@ describe('ws-transport roundtrip', () => {
         | undefined,
     );
     expect(row.title).toBe('Hello from B');
+  });
+
+  it('disconnects when peers disagree on schemaHash', async () => {
+    await transportA.close();
+    await transportB.close();
+
+    transportA = await createWsTransport({
+      engine: engineA, listenPort: 0, remoteUrl: '',
+      schemaHash: 'a'.repeat(64),
+    });
+    const portA = transportA.listenPort();
+    transportB = await createWsTransport({
+      engine: engineB, listenPort: 0, remoteUrl: `ws://127.0.0.1:${String(portA)}`,
+      schemaHash: 'b'.repeat(64),
+    });
+
+    // Allow HELLO exchange + mismatch close
+    await new Promise((r) => setTimeout(r, 500));
+
+    // A-originated write must NOT reach B
+    sqliteA
+      .prepare(
+        `INSERT INTO progress_tasks (slug, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run('mismatch-task', 'No', 'backlog', 'medium', '2026-04-24T00:00:00Z', '2026-04-24T00:00:00Z');
+    engineA.recordLocalWrite({
+      tableName: 'progress_tasks', pk: 'mismatch-task', opType: 'insert',
+      columns: {
+        slug: 'mismatch-task', title: 'No', status: 'backlog', priority: 'medium',
+        created_at: '2026-04-24T00:00:00Z', updated_at: '2026-04-24T00:00:00Z',
+      },
+    });
+
+    await new Promise((r) => setTimeout(r, 300));
+    const row = sqliteB.prepare(`SELECT title FROM progress_tasks WHERE slug='mismatch-task'`).get();
+    expect(row).toBeUndefined();
   });
 });
