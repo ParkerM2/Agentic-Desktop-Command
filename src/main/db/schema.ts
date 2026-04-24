@@ -23,3 +23,4 @@ export * from '../features/assistant/schema';
 export * from '../features/test-suite/schema';
 export * from '../features/workspace/workspaces-schema';
 export * from '../features/runners/schema';
+export * from '../features/peers/schema';
