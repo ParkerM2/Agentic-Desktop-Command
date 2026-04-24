@@ -46,6 +46,7 @@ export interface LifecycleDeps {
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
   getHeartbeatIntervalId: () => ReturnType<typeof setInterval> | null;
+  disposePeerTransport: () => Promise<void>;
 }
 
 /** Registers Electron app lifecycle event handlers. */
@@ -84,6 +85,7 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     deps.notificationManager.dispose();
     deps.briefingService.stopScheduler();
     deps.watchEvaluator.stop();
+    void deps.disposePeerTransport();
 
     const heartbeatId = deps.getHeartbeatIntervalId();
     if (heartbeatId !== null) {
