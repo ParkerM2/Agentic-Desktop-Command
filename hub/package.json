@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && node -e \"import('node:fs').then(f=>f.cpSync('src/ui','dist/ui',{recursive:true}))\"",
+    "build": "tsc && node -e \"const{cpSync}=require('node:fs');cpSync('src/db/migrations','dist/db/migrations',{recursive:true});cpSync('src/ui','dist/ui',{recursive:true});\"",
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",

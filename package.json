@@ -36,6 +36,7 @@
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "test:watch": "vitest",
+    "pretest:e2e": "node scripts/rebuild-sqlite-for-electron.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright test && bash scripts/post-e2e-screenshots.sh",
