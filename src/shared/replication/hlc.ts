@@ -5,7 +5,7 @@ export interface Hlc {
 }
 
 const WALL_PAD = 20;
-const COUNTER_PAD = 4;
+const COUNTER_PAD = 8;
 
 export function formatHlc(hlc: Hlc): string {
   const wall = String(hlc.wallClockMs).padStart(WALL_PAD, '0');
@@ -18,11 +18,12 @@ export function parseHlc(s: string): Hlc {
   if (parts.length !== 3) {
     throw new Error(`invalid HLC: ${s}`);
   }
-  return {
-    wallClockMs: Number(parts[0]),
-    counter: parseInt(parts[1], 16),
-    peerIdShort: parts[2],
-  };
+  const wallClockMs = Number(parts[0]);
+  const counter = parseInt(parts[1], 16);
+  if (!Number.isFinite(wallClockMs) || !Number.isFinite(counter)) {
+    throw new Error(`invalid HLC: ${s}`);
+  }
+  return { wallClockMs, counter, peerIdShort: parts[2] };
 }
 
 export function compareHlc(a: string, b: string): number {
