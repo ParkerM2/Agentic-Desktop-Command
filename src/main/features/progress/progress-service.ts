@@ -21,6 +21,7 @@ import type { ProgressPriority, ProgressStatus, ProgressTask } from '@shared/typ
 
 import type { AdcDatabase } from '@main/db';
 import { progressTasks } from '@main/db/schema';
+import type { ReplicationEngine } from '@main/features/peers/replication-engine';
 import { serviceLogger } from '@main/lib/logger';
 
 import { runLogCleanup as runLogCleanupFn } from './log-cleanup';
@@ -28,6 +29,43 @@ import { detectRootFile, readFrontmatter, writeFrontmatter } from './task-file-i
 
 import type { AgentManager } from '../../agent-host/agent-host-client';
 import type { FSWatcher } from 'node:fs';
+
+// ─── Replication column-name mapping (camelCase TS → snake_case SQL) ─
+
+const PROGRESS_TASK_COLUMN_MAP: Record<string, string> = {
+  slug: 'slug',
+  id: 'id',
+  projectId: 'project_id',
+  title: 'title',
+  status: 'status',
+  priority: 'priority',
+  description: 'description',
+  jiraKey: 'jira_key',
+  jiraUrl: 'jira_url',
+  prUrl: 'pr_url',
+  prNumber: 'pr_number',
+  prStatus: 'pr_status',
+  lastSessionId: 'last_session_id',
+  lastAgentName: 'last_agent_name',
+  completedAt: 'completed_at',
+  archivedAt: 'archived_at',
+  teamName: 'team_name',
+  workflow: 'workflow',
+  workflowPhase: 'workflow_phase',
+  sessionHistory: 'session_history',
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+};
+
+function toSnakeColumns(camelColumns: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(camelColumns)) {
+    if (Object.hasOwn(PROGRESS_TASK_COLUMN_MAP, k)) {
+      out[PROGRESS_TASK_COLUMN_MAP[k]] = v;
+    }
+  }
+  return out;
+}
 
 // ─── Service Interface ────────────────────────────────────────
 
@@ -466,6 +504,7 @@ export function createProgressService(
   projectPath: string,
   agentManagerService: AgentManager,
   db: AdcDatabase,
+  replicationEngine?: ReplicationEngine,
 ): ProgressService {
   const progressDir = join(projectPath, 'progress');
   const archivedDir = join(progressDir, 'archived');
@@ -847,6 +886,23 @@ export function createProgressService(
         updatedAt: now,
       }).run();
 
+      replicationEngine?.recordLocalWrite({
+        tableName: 'progress_tasks',
+        pk: slug,
+        opType: 'insert',
+        columns: toSnakeColumns({
+          slug,
+          id: resolvedId,
+          projectId: projectId ?? null,
+          title,
+          status: 'backlog',
+          priority,
+          description: description || null,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      });
+
       // 2. Create filesystem directory + markdown file
       const taskDir = join(progressDir, slug);
       await mkdir(taskDir, { recursive: true });
@@ -937,6 +993,13 @@ export function createProgressService(
         .where(eq(progressTasks.slug, slug))
         .run();
 
+      replicationEngine?.recordLocalWrite({
+        tableName: 'progress_tasks',
+        pk: slug,
+        opType: 'update',
+        columns: toSnakeColumns(dbUpdates),
+      });
+
       // 2. Also rewrite frontmatter so filesystem stays in sync
       const taskDir = join(progressDir, slug);
       const rootFileName = await detectRootFile(taskDir);
@@ -978,6 +1041,13 @@ export function createProgressService(
         .where(eq(progressTasks.slug, slug))
         .run();
 
+      replicationEngine?.recordLocalWrite({
+        tableName: 'progress_tasks',
+        pk: slug,
+        opType: 'update',
+        columns: toSnakeColumns({ status: 'archived', archivedAt: now, updatedAt: now }),
+      });
+
       // 2. Stamp frontmatter and move directory
       await mkdir(archivedDir, { recursive: true });
       const src = join(progressDir, slug);
@@ -1007,6 +1077,13 @@ export function createProgressService(
       db.delete(progressTasks)
         .where(eq(progressTasks.slug, slug))
         .run();
+
+      replicationEngine?.recordLocalWrite({
+        tableName: 'progress_tasks',
+        pk: slug,
+        opType: 'delete',
+        columns: {},
+      });
 
       // 2. Remove filesystem directory
       const taskDir = join(progressDir, slug);
