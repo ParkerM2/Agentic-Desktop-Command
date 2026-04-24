@@ -75,7 +75,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
     }
     if (frame.type === 'HELLO') {
       const helloPayload = frame.payload as HelloPayload | undefined;
-      if (!helloPayload || helloPayload.schemaHash !== deps.schemaHash) {
+      if (helloPayload?.schemaHash !== deps.schemaHash) {
         serviceLogger.warn(
           { local: deps.schemaHash, remote: helloPayload?.schemaHash },
           'peers.wsTransport schema mismatch — closing socket',
