@@ -22,6 +22,12 @@ async function waitFor<T>(fn: () => T | undefined, timeoutMs = 3000): Promise<T>
   throw new Error('waitFor timed out');
 }
 
+async function sleep(ms: number): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 describe('ws-transport roundtrip', () => {
   let sqliteA: Database.Database;
   let sqliteB: Database.Database;
@@ -133,18 +139,22 @@ describe('ws-transport roundtrip', () => {
     await transportA.close();
     await transportB.close();
 
-    transportA = await createWsTransport({
+    const mismatchedA = await createWsTransport({
       engine: engineA, listenPort: 0, remoteUrl: '',
       schemaHash: 'a'.repeat(64),
     });
-    const portA = transportA.listenPort();
-    transportB = await createWsTransport({
+    const portA = mismatchedA.listenPort();
+    const mismatchedB = await createWsTransport({
       engine: engineB, listenPort: 0, remoteUrl: `ws://127.0.0.1:${String(portA)}`,
       schemaHash: 'b'.repeat(64),
     });
+    // eslint-disable-next-line require-atomic-updates -- sequential afterEach cleanup
+    transportA = mismatchedA;
+    // eslint-disable-next-line require-atomic-updates -- sequential afterEach cleanup
+    transportB = mismatchedB;
 
     // Allow HELLO exchange + mismatch close
-    await new Promise((r) => setTimeout(r, 500));
+    await sleep(500);
 
     // A-originated write must NOT reach B
     sqliteA
@@ -160,7 +170,7 @@ describe('ws-transport roundtrip', () => {
       },
     });
 
-    await new Promise((r) => setTimeout(r, 300));
+    await sleep(300);
     const row = sqliteB.prepare(`SELECT title FROM progress_tasks WHERE slug='mismatch-task'`).get();
     expect(row).toBeUndefined();
   });
