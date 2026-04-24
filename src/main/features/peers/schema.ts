@@ -13,7 +13,6 @@ export const opLog = sqliteTable(
     appliedAt: integer('applied_at').notNull(),
   },
   (t) => [
-    index('op_log_peer_hlc').on(t.originPeerId, t.hlc),
     uniqueIndex('op_log_dedup').on(t.originPeerId, t.hlc),
   ],
 );
