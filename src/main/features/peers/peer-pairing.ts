@@ -3,6 +3,7 @@ import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 export interface PairInitArgs {
   peerId: string;
   pubkey: string;
+  fingerprint?: string;
   displayName?: string;
 }
 
@@ -13,7 +14,7 @@ export interface PairInitResult {
 }
 
 export type PairConfirmResult =
-  | { ok: true; initiator: { peerId: string; pubkey: string; displayName?: string } }
+  | { ok: true; initiator: { peerId: string; pubkey: string; fingerprint?: string; displayName?: string } }
   | { ok: false; reason: 'wrong_pin' | 'expired' | 'locked_out' | 'unknown_session' };
 
 export interface PeerPairing {
