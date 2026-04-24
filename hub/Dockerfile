@@ -21,19 +21,25 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist/ ./dist/
-# DB migrations + schema resolve via __dirname from dist/db/
+# DB migrations + schema + admin UI resolve via __dirname from dist/
 COPY src/db/migrations/ ./dist/db/migrations/
 COPY src/db/schema.sql ./dist/db/schema.sql
+COPY src/ui/ ./dist/ui/
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app/data
 
 ENV PORT=3200
 ENV HOST=0.0.0.0
 EXPOSE 3200
 
+# /app/data holds hub-id, tls.{cert,key}.pem, admin-key.txt, and adc.db — persist it.
+VOLUME /app/data
+
 # Switch to non-root user
 USER appuser
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://localhost:3200/api/health || exit 1
+# Hub serves HTTPS-only after 0.2.0 (self-signed cert on first boot).
+# --no-check-certificate is required since the cert is self-signed.
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -q --no-check-certificate -O- https://localhost:3200/api/health || exit 1
 
 CMD ["node", "dist/index.js"]
