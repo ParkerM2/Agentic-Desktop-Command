@@ -1,14 +1,15 @@
 import { and, eq, sql } from 'drizzle-orm';
 
+import { nextHlc, receiveHlc } from '@shared/replication/hlc';
+import { TOMBSTONE_COLUMN, type Op } from '@shared/replication/op-types';
+import { isSyncTable, SYNC_TABLE_PK, type SyncTable } from '@shared/replication/sync-tables';
+
 import type { AdcDatabase } from '@main/db';
-import { createOpLogService, type OpLogService } from '@main/features/peers/op-log';
 import { mergeOp, type RowMetaState } from '@main/features/peers/lww-merge';
+import { createOpLogService, type OpLogService } from '@main/features/peers/op-log';
 import { rowMeta as rowMetaTable } from '@main/features/peers/schema';
 import { serviceLogger } from '@main/lib/logger';
 
-import { nextHlc, receiveHlc } from '@shared/replication/hlc';
-import { isSyncTable, SYNC_TABLE_PK, type SyncTable } from '@shared/replication/sync-tables';
-import { TOMBSTONE_COLUMN, type Op } from '@shared/replication/op-types';
 
 const COLUMN_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -33,7 +34,7 @@ export interface ReplicationEngine {
   onLocalOp: (listener: (op: Op) => void) => () => void;
 }
 
-type SqliteClient = { prepare: (q: string) => { run: (...a: unknown[]) => void } };
+interface SqliteClient { prepare: (q: string) => { run: (...a: unknown[]) => void } }
 
 function $client(db: AdcDatabase): SqliteClient {
   return (db as unknown as { $client: SqliteClient }).$client;
@@ -125,7 +126,7 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
   return {
     recordLocalWrite(args) {
       if (!isSyncTable(args.tableName)) {
-        throw new Error(`recordLocalWrite called on non-sync table: ${args.tableName}`);
+        throw new Error(`recordLocalWrite called on non-sync table: ${String(args.tableName)}`);
       }
 
       const hlc = nextHlc({ lastHlc, wallClockMs: clock(), peerIdShort });

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { mergeOp, type RowMetaState } from '@main/features/peers/lww-merge';
 import type { Op } from '@shared/replication/op-types';
 import { TOMBSTONE_COLUMN } from '@shared/replication/op-types';
+
+import { mergeOp, type RowMetaState } from '@main/features/peers/lww-merge';
 
 const HLC_1 = '00000000000000000001.00000000.aaaaaaaa';
 const HLC_2 = '00000000000000000002.00000000.bbbbbbbb';

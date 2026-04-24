@@ -1,9 +1,10 @@
 import { and, asc, eq, gt } from 'drizzle-orm';
 
+import type { Op } from '@shared/replication/op-types';
+
 import type { AdcDatabase } from '@main/db';
 import { opLog as opLogTable } from '@main/features/peers/schema';
 
-import type { Op } from '@shared/replication/op-types';
 
 export interface OpLogService {
   append: (op: Op) => void;
@@ -46,7 +47,7 @@ export function createOpLogService(db: AdcDatabase): OpLogService {
         tableName: r.tableName as Op['tableName'],
         pk: r.pk,
         opType: r.opType,
-        payload: JSON.parse(r.payload),
+        payload: JSON.parse(r.payload) as Op['payload'],
       }));
     },
   };

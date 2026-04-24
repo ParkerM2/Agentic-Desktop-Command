@@ -1,12 +1,14 @@
+import { resolve } from 'node:path';
+
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import type { Op } from '@shared/replication/op-types';
 
 import * as schema from '@main/db/schema';
 import { createOpLogService } from '@main/features/peers/op-log';
-import type { Op } from '@shared/replication/op-types';
 
 let sqlite: Database.Database;
 let db: ReturnType<typeof drizzle<typeof schema>>;
