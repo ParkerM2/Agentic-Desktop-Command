@@ -23,11 +23,12 @@ export class ProcessSupervisor extends EventEmitter {
   private procs = new Map<string, ChildProcess>();
 
   spawn(opts: SpawnOptions): SpawnHandle {
-    const shell = process.platform === 'win32';
+    // `command` is a single shell-style string (supports quoting, pipes, etc.),
+    // so always run it through a shell. On Windows this is cmd.exe; elsewhere /bin/sh.
     const proc = spawn(opts.command, {
       cwd: opts.cwd,
       env: { ...process.env, ...opts.env },
-      shell,
+      shell: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 

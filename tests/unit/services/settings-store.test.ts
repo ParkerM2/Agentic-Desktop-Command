@@ -121,7 +121,8 @@ function createTestDb(): AdcDatabase {
 function seedSettings(db: AdcDatabase, settingsObj: Record<string, unknown>): void {
   db.insert(schema.settingsKv)
     .values({
-      key: 'default',
+      key: 'app-settings',
+      category: 'settings',
       settings: settingsObj,
       updatedAt: new Date().toISOString(),
     })
@@ -315,7 +316,7 @@ describe('SettingsStore (SQLite)', () => {
 
       const row = db.select().from(schema.settingsKv).all();
       expect(row).toHaveLength(1);
-      expect(row[0]?.key).toBe('default');
+      expect(row[0]?.key).toBe('app-settings');
     });
 
     it('writes profiles to profiles table', () => {

@@ -18,6 +18,7 @@ import { app } from 'electron';
 import { APP_EVENTS } from '@shared/ipc/app/channels';
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
+import { computeSchemaHash } from '@shared/replication/schema-hash';
 import type { AppChannel } from '@shared/types/channel';
 
 import { createOAuthManager } from '../auth/oauth-manager';
@@ -76,6 +77,7 @@ import { createInsightsService } from '../features/insights/insights-service';
 import { createIntegrationsService } from '../features/integrations/integrations-service';
 import { createMergeService } from '../features/merge/merge-service';
 import { createNotesService } from '../features/notes/notes-service';
+import { loadMigrationTags } from '../features/peers/migration-tags';
 import { loadPhase1PeerConfig } from '../features/peers/peer-config';
 import { createReplicationEngine } from '../features/peers/replication-engine';
 import { createWsTransport, type WsTransport } from '../features/peers/ws-transport';
@@ -620,18 +622,19 @@ export function createServiceRegistry(
   let wsTransportHandle: WsTransport | null = null;
   if (peerConfig.listenPort > 0) {
     // WS transport starts asynchronously. Capture the handle so before-quit can close it.
-    createWsTransport({
-      engine: replicationEngine,
-      listenPort: peerConfig.listenPort,
-      remoteUrl: peerConfig.remoteUrl,
-    })
-      .then((t) => {
-        wsTransportHandle = t;
-        return t;
-      })
-      .catch((err: unknown) => {
+    void (async () => {
+      try {
+        const schemaHash = await computeSchemaHash(loadMigrationTags());
+        wsTransportHandle = await createWsTransport({
+          engine: replicationEngine,
+          listenPort: peerConfig.listenPort,
+          remoteUrl: peerConfig.remoteUrl,
+          schemaHash,
+        });
+      } catch (err) {
         appLogger.error(`[Bootstrap] WS transport failed to start: ${String(err)}`);
-      });
+      }
+    })();
   }
   const disposePeerTransport = async (): Promise<void> => {
     if (wsTransportHandle) {

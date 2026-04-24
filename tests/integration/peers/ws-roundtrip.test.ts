@@ -22,6 +22,12 @@ async function waitFor<T>(fn: () => T | undefined, timeoutMs = 3000): Promise<T>
   throw new Error('waitFor timed out');
 }
 
+async function sleep(ms: number): Promise<void> {
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 describe('ws-transport roundtrip', () => {
   let sqliteA: Database.Database;
   let sqliteB: Database.Database;
@@ -41,12 +47,15 @@ describe('ws-transport roundtrip', () => {
     engineA = createReplicationEngine({ db: dbA, peerIdShort: 'aaaaaaaa', peerIdFull: 'peer-a' });
     engineB = createReplicationEngine({ db: dbB, peerIdShort: 'bbbbbbbb', peerIdFull: 'peer-b' });
 
-    transportA = await createWsTransport({ engine: engineA, listenPort: 0, remoteUrl: '' });
+    transportA = await createWsTransport({
+      engine: engineA, listenPort: 0, remoteUrl: '', schemaHash: 'match',
+    });
     const portA = transportA.listenPort();
     transportB = await createWsTransport({
       engine: engineB,
       listenPort: 0,
       remoteUrl: `ws://127.0.0.1:${String(portA)}`,
+      schemaHash: 'match',
     });
 
     await waitFor(() => (transportB.isConnected() && transportA.isConnected() ? true : undefined));
@@ -124,5 +133,45 @@ describe('ws-transport roundtrip', () => {
         | undefined,
     );
     expect(row.title).toBe('Hello from B');
+  });
+
+  it('disconnects when peers disagree on schemaHash', async () => {
+    await transportA.close();
+    await transportB.close();
+
+    const mismatchedA = await createWsTransport({
+      engine: engineA, listenPort: 0, remoteUrl: '',
+      schemaHash: 'a'.repeat(64),
+    });
+    const portA = mismatchedA.listenPort();
+    const mismatchedB = await createWsTransport({
+      engine: engineB, listenPort: 0, remoteUrl: `ws://127.0.0.1:${String(portA)}`,
+      schemaHash: 'b'.repeat(64),
+    });
+    // eslint-disable-next-line require-atomic-updates -- sequential afterEach cleanup
+    transportA = mismatchedA;
+    // eslint-disable-next-line require-atomic-updates -- sequential afterEach cleanup
+    transportB = mismatchedB;
+
+    // Allow HELLO exchange + mismatch close
+    await sleep(500);
+
+    // A-originated write must NOT reach B
+    sqliteA
+      .prepare(
+        `INSERT INTO progress_tasks (slug, title, status, priority, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run('mismatch-task', 'No', 'backlog', 'medium', '2026-04-24T00:00:00Z', '2026-04-24T00:00:00Z');
+    engineA.recordLocalWrite({
+      tableName: 'progress_tasks', pk: 'mismatch-task', opType: 'insert',
+      columns: {
+        slug: 'mismatch-task', title: 'No', status: 'backlog', priority: 'medium',
+        created_at: '2026-04-24T00:00:00Z', updated_at: '2026-04-24T00:00:00Z',
+      },
+    });
+
+    await sleep(300);
+    const row = sqliteB.prepare(`SELECT title FROM progress_tasks WHERE slug='mismatch-task'`).get();
+    expect(row).toBeUndefined();
   });
 });
