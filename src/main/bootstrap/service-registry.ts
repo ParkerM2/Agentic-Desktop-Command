@@ -9,11 +9,14 @@
  *                    on first property access (first IPC call).
  */
 
+import { existsSync } from 'node:fs';
 import { hostname } from 'node:os';
+import { join } from 'node:path';
 
 import { app } from 'electron';
 
 import { APP_EVENTS } from '@shared/ipc/app/channels';
+import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import type { AppChannel } from '@shared/types/channel';
 
@@ -59,11 +62,14 @@ import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
 import { createGitHubService } from '../features/github';
+import { LEGACY_HUB_ID, LOCAL_HUB_ID, migrateLegacyDb, resolveActiveDbPath } from '../features/hub/db-migrator';
 import { createDeviceService } from '../features/hub/device';
 import { createHubApiClient } from '../features/hub/hub-api-client';
 import { createHubAuthService } from '../features/hub/hub-auth-service';
 import { createHubConnectionManager } from '../features/hub/hub-connection';
+import { createHubDiscovery } from '../features/hub/hub-discovery';
 import { createHubSyncService } from '../features/hub/hub-sync';
+import { createNetworkWatcher } from '../features/hub/network-watcher';
 import { createWebhookRelay } from '../features/hub/webhook-relay';
 import { createIdeasService } from '../features/ideas/ideas-service';
 import { createInsightsService } from '../features/insights/insights-service';
@@ -93,6 +99,7 @@ import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
+import { shouldEnableDiscovery } from '../lib/hub-discovery-flag';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
@@ -177,7 +184,23 @@ export function createServiceRegistry(
   }
 
   const dataDir = configReader.resolveDataDir();
-  const db = initDatabase(dataDir);
+
+  // Move any pre-existing top-level adc.db into hubs/legacy/adc.db before
+  // the DB opens. Task 16's config-store migrator writes hubId='legacy'
+  // into the v2 blob, so once the DB is open at the new location the
+  // records line up.
+  //
+  // Boot-time hub selection: if a 'legacy' per-hub DB exists (either from
+  // this boot's move or a prior boot), open there; otherwise fall back to
+  // 'local' for fresh installs. activeHubId from the v2 config is only
+  // readable once the DB is open, so a full multi-hub active-hub lookup
+  // lives in Task 23.
+  // TODO: Task 23 switch active hub — read activeHubId from hub-config
+  // and reopen the DB at the selected hub's path on switch.
+  migrateLegacyDb(dataDir);
+  const legacyDbPath = resolveActiveDbPath(dataDir, LEGACY_HUB_ID);
+  const bootHubId = existsSync(legacyDbPath) ? LEGACY_HUB_ID : LOCAL_HUB_ID;
+  const db = initDatabase(dataDir, { activeHubId: bootHubId });
 
   const errorCollector = createErrorCollector(dataDir, {
     onError: (entry) => { router.emit(APP_EVENTS.ERROR.OCCURRED, entry); },
@@ -241,6 +264,12 @@ export function createServiceRegistry(
         void registerDeviceAndStartHeartbeat(hubApiClient);
       }
     });
+    // Forward active-hub changes to the renderer so UIs can react
+    // without polling. Subscribed here so the lazy proxy doesn't have
+    // to be force-initialised from outside.
+    mgr.onBeforeActiveHubChange(({ to }) => {
+      router.emit(HUB_EVENTS.ACTIVE.CHANGED, { activeHubId: to });
+    });
     return mgr;
   });
 
@@ -259,6 +288,63 @@ export function createServiceRegistry(
   );
 
   const hubSyncService = lazyService(() => createHubSyncService(hubConnectionManager, db));
+
+  // ─── Tier 1: Hub discovery (mDNS) + network change watcher ────
+  //
+  // Discovery surfaces mDNS-advertised hubs on the same channel; the
+  // network watcher restarts discovery whenever interfaces change so a
+  // VPN connect / Wi-Fi switch gives an immediate refresh instead of
+  // waiting for the browser's next poll.
+  //
+  // Emergency rollback: `ENABLE_HUB_DISCOVERY=false` skips starting the
+  // browser + network watcher and suppresses `HUB_EVENTS.DISCOVERY.CHANGED`
+  // emissions. The legacy `HUB.CONNECT.SERVER` URL+key flow keeps working.
+  const hubsDir = join(dataDir, 'hubs');
+  const hubDiscovery = createHubDiscovery({ channel });
+  const discoveryEnabled = shouldEnableDiscovery();
+  if (discoveryEnabled) {
+    hubDiscovery.start();
+    hubDiscovery.on('changed', () => {
+      const activeHubId = hubConnectionManager.getActiveHubId();
+      const status = hubConnectionManager.getStatus();
+      const paired = hubConnectionManager.listHubs().map((r) => ({
+        hubId: r.hubId,
+        displayName: r.displayName,
+        lastKnownUrl: r.lastKnownUrl,
+        pinnedFingerprint: r.pinnedFingerprint,
+        addedAt: r.addedAt,
+        lastConnectedAt: r.lastConnectedAt,
+        status:
+          activeHubId !== null && activeHubId === r.hubId
+            ? status
+            : ('disconnected' as const),
+      }));
+      const discovered = hubDiscovery.getSnapshot().map((d) => ({
+        hubId: d.hubId,
+        displayName: d.displayName,
+        version: d.version,
+        channel: d.channel,
+        addresses: d.addresses,
+        port: d.port,
+        fingerprint: d.fingerprint,
+        lastSeenAt: d.lastSeenAt,
+        stale: d.stale,
+      }));
+      router.emit(HUB_EVENTS.DISCOVERY.CHANGED, { paired, discovered, activeHubId });
+    });
+    createNetworkWatcher(() => {
+      hubDiscovery.clear();
+      // Restart the browser to repopulate on the new interfaces.
+      void (async () => {
+        await hubDiscovery.stop();
+        hubDiscovery.start();
+      })();
+    });
+  } else {
+    appLogger.warn(
+      '[Hub] ENABLE_HUB_DISCOVERY=false — mDNS discovery and network-watcher disabled; legacy HUB.CONNECT.SERVER flow remains available',
+    );
+  }
 
   // ─── Device + heartbeat (stateful, kept at module scope) ─────
 
@@ -557,6 +643,8 @@ export function createServiceRegistry(
     fitnessService,
     healthRegistry,
     hubConnectionManager,
+    hubDiscovery,
+    hubsDir,
     hubSyncService,
     ideasService,
     insightsService,

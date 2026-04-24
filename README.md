@@ -234,10 +234,47 @@ graph LR
     Hub --> WS["WebSocket"]
 ```
 
+### Running a hub
+
 ```bash
 cd hub && npm install && npm run dev
-# → http://localhost:3200
+# → https://localhost:3200
 ```
+
+The hub listens on HTTPS with a self-signed certificate and advertises itself on the LAN via mDNS (`_adc-hub._tcp.local`). No firewall configuration beyond port 3200 is required on the happy path.
+
+### Pairing a desktop with a hub
+
+Hub discovery is automatic on the LAN. In the desktop app, open **Settings → Hub** to see the list of discovered hubs and click **Pair** on the one you want to use. The app generates a per-hub Ed25519 client identity, pins the hub's TLS fingerprint, and stores the paired hub under `${userData}/hubs/${hubId}/` with its own SQLite database.
+
+The old manual `http://<ip>:3200` + API-key dance is gone. `HUB_BOOTSTRAP_SECRET` is **deprecated** and no longer required for the happy path — the two-step `/api/pair/init` → `/api/pair/confirm` handshake replaces it.
+
+**If mDNS is blocked on your network** (some corporate VPNs, guest Wi-Fi, or hardened firewalls drop multicast), use the **Enter hub URL manually** escape hatch in the picker. Paste `https://<ip>:3200` and the app will fall back to the same pair handshake over unicast.
+
+### Admin UI setup
+
+Set the two admin env vars on the hub before starting it:
+
+```bash
+# Hash a password for HUB_ADMIN_PASSWORD_HASH
+node hub/scripts/hash-admin-password.mjs '<your password>'
+
+# Then export (or put in hub/.env):
+export HUB_ADMIN_USER='admin'
+export HUB_ADMIN_PASSWORD_HASH='<paste argon2 hash from the script>'
+```
+
+The admin UI is served at `https://<hub>:3200/admin` — sign in with those credentials to view paired clients, revoke keys, and inspect the audit log.
+
+### Emergency rollback
+
+If mDNS discovery or the picker is causing problems in your environment, set:
+
+```bash
+ENABLE_HUB_DISCOVERY=false
+```
+
+in the desktop app's environment. The mDNS browser and network-change watcher will not start, `HUB_EVENTS.DISCOVERY.CHANGED` stops emitting, and the legacy URL-entry + API-key **Generate / Connect** flow remains fully functional. This is an escape hatch, not the supported path — the picker is the intended UX.
 
 ---
 

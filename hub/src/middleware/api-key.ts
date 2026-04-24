@@ -3,6 +3,12 @@ import { createHash } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type Database from 'better-sqlite3';
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    clientId?: string;
+  }
+}
+
 function hashKey(key: string): string {
   return createHash('sha256').update(key).digest('hex');
 }
@@ -17,8 +23,19 @@ const JWT_AUTH_ROUTES = [
   '/api/health',
 ];
 
+// Routes that bypass API-key auth entirely. /api/pair/* is the
+// unauthenticated pairing handshake: clients cannot have an API key before
+// they pair, so requiring one here would be a chicken-and-egg deadlock.
+// /api/admin/* uses its own X-Admin-Key auth instead of X-API-Key.
+// /admin (UI) uses HTTP basic auth enforced by a per-route preHandler.
+const BYPASS_AUTH_ROUTES = ['/api/pair/', '/api/admin/', '/admin'];
+
 function isJwtAuthRoute(url: string): boolean {
   return JWT_AUTH_ROUTES.some((route) => url.startsWith(route));
+}
+
+function isBypassAuthRoute(url: string): boolean {
+  return BYPASS_AUTH_ROUTES.some((route) => url.startsWith(route));
 }
 
 export function createApiKeyMiddleware(db: Database.Database) {
@@ -28,6 +45,11 @@ export function createApiKeyMiddleware(db: Database.Database) {
   ): Promise<void> {
     // Skip for routes that use JWT auth instead of API keys
     if (isJwtAuthRoute(request.url)) {
+      return;
+    }
+
+    // Skip for routes that bypass authentication entirely (e.g., pair handshake)
+    if (isBypassAuthRoute(request.url)) {
       return;
     }
 
@@ -69,12 +91,32 @@ export function createApiKeyMiddleware(db: Database.Database) {
 
     const keyHash = hashKey(apiKey);
     const row = db
-      .prepare('SELECT id FROM api_keys WHERE key_hash = ?')
-      .get(keyHash) as { id: string } | undefined;
+      .prepare(
+        'SELECT id, client_id, revoked_at, revoked_reason FROM api_keys WHERE key_hash = ?',
+      )
+      .get(keyHash) as
+      | {
+          id: string;
+          client_id: string | null;
+          revoked_at: number | null;
+          revoked_reason: string | null;
+        }
+      | undefined;
 
     if (!row) {
       await reply.status(401).send({ error: 'Invalid API key' });
       return;
+    }
+
+    if (row.revoked_at !== null) {
+      await reply.status(401).send({
+        error: `Key revoked: ${row.revoked_reason ?? 'no reason'}`,
+      });
+      return;
+    }
+
+    if (row.client_id !== null) {
+      request.clientId = row.client_id;
     }
   };
 }

@@ -1,18 +1,32 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
-import Fastify from 'fastify';
+import Fastify, {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+} from 'fastify';
 
 import { createDatabase } from './db/database.js';
+import { resolveAdminKey } from './lib/admin-key.js';
+import { createAuditRepo, type AuditRepo } from './lib/audit-repo.js';
+import { resolveHubId } from './lib/hub-id.js';
 import { verifyAccessToken } from './lib/jwt.js';
+import { createRevocationBus, type RevocationBus } from './lib/revocation-bus.js';
+import { revokeClient as revokeClientFn } from './lib/revoke-client.js';
+import { resolveTls, type TlsMaterial } from './lib/tls.js';
+import { createAdminBasicAuth } from './middleware/admin-auth.js';
 import { createApiKeyMiddleware, hashKey } from './middleware/api-key.js';
 import { createJwtAuthMiddleware } from './middleware/jwt-auth.js';
+import { createAdminRoutes } from './routes/admin/index.js';
 import { agentRoutes } from './routes/agents.js';
 import { authRoutes } from './routes/auth.js';
 import { captureRoutes } from './routes/captures.js';
 import { deviceRoutes } from './routes/devices.js';
+import { createPairRoutes } from './routes/pair.js';
 import { plannerRoutes } from './routes/planner.js';
 import { projectRoutes } from './routes/projects.js';
 import { workspaceRoutes } from './routes/workspaces.js';
@@ -22,6 +36,7 @@ import { webhookRoutes } from './routes/webhooks/index.js';
 import { addAuthenticatedClient } from './ws/broadcaster.js';
 
 import type Database from 'better-sqlite3';
+import type { WebSocket as WsWebSocket } from 'ws';
 
 /**
  * Validate CORS origin.
@@ -59,9 +74,41 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 /** WebSocket close codes for authentication errors. */
 const WS_CLOSE_INVALID_KEY = 4001;
 const WS_CLOSE_AUTH_TIMEOUT = 4002;
+/** Close code fired when an admin revokes the client's API key. */
+const WS_CLOSE_REVOKED = 4003;
 
 /** Timeout for receiving auth message (5 seconds). */
 const WS_AUTH_TIMEOUT_MS = 5000;
+
+/** Tracks live authenticated sockets keyed by API-key clientId. */
+type WsConnectionMap = Map<string, Set<WsWebSocket>>;
+
+function registerRevokableSocket(
+  map: WsConnectionMap,
+  clientId: string,
+  socket: WsWebSocket,
+): void {
+  let bucket = map.get(clientId);
+  if (bucket === undefined) {
+    bucket = new Set();
+    map.set(clientId, bucket);
+  }
+  bucket.add(socket);
+
+  const cleanup = (): void => {
+    const current = map.get(clientId);
+    if (current === undefined) {
+      return;
+    }
+    current.delete(socket);
+    if (current.size === 0) {
+      map.delete(clientId);
+    }
+  };
+
+  socket.on('close', cleanup);
+  socket.on('error', cleanup);
+}
 
 interface WsApiKeyAuthMessage {
   type: 'auth';
@@ -99,6 +146,7 @@ function isValidAuthMessage(data: unknown): data is WsAuthMessage {
 function handleWebSocketAuth(
   socket: import('ws').WebSocket,
   db: Database.Database,
+  wsConnections: WsConnectionMap,
 ): void {
   let authenticated = false;
 
@@ -110,11 +158,14 @@ function handleWebSocketAuth(
     }
   }, WS_AUTH_TIMEOUT_MS);
 
-  function authSuccess(): void {
+  function authSuccess(clientId?: string | null): void {
     authenticated = true;
     clearTimeout(timeoutId);
     console.log('[WS] Client authenticated');
     addAuthenticatedClient(socket);
+    if (clientId !== undefined && clientId !== null && clientId !== '') {
+      registerRevokableSocket(wsConnections, clientId, socket);
+    }
   }
 
   function authFailure(reason: string): void {
@@ -159,15 +210,29 @@ function handleWebSocketAuth(
       if ('apiKey' in data && typeof data.apiKey === 'string') {
         const keyHash = hashKey(data.apiKey);
         const row = db
-          .prepare('SELECT id FROM api_keys WHERE key_hash = ?')
-          .get(keyHash) as { id: string } | undefined;
+          .prepare(
+            'SELECT id, client_id, revoked_at FROM api_keys WHERE key_hash = ?',
+          )
+          .get(keyHash) as
+          | { id: string; client_id: string | null; revoked_at: number | null }
+          | undefined;
 
         if (!row) {
           authFailure('Invalid API key');
           return;
         }
 
-        authSuccess();
+        if (row.revoked_at !== null) {
+          authFailure('Key revoked');
+          return;
+        }
+
+        authSuccess(row.client_id);
+        try {
+          socket.send(JSON.stringify({ type: 'auth_ok' }));
+        } catch {
+          /* client may already be closing — ignore */
+        }
         return;
       }
 
@@ -185,11 +250,47 @@ function handleWebSocketAuth(
   });
 }
 
-export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fastify>> {
-  const app = Fastify({ logger: true });
+export interface BuildAppOptions {
+  /** Directory used for hub-id, TLS material, and (by default) the SQLite db. */
+  dataDir?: string;
+  /** Explicit SQLite path override; defaults to `<dataDir>/claude-ui.db`. */
+  dbPath?: string;
+  /** Reserved — advertised listen port for downstream consumers. Not used here. */
+  port?: number;
+}
+
+export interface BuiltApp {
+  app: FastifyInstance;
+  hubId: string;
+  tls: TlsMaterial;
+  /** In-process bus for revocation events. Exposed so admin endpoints can fire. */
+  revocationBus: RevocationBus;
+  /**
+   * Bound helper that revokes every live API key for a client, records a
+   * `key.revoke` audit event, and broadcasts to the revocation bus (which
+   * closes any live WS connections with code 4003).
+   */
+  revokeClient: (clientId: string, reason: string) => { updated: number };
+  /** Shared audit repo — exposed for admin routes that emit non-pair events. */
+  audit: AuditRepo;
+}
+
+export async function buildApp(options?: BuildAppOptions | string): Promise<BuiltApp> {
+  // Backward-compatible: accept a bare dbPath string in addition to the options object.
+  const opts: BuildAppOptions =
+    typeof options === 'string' ? { dbPath: options } : options ?? {};
+
+  const dataDir = opts.dataDir ?? join(process.cwd(), 'data');
+  const hubId = resolveHubId(dataDir);
+  const tls = await resolveTls(dataDir, hubId);
+
+  const app = Fastify({
+    logger: true,
+    https: { cert: tls.cert, key: tls.key },
+  });
 
   // Database
-  const resolvedDbPath = dbPath ?? join(process.cwd(), 'data', 'claude-ui.db');
+  const resolvedDbPath = opts.dbPath ?? join(dataDir, 'claude-ui.db');
   const db = createDatabase(resolvedDbPath);
 
   // Decorate Fastify instance with db
@@ -228,12 +329,93 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
   // JWT auth middleware (for new user-based auth)
   app.addHook('onRequest', createJwtAuthMiddleware());
 
+  // Revocation plumbing — bus + live-socket map keyed by clientId.
+  const revocationBus = createRevocationBus();
+  const wsConnections: WsConnectionMap = new Map();
+
+  revocationBus.onRevoke((clientId, reason) => {
+    const sockets = wsConnections.get(clientId);
+    if (sockets === undefined) {
+      return;
+    }
+    const payload = JSON.stringify({ reason });
+    for (const socket of sockets) {
+      try {
+        socket.close(WS_CLOSE_REVOKED, payload);
+      } catch {
+        /* socket may already be gone — cleanup listeners handle the Map */
+      }
+    }
+  });
+
   // WebSocket route with first-message auth protocol
   app.register(async (wsApp) => {
     wsApp.get('/ws', { websocket: true }, (socket) => {
-      handleWebSocketAuth(socket, db);
+      handleWebSocketAuth(socket, db, wsConnections);
     });
   });
+
+  // Pairing routes — unauthenticated (bypass-listed in api-key middleware).
+  // Must be registered after the auth hooks so the skip-list runs first.
+  const auditRepo = createAuditRepo(db);
+  const boundRevokeClient = (clientId: string, reason: string): { updated: number } =>
+    revokeClientFn({ db, bus: revocationBus, audit: auditRepo }, clientId, reason);
+  await app.register(createPairRoutes({ db, audit: auditRepo, hubId }));
+
+  // Admin routes — gated by X-Admin-Key. The current admin key is held in a
+  // mutable closure slot so /rotate-admin-key can swap it atomically.
+  let currentAdminKey = resolveAdminKey(dataDir);
+  await app.register(
+    createAdminRoutes({
+      db,
+      audit: auditRepo,
+      revokeClient: boundRevokeClient,
+      dataDir,
+      getCurrentAdminKey: () => currentAdminKey,
+      onKeyRotated: (newKey) => {
+        currentAdminKey = newKey;
+      },
+    }),
+    { prefix: '/api/admin' },
+  );
+
+  // Admin UI — single-file HTML served at /admin under HTTP basic auth.
+  // Reads the source at `src/ui/admin/index.html` in dev (tsx) and falls back
+  // to the equivalent copy beside the compiled JS at `dist/ui/admin/index.html`
+  // in production (operators are expected to copy the file at build time; see
+  // package.json build script).
+  const adminUiCandidates = [
+    join(import.meta.dirname, 'ui', 'admin', 'index.html'),
+    join(import.meta.dirname, '..', 'src', 'ui', 'admin', 'index.html'),
+  ];
+  const adminUiPath = adminUiCandidates.find((p) => existsSync(p));
+  const adminUiHtml: string | null =
+    adminUiPath === undefined ? null : readFileSync(adminUiPath, 'utf8');
+
+  const adminBasicAuth = createAdminBasicAuth(
+    process.env.HUB_ADMIN_USER,
+    process.env.HUB_ADMIN_PASSWORD_HASH,
+  );
+
+  async function serveAdminUi(
+    _req: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> {
+    if (adminUiHtml === null) {
+      await reply
+        .status(500)
+        .send({ error: 'Admin UI bundle missing (hub/src/ui/admin/index.html)' });
+      return;
+    }
+    await reply.type('text/html; charset=utf-8').send(adminUiHtml);
+  }
+
+  // Fastify's preHandler accepts async functions; its typings list a
+  // void-returning variant that eslint's no-misused-promises flags. Safe.
+  /* eslint-disable @typescript-eslint/no-misused-promises */
+  app.get('/admin', { preHandler: adminBasicAuth }, serveAdminUi);
+  app.get('/admin/', { preHandler: adminBasicAuth }, serveAdminUi);
+  /* eslint-enable @typescript-eslint/no-misused-promises */
 
   // REST routes
   await app.register(projectRoutes);
@@ -263,5 +445,12 @@ export async function buildApp(dbPath?: string): Promise<ReturnType<typeof Fasti
     return { status: 'ok', timestamp: new Date().toISOString() };
   });
 
-  return app;
+  return {
+    app,
+    hubId,
+    tls,
+    revocationBus,
+    revokeClient: boundRevokeClient,
+    audit: auditRepo,
+  };
 }
