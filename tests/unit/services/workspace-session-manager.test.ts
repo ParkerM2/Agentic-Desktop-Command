@@ -62,7 +62,7 @@ function makeMockProvisioner() {
       branch: `worktree/${slug}`,
       claudeMdPath: `/tmp/worktrees/${slug}/CLAUDE.md`,
     })),
-    teardown: vi.fn(),
+    teardown: vi.fn().mockResolvedValue(undefined),
     exists: vi.fn().mockReturnValue(false),
   };
 }
