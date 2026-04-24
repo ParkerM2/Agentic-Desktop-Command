@@ -64,6 +64,14 @@ jobs:
       - name: Rebuild native modules for Electron
         run: npm run rebuild:sqlite:electron
 
+      - name: Build hub (compiled artifacts referenced by tests)
+        shell: bash
+        run: |
+          if [ -f hub/package.json ]; then
+            npm --prefix hub ci
+            npm --prefix hub run build
+          fi
+
       - name: Typecheck
         run: npm run typecheck
 
