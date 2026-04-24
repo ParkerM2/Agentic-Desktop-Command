@@ -25,6 +25,7 @@ import { useLayoutSync } from '@renderer/shared/hooks';
 import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
+import { RevocationModal } from '@features/hub';
 import { OnboardingWizard } from '@features/onboarding';
 import { useErrorEvents, useSettings } from '@features/settings';
 import { useHubStatus } from '@features/settings/api/useHub';
@@ -103,6 +104,7 @@ export function RootLayout() {
       <MutationErrorToast />
       <WebhookNotification />
       <AssistantWidget />
+      <RevocationModal />
       <WorkflowPermissionModal />
       <WorkspaceInitOverlay phase={layoutSync.phase} projectCount={layoutSync.projectCount} />
     </div>
