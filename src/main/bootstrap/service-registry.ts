@@ -78,7 +78,7 @@ import { createMergeService } from '../features/merge/merge-service';
 import { createNotesService } from '../features/notes/notes-service';
 import { loadPhase1PeerConfig } from '../features/peers/peer-config';
 import { createReplicationEngine } from '../features/peers/replication-engine';
-import { createWsTransport } from '../features/peers/ws-transport';
+import { createWsTransport, type WsTransport } from '../features/peers/ws-transport';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
 import { createClaudeMdGenerator } from '../features/projects/claudemd-generator';
@@ -159,6 +159,7 @@ export interface ServiceRegistryResult {
   heartbeatIntervalId: ReturnType<typeof setInterval> | null;
   registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
+  disposePeerTransport: () => Promise<void>;
 }
 
 /**
@@ -616,17 +617,31 @@ export function createServiceRegistry(
     peerIdFull: peerConfig.peerIdFull,
   });
 
+  let wsTransportHandle: WsTransport | null = null;
   if (peerConfig.listenPort > 0) {
-    // Fire-and-forget: WS transport is optional and starts asynchronously.
-    // Errors are logged; replication-engine remains functional without it.
+    // WS transport starts asynchronously. Capture the handle so before-quit can close it.
     createWsTransport({
       engine: replicationEngine,
       listenPort: peerConfig.listenPort,
       remoteUrl: peerConfig.remoteUrl,
-    }).catch((err: unknown) => {
-      appLogger.error(`[Bootstrap] WS transport failed to start: ${String(err)}`);
-    });
+    })
+      .then((t) => {
+        wsTransportHandle = t;
+        return t;
+      })
+      .catch((err: unknown) => {
+        appLogger.error(`[Bootstrap] WS transport failed to start: ${String(err)}`);
+      });
   }
+  const disposePeerTransport = async (): Promise<void> => {
+    if (wsTransportHandle) {
+      try {
+        await wsTransportHandle.close();
+      } catch (err) {
+        appLogger.warn(`[Bootstrap] WS transport close failed: ${String(err)}`);
+      }
+    }
+  };
 
   const progressService = lazyService(() =>
     createProgressService(process.cwd(), agentHostClient, db, replicationEngine),
@@ -742,5 +757,6 @@ export function createServiceRegistry(
     heartbeatIntervalId,
     registeredDeviceId,
     userSessionManager,
+    disposePeerTransport,
   };
 }

@@ -92,3 +92,5 @@ entities.json
 
 # Local session memory (not committed)
 .remember/
+playwright-report/
+test-results/

@@ -84,6 +84,30 @@ describe('progress-service <-> replication-engine', () => {
     expect(op.payload.updated_at).toBeDefined();
   });
 
+  it('archiveTask records an update op with status=archived + archived_at', async () => {
+    const engine = createReplicationEngine({
+      db,
+      peerIdShort: 'aaaaaaaa',
+      peerIdFull: 'peer-a',
+    });
+
+    const service = createProgressService(tmpRoot, {} as AgentManager, db, engine);
+    await service.createTask('plan-arch', 'To archive', '', 'normal');
+
+    const spy = vi.fn<(op: Op) => void>();
+    engine.onLocalOp(spy);
+
+    await service.archiveTask('plan-arch');
+
+    expect(spy).toHaveBeenCalledOnce();
+    const op = spy.mock.calls[0][0];
+    expect(op.opType).toBe('update');
+    expect(op.pk).toBe('plan-arch');
+    expect(op.payload.status.value).toBe('archived');
+    expect(op.payload.archived_at).toBeDefined();
+    expect(op.payload.updated_at).toBeDefined();
+  });
+
   it('deleteTask records a delete op', async () => {
     const engine = createReplicationEngine({
       db,

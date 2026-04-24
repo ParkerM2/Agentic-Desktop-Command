@@ -322,6 +322,7 @@ function initializeApp(): void {
     commandBus: registry.commandBus,
     busSessionManager: registry.busSessionManager,
     getHeartbeatIntervalId: () => registry.heartbeatIntervalId,
+    disposePeerTransport: registry.disposePeerTransport,
   });
 }
 

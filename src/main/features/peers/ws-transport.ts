@@ -69,8 +69,12 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       return;
     }
     if (frame.type === 'OPS') {
-      const { ops } = (frame.payload ?? { ops: [] }) as { ops: Op[] };
-      for (const op of ops) {
+      const payload = (frame.payload ?? {}) as { ops?: unknown };
+      if (!Array.isArray(payload.ops)) {
+        serviceLogger.warn({ payload }, 'peers.wsTransport.OPS frame missing ops array');
+        return;
+      }
+      for (const op of payload.ops as Op[]) {
         try {
           engine.applyRemoteOp(op);
         } catch (err) {
