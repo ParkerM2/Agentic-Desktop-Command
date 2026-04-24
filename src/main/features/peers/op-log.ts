@@ -1,6 +1,6 @@
 import { and, asc, eq, gt } from 'drizzle-orm';
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
+import type { AdcDatabase } from '@main/db';
 import { opLog as opLogTable } from '@main/features/peers/schema';
 
 import type { Op } from '@shared/replication/op-types';
@@ -10,9 +10,7 @@ export interface OpLogService {
   readSince: (originPeerId: string, sinceHlc: string | null) => Op[];
 }
 
-export function createOpLogService(
-  db: BetterSQLite3Database<Record<string, unknown>>,
-): OpLogService {
+export function createOpLogService(db: AdcDatabase): OpLogService {
   return {
     append(op) {
       db.insert(opLogTable)

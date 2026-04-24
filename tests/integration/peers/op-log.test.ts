@@ -4,16 +4,17 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import * as schema from '@main/db/schema';
 import { createOpLogService } from '@main/features/peers/op-log';
 import type { Op } from '@shared/replication/op-types';
 
 let sqlite: Database.Database;
-let db: ReturnType<typeof drizzle>;
+let db: ReturnType<typeof drizzle<typeof schema>>;
 let opLog: ReturnType<typeof createOpLogService>;
 
 beforeEach(() => {
   sqlite = new Database(':memory:');
-  db = drizzle(sqlite);
+  db = drizzle(sqlite, { schema });
   migrate(db, { migrationsFolder: resolve(__dirname, '../../../drizzle') });
   opLog = createOpLogService(db);
 });
