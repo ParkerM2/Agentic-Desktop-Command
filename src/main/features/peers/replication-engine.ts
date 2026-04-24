@@ -4,10 +4,13 @@ import type { AdcDatabase } from '@main/db';
 import { createOpLogService, type OpLogService } from '@main/features/peers/op-log';
 import { mergeOp, type RowMetaState } from '@main/features/peers/lww-merge';
 import { rowMeta as rowMetaTable } from '@main/features/peers/schema';
+import { serviceLogger } from '@main/lib/logger';
 
 import { nextHlc, receiveHlc } from '@shared/replication/hlc';
-import { isSyncTable, type SyncTable } from '@shared/replication/sync-tables';
+import { isSyncTable, SYNC_TABLE_PK, type SyncTable } from '@shared/replication/sync-tables';
 import { TOMBSTONE_COLUMN, type Op } from '@shared/replication/op-types';
+
+const COLUMN_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 export interface ReplicationEngineDeps {
   db: AdcDatabase;
@@ -87,27 +90,36 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
     opType: 'insert' | 'update',
   ): void {
     if (Object.keys(columns).length === 0) return;
+    for (const col of Object.keys(columns)) {
+      if (!COLUMN_NAME_RE.test(col)) {
+        throw new Error(`invalid column name in remote op: ${col}`);
+      }
+    }
     const session = $client(db);
     const cols = Object.keys(columns);
     const placeholders = cols.map(() => '?').join(', ');
     const values = cols.map((c) => columns[c]);
+    const pkCol = SYNC_TABLE_PK[tableName];
 
     if (opType === 'insert') {
       session
         .prepare(
           `INSERT INTO ${tableName} (${cols.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})
-           ON CONFLICT(slug) DO UPDATE SET ${cols.map((c) => `"${c}"=excluded."${c}"`).join(', ')}`,
+           ON CONFLICT("${pkCol}") DO UPDATE SET ${cols.map((c) => `"${c}"=excluded."${c}"`).join(', ')}`,
         )
         .run(...values);
     } else {
       session
-        .prepare(`UPDATE ${tableName} SET ${cols.map((c) => `"${c}"=?`).join(', ')} WHERE slug=?`)
+        .prepare(`UPDATE ${tableName} SET ${cols.map((c) => `"${c}"=?`).join(', ')} WHERE "${pkCol}"=?`)
         .run(...values, pk);
     }
   }
 
+  // tableName is a branded SyncTable (guarded by isSyncTable), so interpolating it
+  // and the PK column from SYNC_TABLE_PK is safe — both come from a closed allowlist.
   function deleteFromUserTable(tableName: SyncTable, pk: string): void {
-    $client(db).prepare(`DELETE FROM ${tableName} WHERE slug=?`).run(pk);
+    const pkCol = SYNC_TABLE_PK[tableName];
+    $client(db).prepare(`DELETE FROM ${tableName} WHERE "${pkCol}"=?`).run(pk);
   }
 
   return {
@@ -117,7 +129,6 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
       }
 
       const hlc = nextHlc({ lastHlc, wallClockMs: clock(), peerIdShort });
-      lastHlc = hlc;
 
       const payload: Op['payload'] = {};
       if (args.opType !== 'delete') {
@@ -155,13 +166,14 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
             })),
           );
         }
+        lastHlc = hlc; // advance only on successful commit
       });
 
       for (const l of localOpListeners) {
         try {
           l(op);
         } catch (err) {
-          console.error('localOpListener threw', err);
+          serviceLogger.error({ err }, 'peers.replication.localOpListener threw');
         }
       }
 

@@ -155,6 +155,20 @@ describe('ReplicationEngine.applyRemoteOp', () => {
     expect(tombstone).toBeDefined();
   });
 
+  it('rejects ops with invalid column names', () => {
+    const op: Op = {
+      hlc: '00000000000000099999.00000000.bbbbbbbb',
+      originPeerId: 'peer-b',
+      tableName: 'progress_tasks',
+      pk: 'task-bad',
+      opType: 'insert',
+      payload: {
+        'title"; DROP TABLE progress_tasks; --': { value: 'x', hlc: '00000000000000099999.00000000.bbbbbbbb' },
+      },
+    };
+    expect(() => engine.applyRemoteOp(op)).toThrow(/invalid column name/);
+  });
+
   it('is idempotent — applying same op twice is safe', () => {
     const op: Op = {
       hlc: '00000000000000099999.00000000.bbbbbbbb',
