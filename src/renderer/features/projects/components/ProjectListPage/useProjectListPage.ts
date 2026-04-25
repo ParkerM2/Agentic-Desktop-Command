@@ -7,7 +7,7 @@ import type { Project } from '@shared/types';
 
 import { useLayoutStore, useToastStore } from '@renderer/shared/stores';
 
-import { useAllTasks } from '@features/tasks';
+import { useAllTasks } from '@features/my-work';
 
 import { useProjects, useRemoveProject } from '../../api/useProjects';
 
@@ -35,11 +35,14 @@ export function useProjectListPage() {
   const metrics = useMemo(() => {
     const tasks = allTasks ?? [];
     const totalProjects = projects?.length ?? 0;
-    const activeTasks = tasks.filter((t) => ['in_progress', 'running'].includes(t.status)).length;
+    const activeTasks = tasks.filter((t) =>
+      ['researching', 'planning', 'executing'].includes(t.status),
+    ).length;
     const activeAgents = tasks.filter(
       (t) =>
-        t.status === 'running' &&
-        Boolean((t.metadata as Record<string, unknown> | undefined)?.agentName),
+        ['researching', 'planning', 'executing'].includes(t.status) &&
+        typeof t.lastAgentName === 'string' &&
+        t.lastAgentName.length > 0,
     ).length;
     return { totalProjects, activeTasks, activeAgents };
   }, [allTasks, projects]);

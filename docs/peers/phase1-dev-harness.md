@@ -1,5 +1,11 @@
 # Phase 1 Dev Harness — Two-Instance Peer Sync
 
+> **Status (2026-04-24):** This Phase 1 harness is historical. Phase 3a/3b
+> made `ADC_PEER_PORT > 0` boot the full TLS + pairing stack via
+> `PeersService`. Pairing is now driven from Settings → Peers; the legacy
+> `ADC_PEER_REMOTE=ws://…` plain-WS path is no longer wired. Use this doc
+> only for understanding the original Phase 1 design.
+
 Two ADC instances on one machine, each with a hardcoded peer address pointing at the other. Writes to `progress_tasks` on one instance appear on the other within ~1 second over WebSocket.
 
 The `ADC-Dev` and `ADC-Local` channels have isolated `userData` directories, so they don't collide on a single machine.

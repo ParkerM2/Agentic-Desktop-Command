@@ -1,17 +1,23 @@
 /**
- * Cross-Device Query — Query other ADC instances via Hub API
+ * Cross-Device Query — Query other ADC instances via local op_log + peer-store
  *
- * Handles natural language queries about device status and running tasks
- * on other machines registered with the Hub.
+ * Handles natural language queries about device status and tasks
+ * originated by other paired peers. Reads entirely from the local
+ * SQLite replica — no Hub round-trips.
  */
 
-import type { HubApiClient } from '../hub/hub-api-client';
+import { and, eq, inArray } from 'drizzle-orm';
+
+import type { AdcDatabase } from '@main/db';
+import { createPeerStore } from '@main/features/peers/peer-store';
+import type { PairedPeer } from '@main/features/peers/peer-store';
+import { opLog } from '@main/features/peers/schema';
+import { progressTasks } from '@main/features/progress/schema';
 
 interface DeviceInfo {
   id: string;
   deviceName: string;
   nickname?: string;
-  isOnline: boolean;
   lastSeen?: string;
 }
 
@@ -25,13 +31,13 @@ const SLEEPING_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 const OFFLINE_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 
 function getDeviceState(device: DeviceInfo): 'online' | 'sleeping' | 'offline' | 'unreachable' {
-  if (!device.lastSeen) {
+  if (device.lastSeen === undefined) {
     return 'unreachable';
   }
 
   const elapsed = Date.now() - new Date(device.lastSeen).getTime();
 
-  if (device.isOnline && elapsed < SLEEPING_THRESHOLD_MS) {
+  if (elapsed < SLEEPING_THRESHOLD_MS) {
     return 'online';
   }
   if (elapsed < OFFLINE_THRESHOLD_MS) {
@@ -83,26 +89,71 @@ function formatDeviceEntry(device: DeviceInfo, tasks: DeviceTaskInfo[]): string 
   return line;
 }
 
+function peerToDevice(peer: PairedPeer): DeviceInfo {
+  return {
+    id: peer.peerId,
+    deviceName: peer.displayName ?? peer.peerId,
+    nickname: peer.displayName ?? undefined,
+    lastSeen:
+      peer.lastConnectedAt === null ? undefined : new Date(peer.lastConnectedAt).toISOString(),
+  };
+}
+
+export interface CrossDeviceQueryDeps {
+  db: AdcDatabase;
+}
+
 export interface CrossDeviceQuery {
   query: (deviceNameFilter: string) => Promise<string>;
 }
 
-export function createCrossDeviceQuery(hubApiClient: HubApiClient): CrossDeviceQuery {
+export function createCrossDeviceQuery(deps: CrossDeviceQueryDeps): CrossDeviceQuery {
+  const { db } = deps;
+  const peerStore = createPeerStore(db);
+
+  function tasksForPeer(peerId: string): DeviceTaskInfo[] {
+    const pkRows = db
+      .selectDistinct({ pk: opLog.pk })
+      .from(opLog)
+      .where(and(eq(opLog.tableName, 'progress_tasks'), eq(opLog.originPeerId, peerId)))
+      .all();
+
+    if (pkRows.length === 0) {
+      return [];
+    }
+
+    const slugs = pkRows.map((r) => r.pk);
+    const taskRows = db
+      .select({
+        slug: progressTasks.slug,
+        id: progressTasks.id,
+        title: progressTasks.title,
+        status: progressTasks.status,
+        archivedAt: progressTasks.archivedAt,
+      })
+      .from(progressTasks)
+      .where(inArray(progressTasks.slug, slugs))
+      .all();
+
+    return taskRows
+      .filter((t) => t.archivedAt === null)
+      .map((t) => ({
+        id: t.id ?? t.slug,
+        title: t.title,
+        status: t.status,
+      }));
+  }
+
   return {
-    async query(deviceNameFilter) {
-      const devicesResult = await hubApiClient.hubGet<DeviceInfo[]>('/devices');
+    query(deviceNameFilter) {
+      const peers = peerStore.listActive();
 
-      if (!devicesResult.ok || !devicesResult.data) {
-        return 'Unable to fetch device information from Hub.';
+      if (peers.length === 0) {
+        return Promise.resolve('No devices paired.');
       }
 
-      const devices = devicesResult.data;
+      const devices = peers.map(peerToDevice);
 
-      if (devices.length === 0) {
-        return 'No devices registered with Hub.';
-      }
-
-      // Filter to specific device if name provided
       const filtered =
         deviceNameFilter.length > 0
           ? devices.filter(
@@ -113,35 +164,20 @@ export function createCrossDeviceQuery(hubApiClient: HubApiClient): CrossDeviceQ
           : devices;
 
       if (filtered.length === 0) {
-        return `No device found matching "${deviceNameFilter}".`;
+        return Promise.resolve(`No device found matching "${deviceNameFilter}".`);
       }
 
-      // Fetch tasks for each device
-      const entries = await Promise.all(
-        filtered.map(async (device) => {
-          const tasks = await (async (): Promise<DeviceTaskInfo[]> => {
-            if (getDeviceState(device) !== 'online') {
-              return [];
-            }
-            const tasksResult = await hubApiClient.hubGet<{ tasks: DeviceTaskInfo[] }>(
-              `/tasks?assignedDeviceId=${device.id}`,
-            );
-            if (tasksResult.ok && tasksResult.data) {
-              const { tasks: deviceTasks } = tasksResult.data;
-              return deviceTasks;
-            }
-            return [];
-          })();
-          return formatDeviceEntry(device, tasks);
-        }),
-      );
+      const entries = filtered.map((device) => {
+        const tasks = getDeviceState(device) === 'online' ? tasksForPeer(device.id) : [];
+        return formatDeviceEntry(device, tasks);
+      });
 
       const header =
         deviceNameFilter.length > 0
           ? `Device status for "${deviceNameFilter}":`
           : `All devices (${String(devices.length)}):`;
 
-      return `${header}\n${entries.join('\n')}`;
+      return Promise.resolve(`${header}\n${entries.join('\n')}`);
     },
   };
 }

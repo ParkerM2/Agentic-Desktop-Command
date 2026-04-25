@@ -31,7 +31,9 @@ export interface ReplicationEngine {
   recordLocalWrite: (args: RecordLocalWriteArgs) => Op;
   applyRemoteOp: (op: Op) => void;
   getLastHlc: () => string | null;
+  getLocalPeerId: () => string;
   onLocalOp: (listener: (op: Op) => void) => () => void;
+  gcOpLog: (watermarkHlc: string) => { deleted: number };
 }
 
 interface SqliteClient { prepare: (q: string) => { run: (...a: unknown[]) => void } }
@@ -227,9 +229,17 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
       return lastHlc;
     },
 
+    getLocalPeerId() {
+      return peerIdFull;
+    },
+
     onLocalOp(listener) {
       localOpListeners.add(listener);
       return () => localOpListeners.delete(listener);
+    },
+
+    gcOpLog(watermarkHlc) {
+      return opLog.gc(watermarkHlc);
     },
   };
 }

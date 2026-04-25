@@ -39,8 +39,8 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
 | **Renderer** | React Components, TanStack Router, React Query, Zustand | React 19, TypeScript |
 | **Preload Bridge** | Typed IPC Context, window.api | Electron contextBridge |
 | **Main Process** | IPC Router, 29 Services, OAuth, MCP Servers, PTY | Node.js, Electron 39 |
-| **External** | Hub Server, GitHub/Spotify/Calendar APIs, Anthropic SDK | REST, WebSocket, OAuth2 |
-| **Storage** | SQLite (Hub), JSON Files (Local), Task Specs | File system, SQLite |
+| **External** | GitHub/Spotify/Calendar APIs, Anthropic SDK | REST, WebSocket, OAuth2 |
+| **Storage** | SQLite, JSON Files, Task Specs | File system, SQLite |
 
 **Data Flow**: React Query hooks call `ipc()` → Preload bridge → IPC Router → Services → External APIs/Storage
 
@@ -57,7 +57,7 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
 | **Agent Team Management** | Spawn, pause, resume, and terminate multiple Claude CLI agents simultaneously |
 | **Workflow-Driven Task Table** | Sortable, filterable task table with customizable agent workflows and `/implement-feature` skill integration |
 | **Agent Queue** | Queue tasks for sequential agent execution with dependency management |
-| **Progress Watching** | Real-time sync of `docs/progress/*.md` files to Hub for crash-safe tracking |
+| **Progress Watching** | Real-time sync of progress events between paired devices via the P2P transport |
 | **Task Launcher** | Launch Claude CLI sessions directly from task rows with project context |
 
 ### Automated QA Loops & Testing
@@ -75,7 +75,7 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
 |---------|-------------|
 | **Multi-Project Support** | Manage multiple codebases with instant project switching |
 | **Workspaces** | Group related projects with shared settings, max concurrency limits, and device assignment |
-| **Device Sync** | Multi-device support via Hub — workspaces can be hosted on specific devices |
+| **Device Sync** | Multi-device sync via direct peer-to-peer connections (TLS-pinned WebSocket); workspaces can be hosted on specific devices |
 | **Git Worktrees** | Parallel development with visual worktree management |
 | **Branch Merging** | Visual conflict resolution and merge preview |
 
@@ -151,7 +151,7 @@ graph LR
 | Styling | Tailwind CSS 4, Radix UI |
 | Validation | Zod 4 |
 | Terminal | xterm.js 6, @lydell/node-pty |
-| Backend | Fastify 5, SQLite (Hub) |
+| Sync | P2P TLS WebSocket, Ed25519 identity, mDNS discovery |
 | Testing | Vitest, Playwright |
 
 ---
@@ -216,65 +216,18 @@ src/
 ├── renderer/       # React app (31 features)
 └── shared/         # Types + IPC contract (single source of truth)
 
-hub/                # Optional sync server (Fastify + SQLite)
 .claude/agents/     # 30 specialist agent definitions
 ```
 
 ---
 
-## Hub Server (Optional)
+## Multi-Device Sync
 
-Multi-device sync and real-time collaboration:
+Devices pair via PIN ritual (Settings → Peers) and sync over a direct
+TLS-pinned WebSocket connection. No central server is involved — each
+device discovers paired peers via mDNS and connects directly.
 
-```mermaid
-graph LR
-    Desktop1["Desktop 1"] <--> Hub["Hub Server"]
-    Desktop2["Desktop 2"] <--> Hub
-    Hub --> DB["SQLite"]
-    Hub --> WS["WebSocket"]
-```
-
-### Running a hub
-
-```bash
-cd hub && npm install && npm run dev
-# → https://localhost:3200
-```
-
-The hub listens on HTTPS with a self-signed certificate and advertises itself on the LAN via mDNS (`_adc-hub._tcp.local`). No firewall configuration beyond port 3200 is required on the happy path.
-
-### Pairing a desktop with a hub
-
-Hub discovery is automatic on the LAN. In the desktop app, open **Settings → Hub** to see the list of discovered hubs and click **Pair** on the one you want to use. The app generates a per-hub Ed25519 client identity, pins the hub's TLS fingerprint, and stores the paired hub under `${userData}/hubs/${hubId}/` with its own SQLite database.
-
-The old manual `http://<ip>:3200` + API-key dance is gone. `HUB_BOOTSTRAP_SECRET` is **deprecated** and no longer required for the happy path — the two-step `/api/pair/init` → `/api/pair/confirm` handshake replaces it.
-
-**If mDNS is blocked on your network** (some corporate VPNs, guest Wi-Fi, or hardened firewalls drop multicast), use the **Enter hub URL manually** escape hatch in the picker. Paste `https://<ip>:3200` and the app will fall back to the same pair handshake over unicast.
-
-### Admin UI setup
-
-Set the two admin env vars on the hub before starting it:
-
-```bash
-# Hash a password for HUB_ADMIN_PASSWORD_HASH
-node hub/scripts/hash-admin-password.mjs '<your password>'
-
-# Then export (or put in hub/.env):
-export HUB_ADMIN_USER='admin'
-export HUB_ADMIN_PASSWORD_HASH='<paste argon2 hash from the script>'
-```
-
-The admin UI is served at `https://<hub>:3200/admin` — sign in with those credentials to view paired clients, revoke keys, and inspect the audit log.
-
-### Emergency rollback
-
-If mDNS discovery or the picker is causing problems in your environment, set:
-
-```bash
-ENABLE_HUB_DISCOVERY=false
-```
-
-in the desktop app's environment. The mDNS browser and network-change watcher will not start, `HUB_EVENTS.DISCOVERY.CHANGED` stops emitting, and the legacy URL-entry + API-key **Generate / Connect** flow remains fully functional. This is an escape hatch, not the supported path — the picker is the intended UX.
+See `docs/peers/` for the protocol specification.
 
 ---
 

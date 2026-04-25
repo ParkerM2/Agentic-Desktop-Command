@@ -21,14 +21,11 @@ import { RootErrorBoundary } from '@renderer/shared/components/error-boundaries'
 
 import { Button, Heading } from '@ui';
 
-import { AuthGuard } from '@features/auth';
-
 import { Spinner } from '@ui/spinner';
 
 import { RootLayout } from './layouts/RootLayout';
 import {
   createAssistantRoutes,
-  createAuthRoutes,
   createDashboardRoutes,
   createIntegrationsRoutes,
   createMiscRoutes,
@@ -79,14 +76,8 @@ function DefaultErrorComponent({ error, reset }: ErrorComponentProps) {
 
 const rootRoute = createRootRoute();
 
-const authLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: 'auth',
-  component: AuthGuard,
-});
-
 const appLayoutRoute = createRoute({
-  getParentRoute: () => authLayoutRoute,
+  getParentRoute: () => rootRoute,
   id: 'app',
   component: RootLayout,
 });
@@ -102,8 +93,6 @@ const indexRoute = createRoute({
 
 // ─── Route Groups ────────────────────────────────────────────
 
-const { loginRoute, registerRoute, hubSetupRoute } = createAuthRoutes(rootRoute);
-
 const assistantRoutes = createAssistantRoutes(appLayoutRoute);
 const dashboardRoutes = createDashboardRoutes(appLayoutRoute);
 const projectRoutes = createProjectRoutes(appLayoutRoute);
@@ -116,21 +105,16 @@ const miscRoutes = createMiscRoutes(appLayoutRoute);
 // ─── Route Tree ──────────────────────────────────────────────
 
 const routeTree = rootRoute.addChildren([
-  loginRoute,
-  registerRoute,
-  hubSetupRoute,
-  authLayoutRoute.addChildren([
-    appLayoutRoute.addChildren([
-      indexRoute,
-      ...assistantRoutes,
-      ...dashboardRoutes,
-      ...projectRoutes,
-      ...personalRoutes,
-      ...productivityRoutes,
-      ...integrationsRoutes,
-      ...settingsRoutes,
-      ...miscRoutes,
-    ]),
+  appLayoutRoute.addChildren([
+    indexRoute,
+    ...assistantRoutes,
+    ...dashboardRoutes,
+    ...projectRoutes,
+    ...personalRoutes,
+    ...productivityRoutes,
+    ...integrationsRoutes,
+    ...settingsRoutes,
+    ...miscRoutes,
   ]),
 ]);
 

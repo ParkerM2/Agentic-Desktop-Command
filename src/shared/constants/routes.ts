@@ -8,9 +8,6 @@
 /** Top-level routes */
 export const ROUTES = {
   INDEX: '/',
-  LOGIN: '/login',
-  REGISTER: '/register',
-  HUB_SETUP: '/hub-setup',
   ASSISTANT: '/assistant',
   INTEGRATIONS: '/integrations',
   DASHBOARD: '/dashboard',

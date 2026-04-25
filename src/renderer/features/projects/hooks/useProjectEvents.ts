@@ -5,7 +5,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 
 import { GIT_EVENTS } from '@shared/ipc/git/channels';
-import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { PROJECTS_EVENTS } from '@shared/ipc/projects/channels';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
@@ -24,11 +23,5 @@ export function useProjectEvents() {
   useIpcEvent(GIT_EVENTS.WORKTREE.CHANGED, ({ projectId }) => {
     void queryClient.invalidateQueries({ queryKey: gitKeys.worktrees(projectId) });
     void queryClient.invalidateQueries({ queryKey: gitKeys.all });
-  });
-
-  useIpcEvent(HUB_EVENTS.PROJECT.UPDATED, ({ projectId }) => {
-    void queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
-    void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-    void queryClient.invalidateQueries({ queryKey: projectKeys.subProjects(projectId) });
   });
 }

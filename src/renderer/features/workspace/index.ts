@@ -20,8 +20,5 @@ export {
 } from './api/useWorkspaces';
 export { workspaceKeys } from './api/workspacesQueryKeys';
 
-// Events
-export { useWorkspaceEvents } from './hooks/useWorkspaceEvents';
-
 // Store (persisted active workspace selection)
 export { useWorkspaceStore as useWorkspacesStore } from './workspaces-store';
