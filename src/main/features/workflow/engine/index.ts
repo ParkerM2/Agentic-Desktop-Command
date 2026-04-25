@@ -19,6 +19,7 @@ import type { AgentDefinition } from '@shared/ipc/workflow-engine';
 import type { WorkflowTemplate } from '@shared/ipc/workflow-templates';
 
 import { workflowRuns } from '../../../db/schema';
+import { workflowRunsSummary } from '../workflow-runs-summary-schema';
 
 import { runFinalizing } from './states/finalize';
 import { runGuardian } from './states/guardian';
@@ -299,6 +300,66 @@ export function createWorkflowEngineModule(deps: WorkflowEngineDeps): WorkflowEn
   /** All engine records, keyed by runId */
   const engines = new Map<string, EngineRuntimeRecord>();
 
+  function writeRunSummary(
+    runtime: EngineRuntimeRecord,
+    status: 'passed' | 'failed' | 'cancelled',
+    errorMessage?: string | null,
+  ): void {
+    try {
+      const id = runtime.runId;
+      const now = Date.now();
+      // WorkflowRunConfig has no projectId — fall back to projectPath which uniquely
+      // identifies the project on the local device.
+      const projectId = runtime.config.projectPath;
+      const startedAtMs = Date.parse(runtime.startedAt);
+      const startedAt = Number.isNaN(startedAtMs) ? now : startedAtMs;
+      const summaryText = errorMessage ?? null;
+      const ranOnPeerId = deps.replicationEngine.getLocalPeerId();
+
+      db.insert(workflowRunsSummary)
+        .values({
+          id,
+          projectId,
+          taskId: null,
+          workflowId: runtime.config.templateId ?? null,
+          status,
+          startedAt,
+          finishedAt: now,
+          summary: summaryText,
+          ranOnPeerId,
+        })
+        .onConflictDoUpdate({
+          target: workflowRunsSummary.id,
+          set: {
+            status,
+            finishedAt: now,
+            summary: summaryText,
+          },
+        })
+        .run();
+
+      deps.replicationEngine.recordLocalWrite({
+        tableName: 'workflow_runs_summary',
+        pk: id,
+        opType: 'insert',
+        columns: {
+          id,
+          project_id: projectId,
+          task_id: null,
+          workflow_id: runtime.config.templateId ?? null,
+          status,
+          started_at: startedAt,
+          finished_at: now,
+          summary: summaryText,
+          ran_on_peer_id: ranOnPeerId,
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[WorkflowEngine] writeRunSummary failed for ${runtime.runId}: ${message}`);
+    }
+  }
+
   function transition(
     runtime: EngineRuntimeRecord,
     nextState: WorkflowState,
@@ -317,6 +378,14 @@ export function createWorkflowEngineModule(deps: WorkflowEngineDeps): WorkflowEn
 
     // Persist to SQLite after every transition for crash recovery
     saveRecord(db, runtime);
+
+    // Dual-write workflow_runs_summary on terminal states so peers learn the
+    // outcome via replication (Phase 4 — Task 2).
+    if (nextState === WorkflowState.DONE && previousState !== WorkflowState.DONE) {
+      writeRunSummary(runtime, 'passed');
+    } else if (nextState === WorkflowState.ERROR && previousState !== WorkflowState.ERROR) {
+      writeRunSummary(runtime, 'failed', errorMessage);
+    }
 
     deps.onStateChanged({
       runId: runtime.runId,

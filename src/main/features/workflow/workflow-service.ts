@@ -29,6 +29,7 @@ export function createWorkflowService(deps: WorkflowServiceDeps): WorkflowServic
     busSessionManager: deps.busSessionManager,
     gitService: deps.gitService,
     templateService: templates,
+    replicationEngine: deps.replicationEngine,
     progressBaseDir: deps.progressBaseDir,
     onStateChanged: deps.onStateChanged,
     onCompleted: deps.onCompleted,
