@@ -33,8 +33,6 @@ import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
 import { hotkeysInvoke } from './hotkeys';
-import { hubEvents, hubInvoke } from './hub';
-import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
 import { mcpInvoke } from './mcp';
@@ -67,7 +65,6 @@ import { workspacesInvoke } from './workspaces';
 
 export const ipcInvokeContract = {
   ...projectsInvoke,
-  ...hubTasksInvoke,
   ...terminalsInvoke,
   ...settingsInvoke,
   ...hotkeysInvoke,
@@ -86,7 +83,6 @@ export const ipcInvokeContract = {
   ...filesInvoke,
   ...fitnessInvoke,
   ...assistantInvoke,
-  ...hubInvoke,
   ...devicesInvoke,
   ...githubInvoke,
   ...spotifyInvoke,
@@ -120,8 +116,6 @@ export const ipcInvokeContract = {
 // ─── Merged Event Contract ───────────────────────────────────
 
 export const ipcEventContract = {
-  ...tasksEvents,
-  ...hubTasksEvents,
   ...terminalsEvents,
   ...projectsEvents,
   ...appEvents,
@@ -137,7 +131,6 @@ export const ipcEventContract = {
   ...alertsEvents,
   ...ideasEvents,
   ...fitnessEvents,
-  ...hubEvents,
   ...githubEvents,
   ...emailEvents,
   ...notificationsEvents,
@@ -243,14 +236,6 @@ export {
   ServiceHealthSchema,
   ServiceHealthStatusSchema,
 } from './app';
-
-export {
-  HubConfigOutputSchema,
-  HubConnectionStatusSchema,
-  HubStatusOutputSchema,
-  HubSyncOutputSchema,
-} from './hub';
-
 
 export {
   InsightMetricsSchema,
@@ -361,16 +346,6 @@ export {
 } from './settings';
 
 export { AppSettingsSchema, ProfileSchema, WebhookConfigSchema } from './settings';
-
-export {
-  ExecutionPhaseSchema,
-  ExecutionProgressSchema,
-  HubTaskPrioritySchema,
-  HubTaskProgressSchema,
-  HubTaskSchema,
-  HubTaskStatusSchema,
-  TaskStatusSchema,
-} from './hub-tasks';
 
 export { TerminalSessionSchema } from './terminals';
 

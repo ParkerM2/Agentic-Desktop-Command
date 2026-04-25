@@ -84,11 +84,6 @@ export {
   HealthStatusSchema,
   ServiceHealthSchema,
   ServiceHealthStatusSchema,
-  // hub
-  HubConfigOutputSchema,
-  HubConnectionStatusSchema,
-  HubStatusOutputSchema,
-  HubSyncOutputSchema,
   // misc (alerts, changelog, devices, ideas, insights, merge, notes, screen, voice, workspaces)
   AlertLinkedToSchema,
   AlertSchema,
@@ -157,14 +152,6 @@ export {
   AppSettingsSchema,
   ProfileSchema,
   WebhookConfigSchema,
-  // tasks
-  ExecutionPhaseSchema,
-  ExecutionProgressSchema,
-  HubTaskPrioritySchema,
-  HubTaskProgressSchema,
-  HubTaskSchema,
-  HubTaskStatusSchema,
-  TaskStatusSchema,
   // terminals
   TerminalSessionSchema,
   // agent-dashboard

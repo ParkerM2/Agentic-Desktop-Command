@@ -8,7 +8,6 @@ export { useDebounce } from './useDebounce';
 export { useDialogWithMutation } from './useDialogWithMutation';
 export { useFileLang } from './useFileLangMap';
 export { useFilteredList } from './useFilteredList';
-export { useHubEvent } from './useHubEvents';
 export { useIpcEvent } from './useIpcEvent';
 export { useLayoutSync } from './useLayoutSync';
 export { useLooseParams } from './useLooseParams';
