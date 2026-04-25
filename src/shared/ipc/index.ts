@@ -19,7 +19,6 @@ import {
   windowInvoke,
 } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
-import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { busEvents, busInvoke } from './bus';
 import { calendarInvoke } from './calendar';
@@ -104,7 +103,6 @@ export const ipcInvokeContract = {
   ...notificationsInvoke,
   ...briefingInvoke,
   ...workspacesInvoke,
-  ...authInvoke,
   ...oauthInvoke,
   ...workflowInvoke,
   ...dashboardInvoke,
@@ -148,7 +146,6 @@ export const ipcEventContract = {
   ...testSuiteEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
-  ...authEvents,
   ...agentDashboardEvents,
   ...workspaceEvents,
   ...workflowEvents,
@@ -173,18 +170,6 @@ export {
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
 } from './assistant';
-
-export {
-  AuthTokensSchema,
-  LoginInputSchema,
-  LoginOutputSchema,
-  RefreshInputSchema,
-  RefreshOutputSchema,
-  RegisterInputSchema,
-  RegisterOutputSchema,
-  UserSchema,
-} from './auth';
-
 
 export { CaptureSchema } from './dashboard';
 

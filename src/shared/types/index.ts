@@ -7,7 +7,6 @@ export type * from './agent-dashboard';
 export type * from './alert';
 export type * from './assistant';
 export type * from './assistant-watch';
-export type * from './auth';
 export type * from './claude';
 export type * from './changelog';
 export type * from './data-management';

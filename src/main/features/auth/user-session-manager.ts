@@ -1,13 +1,10 @@
 /**
  * User Session Manager
  *
- * Tracks the currently logged-in user and emits events on login/logout.
- * Services subscribe to these events to reinitialize with user-scoped paths.
+ * Tracks the currently logged-in user (local-only — no Hub coupling).
+ * Services subscribe to in-process callbacks to reinitialize with
+ * user-scoped paths when the session changes.
  */
-
-import { AUTH_EVENTS } from '@shared/ipc/auth/channels';
-
-import type { IpcRouter } from '@main/ipc/router';
 
 export interface UserSession {
   userId: string;
@@ -25,7 +22,7 @@ export interface UserSessionManager {
   onSessionChange: (callback: (session: UserSession | null) => void) => () => void;
 }
 
-export function createUserSessionManager(router: IpcRouter): UserSessionManager {
+export function createUserSessionManager(): UserSessionManager {
   let currentSession: UserSession | null = null;
   const listeners = new Set<(session: UserSession | null) => void>();
 
@@ -42,13 +39,11 @@ export function createUserSessionManager(router: IpcRouter): UserSessionManager 
 
     setSession(session) {
       currentSession = session;
-      router.emit(AUTH_EVENTS.SESSION.CHANGED, { userId: session.userId, email: session.email });
       notifyListeners();
     },
 
     clearSession() {
       currentSession = null;
-      router.emit(AUTH_EVENTS.SESSION.CHANGED, { userId: null, email: null });
       notifyListeners();
     },
 

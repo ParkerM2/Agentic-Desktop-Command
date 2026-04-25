@@ -19,7 +19,6 @@ import { registerAppUpdateHandlers } from '../features/app/app-update-handlers';
 import { registerErrorHandlers } from '../features/app/health';
 import { registerWindowHandlers } from '../features/app/window-handlers';
 import { registerAssistantHandlers } from '../features/assistant/assistant-handlers';
-import { registerAuthHandlers } from '../features/auth/auth-handlers';
 import { registerBriefingHandlers } from '../features/briefing/briefing-handlers';
 import { registerBusHandlers } from '../features/bus/bus-handlers';
 import { registerChangelogHandlers } from '../features/changelog/changelog-handlers';
@@ -87,7 +86,6 @@ import type { WorktreeService } from '../features/git/worktree-service';
 import type { GitHubService } from '../features/github';
 import type { DeviceService } from '../features/hub/device';
 import type { HubApiClient } from '../features/hub/hub-api-client';
-import type { HubAuthService } from '../features/hub/hub-auth-service';
 import type { HubConnectionManager } from '../features/hub/hub-connection';
 import type { HubDiscovery } from '../features/hub/hub-discovery';
 import type { HubSyncService } from '../features/hub/hub-sync';
@@ -158,7 +156,6 @@ export interface Services {
   hotkeyManager: HotkeyManager;
   appUpdateService: AppUpdateService;
   hubApiClient: HubApiClient;
-  hubAuthService: HubAuthService;
   qaRunner: QaRunner;
   testSuiteService: TestSuiteService;
   workflowTemplateService: WorkflowTemplateService;
@@ -211,10 +208,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     providers: services.providers,
   });
   registerAlertHandlers(router, services.alertService);
-  registerAuthHandlers(router, {
-    hubAuthService: services.hubAuthService,
-    userSessionManager: services.userSessionManager,
-  });
   registerAppHandlers(router, {
     tokenStore: services.tokenStore,
     providers: services.providers,

@@ -222,7 +222,7 @@ export function createServiceRegistry(
   const healthService = createHealthService(healthRegistry);
 
   const settingsService = createSettingsService({ db, dataDir });
-  const userSessionManager = createUserSessionManager(router);
+  const userSessionManager = createUserSessionManager();
   const projectService = createProjectService({ db });
 
   const commandBus = createCommandBus(db);
@@ -722,7 +722,6 @@ export function createServiceRegistry(
     hotkeyManager,
     appUpdateService,
     hubApiClient,
-    hubAuthService,
     qaRunner,
     runnersService,
     testSuiteService,

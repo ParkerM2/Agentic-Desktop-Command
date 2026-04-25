@@ -27,15 +27,6 @@ export {
   CommandHistoryEntrySchema,
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
-  // auth
-  AuthTokensSchema,
-  LoginInputSchema,
-  LoginOutputSchema,
-  RefreshInputSchema,
-  RefreshOutputSchema,
-  RegisterInputSchema,
-  RegisterOutputSchema,
-  UserSchema,
   // briefing
   AgentActivitySummarySchema,
   BriefingConfigSchema,
