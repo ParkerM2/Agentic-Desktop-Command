@@ -20,6 +20,8 @@ import { BUS_EVENTS } from '@shared/ipc/bus/channels';
 import type { sessionRecordSchema } from '@shared/ipc/bus/schemas';
 import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
+import { PEERS_EVENTS } from '@shared/ipc/peers';
+import type { DiscoveredPeer } from '@shared/ipc/peers';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
 import type { AgentTeamsDataSchema } from '@shared/ipc/visualization/schemas';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
@@ -96,6 +98,8 @@ const TASKS = ['tasks'] as const;
 const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
+const PEERS_PAIRED = ['peers', 'paired'] as const;
+const PEERS_DISCOVERED = ['peers', 'discovered'] as const;
 
 // ─── Registry ───────────────────────────────────────────────
 
@@ -146,6 +150,10 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [BUS_EVENTS.SESSION.COMPLETED]: { handler: 'append' as const },
   [BUS_EVENTS.SESSION.ERROR]: { handler: 'append' as const },
   [BUS_EVENTS.SESSION.KILLED]: { handler: 'append' as const },
+
+  // Peer discovery + trust events
+  [PEERS_EVENTS.DISCOVERY.CHANGED]: { handler: 'append' as const },
+  [PEERS_EVENTS.TRUST.CHANGED]: { keys: [PEERS_PAIRED] },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -155,6 +163,12 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
  * Each event channel that uses `handler: 'append'` needs a case here.
  */
 function handleAppend(queryClient: QueryClient, event: EventChannel, payload: unknown) {
+  if (event === PEERS_EVENTS.DISCOVERY.CHANGED) {
+    const { peers } = payload as { peers: DiscoveredPeer[] };
+    queryClient.setQueryData<DiscoveredPeer[]>(PEERS_DISCOVERED, peers);
+    return;
+  }
+
   if (event === AGENT_DASHBOARD_EVENTS.MESSAGE.RECEIVED) {
     const message = payload as AgentChatMessage;
 
