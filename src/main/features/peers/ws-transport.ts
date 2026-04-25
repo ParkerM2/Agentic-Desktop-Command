@@ -30,6 +30,12 @@ export interface WsTransportDeps {
   tls?: WsTransportTlsOpts;
   /** When provided alongside a wss:// remoteUrl, the outbound socket pins this fingerprint. */
   remotePeer?: WsTransportRemotePeer;
+  /**
+   * Pre-existing https.Server to attach the WebSocketServer onto. When provided,
+   * ws-transport skips server creation/listening — caller owns the lifecycle.
+   * Mutually exclusive with `tls` (caller already configured TLS on the server).
+   */
+  existingHttpsServer?: HttpsServer;
 }
 
 export interface WsTransport {
@@ -63,16 +69,18 @@ function fingerprintFromTlsSocket(socket: TLSSocket): string | null {
 }
 
 export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransport> {
-  const { engine, remoteUrl, tls, remotePeer } = deps;
+  const { engine, remoteUrl, tls, remotePeer, existingHttpsServer } = deps;
 
   let outSocket: WebSocket | null = null;
   const incomingSockets = new Set<WebSocket>();
 
-  let httpsServer: HttpsServer | null = null;
+  let ownedHttpsServer: HttpsServer | null = null;
   let wss: WebSocketServer;
-  if (tls) {
+  if (existingHttpsServer) {
+    wss = new WebSocketServer({ server: existingHttpsServer });
+  } else if (tls) {
     const server = createHttpsServer({ cert: tls.cert, key: tls.key });
-    httpsServer = server;
+    ownedHttpsServer = server;
     wss = new WebSocketServer({ server });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
@@ -87,7 +95,8 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       wss.once('listening', () => { resolve(); });
     });
   }
-  const addr = httpsServer ? httpsServer.address() : wss.address();
+  const addrSource = existingHttpsServer ?? ownedHttpsServer ?? wss;
+  const addr = addrSource.address();
   if (addr === null || typeof addr === 'string') {
     throw new Error('WebSocketServer returned unexpected address');
   }
@@ -207,7 +216,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       await new Promise<void>((resolve) => {
         wss.close(() => { resolve(); });
       });
-      const server = httpsServer;
+      const server = ownedHttpsServer;
       if (server) {
         await new Promise<void>((resolve) => {
           server.close(() => { resolve(); });

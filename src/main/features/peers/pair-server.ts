@@ -25,6 +25,108 @@ export interface PairServerDeps {
   host?: string;
   onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string }) => void;
   now?: () => number;
+  /**
+   * Pre-existing https.Server to attach pair routes onto. When provided, the
+   * pair-server skips server creation and listening — caller owns the lifecycle.
+   */
+  existingServer?: Server;
+}
+
+export type PairRequestHandler = (req: IncomingMessage, res: ServerResponse) => void;
+
+export interface PairRoutesDeps {
+  pairing: PeerPairing;
+  peerStore: PeerStore;
+  selfIdentity: { peerId: string; pubkey: string };
+  selfFingerprint: string;
+  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string }) => void;
+  now?: () => number;
+}
+
+/** Returns a request handler that responds to /pair/init + /pair/confirm only. */
+export function createPairRoutes(deps: PairRoutesDeps): PairRequestHandler {
+  const { pairing, peerStore, selfIdentity, selfFingerprint, onPinIssued } = deps;
+  const now = deps.now ?? Date.now;
+
+  return (req, res) => {
+    void handle(req, res).catch((err: unknown) => {
+      serviceLogger.error({ err, url: req.url }, 'peers.pairRoutes handler threw');
+      if (!res.headersSent) sendJson(res, 500, { error: 'internal_error' });
+    });
+  };
+
+  async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
+    const url = req.url ?? '';
+    const method = req.method ?? 'GET';
+
+    if (url !== '/pair/init' && url !== '/pair/confirm') {
+      sendJson(res, 404, { error: 'not_found' });
+      return;
+    }
+    if (method !== 'POST') {
+      res.setHeader('allow', 'POST');
+      sendJson(res, 405, { error: 'method_not_allowed' });
+      return;
+    }
+
+    let body: unknown;
+    try {
+      body = await readJsonBody(req);
+    } catch (err) {
+      const reason = (err as Error).message === 'body_too_large' ? 'body_too_large' : 'invalid_json';
+      sendJson(res, 400, { error: reason });
+      return;
+    }
+
+    if (url === '/pair/init') {
+      if (!isInitBody(body)) {
+        sendJson(res, 400, { error: 'invalid_body' });
+        return;
+      }
+      const result = pairing.initPair({
+        peerId: body.peerId,
+        pubkey: body.pubkey,
+        fingerprint: body.fingerprint,
+        displayName: body.displayName,
+      });
+      onPinIssued?.({
+        sessionId: result.sessionId,
+        pin: result.pin,
+        initiatorPeerId: body.peerId,
+      });
+      sendJson(res, 200, { sessionId: result.sessionId, challenge: result.challenge });
+      return;
+    }
+
+    if (!isConfirmBody(body)) {
+      sendJson(res, 400, { error: 'invalid_body' });
+      return;
+    }
+    const outcome = pairing.confirmPair(body.sessionId, body.pinHmac);
+    if (!outcome.ok) {
+      sendJson(res, 401, { error: outcome.reason });
+      return;
+    }
+
+    const { initiator } = outcome;
+    if (!initiator.fingerprint) {
+      sendJson(res, 400, { error: 'missing_fingerprint' });
+      return;
+    }
+    peerStore.upsert({
+      peerId: initiator.peerId,
+      pubkey: initiator.pubkey,
+      displayName: initiator.displayName ?? null,
+      certFingerprint: initiator.fingerprint,
+      pairedAt: now(),
+    });
+
+    sendJson(res, 200, {
+      peerId: selfIdentity.peerId,
+      pubkey: selfIdentity.pubkey,
+      fingerprint: selfFingerprint,
+    });
+  }
 }
 
 export interface PairServer {
@@ -107,103 +209,23 @@ function isConfirmBody(value: unknown): value is ConfirmBody {
 }
 
 export async function createPairServer(deps: PairServerDeps): Promise<PairServer> {
-  const { tls, pairing, peerStore, selfIdentity, selfFingerprint, onPinIssued } = deps;
-  const now = deps.now ?? Date.now;
+  const { tls, existingServer } = deps;
   const host = deps.host ?? '127.0.0.1';
+  const ownsServer = !existingServer;
 
-  const server: Server = createServer({ cert: tls.cert, key: tls.key });
+  const server: Server = existingServer ?? createServer({ cert: tls.cert, key: tls.key });
+  const handler = createPairRoutes(deps);
+  server.on('request', handler);
 
-  server.on('request', (req: IncomingMessage, res: ServerResponse) => {
-    void handleRequest(req, res).catch((err: unknown) => {
-      serviceLogger.error({ err, url: req.url }, 'peers.pairServer request handler threw');
-      if (!res.headersSent) sendJson(res, 500, { error: 'internal_error' });
-    });
-  });
-
-  async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const url = req.url ?? '';
-    const method = req.method ?? 'GET';
-
-    if (url !== '/pair/init' && url !== '/pair/confirm') {
-      sendJson(res, 404, { error: 'not_found' });
-      return;
-    }
-    if (method !== 'POST') {
-      res.setHeader('allow', 'POST');
-      sendJson(res, 405, { error: 'method_not_allowed' });
-      return;
-    }
-
-    let body: unknown;
-    try {
-      body = await readJsonBody(req);
-    } catch (err) {
-      const reason = (err as Error).message === 'body_too_large' ? 'body_too_large' : 'invalid_json';
-      sendJson(res, 400, { error: reason });
-      return;
-    }
-
-    if (url === '/pair/init') {
-      if (!isInitBody(body)) {
-        sendJson(res, 400, { error: 'invalid_body' });
-        return;
-      }
-      const result = pairing.initPair({
-        peerId: body.peerId,
-        pubkey: body.pubkey,
-        fingerprint: body.fingerprint,
-        displayName: body.displayName,
+  if (ownsServer) {
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(deps.listenPort, host, () => {
+        server.removeListener('error', reject);
+        resolve();
       });
-      onPinIssued?.({
-        sessionId: result.sessionId,
-        pin: result.pin,
-        initiatorPeerId: body.peerId,
-      });
-      sendJson(res, 200, {
-        sessionId: result.sessionId,
-        challenge: result.challenge,
-      });
-      return;
-    }
-
-    // /pair/confirm
-    if (!isConfirmBody(body)) {
-      sendJson(res, 400, { error: 'invalid_body' });
-      return;
-    }
-    const outcome = pairing.confirmPair(body.sessionId, body.pinHmac);
-    if (!outcome.ok) {
-      sendJson(res, 401, { error: outcome.reason });
-      return;
-    }
-
-    const {initiator} = outcome;
-    if (!initiator.fingerprint) {
-      sendJson(res, 400, { error: 'missing_fingerprint' });
-      return;
-    }
-    peerStore.upsert({
-      peerId: initiator.peerId,
-      pubkey: initiator.pubkey,
-      displayName: initiator.displayName ?? null,
-      certFingerprint: initiator.fingerprint,
-      pairedAt: now(),
-    });
-
-    sendJson(res, 200, {
-      peerId: selfIdentity.peerId,
-      pubkey: selfIdentity.pubkey,
-      fingerprint: selfFingerprint,
     });
   }
-
-  await new Promise<void>((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(deps.listenPort, host, () => {
-      server.removeListener('error', reject);
-      resolve();
-    });
-  });
 
   const addr = server.address() as AddressInfo;
   const { port: actualPort } = addr;
@@ -212,6 +234,8 @@ export async function createPairServer(deps: PairServerDeps): Promise<PairServer
     port: () => actualPort,
     url: () => `https://${host}:${String(actualPort)}`,
     async close() {
+      server.removeListener('request', handler);
+      if (!ownsServer) return;
       await new Promise<void>((resolve, reject) => {
         server.close((err) => {
           if (err) reject(err);

@@ -78,7 +78,12 @@ import { createIntegrationsService } from '../features/integrations/integrations
 import { createMergeService } from '../features/merge/merge-service';
 import { createNotesService } from '../features/notes/notes-service';
 import { loadMigrationTags } from '../features/peers/migration-tags';
-import { loadPhase1PeerConfig } from '../features/peers/peer-config';
+import { loadPeerConfig } from '../features/peers/peer-config';
+import { getOrCreatePeerIdentity } from '../features/peers/peer-identity';
+import { createPeerMdns, type PeerMdns } from '../features/peers/peer-mdns';
+import { createPeerServer, type PeerServer } from '../features/peers/peer-server';
+import { createPeerStore } from '../features/peers/peer-store';
+import { resolvePeerTls } from '../features/peers/peer-tls';
 import { createReplicationEngine } from '../features/peers/replication-engine';
 import { createWsTransport, type WsTransport } from '../features/peers/ws-transport';
 import { createPlannerService } from '../features/planner/planner-service';
@@ -611,38 +616,112 @@ export function createServiceRegistry(
   const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
   const fileTreeService = lazyService(() => createFileTreeService());
   const visualizationService = lazyService(() => createVisualizationService(agentHostClient));
-  // ─── Peer replication (Phase 1) ──────────────────────────────
-  const peerConfig = loadPhase1PeerConfig();
+  // ─── Peer replication (Phase 3a) ─────────────────────────────
+  //
+  // Boot flow when ADC_PEER_PORT > 0:
+  //   1. Resolve / create Ed25519 identity (peer-identity)
+  //   2. Resolve / create self-signed TLS cert (peer-tls)
+  //   3. Start unified peer-server (TLS https + /pair/* + WSS sync)
+  //   4. Optionally advertise + browse via mDNS
+  //
+  // Identity-derived peerId overrides ADC_PEER_ID_* env values when set;
+  // env values still apply when no identity has been generated yet (legacy
+  // tests). ADC_PEER_REMOTE remains as a manual override for tests.
+  const peerConfig = loadPeerConfig();
+  const peerIdentity = peerConfig.listenPort > 0 ? getOrCreatePeerIdentity(dataDir) : null;
   const replicationEngine = createReplicationEngine({
     db,
-    peerIdShort: peerConfig.peerIdShort,
-    peerIdFull: peerConfig.peerIdFull,
+    peerIdShort: peerIdentity?.peerIdShort ?? (peerConfig.peerIdShort || 'aaaaaaaa'),
+    peerIdFull: peerIdentity?.peerIdFull ?? (peerConfig.peerIdFull || 'peer-a'),
   });
 
-  let wsTransportHandle: WsTransport | null = null;
-  if (peerConfig.listenPort > 0) {
-    // WS transport starts asynchronously. Capture the handle so before-quit can close it.
+  let peerServerHandle: PeerServer | null = null;
+  let legacyWsTransportHandle: WsTransport | null = null;
+  let peerMdnsHandle: PeerMdns | null = null;
+  if (peerConfig.listenPort > 0 && peerIdentity) {
     void (async () => {
       try {
         const schemaHash = await computeSchemaHash(loadMigrationTags());
-        wsTransportHandle = await createWsTransport({
+        const tls = await resolvePeerTls(dataDir, peerIdentity.peerIdFull);
+        const peerStore = createPeerStore(db);
+
+        // Resolve outbound peer pin from store when ADC_PEER_REMOTE is set.
+        let remotePeerHint;
+        if (peerConfig.remoteUrl) {
+          const known = peerStore.listActive();
+          if (known.length > 0) {
+            const first = known[0];
+            remotePeerHint = { peerId: first.peerId, fingerprint: first.certFingerprint };
+          }
+        }
+
+        peerServerHandle = await createPeerServer({
+          db,
+          engine: replicationEngine,
+          tls,
+          selfIdentity: { peerId: peerIdentity.peerIdFull, pubkey: peerIdentity.pubkey },
+          listenPort: peerConfig.listenPort,
+          schemaHash,
+          remoteUrl: peerConfig.remoteUrl,
+          remotePeer: remotePeerHint,
+          onPinIssued: ({ pin, initiatorPeerId }) => {
+            // Phase 3a logs to console; Phase 3b surfaces to renderer UI.
+            appLogger.info(`[Peers] Pair PIN ${pin} for initiator ${initiatorPeerId}`);
+          },
+        });
+
+        if (peerConfig.preferMdns) {
+          peerMdnsHandle = createPeerMdns({
+            selfPeerId: peerIdentity.peerIdFull,
+            fingerprint: tls.fingerprint,
+            port: peerServerHandle.port(),
+            displayName: peerConfig.displayName,
+          });
+          await peerMdnsHandle.start();
+          peerMdnsHandle.onChange((discovered) => {
+            // Phase 3a: log only. Phase 3b/4 will auto-dial known peers
+            // and surface unknown ones to the pairing UI.
+            for (const ad of discovered) {
+              const known = peerStore.getByPeerId(ad.peerId);
+              appLogger.info(
+                `[Peers] mDNS ${known ? 'known' : 'unknown'} peer ${ad.peerId.slice(0, 8)} at ${ad.host}:${String(ad.port)}`,
+              );
+            }
+          });
+        }
+      } catch (err) {
+        appLogger.error(`[Bootstrap] Peer server failed to start: ${String(err)}`);
+      }
+    })();
+  } else if (peerConfig.listenPort > 0) {
+    // Legacy plain-WS path when identity isn't available (should not happen
+    // post-Phase 3a but kept defensively for boot resilience).
+    void (async () => {
+      try {
+        const schemaHash = await computeSchemaHash(loadMigrationTags());
+        legacyWsTransportHandle = await createWsTransport({
           engine: replicationEngine,
           listenPort: peerConfig.listenPort,
           remoteUrl: peerConfig.remoteUrl,
           schemaHash,
         });
       } catch (err) {
-        appLogger.error(`[Bootstrap] WS transport failed to start: ${String(err)}`);
+        appLogger.error(`[Bootstrap] Legacy WS transport failed to start: ${String(err)}`);
       }
     })();
   }
   const disposePeerTransport = async (): Promise<void> => {
-    if (wsTransportHandle) {
-      try {
-        await wsTransportHandle.close();
-      } catch (err) {
-        appLogger.warn(`[Bootstrap] WS transport close failed: ${String(err)}`);
-      }
+    if (peerMdnsHandle) {
+      try { await peerMdnsHandle.stop(); }
+      catch (err) { appLogger.warn(`[Bootstrap] mDNS stop failed: ${String(err)}`); }
+    }
+    if (peerServerHandle) {
+      try { await peerServerHandle.close(); }
+      catch (err) { appLogger.warn(`[Bootstrap] Peer server close failed: ${String(err)}`); }
+    }
+    if (legacyWsTransportHandle) {
+      try { await legacyWsTransportHandle.close(); }
+      catch (err) { appLogger.warn(`[Bootstrap] WS transport close failed: ${String(err)}`); }
     }
   };
 
