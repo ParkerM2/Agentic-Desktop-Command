@@ -15,7 +15,6 @@ import { WORKFLOW_ENGINE } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES, WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
 
 import { createJsonlWatcher } from "./jsonl-watcher";
-import { createProgressSyncer } from "./progress-syncer";
 import { createProgressWatcher } from "./progress-watcher";
 
 import type { WorkflowEngineService } from './engine';
@@ -24,7 +23,6 @@ import type { ProgressWatcher } from "./progress-watcher";
 import type { WorkflowTemplateService } from './templates';
 import type { BusSessionManager } from '../../bus/session-manager';
 import type { IpcRouter } from '../../ipc/router';
-import type { HubApiClient } from "../hub/hub-api-client";
 
 interface ActiveWatcher {
   jsonl: JsonlWatcher;
@@ -36,7 +34,6 @@ const activeWatchers = new Map<string, ActiveWatcher>();
 
 export function registerWorkflowHandlers(
   router: IpcRouter,
-  hubApiClient: HubApiClient,
   workflowEngineService: WorkflowEngineService,
   workflowTemplateService: WorkflowTemplateService,
   busSessionManager: BusSessionManager,
@@ -52,12 +49,8 @@ export function registerWorkflowHandlers(
       activeWatchers.delete(projectPath);
     }
 
-    // ── Legacy markdown watcher for Hub progress sync ──
+    // ── Legacy markdown watcher for renderer progress events ──
     const legacyWatcher = createProgressWatcher(projectPath);
-    const syncer = createProgressSyncer(hubApiClient);
-    legacyWatcher.onProgress((data) => {
-      void syncer.syncProgress(data.taskId, data);
-    });
     legacyWatcher.onProgress((data) => {
       router.emit(TASKS_EVENTS.PROGRESS.UPDATED, {
         taskId: data.taskId,

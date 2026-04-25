@@ -296,7 +296,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerAppUpdateHandlers(router, services.appUpdateService);
   registerWorkflowHandlers(
     router,
-    services.hubApiClient,
     services.workflowEngineService,
     services.workflowTemplateService,
     services.busSessionManager,
