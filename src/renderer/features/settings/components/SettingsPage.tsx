@@ -1,7 +1,7 @@
 /**
  * SettingsPage — App settings view with tab bar layout
  *
- * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
+ * Tabs: Display, Profile, Hub, Peers, Integrations, Storage, Testing, Advanced
  */
 
 import { FlaskConical, HardDrive, Network, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
@@ -194,6 +194,7 @@ export function SettingsPage() {
           </PageHeader.TabContent>
         </PageContent>
       </PageHeader.Tabs>
+      {/* TODO(p2p-phase4): hoist IncomingPinDialog to RootLayout for global visibility */}
       <IncomingPinDialog />
     </PageLayout>
   );
