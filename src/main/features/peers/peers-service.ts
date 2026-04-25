@@ -219,6 +219,37 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     }
   }
 
+  const GC_INTERVAL_MS = 24 * 60 * 60 * 1000; // daily
+
+  function computeGcWatermark(): string | null {
+    const peers = peerStore.listAll().filter((p) => p.revokedAt === null);
+    if (peers.length === 0) return null;
+    const seen = peers
+      .map((p) => p.lastSeenHlc)
+      .filter((h): h is string => h !== null);
+    if (seen.length !== peers.length) {
+      // At least one active peer hasn't been seen — refuse to GC.
+      return null;
+    }
+    return seen.reduce((min, h) => (h < min ? h : min));
+  }
+
+  let gcInterval: ReturnType<typeof setInterval> | null = null;
+
+  function startGc(): void {
+    gcInterval = setInterval(() => {
+      const watermark = computeGcWatermark();
+      if (watermark === null) return;
+      const result = deps.engine.gcOpLog(watermark);
+      if (result.deleted > 0) {
+        serviceLogger.info(
+          { deleted: result.deleted, watermarkHlc: watermark },
+          'peers.opLog.gc',
+        );
+      }
+    }, GC_INTERVAL_MS);
+  }
+
   let mdns: PeerMdns | null = null;
   let mdnsUnsub: (() => void) | null = null;
   if (deps.preferMdns) {
@@ -235,6 +266,8 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
       serviceLogger.warn({ err }, 'peers.peersService mdns.start failed');
     }
   }
+
+  startGc();
 
   return {
     getIdentity() {
@@ -318,6 +351,10 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     },
 
     async dispose() {
+      if (gcInterval !== null) {
+        clearInterval(gcInterval);
+        gcInterval = null;
+      }
       const localUnsub = mdnsUnsub;
       const localMdns = mdns;
       mdnsUnsub = null;
