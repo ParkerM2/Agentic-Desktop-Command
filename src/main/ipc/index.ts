@@ -145,8 +145,7 @@ export interface Services {
   mcpManager: McpManager;
   notesService: NotesService;
   notificationManager: NotificationManager;
-  // TODO(3b.4): make required after service-registry wiring
-  peersService?: PeersService;
+  peersService: PeersService;
   plannerService: PlannerService;
   spotifyService: SpotifyService;
   gitService: GitService;
@@ -263,9 +262,7 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   }
   registerInsightsHandlers(router, services.insightsService);
   registerNotesHandlers(router, services.notesService);
-  if (services.peersService) {
-    registerPeersHandlers(router, services.peersService);
-  }
+  registerPeersHandlers(router, services.peersService);
   registerPlannerHandlers(router, services.plannerService);
   registerGitHandlers(router, services.gitService, services.worktreeService);
   registerHubHandlers(
