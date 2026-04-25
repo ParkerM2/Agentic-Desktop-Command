@@ -1,10 +1,16 @@
 import { z } from 'zod';
 
+// Naming convention: `certFingerprint` is the persisted DB column on paired
+// peers (matches src/main/features/peers/peer-store.ts); `fingerprint` is the
+// wire/transient form used in mDNS TXT records, TLS APIs, and pair inputs.
+// Both refer to the same lowercase-hex SHA-256 of the DER cert.
+
 export const PairedPeerSchema = z.object({
   peerId: z.string(),
   displayName: z.string().nullable(),
   pubkey: z.string(),
   certFingerprint: z.string(),
+  lastSeenHlc: z.string().nullable(),
   pairedAt: z.number(),
   lastConnectedAt: z.number().nullable(),
   revokedAt: z.number().nullable(),
@@ -15,8 +21,8 @@ export const DiscoveredPeerSchema = z.object({
   peerId: z.string(),
   fingerprint: z.string(),
   host: z.string(),
-  port: z.number(),
-  displayName: z.string().optional(),
+  port: z.number().int().min(1).max(65535),
+  displayName: z.string().nullable(),
   lastSeenAt: z.number(),
   isPaired: z.boolean(),
 });
@@ -26,15 +32,15 @@ export const SelfIdentitySchema = z.object({
   peerId: z.string(),
   pubkey: z.string(),
   fingerprint: z.string(),
-  displayName: z.string().optional(),
+  displayName: z.string().nullable(),
 });
 export type SelfIdentity = z.infer<typeof SelfIdentitySchema>;
 
 export const PairInitInputSchema = z.object({
   host: z.string(),
-  port: z.number(),
+  port: z.number().int().min(1).max(65535),
   fingerprint: z.string(),
-  displayName: z.string().optional(),
+  displayName: z.string().nullable().optional(),
 });
 export type PairInitInput = z.infer<typeof PairInitInputSchema>;
 
@@ -46,7 +52,7 @@ export type PairInitOutput = z.infer<typeof PairInitOutputSchema>;
 
 export const PairConfirmInputSchema = z.object({
   host: z.string(),
-  port: z.number(),
+  port: z.number().int().min(1).max(65535),
   fingerprint: z.string(),
   sessionId: z.string(),
   challenge: z.string(),
@@ -70,7 +76,7 @@ export const PinIssuedEventSchema = z.object({
   sessionId: z.string(),
   pin: z.string(),
   initiatorPeerId: z.string(),
-  initiatorDisplayName: z.string().optional(),
+  initiatorDisplayName: z.string().nullable().optional(),
   issuedAt: z.number(),
 });
 export type PinIssuedEvent = z.infer<typeof PinIssuedEventSchema>;
@@ -81,6 +87,7 @@ export const DiscoveryChangedEventSchema = z.object({
 export type DiscoveryChangedEvent = z.infer<typeof DiscoveryChangedEventSchema>;
 
 export const TrustChangedEventSchema = z.object({
-  peers: z.array(PairedPeerSchema),
+  peerId: z.string(),
+  action: z.enum(['added', 'revoked', 'updated']),
 });
 export type TrustChangedEvent = z.infer<typeof TrustChangedEventSchema>;
