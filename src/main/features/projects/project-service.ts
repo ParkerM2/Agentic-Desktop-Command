@@ -22,6 +22,8 @@ import { and, eq } from 'drizzle-orm';
 
 import type { Project, SubProject } from '@shared/types';
 
+import { serviceLogger } from '@main/lib/logger';
+
 import { projects as projectsTable, subProjects as subProjectsTable } from './schema';
 
 import type { ProjectRow, SubProjectRow } from './schema';
@@ -149,9 +151,13 @@ export function createProjectService(deps: CreateProjectServiceDeps): ProjectSer
   try {
     const initial = db.select().from(projectsTable).all().map(rowToProject);
     updateCache(initial);
-  } catch {
-    // Table may not exist yet during early test setup; cache stays empty
-    // and the next listProjects() will populate it.
+  } catch (err) {
+    // Tolerate "no such table" only — tests that skip migrations hit this path.
+    // Anything else is a real bug we want to surface.
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!msg.includes('no such table')) {
+      serviceLogger.warn({ err }, 'project-service.cacheHydrate failed');
+    }
   }
 
   return {
@@ -238,6 +244,13 @@ export function createProjectService(deps: CreateProjectServiceDeps): ProjectSer
     },
 
     async removeProject(projectId) {
+      const existing = db
+        .select()
+        .from(projectsTable)
+        .where(eq(projectsTable.id, projectId))
+        .get();
+      if (!existing) throw new Error(`Project ${projectId} not found`);
+
       // Cascade by hand: delete sub_projects first, then the project.
       db.delete(subProjectsTable).where(eq(subProjectsTable.projectId, projectId)).run();
       db.delete(projectsTable).where(eq(projectsTable.id, projectId)).run();
@@ -247,6 +260,14 @@ export function createProjectService(deps: CreateProjectServiceDeps): ProjectSer
 
     async updateProject(data) {
       const { projectId, ...updates } = data;
+
+      const existing = db
+        .select()
+        .from(projectsTable)
+        .where(eq(projectsTable.id, projectId))
+        .get();
+      if (!existing) throw new Error(`Project ${projectId} not found`);
+
       const patch: Partial<typeof projectsTable.$inferInsert> = {
         updatedAt: new Date().toISOString(),
       };

@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
@@ -151,5 +151,22 @@ describe('project-service (local SQLite)', () => {
     expect(result.success).toBe(true);
     expect(existsSync(join(dir, '.adc'))).toBe(true);
     expect(existsSync(join(dir, '.adc', 'specs'))).toBe(true);
+  });
+
+  it('addProject defaults name to basename(path) when name omitted', async () => {
+    const dir = makeTempDir();
+    const expectedName = basename(dir);
+    const project = await service.addProject({ path: dir });
+    expect(project.name).toBe(expectedName);
+  });
+
+  it('updateProject against unknown id throws', async () => {
+    await expect(
+      service.updateProject({ projectId: 'does-not-exist', name: 'x' }),
+    ).rejects.toThrow();
+  });
+
+  it('removeProject against unknown id throws', async () => {
+    await expect(service.removeProject('does-not-exist')).rejects.toThrow();
   });
 });
