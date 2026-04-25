@@ -11,13 +11,23 @@ describe('SYNC_TABLES', () => {
     expect(SYNC_TABLES).toContain('workflow_runs_summary');
   });
 
-  it('has exactly 2 entries in phase 2', () => {
-    expect(SYNC_TABLES).toHaveLength(2);
+  it('includes notes', () => {
+    expect(SYNC_TABLES).toContain('notes');
+  });
+
+  it('includes ideas', () => {
+    expect(SYNC_TABLES).toContain('ideas');
+  });
+
+  it('has exactly 4 entries in phase 4', () => {
+    expect(SYNC_TABLES).toHaveLength(4);
   });
 
   it('isSyncTable returns true for allowlisted', () => {
     expect(isSyncTable('progress_tasks')).toBe(true);
     expect(isSyncTable('workflow_runs_summary')).toBe(true);
+    expect(isSyncTable('notes')).toBe(true);
+    expect(isSyncTable('ideas')).toBe(true);
   });
 
   it('isSyncTable returns false for non-allowlisted', () => {
@@ -32,5 +42,13 @@ describe('SYNC_TABLES', () => {
 
   it('SYNC_TABLE_PK maps workflow_runs_summary → id', () => {
     expect(SYNC_TABLE_PK.workflow_runs_summary).toBe('id');
+  });
+
+  it('SYNC_TABLE_PK maps notes → id', () => {
+    expect(SYNC_TABLE_PK.notes).toBe('id');
+  });
+
+  it('SYNC_TABLE_PK maps ideas → id', () => {
+    expect(SYNC_TABLE_PK.ideas).toBe('id');
   });
 });
