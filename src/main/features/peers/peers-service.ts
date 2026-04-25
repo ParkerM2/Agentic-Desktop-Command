@@ -237,6 +237,19 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
   let gcInterval: ReturnType<typeof setInterval> | null = null;
 
   function startGc(): void {
+    const initialGc = setTimeout(() => {
+      const watermark = computeGcWatermark();
+      if (watermark === null) return;
+      const result = deps.engine.gcOpLog(watermark);
+      if (result.deleted > 0) {
+        serviceLogger.info(
+          { deleted: result.deleted, watermarkHlc: watermark, initial: true },
+          'peers.opLog.gc',
+        );
+      }
+    }, 0);
+    initialGc.unref();
+
     gcInterval = setInterval(() => {
       const watermark = computeGcWatermark();
       if (watermark === null) return;
@@ -248,6 +261,7 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         );
       }
     }, GC_INTERVAL_MS);
+    gcInterval.unref();
   }
 
   let mdns: PeerMdns | null = null;
