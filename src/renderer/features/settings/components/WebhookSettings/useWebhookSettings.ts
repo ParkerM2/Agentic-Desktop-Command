@@ -16,6 +16,7 @@ export function useWebhookSettings() {
 
   // Hub-relayed webhooks are gone; URLs unavailable until a local webhook
   // receiver replaces them.
+  // TODO(p2p-future): replace with local receiver URL once a webhook receiver replaces the Hub relay.
   const hasHubUrl = false;
   const slackWebhookUrl = '';
   const githubWebhookUrl = '';
