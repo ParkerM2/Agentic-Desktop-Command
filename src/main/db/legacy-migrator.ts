@@ -15,7 +15,7 @@
 import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { hubLogger } from '../../lib/logger';
+import { hubLogger } from '../lib/logger';
 
 /** Synthetic hub id used when no hub has been paired yet (local-only mode). */
 export const LOCAL_HUB_ID = 'local';

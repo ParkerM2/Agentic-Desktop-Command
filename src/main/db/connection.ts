@@ -7,8 +7,7 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
-import { resolveActiveDbPath } from '../features/hub/db-migrator';
-
+import { resolveActiveDbPath } from './legacy-migrator';
 import * as schema from './schema';
 
 let db: ReturnType<typeof drizzle<typeof schema>> | null = null;

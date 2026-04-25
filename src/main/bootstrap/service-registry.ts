@@ -10,13 +10,10 @@
  */
 
 import { existsSync } from 'node:fs';
-import { hostname } from 'node:os';
-import { join } from 'node:path';
 
 import { app } from 'electron';
 
 import { APP_EVENTS } from '@shared/ipc/app/channels';
-import { HUB_EVENTS } from '@shared/ipc/hub/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { computeSchemaHash } from '@shared/replication/schema-hash';
 import type { AppChannel } from '@shared/types/channel';
@@ -31,6 +28,7 @@ import { createTokenStore } from '../auth/token-store';
 import { createCommandBus } from '../bus';
 import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
+import { LEGACY_HUB_ID, LOCAL_HUB_ID, migrateLegacyDb, resolveActiveDbPath } from '../db/legacy-migrator';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
 import {
@@ -63,15 +61,6 @@ import { createGitService } from '../features/git/git-service';
 import { createPolyrepoService } from '../features/git/polyrepo-service';
 import { createWorktreeService } from '../features/git/worktree-service';
 import { createGitHubService } from '../features/github';
-import { LEGACY_HUB_ID, LOCAL_HUB_ID, migrateLegacyDb, resolveActiveDbPath } from '../features/hub/db-migrator';
-import { createDeviceService } from '../features/hub/device';
-import { createHubApiClient } from '../features/hub/hub-api-client';
-import { createHubAuthService } from '../features/hub/hub-auth-service';
-import { createHubConnectionManager } from '../features/hub/hub-connection';
-import { createHubDiscovery } from '../features/hub/hub-discovery';
-import { createHubSyncService } from '../features/hub/hub-sync';
-import { createNetworkWatcher } from '../features/hub/network-watcher';
-import { createWebhookRelay } from '../features/hub/webhook-relay';
 import { createIdeasService } from '../features/ideas/ideas-service';
 import { createInsightsService } from '../features/insights/insights-service';
 import { createIntegrationsService } from '../features/integrations/integrations-service';
@@ -104,7 +93,6 @@ import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
-import { shouldEnableDiscovery } from '../lib/hub-discovery-flag';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
 import { createMcpManager } from '../mcp/mcp-manager';
@@ -122,7 +110,6 @@ import type { CommandBus } from '../bus';
 import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
-import type { HubApiClient } from '../features/hub/hub-api-client';
 import type { NotificationManager } from '../features/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
@@ -144,8 +131,6 @@ export interface ServiceRegistryResult {
   healthService: ReturnType<typeof createHealthService>;
   qaTrigger: ReturnType<typeof createQaTrigger>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
-  webhookRelay: ReturnType<typeof createWebhookRelay>;
-  hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
   terminalService: ReturnType<typeof createTerminalService>;
   alertService: ReturnType<typeof createAlertService>;
   notificationManager: NotificationManager;
@@ -156,10 +141,7 @@ export interface ServiceRegistryResult {
   cleanupService: ReturnType<typeof createCleanupService>;
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
-  hubApiClient: HubApiClient;
   workspacesService: ReturnType<typeof createWorkspacesService>;
-  heartbeatIntervalId: ReturnType<typeof setInterval> | null;
-  registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
   disposePeerTransport: () => Promise<void>;
 }
@@ -247,154 +229,6 @@ export function createServiceRegistry(
   const oauthManager = lazyService(() => createOAuthManager({ tokenStore, providers }));
   const mcpRegistry = lazyService(() => createMcpRegistry());
   const mcpManager = lazyService(() => createMcpManager({ registry: mcpRegistry }));
-
-  // ─── Tier 1: Hub domain ───────────────────────────────────────
-
-  const hubConnectionManager = lazyService(() => {
-    const mgr = createHubConnectionManager({ router, db, dataDir });
-    const savedHubConfig = mgr.getConnection();
-    if (savedHubConfig?.enabled) {
-      appLogger.info('[Hub] Auto-connecting to saved Hub:', savedHubConfig.hubUrl);
-      void (async () => {
-        const result = await mgr.connect();
-        if (result.success) {
-          appLogger.info('[Hub] Auto-connect succeeded');
-        } else {
-          appLogger.warn('[Hub] Auto-connect failed:', result.error);
-        }
-      })();
-    }
-    mgr.onWebSocketMessage(() => {
-      healthRegistry.pulse('hubWebSocket');
-      if (registeredDeviceId === null && hubAuthService.isAuthenticated()) {
-        void registerDeviceAndStartHeartbeat(hubApiClient);
-      }
-    });
-    // Forward active-hub changes to the renderer so UIs can react
-    // without polling. Subscribed here so the lazy proxy doesn't have
-    // to be force-initialised from outside.
-    mgr.onBeforeActiveHubChange(({ to }) => {
-      router.emit(HUB_EVENTS.ACTIVE.CHANGED, { activeHubId: to });
-    });
-    return mgr;
-  });
-
-  const hubAuthService = lazyService(() =>
-    createHubAuthService({
-      tokenStore,
-      getHubUrl: () => hubConnectionManager.getConnection()?.hubUrl ?? null,
-    }),
-  );
-
-  const hubApiClient = lazyService(() =>
-    createHubApiClient(
-      () => hubConnectionManager.getConnection()?.hubUrl ?? null,
-      () => hubAuthService.getAccessToken(),
-    ),
-  );
-
-  const hubSyncService = lazyService(() => createHubSyncService(hubConnectionManager, db));
-
-  // ─── Tier 1: Hub discovery (mDNS) + network change watcher ────
-  //
-  // Discovery surfaces mDNS-advertised hubs on the same channel; the
-  // network watcher restarts discovery whenever interfaces change so a
-  // VPN connect / Wi-Fi switch gives an immediate refresh instead of
-  // waiting for the browser's next poll.
-  //
-  // Emergency rollback: `ENABLE_HUB_DISCOVERY=false` skips starting the
-  // browser + network watcher and suppresses `HUB_EVENTS.DISCOVERY.CHANGED`
-  // emissions. The legacy `HUB.CONNECT.SERVER` URL+key flow keeps working.
-  const hubsDir = join(dataDir, 'hubs');
-  const hubDiscovery = createHubDiscovery({ channel });
-  const discoveryEnabled = shouldEnableDiscovery();
-  if (discoveryEnabled) {
-    hubDiscovery.start();
-    hubDiscovery.on('changed', () => {
-      const activeHubId = hubConnectionManager.getActiveHubId();
-      const status = hubConnectionManager.getStatus();
-      const paired = hubConnectionManager.listHubs().map((r) => ({
-        hubId: r.hubId,
-        displayName: r.displayName,
-        lastKnownUrl: r.lastKnownUrl,
-        pinnedFingerprint: r.pinnedFingerprint,
-        addedAt: r.addedAt,
-        lastConnectedAt: r.lastConnectedAt,
-        status:
-          activeHubId !== null && activeHubId === r.hubId
-            ? status
-            : ('disconnected' as const),
-      }));
-      const discovered = hubDiscovery.getSnapshot().map((d) => ({
-        hubId: d.hubId,
-        displayName: d.displayName,
-        version: d.version,
-        channel: d.channel,
-        addresses: d.addresses,
-        port: d.port,
-        fingerprint: d.fingerprint,
-        lastSeenAt: d.lastSeenAt,
-        stale: d.stale,
-      }));
-      router.emit(HUB_EVENTS.DISCOVERY.CHANGED, { paired, discovered, activeHubId });
-    });
-    createNetworkWatcher(() => {
-      hubDiscovery.clear();
-      // Restart the browser to repopulate on the new interfaces.
-      void (async () => {
-        await hubDiscovery.stop();
-        hubDiscovery.start();
-      })();
-    });
-  } else {
-    appLogger.warn(
-      '[Hub] ENABLE_HUB_DISCOVERY=false — mDNS discovery and network-watcher disabled; legacy HUB.CONNECT.SERVER flow remains available',
-    );
-  }
-
-  // ─── Device + heartbeat (stateful, kept at module scope) ─────
-
-  let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
-  let registeredDeviceId: string | null = null;
-  const HEARTBEAT_INTERVAL_MS = 30_000;
-
-  async function registerDeviceAndStartHeartbeat(client: HubApiClient): Promise<void> {
-    const machineId = hostname();
-    const deviceName = `${hostname()} (Desktop)`;
-    try {
-      const result = await client.registerDevice({
-        machineId,
-        deviceType: 'desktop',
-        deviceName,
-        capabilities: { canExecute: true, repos: [] },
-        appVersion: app.getVersion(),
-      });
-      if (result.ok && result.data) {
-        registeredDeviceId = result.data.id;
-        appLogger.info(`[Hub] Device registered: ${result.data.id}`);
-        if (heartbeatIntervalId !== null) clearInterval(heartbeatIntervalId);
-        heartbeatIntervalId = setInterval(() => {
-          if (registeredDeviceId) {
-            healthRegistry.pulse('hubHeartbeat');
-            void client.heartbeat(registeredDeviceId).then((res) => {
-              if (!res.ok) appLogger.warn('[Hub] Heartbeat failed:', res.error);
-              return res;
-            });
-          }
-        }, HEARTBEAT_INTERVAL_MS);
-        appLogger.info('[Hub] Heartbeat interval started (30s)');
-      } else {
-        appLogger.warn('[Hub] Device registration failed:', result.error);
-      }
-    } catch (error) {
-      appLogger.error('[Hub] Device registration error:', error instanceof Error ? error.message : 'Unknown error');
-    }
-  }
-
-  const deviceService = lazyService(() => createDeviceService({ hubApiClient }));
-
-  healthRegistry.register('hubHeartbeat', 60_000);
-  healthRegistry.register('hubWebSocket', 30_000);
 
   // ─── Tier 1: Workspace / Git domain ──────────────────────────
 
@@ -523,8 +357,6 @@ export function createServiceRegistry(
       db,
     }),
   );
-
-  const webhookRelay = lazyService(() => createWebhookRelay({ assistantService, router }));
 
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
@@ -688,7 +520,6 @@ export function createServiceRegistry(
     terminalService,
     settingsService,
     claudeClient,
-    deviceService,
     alertService,
     assistantService,
     calendarService,
@@ -698,10 +529,6 @@ export function createServiceRegistry(
     fileTreeService,
     fitnessService,
     healthRegistry,
-    hubConnectionManager,
-    hubDiscovery,
-    hubsDir,
-    hubSyncService,
     ideasService,
     insightsService,
     mcpManager,
@@ -721,7 +548,6 @@ export function createServiceRegistry(
     briefingService,
     hotkeyManager,
     appUpdateService,
-    hubApiClient,
     qaRunner,
     runnersService,
     testSuiteService,
@@ -757,8 +583,6 @@ export function createServiceRegistry(
     healthService,
     qaTrigger,
     watchEvaluator,
-    webhookRelay,
-    hubConnectionManager,
     terminalService,
     alertService,
     notificationManager,
@@ -766,12 +590,9 @@ export function createServiceRegistry(
     hotkeyManager,
     quickInput,
     settingsService,
-    hubApiClient,
     cleanupService,
     teamWatcherService,
     sessionJsonlReaderService,
-    heartbeatIntervalId,
-    registeredDeviceId,
     userSessionManager,
     disposePeerTransport,
   };

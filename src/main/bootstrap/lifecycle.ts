@@ -20,7 +20,6 @@ import type { ErrorCollector, HealthRegistry, HealthService } from '../features/
 import type { createWatchEvaluator } from '../features/assistant/watch-evaluator';
 import type { createBriefingService } from '../features/briefing/briefing-service';
 import type { CleanupService } from '../features/data-management';
-import type { createHubConnectionManager } from '../features/hub/hub-connection';
 import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
 import type { RunnersService } from '../features/runners/runners-service';
@@ -36,7 +35,6 @@ export interface LifecycleDeps {
   healthService: HealthService;
   qaTrigger: QaTrigger;
   alertService: ReturnType<typeof createAlertService>;
-  hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
   notificationManager: ReturnType<typeof createNotificationManager>;
   briefingService: ReturnType<typeof createBriefingService>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
@@ -45,7 +43,6 @@ export interface LifecycleDeps {
   appUpdateService: AppUpdateService;
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
-  getHeartbeatIntervalId: () => ReturnType<typeof setInterval> | null;
   disposePeerTransport: () => Promise<void>;
 }
 
@@ -81,16 +78,10 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     deps.terminalService.dispose();
     deps.runnersService.dispose();
     deps.alertService.stopChecking();
-    deps.hubConnectionManager.dispose();
     deps.notificationManager.dispose();
     deps.briefingService.stopScheduler();
     deps.watchEvaluator.stop();
     void deps.disposePeerTransport();
-
-    const heartbeatId = deps.getHeartbeatIntervalId();
-    if (heartbeatId !== null) {
-      clearInterval(heartbeatId);
-    }
 
     // Dispose bus + sessions
     deps.busSessionManager.dispose();
