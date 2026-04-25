@@ -223,7 +223,7 @@ export function createServiceRegistry(
 
   const settingsService = createSettingsService({ db, dataDir });
   const userSessionManager = createUserSessionManager(router);
-  const projectService = createProjectService({ hubApiClient: lazyService(() => hubApiClient) });
+  const projectService = createProjectService({ db });
 
   const commandBus = createCommandBus(db);
   const busSessionManager = createBusSessionManager(db, agentHostClient);

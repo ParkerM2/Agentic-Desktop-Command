@@ -8,7 +8,7 @@ describe('loadMigrationTags', () => {
     // Phase 3a adds migration 0028_peer_state on top of the Phase 2 baseline.
     expect(tags.length).toBeGreaterThanOrEqual(29);
     expect(tags[0]).toMatch(/^0000_/);
-    expect(tags.at(-1)).toMatch(/^0028_peer_state$/);
+    expect(tags.at(-1)).toMatch(/^0029_projects$/);
   });
 
   it('tags are strictly increasing by idx prefix', () => {

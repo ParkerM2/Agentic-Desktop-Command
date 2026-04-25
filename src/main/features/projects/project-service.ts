@@ -1,19 +1,31 @@
 /**
- * Project Service — Hub API proxy with local cache
+ * Project Service — local SQLite implementation
  *
- * Projects are persisted via Hub API. A local in-memory cache allows
- * synchronous path resolution for services that depend on getProjectPath().
- * The selectDirectory() and detectRepoStructure() remain local Electron operations.
+ * Phase 5: Hub API proxy removed. Project list and sub-projects are
+ * persisted in the device-local SQLite database. A small in-memory
+ * cache is populated eagerly so dependent services can resolve
+ * `getProjectPath()` synchronously.
+ *
+ * Future Phase 6 may add `projects` / `sub_projects` to SYNC_TABLES
+ * for cross-device replication.
  */
+/* eslint-disable @typescript-eslint/require-await -- public methods stay
+   async to preserve the existing ProjectService contract; callers await
+   them and Phase 6 may reintroduce real awaits for cross-device fan-out. */
 
 import { existsSync, mkdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import { dialog } from 'electron';
 
+import { and, eq } from 'drizzle-orm';
+
 import type { Project, SubProject } from '@shared/types';
 
-import type { HubApiClient } from '../hub/hub-api-client';
+import { projects as projectsTable, subProjects as subProjectsTable } from './schema';
+
+import type { ProjectRow, SubProjectRow } from './schema';
+import type { AdcDatabase } from '../../db';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -69,26 +81,53 @@ export interface ProjectService {
   listProjectsSync: () => Project[];
 }
 
+export interface CreateProjectServiceDeps {
+  db: AdcDatabase;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
+
+function rowToProject(row: ProjectRow): Project {
+  // Stamp both `path` (local Project shape) and `rootPath` (Hub flavor)
+  // so callers and legacy serializations both keep working.
+  const project = {
+    id: row.id,
+    workspaceId: row.workspaceId ?? undefined,
+    name: row.name,
+    description: row.description ?? undefined,
+    path: row.rootPath,
+    rootPath: row.rootPath,
+    gitUrl: row.gitUrl ?? undefined,
+    repoStructure: row.repoStructure as Project['repoStructure'],
+    defaultBranch: row.defaultBranch,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+  return project as Project;
+}
+
+function rowToSubProject(row: SubProjectRow): SubProject {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    name: row.name,
+    relativePath: row.relativePath,
+    gitUrl: row.gitUrl ?? undefined,
+    defaultBranch: row.defaultBranch,
+    createdAt: row.createdAt,
+  };
+}
+
 // ─── Factory ─────────────────────────────────────────────────
 
-export function createProjectService(deps: {
-  hubApiClient: HubApiClient;
-}): ProjectService {
-  const { hubApiClient } = deps;
+export function createProjectService(deps: CreateProjectServiceDeps): ProjectService {
+  const { db } = deps;
 
   // Local cache for sync access by dependent services
   const projectCache = new Map<string, Project>();
 
-  /** Update the local cache from an array of projects */
-  function updateCache(projects: Project[]): void {
-    projectCache.clear();
-    for (const p of projects) {
-      cacheProject(p);
-    }
-  }
-
   /** Add or update a single project in the cache.
-   *  Hub API returns `rootPath` while local code expects `path` —
+   *  Project rows store `rootPath` while local code expects `path` —
    *  normalize here so getProjectPath() always works. */
   function cacheProject(project: Project): void {
     const raw = project as unknown as Record<string, unknown>;
@@ -97,6 +136,22 @@ export function createProjectService(deps: {
       path: project.path || (raw.rootPath as string) || '',
     };
     projectCache.set(normalized.id, normalized);
+  }
+
+  function updateCache(items: Project[]): void {
+    projectCache.clear();
+    for (const p of items) cacheProject(p);
+  }
+
+  // Eagerly hydrate the cache so getProjectPath() works before the
+  // first listProjects() call (services like worktreeService and
+  // runners depend on it during bootstrap).
+  try {
+    const initial = db.select().from(projectsTable).all().map(rowToProject);
+    updateCache(initial);
+  } catch {
+    // Table may not exist yet during early test setup; cache stays empty
+    // and the next listProjects() will populate it.
   }
 
   return {
@@ -133,85 +188,81 @@ export function createProjectService(deps: {
     },
 
     async listProjects(workspaceId) {
-      const endpoint = workspaceId
-        ? `/api/workspaces/${encodeURIComponent(workspaceId)}/projects`
-        : '/api/projects';
-
-      // Workspace endpoint returns { projects: [...] }, legacy returns raw array
-      const result = await hubApiClient.hubGet<Project[] | { projects: Project[] }>(endpoint);
-
-      if (!result.ok || !result.data) {
-        throw new Error(result.error ?? 'Failed to fetch projects');
-      }
-
-      const projects = Array.isArray(result.data) ? result.data : result.data.projects;
-      updateCache(projects);
-      return projects;
+      const rows = workspaceId
+        ? db.select().from(projectsTable).where(eq(projectsTable.workspaceId, workspaceId)).all()
+        : db.select().from(projectsTable).all();
+      const items = rows.map(rowToProject);
+      // Refresh the full cache so any orphaned entries are dropped.
+      const allRows = workspaceId ? db.select().from(projectsTable).all() : rows;
+      updateCache(allRows.map(rowToProject));
+      return items;
     },
 
     async addProject(data) {
-      const endpoint = data.workspaceId
-        ? `/api/workspaces/${encodeURIComponent(data.workspaceId)}/projects`
-        : '/api/projects';
-
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
       const projectName = data.name ?? basename(data.path);
 
-      const body = data.workspaceId
-        ? {
-            rootPath: data.path,
-            name: projectName,
-            description: data.description,
-            repoStructure: data.repoStructure ?? 'single',
-            gitUrl: data.gitUrl,
-            defaultBranch: data.defaultBranch,
-            subProjects: data.subProjects,
-          }
-        : {
-            path: data.path,
-            name: projectName,
-            description: data.description,
-            repoStructure: data.repoStructure,
-            gitUrl: data.gitUrl,
-            defaultBranch: data.defaultBranch,
-            subProjects: data.subProjects,
-          };
+      db.insert(projectsTable).values({
+        id,
+        workspaceId: data.workspaceId ?? null,
+        name: projectName,
+        description: data.description ?? null,
+        rootPath: data.path,
+        gitUrl: data.gitUrl ?? null,
+        repoStructure: data.repoStructure ?? 'single',
+        defaultBranch: data.defaultBranch ?? 'main',
+        createdAt: now,
+        updatedAt: now,
+      }).run();
 
-      const result = await hubApiClient.hubPost<Project>(endpoint, body);
-
-      if (!result.ok || !result.data) {
-        throw new Error(result.error ?? 'Failed to add project');
+      if (data.subProjects && data.subProjects.length > 0) {
+        for (const sub of data.subProjects) {
+          db.insert(subProjectsTable).values({
+            id: crypto.randomUUID(),
+            projectId: id,
+            name: sub.name,
+            relativePath: sub.relativePath,
+            gitUrl: sub.gitUrl ?? null,
+            defaultBranch: sub.defaultBranch ?? 'main',
+            createdAt: now,
+          }).run();
+        }
       }
 
-      cacheProject(result.data);
-      return result.data;
+      const row = db.select().from(projectsTable).where(eq(projectsTable.id, id)).get();
+      if (!row) throw new Error(`Failed to add project ${id}`);
+      const project = rowToProject(row);
+      cacheProject(project);
+      return project;
     },
 
     async removeProject(projectId) {
-      const result = await hubApiClient.hubDelete(
-        `/api/projects/${encodeURIComponent(projectId)}`,
-      );
-
-      if (!result.ok) {
-        throw new Error(result.error ?? `Failed to remove project ${projectId}`);
-      }
-
+      // Cascade by hand: delete sub_projects first, then the project.
+      db.delete(subProjectsTable).where(eq(subProjectsTable.projectId, projectId)).run();
+      db.delete(projectsTable).where(eq(projectsTable.id, projectId)).run();
       projectCache.delete(projectId);
       return { success: true };
     },
 
     async updateProject(data) {
       const { projectId, ...updates } = data;
-      const result = await hubApiClient.hubPatch<Project>(
-        `/api/projects/${encodeURIComponent(projectId)}`,
-        updates,
-      );
+      const patch: Partial<typeof projectsTable.$inferInsert> = {
+        updatedAt: new Date().toISOString(),
+      };
+      if (updates.name !== undefined) patch.name = updates.name;
+      if (updates.description !== undefined) patch.description = updates.description;
+      if (updates.gitUrl !== undefined) patch.gitUrl = updates.gitUrl;
+      if (updates.defaultBranch !== undefined) patch.defaultBranch = updates.defaultBranch;
+      if (updates.workspaceId !== undefined) patch.workspaceId = updates.workspaceId;
 
-      if (!result.ok || !result.data) {
-        throw new Error(result.error ?? `Failed to update project ${projectId}`);
-      }
+      db.update(projectsTable).set(patch).where(eq(projectsTable.id, projectId)).run();
 
-      cacheProject(result.data);
-      return result.data;
+      const row = db.select().from(projectsTable).where(eq(projectsTable.id, projectId)).get();
+      if (!row) throw new Error(`Project ${projectId} not found after update`);
+      const project = rowToProject(row);
+      cacheProject(project);
+      return project;
     },
 
     async selectDirectory() {
@@ -223,42 +274,36 @@ export function createProjectService(deps: {
     },
 
     async getSubProjects(projectId) {
-      const result = await hubApiClient.hubGet<{ subProjects: SubProject[] }>(
-        `/api/projects/${encodeURIComponent(projectId)}/sub-projects`,
-      );
-
-      if (!result.ok || !result.data) {
-        throw new Error(result.error ?? `Failed to fetch sub-projects for ${projectId}`);
-      }
-
-      return result.data.subProjects;
+      const rows = db
+        .select()
+        .from(subProjectsTable)
+        .where(eq(subProjectsTable.projectId, projectId))
+        .all();
+      return rows.map(rowToSubProject);
     },
 
     async createSubProject(data) {
-      const { projectId, ...body } = data;
-      const result = await hubApiClient.hubPost<SubProject>(
-        `/api/projects/${encodeURIComponent(projectId)}/sub-projects`,
-        body,
-      );
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      db.insert(subProjectsTable).values({
+        id,
+        projectId: data.projectId,
+        name: data.name,
+        relativePath: data.relativePath,
+        gitUrl: data.gitUrl ?? null,
+        defaultBranch: data.defaultBranch ?? 'main',
+        createdAt: now,
+      }).run();
 
-      if (!result.ok || !result.data) {
-        throw new Error(result.error ?? `Failed to create sub-project for ${projectId}`);
-      }
-
-      return result.data;
+      const row = db.select().from(subProjectsTable).where(eq(subProjectsTable.id, id)).get();
+      if (!row) throw new Error(`Failed to create sub-project ${id}`);
+      return rowToSubProject(row);
     },
 
     async deleteSubProject(projectId, subProjectId) {
-      const result = await hubApiClient.hubDelete(
-        `/api/projects/${encodeURIComponent(projectId)}/sub-projects/${encodeURIComponent(subProjectId)}`,
-      );
-
-      if (!result.ok) {
-        throw new Error(
-          result.error ?? `Failed to delete sub-project ${subProjectId}`,
-        );
-      }
-
+      db.delete(subProjectsTable)
+        .where(and(eq(subProjectsTable.id, subProjectId), eq(subProjectsTable.projectId, projectId)))
+        .run();
       return { success: true };
     },
   };
