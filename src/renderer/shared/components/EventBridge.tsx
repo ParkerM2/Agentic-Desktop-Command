@@ -4,9 +4,9 @@
  * Mounted once in RootLayout. Subscribes to every IPC event channel that
  * affects cached data and invalidates the corresponding React Query keys.
  *
- * Replaces the ad-hoc hub-query-sync approach and scattered useIpcEvent
- * calls with a single declarative registry. To add a new event-to-cache
- * mapping, add an entry to EVENT_REGISTRY below.
+ * Provides a single declarative registry replacing scattered useIpcEvent
+ * calls. To add a new event-to-cache mapping, add an entry to
+ * EVENT_REGISTRY below.
  *
  * Renders null — purely side-effect.
  */
@@ -18,8 +18,6 @@ import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import { BUS_EVENTS } from '@shared/ipc/bus/channels';
 import type { sessionRecordSchema } from '@shared/ipc/bus/schemas';
-import { HUB_EVENTS } from '@shared/ipc/hub/channels';
-import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
 import { PEERS_EVENTS } from '@shared/ipc/peers';
 import type { DiscoveredPeer } from '@shared/ipc/peers';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
@@ -94,7 +92,6 @@ function extractTextPreview(content: ContentBlock[]): string {
 // ─── Shared Key Constants ───────────────────────────────────
 
 const PROGRESS_LIST = ['progress', 'list'] as const;
-const TASKS = ['tasks'] as const;
 const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
@@ -113,18 +110,6 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [PROGRESS_EVENTS.ACTION.FAILED]: { keys: [PROGRESS_LIST, ['progress', 'sessions']] },
   [PROGRESS_EVENTS.WORKFLOW.STEP]: { keys: [PROGRESS_LIST] },
 
-  // Hub entity events
-  [HUB_TASKS_EVENTS.TASK.CREATED]: { keys: [TASKS] },
-  [HUB_TASKS_EVENTS.TASK.UPDATED]: { keys: [TASKS] },
-  [HUB_TASKS_EVENTS.TASK.DELETED]: { keys: [TASKS] },
-  [HUB_TASKS_EVENTS.TASK_RUN.COMPLETED]: { keys: [TASKS] },
-  [HUB_TASKS_EVENTS.PROGRESS.UPDATED]: { keys: [TASKS] },
-  [HUB_EVENTS.DEVICE.ONLINE]: { keys: [['devices']] },
-  [HUB_EVENTS.DEVICE.OFFLINE]: { keys: [['devices']] },
-  [HUB_EVENTS.WORKSPACE.UPDATED]: { keys: [['workspaces']] },
-  [HUB_EVENTS.PROJECT.UPDATED]: { keys: [['projects']] },
-  [HUB_EVENTS.CONNECTION.CHANGED]: { keys: [['hub', 'status']] },
-
   // Agent dashboard events
   [AGENT_DASHBOARD_EVENTS.SESSION.STARTED]: { keys: [AGENT_SESSIONS] },
   [AGENT_DASHBOARD_EVENTS.SESSION.ENDED]: { keys: [AGENT_SESSIONS] },
@@ -140,9 +125,6 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
   [WORKFLOW_ENGINE_EVENTS.STATE.CHANGED]: { keys: [WORKFLOW_ENGINE] },
   [WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED]: { keys: [WORKFLOW_ENGINE] },
   [WORKFLOW_ENGINE_EVENTS.RUN.ERROR]: { keys: [WORKFLOW_ENGINE] },
-
-  // Task status events
-  [TASKS_EVENTS.STATUS.CHANGED]: { keys: [TASKS] },
 
   // Bus session events — update visualization agent nodes in-place
   [BUS_EVENTS.SESSION.SPAWNED]: { handler: 'append' as const },
