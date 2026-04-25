@@ -302,14 +302,16 @@ export function createWorkflowEngineModule(deps: WorkflowEngineDeps): WorkflowEn
 
   function writeRunSummary(
     runtime: EngineRuntimeRecord,
-    status: 'passed' | 'failed' | 'cancelled',
+    status: 'passed' | 'failed',
     errorMessage?: string | null,
   ): void {
     try {
       const id = runtime.runId;
       const now = Date.now();
-      // WorkflowRunConfig has no projectId — fall back to projectPath which uniquely
-      // identifies the project on the local device.
+      // TODO(p2p-future): replace projectPath with a stable project UUID once
+      // the projects table is added to SYNC_TABLES — current behavior treats
+      // two peers with different absolute paths to the same logical project
+      // as distinct projects in the workflow_runs_summary view.
       const projectId = runtime.config.projectPath;
       const startedAtMs = Date.parse(runtime.startedAt);
       const startedAt = Number.isNaN(startedAtMs) ? now : startedAtMs;
