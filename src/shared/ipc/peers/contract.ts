@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { PEERS, PEERS_EVENTS } from './channels';
+
 // Naming convention: `certFingerprint` is the persisted DB column on paired
 // peers (matches src/main/features/peers/peer-store.ts); `fingerprint` is the
 // wire/transient form used in mDNS TXT records, TLS APIs, and pair inputs.
@@ -22,7 +24,7 @@ export const DiscoveredPeerSchema = z.object({
   fingerprint: z.string(),
   host: z.string(),
   port: z.number().int().min(1).max(65535),
-  displayName: z.string().nullable(),
+  displayName: z.string().nullable().optional(),
   lastSeenAt: z.number(),
   isPaired: z.boolean(),
 });
@@ -92,3 +94,42 @@ export const TrustChangedEventSchema = z.object({
   action: z.enum(['added', 'revoked', 'updated']),
 });
 export type TrustChangedEvent = z.infer<typeof TrustChangedEventSchema>;
+
+export const peersInvoke = {
+  [PEERS.LIST.PAIRED]: {
+    input: z.object({}).optional(),
+    output: z.array(PairedPeerSchema),
+  },
+  [PEERS.LIST.DISCOVERED]: {
+    input: z.object({}).optional(),
+    output: z.array(DiscoveredPeerSchema),
+  },
+  [PEERS.IDENTITY.GET]: {
+    input: z.object({}).optional(),
+    output: SelfIdentitySchema,
+  },
+  [PEERS.PAIR.INIT]: {
+    input: PairInitInputSchema,
+    output: PairInitOutputSchema,
+  },
+  [PEERS.PAIR.CONFIRM]: {
+    input: PairConfirmInputSchema,
+    output: PairConfirmOutputSchema,
+  },
+  [PEERS.REVOKE.PEER]: {
+    input: RevokeInputSchema,
+    output: RevokeOutputSchema,
+  },
+} as const;
+
+export const peersEvents = {
+  [PEERS_EVENTS.PIN.ISSUED]: {
+    payload: PinIssuedEventSchema,
+  },
+  [PEERS_EVENTS.DISCOVERY.CHANGED]: {
+    payload: DiscoveryChangedEventSchema,
+  },
+  [PEERS_EVENTS.TRUST.CHANGED]: {
+    payload: TrustChangedEventSchema,
+  },
+} as const;

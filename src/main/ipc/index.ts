@@ -40,6 +40,7 @@ import { registerMcpHandlers } from '../features/mcp/mcp-handlers';
 import { registerMergeHandlers } from '../features/merge/merge-handlers';
 import { registerNotesHandlers } from '../features/notes/notes-handlers';
 import { registerOAuthHandlers } from '../features/oauth/oauth-handlers';
+import { registerPeersHandlers } from '../features/peers/peers-handlers';
 import { registerPlannerHandlers } from '../features/planner/planner-handlers';
 import { registerProgressHandlers } from '../features/progress/progress-handlers';
 import { registerProjectHandlers } from '../features/projects/project-handlers';
@@ -96,6 +97,7 @@ import type { CalendarService } from '../features/integrations/calendar';
 import type { MergeService } from '../features/merge/merge-service';
 import type { NotesService } from '../features/notes/notes-service';
 import type { NotificationManager } from '../features/notifications';
+import type { PeersService } from '../features/peers/peers-service';
 import type { PlannerService } from '../features/planner/planner-service';
 import type { ProgressService } from '../features/progress/progress-service';
 import type { CodebaseAnalyzerService } from '../features/projects/codebase-analyzer';
@@ -143,6 +145,8 @@ export interface Services {
   mcpManager: McpManager;
   notesService: NotesService;
   notificationManager: NotificationManager;
+  // TODO: Phase 3b Task 4 — make required after service-registry wiring
+  peersService?: PeersService;
   plannerService: PlannerService;
   spotifyService: SpotifyService;
   gitService: GitService;
@@ -259,6 +263,9 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   }
   registerInsightsHandlers(router, services.insightsService);
   registerNotesHandlers(router, services.notesService);
+  if (services.peersService) {
+    registerPeersHandlers(router, services.peersService);
+  }
   registerPlannerHandlers(router, services.plannerService);
   registerGitHandlers(router, services.gitService, services.worktreeService);
   registerHubHandlers(

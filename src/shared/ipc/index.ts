@@ -43,6 +43,7 @@ import { mergeInvoke } from './merge';
 import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
+import { peersEvents, peersInvoke } from './peers';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
@@ -75,6 +76,7 @@ export const ipcInvokeContract = {
   ...screenInvoke,
   ...securityInvoke,
   ...notesInvoke,
+  ...peersInvoke,
   ...plannerInvoke,
   ...alertsInvoke,
   ...gitInvoke,
@@ -132,6 +134,7 @@ export const ipcEventContract = {
   ...webhookEvents,
   ...gitEvents,
   ...notesEvents,
+  ...peersEvents,
   ...plannerEvents,
   ...alertsEvents,
   ...ideasEvents,
