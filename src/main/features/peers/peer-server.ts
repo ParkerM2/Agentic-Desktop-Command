@@ -28,7 +28,7 @@ export interface PeerServerDeps {
   schemaHash: string;
   remoteUrl?: string;
   remotePeer?: WsTransportRemotePeer;
-  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string }) => void;
+  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string; initiatorDisplayName?: string }) => void;
 }
 
 export interface PeerServer {

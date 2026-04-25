@@ -23,7 +23,7 @@ export interface PairServerDeps {
   selfFingerprint: string;
   listenPort: number; // 0 = OS-assigned
   host?: string;
-  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string }) => void;
+  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string; initiatorDisplayName?: string }) => void;
   now?: () => number;
   /**
    * Pre-existing https.Server to attach pair routes onto. When provided, the
@@ -39,7 +39,7 @@ export interface PairRoutesDeps {
   peerStore: PeerStore;
   selfIdentity: { peerId: string; pubkey: string };
   selfFingerprint: string;
-  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string }) => void;
+  onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string; initiatorDisplayName?: string }) => void;
   now?: () => number;
 }
 
@@ -93,6 +93,7 @@ export function createPairRoutes(deps: PairRoutesDeps): PairRequestHandler {
         sessionId: result.sessionId,
         pin: result.pin,
         initiatorPeerId: body.peerId,
+        initiatorDisplayName: body.displayName,
       });
       sendJson(res, 200, { sessionId: result.sessionId, challenge: result.challenge });
       return;

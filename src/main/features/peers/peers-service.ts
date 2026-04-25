@@ -39,6 +39,7 @@ export interface PinIssuedInfo {
   sessionId: string;
   pin: string;
   initiatorPeerId: string;
+  initiatorDisplayName?: string | null;
   issuedAt: number;
 }
 
@@ -184,6 +185,7 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         sessionId: info.sessionId,
         pin: info.pin,
         initiatorPeerId: info.initiatorPeerId,
+        initiatorDisplayName: info.initiatorDisplayName ?? null,
         issuedAt: Date.now(),
       };
       for (const h of pinHandlers) {

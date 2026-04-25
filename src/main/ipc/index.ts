@@ -145,7 +145,7 @@ export interface Services {
   mcpManager: McpManager;
   notesService: NotesService;
   notificationManager: NotificationManager;
-  // TODO: Phase 3b Task 4 — make required after service-registry wiring
+  // TODO(3b.4): make required after service-registry wiring
   peersService?: PeersService;
   plannerService: PlannerService;
   spotifyService: SpotifyService;

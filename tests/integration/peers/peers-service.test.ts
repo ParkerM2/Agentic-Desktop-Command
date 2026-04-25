@@ -206,18 +206,25 @@ describe('PeersService', () => {
     const idA = svcA.getIdentity();
     const portA = svcA.getListenPort();
 
-    const seen: Array<{ sessionId: string; pin: string; initiatorPeerId: string }> = [];
+    const seen: Array<{
+      sessionId: string;
+      pin: string;
+      initiatorPeerId: string;
+      initiatorDisplayName?: string | null;
+    }> = [];
     const off = svcA.onPinIssued((info) => seen.push(info));
 
     await svcB.pairInit({
       host: '127.0.0.1',
       port: portA,
       fingerprint: idA.fingerprint,
+      displayName: 'Desktop B',
     });
 
     const ev = await waitFor(() => seen[0]);
     expect(ev.pin).toMatch(/^\d{6}$/);
     expect(ev.initiatorPeerId).toBe(svcB.getIdentity().peerId);
+    expect(ev.initiatorDisplayName).toBe('Desktop B');
 
     off();
   });

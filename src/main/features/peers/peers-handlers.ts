@@ -40,6 +40,7 @@ export function registerPeersHandlers(router: IpcRouter, service: PeersService):
       sessionId: info.sessionId,
       pin: info.pin,
       initiatorPeerId: info.initiatorPeerId,
+      initiatorDisplayName: info.initiatorDisplayName ?? null,
       issuedAt: info.issuedAt,
     });
   });
