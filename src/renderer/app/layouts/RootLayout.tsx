@@ -17,7 +17,6 @@ import { AppUpdateNotification } from '@renderer/shared/components/AppUpdateNoti
 import { AuthNotification } from '@renderer/shared/components/AuthNotification';
 import { RouteErrorBoundary } from '@renderer/shared/components/error-boundaries';
 import { EventBridge } from '@renderer/shared/components/EventBridge';
-import { HubNotification } from '@renderer/shared/components/HubNotification';
 import { MutationErrorToast } from '@renderer/shared/components/MutationErrorToast';
 import { WebhookNotification } from '@renderer/shared/components/WebhookNotification';
 import { WorkspaceInitOverlay } from '@renderer/shared/components/WorkspaceInitOverlay';
@@ -25,10 +24,8 @@ import { useLayoutSync } from '@renderer/shared/hooks';
 import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
-import { RevocationModal } from '@features/hub';
 import { OnboardingWizard } from '@features/onboarding';
 import { useErrorEvents, useSettings } from '@features/settings';
-import { useHubStatus } from '@features/settings/api/useHub';
 import { WorkflowPermissionModal } from '@features/workflow';
 
 import { ContentAreaContainer } from './ContentAreaContainer';
@@ -37,7 +34,6 @@ import { TopBar } from './TopBar';
 
 export function RootLayout() {
   const { data: settings, isLoading } = useSettings();
-  const { data: hubStatus } = useHubStatus();
   const [onboardingJustCompleted, setOnboardingJustCompleted] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const pushRoute = useRouteHistoryStore((s) => s.pushRoute);
@@ -84,11 +80,6 @@ export function RootLayout() {
           <ContentAreaContainer>
             <ContentAreaContainer.ToolBar>
               <TopBar />
-              {hubStatus?.status === 'disconnected' || hubStatus?.status === 'error' ? (
-                <div className="bg-destructive/10 text-destructive px-4 py-1.5 text-center text-xs">
-                  Hub disconnected. Some features may be unavailable.
-                </div>
-              ) : null}
             </ContentAreaContainer.ToolBar>
             <ContentAreaContainer.Content>
               <RouteErrorBoundary resetKey={pathname}>
@@ -100,11 +91,9 @@ export function RootLayout() {
       </div>
       <AppUpdateNotification />
       <AuthNotification />
-      <HubNotification />
       <MutationErrorToast />
       <WebhookNotification />
       <AssistantWidget />
-      <RevocationModal />
       <WorkflowPermissionModal />
       <WorkspaceInitOverlay phase={layoutSync.phase} projectCount={layoutSync.projectCount} />
     </div>

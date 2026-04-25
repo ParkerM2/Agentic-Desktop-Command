@@ -1,10 +1,10 @@
 /**
  * SettingsPage — App settings view with tab bar layout
  *
- * Tabs: Display, Profile, Hub, Peers, Integrations, Storage, Testing, Advanced
+ * Tabs: Display, Profile, Peers, Integrations, Storage, Testing, Advanced
  */
 
-import { FlaskConical, HardDrive, Network, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
+import { FlaskConical, HardDrive, Network, Paintbrush, Plug, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
@@ -23,7 +23,6 @@ import { ClaudeAuthSettings } from './ClaudeAuthSettings';
 import { DataLocationSection } from './DataLocationSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
-import { HubSettings } from './HubSettings';
 import { LayoutSection } from './LayoutSection';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
@@ -41,7 +40,6 @@ import { WorkspacesTab } from './WorkspacesTab';
 const SETTINGS_TABS = [
   { id: 'display' as const, label: 'Display', icon: Paintbrush },
   { id: 'profile' as const, label: 'Profile', icon: User },
-  { id: 'hub' as const, label: 'Hub', icon: Server },
   { id: 'peers' as const, label: 'Peers', icon: Network },
   { id: 'integrations' as const, label: 'Integrations', icon: Plug },
   { id: 'storage' as const, label: 'Storage', icon: HardDrive },
@@ -138,15 +136,6 @@ export function SettingsPage() {
             <ProfileSection />
             <section className="mb-8">
               <WorkspacesTab />
-            </section>
-          </PageHeader.TabContent>
-
-          <PageHeader.TabContent value="hub">
-            <section className="mb-8">
-              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Hub Connection
-              </Heading>
-              <HubSettings />
             </section>
           </PageHeader.TabContent>
 

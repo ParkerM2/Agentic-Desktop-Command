@@ -4,22 +4,21 @@
 
 import { useCallback, useState } from 'react';
 
-import { useHubStatus } from '../../api/useHub';
 import { useUpdateWebhookConfig, useWebhookConfig } from '../../api/useWebhookConfig';
 
 export function useWebhookSettings() {
   const { data: webhookConfig, isLoading } = useWebhookConfig();
   const updateConfig = useUpdateWebhookConfig();
-  const { data: hubStatus } = useHubStatus();
 
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showSlackInstructions, setShowSlackInstructions] = useState(false);
   const [showGithubInstructions, setShowGithubInstructions] = useState(false);
 
-  const hubUrl = hubStatus?.hubUrl ?? '';
-  const hasHubUrl = hubUrl.length > 0;
-  const slackWebhookUrl = hasHubUrl ? `${hubUrl}/api/webhooks/slack/commands` : '';
-  const githubWebhookUrl = hasHubUrl ? `${hubUrl}/api/webhooks/github` : '';
+  // Hub-relayed webhooks are gone; URLs unavailable until a local webhook
+  // receiver replaces them.
+  const hasHubUrl = false;
+  const slackWebhookUrl = '';
+  const githubWebhookUrl = '';
   const isSlackConfigured = webhookConfig?.slack.configured === true;
   const isGithubConfigured = webhookConfig?.github.configured === true;
 

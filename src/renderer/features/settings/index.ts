@@ -42,13 +42,11 @@ export {
   useUpdateWorkspace,
   useDeleteWorkspace,
   workspaceKeys,
-  useWorkspaceEvents,
 } from '@features/workspace';
 
 // Devices (absorbed from @features/devices)
 export { useDevices, useRegisterDevice, useUpdateDevice } from './api/useDevices';
 export { deviceKeys } from './api/deviceQueryKeys';
-export { useDeviceEvents } from './hooks/useDeviceEvents';
 
 // Screen capture (absorbed from @features/screen)
 export { useAvailableSources, useCaptureScreen, useScreenPermission } from './api/useScreenCapture';

@@ -2,16 +2,16 @@
  * Task IPC event listeners → query invalidation
  *
  * Bridges real-time events from the main process to React Query cache.
- * Handles both local task events and Hub entity task events (synced from other devices).
+ * Cross-device task sync (formerly via Hub WebSocket) is now handled by
+ * the local op-log replication in @features/peers.
  */
 
 import { useQueryClient } from '@tanstack/react-query';
 
-import { HUB_TASKS_EVENTS, TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
+import { TASKS_EVENTS } from '@shared/ipc/hub-tasks/channels';
 import type { Task } from '@shared/types';
 
-import { useHubEvent, useIpcEvent } from '@renderer/shared/hooks';
-import { useToastStore } from '@renderer/shared/stores';
+import { useIpcEvent } from '@renderer/shared/hooks';
 
 import { taskKeys } from '../api/queryKeys';
 
@@ -54,48 +54,5 @@ export function useTaskEvents() {
   // Plan updated → invalidate detail
   useIpcEvent(TASKS_EVENTS.PLAN.UPDATED, ({ taskId }) => {
     void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
-  });
-
-  // ── Hub entity task events (synced from other devices) ──
-
-  // Task created on another device → invalidate list
-  useHubEvent(HUB_TASKS_EVENTS.TASK.CREATED, ({ projectId }) => {
-    void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-  });
-
-  // Task updated on another device → invalidate list and detail
-  useHubEvent(HUB_TASKS_EVENTS.TASK.UPDATED, ({ taskId, projectId }) => {
-    void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-    void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
-  });
-
-  // Task deleted on another device → invalidate list
-  useHubEvent(HUB_TASKS_EVENTS.TASK.DELETED, ({ projectId }) => {
-    void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-  });
-
-  // Task progress from another device → patch detail cache directly
-  useHubEvent(HUB_TASKS_EVENTS.PROGRESS.UPDATED, ({ taskId, progress, phase }) => {
-    queryClient.setQueryData<Task>(taskKeys.detail(taskId), (old) => {
-      if (!old) return old;
-      const existing = old.executionProgress ?? {
-        phase: 'idle' as const,
-        phaseProgress: 0,
-        overallProgress: 0,
-      };
-      return {
-        ...old,
-        executionProgress: { ...existing, overallProgress: progress, message: phase },
-      };
-    });
-    void queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-  });
-
-  // Task completed on another device → invalidate lists, detail, and show toast
-  const addToast = useToastStore((s) => s.addToast);
-  useHubEvent(HUB_TASKS_EVENTS.TASK_RUN.COMPLETED, ({ taskId, projectId, result: _result }) => {
-    void queryClient.invalidateQueries({ queryKey: taskKeys.list(projectId) });
-    void queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
-    addToast(`Task ${taskId} completed`, 'success');
   });
 }

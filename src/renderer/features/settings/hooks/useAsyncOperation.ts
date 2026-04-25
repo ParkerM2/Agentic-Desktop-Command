@@ -2,7 +2,7 @@
  * useAsyncOperation — reusable error-state wrapper for async calls
  *
  * Replaces the repeated useState<string | null> + try/catch + setError
- * pattern found in HubSettings sub-panels and similar forms.
+ * pattern found in settings sub-panels and similar forms.
  */
 
 import { useCallback, useState } from 'react';

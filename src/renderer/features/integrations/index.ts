@@ -57,6 +57,5 @@ export {
 } from './api/useNotifications';
 
 // Events / Hooks
-export { useIntegrationsEvents } from './hooks/useIntegrationsEvents';
 export { useGitHubEvents } from './hooks/useGitHubEvents';
 export { useGitHubProjectSync } from './hooks/useGitHubProjectSync';
