@@ -7,7 +7,6 @@
 
 import { PageContent, PageHeader, PageLayout } from '@ui';
 
-import { useIntegrationsEvents } from '../hooks/useIntegrationsEvents';
 import { useIntegrationsStore } from '../store';
 
 import { CalendarPanel } from './CalendarPanel';
@@ -31,8 +30,6 @@ const TABS: Array<{ id: IntegrationsTab; label: string }> = [
 ];
 
 export function IntegrationsPage() {
-  useIntegrationsEvents();
-
   const { activeTab, setActiveTab } = useIntegrationsStore();
 
   return (

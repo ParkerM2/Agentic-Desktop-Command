@@ -236,7 +236,7 @@ export function WebhookSettings() {
             </div>
           ) : (
             <p className="text-muted-foreground mt-3 text-xs">
-              Connect to a Hub server to get your webhook URL.
+              Webhook URL relay unavailable — coming in a future release.
             </p>
           )}
         </div>
@@ -281,7 +281,7 @@ export function WebhookSettings() {
             </div>
           ) : (
             <p className="text-muted-foreground mt-3 text-xs">
-              Connect to a Hub server to get your webhook URL.
+              Webhook URL relay unavailable — coming in a future release.
             </p>
           )}
         </div>

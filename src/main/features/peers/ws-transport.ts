@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https';
+
 import { WebSocket, WebSocketServer, type RawData } from 'ws';
 
 import type { Op } from '@shared/replication/op-types';
@@ -5,12 +8,34 @@ import type { Op } from '@shared/replication/op-types';
 import type { ReplicationEngine } from '@main/features/peers/replication-engine';
 import { serviceLogger } from '@main/lib/logger';
 
+import type { TLSSocket } from 'node:tls';
+
+
+export interface WsTransportTlsOpts {
+  cert: string;
+  key: string;
+}
+
+export interface WsTransportRemotePeer {
+  peerId: string;
+  fingerprint: string;
+}
 
 export interface WsTransportDeps {
   engine: ReplicationEngine;
   listenPort: number; // 0 = OS-assigned
   remoteUrl: string;  // '' = don't connect out
   schemaHash: string;
+  /** When provided, the inbound server runs over TLS using this material. */
+  tls?: WsTransportTlsOpts;
+  /** When provided alongside a wss:// remoteUrl, the outbound socket pins this fingerprint. */
+  remotePeer?: WsTransportRemotePeer;
+  /**
+   * Pre-existing https.Server to attach the WebSocketServer onto. When provided,
+   * ws-transport skips server creation/listening — caller owns the lifecycle.
+   * Mutually exclusive with `tls` (caller already configured TLS on the server).
+   */
+  existingHttpsServer?: HttpsServer;
 }
 
 export interface WsTransport {
@@ -28,6 +53,8 @@ interface HelloPayload {
   schemaHash: string;
 }
 
+const FINGERPRINT_MISMATCH_CODE = 4002;
+
 function dataToString(data: RawData): string {
   if (typeof data === 'string') return data;
   if (Buffer.isBuffer(data)) return data.toString('utf8');
@@ -35,17 +62,41 @@ function dataToString(data: RawData): string {
   return Buffer.from(data).toString('utf8');
 }
 
+function fingerprintFromTlsSocket(socket: TLSSocket): string | null {
+  const cert = socket.getPeerCertificate(true);
+  if (cert.raw.length === 0) return null;
+  return createHash('sha256').update(cert.raw).digest('hex');
+}
+
 export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransport> {
-  const { engine, remoteUrl } = deps;
+  const { engine, remoteUrl, tls, remotePeer, existingHttpsServer } = deps;
 
   let outSocket: WebSocket | null = null;
   const incomingSockets = new Set<WebSocket>();
 
-  const wss = new WebSocketServer({ port: deps.listenPort, host: '127.0.0.1' });
-  await new Promise<void>((resolve) => {
-    wss.once('listening', () => { resolve(); });
-  });
-  const addr = wss.address();
+  let ownedHttpsServer: HttpsServer | null = null;
+  let wss: WebSocketServer;
+  if (existingHttpsServer) {
+    wss = new WebSocketServer({ server: existingHttpsServer });
+  } else if (tls) {
+    const server = createHttpsServer({ cert: tls.cert, key: tls.key });
+    ownedHttpsServer = server;
+    wss = new WebSocketServer({ server });
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(deps.listenPort, '127.0.0.1', () => {
+        server.removeListener('error', reject);
+        resolve();
+      });
+    });
+  } else {
+    wss = new WebSocketServer({ port: deps.listenPort, host: '127.0.0.1' });
+    await new Promise<void>((resolve) => {
+      wss.once('listening', () => { resolve(); });
+    });
+  }
+  const addrSource = existingHttpsServer ?? ownedHttpsServer ?? wss;
+  const addr = addrSource.address();
   if (addr === null || typeof addr === 'string') {
     throw new Error('WebSocketServer returned unexpected address');
   }
@@ -115,9 +166,24 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
   let shuttingDown = false;
   function dial(): void {
     if (!remoteUrl || shuttingDown) return;
-    const ws = new WebSocket(remoteUrl);
+    const isWss = remoteUrl.startsWith('wss://');
+    const ws = isWss
+      ? new WebSocket(remoteUrl, { rejectUnauthorized: false })
+      : new WebSocket(remoteUrl);
     outSocket = ws;
     ws.on('open', () => {
+      if (isWss && remotePeer) {
+        const sock = (ws as unknown as { _socket: TLSSocket })._socket;
+        const fp = fingerprintFromTlsSocket(sock);
+        if (fp === null || fp !== remotePeer.fingerprint) {
+          serviceLogger.warn(
+            { expected: remotePeer.fingerprint, actual: fp, peerId: remotePeer.peerId },
+            'peers.wsTransport fingerprint mismatch — closing outbound',
+          );
+          ws.close(FINGERPRINT_MISMATCH_CODE, 'fingerprint mismatch');
+          return;
+        }
+      }
       send(ws, {
         type: 'HELLO',
         payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
@@ -150,6 +216,13 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       await new Promise<void>((resolve) => {
         wss.close(() => { resolve(); });
       });
+      const server = ownedHttpsServer;
+      if (server) {
+        await new Promise<void>((resolve) => {
+          server.close(() => { resolve(); });
+          server.closeAllConnections();
+        });
+      }
     },
   };
 }

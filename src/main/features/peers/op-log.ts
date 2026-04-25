@@ -1,4 +1,4 @@
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gt, lt } from 'drizzle-orm';
 
 import type { Op } from '@shared/replication/op-types';
 
@@ -9,6 +9,9 @@ import { opLog as opLogTable } from '@main/features/peers/schema';
 export interface OpLogService {
   append: (op: Op) => void;
   readSince: (originPeerId: string, sinceHlc: string | null) => Op[];
+  /** Delete op_log rows whose hlc is strictly less than the watermark.
+   *  Returns the number of rows deleted. */
+  gc: (watermarkHlc: string) => { deleted: number };
 }
 
 export function createOpLogService(db: AdcDatabase): OpLogService {
@@ -49,6 +52,14 @@ export function createOpLogService(db: AdcDatabase): OpLogService {
         opType: r.opType,
         payload: JSON.parse(r.payload) as Op['payload'],
       }));
+    },
+
+    gc(watermarkHlc) {
+      const result = db
+        .delete(opLogTable)
+        .where(lt(opLogTable.hlc, watermarkHlc))
+        .run() as { changes?: number };
+      return { deleted: result.changes ?? 0 };
     },
   };
 }

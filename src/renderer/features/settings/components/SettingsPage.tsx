@@ -1,16 +1,18 @@
 /**
  * SettingsPage — App settings view with tab bar layout
  *
- * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
+ * Tabs: Display, Profile, Peers, Integrations, Storage, Testing, Advanced
  */
 
-import { FlaskConical, HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
+import { FlaskConical, HardDrive, Network, Paintbrush, Plug, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
 import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
 import { Heading, PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
+
+import { IncomingPinDialog, PeerListPanel } from '@features/peers';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
@@ -21,7 +23,6 @@ import { ClaudeAuthSettings } from './ClaudeAuthSettings';
 import { DataLocationSection } from './DataLocationSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
-import { HubSettings } from './HubSettings';
 import { LayoutSection } from './LayoutSection';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
@@ -39,7 +40,7 @@ import { WorkspacesTab } from './WorkspacesTab';
 const SETTINGS_TABS = [
   { id: 'display' as const, label: 'Display', icon: Paintbrush },
   { id: 'profile' as const, label: 'Profile', icon: User },
-  { id: 'hub' as const, label: 'Hub', icon: Server },
+  { id: 'peers' as const, label: 'Peers', icon: Network },
   { id: 'integrations' as const, label: 'Integrations', icon: Plug },
   { id: 'storage' as const, label: 'Storage', icon: HardDrive },
   { id: 'testing' as const, label: 'Testing', icon: FlaskConical },
@@ -138,13 +139,8 @@ export function SettingsPage() {
             </section>
           </PageHeader.TabContent>
 
-          <PageHeader.TabContent value="hub">
-            <section className="mb-8">
-              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Hub Connection
-              </Heading>
-              <HubSettings />
-            </section>
+          <PageHeader.TabContent value="peers">
+            <PeerListPanel />
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="integrations">
@@ -187,6 +183,8 @@ export function SettingsPage() {
           </PageHeader.TabContent>
         </PageContent>
       </PageHeader.Tabs>
+      {/* TODO(p2p-phase4): hoist IncomingPinDialog to RootLayout for global visibility */}
+      <IncomingPinDialog />
     </PageLayout>
   );
 }

@@ -16,9 +16,6 @@ export { workflowKeys } from './api/queryKeys';
 export { WorkflowPermissionModal } from './components/WorkflowPermissionModal';
 export { WorkflowStatusBar } from './components/WorkflowStatusBar';
 
-// Events
-export { useWorkflowEvents } from './hooks/useWorkflowEvents';
-
 // Hooks
 export { useWorkflowContext } from './hooks/useWorkflowContext';
 export { useWorkflowMilestones } from './hooks/useWorkflowMilestones';

@@ -2,9 +2,18 @@
  * Task-related types
  */
 
-import type { TaskPriority, TaskStatus } from './hub/enums';
+export type TaskStatus =
+  | 'backlog'
+  | 'planning'
+  | 'plan_ready'
+  | 'queued'
+  | 'running'
+  | 'paused'
+  | 'review'
+  | 'done'
+  | 'error';
 
-export type { TaskPriority, TaskStatus } from './hub/enums';
+export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 
 export type SubtaskStatus = 'pending' | 'in_progress' | 'completed' | 'failed';
 

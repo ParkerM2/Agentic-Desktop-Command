@@ -19,7 +19,6 @@ import {
   windowInvoke,
 } from './app';
 import { assistantEvents, assistantInvoke } from './assistant';
-import { authEvents, authInvoke } from './auth';
 import { briefingEvents, briefingInvoke } from './briefing';
 import { busEvents, busInvoke } from './bus';
 import { calendarInvoke } from './calendar';
@@ -34,8 +33,6 @@ import { fitnessEvents, fitnessInvoke } from './fitness';
 import { gitEvents, gitInvoke } from './git';
 import { githubEvents, githubInvoke } from './github';
 import { hotkeysInvoke } from './hotkeys';
-import { hubEvents, hubInvoke } from './hub';
-import { hubTasksEvents, hubTasksInvoke, tasksEvents } from './hub-tasks';
 import { ideasEvents, ideasInvoke } from './ideas';
 import { insightsInvoke } from './insights';
 import { mcpInvoke } from './mcp';
@@ -43,6 +40,7 @@ import { mergeInvoke } from './merge';
 import { notesEvents, notesInvoke } from './notes';
 import { notificationsEvents, notificationsInvoke } from './notifications';
 import { oauthInvoke } from './oauth';
+import { peersEvents, peersInvoke } from './peers';
 import { plannerEvents, plannerInvoke } from './planner';
 import { progressEvents, progressInvoke } from './progress';
 import { projectsEvents, projectsInvoke } from './projects';
@@ -67,7 +65,6 @@ import { workspacesInvoke } from './workspaces';
 
 export const ipcInvokeContract = {
   ...projectsInvoke,
-  ...hubTasksInvoke,
   ...terminalsInvoke,
   ...settingsInvoke,
   ...hotkeysInvoke,
@@ -75,6 +72,7 @@ export const ipcInvokeContract = {
   ...screenInvoke,
   ...securityInvoke,
   ...notesInvoke,
+  ...peersInvoke,
   ...plannerInvoke,
   ...alertsInvoke,
   ...gitInvoke,
@@ -85,7 +83,6 @@ export const ipcInvokeContract = {
   ...filesInvoke,
   ...fitnessInvoke,
   ...assistantInvoke,
-  ...hubInvoke,
   ...devicesInvoke,
   ...githubInvoke,
   ...spotifyInvoke,
@@ -102,7 +99,6 @@ export const ipcInvokeContract = {
   ...notificationsInvoke,
   ...briefingInvoke,
   ...workspacesInvoke,
-  ...authInvoke,
   ...oauthInvoke,
   ...workflowInvoke,
   ...dashboardInvoke,
@@ -120,8 +116,6 @@ export const ipcInvokeContract = {
 // ─── Merged Event Contract ───────────────────────────────────
 
 export const ipcEventContract = {
-  ...tasksEvents,
-  ...hubTasksEvents,
   ...terminalsEvents,
   ...projectsEvents,
   ...appEvents,
@@ -132,11 +126,11 @@ export const ipcEventContract = {
   ...webhookEvents,
   ...gitEvents,
   ...notesEvents,
+  ...peersEvents,
   ...plannerEvents,
   ...alertsEvents,
   ...ideasEvents,
   ...fitnessEvents,
-  ...hubEvents,
   ...githubEvents,
   ...emailEvents,
   ...notificationsEvents,
@@ -145,7 +139,6 @@ export const ipcEventContract = {
   ...testSuiteEvents,
   ...dashboardEvents,
   ...dataManagementEvents,
-  ...authEvents,
   ...agentDashboardEvents,
   ...workspaceEvents,
   ...workflowEvents,
@@ -170,18 +163,6 @@ export {
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
 } from './assistant';
-
-export {
-  AuthTokensSchema,
-  LoginInputSchema,
-  LoginOutputSchema,
-  RefreshInputSchema,
-  RefreshOutputSchema,
-  RegisterInputSchema,
-  RegisterOutputSchema,
-  UserSchema,
-} from './auth';
-
 
 export { CaptureSchema } from './dashboard';
 
@@ -255,14 +236,6 @@ export {
   ServiceHealthSchema,
   ServiceHealthStatusSchema,
 } from './app';
-
-export {
-  HubConfigOutputSchema,
-  HubConnectionStatusSchema,
-  HubStatusOutputSchema,
-  HubSyncOutputSchema,
-} from './hub';
-
 
 export {
   InsightMetricsSchema,
@@ -373,16 +346,6 @@ export {
 } from './settings';
 
 export { AppSettingsSchema, ProfileSchema, WebhookConfigSchema } from './settings';
-
-export {
-  ExecutionPhaseSchema,
-  ExecutionProgressSchema,
-  HubTaskPrioritySchema,
-  HubTaskProgressSchema,
-  HubTaskSchema,
-  HubTaskStatusSchema,
-  TaskStatusSchema,
-} from './hub-tasks';
 
 export { TerminalSessionSchema } from './terminals';
 

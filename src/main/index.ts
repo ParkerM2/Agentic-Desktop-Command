@@ -298,8 +298,6 @@ function initializeApp(): void {
   wireEventForwarding({
     router: registry.router,
     watchEvaluator: registry.watchEvaluator,
-    webhookRelay: registry.webhookRelay,
-    hubConnectionManager: registry.hubConnectionManager,
   });
 
   // Register app lifecycle handlers (quit, activate, cleanup)
@@ -312,7 +310,6 @@ function initializeApp(): void {
     healthService: registry.healthService,
     qaTrigger: registry.qaTrigger,
     alertService: registry.alertService,
-    hubConnectionManager: registry.hubConnectionManager,
     notificationManager: registry.notificationManager,
     briefingService: registry.briefingService,
     watchEvaluator: registry.watchEvaluator,
@@ -321,7 +318,6 @@ function initializeApp(): void {
     appUpdateService: registry.services.appUpdateService,
     commandBus: registry.commandBus,
     busSessionManager: registry.busSessionManager,
-    getHeartbeatIntervalId: () => registry.heartbeatIntervalId,
     disposePeerTransport: registry.disposePeerTransport,
   });
 }

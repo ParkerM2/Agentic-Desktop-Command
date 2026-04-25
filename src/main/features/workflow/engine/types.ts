@@ -10,6 +10,7 @@ import type { QaVerdict } from '@shared/ipc/workflow-engine/verdict-schemas';
 
 import type { BusSessionManager } from '@main/bus/session-manager';
 import type { AdcDatabase } from '@main/db';
+import type { ReplicationEngine } from '@main/features/peers/replication-engine';
 
 import type { GitService } from '../../git/git-service';
 import type { WorkflowTemplateService } from '../templates';
@@ -146,6 +147,7 @@ export interface WorkflowEngineDeps {
   busSessionManager: BusSessionManager;
   gitService: GitService;
   templateService: WorkflowTemplateService;
+  replicationEngine: ReplicationEngine;
   progressBaseDir: string;
   onStateChanged: (event: WorkflowStateChangedEvent) => void;
   onCompleted: (event: WorkflowCompletedEvent) => void;

@@ -25,3 +25,5 @@ export * from '../features/workspace/workspaces-schema';
 export * from '../features/runners/schema';
 export * from '../features/peers/schema';
 export * from '../features/workflow/workflow-runs-summary-schema';
+export * from '../features/peers/peer-state-schema';
+export * from '../features/projects/schema';

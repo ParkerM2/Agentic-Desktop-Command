@@ -1,4 +1,4 @@
-export const SYNC_TABLES = ['progress_tasks', 'workflow_runs_summary'] as const;
+export const SYNC_TABLES = ['progress_tasks', 'workflow_runs_summary', 'notes', 'ideas'] as const;
 
 export type SyncTable = typeof SYNC_TABLES[number];
 
@@ -11,4 +11,6 @@ export function isSyncTable(name: string): name is SyncTable {
 export const SYNC_TABLE_PK: Record<SyncTable, string> = {
   progress_tasks: 'slug',
   workflow_runs_summary: 'id',
+  notes: 'id',
+  ideas: 'id',
 };

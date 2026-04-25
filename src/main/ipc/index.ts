@@ -19,7 +19,6 @@ import { registerAppUpdateHandlers } from '../features/app/app-update-handlers';
 import { registerErrorHandlers } from '../features/app/health';
 import { registerWindowHandlers } from '../features/app/window-handlers';
 import { registerAssistantHandlers } from '../features/assistant/assistant-handlers';
-import { registerAuthHandlers } from '../features/auth/auth-handlers';
 import { registerBriefingHandlers } from '../features/briefing/briefing-handlers';
 import { registerBusHandlers } from '../features/bus/bus-handlers';
 import { registerChangelogHandlers } from '../features/changelog/changelog-handlers';
@@ -31,8 +30,6 @@ import { registerFilesHandlers } from '../features/files/files-handlers';
 import { registerFitnessHandlers } from '../features/fitness/fitness-handlers';
 import { registerGitHandlers } from '../features/git/git-handlers';
 import { registerGitHubHandlers } from '../features/github';
-import { registerDeviceHandlers } from '../features/hub/device';
-import { registerHubHandlers } from '../features/hub/hub-handlers';
 import { registerIdeasHandlers } from '../features/ideas/ideas-handlers';
 import { registerInsightsHandlers } from '../features/insights/insights-handlers';
 import { registerIntegrationsHandlers } from '../features/integrations/integrations-handlers';
@@ -40,6 +37,7 @@ import { registerMcpHandlers } from '../features/mcp/mcp-handlers';
 import { registerMergeHandlers } from '../features/merge/merge-handlers';
 import { registerNotesHandlers } from '../features/notes/notes-handlers';
 import { registerOAuthHandlers } from '../features/oauth/oauth-handlers';
+import { registerPeersHandlers } from '../features/peers/peers-handlers';
 import { registerPlannerHandlers } from '../features/planner/planner-handlers';
 import { registerProgressHandlers } from '../features/progress/progress-handlers';
 import { registerProjectHandlers } from '../features/projects/project-handlers';
@@ -84,18 +82,13 @@ import type { FitnessService } from '../features/fitness/fitness-service';
 import type { GitService } from '../features/git/git-service';
 import type { WorktreeService } from '../features/git/worktree-service';
 import type { GitHubService } from '../features/github';
-import type { DeviceService } from '../features/hub/device';
-import type { HubApiClient } from '../features/hub/hub-api-client';
-import type { HubAuthService } from '../features/hub/hub-auth-service';
-import type { HubConnectionManager } from '../features/hub/hub-connection';
-import type { HubDiscovery } from '../features/hub/hub-discovery';
-import type { HubSyncService } from '../features/hub/hub-sync';
 import type { IdeasService } from '../features/ideas/ideas-service';
 import type { InsightsService } from '../features/insights/insights-service';
 import type { CalendarService } from '../features/integrations/calendar';
 import type { MergeService } from '../features/merge/merge-service';
 import type { NotesService } from '../features/notes/notes-service';
 import type { NotificationManager } from '../features/notifications';
+import type { PeersService } from '../features/peers/peers-service';
 import type { PlannerService } from '../features/planner/planner-service';
 import type { ProgressService } from '../features/progress/progress-service';
 import type { CodebaseAnalyzerService } from '../features/projects/codebase-analyzer';
@@ -125,7 +118,6 @@ export interface Services {
   terminalService: TerminalService;
   settingsService: SettingsService;
   claudeClient: ClaudeClient;
-  deviceService: DeviceService;
   alertService: AlertService;
   assistantService: AssistantService;
   calendarService: CalendarService;
@@ -134,15 +126,12 @@ export interface Services {
   errorCollector: ErrorCollectorHandler;
   fitnessService: FitnessService | null;
   healthRegistry: HealthRegistryHandler;
-  hubConnectionManager: HubConnectionManager;
-  hubDiscovery: HubDiscovery;
-  hubsDir: string;
-  hubSyncService: HubSyncService;
   ideasService: IdeasService | null;
   insightsService: InsightsService;
   mcpManager: McpManager;
   notesService: NotesService;
   notificationManager: NotificationManager;
+  peersService: PeersService;
   plannerService: PlannerService;
   spotifyService: SpotifyService;
   gitService: GitService;
@@ -154,8 +143,6 @@ export interface Services {
   briefingService: BriefingService;
   hotkeyManager: HotkeyManager;
   appUpdateService: AppUpdateService;
-  hubApiClient: HubApiClient;
-  hubAuthService: HubAuthService;
   qaRunner: QaRunner;
   testSuiteService: TestSuiteService;
   workflowTemplateService: WorkflowTemplateService;
@@ -208,10 +195,6 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
     providers: services.providers,
   });
   registerAlertHandlers(router, services.alertService);
-  registerAuthHandlers(router, {
-    hubAuthService: services.hubAuthService,
-    userSessionManager: services.userSessionManager,
-  });
   registerAppHandlers(router, {
     tokenStore: services.tokenStore,
     providers: services.providers,
@@ -259,16 +242,9 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   }
   registerInsightsHandlers(router, services.insightsService);
   registerNotesHandlers(router, services.notesService);
+  registerPeersHandlers(router, services.peersService);
   registerPlannerHandlers(router, services.plannerService);
   registerGitHandlers(router, services.gitService, services.worktreeService);
-  registerHubHandlers(
-    router,
-    services.hubConnectionManager,
-    services.hubSyncService,
-    services.hubApiClient,
-    services.hubDiscovery,
-    services.hubsDir,
-  );
   registerMcpHandlers(router, services.mcpManager);
   registerMergeHandlers(router, services.mergeService);
   registerOAuthHandlers(router, services.oauthManager);
@@ -292,13 +268,11 @@ export function registerAllHandlers(router: IpcRouter, services: Services): void
   registerAppUpdateHandlers(router, services.appUpdateService);
   registerWorkflowHandlers(
     router,
-    services.hubApiClient,
     services.workflowEngineService,
     services.workflowTemplateService,
     services.busSessionManager,
   );
   registerWorkspaceHandlers(router, services.workspaceSessionManager);
-  registerDeviceHandlers(router, services.deviceService);
   registerQaHandlers(
     router,
     services.qaRunner,
