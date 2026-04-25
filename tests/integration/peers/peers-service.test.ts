@@ -131,6 +131,7 @@ describe('PeersService', () => {
       sessionId: initRes.sessionId,
       challenge: initRes.challenge,
       pin: issued.pin,
+      displayName: 'Desktop A',
     });
     expect(confirmRes.peerId).toBe(idA.peerId);
     expect(confirmRes.pubkey).toBe(idA.pubkey);
@@ -146,6 +147,7 @@ describe('PeersService', () => {
     expect(bPaired).toBeDefined();
     expect(bPaired?.pubkey).toBe(idA.pubkey);
     expect(bPaired?.certFingerprint).toBe(idA.fingerprint);
+    expect(bPaired?.displayName).toBe('Desktop A');
 
     // Trust-changed event fired on B (the initiator side)
     expect(trustEventsB).toContainEqual({ peerId: idA.peerId, action: 'added' });

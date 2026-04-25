@@ -66,6 +66,7 @@ export interface PairConfirmInput {
   sessionId: string;
   challenge: string;
   pin: string;
+  displayName?: string | null;
 }
 
 export interface PairConfirmOutput {
@@ -282,7 +283,7 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         peerId: res.peerId,
         pubkey: res.pubkey,
         certFingerprint: res.fingerprint,
-        displayName: null,
+        displayName: input.displayName ?? null,
         pairedAt: Date.now(),
       });
       fireTrustChanged({ peerId: res.peerId, action: 'added' });

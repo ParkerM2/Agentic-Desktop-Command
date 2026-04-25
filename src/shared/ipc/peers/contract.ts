@@ -57,6 +57,7 @@ export const PairConfirmInputSchema = z.object({
   sessionId: z.string(),
   challenge: z.string(),
   pin: z.string().regex(/^\d{6}$/),
+  displayName: z.string().nullable().optional(),
 });
 export type PairConfirmInput = z.infer<typeof PairConfirmInputSchema>;
 
