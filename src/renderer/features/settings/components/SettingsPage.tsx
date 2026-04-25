@@ -4,13 +4,15 @@
  * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
  */
 
-import { FlaskConical, HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
+import { FlaskConical, HardDrive, Network, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
 import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
 import { Heading, PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
+
+import { IncomingPinDialog, PeerListPanel } from '@features/peers';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
@@ -40,6 +42,7 @@ const SETTINGS_TABS = [
   { id: 'display' as const, label: 'Display', icon: Paintbrush },
   { id: 'profile' as const, label: 'Profile', icon: User },
   { id: 'hub' as const, label: 'Hub', icon: Server },
+  { id: 'peers' as const, label: 'Peers', icon: Network },
   { id: 'integrations' as const, label: 'Integrations', icon: Plug },
   { id: 'storage' as const, label: 'Storage', icon: HardDrive },
   { id: 'testing' as const, label: 'Testing', icon: FlaskConical },
@@ -147,6 +150,10 @@ export function SettingsPage() {
             </section>
           </PageHeader.TabContent>
 
+          <PageHeader.TabContent value="peers">
+            <PeerListPanel />
+          </PageHeader.TabContent>
+
           <PageHeader.TabContent value="integrations">
             <section className="mb-8">
               <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
@@ -187,6 +194,7 @@ export function SettingsPage() {
           </PageHeader.TabContent>
         </PageContent>
       </PageHeader.Tabs>
+      <IncomingPinDialog />
     </PageLayout>
   );
 }
