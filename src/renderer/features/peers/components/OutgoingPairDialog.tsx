@@ -17,6 +17,7 @@ import {
 } from '@ui';
 
 import { usePairConfirm, usePairInit } from '../api/usePeers';
+import { truncate } from '../lib/truncate';
 
 type Stage = 'idle' | 'awaiting-pin' | 'done';
 
@@ -37,7 +38,13 @@ export function OutgoingPairDialog({ target, onClose }: OutgoingPairDialogProps)
   const pairInit = usePairInit();
   const pairConfirm = usePairConfirm();
 
-  const targetLabel = target.displayName ?? `${target.peerId.slice(0, 16)}…`;
+  const targetLabel = target.displayName ?? truncate(target.peerId);
+
+  const handleClose = (): void => {
+    pairInit.reset();
+    pairConfirm.reset();
+    onClose();
+  };
 
   const handleSendInvite = () => {
     pairInit.mutate(
@@ -80,7 +87,7 @@ export function OutgoingPairDialog({ target, onClose }: OutgoingPairDialogProps)
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) handleClose();
       }}
     >
       <DialogContent>
@@ -98,10 +105,12 @@ export function OutgoingPairDialog({ target, onClose }: OutgoingPairDialogProps)
               here to complete pairing.
             </Text>
             {pairInit.isError ? (
-              <Text variant="error">Failed to send invite: {pairInit.error.message}</Text>
+              <Text role="alert" variant="error">
+                Failed to send invite: {pairInit.error.message}
+              </Text>
             ) : null}
             <DialogFooter>
-              <Button variant="secondary" onClick={onClose}>
+              <Button variant="secondary" onClick={handleClose}>
                 Cancel
               </Button>
               <Button disabled={pairInit.isPending} onClick={handleSendInvite}>
@@ -125,10 +134,12 @@ export function OutgoingPairDialog({ target, onClose }: OutgoingPairDialogProps)
               />
             </Stack>
             {pairConfirm.isError ? (
-              <Text variant="error">Pairing failed: {pairConfirm.error.message}</Text>
+              <Text role="alert" variant="error">
+                Pairing failed: {pairConfirm.error.message}
+              </Text>
             ) : null}
             <DialogFooter>
-              <Button variant="secondary" onClick={onClose}>
+              <Button variant="secondary" onClick={handleClose}>
                 Cancel
               </Button>
               <Button
@@ -145,7 +156,7 @@ export function OutgoingPairDialog({ target, onClose }: OutgoingPairDialogProps)
           <Stack gap="md">
             <Text variant="success">Pairing complete. {targetLabel} is now trusted.</Text>
             <DialogFooter>
-              <Button onClick={onClose}>Close</Button>
+              <Button onClick={handleClose}>Close</Button>
             </DialogFooter>
           </Stack>
         )}

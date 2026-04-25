@@ -11,6 +11,7 @@ import {
 } from '@ui';
 
 import { useIncomingPin } from '../api/usePeerEvents';
+import { truncate } from '../lib/truncate';
 
 /**
  * Receiver-side modal showing the PIN issued to a remote initiator.
@@ -20,7 +21,7 @@ export function IncomingPinDialog() {
   const { pin, dismiss } = useIncomingPin();
   if (pin === null) return null;
   const initiatorLabel =
-    pin.initiatorDisplayName ?? `${pin.initiatorPeerId.slice(0, 16)}…`;
+    pin.initiatorDisplayName ?? truncate(pin.initiatorPeerId);
   return (
     <Dialog
       open

@@ -23,14 +23,11 @@ import {
   useRevokePeer,
   useSelfIdentity,
 } from '../api/usePeers';
+import { truncate } from '../lib/truncate';
 
 import { OutgoingPairDialog } from './OutgoingPairDialog';
 
 // ─── Helpers ─────────────────────────────────────────────
-
-function truncate(value: string): string {
-  return `${value.slice(0, 16)}…`;
-}
 
 function renderSelfBody(isPending: boolean, data: SelfIdentity | undefined) {
   if (isPending) return <Spinner />;
