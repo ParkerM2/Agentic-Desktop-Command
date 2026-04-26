@@ -69,6 +69,7 @@ import { createNotesService } from '../features/notes/notes-service';
 import { loadMigrationTags } from '../features/peers/migration-tags';
 import { loadPeerConfig } from '../features/peers/peer-config';
 import { createPeersService, type PeersService } from '../features/peers/peers-service';
+import { wrapAsyncPeersService } from '../features/peers/peers-service-async';
 import { createReplicationEngine } from '../features/peers/replication-engine';
 import { createPlannerService } from '../features/planner/planner-service';
 import { createProgressService } from '../features/progress';
@@ -451,43 +452,60 @@ export function createServiceRegistry(
   // renderer drives pairing via IPC; ADC_PEER_REMOTE remains a dev override.
   const peerConfig = loadPeerConfig();
 
-  let peersServiceHandle: PeersService | null = null;
   const replicationEngine = createReplicationEngine({
     db,
     peerIdShort: peerConfig.peerIdShort || 'aaaaaaaa',
     peerIdFull: peerConfig.peerIdFull || 'peer-a',
   });
 
-  if (peerConfig.listenPort > 0) {
-    void (async () => {
-      try {
-        const schemaHash = await computeSchemaHash(loadMigrationTags());
-        peersServiceHandle = await createPeersService({
-          db,
-          dataDir,
-          engine: replicationEngine,
-          listenPort: peerConfig.listenPort,
-          schemaHash,
-          preferMdns: peerConfig.preferMdns,
-          displayName: peerConfig.displayName ?? null,
+  // PeersService bootstrap is async (TLS material, peer-server.listen, mDNS).
+  // Wrap the in-flight promise in a Proxy so handlers transparently `await`
+  // it — eliminates the IIFE race where IPC calls landing during the boot
+  // window hit a "peers-service not yet initialized" throw, and ensures
+  // disposePeerTransport awaits the same promise so half-constructed
+  // resources (TLS listener, mDNS) cannot leak. See audit 04 C1+C2.
+  // NOTE: peerConfig.listenPort > 0 gating is preserved — when peers is
+  // disabled we hand back a permanently-pending promise that the wrapper
+  // never resolves, so handlers will hang rather than silently no-op.
+  // TODO(audit-04 C1): replace the never-resolving disabled branch with
+  // a proper "peers disabled" stub once the contract supports it.
+  const peersServicePromise: Promise<PeersService> =
+    peerConfig.listenPort > 0
+      ? (async () => {
+          const schemaHash = await computeSchemaHash(loadMigrationTags());
+          return await createPeersService({
+            db,
+            dataDir,
+            engine: replicationEngine,
+            listenPort: peerConfig.listenPort,
+            schemaHash,
+            preferMdns: peerConfig.preferMdns,
+            displayName: peerConfig.displayName ?? null,
+          });
+        })()
+      : new Promise<PeersService>(() => {
+          // intentionally never resolves: peers feature disabled by config
         });
-      } catch (err) {
-        appLogger.error(`[Bootstrap] PeersService failed to start: ${String(err)}`);
-      }
-    })();
-  }
 
-  const peersServiceLazy = lazyService<PeersService>(() => {
-    if (peersServiceHandle === null) {
-      throw new Error('peers-service not yet initialized — wait for bootstrap to finish');
-    }
-    return peersServiceHandle;
+  // Guard against unhandled rejection if bootstrap fails. The wrapper
+  // re-uses the same promise and will surface the rejection on the first
+  // method call, so logging here is purely informational.
+  peersServicePromise.catch((err: unknown) => {
+    appLogger.error(`[Bootstrap] PeersService failed to start: ${String(err)}`);
   });
 
+  let peersDisposed = false;
+  const peersServiceLazy: PeersService = wrapAsyncPeersService(peersServicePromise);
+
   const disposePeerTransport = async (): Promise<void> => {
-    if (peersServiceHandle) {
-      try { await peersServiceHandle.dispose(); }
-      catch (err) { appLogger.warn(`[Bootstrap] PeersService dispose failed: ${String(err)}`); }
+    if (peersDisposed) return;
+    peersDisposed = true;
+    if (peerConfig.listenPort <= 0) return;
+    try {
+      const svc = await peersServicePromise;
+      await svc.dispose();
+    } catch (err) {
+      appLogger.warn(`[Bootstrap] PeersService dispose during bootstrap-error: ${String(err)}`);
     }
   };
 
