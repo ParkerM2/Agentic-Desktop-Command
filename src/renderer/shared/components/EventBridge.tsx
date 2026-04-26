@@ -18,7 +18,9 @@ import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import { BUS_EVENTS } from '@shared/ipc/bus/channels';
 import type { sessionRecordSchema } from '@shared/ipc/bus/schemas';
-import { PEERS_EVENTS } from '@shared/ipc/peers';
+// peerKeys lives in @shared/ipc/peers so EventBridge can use it without
+// crossing the renderer's shared->features boundary (audit 05/T13).
+import { peerKeys, PEERS_EVENTS } from '@shared/ipc/peers';
 import type { DiscoveredPeer } from '@shared/ipc/peers';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
 import type { AgentTeamsDataSchema } from '@shared/ipc/visualization/schemas';
@@ -26,14 +28,6 @@ import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
-
-// EventBridge is a renderer-shared component but needs the per-feature query
-// key factories to invalidate the right caches. This is an intentional,
-// narrow exception to the shared->features boundary; the alternative
-// (hardcoded `['peers', 'paired']` tuples) silently breaks if `peerKeys`
-// changes shape.
-// eslint-disable-next-line boundaries/dependencies
-import { peerKeys } from '@features/peers';
 
 import type { z } from 'zod';
 

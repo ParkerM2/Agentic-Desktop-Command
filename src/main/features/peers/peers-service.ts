@@ -4,7 +4,7 @@ import { serviceLogger } from '@main/lib/logger';
 import { gcWatermarkFromObserved } from './gc-watermark';
 import { GC_INTERVAL_MS, LOOPBACK_HOST } from './peer-constants';
 import { postJsonPinned } from './peer-http';
-import { getOrCreatePeerIdentity } from './peer-identity';
+import { getOrCreatePeerIdentity, type PeerIdentity } from './peer-identity';
 import { createPeerMdns, type PeerAdvertisement, type PeerMdns } from './peer-mdns';
 import { createPeerPairing } from './peer-pairing';
 import { createPeerServer, type PeerServer } from './peer-server';
@@ -21,6 +21,13 @@ export interface PeersServiceDeps {
   schemaHash: string;
   preferMdns: boolean;
   displayName?: string | null;
+  /** Pre-resolved identity from the registry. When omitted, falls back to
+   * `getOrCreatePeerIdentity(dataDir)` for back-compat with existing call
+   * sites and tests. */
+  identity?: PeerIdentity;
+  /** Pre-constructed peer store from the registry. When omitted, falls back
+   * to `createPeerStore(db)`. */
+  peerStore?: PeerStore;
 }
 
 export interface PeersServiceSelfIdentity {
@@ -108,11 +115,11 @@ export function safeFanOut<T>(
 }
 
 export async function createPeersService(deps: PeersServiceDeps): Promise<PeersService> {
-  const identity = getOrCreatePeerIdentity(deps.dataDir, {
+  const identity = deps.identity ?? getOrCreatePeerIdentity(deps.dataDir, {
     allowPlaintext: process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY === '1',
   });
   const tls: PeerTlsMaterial = await resolvePeerTls(deps.dataDir, identity.peerIdFull);
-  const peerStore: PeerStore = createPeerStore(deps.db);
+  const peerStore: PeerStore = deps.peerStore ?? createPeerStore(deps.db);
   const pairingHelper = createPeerPairing();
 
   const pinHandlers = new Set<(info: PinIssuedInfo) => void>();

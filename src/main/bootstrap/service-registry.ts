@@ -29,6 +29,7 @@ import { createCommandBus } from '../bus';
 import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
 import { LEGACY_HUB_ID, LOCAL_HUB_ID, migrateLegacyDb, resolveActiveDbPath } from '../db/legacy-migrator';
+import { loadMigrationTags } from '../db/migration-tags';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
 import {
@@ -66,8 +67,9 @@ import { createInsightsService } from '../features/insights/insights-service';
 import { createIntegrationsService } from '../features/integrations/integrations-service';
 import { createMergeService } from '../features/merge/merge-service';
 import { createNotesService } from '../features/notes/notes-service';
-import { loadMigrationTags } from '../features/peers/migration-tags';
 import { loadPeerConfig } from '../features/peers/peer-config';
+import { getOrCreatePeerIdentity } from '../features/peers/peer-identity';
+import { createPeerStore } from '../features/peers/peer-store';
 import { createPeersService, type PeersService } from '../features/peers/peers-service';
 import { wrapAsyncPeersService } from '../features/peers/peers-service-async';
 import { createReplicationEngine } from '../features/peers/replication-engine';
@@ -452,10 +454,26 @@ export function createServiceRegistry(
   // renderer drives pairing via IPC; ADC_PEER_REMOTE remains a dev override.
   const peerConfig = loadPeerConfig();
 
+  // Audit 04/L3: resolve peer identity once at boot rather than relying on
+  // dev-default fallbacks (`'aaaaaaaa'` / `'peer-a'`) inside the engine deps.
+  // peers-service reuses the same identity instead of resolving its own. The
+  // env-var override in peer-config wins when set; otherwise we derive from
+  // the on-disk Ed25519 keypair (creating it on first boot).
+  const peerIdentity = getOrCreatePeerIdentity(dataDir, {
+    allowPlaintext: process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY === '1',
+  });
+  const peerIdFull = peerConfig.peerIdFull || peerIdentity.peerIdFull;
+  const peerIdShort = peerConfig.peerIdShort || peerIdentity.peerIdShort;
+  if (peerIdFull === '' || peerIdShort === '') {
+    throw new Error('peers: identity not resolved');
+  }
+  const peerStore = createPeerStore(db);
+
   const replicationEngine = createReplicationEngine({
     db,
-    peerIdShort: peerConfig.peerIdShort || 'aaaaaaaa',
-    peerIdFull: peerConfig.peerIdFull || 'peer-a',
+    peerIdShort,
+    peerIdFull,
+    peerStore,
   });
 
   // PeersService bootstrap is async (TLS material, peer-server.listen, mDNS).
@@ -472,7 +490,7 @@ export function createServiceRegistry(
   const peersServicePromise: Promise<PeersService> =
     peerConfig.listenPort > 0
       ? (async () => {
-          const schemaHash = await computeSchemaHash(loadMigrationTags());
+          const schemaHash = computeSchemaHash(loadMigrationTags());
           return await createPeersService({
             db,
             dataDir,
@@ -481,6 +499,10 @@ export function createServiceRegistry(
             schemaHash,
             preferMdns: peerConfig.preferMdns,
             displayName: peerConfig.displayName ?? null,
+            // Audit 04/L3 + M6: reuse identity + peer store from the
+            // registry rather than letting peers-service construct duplicates.
+            identity: peerIdentity,
+            peerStore,
           });
         })()
       : new Promise<PeersService>(() => {

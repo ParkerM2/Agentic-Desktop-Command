@@ -4,7 +4,7 @@ import type { PairedPeer } from '@shared/ipc/peers';
 
 import type { AdcDatabase } from '@main/db';
 
-import { peerState } from './peer-state-schema';
+import { peerState } from './schema';
 
 export type { PairedPeer };
 
@@ -68,6 +68,9 @@ export function createPeerStore(db: AdcDatabase): PeerStore {
             displayName: entry.displayName ?? null,
             pubkey: entry.pubkey,
             certFingerprint: entry.certFingerprint,
+            // Audit 01/Medium: clear revokedAt on re-pair so previously-revoked
+            // peers can be re-paired without silently remaining revoked.
+            revokedAt: entry.revokedAt ?? null,
           },
         })
         .run();

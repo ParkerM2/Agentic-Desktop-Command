@@ -9,10 +9,14 @@
 import { and, eq, inArray } from 'drizzle-orm';
 
 import type { AdcDatabase } from '@main/db';
-import { createPeerStore } from '@main/features/peers/peer-store';
 import type { PairedPeer } from '@main/features/peers/peer-store';
 import { opLog } from '@main/features/peers/schema';
 import { progressTasks } from '@main/features/progress/schema';
+
+/** Narrow read-only view of PeerStore used by cross-device-query. */
+export interface PeerReader {
+  listActive: () => PairedPeer[];
+}
 
 interface DeviceInfo {
   id: string;
@@ -101,6 +105,9 @@ function peerToDevice(peer: PairedPeer): DeviceInfo {
 
 export interface CrossDeviceQueryDeps {
   db: AdcDatabase;
+  /** Audit 04/M6: peer-reader is injected so the registry-owned PeerStore
+   * is reused instead of constructing a duplicate here. */
+  peerStore: PeerReader;
 }
 
 export interface CrossDeviceQuery {
@@ -108,8 +115,7 @@ export interface CrossDeviceQuery {
 }
 
 export function createCrossDeviceQuery(deps: CrossDeviceQueryDeps): CrossDeviceQuery {
-  const { db } = deps;
-  const peerStore = createPeerStore(db);
+  const { db, peerStore } = deps;
 
   function tasksForPeer(peerId: string): DeviceTaskInfo[] {
     const pkRows = db

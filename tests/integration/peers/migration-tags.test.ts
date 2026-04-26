@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadMigrationTags } from '@main/features/peers/migration-tags';
+import { loadMigrationTags } from '@main/db/migration-tags';
 
 describe('loadMigrationTags', () => {
   it('reads drizzle/meta/_journal.json and returns tags in idx order', () => {
