@@ -161,7 +161,9 @@ async function postJson(
 }
 
 export async function createPeersService(deps: PeersServiceDeps): Promise<PeersService> {
-  const identity = getOrCreatePeerIdentity(deps.dataDir);
+  const identity = getOrCreatePeerIdentity(deps.dataDir, {
+    allowPlaintext: process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY === '1',
+  });
   const tls: PeerTlsMaterial = await resolvePeerTls(deps.dataDir, identity.peerIdFull);
   const peerStore: PeerStore = createPeerStore(deps.db);
   const pairingHelper = createPeerPairing();
