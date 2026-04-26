@@ -1,14 +1,12 @@
-import { createHash } from 'node:crypto';
 import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https';
 
-import { WebSocket, WebSocketServer, type RawData } from 'ws';
+import { WebSocket, WebSocketServer, type RawData, type ClientOptions } from 'ws';
 
 import type { Op } from '@shared/replication/op-types';
 
+import { pinnedCheckServerIdentity } from '@main/features/peers/peer-tls-pin';
 import type { ReplicationEngine } from '@main/features/peers/replication-engine';
 import { serviceLogger } from '@main/lib/logger';
-
-import type { TLSSocket } from 'node:tls';
 
 
 export interface WsTransportTlsOpts {
@@ -53,19 +51,21 @@ interface HelloPayload {
   schemaHash: string;
 }
 
+/**
+ * Reserved close code for an outbound dialer rejecting a peer cert that
+ * fails the pinned fingerprint check. Pinning now runs at TLS-handshake
+ * time via `checkServerIdentity` (see `peer-tls-pin.ts`), so the dial path
+ * no longer emits this code itself — the WebSocket fails before `'open'`
+ * with a TLS error. Kept here for inbound code paths and documentation.
+ */
 const FINGERPRINT_MISMATCH_CODE = 4002;
+void FINGERPRINT_MISMATCH_CODE;
 
 function dataToString(data: RawData): string {
   if (typeof data === 'string') return data;
   if (Buffer.isBuffer(data)) return data.toString('utf8');
   if (Array.isArray(data)) return Buffer.concat(data).toString('utf8');
   return Buffer.from(data).toString('utf8');
-}
-
-function fingerprintFromTlsSocket(socket: TLSSocket): string | null {
-  const cert = socket.getPeerCertificate(true);
-  if (cert.raw.length === 0) return null;
-  return createHash('sha256').update(cert.raw).digest('hex');
 }
 
 export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransport> {
@@ -167,23 +167,28 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
   function dial(): void {
     if (!remoteUrl || shuttingDown) return;
     const isWss = remoteUrl.startsWith('wss://');
+    // Pin the remote leaf cert during the TLS handshake. With this hook a
+    // fingerprint mismatch fails the WebSocket before `'open'` fires, so
+    // there is no post-handshake fingerprint check below.
+    //
+    // The `ws` package types `checkServerIdentity` as
+    // `(name, cert: CertMeta) => boolean`, but at runtime Node passes the
+    // real `PeerCertificate` and accepts an `Error | undefined` return —
+    // matching `https.RequestOptions.checkServerIdentity`. We cast through
+    // `ClientOptions` to satisfy the looser package typing.
+    const wssOpts: ClientOptions = remotePeer
+      ? {
+          rejectUnauthorized: true,
+          checkServerIdentity: pinnedCheckServerIdentity(
+            remotePeer.fingerprint,
+          ) as unknown as ClientOptions['checkServerIdentity'],
+        }
+      : { rejectUnauthorized: true };
     const ws = isWss
-      ? new WebSocket(remoteUrl, { rejectUnauthorized: false })
+      ? new WebSocket(remoteUrl, wssOpts)
       : new WebSocket(remoteUrl);
     outSocket = ws;
     ws.on('open', () => {
-      if (isWss && remotePeer) {
-        const sock = (ws as unknown as { _socket: TLSSocket })._socket;
-        const fp = fingerprintFromTlsSocket(sock);
-        if (fp === null || fp !== remotePeer.fingerprint) {
-          serviceLogger.warn(
-            { expected: remotePeer.fingerprint, actual: fp, peerId: remotePeer.peerId },
-            'peers.wsTransport fingerprint mismatch — closing outbound',
-          );
-          ws.close(FINGERPRINT_MISMATCH_CODE, 'fingerprint mismatch');
-          return;
-        }
-      }
       send(ws, {
         type: 'HELLO',
         payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';
 
 import type { AdcDatabase } from '@main/db';
@@ -10,9 +9,9 @@ import { createPeerPairing } from './peer-pairing';
 import { createPeerServer, type PeerServer } from './peer-server';
 import { createPeerStore, type PairedPeer, type PeerStore } from './peer-store';
 import { resolvePeerTls, type PeerTlsMaterial } from './peer-tls';
+import { pinnedCheckServerIdentity } from './peer-tls-pin';
 
 import type { ReplicationEngine } from './replication-engine';
-import type { TLSSocket } from 'node:tls';
 
 export interface PeersServiceDeps {
   db: AdcDatabase;
@@ -96,7 +95,13 @@ async function postJson(
   body: unknown,
 ): Promise<unknown> {
   const u = new URL(url);
-  const agent = new HttpsAgent({ rejectUnauthorized: false });
+  // Pin the peer's leaf cert at TLS handshake time. With this in place we can
+  // (and must) keep `rejectUnauthorized: true` — fingerprint mismatch surfaces
+  // as a handshake error on the request, not a post-`'end'` check.
+  const agent = new HttpsAgent({
+    rejectUnauthorized: true,
+    checkServerIdentity: pinnedCheckServerIdentity(expectedFingerprint),
+  });
   const payload = Buffer.from(JSON.stringify(body), 'utf8');
   return await new Promise((resolve, reject) => {
     let settled = false;
@@ -120,21 +125,7 @@ async function postJson(
       (res) => {
         const chunks: Buffer[] = [];
         res.on('data', (c: Buffer) => chunks.push(c));
-        const tlsSock = res.socket as TLSSocket;
-        const cert = tlsSock.getPeerCertificate(true);
-        const remoteFp = cert.raw.length > 0
-          ? createHash('sha256').update(cert.raw).digest('hex')
-          : '';
         res.on('end', () => {
-          agent.destroy();
-          if (remoteFp !== expectedFingerprint) {
-            settle(() => {
-              reject(new Error(
-                `fingerprint_mismatch expected=${expectedFingerprint} actual=${remoteFp}`,
-              ));
-            });
-            return;
-          }
           const raw = Buffer.concat(chunks).toString('utf8');
           if (res.statusCode !== 200) {
             settle(() => { reject(new Error(`http_${String(res.statusCode)}: ${raw}`)); });
@@ -152,7 +143,6 @@ async function postJson(
       },
     );
     req.on('error', (err) => {
-      agent.destroy();
       settle(() => { reject(err); });
     });
     req.write(payload);
