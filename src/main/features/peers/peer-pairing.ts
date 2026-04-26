@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 
 export interface PairInitArgs {
   peerId: string;
@@ -32,7 +32,6 @@ export interface PeerPairingOpts {
 }
 
 interface StoredSession {
-  pin: string;
   challenge: string;
   expectedHmac: string;
   initiator: PairInitArgs;
@@ -46,8 +45,7 @@ const DEFAULT_MAX_ATTEMPTS = 3;
 export function createPeerPairing(opts: PeerPairingOpts = {}): PeerPairing {
   const now = opts.now ?? Date.now;
   const rng = opts.rng ?? (() => randomBytes(32));
-  const pinRng =
-    opts.pinRng ?? (() => String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0'));
+  const pinRng = opts.pinRng ?? (() => randomInt(0, 1_000_000).toString().padStart(6, '0'));
   const sessionTtlMs = opts.sessionTtlMs ?? DEFAULT_TTL_MS;
   const maxAttempts = opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
 
@@ -58,10 +56,17 @@ export function createPeerPairing(opts: PeerPairingOpts = {}): PeerPairing {
   }
 
   function constantTimeEq(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    let diff = 0;
-    for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    return diff === 0;
+    let bufA: Buffer;
+    let bufB: Buffer;
+    try {
+      bufA = Buffer.from(a, 'base64');
+      bufB = Buffer.from(b, 'base64');
+    } catch {
+      return false;
+    }
+    if (bufA.length !== bufB.length) return false;
+    if (bufA.length === 0) return false;
+    return timingSafeEqual(bufA, bufB);
   }
 
   return {
@@ -71,7 +76,6 @@ export function createPeerPairing(opts: PeerPairingOpts = {}): PeerPairing {
       const pin = pinRng();
       const expectedHmac = computeHmac(pin, challenge);
       sessions.set(sessionId, {
-        pin,
         challenge,
         expectedHmac,
         initiator,
