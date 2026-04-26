@@ -1,19 +1,12 @@
 import { eq, isNull, sql } from 'drizzle-orm';
 
+import type { PairedPeer } from '@shared/ipc/peers';
+
 import type { AdcDatabase } from '@main/db';
 
 import { peerState } from './peer-state-schema';
 
-export interface PairedPeer {
-  peerId: string;
-  displayName: string | null;
-  pubkey: string;
-  certFingerprint: string;
-  lastSeenHlc: string | null;
-  pairedAt: number;
-  lastConnectedAt: number | null;
-  revokedAt: number | null;
-}
+export type { PairedPeer };
 
 type UpsertInput = Pick<PairedPeer, 'peerId' | 'pubkey' | 'certFingerprint' | 'pairedAt'> & {
   displayName?: string | null;

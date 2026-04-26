@@ -5,44 +5,57 @@
  * NOTE: `service` here may be the awaitable Proxy wrapper from
  * `peers-service-async.ts`. Every method call returns a Promise even when
  * the underlying service method is statically typed synchronous (e.g.
- * `listPaired`, `listDiscovered`, `getIdentity`, `revoke`). We rely on
- * `Promise.resolve(...)` to normalize both shapes — for the real service
- * it wraps a sync result; for the wrapper it transparently chains.
+ * `listPaired`, `listDiscovered`, `getIdentity`, `revoke`). The
+ * `validatedHandle` helper normalizes both shapes — its `fn` is async, so
+ * sync return values are auto-promised; awaitable-wrapper return values
+ * are transparently chained.
+ *
  * Event-subscription return values (the unsub function) are wrapped in a
  * Promise by the wrapper; we discard them here since the registry has no
  * per-handler teardown path.
  */
 
-import {
-  PEERS,
-  PEERS_EVENTS,
-  PairConfirmInputSchema,
-  PairInitInputSchema,
-  RevokeInputSchema,
-} from '@shared/ipc/peers';
+import { PEERS, PEERS_EVENTS, peersInvoke } from '@shared/ipc/peers';
+
+import { validatedHandle } from './validated-handle';
 
 import type { PeersService } from './peers-service';
 import type { IpcRouter } from '../../ipc/router';
 
 export function registerPeersHandlers(router: IpcRouter, service: PeersService): void {
-  router.handle(PEERS.LIST.PAIRED, () => Promise.resolve(service.listPaired()));
-  router.handle(PEERS.LIST.DISCOVERED, () => Promise.resolve(service.listDiscovered()));
-  router.handle(PEERS.IDENTITY.GET, () => Promise.resolve(service.getIdentity()));
+  router.handle(
+    PEERS.LIST.PAIRED,
+    validatedHandle(peersInvoke, PEERS.LIST.PAIRED, () => Promise.resolve(service.listPaired())),
+  );
 
-  router.handle(PEERS.PAIR.INIT, async (raw) => {
-    const input = PairInitInputSchema.parse(raw);
-    return await service.pairInit(input);
-  });
+  router.handle(
+    PEERS.LIST.DISCOVERED,
+    validatedHandle(peersInvoke, PEERS.LIST.DISCOVERED, () =>
+      Promise.resolve(service.listDiscovered()),
+    ),
+  );
 
-  router.handle(PEERS.PAIR.CONFIRM, async (raw) => {
-    const input = PairConfirmInputSchema.parse(raw);
-    return await service.pairConfirm(input);
-  });
+  router.handle(
+    PEERS.IDENTITY.GET,
+    validatedHandle(peersInvoke, PEERS.IDENTITY.GET, () => Promise.resolve(service.getIdentity())),
+  );
 
-  router.handle(PEERS.REVOKE.PEER, (raw) => {
-    const input = RevokeInputSchema.parse(raw);
-    return Promise.resolve(service.revoke(input.peerId));
-  });
+  router.handle(
+    PEERS.PAIR.INIT,
+    validatedHandle(peersInvoke, PEERS.PAIR.INIT, (input) => service.pairInit(input)),
+  );
+
+  router.handle(
+    PEERS.PAIR.CONFIRM,
+    validatedHandle(peersInvoke, PEERS.PAIR.CONFIRM, (input) => service.pairConfirm(input)),
+  );
+
+  router.handle(
+    PEERS.REVOKE.PEER,
+    validatedHandle(peersInvoke, PEERS.REVOKE.PEER, (input) =>
+      Promise.resolve(service.revoke(input.peerId)),
+    ),
+  );
 
   // Forward service events → IPC events. With the awaitable wrapper, the
   // `onX(...)` calls return Promise<() => void>; the unsub is discarded

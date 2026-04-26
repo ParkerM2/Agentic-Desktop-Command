@@ -31,7 +31,8 @@ export interface PeersServiceSelfIdentity {
   displayName: string | null;
 }
 
-export interface DiscoveredPeerWithPaired extends PeerAdvertisement {
+export interface DiscoveredPeerWithPaired extends Omit<PeerAdvertisement, 'displayName'> {
+  displayName: string | null;
   isPaired: boolean;
 }
 
@@ -206,6 +207,9 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
   function enrichDiscovered(ads: PeerAdvertisement[]): DiscoveredPeerWithPaired[] {
     return ads.map((ad) => ({
       ...ad,
+      // Normalize displayName to `string | null` to match DiscoveredPeerSchema
+      // (audit H4). PeerAdvertisement still uses `string | undefined` upstream.
+      displayName: ad.displayName ?? null,
       isPaired: peerStore.getByPeerId(ad.peerId) !== null,
     }));
   }
