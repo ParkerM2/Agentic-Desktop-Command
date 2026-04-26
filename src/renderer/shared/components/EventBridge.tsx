@@ -27,6 +27,14 @@ import { WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channe
 import type { EventChannel } from '@shared/ipc-contract';
 import type { AgentChatMessage, ContentBlock } from '@shared/types/agent-dashboard';
 
+// EventBridge is a renderer-shared component but needs the per-feature query
+// key factories to invalidate the right caches. This is an intentional,
+// narrow exception to the shared->features boundary; the alternative
+// (hardcoded `['peers', 'paired']` tuples) silently breaks if `peerKeys`
+// changes shape.
+// eslint-disable-next-line boundaries/dependencies
+import { peerKeys } from '@features/peers';
+
 import type { z } from 'zod';
 
 type AgentTeamsData = z.infer<typeof AgentTeamsDataSchema>;
@@ -95,8 +103,6 @@ const PROGRESS_LIST = ['progress', 'list'] as const;
 const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
-const PEERS_PAIRED = ['peers', 'paired'] as const;
-const PEERS_DISCOVERED = ['peers', 'discovered'] as const;
 
 // ─── Registry ───────────────────────────────────────────────
 
@@ -135,7 +141,7 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 
   // Peer discovery + trust events
   [PEERS_EVENTS.DISCOVERY.CHANGED]: { handler: 'append' as const },
-  [PEERS_EVENTS.TRUST.CHANGED]: { keys: [PEERS_PAIRED] },
+  [PEERS_EVENTS.TRUST.CHANGED]: { keys: [peerKeys.paired()] },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -147,7 +153,7 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 function handleAppend(queryClient: QueryClient, event: EventChannel, payload: unknown) {
   if (event === PEERS_EVENTS.DISCOVERY.CHANGED) {
     const { peers } = payload as { peers: DiscoveredPeer[] };
-    queryClient.setQueryData<DiscoveredPeer[]>(PEERS_DISCOVERED, peers);
+    queryClient.setQueryData<DiscoveredPeer[]>(peerKeys.discovered(), peers);
     return;
   }
 
