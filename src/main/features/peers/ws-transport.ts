@@ -14,6 +14,11 @@ import {
   type DialResult,
   type OutboundDialer,
 } from '@main/features/peers/outbound-dialer';
+import {
+  LOOPBACK_HOST,
+  MAX_INBOUND_SOCKETS,
+  WS_CLOSE_CODES,
+} from '@main/features/peers/peer-constants';
 import type { PeerStore } from '@main/features/peers/peer-store';
 import { pinnedCheckServerIdentity } from '@main/features/peers/peer-tls-pin';
 import type { ReplicationEngine } from '@main/features/peers/replication-engine';
@@ -82,13 +87,6 @@ export interface WsTransportDeps {
   onConnected?: (info: { peerId: string }) => void;
 }
 
-/**
- * Hard cap on simultaneous inbound WS sockets. Overflow connections are
- * closed with WS code 1013 ('try again later'). A constant for now;
- * Task 16 moves this into `peer-constants.ts`.
- */
-const MAX_INBOUND_SOCKETS = 64;
-
 export interface WsTransport {
   listenPort: () => number;
   isConnected: () => boolean;
@@ -102,8 +100,7 @@ export interface WsTransport {
  * no longer emits this code itself — the WebSocket fails before `'open'`
  * with a TLS error. Kept here for inbound code paths and documentation.
  */
-const FINGERPRINT_MISMATCH_CODE = 4002;
-void FINGERPRINT_MISMATCH_CODE;
+void WS_CLOSE_CODES.FINGERPRINT_MISMATCH;
 
 function dataToString(data: RawData): string {
   if (typeof data === 'string') return data;
@@ -137,13 +134,13 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
     wss = new WebSocketServer({ server });
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject);
-      server.listen(deps.listenPort, '127.0.0.1', () => {
+      server.listen(deps.listenPort, LOOPBACK_HOST, () => {
         server.removeListener('error', reject);
         resolve();
       });
     });
   } else {
-    wss = new WebSocketServer({ port: deps.listenPort, host: '127.0.0.1' });
+    wss = new WebSocketServer({ port: deps.listenPort, host: LOOPBACK_HOST });
     await new Promise<void>((resolve) => {
       wss.once('listening', () => { resolve(); });
     });
@@ -198,7 +195,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
         { peerId: frame.peerId, reason: verifyResult.reason },
         'peers.wsTransport inbound HELLO auth failed',
       );
-      ws.close(4004, 'untrusted');
+      ws.close(WS_CLOSE_CODES.UNTRUSTED, 'untrusted');
       incomingSockets.delete(ws);
       return false;
     }
@@ -221,7 +218,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
         { local: deps.schemaHash, remote: frame.schemaHash },
         'peers.wsTransport schema mismatch — closing socket',
       );
-      ws.close(4001, 'schema mismatch');
+      ws.close(WS_CLOSE_CODES.SCHEMA_MISMATCH, 'schema mismatch');
       return;
     }
     if (ctx.isInbound) {
@@ -249,7 +246,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
         { reason: parsed.error },
         'peers.wsTransport.malformedFrame',
       );
-      ws.close(4003, 'malformed frame');
+      ws.close(WS_CLOSE_CODES.MALFORMED_FRAME, 'malformed frame');
       return;
     }
     const { frame } = parsed;

@@ -1,5 +1,11 @@
 import { createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'node:crypto';
 
+import {
+  SESSION_MAX_ATTEMPTS,
+  SESSION_SOFT_LIMIT,
+  SESSION_TTL_MS,
+} from './peer-constants';
+
 export interface PairInitArgs {
   peerId: string;
   pubkey: string;
@@ -47,17 +53,13 @@ interface StoredSession {
   attemptsRemaining: number;
 }
 
-const DEFAULT_TTL_MS = 5 * 60 * 1000;
-const DEFAULT_MAX_ATTEMPTS = 3;
-const DEFAULT_MAX_ACTIVE_SESSIONS = 100;
-
 export function createPeerPairing(opts: PeerPairingOpts = {}): PeerPairing {
   const now = opts.now ?? Date.now;
   const rng = opts.rng ?? (() => randomBytes(32));
   const pinRng = opts.pinRng ?? (() => randomInt(0, 1_000_000).toString().padStart(6, '0'));
-  const sessionTtlMs = opts.sessionTtlMs ?? DEFAULT_TTL_MS;
-  const maxAttempts = opts.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
-  const maxActiveSessions = opts.maxActiveSessions ?? DEFAULT_MAX_ACTIVE_SESSIONS;
+  const sessionTtlMs = opts.sessionTtlMs ?? SESSION_TTL_MS;
+  const maxAttempts = opts.maxAttempts ?? SESSION_MAX_ATTEMPTS;
+  const maxActiveSessions = opts.maxActiveSessions ?? SESSION_SOFT_LIMIT;
 
   const sessions = new Map<string, StoredSession>();
 

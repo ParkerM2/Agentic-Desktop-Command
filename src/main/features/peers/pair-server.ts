@@ -2,6 +2,14 @@ import { createServer, type Server } from 'node:https';
 
 import { serviceLogger } from '@main/lib/logger';
 
+import {
+  LOOPBACK_HOST,
+  PAIR_BODY_MAX_BYTES,
+  PAIR_BODY_READ_TIMEOUT_MS,
+  PAIR_HEADERS_TIMEOUT_MS,
+  PAIR_KEEPALIVE_TIMEOUT_MS,
+  PAIR_REQUEST_TIMEOUT_MS,
+} from './peer-constants';
 import { createIpRateLimiter, type IpRateLimiter } from './rate-limiter';
 
 import type { PeerPairing } from './peer-pairing';
@@ -10,20 +18,10 @@ import type { PeerTlsMaterial } from './peer-tls';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// ─── Local constants (Task 16 will move these to peer-constants.ts) ──────────
+// ─── Local constants (only those not protocol-shared) ───────────────────────
 
-/** Generous cap on init/confirm body size — real bodies are well under 1 KB. */
-const MAX_BODY_BYTES = 16 * 1024;
 /** TLS floor — Node's TLSv1.3 default for Ed25519 is fine, but we pin the floor. */
 const TLS_MIN_VERSION = 'TLSv1.2' as const;
-/** Time the request can spend reading headers before the server kills it. */
-const HEADERS_TIMEOUT_MS = 10_000;
-/** Total request lifetime ceiling, including body. */
-const REQUEST_TIMEOUT_MS = 15_000;
-/** How long an idle keep-alive connection lingers. */
-const KEEP_ALIVE_TIMEOUT_MS = 5_000;
-/** Per-request socket inactivity timeout while reading the body. */
-const BODY_READ_TIMEOUT_MS = 5_000;
 /** Default per-IP rate-limit capacity for /pair/init + /pair/confirm. */
 const DEFAULT_RL_CAPACITY = 5;
 /** Default refill: 1 token per minute. */
@@ -108,7 +106,7 @@ export function createPairRoutes(deps: PairRoutesDeps): PairRequestHandler {
     }
 
     // Slow-loris guard — if the client stops sending body bytes, drop the socket.
-    req.setTimeout(BODY_READ_TIMEOUT_MS, () => {
+    req.setTimeout(PAIR_BODY_READ_TIMEOUT_MS, () => {
       req.destroy();
     });
 
@@ -196,7 +194,7 @@ function readJsonBody(req: IncomingMessage): Promise<unknown> {
     };
     req.on('data', (chunk: Buffer) => {
       total += chunk.length;
-      if (total > MAX_BODY_BYTES) {
+      if (total > PAIR_BODY_MAX_BYTES) {
         settleErr(new Error('body_too_large'));
         req.destroy();
         return;
@@ -252,7 +250,7 @@ function isConfirmBody(value: unknown): value is ConfirmBody {
 
 export async function createPairServer(deps: PairServerDeps): Promise<PairServer> {
   const { tls, existingServer } = deps;
-  const host = deps.host ?? '127.0.0.1';
+  const host = deps.host ?? LOOPBACK_HOST;
   const ownsServer = !existingServer;
 
   const server: Server =
@@ -264,9 +262,9 @@ export async function createPairServer(deps: PairServerDeps): Promise<PairServer
     });
   if (ownsServer) {
     // Slow-loris hardening — see audit 01-security finding "no requestTimeout/headersTimeout".
-    server.headersTimeout = HEADERS_TIMEOUT_MS;
-    server.requestTimeout = REQUEST_TIMEOUT_MS;
-    server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT_MS;
+    server.headersTimeout = PAIR_HEADERS_TIMEOUT_MS;
+    server.requestTimeout = PAIR_REQUEST_TIMEOUT_MS;
+    server.keepAliveTimeout = PAIR_KEEPALIVE_TIMEOUT_MS;
   }
   const handler = createPairRoutes(deps);
   server.on('request', handler);

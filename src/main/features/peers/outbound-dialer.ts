@@ -8,6 +8,12 @@
  * and 02-transport.md C5 (permanent-fail on fingerprint mismatch).
  */
 
+import {
+  WS_RECONNECT_BASE_MS,
+  WS_RECONNECT_JITTER,
+  WS_RECONNECT_MAX_MS,
+} from './peer-constants';
+
 export type DialResult = 'OK' | 'FAIL' | 'PERMANENT_FAIL';
 
 export type DialerState =
@@ -55,9 +61,9 @@ export interface OutboundDialer {
 export function createOutboundDialer(opts: OutboundDialerOpts): OutboundDialer {
   const {
     attemptDial,
-    baseMs = 500,
-    maxBackoffMs = 30_000,
-    jitterRatio = 0.25,
+    baseMs = WS_RECONNECT_BASE_MS,
+    maxBackoffMs = WS_RECONNECT_MAX_MS,
+    jitterRatio = WS_RECONNECT_JITTER,
     onState,
     random = Math.random,
   } = opts;

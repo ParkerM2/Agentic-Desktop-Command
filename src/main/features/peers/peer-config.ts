@@ -15,11 +15,6 @@ export interface PeerConfig {
   displayName?: string;
 }
 
-/**
- * @deprecated Use {@link PeerConfig} — kept as a type alias for back-compat.
- */
-export type Phase1PeerConfig = PeerConfig;
-
 function parseBool(value: string | undefined, fallback: boolean): boolean {
   if (value === undefined) return fallback;
   if (value === '1' || value.toLowerCase() === 'true') return true;
@@ -38,11 +33,4 @@ export function loadPeerConfig(): PeerConfig {
     pairingEnabled: parseBool(process.env.ADC_PEER_PAIRING_ENABLED, true),
     displayName: process.env.ADC_PEER_DISPLAY_NAME,
   };
-}
-
-/**
- * @deprecated Use {@link loadPeerConfig}.
- */
-export function loadPhase1PeerConfig(): PeerConfig {
-  return loadPeerConfig();
 }

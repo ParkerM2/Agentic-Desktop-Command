@@ -2,6 +2,7 @@ import type { AdcDatabase } from '@main/db';
 import { serviceLogger } from '@main/lib/logger';
 
 import { gcWatermarkFromObserved } from './gc-watermark';
+import { GC_INTERVAL_MS, LOOPBACK_HOST } from './peer-constants';
 import { postJsonPinned } from './peer-http';
 import { getOrCreatePeerIdentity } from './peer-identity';
 import { createPeerMdns, type PeerAdvertisement, type PeerMdns } from './peer-mdns';
@@ -134,7 +135,7 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     peerStore,
     pairing: pairingHelper,
     listenPort: deps.listenPort,
-    host: '127.0.0.1',
+    host: LOOPBACK_HOST,
     schemaHash: deps.schemaHash,
     onConnected: (info) => {
       // Inbound peer authenticated — bump lastConnectedAt for presence.
@@ -173,8 +174,6 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
   function fireTrustChanged(event: TrustChangedEvent): void {
     safeFanOut(trustHandlers, event, 'onTrustChanged');
   }
-
-  const GC_INTERVAL_MS = 24 * 60 * 60 * 1000; // daily
 
   function computeGcWatermark(): string | null {
     return gcWatermarkFromObserved(
