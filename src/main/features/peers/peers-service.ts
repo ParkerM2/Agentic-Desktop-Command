@@ -1,16 +1,14 @@
-import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';
-
 import type { AdcDatabase } from '@main/db';
 import { serviceLogger } from '@main/lib/logger';
 
 import { gcWatermarkFromObserved } from './gc-watermark';
+import { postJsonPinned } from './peer-http';
 import { getOrCreatePeerIdentity } from './peer-identity';
 import { createPeerMdns, type PeerAdvertisement, type PeerMdns } from './peer-mdns';
 import { createPeerPairing } from './peer-pairing';
 import { createPeerServer, type PeerServer } from './peer-server';
 import { createPeerStore, type PairedPeer, type PeerStore } from './peer-store';
 import { resolvePeerTls, type PeerTlsMaterial } from './peer-tls';
-import { pinnedCheckServerIdentity } from './peer-tls-pin';
 
 import type { ReplicationEngine } from './replication-engine';
 
@@ -91,65 +89,21 @@ export interface PeersService {
   dispose: () => Promise<void>;
 }
 
-async function postJson(
-  url: string,
-  expectedFingerprint: string,
-  body: unknown,
-): Promise<unknown> {
-  const u = new URL(url);
-  // Pin the peer's leaf cert at TLS handshake time. With this in place we can
-  // (and must) keep `rejectUnauthorized: true` — fingerprint mismatch surfaces
-  // as a handshake error on the request, not a post-`'end'` check.
-  const agent = new HttpsAgent({
-    rejectUnauthorized: true,
-    checkServerIdentity: pinnedCheckServerIdentity(expectedFingerprint),
-  });
-  const payload = Buffer.from(JSON.stringify(body), 'utf8');
-  return await new Promise((resolve, reject) => {
-    let settled = false;
-    const settle = (fn: () => void): void => {
-      if (settled) return;
-      settled = true;
-      fn();
-    };
-    const req = httpsRequest(
-      {
-        host: u.hostname,
-        port: Number(u.port),
-        path: u.pathname,
-        method: 'POST',
-        agent,
-        headers: {
-          'content-type': 'application/json',
-          'content-length': String(payload.length),
-        },
-      },
-      (res) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        res.on('end', () => {
-          const raw = Buffer.concat(chunks).toString('utf8');
-          if (res.statusCode !== 200) {
-            settle(() => { reject(new Error(`http_${String(res.statusCode)}: ${raw}`)); });
-            return;
-          }
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(raw);
-          } catch {
-            settle(() => { reject(new Error('invalid_json_response')); });
-            return;
-          }
-          settle(() => { resolve(parsed); });
-        });
-      },
-    );
-    req.on('error', (err) => {
-      settle(() => { reject(err); });
-    });
-    req.write(payload);
-    req.end();
-  });
+// internal: exported for tests — keep usage limited to peers-service.ts itself
+// and `tests/unit/peers/safe-fan-out.test.ts`. Audit M4: dedupes the
+// fan-out boilerplate in pin/discovery/trust handler iteration.
+export function safeFanOut<T>(
+  handlers: Set<(value: T) => void>,
+  value: T,
+  label: string,
+): void {
+  for (const h of handlers) {
+    try {
+      h(value);
+    } catch (err) {
+      serviceLogger.warn({ err }, `peers.peersService ${label} handler threw`);
+    }
+  }
 }
 
 export async function createPeersService(deps: PeersServiceDeps): Promise<PeersService> {
@@ -195,10 +149,7 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         initiatorDisplayName: info.initiatorDisplayName ?? null,
         issuedAt: Date.now(),
       };
-      for (const h of pinHandlers) {
-        try { h(enriched); }
-        catch (err) { serviceLogger.warn({ err }, 'peers.peersService onPinIssued handler threw'); }
-      }
+      safeFanOut(pinHandlers, enriched, 'onPinIssued');
     },
   });
 
@@ -216,17 +167,11 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
 
   function fireDiscoveryChanged(ads: PeerAdvertisement[]): void {
     const enriched = enrichDiscovered(ads);
-    for (const h of discoveryHandlers) {
-      try { h(enriched); }
-      catch (err) { serviceLogger.warn({ err }, 'peers.peersService onDiscoveryChanged handler threw'); }
-    }
+    safeFanOut(discoveryHandlers, enriched, 'onDiscoveryChanged');
   }
 
   function fireTrustChanged(event: TrustChangedEvent): void {
-    for (const h of trustHandlers) {
-      try { h(event); }
-      catch (err) { serviceLogger.warn({ err }, 'peers.peersService onTrustChanged handler threw'); }
-    }
+    safeFanOut(trustHandlers, event, 'onTrustChanged');
   }
 
   const GC_INTERVAL_MS = 24 * 60 * 60 * 1000; // daily
@@ -241,23 +186,9 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     );
   }
 
-  let gcInterval: ReturnType<typeof setInterval> | null = null;
-
-  function startGc(): void {
-    const initialGc = setTimeout(() => {
-      const watermark = computeGcWatermark();
-      if (watermark === null) return;
-      const result = deps.engine.gcOpLog(watermark);
-      if (result.deleted > 0) {
-        serviceLogger.info(
-          { deleted: result.deleted, watermarkHlc: watermark, initial: true },
-          'peers.opLog.gc',
-        );
-      }
-    }, 0);
-    initialGc.unref();
-
-    gcInterval = setInterval(() => {
+  // Audit M3: dedupe initial-call vs periodic-call GC bodies.
+  function runGcTick(): void {
+    try {
       const watermark = computeGcWatermark();
       if (watermark === null) return;
       const result = deps.engine.gcOpLog(watermark);
@@ -267,7 +198,19 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
           'peers.opLog.gc',
         );
       }
-    }, GC_INTERVAL_MS);
+    } catch (err) {
+      serviceLogger.warn({ err }, 'peers.peersService gc tick threw');
+    }
+  }
+
+  let initialGcTimer: ReturnType<typeof setTimeout> | null = null;
+  let gcInterval: ReturnType<typeof setInterval> | null = null;
+
+  function startGc(): void {
+    initialGcTimer = setTimeout(runGcTick, 0);
+    initialGcTimer.unref();
+
+    gcInterval = setInterval(runGcTick, GC_INTERVAL_MS);
     gcInterval.unref();
   }
 
@@ -320,20 +263,25 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         fingerprint: tls.fingerprint,
         displayName: input.displayName ?? displayName ?? undefined,
       };
-      const res = (await postJson(url, input.fingerprint, body)) as {
-        sessionId: string;
-        challenge: string;
-      };
+      const res = await postJsonPinned<{ sessionId: string; challenge: string }>(
+        url,
+        input.fingerprint,
+        body,
+      );
       return { sessionId: res.sessionId, challenge: res.challenge };
     },
 
     async pairConfirm(input) {
       const url = `https://${input.host}:${String(input.port)}/pair/confirm`;
       const pinHmac = pairingHelper.computePinHmac(input.pin, input.challenge);
-      const res = (await postJson(url, input.fingerprint, {
-        sessionId: input.sessionId,
-        pinHmac,
-      })) as { peerId: string; pubkey: string; fingerprint: string };
+      const res = await postJsonPinned<{ peerId: string; pubkey: string; fingerprint: string }>(
+        url,
+        input.fingerprint,
+        {
+          sessionId: input.sessionId,
+          pinHmac,
+        },
+      );
 
       peerStore.upsert({
         peerId: res.peerId,
@@ -372,6 +320,10 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     },
 
     async dispose() {
+      if (initialGcTimer !== null) {
+        clearTimeout(initialGcTimer);
+        initialGcTimer = null;
+      }
       if (gcInterval !== null) {
         clearInterval(gcInterval);
         gcInterval = null;
