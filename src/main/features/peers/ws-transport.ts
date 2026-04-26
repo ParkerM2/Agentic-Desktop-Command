@@ -17,6 +17,12 @@ import {
 import type { PeerStore } from '@main/features/peers/peer-store';
 import { pinnedCheckServerIdentity } from '@main/features/peers/peer-tls-pin';
 import type { ReplicationEngine } from '@main/features/peers/replication-engine';
+import {
+  parseWireFrame,
+  type HelloFrame,
+  type OpsFrame,
+  type WireFrame,
+} from '@main/features/peers/wire-schema';
 import { serviceLogger } from '@main/lib/logger';
 
 
@@ -87,29 +93,6 @@ export interface WsTransport {
   listenPort: () => number;
   isConnected: () => boolean;
   close: () => Promise<void>;
-}
-
-interface WireFrame {
-  type: 'HELLO' | 'OPS' | 'PING';
-  payload?: unknown;
-}
-
-/**
- * HELLO frame payload. Includes the signed nonce (Task 6) so the inbound
- * server can authenticate the peer via the paired pubkey before accepting
- * any further frames. T7 will Zod-validate this; for now it's loosely typed.
- *
- * Signature is over `nonce_bytes || schemaHash_utf8 || peerId_utf8` —
- * see `hello-verify.ts::helloPayloadBytes` for the canonical ordering.
- */
-interface HelloPayload {
-  schemaHash: string;
-  /** Self peerId of the sender (so the receiver can look up the pubkey). */
-  peerId?: string;
-  /** Random nonce, base64. 32 bytes recommended. */
-  nonce?: string;
-  /** Ed25519 signature over the canonical payload bytes, base64. */
-  sig?: string;
 }
 
 /**
@@ -185,7 +168,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
   }
 
   function broadcastOp(op: Op): void {
-    const frame: WireFrame = { type: 'OPS', payload: { ops: [op] } };
+    const frame: WireFrame = { type: 'OPS', ops: [op] };
     const str = JSON.stringify(frame);
     if (outSocket?.readyState === WebSocket.OPEN) outSocket.send(str);
     for (const ws of incomingSockets) {
@@ -194,37 +177,25 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
   }
 
   /**
-   * Authenticate an inbound HELLO frame against `peerStore`.
+   * Authenticate an inbound HELLO frame against `peerStore`. Zod has already
+   * verified that `peerId`, `nonce`, and `sig` are non-empty strings.
    * Returns true when the frame is accepted, false when the socket has been
    * closed and the caller must abort.
    */
-  function authenticateInboundHello(ws: WebSocket, helloPayload: HelloPayload): boolean {
+  function authenticateInboundHello(ws: WebSocket, frame: HelloFrame): boolean {
     if (!peerStore) return true;
-    if (
-      typeof helloPayload.peerId !== 'string' ||
-      typeof helloPayload.nonce !== 'string' ||
-      typeof helloPayload.sig !== 'string'
-    ) {
-      serviceLogger.warn(
-        { peerId: helloPayload.peerId },
-        'peers.wsTransport inbound HELLO missing peerId/nonce/sig',
-      );
-      ws.close(4004, 'untrusted');
-      incomingSockets.delete(ws);
-      return false;
-    }
     const verifyResult = verifyHelloSignature(
       {
-        peerId: helloPayload.peerId,
-        schemaHash: helloPayload.schemaHash,
-        nonce: helloPayload.nonce,
-        sig: helloPayload.sig,
+        peerId: frame.peerId,
+        schemaHash: frame.schemaHash,
+        nonce: frame.nonce,
+        sig: frame.sig,
       },
       peerStore,
     );
     if (!verifyResult.ok) {
       serviceLogger.warn(
-        { peerId: helloPayload.peerId, reason: verifyResult.reason },
+        { peerId: frame.peerId, reason: verifyResult.reason },
         'peers.wsTransport inbound HELLO auth failed',
       );
       ws.close(4004, 'untrusted');
@@ -232,7 +203,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       return false;
     }
     if (onConnected) {
-      try { onConnected({ peerId: helloPayload.peerId }); }
+      try { onConnected({ peerId: frame.peerId }); }
       catch (err) {
         serviceLogger.warn({ err }, 'peers.wsTransport onConnected handler threw');
       }
@@ -242,29 +213,27 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
 
   function handleHelloFrame(
     ws: WebSocket,
-    helloPayload: HelloPayload | undefined,
+    frame: HelloFrame,
     ctx: { isInbound: boolean },
   ): void {
-    if (helloPayload?.schemaHash !== deps.schemaHash) {
+    if (frame.schemaHash !== deps.schemaHash) {
       serviceLogger.warn(
-        { local: deps.schemaHash, remote: helloPayload?.schemaHash },
+        { local: deps.schemaHash, remote: frame.schemaHash },
         'peers.wsTransport schema mismatch — closing socket',
       );
       ws.close(4001, 'schema mismatch');
       return;
     }
     if (ctx.isInbound) {
-      authenticateInboundHello(ws, helloPayload);
+      authenticateInboundHello(ws, frame);
     }
   }
 
-  function handleOpsFrame(payload: unknown): void {
-    const opsPayload = (payload ?? {}) as { ops?: unknown };
-    if (!Array.isArray(opsPayload.ops)) {
-      serviceLogger.warn({ payload }, 'peers.wsTransport.OPS frame missing ops array');
-      return;
-    }
-    for (const op of opsPayload.ops as Op[]) {
+  function handleOpsFrame(frame: OpsFrame): void {
+    // T9 will tighten per-op validation in `replication-engine.applyRemoteOp`,
+    // which already has a column-allowlist. For now we trust the structure
+    // Zod confirmed (array, length cap) and let the engine reject bad shapes.
+    for (const op of frame.ops as Op[]) {
       try {
         engine.applyRemoteOp(op);
       } catch (err) {
@@ -274,18 +243,22 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
   }
 
   function handleFrame(ws: WebSocket, raw: string, ctx: { isInbound: boolean }): void {
-    let frame: WireFrame;
-    try {
-      frame = JSON.parse(raw) as WireFrame;
-    } catch {
+    const parsed = parseWireFrame(raw);
+    if (!parsed.ok) {
+      serviceLogger.warn(
+        { reason: parsed.error },
+        'peers.wsTransport.malformedFrame',
+      );
+      ws.close(4003, 'malformed frame');
       return;
     }
+    const { frame } = parsed;
     if (frame.type === 'HELLO') {
-      handleHelloFrame(ws, frame.payload as HelloPayload | undefined, ctx);
+      handleHelloFrame(ws, frame, ctx);
       return;
     }
     if (frame.type === 'OPS') {
-      handleOpsFrame(frame.payload);
+      handleOpsFrame(frame);
     }
     // PING is a no-op in Phase 1
   }
@@ -310,8 +283,9 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
     ws.on('message', (data: RawData) => { handleFrame(ws, dataToString(data), { isInbound: true }); });
     ws.on('close', () => incomingSockets.delete(ws));
     // Send our HELLO. In production (selfIdentity present) it is signed for
-    // wire-format symmetry; legacy tests without selfIdentity send the
-    // schema-only HELLO that the pre-T6 wire format used.
+    // wire-format symmetry. Legacy tests without selfIdentity emit placeholder
+    // nonce/sig values purely to satisfy the wire schema; the receiver in
+    // those tests has no peerStore, so signature verification is skipped.
     if (selfIdentity) {
       const nonce = randomBytes(32).toString('base64');
       const sig = signHelloPayload(
@@ -320,17 +294,18 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       );
       send(ws, {
         type: 'HELLO',
-        payload: {
-          schemaHash: deps.schemaHash,
-          peerId: selfIdentity.peerId,
-          nonce,
-          sig,
-        } satisfies HelloPayload,
+        peerId: selfIdentity.peerId,
+        schemaHash: deps.schemaHash,
+        nonce,
+        sig,
       });
     } else {
       send(ws, {
         type: 'HELLO',
-        payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
+        peerId: 'legacy',
+        schemaHash: deps.schemaHash,
+        nonce: 'legacy',
+        sig: 'legacy',
       });
     }
   });
@@ -389,18 +364,20 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
           );
           send(ws, {
             type: 'HELLO',
-            payload: {
-              schemaHash: deps.schemaHash,
-              peerId: selfIdentity.peerId,
-              nonce,
-              sig,
-            } satisfies HelloPayload,
+            peerId: selfIdentity.peerId,
+            schemaHash: deps.schemaHash,
+            nonce,
+            sig,
           });
         } else {
-          // Legacy test path: send schema-only HELLO.
+          // Legacy test path: emit placeholder nonce/sig to satisfy the wire
+          // schema. Receiver with no peerStore skips signature verification.
           send(ws, {
             type: 'HELLO',
-            payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
+            peerId: 'legacy',
+            schemaHash: deps.schemaHash,
+            nonce: 'legacy',
+            sig: 'legacy',
           });
         }
         if (!settled) {
