@@ -4,6 +4,11 @@ import { WebSocket, WebSocketServer, type RawData, type ClientOptions } from 'ws
 
 import type { Op } from '@shared/replication/op-types';
 
+import {
+  createOutboundDialer,
+  type DialResult,
+  type OutboundDialer,
+} from '@main/features/peers/outbound-dialer';
 import { pinnedCheckServerIdentity } from '@main/features/peers/peer-tls-pin';
 import type { ReplicationEngine } from '@main/features/peers/replication-engine';
 import { serviceLogger } from '@main/lib/logger';
@@ -164,48 +169,91 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
   });
 
   let shuttingDown = false;
-  function dial(): void {
-    if (!remoteUrl || shuttingDown) return;
-    const isWss = remoteUrl.startsWith('wss://');
-    // Pin the remote leaf cert during the TLS handshake. With this hook a
-    // fingerprint mismatch fails the WebSocket before `'open'` fires, so
-    // there is no post-handshake fingerprint check below.
-    //
-    // The `ws` package types `checkServerIdentity` as
-    // `(name, cert: CertMeta) => boolean`, but at runtime Node passes the
-    // real `PeerCertificate` and accepts an `Error | undefined` return —
-    // matching `https.RequestOptions.checkServerIdentity`. We cast through
-    // `ClientOptions` to satisfy the looser package typing.
-    const wssOpts: ClientOptions = remotePeer
-      ? {
-          rejectUnauthorized: true,
-          checkServerIdentity: pinnedCheckServerIdentity(
-            remotePeer.fingerprint,
-          ) as unknown as ClientOptions['checkServerIdentity'],
+  let dialer: OutboundDialer | null = null;
+
+  /**
+   * One dial attempt. Resolves with:
+   *   - `'OK'`  → WebSocket opened (HELLO sent). When this socket later
+   *              `'close'`s, we re-arm the dialer to start the next attempt.
+   *   - `'PERMANENT_FAIL'` → TLS fingerprint mismatch (peer-tls-pin returned
+   *              an Error containing `'fingerprint mismatch'`). The dialer
+   *              moves to `permanently_failed` and stops retrying.
+   *   - `'FAIL'` → any other transient failure (close before open, network
+   *              error, ECONNREFUSED). The dialer schedules the next attempt
+   *              with exponential backoff + jitter.
+   */
+  function attemptDial(): Promise<DialResult> {
+    if (!remoteUrl || shuttingDown) return Promise.resolve('FAIL');
+    return new Promise<DialResult>((resolve) => {
+      const isWss = remoteUrl.startsWith('wss://');
+      // Pin the remote leaf cert during the TLS handshake. With this hook a
+      // fingerprint mismatch fails the WebSocket before `'open'` fires, so
+      // there is no post-handshake fingerprint check below.
+      //
+      // The `ws` package types `checkServerIdentity` as
+      // `(name, cert: CertMeta) => boolean`, but at runtime Node passes the
+      // real `PeerCertificate` and accepts an `Error | undefined` return —
+      // matching `https.RequestOptions.checkServerIdentity`. We cast through
+      // `ClientOptions` to satisfy the looser package typing.
+      const wssOpts: ClientOptions = remotePeer
+        ? {
+            rejectUnauthorized: true,
+            checkServerIdentity: pinnedCheckServerIdentity(
+              remotePeer.fingerprint,
+            ) as unknown as ClientOptions['checkServerIdentity'],
+          }
+        : { rejectUnauthorized: true };
+      const ws = isWss
+        ? new WebSocket(remoteUrl, wssOpts)
+        : new WebSocket(remoteUrl);
+      outSocket = ws;
+
+      let settled = false;
+      let permanent = false;
+
+      ws.on('open', () => {
+        send(ws, {
+          type: 'HELLO',
+          payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
+        });
+        if (!settled) {
+          settled = true;
+          resolve('OK');
         }
-      : { rejectUnauthorized: true };
-    const ws = isWss
-      ? new WebSocket(remoteUrl, wssOpts)
-      : new WebSocket(remoteUrl);
-    outSocket = ws;
-    ws.on('open', () => {
-      send(ws, {
-        type: 'HELLO',
-        payload: { schemaHash: deps.schemaHash } satisfies HelloPayload,
+      });
+      ws.on('message', (data: RawData) => { handleFrame(ws, dataToString(data)); });
+      ws.on('error', (err: Error & { code?: string }) => {
+        serviceLogger.warn({ err }, 'peers.wsTransport.dial error');
+        const msg = err.message;
+        const code = err.code ?? '';
+        if (msg.includes('fingerprint mismatch') || code === 'FINGERPRINT_MISMATCH') {
+          permanent = true;
+        }
+      });
+      ws.on('close', () => {
+        const wasOutSocket = outSocket === ws;
+        if (wasOutSocket) outSocket = null;
+        if (!settled) {
+          // Closed before 'open' → transient or permanent failure.
+          settled = true;
+          resolve(permanent ? 'PERMANENT_FAIL' : 'FAIL');
+          return;
+        }
+        // The socket previously emitted 'open' (we resolved 'OK' already).
+        // Treat the close as a request to re-arm the dialer for the next
+        // attempt — single-flight guard inside the dialer makes re-entrant
+        // start() calls a no-op when not in idle/backoff.
+        if (!shuttingDown) {
+          dialer?.start();
+        }
       });
     });
-    ws.on('message', (data: RawData) => { handleFrame(ws, dataToString(data)); });
-    ws.on('close', () => {
-      outSocket = null;
-      if (!shuttingDown) {
-        setTimeout(dial, 1000);
-      }
-    });
-    ws.on('error', (err) => {
-      serviceLogger.warn({ err }, 'peers.wsTransport.dial error');
-    });
   }
-  if (remoteUrl) dial();
+
+  if (remoteUrl) {
+    dialer = createOutboundDialer({ attemptDial });
+    dialer.start();
+  }
 
   const unsubscribe = engine.onLocalOp((op) => broadcastOp(op));
 
@@ -215,6 +263,7 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       outSocket?.readyState === WebSocket.OPEN || incomingSockets.size > 0,
     async close() {
       shuttingDown = true;
+      dialer?.close();
       unsubscribe();
       if (outSocket) outSocket.close();
       for (const ws of incomingSockets) ws.close();
