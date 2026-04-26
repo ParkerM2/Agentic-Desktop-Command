@@ -3,6 +3,7 @@ import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';
 import type { AdcDatabase } from '@main/db';
 import { serviceLogger } from '@main/lib/logger';
 
+import { gcWatermarkFromObserved } from './gc-watermark';
 import { getOrCreatePeerIdentity } from './peer-identity';
 import { createPeerMdns, type PeerAdvertisement, type PeerMdns } from './peer-mdns';
 import { createPeerPairing } from './peer-pairing';
@@ -227,16 +228,13 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
   const GC_INTERVAL_MS = 24 * 60 * 60 * 1000; // daily
 
   function computeGcWatermark(): string | null {
-    const peers = peerStore.listAll().filter((p) => p.revokedAt === null);
-    if (peers.length === 0) return null;
-    const seen = peers
-      .map((p) => p.lastSeenHlc)
-      .filter((h): h is string => h !== null);
-    if (seen.length !== peers.length) {
-      // At least one active peer hasn't been seen — refuse to GC.
-      return null;
-    }
-    return seen.reduce((min, h) => (h < min ? h : min));
+    return gcWatermarkFromObserved(
+      peerStore.listAll().map((p) => ({
+        peerId: p.peerId,
+        revokedAt: p.revokedAt,
+        lastSeenHlc: p.lastSeenHlc,
+      })),
+    );
   }
 
   let gcInterval: ReturnType<typeof setInterval> | null = null;

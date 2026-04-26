@@ -1,12 +1,13 @@
 import { and, eq, sql } from 'drizzle-orm';
 
-import { nextHlc, receiveHlc } from '@shared/replication/hlc';
+import { nextHlc, parseHlc, receiveHlc } from '@shared/replication/hlc';
 import { TOMBSTONE_COLUMN, type Op } from '@shared/replication/op-types';
 import { isSyncTable, SYNC_TABLE_PK, type SyncTable } from '@shared/replication/sync-tables';
 
 import type { AdcDatabase } from '@main/db';
 import { mergeOp, type RowMetaState } from '@main/features/peers/lww-merge';
 import { createOpLogService, type OpLogService } from '@main/features/peers/op-log';
+import { createPeerStore, type PeerStore } from '@main/features/peers/peer-store';
 import { rowMeta as rowMetaTable } from '@main/features/peers/schema';
 import { serviceLogger } from '@main/lib/logger';
 
@@ -18,6 +19,25 @@ export interface ReplicationEngineDeps {
   peerIdShort: string;
   peerIdFull: string;
   clock?: () => number;
+  /** Optional override; when omitted the engine creates one internally. */
+  peerStore?: PeerStore;
+}
+
+interface OpLogMaxRow { m: string | null }
+
+/**
+ * Read `MAX(hlc)` from `op_log` and return the parsed parts, or `null` if
+ * the table is empty. Exported for unit testing without a real DB.
+ * Audit reference: tmp/audit/03-replication.md C6.
+ */
+export function seedLastHlcFromDb(
+  client: { prepare: (sql: string) => { get: () => unknown } },
+): string | null {
+  const row = client.prepare('SELECT MAX(hlc) AS m FROM op_log').get() as OpLogMaxRow | undefined;
+  if (row?.m === null || row?.m === undefined) return null;
+  // Validate parseability — a malformed row would explode `nextHlc` later.
+  parseHlc(row.m);
+  return row.m;
 }
 
 export interface RecordLocalWriteArgs {
@@ -36,7 +56,12 @@ export interface ReplicationEngine {
   gcOpLog: (watermarkHlc: string) => { deleted: number };
 }
 
-interface SqliteClient { prepare: (q: string) => { run: (...a: unknown[]) => void } }
+interface SqliteClient {
+  prepare: (q: string) => {
+    run: (...a: unknown[]) => void;
+    get: (...a: unknown[]) => unknown;
+  };
+}
 
 function $client(db: AdcDatabase): SqliteClient {
   return (db as unknown as { $client: SqliteClient }).$client;
@@ -46,8 +71,18 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
   const { db, peerIdShort, peerIdFull } = deps;
   const clock = deps.clock ?? (() => Date.now());
   const opLog: OpLogService = createOpLogService(db);
+  const peerStore: PeerStore = deps.peerStore ?? createPeerStore(db);
 
-  let lastHlc: string | null = null;
+  // Seed lastHlc from op_log so HLC monotonicity survives process restart.
+  // Audit reference: tmp/audit/03-replication.md C6.
+  let lastHlc: string | null = (() => {
+    try {
+      return seedLastHlcFromDb($client(db));
+    } catch (err) {
+      serviceLogger.warn({ err }, 'peers.replication.seedLastHlc threw — starting from null');
+      return null;
+    }
+  })();
   const localOpListeners = new Set<(op: Op) => void>();
 
   function loadRowMeta(tableName: string, pk: string): RowMetaState {
@@ -222,6 +257,9 @@ export function createReplicationEngine(deps: ReplicationEngineDeps): Replicatio
 
         upsertRowMeta(op.tableName, op.pk, result.rowMetaUpdates);
         opLog.append(op);
+        // Persist the per-peer frontier so the GC watermark has accurate
+        // `last_seen_hlc`. Audit reference: tmp/audit/03-replication.md C5.
+        peerStore.recordObserved(op.originPeerId, op.hlc);
       });
     },
 
