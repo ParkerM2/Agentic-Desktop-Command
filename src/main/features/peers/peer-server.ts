@@ -5,10 +5,15 @@ import type { ReplicationEngine } from '@main/features/peers/replication-engine'
 import { serviceLogger } from '@main/lib/logger';
 
 import { createPairServer, type PairServer } from './pair-server';
-import { createPeerPairing } from './peer-pairing';
-import { createPeerStore } from './peer-store';
-import { createWsTransport, type WsTransport, type WsTransportRemotePeer } from './ws-transport';
+import {
+  createWsTransport,
+  type WsTransport,
+  type WsTransportRemotePeer,
+  type WsTransportSelfIdentity,
+} from './ws-transport';
 
+import type { PeerPairing } from './peer-pairing';
+import type { PeerStore } from './peer-store';
 import type { PeerTlsMaterial } from './peer-tls';
 import type { AddressInfo } from 'node:net';
 
@@ -22,13 +27,27 @@ export interface PeerServerDeps {
   db: AdcDatabase;
   engine: ReplicationEngine;
   tls: PeerTlsMaterial;
-  selfIdentity: { peerId: string; pubkey: string };
+  selfIdentity: { peerId: string; pubkey: string; sign: (msg: Uint8Array) => Uint8Array };
+  /**
+   * Paired-peer store, owned by `peers-service` and passed through (audit M6).
+   * Used by `ws-transport` to authenticate inbound HELLO signatures.
+   */
+  peerStore: PeerStore;
+  /**
+   * Pairing helper, owned by `peers-service` and passed through (audit M6).
+   */
+  pairing: PeerPairing;
   listenPort: number; // 0 = OS-assigned
   host?: string;
   schemaHash: string;
   remoteUrl?: string;
   remotePeer?: WsTransportRemotePeer;
   onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string; initiatorDisplayName?: string }) => void;
+  /**
+   * Notified once an inbound peer's HELLO signature verifies — surfaced from
+   * `ws-transport` so the service can update presence state.
+   */
+  onConnected?: (info: { peerId: string }) => void;
 }
 
 export interface PeerServer {
@@ -53,14 +72,15 @@ export async function createPeerServer(deps: PeerServerDeps): Promise<PeerServer
   const addr = httpsServer.address() as AddressInfo;
   const { port } = addr;
 
-  const pairing = createPeerPairing();
-  const peerStore = createPeerStore(deps.db);
+  // Audit M6: peerStore + pairing are owned by `peers-service` and passed
+  // in here, not re-constructed.
+  const { pairing, peerStore } = deps;
 
   const pair = await createPairServer({
     tls: deps.tls,
     pairing,
     peerStore,
-    selfIdentity: deps.selfIdentity,
+    selfIdentity: { peerId: deps.selfIdentity.peerId, pubkey: deps.selfIdentity.pubkey },
     selfFingerprint: deps.tls.fingerprint,
     listenPort: port,
     host,
@@ -68,6 +88,10 @@ export async function createPeerServer(deps: PeerServerDeps): Promise<PeerServer
     existingServer: httpsServer,
   });
 
+  const wsSelfIdentity: WsTransportSelfIdentity = {
+    peerId: deps.selfIdentity.peerId,
+    sign: deps.selfIdentity.sign,
+  };
   const ws = await createWsTransport({
     engine: deps.engine,
     listenPort: port,
@@ -75,6 +99,9 @@ export async function createPeerServer(deps: PeerServerDeps): Promise<PeerServer
     schemaHash: deps.schemaHash,
     remotePeer: deps.remotePeer,
     existingHttpsServer: httpsServer,
+    peerStore,
+    selfIdentity: wsSelfIdentity,
+    onConnected: deps.onConnected,
   });
 
   serviceLogger.info({ port, peerId: deps.selfIdentity.peerId }, 'peers.peerServer listening');

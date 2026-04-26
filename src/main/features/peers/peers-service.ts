@@ -168,10 +168,23 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     db: deps.db,
     engine: deps.engine,
     tls,
-    selfIdentity: { peerId: identity.peerIdFull, pubkey: identity.pubkey },
+    selfIdentity: {
+      peerId: identity.peerIdFull,
+      pubkey: identity.pubkey,
+      sign: identity.sign,
+    },
+    // Audit M6: pass through the singletons rather than letting peer-server
+    // construct duplicates.
+    peerStore,
+    pairing: pairingHelper,
     listenPort: deps.listenPort,
     host: '127.0.0.1',
     schemaHash: deps.schemaHash,
+    onConnected: (info) => {
+      // Inbound peer authenticated — bump lastConnectedAt for presence.
+      try { peerStore.updateLastConnectedAt(info.peerId, Date.now()); }
+      catch (err) { serviceLogger.warn({ err, peerId: info.peerId }, 'peers.peersService updateLastConnectedAt threw'); }
+    },
     onPinIssued: (info) => {
       const enriched: PinIssuedInfo = {
         sessionId: info.sessionId,
