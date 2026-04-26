@@ -211,6 +211,13 @@
       "when": 1777200000000,
       "tag": "0029_projects",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1777300000000,
+      "tag": "0030_op_log_hlc_index",
+      "breakpoints": true
     }
   ]
 }

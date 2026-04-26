@@ -14,6 +14,9 @@ export const opLog = sqliteTable(
   },
   (t) => [
     uniqueIndex('op_log_dedup').on(t.originPeerId, t.hlc),
+    // Speeds up GC scans (`DELETE FROM op_log WHERE hlc < ?`).
+    // Audit reference: tmp/audit/03-replication.md H2.
+    index('op_log_by_hlc').on(t.hlc),
   ],
 );
 
