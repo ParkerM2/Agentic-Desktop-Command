@@ -15,14 +15,21 @@ function setEncryptionAvailable(value: boolean): void {
 
 describe('getOrCreatePeerIdentity — safeStorage unavailable', () => {
   let tmpDir: string;
+  let savedEnv: string | undefined;
 
   beforeEach(() => {
     tmpDir = mkdtempSync(join(tmpdir(), 'pid-'));
     setEncryptionAvailable(false);
+    // Isolate from CI's ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY=1
+    savedEnv = process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY;
+    delete process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY;
   });
 
   afterEach(() => {
     setEncryptionAvailable(true);
+    if (savedEnv !== undefined) {
+      process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY = savedEnv;
+    }
   });
 
   it('throws when safeStorage is unavailable and allowPlaintext is not set', () => {

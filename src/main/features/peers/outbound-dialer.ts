@@ -52,6 +52,14 @@ export interface OutboundDialer {
    * connecting / open / permanently_failed / closed.
    */
   start: () => void;
+  /**
+   * Caller signals that an `'open'` socket has closed and the dialer should
+   * arm the next attempt. Transitions `open` → `backoff` (with the current
+   * backoff schedule). No-op in any other state. Caller MUST call this when
+   * the underlying socket disconnects after a successful open, otherwise the
+   * dialer stays stuck in `open`.
+   */
+  notifyDisconnected: () => void;
   /** Cancel any pending timer and transition to `closed`. Idempotent. */
   close: () => void;
   /** Current state. */
@@ -154,6 +162,14 @@ export function createOutboundDialer(opts: OutboundDialerOpts): OutboundDialer {
       if (current !== 'idle' && current !== 'backoff') return;
       clearPending();
       runDial();
+    },
+    notifyDisconnected(): void {
+      // Only act on a previously-open socket. Closed/permanently_failed are
+      // terminal; idle/backoff/connecting already handle their own transitions.
+      if (current !== 'open') return;
+      // Re-enter the backoff schedule. attempts is 0 (reset on OK) so the next
+      // delay starts from the base; transient peer disconnects retry quickly.
+      scheduleBackoff();
     },
     close(): void {
       if (current === 'closed') return;
