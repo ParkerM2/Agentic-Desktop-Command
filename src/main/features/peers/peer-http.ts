@@ -35,11 +35,14 @@ export async function postJsonPinned<T>(
 ): Promise<T> {
   const reqFn = opts.requestImpl ?? httpsRequest;
   const u = new URL(url);
-  // Pin the peer's leaf cert at TLS handshake time. With this in place we can
-  // (and must) keep `rejectUnauthorized: true` — fingerprint mismatch surfaces
-  // as a handshake error on the request, not a post-`'end'` check.
+  // Pin the peer's leaf cert at TLS handshake time via `checkServerIdentity`.
+  // Self-signed certs cannot be CA-validated, so we MUST keep
+  // `rejectUnauthorized: false` — otherwise Node rejects with "self-signed
+  // certificate" before `checkServerIdentity` is called. The pin function still
+  // runs at TLS time and rejects the handshake on fingerprint mismatch
+  // (returning an Error fails the connection during `'secureConnect'`).
   const agent = new HttpsAgent({
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
     checkServerIdentity: pinnedCheckServerIdentity(fingerprintHex),
   });
   const payload = Buffer.from(JSON.stringify(body), 'utf8');

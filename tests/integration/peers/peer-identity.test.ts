@@ -16,12 +16,20 @@ vi.mock('electron', () => ({
 const { getOrCreatePeerIdentity } = await import('@main/features/peers/peer-identity');
 
 let dir: string;
+let savedEnv: string | undefined;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'peer-identity-'));
+  // Isolate from CI's ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY=1 so the
+  // "throws when allowPlaintext not set" assertion is meaningful.
+  savedEnv = process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY;
+  delete process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY;
 });
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
+  if (savedEnv !== undefined) {
+    process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY = savedEnv;
+  }
 });
 
 describe('peer-identity', () => {

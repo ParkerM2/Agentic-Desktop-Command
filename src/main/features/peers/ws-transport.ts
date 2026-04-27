@@ -334,14 +334,18 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       // real `PeerCertificate` and accepts an `Error | undefined` return —
       // matching `https.RequestOptions.checkServerIdentity`. We cast through
       // `ClientOptions` to satisfy the looser package typing.
+      // Self-signed peer certs cannot be CA-validated; keep
+      // `rejectUnauthorized: false` so `checkServerIdentity` (the
+      // fingerprint-pin function) still runs at TLS time. A mismatch in
+      // checkServerIdentity fails the handshake before `'open'` fires.
       const wssOpts: ClientOptions = remotePeer
         ? {
-            rejectUnauthorized: true,
+            rejectUnauthorized: false,
             checkServerIdentity: pinnedCheckServerIdentity(
               remotePeer.fingerprint,
             ) as unknown as ClientOptions['checkServerIdentity'],
           }
-        : { rejectUnauthorized: true };
+        : { rejectUnauthorized: false };
       const ws = isWss
         ? new WebSocket(remoteUrl, wssOpts)
         : new WebSocket(remoteUrl);
