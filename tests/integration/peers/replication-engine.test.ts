@@ -70,18 +70,18 @@ describe('ReplicationEngine.applyRemoteOp', () => {
 
   it('applies an incoming insert op to progress_tasks', () => {
     const op: Op = {
-      hlc: '00000000000000099999.00000000.bbbbbbbb',
+      hlc: '0000000099999.00000000.bbbbbbbb',
       originPeerId: 'peer-b',
       tableName: 'progress_tasks',
       pk: 'task-remote',
       opType: 'insert',
       payload: {
-        slug: { value: 'task-remote', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        title: { value: 'Remote', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        status: { value: 'backlog', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        priority: { value: 'medium', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        created_at: { value: '2026-04-24T00:00:00Z', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        updated_at: { value: '2026-04-24T00:00:00Z', hlc: '00000000000000099999.00000000.bbbbbbbb' },
+        slug: { value: 'task-remote', hlc: '0000000099999.00000000.bbbbbbbb' },
+        title: { value: 'Remote', hlc: '0000000099999.00000000.bbbbbbbb' },
+        status: { value: 'backlog', hlc: '0000000099999.00000000.bbbbbbbb' },
+        priority: { value: 'medium', hlc: '0000000099999.00000000.bbbbbbbb' },
+        created_at: { value: '2026-04-24T00:00:00Z', hlc: '0000000099999.00000000.bbbbbbbb' },
+        updated_at: { value: '2026-04-24T00:00:00Z', hlc: '0000000099999.00000000.bbbbbbbb' },
       },
     };
 
@@ -109,13 +109,13 @@ describe('ReplicationEngine.applyRemoteOp', () => {
     });
 
     const incoming: Op = {
-      hlc: '00000000000009999999.00000000.bbbbbbbb',
+      hlc: '0000009999999.00000000.bbbbbbbb',
       originPeerId: 'peer-b',
       tableName: 'progress_tasks',
       pk: 'task-1',
       opType: 'update',
       payload: {
-        status: { value: 'executing', hlc: '00000000000009999999.00000000.bbbbbbbb' },
+        status: { value: 'executing', hlc: '0000009999999.00000000.bbbbbbbb' },
       },
     };
 
@@ -139,7 +139,7 @@ describe('ReplicationEngine.applyRemoteOp', () => {
     });
 
     const del: Op = {
-      hlc: '00000000000009999999.00000000.bbbbbbbb',
+      hlc: '0000009999999.00000000.bbbbbbbb',
       originPeerId: 'peer-b',
       tableName: 'progress_tasks',
       pk: 'task-del',
@@ -159,13 +159,13 @@ describe('ReplicationEngine.applyRemoteOp', () => {
 
   it('rejects ops with invalid column names', () => {
     const op: Op = {
-      hlc: '00000000000000099999.00000000.bbbbbbbb',
+      hlc: '0000000099999.00000000.bbbbbbbb',
       originPeerId: 'peer-b',
       tableName: 'progress_tasks',
       pk: 'task-bad',
       opType: 'insert',
       payload: {
-        'title"; DROP TABLE progress_tasks; --': { value: 'x', hlc: '00000000000000099999.00000000.bbbbbbbb' },
+        'title"; DROP TABLE progress_tasks; --': { value: 'x', hlc: '0000000099999.00000000.bbbbbbbb' },
       },
     };
     expect(() => engine.applyRemoteOp(op)).toThrow(/invalid column name/);
@@ -173,18 +173,18 @@ describe('ReplicationEngine.applyRemoteOp', () => {
 
   it('is idempotent — applying same op twice is safe', () => {
     const op: Op = {
-      hlc: '00000000000000099999.00000000.bbbbbbbb',
+      hlc: '0000000099999.00000000.bbbbbbbb',
       originPeerId: 'peer-b',
       tableName: 'progress_tasks',
       pk: 'task-idem',
       opType: 'insert',
       payload: {
-        slug: { value: 'task-idem', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        title: { value: 'Idempotent', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        status: { value: 'backlog', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        priority: { value: 'medium', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        created_at: { value: '2026-04-24T00:00:00Z', hlc: '00000000000000099999.00000000.bbbbbbbb' },
-        updated_at: { value: '2026-04-24T00:00:00Z', hlc: '00000000000000099999.00000000.bbbbbbbb' },
+        slug: { value: 'task-idem', hlc: '0000000099999.00000000.bbbbbbbb' },
+        title: { value: 'Idempotent', hlc: '0000000099999.00000000.bbbbbbbb' },
+        status: { value: 'backlog', hlc: '0000000099999.00000000.bbbbbbbb' },
+        priority: { value: 'medium', hlc: '0000000099999.00000000.bbbbbbbb' },
+        created_at: { value: '2026-04-24T00:00:00Z', hlc: '0000000099999.00000000.bbbbbbbb' },
+        updated_at: { value: '2026-04-24T00:00:00Z', hlc: '0000000099999.00000000.bbbbbbbb' },
       },
     };
 

@@ -2,11 +2,30 @@ import { createServer, type Server } from 'node:https';
 
 import { serviceLogger } from '@main/lib/logger';
 
+import {
+  LOOPBACK_HOST,
+  PAIR_BODY_MAX_BYTES,
+  PAIR_BODY_READ_TIMEOUT_MS,
+  PAIR_HEADERS_TIMEOUT_MS,
+  PAIR_KEEPALIVE_TIMEOUT_MS,
+  PAIR_REQUEST_TIMEOUT_MS,
+} from './peer-constants';
+import { createIpRateLimiter, type IpRateLimiter } from './rate-limiter';
+
 import type { PeerPairing } from './peer-pairing';
 import type { PeerStore } from './peer-store';
 import type { PeerTlsMaterial } from './peer-tls';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
+
+// ─── Local constants (only those not protocol-shared) ───────────────────────
+
+/** TLS floor — Node's TLSv1.3 default for Ed25519 is fine, but we pin the floor. */
+const TLS_MIN_VERSION = 'TLSv1.2' as const;
+/** Default per-IP rate-limit capacity for /pair/init + /pair/confirm. */
+const DEFAULT_RL_CAPACITY = 5;
+/** Default refill: 1 token per minute. */
+const DEFAULT_RL_REFILL_PER_MS = 1 / 60_000;
 
 export interface PairInitRequestBody {
   peerId: string;
@@ -30,6 +49,8 @@ export interface PairServerDeps {
    * pair-server skips server creation and listening — caller owns the lifecycle.
    */
   existingServer?: Server;
+  /** Optional rate limiter override (test injection). */
+  rateLimiter?: IpRateLimiter;
 }
 
 export type PairRequestHandler = (req: IncomingMessage, res: ServerResponse) => void;
@@ -41,12 +62,20 @@ export interface PairRoutesDeps {
   selfFingerprint: string;
   onPinIssued?: (info: { sessionId: string; pin: string; initiatorPeerId: string; initiatorDisplayName?: string }) => void;
   now?: () => number;
+  /** Per-IP rate limiter applied before any work happens. Defaults to 5/min/IP. */
+  rateLimiter?: IpRateLimiter;
 }
 
 /** Returns a request handler that responds to /pair/init + /pair/confirm only. */
 export function createPairRoutes(deps: PairRoutesDeps): PairRequestHandler {
   const { pairing, peerStore, selfIdentity, selfFingerprint, onPinIssued } = deps;
   const now = deps.now ?? Date.now;
+  const rateLimiter =
+    deps.rateLimiter ??
+    createIpRateLimiter({
+      capacity: DEFAULT_RL_CAPACITY,
+      refillPerMs: DEFAULT_RL_REFILL_PER_MS,
+    });
 
   return (req, res) => {
     void handle(req, res).catch((err: unknown) => {
@@ -68,6 +97,18 @@ export function createPairRoutes(deps: PairRoutesDeps): PairRequestHandler {
       sendJson(res, 405, { error: 'method_not_allowed' });
       return;
     }
+
+    const ip = req.socket.remoteAddress ?? 'unknown';
+    if (!rateLimiter.consume(ip)) {
+      serviceLogger.warn({ ip, url }, 'peers.pairRoutes rate-limited request');
+      sendJson(res, 429, { error: 'rate_limited' });
+      return;
+    }
+
+    // Slow-loris guard — if the client stops sending body bytes, drop the socket.
+    req.setTimeout(PAIR_BODY_READ_TIMEOUT_MS, () => {
+      req.destroy();
+    });
 
     let body: unknown;
     try {
@@ -136,8 +177,6 @@ export interface PairServer {
   close: () => Promise<void>;
 }
 
-const MAX_BODY_BYTES = 16 * 1024;
-
 function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -155,7 +194,7 @@ function readJsonBody(req: IncomingMessage): Promise<unknown> {
     };
     req.on('data', (chunk: Buffer) => {
       total += chunk.length;
-      if (total > MAX_BODY_BYTES) {
+      if (total > PAIR_BODY_MAX_BYTES) {
         settleErr(new Error('body_too_large'));
         req.destroy();
         return;
@@ -211,10 +250,22 @@ function isConfirmBody(value: unknown): value is ConfirmBody {
 
 export async function createPairServer(deps: PairServerDeps): Promise<PairServer> {
   const { tls, existingServer } = deps;
-  const host = deps.host ?? '127.0.0.1';
+  const host = deps.host ?? LOOPBACK_HOST;
   const ownsServer = !existingServer;
 
-  const server: Server = existingServer ?? createServer({ cert: tls.cert, key: tls.key });
+  const server: Server =
+    existingServer ??
+    createServer({
+      cert: tls.cert,
+      key: tls.key,
+      minVersion: TLS_MIN_VERSION,
+    });
+  if (ownsServer) {
+    // Slow-loris hardening — see audit 01-security finding "no requestTimeout/headersTimeout".
+    server.headersTimeout = PAIR_HEADERS_TIMEOUT_MS;
+    server.requestTimeout = PAIR_REQUEST_TIMEOUT_MS;
+    server.keepAliveTimeout = PAIR_KEEPALIVE_TIMEOUT_MS;
+  }
   const handler = createPairRoutes(deps);
   server.on('request', handler);
 

@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { PEERS_EVENTS } from '@shared/ipc/peers';
 import type { PinIssuedEvent } from '@shared/ipc/peers';
+
+import { useIpcEvent } from '@renderer/shared/hooks/useIpcEvent';
 
 /**
  * Subscribes to PEERS_EVENTS.PIN.ISSUED and exposes the latest unseen PIN.
@@ -10,18 +12,11 @@ import type { PinIssuedEvent } from '@shared/ipc/peers';
  */
 export function useIncomingPin(): { pin: PinIssuedEvent | null; dismiss: () => void } {
   const [pin, setPin] = useState<PinIssuedEvent | null>(null);
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition, @typescript-eslint/strict-boolean-expressions
-    if (typeof window === 'undefined' || !window.api) return;
-    const cleanup = window.api.on(PEERS_EVENTS.PIN.ISSUED, (payload: unknown) => {
-      setPin(payload as PinIssuedEvent);
-    });
-    return cleanup;
+  useIpcEvent(PEERS_EVENTS.PIN.ISSUED, (payload) => {
+    setPin(payload);
+  });
+  const dismiss = useCallback(() => {
+    setPin(null);
   }, []);
-  return {
-    pin,
-    dismiss: () => {
-      setPin(null);
-    },
-  };
+  return { pin, dismiss };
 }

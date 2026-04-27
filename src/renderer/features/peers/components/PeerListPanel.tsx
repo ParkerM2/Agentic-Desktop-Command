@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 import type { DiscoveredPeer, PairedPeer, SelfIdentity } from '@shared/ipc/peers';
 
 import {
@@ -17,19 +15,19 @@ import {
   Text,
 } from '@ui';
 
-import {
-  useDiscoveredPeers,
-  usePairedPeers,
-  useRevokePeer,
-  useSelfIdentity,
-} from '../api/usePeers';
-import { truncate } from '../lib/truncate';
+import { usePeerListPanel } from '../hooks/usePeerListPanel';
+import { peerLabel, truncate } from '../lib/format';
 
 import { OutgoingPairDialog } from './OutgoingPairDialog';
 
-// ─── Helpers ─────────────────────────────────────────────
+// ─── Sub-components ─────────────────────────────────────
 
-function renderSelfBody(isPending: boolean, data: SelfIdentity | undefined) {
+interface SelfBodyProps {
+  isPending: boolean;
+  data: SelfIdentity | undefined;
+}
+
+function SelfBody({ isPending, data }: SelfBodyProps) {
   if (isPending) return <Spinner />;
   if (data === undefined) return <Text variant="muted">Identity unavailable.</Text>;
   return (
@@ -58,11 +56,10 @@ interface PairedRowProps {
 
 function PairedRow({ peer, onRevoke, revokePending }: PairedRowProps) {
   const isRevoked = peer.revokedAt !== null;
-  const label = peer.displayName ?? truncate(peer.peerId);
   return (
     <Flex align="center" gap="md" justify="between">
       <Stack gap="none">
-        <Text>{label}</Text>
+        <Text>{peerLabel(peer)}</Text>
         <Code>{truncate(peer.peerId)}</Code>
       </Stack>
       <Flex align="center" gap="sm">
@@ -84,12 +81,14 @@ function PairedRow({ peer, onRevoke, revokePending }: PairedRowProps) {
   );
 }
 
-function renderPairedBody(
-  isPending: boolean,
-  data: readonly PairedPeer[] | undefined,
-  onRevoke: (peerId: string) => void,
-  revokePending: boolean,
-) {
+interface PairedListProps {
+  isPending: boolean;
+  data: readonly PairedPeer[] | undefined;
+  onRevoke: (peerId: string) => void;
+  revokePending: boolean;
+}
+
+function PairedList({ isPending, data, onRevoke, revokePending }: PairedListProps) {
   if (isPending) return <Spinner />;
   if (data === undefined || data.length === 0) {
     return (
@@ -119,11 +118,10 @@ interface DiscoveredRowProps {
 }
 
 function DiscoveredRow({ peer, onInvite }: DiscoveredRowProps) {
-  const label = peer.displayName ?? truncate(peer.peerId);
   return (
     <Flex align="center" gap="md" justify="between">
       <Stack gap="none">
-        <Text>{label}</Text>
+        <Text>{peerLabel(peer)}</Text>
         <Code>
           {peer.host}:{peer.port}
         </Code>
@@ -141,11 +139,13 @@ function DiscoveredRow({ peer, onInvite }: DiscoveredRowProps) {
   );
 }
 
-function renderDiscoveredBody(
-  isPending: boolean,
-  data: readonly DiscoveredPeer[] | undefined,
-  onInvite: (peer: DiscoveredPeer) => void,
-) {
+interface DiscoveredListProps {
+  isPending: boolean;
+  data: readonly DiscoveredPeer[] | undefined;
+  onInvite: (peer: DiscoveredPeer) => void;
+}
+
+function DiscoveredList({ isPending, data, onInvite }: DiscoveredListProps) {
   if (isPending) return <Spinner />;
   if (data === undefined || data.length === 0) {
     return (
@@ -171,15 +171,10 @@ function renderDiscoveredBody(
  *
  * Auto-updates via the global EventBridge subscriptions for
  * DISCOVERY.CHANGED (cache write) and TRUST.CHANGED (invalidate) — this
- * panel only consumes the queries.
+ * panel only consumes the queries via `usePeerListPanel`.
  */
 export function PeerListPanel() {
-  const self = useSelfIdentity();
-  const paired = usePairedPeers();
-  const discovered = useDiscoveredPeers();
-  const revoke = useRevokePeer();
-
-  const [inviteTarget, setInviteTarget] = useState<DiscoveredPeer | null>(null);
+  const vm = usePeerListPanel();
 
   return (
     <>
@@ -188,7 +183,9 @@ export function PeerListPanel() {
           <CardHeader>
             <CardTitle>This device</CardTitle>
           </CardHeader>
-          <CardContent>{renderSelfBody(self.isPending, self.data)}</CardContent>
+          <CardContent>
+            <SelfBody data={vm.self.data} isPending={vm.self.isPending} />
+          </CardContent>
         </Card>
 
         <Card>
@@ -196,12 +193,12 @@ export function PeerListPanel() {
             <CardTitle>Paired peers</CardTitle>
           </CardHeader>
           <CardContent>
-            {renderPairedBody(
-              paired.isPending,
-              paired.data,
-              (peerId) => revoke.mutate(peerId),
-              revoke.isPending,
-            )}
+            <PairedList
+              data={vm.paired.data}
+              isPending={vm.paired.isPending}
+              revokePending={vm.revoke.isPending}
+              onRevoke={vm.revokePeer}
+            />
           </CardContent>
         </Card>
 
@@ -210,13 +207,17 @@ export function PeerListPanel() {
             <CardTitle>Nearby (mDNS)</CardTitle>
           </CardHeader>
           <CardContent>
-            {renderDiscoveredBody(discovered.isPending, discovered.data, setInviteTarget)}
+            <DiscoveredList
+              data={vm.discovered.data}
+              isPending={vm.discovered.isPending}
+              onInvite={vm.openInvite}
+            />
           </CardContent>
         </Card>
       </Stack>
 
-      {inviteTarget !== null && (
-        <OutgoingPairDialog target={inviteTarget} onClose={() => setInviteTarget(null)} />
+      {vm.inviteTarget !== null && (
+        <OutgoingPairDialog target={vm.inviteTarget} onClose={vm.closeInvite} />
       )}
     </>
   );

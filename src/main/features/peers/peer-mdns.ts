@@ -2,6 +2,12 @@ import { EventEmitter } from 'node:events';
 
 import { Bonjour } from 'bonjour-service';
 
+import {
+  MDNS_PROTOCOL,
+  MDNS_SERVICE_TYPE,
+  PEER_ID_SHORT_LEN,
+} from './peer-constants';
+
 export interface PeerAdvertisement {
   peerId: string;
   fingerprint: string;
@@ -103,14 +109,14 @@ export function createPeerMdns(opts: PeerMdnsOpts): PeerMdns {
       if (opts.displayName) txt.name = opts.displayName;
 
       published = bonjour.publish({
-        name: `adc-peer-${opts.selfPeerId.slice(0, 8)}`,
-        type: 'adc-peer',
-        protocol: 'tcp',
+        name: `adc-peer-${opts.selfPeerId.slice(0, PEER_ID_SHORT_LEN)}`,
+        type: MDNS_SERVICE_TYPE,
+        protocol: MDNS_PROTOCOL,
         port: opts.port,
         txt,
       }) as unknown as { stop: () => void };
 
-      browser = bonjour.find({ type: 'adc-peer', protocol: 'tcp' });
+      browser = bonjour.find({ type: MDNS_SERVICE_TYPE, protocol: MDNS_PROTOCOL });
       browser.on('up', (svc: UpService) => { handleUp(svc); });
       browser.on('down', (svc: UpService) => { handleDown(svc); });
       return Promise.resolve();

@@ -6,12 +6,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Heading,
   Stack,
+  Text,
 } from '@ui';
 
 import { useIncomingPin } from '../api/usePeerEvents';
-import { truncate } from '../lib/truncate';
+import { peerLabel } from '../lib/format';
 
 /**
  * Receiver-side modal showing the PIN issued to a remote initiator.
@@ -20,8 +20,10 @@ import { truncate } from '../lib/truncate';
 export function IncomingPinDialog() {
   const { pin, dismiss } = useIncomingPin();
   if (pin === null) return null;
-  const initiatorLabel =
-    pin.initiatorDisplayName ?? truncate(pin.initiatorPeerId);
+  const initiatorLabel = peerLabel({
+    displayName: pin.initiatorDisplayName,
+    peerId: pin.initiatorPeerId,
+  });
   return (
     <Dialog
       open
@@ -37,7 +39,9 @@ export function IncomingPinDialog() {
           </DialogDescription>
         </DialogHeader>
         <Stack align="center" gap="md">
-          <Heading as="h1">{pin.pin}</Heading>
+          <Text className="text-3xl font-mono tracking-widest" size="lg">
+            {pin.pin}
+          </Text>
         </Stack>
         <DialogFooter>
           <Button onClick={dismiss}>Done</Button>

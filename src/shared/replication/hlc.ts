@@ -4,7 +4,10 @@ export interface Hlc {
   peerIdShort: string;
 }
 
-const WALL_PAD = 20;
+// Wall-clock ms is at most 13 digits in JS (Date.now() through year 5138 fits in 13 digits;
+// the prior value of 20 was both excessive and pushed the numeric portion past
+// MAX_SAFE_INTEGER for round-trip via Number()). Audit reference: tmp/audit/03-replication.md C1.
+const WALL_PAD = 13;
 const COUNTER_PAD = 8;
 
 export function formatHlc(hlc: Hlc): string {
@@ -30,6 +33,16 @@ export function compareHlc(a: string, b: string): number {
   if (a < b) return -1;
   if (a > b) return 1;
   return 0;
+}
+
+/**
+ * Strip the trailing `.peerIdShort` suffix from an HLC string, returning the
+ * `wall.counter` prefix. Used by GC frontier computation so that ops authored
+ * by peers with lex-greater peer-id-shorts at the same wall+counter are not
+ * incorrectly garbage-collected. Audit reference: tmp/audit/03-replication.md C4.
+ */
+export function hlcWallCounterPrefix(h: string): string {
+  return h.replace(/\.[A-Za-z0-9]+$/, '');
 }
 
 export function nextHlc(args: {

@@ -1,6 +1,4 @@
-import { useState } from 'react';
-
-import type { DiscoveredPeer, PairInitOutput } from '@shared/ipc/peers';
+import type { DiscoveredPeer } from '@shared/ipc/peers';
 
 import {
   Button,
@@ -16,10 +14,7 @@ import {
   Text,
 } from '@ui';
 
-import { usePairConfirm, usePairInit } from '../api/usePeers';
-import { truncate } from '../lib/truncate';
-
-type Stage = 'idle' | 'awaiting-pin' | 'done';
+import { useOutgoingPair } from '../hooks/useOutgoingPair';
 
 interface OutgoingPairDialogProps {
   target: DiscoveredPeer;
@@ -28,135 +23,84 @@ interface OutgoingPairDialogProps {
 
 /**
  * Initiator-side three-step flow: send invite → enter PIN → confirm.
- * Holds the {sessionId, challenge} between mutations as renderer state.
+ * Render-only — all state and mutations live in `useOutgoingPair`.
  */
 export function OutgoingPairDialog({ target, onClose }: OutgoingPairDialogProps) {
-  const [stage, setStage] = useState<Stage>('idle');
-  const [session, setSession] = useState<PairInitOutput | null>(null);
-  const [pin, setPin] = useState('');
-
-  const pairInit = usePairInit();
-  const pairConfirm = usePairConfirm();
-
-  const targetLabel = target.displayName ?? truncate(target.peerId);
-
-  const handleClose = (): void => {
-    pairInit.reset();
-    pairConfirm.reset();
-    onClose();
-  };
-
-  const handleSendInvite = () => {
-    pairInit.mutate(
-      {
-        host: target.host,
-        port: target.port,
-        fingerprint: target.fingerprint,
-        displayName: target.displayName ?? null,
-      },
-      {
-        onSuccess(result) {
-          setSession(result);
-          setStage('awaiting-pin');
-        },
-      },
-    );
-  };
-
-  const handleConfirm = () => {
-    if (session === null || pin.length !== 6) return;
-    pairConfirm.mutate(
-      {
-        host: target.host,
-        port: target.port,
-        fingerprint: target.fingerprint,
-        sessionId: session.sessionId,
-        challenge: session.challenge,
-        pin,
-        displayName: target.displayName ?? null,
-      },
-      {
-        onSuccess() {
-          setStage('done');
-        },
-      },
-    );
-  };
+  const vm = useOutgoingPair(target, onClose);
 
   return (
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) handleClose();
+        if (!open) vm.close();
       }}
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Pair with {targetLabel}</DialogTitle>
+          <DialogTitle>Pair with {vm.targetLabel}</DialogTitle>
           <DialogDescription>
             {target.host}:{target.port}
           </DialogDescription>
         </DialogHeader>
 
-        {stage === 'idle' && (
+        {vm.stage === 'idle' && (
           <Stack gap="md">
             <Text variant="muted">
               Click Send invite. The receiving device will display a 6-digit PIN that you enter
               here to complete pairing.
             </Text>
-            {pairInit.isError ? (
+            {vm.initError === null ? null : (
               <Text role="alert" variant="error">
-                Failed to send invite: {pairInit.error.message}
+                Failed to send invite: {vm.initError.message}
               </Text>
-            ) : null}
+            )}
             <DialogFooter>
-              <Button variant="secondary" onClick={handleClose}>
+              <Button variant="secondary" onClick={vm.close}>
                 Cancel
               </Button>
-              <Button disabled={pairInit.isPending} onClick={handleSendInvite}>
-                {pairInit.isPending ? 'Sending…' : 'Send invite'}
+              <Button disabled={vm.isInitPending} onClick={vm.sendInvite}>
+                {vm.isInitPending ? 'Sending…' : 'Send invite'}
               </Button>
             </DialogFooter>
           </Stack>
         )}
 
-        {stage === 'awaiting-pin' && (
+        {vm.stage === 'awaiting-pin' && (
           <Stack gap="md">
             <Stack gap="sm">
-              <Label htmlFor="pair-pin-input">Enter the 6-digit PIN displayed on {targetLabel}</Label>
+              <Label htmlFor="pair-pin-input">
+                Enter the 6-digit PIN displayed on {vm.targetLabel}
+              </Label>
               <Input
                 id="pair-pin-input"
                 inputMode="numeric"
                 maxLength={6}
                 placeholder="000000"
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replaceAll(/\D/g, '').slice(0, 6))}
+                value={vm.pin}
+                onChange={(e) => vm.setPin(e.target.value)}
               />
             </Stack>
-            {pairConfirm.isError ? (
+            {vm.confirmError === null ? null : (
               <Text role="alert" variant="error">
-                Pairing failed: {pairConfirm.error.message}
+                Pairing failed: {vm.confirmError.message}
               </Text>
-            ) : null}
+            )}
             <DialogFooter>
-              <Button variant="secondary" onClick={handleClose}>
+              <Button variant="secondary" onClick={vm.close}>
                 Cancel
               </Button>
-              <Button
-                disabled={pin.length !== 6 || pairConfirm.isPending}
-                onClick={handleConfirm}
-              >
-                {pairConfirm.isPending ? 'Confirming…' : 'Confirm'}
+              <Button disabled={!vm.canConfirm} onClick={vm.confirm}>
+                {vm.isConfirmPending ? 'Confirming…' : 'Confirm'}
               </Button>
             </DialogFooter>
           </Stack>
         )}
 
-        {stage === 'done' && (
+        {vm.stage === 'done' && (
           <Stack gap="md">
-            <Text variant="success">Pairing complete. {targetLabel} is now trusted.</Text>
+            <Text variant="success">Pairing complete. {vm.targetLabel} is now trusted.</Text>
             <DialogFooter>
-              <Button onClick={handleClose}>Close</Button>
+              <Button onClick={vm.close}>Close</Button>
             </DialogFooter>
           </Stack>
         )}
