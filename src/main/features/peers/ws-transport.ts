@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https';
 
 import { WebSocket, WebSocketServer, type RawData, type ClientOptions } from 'ws';
@@ -30,6 +30,7 @@ import {
 } from '@main/features/peers/wire-schema';
 import { serviceLogger } from '@main/lib/logger';
 
+import type { TLSSocket } from 'node:tls';
 
 export interface WsTransportTlsOpts {
   cert: string;
@@ -334,14 +335,20 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       // real `PeerCertificate` and accepts an `Error | undefined` return —
       // matching `https.RequestOptions.checkServerIdentity`. We cast through
       // `ClientOptions` to satisfy the looser package typing.
+      // Self-signed peer certs cannot be CA-validated. Use
+      // rejectUnauthorized:false to let the handshake complete, then enforce
+      // the fingerprint pin on the WebSocket 'open' event BEFORE sending any
+      // application bytes (HELLO/OPS). checkServerIdentity is wired as
+      // defense-in-depth but Node only acts on its Error return when
+      // rejectUnauthorized:true, so the post-'open' check is the gate.
       const wssOpts: ClientOptions = remotePeer
         ? {
-            rejectUnauthorized: true,
+            rejectUnauthorized: false,
             checkServerIdentity: pinnedCheckServerIdentity(
               remotePeer.fingerprint,
             ) as unknown as ClientOptions['checkServerIdentity'],
           }
-        : { rejectUnauthorized: true };
+        : { rejectUnauthorized: false };
       const ws = isWss
         ? new WebSocket(remoteUrl, wssOpts)
         : new WebSocket(remoteUrl);
@@ -351,6 +358,27 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
       let permanent = false;
 
       ws.on('open', () => {
+        // Enforce TLS fingerprint pin BEFORE sending any application bytes.
+        // Node ignores checkServerIdentity Error when rejectUnauthorized:false,
+        // so the actual gate runs here on the underlying TLS socket.
+        if (remotePeer) {
+          const sock = (ws as unknown as { _socket?: TLSSocket })._socket;
+          const cert = sock && typeof sock.getPeerCertificate === 'function'
+            ? sock.getPeerCertificate(true)
+            : undefined;
+          const raw = cert && (cert as { raw?: Buffer }).raw;
+          if (!raw || raw.length === 0) {
+            permanent = true;
+            ws.close(WS_CLOSE_CODES.FINGERPRINT_MISMATCH, 'fingerprint mismatch');
+            return;
+          }
+          const actual = createHash('sha256').update(raw).digest('hex');
+          if (actual !== remotePeer.fingerprint) {
+            permanent = true;
+            ws.close(WS_CLOSE_CODES.FINGERPRINT_MISMATCH, 'fingerprint mismatch');
+            return;
+          }
+        }
         if (selfIdentity) {
           // Sign the outbound HELLO so the inbound peer can authenticate us
           // (Task 6). Signature is over nonce_bytes || schemaHash_utf8 || peerId_utf8.
@@ -403,11 +431,10 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
           return;
         }
         // The socket previously emitted 'open' (we resolved 'OK' already).
-        // Treat the close as a request to re-arm the dialer for the next
-        // attempt — single-flight guard inside the dialer makes re-entrant
-        // start() calls a no-op when not in idle/backoff.
+        // The dialer is in `open` state — call notifyDisconnected so it can
+        // re-enter backoff and retry. start() alone would be a no-op from `open`.
         if (!shuttingDown) {
-          dialer?.start();
+          dialer?.notifyDisconnected();
         }
       });
     });

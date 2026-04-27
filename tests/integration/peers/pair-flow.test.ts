@@ -179,8 +179,11 @@ describe('pair-flow end-to-end', () => {
       remotePeer: { peerId: identityA.peerIdFull, fingerprint: tlsA.fingerprint },
     });
 
-    // 5. Wait for the TLS-pinned WS connection to come up both ways.
-    await waitFor(() => (serverA.ws.isConnected() && serverB.ws.isConnected() ? true : undefined));
+    // 5. PAIR FIRST. T6 added signed-HELLO inbound auth, so the WS dialer's
+    //    initial attempt fails until both sides have the other peer in their
+    //    peer-store. The dialer retries with backoff, so once pairing populates
+    //    both stores the next dial attempt authenticates and connects.
+    //    (Connection waitFor moved to step 9 below, after stores are populated.)
 
     // 6. PAIR: B is initiator, A is receiver. B POSTs /pair/init to A's TLS port.
     const initRes = await postJson(
@@ -242,6 +245,13 @@ describe('pair-flow end-to-end', () => {
     // listActive should also surface them.
     expect(storeA.listActive().map((p) => p.peerId)).toContain(identityB.peerIdFull);
     expect(storeB.listActive().map((p) => p.peerId)).toContain(identityA.peerIdFull);
+
+    // 9. Now the WS dialer should authenticate and connect on its next retry.
+    //    Wait up to a few backoff cycles for both directions to come up.
+    await waitFor(
+      () => (serverA.ws.isConnected() && serverB.ws.isConnected() ? true : undefined),
+      8000,
+    );
 
     // 10. SYNC: write a task on A, expect it to land on B over the TLS-pinned WS.
     sqliteA

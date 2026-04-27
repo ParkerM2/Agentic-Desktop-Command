@@ -38,13 +38,15 @@ export function getOrCreatePeerIdentity(
   }
 
   const canEncrypt = safeStorage.isEncryptionAvailable();
-  if (!canEncrypt && !opts.allowPlaintext) {
+  const envOptIn = process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY === '1';
+  const allowPlaintext = opts.allowPlaintext === true || envOptIn;
+  if (!canEncrypt && !allowPlaintext) {
     // Refuse to leak entropy on the failure path — throw before generating the keypair.
     throw new Error(
       'peer-identity: safeStorage unavailable. Set ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY=1 to opt in.',
     );
   }
-  if (!canEncrypt && opts.allowPlaintext === true) {
+  if (!canEncrypt && allowPlaintext) {
     serviceLogger.warn(
       { dataDir },
       'peers.peerIdentity writing private key in plaintext (safeStorage unavailable, opt-in via ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY)',

@@ -5,10 +5,10 @@ import { loadMigrationTags } from '@main/db/migration-tags';
 describe('loadMigrationTags', () => {
   it('reads drizzle/meta/_journal.json and returns tags in idx order', () => {
     const tags = loadMigrationTags();
-    // Phase 3a adds migration 0028_peer_state on top of the Phase 2 baseline.
-    expect(tags.length).toBeGreaterThanOrEqual(29);
+    // Audit-fix sprint adds 0030_op_log_hlc_index on top of the Phase 2/3 baseline.
+    expect(tags.length).toBeGreaterThanOrEqual(30);
     expect(tags[0]).toMatch(/^0000_/);
-    expect(tags.at(-1)).toMatch(/^0029_projects$/);
+    expect(tags.at(-1)).toMatch(/^0030_op_log_hlc_index$/);
   });
 
   it('tags are strictly increasing by idx prefix', () => {

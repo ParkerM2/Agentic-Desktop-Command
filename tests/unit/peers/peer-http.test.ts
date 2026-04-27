@@ -131,7 +131,10 @@ describe('postJsonPinned', () => {
       | { options?: { checkServerIdentity?: unknown; rejectUnauthorized?: boolean } };
     expect(agent).toBeDefined();
     expect(typeof agent?.options?.checkServerIdentity).toBe('function');
-    expect(agent?.options?.rejectUnauthorized).toBe(true);
+    // rejectUnauthorized:false is intentional — self-signed peer certs cannot
+    // be CA-validated. Pin enforcement happens post-secureConnect via the
+    // socket-cert fingerprint check (see peer-http.ts).
+    expect(agent?.options?.rejectUnauthorized).toBe(false);
   });
 
   it('rejects on non-2xx with status code in error message', async () => {
