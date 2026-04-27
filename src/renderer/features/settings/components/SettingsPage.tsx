@@ -12,7 +12,7 @@ import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores'
 
 import { Heading, PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
 
-import { IncomingPinDialog, PeerListPanel } from '@features/peers';
+import { PeerListPanel } from '@features/peers';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
@@ -183,8 +183,6 @@ export function SettingsPage() {
           </PageHeader.TabContent>
         </PageContent>
       </PageHeader.Tabs>
-      {/* TODO(p2p-phase4): hoist IncomingPinDialog to RootLayout for global visibility */}
-      <IncomingPinDialog />
     </PageLayout>
   );
 }

@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
-import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';
-
 import type { AdcDatabase } from '@main/db';
 import { serviceLogger } from '@main/lib/logger';
 
-import { getOrCreatePeerIdentity } from './peer-identity';
+import { gcWatermarkFromObserved } from './gc-watermark';
+import { GC_INTERVAL_MS, LOOPBACK_HOST } from './peer-constants';
+import { postJsonPinned } from './peer-http';
+import { getOrCreatePeerIdentity, type PeerIdentity } from './peer-identity';
 import { createPeerMdns, type PeerAdvertisement, type PeerMdns } from './peer-mdns';
 import { createPeerPairing } from './peer-pairing';
 import { createPeerServer, type PeerServer } from './peer-server';
@@ -12,7 +12,6 @@ import { createPeerStore, type PairedPeer, type PeerStore } from './peer-store';
 import { resolvePeerTls, type PeerTlsMaterial } from './peer-tls';
 
 import type { ReplicationEngine } from './replication-engine';
-import type { TLSSocket } from 'node:tls';
 
 export interface PeersServiceDeps {
   db: AdcDatabase;
@@ -22,6 +21,13 @@ export interface PeersServiceDeps {
   schemaHash: string;
   preferMdns: boolean;
   displayName?: string | null;
+  /** Pre-resolved identity from the registry. When omitted, falls back to
+   * `getOrCreatePeerIdentity(dataDir)` for back-compat with existing call
+   * sites and tests. */
+  identity?: PeerIdentity;
+  /** Pre-constructed peer store from the registry. When omitted, falls back
+   * to `createPeerStore(db)`. */
+  peerStore?: PeerStore;
 }
 
 export interface PeersServiceSelfIdentity {
@@ -31,7 +37,8 @@ export interface PeersServiceSelfIdentity {
   displayName: string | null;
 }
 
-export interface DiscoveredPeerWithPaired extends PeerAdvertisement {
+export interface DiscoveredPeerWithPaired extends Omit<PeerAdvertisement, 'displayName'> {
+  displayName: string | null;
   isPaired: boolean;
 }
 
@@ -90,80 +97,29 @@ export interface PeersService {
   dispose: () => Promise<void>;
 }
 
-async function postJson(
-  url: string,
-  expectedFingerprint: string,
-  body: unknown,
-): Promise<unknown> {
-  const u = new URL(url);
-  const agent = new HttpsAgent({ rejectUnauthorized: false });
-  const payload = Buffer.from(JSON.stringify(body), 'utf8');
-  return await new Promise((resolve, reject) => {
-    let settled = false;
-    const settle = (fn: () => void): void => {
-      if (settled) return;
-      settled = true;
-      fn();
-    };
-    const req = httpsRequest(
-      {
-        host: u.hostname,
-        port: Number(u.port),
-        path: u.pathname,
-        method: 'POST',
-        agent,
-        headers: {
-          'content-type': 'application/json',
-          'content-length': String(payload.length),
-        },
-      },
-      (res) => {
-        const chunks: Buffer[] = [];
-        res.on('data', (c: Buffer) => chunks.push(c));
-        const tlsSock = res.socket as TLSSocket;
-        const cert = tlsSock.getPeerCertificate(true);
-        const remoteFp = cert.raw.length > 0
-          ? createHash('sha256').update(cert.raw).digest('hex')
-          : '';
-        res.on('end', () => {
-          agent.destroy();
-          if (remoteFp !== expectedFingerprint) {
-            settle(() => {
-              reject(new Error(
-                `fingerprint_mismatch expected=${expectedFingerprint} actual=${remoteFp}`,
-              ));
-            });
-            return;
-          }
-          const raw = Buffer.concat(chunks).toString('utf8');
-          if (res.statusCode !== 200) {
-            settle(() => { reject(new Error(`http_${String(res.statusCode)}: ${raw}`)); });
-            return;
-          }
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(raw);
-          } catch {
-            settle(() => { reject(new Error('invalid_json_response')); });
-            return;
-          }
-          settle(() => { resolve(parsed); });
-        });
-      },
-    );
-    req.on('error', (err) => {
-      agent.destroy();
-      settle(() => { reject(err); });
-    });
-    req.write(payload);
-    req.end();
-  });
+// internal: exported for tests — keep usage limited to peers-service.ts itself
+// and `tests/unit/peers/safe-fan-out.test.ts`. Audit M4: dedupes the
+// fan-out boilerplate in pin/discovery/trust handler iteration.
+export function safeFanOut<T>(
+  handlers: Set<(value: T) => void>,
+  value: T,
+  label: string,
+): void {
+  for (const h of handlers) {
+    try {
+      h(value);
+    } catch (err) {
+      serviceLogger.warn({ err }, `peers.peersService ${label} handler threw`);
+    }
+  }
 }
 
 export async function createPeersService(deps: PeersServiceDeps): Promise<PeersService> {
-  const identity = getOrCreatePeerIdentity(deps.dataDir);
+  const identity = deps.identity ?? getOrCreatePeerIdentity(deps.dataDir, {
+    allowPlaintext: process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY === '1',
+  });
   const tls: PeerTlsMaterial = await resolvePeerTls(deps.dataDir, identity.peerIdFull);
-  const peerStore: PeerStore = createPeerStore(deps.db);
+  const peerStore: PeerStore = deps.peerStore ?? createPeerStore(deps.db);
   const pairingHelper = createPeerPairing();
 
   const pinHandlers = new Set<(info: PinIssuedInfo) => void>();
@@ -176,10 +132,23 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     db: deps.db,
     engine: deps.engine,
     tls,
-    selfIdentity: { peerId: identity.peerIdFull, pubkey: identity.pubkey },
+    selfIdentity: {
+      peerId: identity.peerIdFull,
+      pubkey: identity.pubkey,
+      sign: identity.sign,
+    },
+    // Audit M6: pass through the singletons rather than letting peer-server
+    // construct duplicates.
+    peerStore,
+    pairing: pairingHelper,
     listenPort: deps.listenPort,
-    host: '127.0.0.1',
+    host: LOOPBACK_HOST,
     schemaHash: deps.schemaHash,
+    onConnected: (info) => {
+      // Inbound peer authenticated — bump lastConnectedAt for presence.
+      try { peerStore.updateLastConnectedAt(info.peerId, Date.now()); }
+      catch (err) { serviceLogger.warn({ err, peerId: info.peerId }, 'peers.peersService updateLastConnectedAt threw'); }
+    },
     onPinIssued: (info) => {
       const enriched: PinIssuedInfo = {
         sessionId: info.sessionId,
@@ -188,10 +157,7 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         initiatorDisplayName: info.initiatorDisplayName ?? null,
         issuedAt: Date.now(),
       };
-      for (const h of pinHandlers) {
-        try { h(enriched); }
-        catch (err) { serviceLogger.warn({ err }, 'peers.peersService onPinIssued handler threw'); }
-      }
+      safeFanOut(pinHandlers, enriched, 'onPinIssued');
     },
   });
 
@@ -200,57 +166,35 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
   function enrichDiscovered(ads: PeerAdvertisement[]): DiscoveredPeerWithPaired[] {
     return ads.map((ad) => ({
       ...ad,
+      // Normalize displayName to `string | null` to match DiscoveredPeerSchema
+      // (audit H4). PeerAdvertisement still uses `string | undefined` upstream.
+      displayName: ad.displayName ?? null,
       isPaired: peerStore.getByPeerId(ad.peerId) !== null,
     }));
   }
 
   function fireDiscoveryChanged(ads: PeerAdvertisement[]): void {
     const enriched = enrichDiscovered(ads);
-    for (const h of discoveryHandlers) {
-      try { h(enriched); }
-      catch (err) { serviceLogger.warn({ err }, 'peers.peersService onDiscoveryChanged handler threw'); }
-    }
+    safeFanOut(discoveryHandlers, enriched, 'onDiscoveryChanged');
   }
 
   function fireTrustChanged(event: TrustChangedEvent): void {
-    for (const h of trustHandlers) {
-      try { h(event); }
-      catch (err) { serviceLogger.warn({ err }, 'peers.peersService onTrustChanged handler threw'); }
-    }
+    safeFanOut(trustHandlers, event, 'onTrustChanged');
   }
-
-  const GC_INTERVAL_MS = 24 * 60 * 60 * 1000; // daily
 
   function computeGcWatermark(): string | null {
-    const peers = peerStore.listAll().filter((p) => p.revokedAt === null);
-    if (peers.length === 0) return null;
-    const seen = peers
-      .map((p) => p.lastSeenHlc)
-      .filter((h): h is string => h !== null);
-    if (seen.length !== peers.length) {
-      // At least one active peer hasn't been seen — refuse to GC.
-      return null;
-    }
-    return seen.reduce((min, h) => (h < min ? h : min));
+    return gcWatermarkFromObserved(
+      peerStore.listAll().map((p) => ({
+        peerId: p.peerId,
+        revokedAt: p.revokedAt,
+        lastSeenHlc: p.lastSeenHlc,
+      })),
+    );
   }
 
-  let gcInterval: ReturnType<typeof setInterval> | null = null;
-
-  function startGc(): void {
-    const initialGc = setTimeout(() => {
-      const watermark = computeGcWatermark();
-      if (watermark === null) return;
-      const result = deps.engine.gcOpLog(watermark);
-      if (result.deleted > 0) {
-        serviceLogger.info(
-          { deleted: result.deleted, watermarkHlc: watermark, initial: true },
-          'peers.opLog.gc',
-        );
-      }
-    }, 0);
-    initialGc.unref();
-
-    gcInterval = setInterval(() => {
+  // Audit M3: dedupe initial-call vs periodic-call GC bodies.
+  function runGcTick(): void {
+    try {
       const watermark = computeGcWatermark();
       if (watermark === null) return;
       const result = deps.engine.gcOpLog(watermark);
@@ -260,7 +204,19 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
           'peers.opLog.gc',
         );
       }
-    }, GC_INTERVAL_MS);
+    } catch (err) {
+      serviceLogger.warn({ err }, 'peers.peersService gc tick threw');
+    }
+  }
+
+  let initialGcTimer: ReturnType<typeof setTimeout> | null = null;
+  let gcInterval: ReturnType<typeof setInterval> | null = null;
+
+  function startGc(): void {
+    initialGcTimer = setTimeout(runGcTick, 0);
+    initialGcTimer.unref();
+
+    gcInterval = setInterval(runGcTick, GC_INTERVAL_MS);
     gcInterval.unref();
   }
 
@@ -313,20 +269,25 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
         fingerprint: tls.fingerprint,
         displayName: input.displayName ?? displayName ?? undefined,
       };
-      const res = (await postJson(url, input.fingerprint, body)) as {
-        sessionId: string;
-        challenge: string;
-      };
+      const res = await postJsonPinned<{ sessionId: string; challenge: string }>(
+        url,
+        input.fingerprint,
+        body,
+      );
       return { sessionId: res.sessionId, challenge: res.challenge };
     },
 
     async pairConfirm(input) {
       const url = `https://${input.host}:${String(input.port)}/pair/confirm`;
       const pinHmac = pairingHelper.computePinHmac(input.pin, input.challenge);
-      const res = (await postJson(url, input.fingerprint, {
-        sessionId: input.sessionId,
-        pinHmac,
-      })) as { peerId: string; pubkey: string; fingerprint: string };
+      const res = await postJsonPinned<{ peerId: string; pubkey: string; fingerprint: string }>(
+        url,
+        input.fingerprint,
+        {
+          sessionId: input.sessionId,
+          pinHmac,
+        },
+      );
 
       peerStore.upsert({
         peerId: res.peerId,
@@ -365,6 +326,10 @@ export async function createPeersService(deps: PeersServiceDeps): Promise<PeersS
     },
 
     async dispose() {
+      if (initialGcTimer !== null) {
+        clearTimeout(initialGcTimer);
+        initialGcTimer = null;
+      }
       if (gcInterval !== null) {
         clearInterval(gcInterval);
         gcInterval = null;

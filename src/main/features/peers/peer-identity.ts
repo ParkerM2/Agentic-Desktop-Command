@@ -4,12 +4,17 @@ import { join } from 'node:path';
 
 import { safeStorage } from 'electron';
 
+import { serviceLogger } from '@main/lib/logger';
+
 export interface PeerIdentity {
   peerIdFull: string;
   peerIdShort: string;
   pubkey: string;
-  privkey: string;
   sign: (message: Uint8Array) => Uint8Array;
+}
+
+export interface IdentityOpts {
+  allowPlaintext?: boolean;
 }
 
 const IDENTITY_FILENAME = 'peer-identity.json';
@@ -20,13 +25,30 @@ interface StoredIdentity {
   useSafeStorage: boolean;
 }
 
-export function getOrCreatePeerIdentity(dataDir: string): PeerIdentity {
+export function getOrCreatePeerIdentity(
+  dataDir: string,
+  opts: IdentityOpts = {},
+): PeerIdentity {
   mkdirSync(dataDir, { recursive: true });
   const path = join(dataDir, IDENTITY_FILENAME);
 
   if (existsSync(path)) {
     const stored = JSON.parse(readFileSync(path, 'utf8')) as StoredIdentity;
     return materialize(stored);
+  }
+
+  const canEncrypt = safeStorage.isEncryptionAvailable();
+  if (!canEncrypt && !opts.allowPlaintext) {
+    // Refuse to leak entropy on the failure path — throw before generating the keypair.
+    throw new Error(
+      'peer-identity: safeStorage unavailable. Set ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY=1 to opt in.',
+    );
+  }
+  if (!canEncrypt && opts.allowPlaintext === true) {
+    serviceLogger.warn(
+      { dataDir },
+      'peers.peerIdentity writing private key in plaintext (safeStorage unavailable, opt-in via ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY)',
+    );
   }
 
   const { privateKey, publicKey } = generateKeyPairSync('ed25519', {});
@@ -36,7 +58,6 @@ export function getOrCreatePeerIdentity(dataDir: string): PeerIdentity {
   const privBytes = privateKey.export({ type: 'pkcs8', format: 'der' }).subarray(-32);
 
   const pubkey = pubBytes.toString('base64');
-  const canEncrypt = safeStorage.isEncryptionAvailable();
   const privkeyPlain = privBytes.toString('base64');
   const privkeyStored = canEncrypt
     ? safeStorage.encryptString(privkeyPlain).toString('base64')
@@ -47,7 +68,7 @@ export function getOrCreatePeerIdentity(dataDir: string): PeerIdentity {
     privkey: privkeyStored,
     useSafeStorage: canEncrypt,
   };
-  writeFileSync(path, JSON.stringify(stored, null, 2), 'utf8');
+  writeFileSync(path, JSON.stringify(stored, null, 2), { mode: 0o600, encoding: 'utf8' });
   return materialize(stored);
 }
 
@@ -70,7 +91,6 @@ function materialize(stored: StoredIdentity): PeerIdentity {
     peerIdFull,
     peerIdShort: peerIdFull.slice(0, 8),
     pubkey: stored.pubkey,
-    privkey: privBytes.toString('base64'),
     sign: (message: Uint8Array) => edSign(null, message, keyObject),
   };
 }

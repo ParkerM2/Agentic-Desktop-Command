@@ -25,6 +25,7 @@ import { useRouteHistoryStore } from '@renderer/shared/stores';
 
 import { AssistantWidget } from '@features/assistant';
 import { OnboardingWizard } from '@features/onboarding';
+import { IncomingPinDialog } from '@features/peers';
 import { useErrorEvents, useSettings } from '@features/settings';
 import { WorkflowPermissionModal } from '@features/workflow';
 
@@ -95,6 +96,7 @@ export function RootLayout() {
       <WebhookNotification />
       <AssistantWidget />
       <WorkflowPermissionModal />
+      <IncomingPinDialog />
       <WorkspaceInitOverlay phase={layoutSync.phase} projectCount={layoutSync.projectCount} />
     </div>
   );

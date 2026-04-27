@@ -21,12 +21,14 @@ describe('formatHlc / parseHlc', () => {
 
   it('pads counter to 8 hex digits', () => {
     const s = formatHlc({ wallClockMs: 100, counter: 3, peerIdShort: PEER_A });
-    expect(s).toBe('00000000000000000100.00000003.aaaaaaaa');
+    expect(s).toBe('0000000000100.00000003.aaaaaaaa');
   });
 
-  it('pads wallClockMs to 20 digits for lexicographic sort', () => {
+  it('pads wallClockMs to 13 digits for lexicographic sort', () => {
     const s = formatHlc({ wallClockMs: 1, counter: 0, peerIdShort: PEER_A });
-    expect(s.startsWith('00000000000000000001')).toBe(true);
+    expect(s.startsWith('0000000000001')).toBe(true);
+    // Wall segment must be exactly WALL_PAD = 13 chars wide.
+    expect(s.split('.')[0]).toHaveLength(13);
   });
 
   it('handles large counters without changing width', () => {

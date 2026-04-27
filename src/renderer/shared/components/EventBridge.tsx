@@ -18,7 +18,9 @@ import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { AGENT_DASHBOARD_EVENTS } from '@shared/ipc/agent-dashboard/channels';
 import { BUS_EVENTS } from '@shared/ipc/bus/channels';
 import type { sessionRecordSchema } from '@shared/ipc/bus/schemas';
-import { PEERS_EVENTS } from '@shared/ipc/peers';
+// peerKeys lives in @shared/ipc/peers so EventBridge can use it without
+// crossing the renderer's shared->features boundary (audit 05/T13).
+import { peerKeys, PEERS_EVENTS } from '@shared/ipc/peers';
 import type { DiscoveredPeer } from '@shared/ipc/peers';
 import { PROGRESS_EVENTS } from '@shared/ipc/progress/channels';
 import type { AgentTeamsDataSchema } from '@shared/ipc/visualization/schemas';
@@ -95,8 +97,6 @@ const PROGRESS_LIST = ['progress', 'list'] as const;
 const AGENT_SESSIONS = ['agent-dashboard', 'sessions'] as const;
 const WORKFLOW_TEMPLATES = ['workflowTemplates'] as const;
 const WORKFLOW_ENGINE = ['workflow-engine'] as const;
-const PEERS_PAIRED = ['peers', 'paired'] as const;
-const PEERS_DISCOVERED = ['peers', 'discovered'] as const;
 
 // ─── Registry ───────────────────────────────────────────────
 
@@ -135,7 +135,7 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 
   // Peer discovery + trust events
   [PEERS_EVENTS.DISCOVERY.CHANGED]: { handler: 'append' as const },
-  [PEERS_EVENTS.TRUST.CHANGED]: { keys: [PEERS_PAIRED] },
+  [PEERS_EVENTS.TRUST.CHANGED]: { keys: [peerKeys.paired()] },
 };
 
 // ─── Append Handlers ────────────────────────────────────────
@@ -147,7 +147,7 @@ const EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>> = {
 function handleAppend(queryClient: QueryClient, event: EventChannel, payload: unknown) {
   if (event === PEERS_EVENTS.DISCOVERY.CHANGED) {
     const { peers } = payload as { peers: DiscoveredPeer[] };
-    queryClient.setQueryData<DiscoveredPeer[]>(PEERS_DISCOVERED, peers);
+    queryClient.setQueryData<DiscoveredPeer[]>(peerKeys.discovered(), peers);
     return;
   }
 

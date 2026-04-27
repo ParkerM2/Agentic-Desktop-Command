@@ -63,7 +63,8 @@ const basePeer = {
 
 describe('cross-device-query', () => {
   it('returns "No devices paired." when no peers exist', async () => {
-    const q = createCrossDeviceQuery({ db });
+    const peerStore = createPeerStore(db);
+    const q = createCrossDeviceQuery({ db, peerStore });
     const out = await q.query('');
     expect(out).toBe('No devices paired.');
   });
@@ -104,7 +105,7 @@ describe('cross-device-query', () => {
     appendTaskOp('peer-online', 'task-1', '00000000000000000001.00000000.aaaaaaaa');
     appendTaskOp('peer-sleeping', 'task-2', '00000000000000000002.00000000.aaaaaaaa');
 
-    const q = createCrossDeviceQuery({ db });
+    const q = createCrossDeviceQuery({ db, peerStore });
     const out = await q.query('');
 
     expect(out).toContain('All devices (4):');
@@ -132,7 +133,7 @@ describe('cross-device-query', () => {
       lastConnectedAt: NOW - 30 * 1000,
     });
 
-    const q = createCrossDeviceQuery({ db });
+    const q = createCrossDeviceQuery({ db, peerStore });
     const out = await q.query('mac');
 
     expect(out).toContain('Device status for "mac":');
@@ -149,7 +150,7 @@ describe('cross-device-query', () => {
       lastConnectedAt: NOW - 30 * 1000,
     });
 
-    const q = createCrossDeviceQuery({ db });
+    const q = createCrossDeviceQuery({ db, peerStore });
     const out = await q.query('nonexistent');
     expect(out).toBe('No device found matching "nonexistent".');
   });
@@ -190,7 +191,7 @@ describe('cross-device-query', () => {
     appendTaskOp('peer-online', 'live-task', '00000000000000000001.00000000.aaaaaaaa');
     appendTaskOp('peer-online', 'archived-task', '00000000000000000002.00000000.aaaaaaaa');
 
-    const q = createCrossDeviceQuery({ db });
+    const q = createCrossDeviceQuery({ db, peerStore });
     const out = await q.query('');
 
     expect(out).toContain('Live work');
@@ -213,7 +214,7 @@ describe('cross-device-query', () => {
     });
     peerStore.revoke('peer-b', NOW);
 
-    const q = createCrossDeviceQuery({ db });
+    const q = createCrossDeviceQuery({ db, peerStore });
     const out = await q.query('');
     expect(out).toContain('All devices (1):');
     expect(out).toContain('Active');

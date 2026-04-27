@@ -7,6 +7,12 @@ import { PEERS, PEERS_EVENTS } from './channels';
 // wire/transient form used in mDNS TXT records, TLS APIs, and pair inputs.
 // Both refer to the same lowercase-hex SHA-256 of the DER cert.
 
+// Hostname schema: covers DNS hostnames, IPv4, IPv6 (with optional zone id),
+// and bracketed IPv6 (e.g. `[::1]`). Rejects URLs, schemes, paths, query
+// strings, and whitespace. Audit reference: tmp/audit/04-service-ipc.md H3.
+const HOSTNAME_RE = /^[A-Za-z0-9.\-:%[\]]+$/;
+export const HostnameSchema = z.string().min(1).max(255).regex(HOSTNAME_RE);
+
 export const PairedPeerSchema = z.object({
   peerId: z.string(),
   displayName: z.string().nullable(),
@@ -22,9 +28,9 @@ export type PairedPeer = z.infer<typeof PairedPeerSchema>;
 export const DiscoveredPeerSchema = z.object({
   peerId: z.string(),
   fingerprint: z.string(),
-  host: z.string(),
+  host: HostnameSchema,
   port: z.number().int().min(1).max(65535),
-  displayName: z.string().nullable().optional(),
+  displayName: z.string().nullable(),
   lastSeenAt: z.number(),
   isPaired: z.boolean(),
 });
@@ -39,10 +45,10 @@ export const SelfIdentitySchema = z.object({
 export type SelfIdentity = z.infer<typeof SelfIdentitySchema>;
 
 export const PairInitInputSchema = z.object({
-  host: z.string(),
+  host: HostnameSchema,
   port: z.number().int().min(1).max(65535),
   fingerprint: z.string(),
-  displayName: z.string().nullable().optional(),
+  displayName: z.string().nullable(),
 });
 export type PairInitInput = z.infer<typeof PairInitInputSchema>;
 
@@ -53,13 +59,13 @@ export const PairInitOutputSchema = z.object({
 export type PairInitOutput = z.infer<typeof PairInitOutputSchema>;
 
 export const PairConfirmInputSchema = z.object({
-  host: z.string(),
+  host: HostnameSchema,
   port: z.number().int().min(1).max(65535),
   fingerprint: z.string(),
   sessionId: z.string(),
   challenge: z.string(),
   pin: z.string().regex(/^\d{6}$/),
-  displayName: z.string().nullable().optional(),
+  displayName: z.string().nullable(),
 });
 export type PairConfirmInput = z.infer<typeof PairConfirmInputSchema>;
 
@@ -79,7 +85,7 @@ export const PinIssuedEventSchema = z.object({
   sessionId: z.string(),
   pin: z.string(),
   initiatorPeerId: z.string(),
-  initiatorDisplayName: z.string().nullable().optional(),
+  initiatorDisplayName: z.string().nullable(),
   issuedAt: z.number(),
 });
 export type PinIssuedEvent = z.infer<typeof PinIssuedEventSchema>;
