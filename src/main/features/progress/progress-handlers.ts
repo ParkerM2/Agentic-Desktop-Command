@@ -30,12 +30,12 @@ export function registerProgressHandlers(
 ): void {
   // ── Invoke Handlers ──────────────────────────────────────────
 
-  router.handle(PROGRESS.LIST.TASKS, () => progressService.listTasks());
+  router.handle(PROGRESS.LIST.TASKS, ({ projectId }) => progressService.listTasks(projectId));
 
   router.handle(PROGRESS.GET.TASK, ({ slug }) => progressService.getTask(slug));
 
-  router.handle(PROGRESS.CREATE.TASK, ({ slug, title, description, priority, id }) =>
-    progressService.createTask(slug, title, description, priority, id),
+  router.handle(PROGRESS.CREATE.TASK, ({ slug, title, description, priority, id, projectId }) =>
+    progressService.createTask(slug, title, description, priority, id, projectId),
   );
 
   router.handle(PROGRESS.UPDATE.TASK, ({ slug, updates }) =>

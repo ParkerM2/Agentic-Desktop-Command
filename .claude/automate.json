@@ -1,0 +1,56 @@
+{
+  "project": "Agent-Desktop-Command",
+  "version": "1.0.0",
+  "description": "Per-project automation rules. Read by SessionStart hook, on-edit dispatcher, and on-stop doc-sync. Add scripts to .claude/scripts/ and reference them in onEdit rules.",
+
+  "docSync": {
+    "enabled": true,
+    "stateFile": ".claude/progress/adc-codebase-state-2026-04-13.html",
+    "pendingFile": ".claude/progress/PENDING_DOC_UPDATE.json",
+    "domainPatterns": [
+      "src/renderer/features/([^/]+)/",
+      "src/main/features/([^/]+)/",
+      "src/shared/ipc/([^/]+)/"
+    ]
+  },
+
+  "onEdit": [
+    {
+      "glob": "src/renderer/features/*/index.ts",
+      "scripts": ["check-barrel-exports"],
+      "description": "Validate barrel exports are complete and consistent"
+    },
+    {
+      "glob": "src/shared/ipc/**/channels.ts",
+      "scripts": [],
+      "description": "IPC channel changes tracked for doc sync — no scripts yet"
+    },
+    {
+      "glob": "src/main/features/**/schema.ts",
+      "scripts": [],
+      "description": "DB schema changes tracked for doc sync — no scripts yet"
+    }
+  ],
+
+  "onCommit": {
+    "typecheck": true,
+    "eslint": {
+      "enabled": true,
+      "glob": "*.{ts,tsx,js,mjs}",
+      "flags": ["--fix", "--no-warn-ignored"]
+    },
+    "prettier": {
+      "enabled": true,
+      "glob": "*.{ts,tsx,css,json,md,yaml,yml}"
+    },
+    "customScripts": []
+  },
+
+  "scriptsDir": ".claude/scripts",
+
+  "notes": {
+    "addingScripts": "1. Create .claude/scripts/{name}.mjs  2. Add entry to onEdit[].scripts  3. Script receives FILE_PATH env var",
+    "importOrder": "Not yet configured — enable when eslint import/order rule is active",
+    "lefthook": "Run `npx lefthook install` once after cloning to activate git hooks"
+  }
+}

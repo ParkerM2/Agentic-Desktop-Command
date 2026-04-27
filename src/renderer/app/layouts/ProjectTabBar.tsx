@@ -46,10 +46,11 @@ export function ProjectTabBar() {
         if (!project) return null;
         const isActive = project.id === activeProjectId;
         return (
-          <button
+          <Button
             key={project.id}
+            variant="ghost"
             className={cn(
-              'group flex items-center gap-2 rounded-t-md px-3 py-1.5 text-sm transition-colors',
+              'group flex h-auto items-center gap-2 rounded-t-md px-3 py-1.5 text-sm transition-colors',
               isActive
                 ? 'bg-background text-foreground border-primary border-b-2'
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -67,17 +68,20 @@ export function ProjectTabBar() {
             >
               <X className="h-3 w-3" />
             </Button>
-          </button>
+          </Button>
         );
       })}
 
-      <button
-        className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded-md p-1.5"
+      <Button
+        aria-label="Open project"
+        className="ml-1"
+        size="icon-xs"
         title="Open project"
+        variant="ghost"
         onClick={handleAddProject}
       >
-        <Plus className="h-4 w-4" />
-      </button>
+        <Plus className="h-4 w-4 shrink-0" />
+      </Button>
     </div>
   );
 }

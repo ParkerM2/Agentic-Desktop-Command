@@ -9,6 +9,9 @@
  * electron's IPC to a clean interface.
  */
 
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 import { contextBridge, ipcRenderer } from 'electron';
 
 import { ENV_VARS, APP_INFO_BRIDGE } from '@shared/constants/env';
@@ -20,6 +23,8 @@ import type {
   EventPayload,
 } from '@shared/ipc-contract';
 import { ipcInvokeContract, ipcEventContract } from '@shared/ipc-contract';
+import { isAppChannel } from '@shared/types/channel';
+import type { AppChannel } from '@shared/types/channel';
 
 // ─── Channel Allowlists (defense-in-depth) ──────────────────
 const ALLOWED_INVOKE = new Set(Object.keys(ipcInvokeContract));
@@ -107,14 +112,31 @@ const agentHostBridge = {
 
 contextBridge.exposeInMainWorld('agentHost', agentHostBridge);
 
+function resolveAppChannel(): AppChannel {
+  const envValue = process.env[ENV_VARS.ADC_CHANNEL] ?? '';
+  if (isAppChannel(envValue)) return envValue;
+  if (isAppChannel(__ADC_CHANNEL__)) return __ADC_CHANNEL__;
+  return process.env[ENV_VARS.ADC_DEV_MODE] === 'true' ? 'dev' : 'release';
+}
+const channel: AppChannel = resolveAppChannel();
+
 const appInfo = {
   devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
   version: process.env.npm_package_version ?? 'unknown',
   devEmail: process.env[ENV_VARS.ADC_DEV_EMAIL] ?? '',
   devPassword: process.env[ENV_VARS.ADC_DEV_PASSWORD] ?? '',
+  channel,
 } as const;
 
 contextBridge.exposeInMainWorld(APP_INFO_BRIDGE, appInfo);
+
+// ─── Sibling preload paths ───────────────────────────────
+// Renderer needs file:// URLs to pass as <webview preload="...">
+const preloads = {
+  testSuiteRecorder: pathToFileURL(join(__dirname, 'test-suite-recorder.cjs')).href,
+};
+
+contextBridge.exposeInMainWorld('preloads', preloads);
 
 // Type declaration for the renderer process
 declare global {
@@ -128,6 +150,10 @@ declare global {
       version: string;
       devEmail: string;
       devPassword: string;
+      channel: AppChannel;
+    };
+    preloads: {
+      testSuiteRecorder: string;
     };
   }
 }

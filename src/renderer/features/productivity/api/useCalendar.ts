@@ -4,7 +4,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { CALENDAR } from '@shared/ipc/misc/calendar.channels';
+import { CALENDAR } from '@shared/ipc/calendar';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

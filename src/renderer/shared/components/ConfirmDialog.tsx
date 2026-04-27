@@ -16,7 +16,7 @@ import { useEffect } from 'react';
 
 import { AlertTriangle, Loader2 } from 'lucide-react';
 
-import { cn } from '@renderer/shared/lib/utils';
+import { Button, Heading, Separator } from '@ui';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -96,7 +96,7 @@ export function ConfirmDialog({
               <AlertTriangle className="text-destructive h-5 w-5" />
             </div>
           ) : null}
-          <h2 className="text-foreground text-lg font-semibold">{title}</h2>
+          <Heading as="h2" className="text-lg">{title}</Heading>
         </div>
 
         {/* Body */}
@@ -105,39 +105,29 @@ export function ConfirmDialog({
         </div>
 
         {/* Footer */}
-        <div className="border-border flex justify-end gap-2 border-t px-6 py-4">
-          <button
+        <Separator />
+        <div className="flex justify-end gap-2 px-6 py-4">
+          <Button
             disabled={loading}
-            className={cn(
-              'text-muted-foreground hover:text-foreground rounded-md px-4 py-2 text-sm',
-              'transition-colors',
-              'disabled:pointer-events-none disabled:opacity-50',
-            )}
+            variant="outline"
             onClick={handleClose}
           >
             {cancelLabel}
-          </button>
-          <button
+          </Button>
+          <Button
             disabled={loading}
-            className={cn(
-              'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium',
-              'transition-opacity hover:opacity-90',
-              'disabled:pointer-events-none disabled:opacity-50',
-              isDestructive
-                ? 'bg-destructive text-destructive-foreground'
-                : 'bg-primary text-primary-foreground',
-            )}
+            variant={isDestructive ? 'destructive' : 'primary'}
             onClick={handleConfirm}
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin shrink-0" />
                 {confirmLabel}
               </>
             ) : (
               confirmLabel
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

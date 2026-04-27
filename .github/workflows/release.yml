@@ -1,0 +1,131 @@
+name: Release
+
+on:
+  push:
+    branches: [production]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  read-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.pkg.outputs.version }}
+      tag: ${{ steps.pkg.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: pkg
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Building release for $TAG"
+          # Reject the release if this version was already published.
+          # Forces the dev to bump package.json version before merging to production.
+          if git tag --list | grep -qx "$TAG"; then
+            echo "::error::Tag $TAG already exists. Bump package.json version before pushing to production."
+            exit 1
+          fi
+          if gh release view "$TAG" --json id >/dev/null 2>&1; then
+            echo "::error::Release $TAG already exists on GitHub. Bump package.json version."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: read-version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            build-flag: --mac
+          - os: windows-latest
+            build-flag: --win
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules for Electron
+        run: npm run rebuild:sqlite:electron
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build application
+        run: npm run build
+
+      # Only populate signing env vars when the corresponding secrets are set.
+      # electron-builder treats an empty CSC_LINK as a path and errors with
+      # "not a file" if the variable is present but blank — so we omit it
+      # entirely for ad-hoc signed builds (mac.identity: "-" in package.json
+      # handles the signature without a cert).
+      - name: Configure signing env
+        shell: bash
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
+          APPLE_APP_PW_SECRET: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_SECRET: ${{ secrets.APPLE_TEAM_ID }}
+          WIN_CSC_LINK_SECRET: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PW_SECRET: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if [ -n "$MAC_CSC_LINK" ]; then
+            echo "CSC_LINK=$MAC_CSC_LINK" >> "$GITHUB_ENV"
+            echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$APPLE_ID_SECRET" ]; then
+            echo "APPLE_ID=$APPLE_ID_SECRET" >> "$GITHUB_ENV"
+            echo "APPLE_APP_SPECIFIC_PASSWORD=$APPLE_APP_PW_SECRET" >> "$GITHUB_ENV"
+            echo "APPLE_TEAM_ID=$APPLE_TEAM_SECRET" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$WIN_CSC_LINK_SECRET" ]; then
+            echo "WIN_CSC_LINK=$WIN_CSC_LINK_SECRET" >> "$GITHUB_ENV"
+            echo "WIN_CSC_KEY_PASSWORD=$WIN_CSC_KEY_PW_SECRET" >> "$GITHUB_ENV"
+          fi
+
+      - name: Package and publish (${{ matrix.os }})
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Disable keychain discovery so ad-hoc signing (mac.identity: "-" in
+          # package.json) is used when no real CSC_LINK was exported above.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder ${{ matrix.build-flag }} --publish always
+
+  finalize-release:
+    needs: [read-version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Attach macOS install script and promote release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.read-version.outputs.tag }}"
+          # Attach the curl-based macOS installer so users can bypass the
+          # Gatekeeper "damaged" dialog without an Apple Developer subscription.
+          gh release upload "$TAG" scripts/install-mac.sh --clobber
+          # electron-builder creates a draft release — publish it now that all platforms succeeded
+          if gh release view "$TAG" --json isDraft --jq '.isDraft' | grep -q true; then
+            gh release edit "$TAG" --draft=false
+            echo "Published release $TAG"
+          else
+            echo "Release $TAG already published"
+          fi

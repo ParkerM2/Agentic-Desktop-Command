@@ -1,16 +1,18 @@
 /**
  * SettingsPage — App settings view with tab bar layout
  *
- * Tabs: Display, Profile, Hub, Integrations, Storage, Advanced
+ * Tabs: Display, Profile, Peers, Integrations, Storage, Testing, Advanced
  */
 
-import { HardDrive, Paintbrush, Plug, Server, User, Wrench } from 'lucide-react';
+import { FlaskConical, HardDrive, Network, Paintbrush, Plug, User, Wrench } from 'lucide-react';
 
 import type { ThemeMode } from '@shared/types';
 
 import { useAssistantWidgetStore, useThemeStore } from '@renderer/shared/stores';
 
-import { PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
+import { Heading, PageContent, PageHeader, PageLayout, Spinner, Switch } from '@ui';
+
+import { PeerListPanel } from '@features/peers';
 
 import { useSettings, useUpdateSettings } from '../api/useSettings';
 
@@ -21,11 +23,12 @@ import { ClaudeAuthSettings } from './ClaudeAuthSettings';
 import { DataLocationSection } from './DataLocationSection';
 import { GitHubAuthSettings } from './GitHubAuthSettings';
 import { HotkeySettings } from './HotkeySettings';
-import { HubSettings } from './HubSettings';
 import { LayoutSection } from './LayoutSection';
 import { OAuthProviderSettings } from './OAuthProviderSettings';
 import { ProfileSection } from './ProfileSection';
+import { SpacingSection } from './SpacingSection';
 import { StorageManagementSection } from './StorageManagementSection';
+import { TestingSettingsTab } from './TestingSettingsTab';
 import { TypographySection } from './TypographySection';
 import { UiScaleSection } from './UiScaleSection';
 import { VoiceSettings } from './voice/VoiceSettings';
@@ -37,9 +40,10 @@ import { WorkspacesTab } from './WorkspacesTab';
 const SETTINGS_TABS = [
   { id: 'display' as const, label: 'Display', icon: Paintbrush },
   { id: 'profile' as const, label: 'Profile', icon: User },
-  { id: 'hub' as const, label: 'Hub', icon: Server },
+  { id: 'peers' as const, label: 'Peers', icon: Network },
   { id: 'integrations' as const, label: 'Integrations', icon: Plug },
   { id: 'storage' as const, label: 'Storage', icon: HardDrive },
+  { id: 'testing' as const, label: 'Testing', icon: FlaskConical },
   { id: 'advanced' as const, label: 'Advanced', icon: Wrench },
 ];
 
@@ -48,7 +52,7 @@ const SETTINGS_TABS = [
 export function SettingsPage() {
   const { data: settings, isLoading } = useSettings();
   const updateSettings = useUpdateSettings();
-  const { mode, uiScale, setMode, setUiScale } = useThemeStore();
+  const { mode, uiScale, layoutGap, setMode, setUiScale, setLayoutGap } = useThemeStore();
 
   const currentFontFamily = settings?.fontFamily ?? 'system-ui';
   const currentFontSize = settings?.fontSize ?? 14;
@@ -62,6 +66,12 @@ export function SettingsPage() {
     const scale = Number(event.target.value);
     setUiScale(scale);
     updateSettings.mutate({ uiScale: scale });
+  }
+
+  function handleLayoutGapChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const gap = Number(event.target.value);
+    setLayoutGap(gap);
+    updateSettings.mutate({ layoutGap: gap });
   }
 
   function handleFontFamilyChange(fontFamily: string) {
@@ -104,6 +114,7 @@ export function SettingsPage() {
             <LayoutSection />
             <AppearanceModeSection currentMode={mode} onModeChange={handleThemeChange} />
             <UiScaleSection currentScale={uiScale} onScaleChange={handleUiScaleChange} />
+            <SpacingSection currentGap={layoutGap} onGapChange={handleLayoutGapChange} />
             <TypographySection
               currentFontFamily={currentFontFamily}
               currentFontSize={currentFontSize}
@@ -111,9 +122,9 @@ export function SettingsPage() {
               onFontSizeChange={handleFontSizeChange}
             />
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Language
-              </h2>
+              </Heading>
               <div className="border-border bg-card flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm">
                 <span>English</span>
                 <span className="text-muted-foreground text-xs">Only language available</span>
@@ -128,32 +139,27 @@ export function SettingsPage() {
             </section>
           </PageHeader.TabContent>
 
-          <PageHeader.TabContent value="hub">
-            <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
-                Hub Connection
-              </h2>
-              <HubSettings />
-            </section>
+          <PageHeader.TabContent value="peers">
+            <PeerListPanel />
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="integrations">
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Claude Code
-              </h2>
+              </Heading>
               <ClaudeAuthSettings />
             </section>
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 GitHub
-              </h2>
+              </Heading>
               <GitHubAuthSettings />
             </section>
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 OAuth Providers
-              </h2>
+              </Heading>
               <OAuthProviderSettings />
             </section>
           </PageHeader.TabContent>
@@ -161,11 +167,15 @@ export function SettingsPage() {
           <PageHeader.TabContent value="storage">
             <DataLocationSection />
             <section className="mb-8">
-              <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+              <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
                 Storage Management
-              </h2>
+              </Heading>
               <StorageManagementSection />
             </section>
+          </PageHeader.TabContent>
+
+          <PageHeader.TabContent value="testing">
+            <TestingSettingsTab />
           </PageHeader.TabContent>
 
           <PageHeader.TabContent value="advanced">
@@ -193,9 +203,9 @@ function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
     <>
       <BackgroundSettings />
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           AI Assistant
-        </h2>
+        </Heading>
         <div className="border-border bg-card space-y-4 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -232,24 +242,24 @@ function AdvancedTab({ settings, updateSettings }: AdvancedTabProps) {
       </section>
       <AppBehaviorSection />
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Assistant &amp; Webhooks
-        </h2>
+        </Heading>
         <WebhookSettings />
       </section>
       <HotkeySettings />
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Voice
-        </h2>
+        </Heading>
         <div className="border-border bg-card rounded-lg border p-4">
           <VoiceSettings />
         </div>
       </section>
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           About
-        </h2>
+        </Heading>
         <p className="text-muted-foreground text-sm">ADC v0.1.0</p>
       </section>
     </>

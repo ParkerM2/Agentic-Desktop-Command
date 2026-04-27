@@ -15,7 +15,7 @@ import type { ProgressTask } from '@shared/types/progress';
 
 import type { BusSessionManager } from '../../bus/session-manager';
 import type { ProgressService } from '../progress/progress-service';
-import type { ProjectService } from '../project/project-service';
+import type { ProjectService } from '../projects/project-service';
 import type { QaRunner } from '../qa/qa-types';
 
 export interface InsightsService {

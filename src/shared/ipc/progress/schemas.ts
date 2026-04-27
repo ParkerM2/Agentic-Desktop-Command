@@ -32,6 +32,7 @@ export const workflowStepStatusSchema = z.enum(['started', 'completed', 'failed'
 
 export const progressTaskSchema = z.object({
   slug: z.string(),
+  projectId: z.string().optional(),
   rootFile: z.string(),
   title: z.string(),
   description: z.string(),
@@ -78,6 +79,7 @@ export const progressGetTaskInputSchema = z.object({
 
 export const progressCreateTaskInputSchema = z.object({
   slug: z.string(),
+  projectId: z.string().optional(),
   title: z.string().min(1),
   description: z.string(),
   priority: progressPrioritySchema.optional(),

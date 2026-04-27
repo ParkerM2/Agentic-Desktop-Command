@@ -10,10 +10,10 @@ import type { Device, Workspace } from '@shared/types';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button } from '@ui';
+import { Button, Heading } from '@ui';
 
 
-import { useDeleteWorkspace } from '@features/workspaces';
+import { useDeleteWorkspace } from '@features/workspace';
 
 interface WorkspaceCardProps {
   workspace: Workspace;
@@ -52,7 +52,7 @@ export function WorkspaceCard({ workspace, devices, onEdit }: WorkspaceCardProps
               isOnline ? 'bg-success' : 'bg-muted-foreground',
             )}
           />
-          <h3 className="text-sm font-semibold">{workspace.name}</h3>
+          <Heading as="h3" className="text-sm">{workspace.name}</Heading>
         </div>
         <div className="flex items-center gap-1">
           <Button

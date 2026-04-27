@@ -2,12 +2,12 @@
  * Settings IPC Schemas
  *
  * Zod schemas for application settings, profiles, OAuth providers,
- * webhook configuration, agent settings, hotkeys, voice, and screen capture.
+ * webhook configuration, and agent settings.
  */
 
 import { z } from 'zod';
 
-import { SIDEBAR_LAYOUT_IDS } from '@shared/types/layout';
+import { LAYOUT_PRESET_IDS } from '@shared/types/layout';
 
 import { DataRetentionSettingsSchema } from '../data-management/schemas';
 
@@ -66,7 +66,7 @@ export const AppSettingsSchema = z.object({
   customThemes: z.array(CustomThemeSchema).optional(),
   language: z.string(),
   uiScale: z.number(),
-  sidebarLayout: z.enum(SIDEBAR_LAYOUT_IDS as [string, ...string[]]).optional(),
+  layoutPreset: z.enum(LAYOUT_PRESET_IDS).optional(),
   onboardingCompleted: z.boolean(),
   fontFamily: z.string().optional(),
   fontSize: z.number().optional(),
@@ -82,6 +82,7 @@ export const AppSettingsSchema = z.object({
   activeProjectId: z.string().nullable().optional(),
   lastRoutePerProject: z.record(z.string(), z.string()).optional(),
   sidebarCollapsed: z.boolean().optional(),
+  layoutGap: z.number().min(0).max(16).optional(),
 });
 
 // ── Profile Schemas ─────────────────────────────────────────────
@@ -110,34 +111,6 @@ export const WebhookConfigSchema = z.object({
   }),
 });
 
-// ── Voice Schemas ───────────────────────────────────────────────
-
-export const VoiceInputModeSchema = z.enum(['push_to_talk', 'continuous']);
-
-export const VoiceConfigSchema = z.object({
-  enabled: z.boolean(),
-  language: z.string(),
-  inputMode: VoiceInputModeSchema,
-});
-
-// ── Screen Capture Schemas ──────────────────────────────────────
-
-export const ScreenSourceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  thumbnail: z.string(),
-  display_id: z.string().optional(),
-  appIcon: z.string().optional(),
-});
-
-export const ScreenshotSchema = z.object({
-  data: z.string(),
-  timestamp: z.string(),
-  source: ScreenSourceSchema,
-  width: z.number(),
-  height: z.number(),
-});
-
 // ── Layout Persistence Schemas ─────────────────────────────────
 
 export const LayoutStateSchema = z.object({
@@ -145,9 +118,7 @@ export const LayoutStateSchema = z.object({
   activeProjectId: z.string().nullable(),
   lastRoutePerProject: z.record(z.string(), z.string()),
   sidebarCollapsed: z.boolean(),
-  sidebarLayout: z.string(),
-  toolbarStyle: z.string().optional(),
-  contentLayout: z.string().optional(),
+  layoutPreset: z.string(),
 });
 
 export const LayoutUpdateSchema = z.object({
@@ -155,17 +126,8 @@ export const LayoutUpdateSchema = z.object({
   activeProjectId: z.string().nullable().optional(),
   lastRoutePerProject: z.record(z.string(), z.string()).optional(),
   sidebarCollapsed: z.boolean().optional(),
-  sidebarLayout: z.string().optional(),
-  toolbarStyle: z.string().optional(),
-  contentLayout: z.string().optional(),
+  layoutPreset: z.string().optional(),
 });
-
-export const ScreenPermissionStatusSchema = z.enum([
-  'granted',
-  'denied',
-  'not-determined',
-  'restricted',
-]);
 
 // ── Data Directory Schemas ─────────────────────────────────────
 

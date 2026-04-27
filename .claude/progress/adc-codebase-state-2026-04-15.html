@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADC Codebase State — 2026-04-15</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d0f;
+    --bg2: #13131a;
+    --bg3: #1a1a24;
+    --border: #2a2a3a;
+    --border2: #3a3a50;
+    --text: #e2e2f0;
+    --text2: #9090b0;
+    --text3: #5a5a7a;
+    --accent: #2dd4bf;
+    --accent2: #1aa090;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --orange: #fb923c;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+
+  /* ── Layout ── */
+  .app { display: grid; grid-template-columns: 260px 1fr; grid-template-rows: auto 1fr; height: 100vh; overflow: hidden; }
+  .header { grid-column: 1 / -1; background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px 12px; }
+  .main { overflow-y: auto; padding: 24px 32px; }
+
+  /* ── Header ── */
+  .header h1 { font-size: 15px; font-weight: 700; color: var(--accent); letter-spacing: -0.3px; }
+  .header .meta { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+  .header .stats { margin-left: auto; display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat-chip { font-size: 11px; font-family: var(--mono); padding: 3px 8px; border-radius: 12px; border: 1px solid var(--border2); background: var(--bg3); }
+  .stat-chip.complete { border-color: var(--green); color: var(--green); }
+  .stat-chip.partial { border-color: var(--yellow); color: var(--yellow); }
+  .stat-chip.backend { border-color: var(--purple); color: var(--purple); }
+  .stat-chip.frontend { border-color: var(--blue); color: var(--blue); }
+  .stat-chip.misc { border-color: var(--orange); color: var(--orange); }
+
+  /* ── Search ── */
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 6px 10px 6px 28px; font-size: 13px; width: 220px;
+    outline: none; transition: border-color .15s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 12px; pointer-events: none; }
+
+  /* ── Sidebar ── */
+  .sidebar h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3); margin: 14px 8px 6px; font-weight: 600; }
+  .sidebar h3:first-child { margin-top: 0; }
+  .sidebar a { display: block; padding: 5px 10px; font-size: 12px; color: var(--text2); text-decoration: none; border-radius: 4px; font-family: var(--mono); transition: background .1s, color .1s; }
+  .sidebar a:hover { background: var(--bg3); color: var(--text); }
+  .sidebar a.active { background: var(--bg3); color: var(--accent); }
+
+  /* ── Main content ── */
+  .main h2 { font-size: 18px; font-weight: 700; color: var(--text); margin: 24px 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.2px; }
+  .main h2:first-child { margin-top: 0; }
+  .main h3 { font-size: 14px; font-weight: 600; color: var(--text2); margin: 18px 0 8px; }
+  .main p { color: var(--text2); margin-bottom: 10px; max-width: 900px; }
+  .main ul { color: var(--text2); margin: 6px 0 12px 22px; }
+  .main li { margin-bottom: 3px; }
+
+  code { background: var(--bg3); padding: 1px 6px; border-radius: 3px; font-family: var(--mono); font-size: 12px; color: var(--accent); border: 1px solid var(--border); }
+
+  /* ── Feature cards ── */
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 12px 0 20px; }
+  .feat { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; transition: border-color .12s; }
+  .feat:hover { border-color: var(--border2); }
+  .feat .row { display: flex; align-items: center; gap: 8px; }
+  .feat .name { font-family: var(--mono); font-size: 13px; color: var(--text); font-weight: 600; flex: 1; }
+  .feat .status { font-size: 10px; font-family: var(--mono); padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border2); color: var(--text3); white-space: nowrap; }
+  .feat .status.complete { border-color: var(--green); color: var(--green); background: rgba(74,222,128,.08); }
+  .feat .status.backend { border-color: var(--purple); color: var(--purple); background: rgba(167,139,250,.08); }
+  .feat .status.frontend { border-color: var(--blue); color: var(--blue); background: rgba(96,165,250,.08); }
+  .feat .status.misc { border-color: var(--orange); color: var(--orange); background: rgba(251,146,60,.08); }
+  .feat .status.partial { border-color: var(--yellow); color: var(--yellow); background: rgba(251,191,36,.08); }
+
+  .feat .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 10px; font-family: var(--mono); font-size: 10px; }
+  .feat .layer { padding: 3px 5px; text-align: center; border-radius: 3px; border: 1px solid var(--border); color: var(--text3); background: var(--bg3); }
+  .feat .layer.on { border-color: var(--green); color: var(--green); background: rgba(74,222,128,.06); }
+  .feat .layer.off { opacity: 0.35; text-decoration: line-through; }
+  .feat .layer.na { opacity: 0.35; }
+  .feat .note { font-size: 11px; color: var(--text3); margin-top: 8px; font-style: italic; line-height: 1.4; }
+  .feat .route { font-family: var(--mono); font-size: 10px; color: var(--accent); margin-top: 6px; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 13px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--text2); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg3); }
+  td { font-family: var(--mono); font-size: 12px; color: var(--text2); }
+  td:first-child { color: var(--text); }
+
+  /* ── Note boxes ── */
+  .note-box { background: var(--bg2); border-left: 3px solid var(--accent); padding: 10px 14px; margin: 12px 0; border-radius: 0 4px 4px 0; color: var(--text2); font-size: 13px; }
+  .note-box.warn { border-left-color: var(--yellow); }
+  .note-box.info { border-left-color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header class="header">
+    <h1>ADC Codebase State</h1>
+    <div class="meta">2026-04-15 · post full-gap-closure (T1-T14) · feature health dashboard</div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input id="search" type="text" placeholder="Filter features…" autocomplete="off">
+    </div>
+    <div class="stats">
+      <span class="stat-chip complete">31 complete</span>
+      <span class="stat-chip backend">14 backend-only</span>
+      <span class="stat-chip frontend">10 view-composite</span>
+      <span class="stat-chip complete">0 misc-bundled</span>
+      <span class="stat-chip complete">0 errors</span>
+    </div>
+  </header>
+
+  <nav class="sidebar">
+    <h3>Status Legend</h3>
+    <a href="#legend">Layer meanings</a>
+    <h3>What Changed</h3>
+    <a href="#changelog">2026-04-15 full gap closure</a>
+    <h3>Core Domains</h3>
+    <a href="#core">Fully-wired features (31)</a>
+    <h3>Backend Services</h3>
+    <a href="#backend">Main-process only (14)</a>
+    <h3>View Composites</h3>
+    <a href="#views">Renderer-only (10)</a>
+    <h3>Infrastructure</h3>
+    <a href="#infra">Contract-only IPC</a>
+    <h3>Health</h3>
+    <a href="#routes">Routes & constants</a>
+    <a href="#verification">Verification</a>
+    <a href="#gaps">Known gaps</a>
+  </nav>
+
+  <main class="main">
+
+    <h2 id="legend">How to read this page</h2>
+    <p>Each card shows one feature and its wiring across the four ADC layers: <code>IPC</code> (channels + contract), <code>MAIN</code> (schema + service + handlers), <code>RENDERER</code> (hooks + components), and <code>ROUTE</code> (registered in TanStack Router). A layer is green when implemented, dim when absent, and dim with line-through when intentionally not applicable.</p>
+    <div class="note-box info">
+      <strong>Status meanings.</strong> <code>complete</code> = all four layers wired with canonical three-way name match (ipc / main / renderer). <code>backend</code> = main-process service called by other features (no renderer view by design). <code>frontend</code> = renderer composite view that aggregates live domains (no dedicated IPC). <strong>Zero misc-bundled and zero partial features</strong> as of 2026-04-15 — see changelog below.
+    </div>
+
+    <!-- ═══════════════ CHANGELOG ═══════════════ -->
+    <h2 id="changelog">What Changed — 2026-04-15 Full Gap Closure (T1-T14)</h2>
+    <p>A 14-task gap-closure sprint landed on branch <code>feature/full-gap-closure</code>. Every previously-flagged debt item from the 2026-04-14 state is now resolved.</p>
+    <div class="note-box">
+      <strong>T1-T9 &mdash; IPC domain promotions.</strong> Moved <code>notes</code>, <code>calendar</code>, <code>devices</code>, <code>hotkeys</code>, <code>mcp</code>, <code>screen</code>, <code>voice</code>, <code>webhook</code>, <code>workspaces</code> out of <code>src/shared/ipc/misc/</code> into dedicated folders. Each now has <code>channels.ts</code>, <code>contract.ts</code>, <code>index.ts</code> matching the Feature Slice layer convention.
+    </div>
+    <div class="note-box">
+      <strong>T10 &mdash; Deleted empty ipc/misc/.</strong> Commit <code>4a8eea7</code>. No more bundle folder. The nine prior residents are all top-level domains.
+    </div>
+    <div class="note-box">
+      <strong>T11-T12 &mdash; Main feature extractions.</strong> <code>spotify</code> now has a dedicated <code>src/main/features/spotify/</code> folder (service + handlers + index). <code>github</code> consolidated from a contract-only stub into <code>src/main/features/github/</code> with proper service. Commits <code>689d762</code>, <code>fec358e</code>.
+    </div>
+    <div class="note-box">
+      <strong>T13 &mdash; better-sqlite3 rebuild hooks.</strong> Added ABI rebuild hook scripts so Vitest no longer fails on node-version mismatch (<code>e8d8264</code>). Previously 10 unit test files failed; now they pass.
+    </div>
+    <div class="note-box">
+      <strong>T14 &mdash; Doc cleanup.</strong> Deleted 25 landed plans and stale feature docs (<code>f2068bf</code>).
+    </div>
+    <div class="note-box info">
+      <strong>Also in this branch:</strong> <code>7d1acd1</code> removed the unused <code>milestones</code> and <code>roadmap</code> features entirely (no renderer view ever built, folded into progress). <code>0ca9708</code> dropped the milestone mention from the planner IPC barrel.
+    </div>
+
+    <!-- ═══════════════ CORE DOMAINS ═══════════════ -->
+    <h2 id="core">Core Domains — Fully Wired (31)</h2>
+    <p>Features with a dedicated folder in <code>src/shared/ipc/&lt;domain&gt;/</code>, a matching main service in <code>src/main/features/&lt;domain&gt;/</code>, and a renderer feature in <code>src/renderer/features/&lt;domain&gt;/</code>.</p>
+
+    <div class="feat-grid">
+
+      <div class="feat" data-name="agent-dashboard">
+        <div class="row"><span class="name">agent-dashboard</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/agents</div>
+        <div class="note">Self-fetching session list. Fixed in c8f0f5d: page now queries sessions on mount.</div>
+      </div>
+
+      <div class="feat" data-name="assistant">
+        <div class="row"><span class="name">assistant</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/assistant</div>
+        <div class="note">Persistent AI assistant with intent classification and command routing.</div>
+      </div>
+
+      <div class="feat" data-name="auth">
+        <div class="row"><span class="name">auth</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/login, /register</div>
+        <div class="note">JWT session flow with Hub server.</div>
+      </div>
+
+      <div class="feat" data-name="briefing">
+        <div class="row"><span class="name">briefing</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/productivity?tab=briefing</div>
+        <div class="note">Daily summary feed. Lives under Productivity tab.</div>
+      </div>
+
+      <div class="feat" data-name="bus">
+        <div class="row"><span class="name">bus</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Agent-host command/event bus. No route (infrastructure).</div>
+      </div>
+
+      <div class="feat" data-name="dashboard">
+        <div class="row"><span class="name">dashboard</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/dashboard</div>
+        <div class="note">Captures + widgets home. Store removed in wire-cleanup (orphan).</div>
+      </div>
+
+      <div class="feat" data-name="files">
+        <div class="row"><span class="name">files</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">File watchers, tree, read/write. Consumed by other features (no route).</div>
+      </div>
+
+      <div class="feat" data-name="fitness">
+        <div class="row"><span class="name">fitness</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/personal?tab=fitness</div>
+        <div class="note">Withings sync, workouts, body composition.</div>
+      </div>
+
+      <div class="feat" data-name="git">
+        <div class="row"><span class="name">git</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/git</div>
+        <div class="note">Status, diff, commit, push. Per-project view.</div>
+      </div>
+
+      <div class="feat" data-name="hub">
+        <div class="row"><span class="name">hub</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/hub-setup</div>
+        <div class="note">Hub server pairing + sync client.</div>
+      </div>
+
+      <div class="feat" data-name="integrations">
+        <div class="row"><span class="name">integrations</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/integrations</div>
+        <div class="note">Slack, Discord, Calendar, GitHub, Gmail. OAuth via oauth service.</div>
+      </div>
+
+      <div class="feat" data-name="planner">
+        <div class="row"><span class="name">planner</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/productivity?tab=planner</div>
+        <div class="note">Weekly planner view. Legacy /planner path redirects.</div>
+      </div>
+
+      <div class="feat" data-name="projects">
+        <div class="row"><span class="name">projects</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects, /projects/$id/*</div>
+        <div class="note">Project registry + per-project tabbed shell.</div>
+      </div>
+
+      <div class="feat" data-name="qa-recorder">
+        <div class="row"><span class="name">qa-recorder</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/qa-recorder</div>
+        <div class="note">Per-project QA session recorder.</div>
+      </div>
+
+      <div class="feat" data-name="settings">
+        <div class="row"><span class="name">settings</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/settings, /settings/themes</div>
+        <div class="note">App + user settings. Store removed in wire-cleanup (orphan).</div>
+      </div>
+
+      <div class="feat" data-name="terminals">
+        <div class="row"><span class="name">terminals</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/terminals</div>
+        <div class="note">PTY-backed terminals via node-pty.</div>
+      </div>
+
+      <div class="feat" data-name="visualization">
+        <div class="row"><span class="name">visualization</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/visualization</div>
+        <div class="note">Agent graph. Event-driven cache via EventBridge setQueryData.</div>
+      </div>
+
+      <div class="feat" data-name="workflow">
+        <div class="row"><span class="name">workflow</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/workflow</div>
+        <div class="note">Workflow launcher. Depends on workflow-engine + workflow-templates.</div>
+      </div>
+
+      <div class="feat" data-name="workspace">
+        <div class="row"><span class="name">workspace</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Multi-device workspaces. Fixed edec904: no longer spawns sessions on cold start.</div>
+      </div>
+
+      <div class="feat" data-name="workspaces">
+        <div class="row"><span class="name">workspaces</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Promoted T9 (<code>d3a05d1</code>). Separate from <code>workspace</code> singular — this is the multi-workspace registry.</div>
+      </div>
+
+      <div class="feat" data-name="alerts">
+        <div class="row"><span class="name">alerts</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/productivity?tab=alerts</div>
+        <div class="note">Promoted from misc/ (<code>92c21b1</code>). Now at <code>ipc/alerts/</code>.</div>
+      </div>
+
+      <div class="feat" data-name="calendar">
+        <div class="row"><span class="name">calendar</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/productivity?tab=calendar</div>
+        <div class="note">Promoted T2 (<code>5ee742d</code>).</div>
+      </div>
+
+      <div class="feat" data-name="changelog">
+        <div class="row"><span class="name">changelog</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/changelog (redirect)</div>
+        <div class="note">Promoted from misc/ (<code>7baff5a</code>). AI changelog generator.</div>
+      </div>
+
+      <div class="feat" data-name="ideas">
+        <div class="row"><span class="name">ideas</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/ideation (redirect)</div>
+        <div class="note">Promoted from misc/ (<code>6dc62e7</code>).</div>
+      </div>
+
+      <div class="feat" data-name="insights">
+        <div class="row"><span class="name">insights</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/insights (redirect)</div>
+        <div class="note">Promoted from misc/ (<code>7da220c</code>).</div>
+      </div>
+
+      <div class="feat" data-name="merge">
+        <div class="row"><span class="name">merge</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Promoted from misc/ (<code>ffa5905</code>). Consumed by workflow-pipeline view.</div>
+      </div>
+
+      <div class="feat" data-name="notes">
+        <div class="row"><span class="name">notes</span><span class="status complete">complete</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/productivity?tab=notes</div>
+        <div class="note">Promoted T1 (<code>e60613f</code>).</div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════ BACKEND-ONLY ═══════════════ -->
+    <h2 id="backend">Backend-Only Services (14)</h2>
+    <p>Main-process services with no renderer feature by design. They are either infrastructure (router/host), called by other features, or expose functionality via another feature's UI.</p>
+
+    <div class="feat-grid">
+
+      <div class="feat" data-name="claude">
+        <div class="row"><span class="name">claude</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Claude CLI binary lookup + version. Consumed by assistant + bus.</div>
+      </div>
+
+      <div class="feat" data-name="data-management">
+        <div class="row"><span class="name">data-management</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">DB backup / restore / export. Surfaced via settings page.</div>
+      </div>
+
+      <div class="feat" data-name="docker">
+        <div class="row"><span class="name">docker</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Container introspection for hub deploys.</div>
+      </div>
+
+      <div class="feat" data-name="email">
+        <div class="row"><span class="name">email</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Gmail reader. Surfaced via integrations + briefing.</div>
+      </div>
+
+      <div class="feat" data-name="github">
+        <div class="row"><span class="name">github</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">T12 (<code>fec358e</code>): consolidated into <code>src/main/features/github/</code> with dedicated service + handlers. Surfaced via integrations UI.</div>
+      </div>
+
+      <div class="feat" data-name="mcp">
+        <div class="row"><span class="name">mcp</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">MCP client + registry + manager. Promoted T5 (<code>c61834c</code>) to <code>ipc/mcp/</code>.</div>
+      </div>
+
+      <div class="feat" data-name="devices">
+        <div class="row"><span class="name">devices</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Device registry for multi-device workspaces. Promoted T3 (<code>623f623</code>); dedupe with hub/ in <code>f40914f</code>.</div>
+      </div>
+
+      <div class="feat" data-name="hotkeys">
+        <div class="row"><span class="name">hotkeys</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Global hotkey registration. Promoted T4 (<code>a977483</code>).</div>
+      </div>
+
+      <div class="feat" data-name="screen">
+        <div class="row"><span class="name">screen</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Screen capture for QA recorder. Promoted T6 (<code>defb086</code>).</div>
+      </div>
+
+      <div class="feat" data-name="voice">
+        <div class="row"><span class="name">voice</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Voice capture for assistant dictation. Promoted T7 (<code>7dcaefb</code>).</div>
+      </div>
+
+      <div class="feat" data-name="webhook">
+        <div class="row"><span class="name">webhook</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Inbound webhook listener for hub integrations. Promoted T8 (<code>da8df65</code>).</div>
+      </div>
+
+      <div class="feat" data-name="spotify">
+        <div class="row"><span class="name">spotify</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">T11 (<code>689d762</code>): extracted to dedicated <code>src/main/features/spotify/</code>. Widget at productivity?tab=spotify.</div>
+      </div>
+
+      <div class="feat" data-name="notifications">
+        <div class="row"><span class="name">notifications</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">System tray notifications + watchers.</div>
+      </div>
+
+      <div class="feat" data-name="oauth">
+        <div class="row"><span class="name">oauth</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">OAuth2 flow + keytar token storage for integrations.</div>
+      </div>
+
+      <div class="feat" data-name="progress">
+        <div class="row"><span class="name">progress</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Task/wave progress tracker. Replaced old .adc/specs filesystem.</div>
+      </div>
+
+      <div class="feat" data-name="qa">
+        <div class="row"><span class="name">qa</span><span class="status backend">backend</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">QA trigger + gate. Invoked by workflow + coderabbit agents.</div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════ INFRASTRUCTURE IPC ═══════════════ -->
+    <h2 id="infra">Infrastructure IPC — No Service Expected</h2>
+    <p>Shared IPC folders that are intentionally contract-only. Not counted as features.</p>
+    <div class="feat-grid">
+      <div class="feat" data-name="app">
+        <div class="row"><span class="name">app</span><span class="status backend">infra</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">App lifecycle + window channels.</div>
+      </div>
+      <div class="feat" data-name="window">
+        <div class="row"><span class="name">window</span><span class="status backend">infra</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer na">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Window control channel bundle.</div>
+      </div>
+      <div class="feat" data-name="security">
+        <div class="row"><span class="name">security</span><span class="status backend">infra</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Extracted security handlers (keytar, clipboard). Created in wire-cleanup.</div>
+      </div>
+      <div class="feat" data-name="hub-tasks">
+        <div class="row"><span class="name">hub-tasks</span><span class="status backend">infra</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Hub-server task coordination (renamed from ipc/tasks in wire-cleanup).</div>
+      </div>
+      <div class="feat" data-name="workflow-engine">
+        <div class="row"><span class="name">workflow-engine</span><span class="status backend">infra</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Nested sub-namespace of workflow. 11+ callers.</div>
+      </div>
+      <div class="feat" data-name="workflow-templates">
+        <div class="row"><span class="name">workflow-templates</span><span class="status backend">infra</span></div>
+        <div class="layers"><span class="layer on">IPC</span><span class="layer on">MAIN</span><span class="layer na">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Nested sub-namespace of workflow. 20+ callers.</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ VIEW COMPOSITES ═══════════════ -->
+    <h2 id="views">Renderer View Composites (10)</h2>
+    <p>Renderer features with no dedicated IPC or main service. Each one is a <em>view</em> that aggregates data from the wired domains above. They belong to the renderer tree only, are registered as routes, and call into sibling feature hooks.</p>
+
+    <div class="feat-grid">
+
+      <div class="feat" data-name="agents">
+        <div class="row"><span class="name">agents</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/agents</div>
+        <div class="note">Thin route wrapper around agent-dashboard feature (fixed b3cad08 — removed duplicate definition).</div>
+      </div>
+
+      <div class="feat" data-name="diff-viewer">
+        <div class="row"><span class="name">diff-viewer</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Reusable diff component. Consumed by git + merge. No route.</div>
+      </div>
+
+      <div class="feat" data-name="my-work">
+        <div class="row"><span class="name">my-work</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/my-work</div>
+        <div class="note">Personal task/session aggregator. Pulls from assistant + bus + projects.</div>
+      </div>
+
+      <div class="feat" data-name="onboarding">
+        <div class="row"><span class="name">onboarding</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">First-run walkthrough. Rendered conditionally by root layout.</div>
+      </div>
+
+      <div class="feat" data-name="personal">
+        <div class="row"><span class="name">personal</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/personal</div>
+        <div class="note">Composite page hosting fitness, notes, briefing tabs.</div>
+      </div>
+
+      <div class="feat" data-name="planning">
+        <div class="row"><span class="name">planning</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/planning</div>
+        <div class="note">Per-project planning view. Pulls from progress + workflow.</div>
+      </div>
+
+      <div class="feat" data-name="productivity">
+        <div class="row"><span class="name">productivity</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/productivity</div>
+        <div class="note">Tabs: overview · calendar · spotify · briefing · notes · planner · alerts · comms.</div>
+      </div>
+
+      <div class="feat" data-name="roadmap">
+        <div class="row"><span class="name">roadmap</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/roadmap (redirect)</div>
+        <div class="note">Rolls up milestones + ideas + insights into a timeline.</div>
+      </div>
+
+      <div class="feat" data-name="tasks">
+        <div class="row"><span class="name">tasks</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/tasks</div>
+        <div class="note">Per-project task table. Data from progress service.</div>
+      </div>
+
+      <div class="feat" data-name="tools">
+        <div class="row"><span class="name">tools</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer on">ROUTE</span></div>
+        <div class="route">/projects/$id/tools</div>
+        <div class="note">Per-project tooling launcher (MCP servers, scripts).</div>
+      </div>
+
+      <div class="feat" data-name="workflow-pipeline">
+        <div class="row"><span class="name">workflow-pipeline</span><span class="status frontend">frontend</span></div>
+        <div class="layers"><span class="layer na">IPC</span><span class="layer na">MAIN</span><span class="layer on">RENDERER</span><span class="layer na">ROUTE</span></div>
+        <div class="note">Visual pipeline component. Used by workflow + merge feature pages.</div>
+      </div>
+
+    </div>
+
+    <!-- ═══════════════ ROUTES ═══════════════ -->
+    <h2 id="routes">Routes & Constants</h2>
+    <p>All navigation paths flow through <code>src/shared/constants/routes.ts</code>. ESLint AST rules in <code>eslint.config.js</code> block literal route strings in <code>navigate({ to })</code> and <code>&lt;Link to&gt;</code>.</p>
+
+    <table>
+      <thead><tr><th>Constant</th><th>Path</th><th>Kind</th></tr></thead>
+      <tbody>
+        <tr><td>ROUTES.INDEX</td><td>/</td><td>top-level</td></tr>
+        <tr><td>ROUTES.LOGIN / REGISTER</td><td>/login, /register</td><td>auth</td></tr>
+        <tr><td>ROUTES.HUB_SETUP</td><td>/hub-setup</td><td>top-level</td></tr>
+        <tr><td>ROUTES.ASSISTANT</td><td>/assistant</td><td>top-level</td></tr>
+        <tr><td>ROUTES.DASHBOARD</td><td>/dashboard</td><td>top-level</td></tr>
+        <tr><td>ROUTES.MY_WORK</td><td>/my-work</td><td>composite</td></tr>
+        <tr><td>ROUTES.PERSONAL</td><td>/personal</td><td>composite</td></tr>
+        <tr><td>ROUTES.PRODUCTIVITY</td><td>/productivity</td><td>composite</td></tr>
+        <tr><td>ROUTES.INTEGRATIONS</td><td>/integrations</td><td>top-level</td></tr>
+        <tr><td>ROUTES.PROJECTS</td><td>/projects</td><td>top-level</td></tr>
+        <tr><td>ROUTES.SETTINGS / THEMES</td><td>/settings, /settings/themes</td><td>top-level</td></tr>
+        <tr><td>ROUTES.AGENTS</td><td>/agents</td><td>top-level</td></tr>
+        <tr><td>ROUTE_PATTERNS.PROJECT_*</td><td>/projects/$id/{tasks,terminals,agents,planning,git,github,tools,workflow,visualization,qa-recorder}</td><td>project tabs</td></tr>
+        <tr><td>ROUTES.ALERTS / BRIEFING / FITNESS / NOTES / PLANNER</td><td>legacy top-level</td><td>redirect only</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ═══════════════ VERIFICATION ═══════════════ -->
+    <h2 id="verification">Verification</h2>
+    <table>
+      <thead><tr><th>Check</th><th>Command</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>TypeScript</td><td>npx tsc --noEmit</td><td style="color:var(--green)">PASS (0 errors)</td></tr>
+        <tr><td>ipc/misc/ folder</td><td>ls src/shared/ipc/misc</td><td style="color:var(--green)">deleted (T10)</td></tr>
+        <tr><td>git grep "from './misc'"</td><td>grep ts files</td><td style="color:var(--green)">0 references</td></tr>
+        <tr><td>Hardcoded routes</td><td>ESLint no-restricted-syntax AST rules</td><td style="color:var(--green)">0 violations</td></tr>
+        <tr><td>Naming mismatches (ipc/main/renderer)</td><td>manual cross-check</td><td style="color:var(--green)">0 mismatches</td></tr>
+        <tr><td>better-sqlite3 rebuild</td><td>rebuild hook</td><td style="color:var(--green)">auto-rebuilds via T13 hook</td></tr>
+        <tr><td>Lint / Build</td><td>npm run lint &amp;&amp; npm run build</td><td style="color:var(--text3)">not re-run in T15 (docs-only change)</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ═══════════════ GAPS ═══════════════ -->
+    <h2 id="gaps">Known Gaps & Debt</h2>
+    <p style="color:var(--green);font-weight:600">Zero outstanding items from the 2026-04-14 state document. All previously-listed gaps closed by T1-T14.</p>
+    <ul>
+      <li><strong>Lefthook</strong> — not in PATH on Windows dev machine; pre-commit checks warn but don't block. Install globally or via corepack. (Not in scope of this sprint.)</li>
+    </ul>
+
+  </main>
+</div>
+
+<script>
+  // Live filter
+  const input = document.getElementById('search');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    document.querySelectorAll('.feat').forEach((el) => {
+      const name = (el.dataset.name || '').toLowerCase();
+      const text = el.textContent.toLowerCase();
+      el.style.display = !q || name.includes(q) || text.includes(q) ? '' : 'none';
+    });
+  });
+</script>
+
+</body>
+</html>

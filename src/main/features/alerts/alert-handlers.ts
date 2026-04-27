@@ -2,7 +2,7 @@
  * Alert IPC handlers
  */
 
-import { ALERTS } from '@shared/ipc/misc/alerts.channels';
+import { ALERTS } from '@shared/ipc/alerts';
 
 import type { AlertService } from "./alert-service";
 import type { IpcRouter } from '../../ipc/router';

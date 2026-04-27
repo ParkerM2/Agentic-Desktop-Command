@@ -34,7 +34,7 @@ Each row traces a domain from shared types through to the rendered route.
 | github | `types/github.ts` | `ipc/github/` | `services/github/` | `handlers/github-handlers.ts` | `features/github/` | `project.routes.ts` |
 | hotkeys | -- | `ipc/misc/hotkeys.contract.ts` | -- (tray service) | `handlers/hotkey-handlers.ts` | -- | -- |
 | hub | `types/hub-protocol.ts`, `types/hub/` | `ipc/hub/` | `services/hub/` | `handlers/hub-handlers.ts` | `features/settings/` (HubSettings) | `settings.routes.ts` |
-| ideation | `types/idea.ts` | `ipc/misc/ideas.contract.ts` | `services/ideas/` | `handlers/ideas-handlers.ts` | `features/ideation/` | `project.routes.ts` |
+| ideation | `types/idea.ts` | `ipc/misc/ideas.contract.ts` | `services/ideas/` | `handlers/ideas-handlers.ts` | `features/ideas/` | `project.routes.ts` |
 | insights | `types/insights.ts` | `ipc/misc/insights.contract.ts` | `services/insights/` | `handlers/insights-handlers.ts` | `features/insights/` | `project.routes.ts` |
 | mcp | -- | `ipc/misc/mcp.contract.ts` | `main/mcp/` | `handlers/mcp-handlers.ts` | `features/communications/` | -- |
 | merge | -- | `ipc/misc/merge.contract.ts` | `services/merge/` | `handlers/merge-handlers.ts` | `features/merge/` | -- |
@@ -53,7 +53,7 @@ Each row traces a domain from shared types through to the rendered route.
 | tasks | `types/progress.ts` | `ipc/progress/` | `features/progress/progress-service.ts` (SQLite — sole source of truth, old TaskService/TaskRepository deleted) | `features/progress/progress-handlers.ts` | `features/tasks/` | `project.routes.ts` |
 | terminals | `types/terminal.ts` | `ipc/terminals/` | `services/terminal/` | `handlers/terminal-handlers.ts` | `features/terminals/` | `project.routes.ts` |
 | voice | `types/voice.ts` | `ipc/misc/voice.contract.ts` | `services/voice/` | `handlers/voice-handlers.ts` | `features/voice/` | -- |
-| workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspaces/` | -- |
+| workspaces | `types/workspace.ts` | `ipc/misc/workspaces.contract.ts` | -- | `handlers/workspace-handlers.ts` | `features/workspace/` | -- |
 | progress | `types/progress.ts` | `ipc/progress/` | `services/progress/` | `handlers/progress-handlers.ts` | `features/tasks/` (ProgressTaskGrid) | `project.routes.ts` |
 | workflow-templates | -- | `ipc/workflow-templates/` | `services/workflow-templates/` | `handlers/workflow-template-handlers.ts` | `features/tools/` | `misc.routes.ts` |
 | workflow-engine | -- | `ipc/workflow-engine/` | `services/workflow-engine/` | `handlers/workflow-engine-handlers.ts` | -- | -- |
@@ -452,11 +452,11 @@ Idea capture & tracking.
 | IPC Contract | `shared/ipc/misc/ideas.contract.ts` |
 | Service | `main/services/ideas/` |
 | Handler | `main/ipc/handlers/ideas-handlers.ts` |
-| Feature Module | `renderer/features/ideation/` |
-| API Hooks | `renderer/features/ideation/api/useIdeas.ts` |
-| Query Keys | `renderer/features/ideation/api/queryKeys.ts` |
-| Event Hook | `renderer/features/ideation/hooks/useIdeaEvents.ts` |
-| Store | `renderer/features/ideation/store.ts` |
+| Feature Module | `renderer/features/ideas/` |
+| API Hooks | `renderer/features/ideas/api/useIdeas.ts` |
+| Query Keys | `renderer/features/ideas/api/queryKeys.ts` |
+| Event Hook | `renderer/features/ideas/hooks/useIdeaEvents.ts` |
+| Store | `renderer/features/ideas/store.ts` |
 | Components | `IdeationPage`, `IdeaForm` |
 | Route | `renderer/app/routes/project.routes.ts` → `/projects/$projectId/ideation` |
 
@@ -810,11 +810,11 @@ Workspace management via Hub.
 | IPC Contract | `shared/ipc/misc/workspaces.contract.ts` |
 | Service | -- (handled via Hub API client directly) |
 | Handler | `main/ipc/handlers/workspace-handlers.ts` |
-| Feature Module | `renderer/features/workspaces/` |
-| API Hooks | `renderer/features/workspaces/api/useWorkspaces.ts` |
-| Query Keys | `renderer/features/workspaces/api/queryKeys.ts` |
-| Event Hook | `renderer/features/workspaces/hooks/useWorkspaceEvents.ts` |
-| Store | `renderer/features/workspaces/store.ts` |
+| Feature Module | `renderer/features/workspace/` |
+| API Hooks | `renderer/features/workspace/api/useWorkspaces.ts` |
+| Query Keys | `renderer/features/workspace/api/queryKeys.ts` |
+| Event Hook | `renderer/features/workspace/hooks/useWorkspaceEvents.ts` |
+| Store | `renderer/features/workspace/store.ts` |
 | Components | `WorkspaceCard`, `WorkspacesTab`, `WorkspaceEditor` |
 
 ---
@@ -1138,7 +1138,7 @@ The `src/shared/ipc/misc/` folder bundles 17 smaller domain contracts. Here's wh
 | `notes.contract.ts` | `notes.*` | `notes-handlers.ts` | `services/notes/` |
 | `rate-limit.contract.ts` | `rateLimit.*` | -- (internal) | -- |
 | `screen.contract.ts` | `screen.*` | `screen-handlers.ts` | `services/screen/` |
-| `time.contract.ts` | `time.*` | `time-handlers.ts` | `services/time-parser/` |
+| ~~`time.contract.ts`~~ | ~~`time.*`~~ | ~~`time-handlers.ts`~~ | REMOVED — time-parser feature deleted (Sprint 6-7) |
 | `voice.contract.ts` | `voice.*` | `voice-handlers.ts` | `services/voice/` |
 | `webhook.contract.ts` | `webhooks.*` | `webhook-settings-handlers.ts` | `services/settings/` |
 | `workspaces.contract.ts` | `workspaces.*` | `workspace-handlers.ts` | -- (Hub API) |

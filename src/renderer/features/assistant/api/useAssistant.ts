@@ -8,7 +8,6 @@ import { ASSISTANT } from '@shared/ipc/assistant/channels';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 
-import { setLastCommand } from '../hooks/useAssistantEvents';
 import { useAssistantStore } from '../store';
 
 import { assistantKeys } from './queryKeys';
@@ -25,7 +24,7 @@ export function useHistory(limit?: number) {
 /** Send a command to the assistant */
 export function useSendCommand() {
   const queryClient = useQueryClient();
-  const { setIsThinking, clearCurrentResponse } = useAssistantStore();
+  const { setIsThinking, clearCurrentResponse, addUserEntry } = useAssistantStore();
 
   return useMutation({
     mutationFn: (data: {
@@ -38,7 +37,7 @@ export function useSendCommand() {
       });
     },
     onMutate: (variables) => {
-      setLastCommand(variables.input);
+      addUserEntry(variables.input);
       setIsThinking(true);
       clearCurrentResponse();
     },

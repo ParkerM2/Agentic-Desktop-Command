@@ -3,6 +3,7 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 export const progressTasks = sqliteTable('progress_tasks', {
   slug: text('slug').primaryKey(),
   id: text('id'),
+  projectId: text('project_id'),
   title: text('title').notNull(),
   status: text('status').notNull(),
   priority: text('priority').notNull().default('medium'),
@@ -24,4 +25,5 @@ export const progressTasks = sqliteTable('progress_tasks', {
   updatedAt: text('updated_at').notNull(),
 }, (table) => [
   index('idx_progress_tasks_status').on(table.status),
+  index('idx_progress_tasks_project').on(table.projectId),
 ]);

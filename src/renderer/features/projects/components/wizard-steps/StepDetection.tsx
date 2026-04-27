@@ -5,6 +5,8 @@
 import type { PROJECTS } from '@shared/ipc/projects/channels';
 import type { InvokeOutput } from '@shared/ipc-contract';
 
+import { Heading } from '@ui';
+
 import { RepoTypeSelector } from '../RepoTypeSelector';
 import { SubRepoDetector } from '../SubRepoDetector';
 
@@ -29,7 +31,7 @@ export function StepDetection({
 }: StepDetectionProps) {
   return (
     <div>
-      <h3 className="mb-3 text-sm font-medium">Repository Detection</h3>
+      <Heading as="h3" className="mb-3 text-sm font-medium">Repository Detection</Heading>
       <p className="text-muted-foreground mb-4 text-xs">{selectedPath}</p>
       <SubRepoDetector detection={detection} error={error} isLoading={isLoading} />
       {detection ? (

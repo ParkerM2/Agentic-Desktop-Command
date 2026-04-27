@@ -2,49 +2,57 @@
  * Personal Domain — Unified TypeScript Types
  *
  * Inferred types from the personal/ Zod schemas. Covers all
- * personal sub-domains: notes, ideas, milestones, alerts,
+ * personal sub-domains: notes, ideas, alerts,
  * changelog, planner, briefing, and fitness.
  */
 
+
 import type {
-  AgentActivitySummarySchema,
   AlertLinkedToSchema,
   AlertSchema,
   AlertTypeSchema,
-  BodyMeasurementSchema,
+  RecurringConfigSchema,
+} from '../ipc/alerts';
+import type {
+  AgentActivitySummarySchema,
   BriefingConfigSchema,
+  DailyBriefingSchema,
+  SuggestionActionSchema,
+  SuggestionSchema,
+  SuggestionTypeSchema,
+  TaskSummarySchema,
+} from '../ipc/briefing/schemas';
+import type {
   ChangeCategorySchema,
   ChangelogEntrySchema,
   ChangeTypeSchema,
-  DailyBriefingSchema,
-  DailyPlanSchema,
+} from '../ipc/changelog';
+import type {
+  BodyMeasurementSchema,
   ExerciseSchema,
   ExerciseSetSchema,
   FitnessGoalSchema,
   FitnessGoalTypeSchema,
   FitnessStatsSchema,
+  MeasurementSourceSchema,
+  WeightUnitSchema,
+  WorkoutSchema,
+  WorkoutTypeSchema,
+} from '../ipc/fitness/schemas';
+import type {
   IdeaCategorySchema,
   IdeaSchema,
   IdeaStatusSchema,
-  MeasurementSourceSchema,
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
-  NoteSchema,
-  RecurringConfigSchema,
+} from '../ipc/ideas';
+import type { NoteSchema } from '../ipc/notes';
+import type {
+  DailyPlanSchema,
   ScheduledTaskSchema,
-  SuggestionActionSchema,
-  SuggestionSchema,
-  SuggestionTypeSchema,
-  TaskSummarySchema,
   TimeBlockSchema,
   TimeBlockTypeSchema,
   WeeklyReviewSchema,
   WeeklyReviewSummarySchema,
-  WeightUnitSchema,
-  WorkoutSchema,
-  WorkoutTypeSchema,
-} from '../ipc/personal/schemas';
+} from '../ipc/planner/schemas';
 import type { z } from 'zod';
 
 // ── Notes ───────────────────────────────────────────────────────
@@ -56,12 +64,6 @@ export type Note = z.infer<typeof NoteSchema>;
 export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 export type IdeaCategory = z.infer<typeof IdeaCategorySchema>;
 export type Idea = z.infer<typeof IdeaSchema>;
-
-// ── Milestones ──────────────────────────────────────────────────
-
-export type MilestoneStatus = z.infer<typeof MilestoneStatusSchema>;
-export type MilestoneTask = z.infer<typeof MilestoneTaskSchema>;
-export type Milestone = z.infer<typeof MilestoneSchema>;
 
 // ── Alerts ──────────────────────────────────────────────────────
 

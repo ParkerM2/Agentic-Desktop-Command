@@ -19,22 +19,22 @@ import type { AppUpdateService } from '../features/app/app-update-service';
 import type { ErrorCollector, HealthRegistry, HealthService } from '../features/app/health';
 import type { createWatchEvaluator } from '../features/assistant/watch-evaluator';
 import type { createBriefingService } from '../features/briefing/briefing-service';
-import type { createHubConnectionManager } from '../features/hub/hub-connection';
-import type { createNotificationManager } from '../features/integrations/notifications';
+import type { CleanupService } from '../features/data-management';
+import type { createNotificationManager } from '../features/notifications';
 import type { QaTrigger } from '../features/qa/qa-trigger';
-import type { CleanupService } from '../features/settings/data-management';
-import type { createTerminalService } from '../features/terminal/terminal-service';
+import type { RunnersService } from '../features/runners/runners-service';
+import type { createTerminalService } from '../features/terminals/terminals-service';
 import type { HotkeyManager } from '../tray/hotkey-manager';
 
 export interface LifecycleDeps {
   createWindow: () => void;
   terminalService: ReturnType<typeof createTerminalService>;
+  runnersService: RunnersService;
   errorCollector: ErrorCollector;
   healthRegistry: HealthRegistry;
   healthService: HealthService;
   qaTrigger: QaTrigger;
   alertService: ReturnType<typeof createAlertService>;
-  hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
   notificationManager: ReturnType<typeof createNotificationManager>;
   briefingService: ReturnType<typeof createBriefingService>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
@@ -43,7 +43,7 @@ export interface LifecycleDeps {
   appUpdateService: AppUpdateService;
   commandBus: CommandBus;
   busSessionManager: BusSessionManager;
-  getHeartbeatIntervalId: () => ReturnType<typeof setInterval> | null;
+  disposePeerTransport: () => Promise<void>;
 }
 
 /** Registers Electron app lifecycle event handlers. */
@@ -76,16 +76,12 @@ export function setupLifecycle(deps: LifecycleDeps): void {
     deps.hotkeyManager.unregisterAll();
     deps.qaTrigger.dispose();
     deps.terminalService.dispose();
+    deps.runnersService.dispose();
     deps.alertService.stopChecking();
-    deps.hubConnectionManager.dispose();
     deps.notificationManager.dispose();
     deps.briefingService.stopScheduler();
     deps.watchEvaluator.stop();
-
-    const heartbeatId = deps.getHeartbeatIntervalId();
-    if (heartbeatId !== null) {
-      clearInterval(heartbeatId);
-    }
+    void deps.disposePeerTransport();
 
     // Dispose bus + sessions
     deps.busSessionManager.dispose();

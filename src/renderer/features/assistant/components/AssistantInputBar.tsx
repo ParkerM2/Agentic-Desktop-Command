@@ -1,9 +1,9 @@
 /**
- * AssistantInputBar — Combined input bar with project selector, text input,
- * send button, and quick action chips.
+ * AssistantInputBar — Combined input bar with text input, send button,
+ * and quick action chips.
  *
  * Layout:
- *   [▾ ProjectName] [Ask anything...        ] [↑]
+ *   [Ask anything...        ] [↑]
  *   +Task  +Todo  Status  Git  PRs
  */
 
@@ -17,9 +17,9 @@ import { useLayoutStore } from '@renderer/shared/stores';
 import { useProjects } from '@features/projects/api/useProjects';
 
 import { Button } from '@ui/button';
+import { Separator } from '@ui/separator';
 import { Textarea } from '@ui/textarea';
 
-import { ProjectSelector } from './ProjectSelector';
 import { QuickActionChips } from './QuickActionChips';
 
 interface AssistantInputBarProps {
@@ -32,25 +32,17 @@ export function AssistantInputBar({ onSubmit, disabled, compact }: AssistantInpu
   const activeProjectId = useLayoutStore((s) => s.activeProjectId);
   const { data: projects } = useProjects();
 
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(activeProjectId);
-  const [selectedProjectName, setSelectedProjectName] = useState('');
   const [draft, setDraft] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Sync with active project changes
-  useEffect(() => {
-    setSelectedProjectId(activeProjectId);
-  }, [activeProjectId]);
-
   // Derive project name from projects list
   const projectName = useMemo(() => {
-    if (selectedProjectName) return selectedProjectName;
-    if (projects && selectedProjectId) {
-      const found = projects.find((p) => p.id === selectedProjectId);
+    if (projects && activeProjectId) {
+      const found = projects.find((p) => p.id === activeProjectId);
       if (found) return found.name;
     }
     return 'project';
-  }, [projects, selectedProjectId, selectedProjectName]);
+  }, [projects, activeProjectId]);
 
   const adjustHeight = useCallback(() => {
     const el = textareaRef.current;
@@ -78,41 +70,31 @@ export function AssistantInputBar({ onSubmit, disabled, compact }: AssistantInpu
     }
   }
 
-  function handleProjectSelect(projectId: string, name: string) {
-    setSelectedProjectId(projectId);
-    setSelectedProjectName(name);
-  }
-
   function handlePrefill(text: string) {
     setDraft(text);
     textareaRef.current?.focus();
   }
 
   return (
-    <div className={cn('border-border border-t', compact ? 'space-y-0' : 'space-y-0.5')}>
-      {/* Row 1: Project selector + textarea + send */}
+    <div className={cn('shrink-0', compact ? 'space-y-0' : 'space-y-0.5')}>
+      <Separator />
+      {/* Row 1: textarea + send */}
       <div className={cn('flex items-end gap-1', compact ? 'p-1.5' : 'p-2')}>
-        <div className="flex flex-1 flex-col gap-1">
-          <ProjectSelector
-            selectedProjectId={selectedProjectId}
-            onSelect={handleProjectSelect}
-          />
-          <Textarea
-            ref={textareaRef}
-            aria-label="Message assistant"
-            disabled={disabled}
-            placeholder="Ask anything..."
-            resize="none"
-            rows={1}
-            value={draft}
-            className={cn(
-              'min-h-0 flex-1 px-2 py-1.5 text-xs',
-              compact ? 'max-h-16' : 'max-h-20',
-            )}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-        </div>
+        <Textarea
+          ref={textareaRef}
+          aria-label="Message assistant"
+          disabled={disabled}
+          placeholder="Ask anything..."
+          resize="none"
+          rows={1}
+          value={draft}
+          className={cn(
+            'min-h-0 flex-1 px-2 py-1.5 text-xs',
+            compact ? 'max-h-16' : 'max-h-20',
+          )}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
         <Button
           aria-label="Send message"
           className="h-7 w-7 shrink-0 p-1.5"

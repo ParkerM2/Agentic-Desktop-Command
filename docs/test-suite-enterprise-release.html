@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Suite Enterprise Release - ADC</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --bg-surface: #1a1a24;
+      --border: #2a2a3a;
+      --text: #e4e4ef;
+      --text-muted: #8888a0;
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --blue: #3b82f6;
+      --orange: #f97316;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 48px 0 32px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-light), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    header p { color: var(--text-muted); font-size: 1.1rem; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      padding: 32px 0;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-card .number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .phase {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .phase-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .phase-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: white;
+    }
+
+    .phase-0 .phase-badge { background: var(--red); }
+    .phase-1 .phase-badge { background: var(--orange); }
+    .phase-2 .phase-badge { background: var(--blue); }
+    .phase-3 .phase-badge { background: var(--accent); }
+    .phase-4 .phase-badge { background: var(--green); }
+
+    .phase-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .phase-header .phase-subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-left: auto;
+    }
+
+    .phase-content { padding: 20px 24px; }
+
+    .feature-list {
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .feature-check {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+
+    .feature-check::after {
+      content: '\2713';
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .feature-name {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .feature-desc {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .files-changed {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .file-tag {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .timeline {
+      position: relative;
+      padding: 32px 0;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+      transform: translateX(-50%);
+    }
+
+    section { padding: 32px 0; }
+
+    section h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--accent-light);
+    }
+
+    .commit-log {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .commit-log .hash { color: var(--yellow); }
+    .commit-log .msg { color: var(--text); }
+    .commit-log .merge { color: var(--accent-light); font-weight: 600; }
+
+    .arch-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+
+    .arch-table th, .arch-table td {
+      text-align: left;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .arch-table th {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .arch-table td:first-child {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: var(--accent-light);
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      header h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Test Suite Enterprise Release</h1>
+      <p>Agent Desktop Command &mdash; Full-stack E2E testing for enterprise website testing</p>
+      <p style="margin-top: 12px; font-size: 0.85rem; color: var(--text-muted);">
+        April 18, 2026 &mdash; 5 Phases, 20 Tasks, 40 Commits
+      </p>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="number">5</div>
+        <div class="label">Phases Completed</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">20</div>
+        <div class="label">Tasks Implemented</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">40+</div>
+        <div class="label">Files Modified</div>
+      </div>
+      <div class="stat-card">
+        <div class="number">0</div>
+        <div class="label">Typecheck Errors</div>
+      </div>
+    </div>
+
+    <!-- Phases -->
+    <section>
+      <h2>Release Phases</h2>
+
+      <!-- Phase 0 -->
+      <div class="phase phase-0">
+        <div class="phase-header">
+          <span class="phase-badge">0</span>
+          <h2>Lock Down Pass / Fail</h2>
+          <span class="phase-subtitle">Foundation &mdash; 8 tasks</span>
+        </div>
+        <div class="phase-content">
+          <ul class="feature-list">
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Smart Waits in Script Writer</div>
+                <div class="feature-desc">Added <code>waitForLoadState('networkidle')</code> after navigation steps with configurable timeouts. No more race conditions.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Playwright Locator Upgrade</div>
+                <div class="feature-desc">Priority chain: <code>getByTestId</code> &gt; <code>getByLabel</code> &gt; <code>getByPlaceholder</code> &gt; <code>getByRole</code> &gt; <code>getByText</code> &gt; CSS fallback. Context-aware locator selection from recorded step metadata.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Pre-flight Checks in Runner</div>
+                <div class="feature-desc">Validates spec file exists, Playwright is installed, and browsers are available before spawning. Clear error messages instead of cryptic crashes.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">JSON Reporter for Step-Level Results</div>
+                <div class="feature-desc">Switched from <code>--reporter=line</code> to <code>--reporter=json</code>. Parses <code>stats.expected</code> / <code>stats.unexpected</code> for accurate pass/fail counts.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Screenshot on Failure</div>
+                <div class="feature-desc">Added <code>--screenshot=only-on-failure</code> flag. Failed runs capture screenshots automatically.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Data-Driven Value Substitution</div>
+                <div class="feature-desc">Wired <code>substituteDataInSteps()</code> in the DATA-RUN handler. CSV/JSON <code>{{key}}</code> placeholders now substitute correctly per row.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Configurable Timeouts</div>
+                <div class="feature-desc">Added <code>navigationTimeout</code> (30s default) and <code>actionTimeout</code> (10s default) to TestSuiteConfig. Flows through to generated Playwright config.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Run Output Log Dialog + Task/Workflow Integration</div>
+                <div class="feature-desc">Full-screen log viewer with syntax coloring, copy-to-clipboard, Create Task button (pre-fills failure details), and Start Workflow dropdown (Research/Plan/Team).</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 1 -->
+      <div class="phase phase-1">
+        <div class="phase-header">
+          <span class="phase-badge">1</span>
+          <h2>Stability</h2>
+          <span class="phase-subtitle">Code health &mdash; 4 tasks</span>
+        </div>
+        <div class="phase-content">
+          <ul class="feature-list">
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">WebContentsView Migration</div>
+                <div class="feature-desc">Migrated from deprecated <code>BrowserView</code> to <code>WebContentsView</code>. Updated <code>setBrowserView</code> &rarr; <code>contentView.addChildView</code>.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Zustand Store Consolidation</div>
+                <div class="feature-desc">Merged two stores into single <code>test-suite-store.ts</code>. Ephemeral fields (isRunning, outputLines) excluded from persistence.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Dead Code Removal</div>
+                <div class="feature-desc">Deleted old <code>exporter.ts</code> (deprecated <code>page.click()</code> API), unused <code>RunOutputPanel.tsx</code>, and orphan <code>store.ts</code>.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Single Retry for Flaky Tests</div>
+                <div class="feature-desc">Added <code>--retries=1</code> to runner spawn args (later made configurable in Phase 3).</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="phase phase-2">
+        <div class="phase-header">
+          <span class="phase-badge">2</span>
+          <h2>Scale</h2>
+          <span class="phase-subtitle">Organization &amp; execution &mdash; 4 tasks</span>
+        </div>
+        <div class="phase-content">
+          <ul class="feature-list">
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Script Tags</div>
+                <div class="feature-desc">Tags field on scripts (JSON array in SQLite TEXT column). Migration <code>0025_test_suite_tags.sql</code>. Schema, store, contract all wired.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Tag Filtering UI</div>
+                <div class="feature-desc">Toggle badge bar in LibraryPanel with intersection filtering (must match ALL selected tags). Tags input in SaveRecordingDialog. Tag badges on script rows.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Cross-Browser Testing</div>
+                <div class="feature-desc">Multi-select for Chromium, Firefox, WebKit. Generated Playwright config uses <code>projects</code> array with correct device names (Desktop Chrome, Desktop Firefox, Desktop Safari).</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Parallel Workers</div>
+                <div class="feature-desc">Workers config (1-16) passed via <code>--workers=N</code> flag. UI number input in ConfigEditDialog.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Environment Profiles</div>
+                <div class="feature-desc">Named URL profiles (staging, production). Runtime switching via <code>BASE_URL</code> env var. Environment selector in ResultsPanel toolbar.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="phase phase-3">
+        <div class="phase-header">
+          <span class="phase-badge">3</span>
+          <h2>Enterprise</h2>
+          <span class="phase-subtitle">Production-grade &mdash; 4 tasks</span>
+        </div>
+        <div class="phase-content">
+          <ul class="feature-list">
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Configurable Retries</div>
+                <div class="feature-desc">Retries (0-5) in TestSuiteConfig. Replaces hardcoded <code>--retries=1</code>. UI number input with description text.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">HTML Report Generation</div>
+                <div class="feature-desc">Dual <code>--reporter=json,html</code> output. Reports saved to <code>.playwright-reports/&lt;runId&gt;/</code>. "View Report" button opens in browser via <code>shell.openPath</code>.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Auth State Persistence</div>
+                <div class="feature-desc">Playwright <code>storageState</code> support. "Capture Auth State" button saves cookies/localStorage. Generated config includes <code>storageState</code> for authenticated test runs.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Batch Test Execution</div>
+                <div class="feature-desc"><code>BATCH.RUN</code> IPC channel runs multiple scripts sequentially. "Run Selected" uses batch. "Run Tagged" button runs all scripts matching selected tags.</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="phase phase-4">
+        <div class="phase-header">
+          <span class="phase-badge">4</span>
+          <h2>Differentiation</h2>
+          <span class="phase-subtitle">Smart features &mdash; 4 tasks</span>
+        </div>
+        <div class="phase-content">
+          <ul class="feature-list">
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Test Health Score</div>
+                <div class="feature-desc">Letter grade (A-F) computed from pass rate (40pts), stability (30pts), and speed (30pts). Score bars with visual breakdown on the Analytics tab.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Flaky Test Indicators</div>
+                <div class="feature-desc">RunSparkline detects pass-fail alternation patterns and marks flaky runs with yellow/amber color. Native tooltip shows "Flaky" on hover.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Auto-Assertion Suggestions</div>
+                <div class="feature-desc">After recording, generates assertion suggestions from step context (URL verification, input value checks, element visibility). Checkbox UI in SaveRecordingDialog.</div>
+              </div>
+            </li>
+            <li class="feature-item">
+              <span class="feature-check"></span>
+              <div>
+                <div class="feature-name">Run Completion Toasts</div>
+                <div class="feature-desc">Success/error toast notifications when a test run completes. Uses the Zustand toast store with auto-dismiss (5s success, 8s error).</div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture -->
+    <section>
+      <h2>Architecture Overview</h2>
+      <table class="arch-table">
+        <thead>
+          <tr>
+            <th>Layer</th>
+            <th>Key Files</th>
+            <th>Responsibility</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>IPC Schema</td>
+            <td>schemas.ts, contract.ts, channels.ts</td>
+            <td>Zod validation, channel constants, type-safe IPC contracts</td>
+          </tr>
+          <tr>
+            <td>Config</td>
+            <td>config-store.ts</td>
+            <td>Per-project TestSuiteConfig with 15+ fields in settings_kv</td>
+          </tr>
+          <tr>
+            <td>Script Store</td>
+            <td>script-store.ts, schema.ts</td>
+            <td>CRUD for test scripts with tags, steps (JSON), metadata in SQLite</td>
+          </tr>
+          <tr>
+            <td>Runner</td>
+            <td>runner.ts</td>
+            <td>Spawns Playwright CLI, streams output, parses JSON results</td>
+          </tr>
+          <tr>
+            <td>Script Writer</td>
+            <td>script-writer.ts</td>
+            <td>Generates .spec.ts with smart waits, Playwright locators</td>
+          </tr>
+          <tr>
+            <td>Config Writer</td>
+            <td>playwright-config-writer.ts</td>
+            <td>Generates playwright.config.ts with projects, workers, storageState</td>
+          </tr>
+          <tr>
+            <td>Service Facade</td>
+            <td>index.ts</td>
+            <td>Composes stores + runner, handles auth state, batch runs</td>
+          </tr>
+          <tr>
+            <td>IPC Handlers</td>
+            <td>recorder-handlers.ts</td>
+            <td>Registers 60+ IPC handlers for all test-suite operations</td>
+          </tr>
+          <tr>
+            <td>React Hooks</td>
+            <td>api/*.ts</td>
+            <td>React Query hooks for scripts, runs, config, analytics</td>
+          </tr>
+          <tr>
+            <td>UI Components</td>
+            <td>components/*.tsx (20 files)</td>
+            <td>Full test suite UI with 7 tabs, dialogs, panels</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Config Schema -->
+    <section>
+      <h2>TestSuiteConfig Schema</h2>
+      <table class="arch-table">
+        <thead>
+          <tr><th>Field</th><th>Type</th><th>Default</th><th>Phase</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>targetUrl</td><td>url</td><td>-</td><td>Original</td></tr>
+          <tr><td>viewportWidth/Height</td><td>int</td><td>1280x720</td><td>Original</td></tr>
+          <tr><td>screenshotMode</td><td>enum</td><td>'smart'</td><td>Original</td></tr>
+          <tr><td>testDirectory</td><td>string</td><td>'test-suite/'</td><td>Original</td></tr>
+          <tr><td>navigationTimeout</td><td>int (ms)</td><td>30000</td><td>Phase 0</td></tr>
+          <tr><td>actionTimeout</td><td>int (ms)</td><td>10000</td><td>Phase 0</td></tr>
+          <tr><td>browsers</td><td>enum[]</td><td>['chromium']</td><td>Phase 2</td></tr>
+          <tr><td>workers</td><td>int (1-16)</td><td>1</td><td>Phase 2</td></tr>
+          <tr><td>environments</td><td>object[]</td><td>[]</td><td>Phase 2</td></tr>
+          <tr><td>retries</td><td>int (0-5)</td><td>1</td><td>Phase 3</td></tr>
+          <tr><td>storageStatePath</td><td>string?</td><td>undefined</td><td>Phase 3</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Commit Log -->
+    <section>
+      <h2>Commit History</h2>
+      <div class="commit-log">
+<span class="merge">f344fa55</span> <span class="msg">docs: update CLAUDE.md test-suite section for Phase 4 features</span>
+<span class="merge">158499b1</span> <span class="msg">merge: Phase 4 &mdash; Differentiation (health score, flaky indicators, assertion suggestions, toast notifications)</span>
+<span class="hash">32737e28</span> <span class="msg">feat(test-suite): add toast notifications for run completion</span>
+<span class="hash">775f36e4</span> <span class="msg">feat(test-suite): add auto-generated assertion suggestions in save dialog</span>
+<span class="hash">186776ee</span> <span class="msg">feat(test-suite): add test health score with letter grade to analytics</span>
+<span class="hash">01df29e9</span> <span class="msg">feat(test-suite): add flaky test indicators to run history sparkline</span>
+<span class="merge">1f9ef18a</span> <span class="msg">docs: update CLAUDE.md test-suite section for Phase 3 features</span>
+<span class="merge">0deed2a2</span> <span class="msg">merge: Phase 3 &mdash; Enterprise (configurable retries, HTML reports, auth state, batch execution)</span>
+<span class="hash">98e710d6</span> <span class="msg">feat(test-suite): add batch test execution with run-by-tag support</span>
+<span class="hash">40636a44</span> <span class="msg">feat(test-suite): add auth state persistence via Playwright storageState</span>
+<span class="hash">e786ca25</span> <span class="msg">feat(test-suite): add HTML report generation with View Report button</span>
+<span class="hash">a26c0323</span> <span class="msg">feat(test-suite): add configurable retries to config and runner</span>
+<span class="merge">c73a1c11</span> <span class="msg">docs: update CLAUDE.md test-suite section for Phase 2 features</span>
+<span class="merge">747e0238</span> <span class="msg">merge: Phase 2 &mdash; Scale (tags, cross-browser, parallel workers, environment profiles)</span>
+<span class="hash">a5c97887</span> <span class="msg">feat(test-suite): add environment profiles with URL switching</span>
+<span class="hash">ef120ce8</span> <span class="msg">fix(test-suite): use correct Playwright device names for browser projects</span>
+<span class="hash">8809f237</span> <span class="msg">feat(test-suite): add cross-browser and parallel execution config</span>
+<span class="hash">fa53e1af</span> <span class="msg">feat(test-suite): add tag filtering UI to library and save dialog</span>
+<span class="hash">369d6179</span> <span class="msg">feat(test-suite): add tags field to scripts schema and store</span>
+<span class="merge">3047c6e4</span> <span class="msg">merge: Phase 1 &mdash; Stability (WebContentsView, store consolidation, dead code, retry)</span>
+<span class="hash">6dce7f73</span> <span class="msg">docs: add test-suite feature documentation to CLAUDE.md</span>
+<span class="hash">37b80485</span> <span class="msg">refactor(test-suite): delete unused RunOutputPanel component</span>
+<span class="hash">3e19b090</span> <span class="msg">refactor(test-suite): remove dead code and add single retry for flaky tests</span>
+<span class="hash">44dd311d</span> <span class="msg">refactor(test-suite): consolidate Zustand stores into test-suite-store</span>
+<span class="hash">25a25fb2</span> <span class="msg">refactor(test-suite): migrate BrowserView to WebContentsView</span>
+<span class="merge">8075c777</span> <span class="msg">merge: Phase 0 &mdash; Lock Down Pass/Fail (6 commits)</span>
+<span class="hash">98a56454</span> <span class="msg">feat(test-suite): add run summary stats, full log dialog, and task/workflow actions</span>
+<span class="hash">4b148fd6</span> <span class="msg">feat(test-suite): wire data-driven value substitution in DATA-RUN handler</span>
+<span class="hash">1bf055e4</span> <span class="msg">feat(test-suite): add pre-flight checks, JSON reporter, and failure screenshots to runner</span>
+<span class="hash">a178b339</span> <span class="msg">feat(test-suite): add smart waits and Playwright locator upgrade to script-writer</span>
+<span class="hash">c5e40c2a</span> <span class="msg">refactor(test-suite): remove old exporter, consolidate on script-writer</span>
+<span class="hash">3cff41fc</span> <span class="msg">feat(test-suite): add configurable navigation and action timeouts</span>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p>Agent Desktop Command &mdash; Test Suite Enterprise Release</p>
+      <p style="margin-top: 4px;">Built with Electron 39, React 19, TypeScript, SQLite, Playwright, shadcn/ui</p>
+      <p style="margin-top: 8px; font-size: 0.75rem;">Generated April 18, 2026</p>
+    </div>
+  </footer>
+</body>
+</html>

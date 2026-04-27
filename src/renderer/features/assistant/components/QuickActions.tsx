@@ -2,9 +2,9 @@
  * QuickActions — Common action buttons for the assistant
  */
 
-import { Bell, Lightbulb, Map, StickyNote } from 'lucide-react';
+import { Bell, Lightbulb, StickyNote } from 'lucide-react';
 
-import { Button } from '@ui';
+import { Button, Separator } from '@ui';
 
 interface QuickAction {
   label: string;
@@ -25,12 +25,6 @@ const quickActions: QuickAction[] = [
       'Create a new feature idea for my project. Use the create_idea tool with a descriptive title and description.',
   },
   {
-    label: 'New Milestone',
-    icon: Map,
-    command:
-      'Create a new milestone for my project roadmap with a target date 4 weeks from today. Use the create_milestone tool.',
-  },
-  {
     label: 'Plan Today',
     icon: Bell,
     command:
@@ -45,23 +39,26 @@ interface QuickActionsProps {
 
 export function QuickActions({ disabled, onAction }: QuickActionsProps) {
   return (
-    <div className="border-border border-b px-4 py-3">
-      <div className="flex flex-wrap gap-2">
-        {quickActions.map((action) => (
-          <Button
-            key={action.label}
-            className="text-muted-foreground text-xs"
-            disabled={disabled}
-            size="sm"
-            type="button"
-            variant="outline"
-            onClick={() => onAction(action.command)}
-          >
-            <action.icon className="h-3.5 w-3.5" />
-            <span>{action.label}</span>
-          </Button>
-        ))}
+    <>
+      <div className="px-4 py-3">
+        <div className="flex flex-wrap gap-2">
+          {quickActions.map((action) => (
+            <Button
+              key={action.label}
+              className="text-muted-foreground text-xs"
+              disabled={disabled}
+              size="sm"
+              type="button"
+              variant="outline"
+              onClick={() => onAction(action.command)}
+            >
+              <action.icon className="h-3.5 w-3.5" />
+              <span>{action.label}</span>
+            </Button>
+          ))}
+        </div>
       </div>
-    </div>
+      <Separator />
+    </>
   );
 }

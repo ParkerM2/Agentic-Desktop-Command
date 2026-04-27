@@ -6,7 +6,7 @@
 
 import { ArrowRight, Sparkles, Zap } from 'lucide-react';
 
-import { Button, Card, CardContent } from '@ui';
+import { Button, Card, CardContent, Heading } from '@ui';
 
 // ── Constants ───────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         <Sparkles className="text-primary h-10 w-10" />
       </div>
 
-      <h1 className="text-foreground mb-3 text-3xl font-bold">Welcome to ADC</h1>
+      <Heading as="h1" className="mb-3 text-3xl font-bold">Welcome to ADC</Heading>
 
       <p className="text-muted-foreground mb-8 max-w-md text-lg">
         Your desktop companion for managing Claude autonomous coding agents.
@@ -54,7 +54,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
                 <feature.icon className="text-primary h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-foreground font-medium">{feature.title}</h3>
+                <Heading as="h3" className="font-medium">{feature.title}</Heading>
                 <p className="text-muted-foreground mt-1 text-sm">{feature.description}</p>
               </div>
             </CardContent>

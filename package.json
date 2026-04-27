@@ -1,6 +1,6 @@
 {
   "name": "adc",
-  "version": "0.1.0",
+  "version": "0.3.2",
   "type": "module",
   "description": "ADC — Desktop UI for multi-project management with agent team orchestration, automated QA loops, and agentic local software testing",
   "main": "./out/main/index.cjs",
@@ -14,7 +14,10 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:mcp": "electron-vite dev -- --remote-debugging-port=9222",
+    "dev:kill": "node scripts/kill-dev.mjs",
     "build": "electron-vite build",
+    "build:local": "cross-env ADC_CHANNEL=local electron-vite build && electron-builder --win --dir --config.productName=ADC-Local --config.appId=com.adc.app.local --config.win.icon=resources/icon-local.ico --config.nsis.artifactName=ADC-Local-Setup-${version}.${ext} --config.extraMetadata.name=adc-local",
+    "build:local:installer": "cross-env ADC_CHANNEL=local electron-vite build && electron-builder --win --config.productName=ADC-Local --config.appId=com.adc.app.local --config.win.icon=resources/icon-local.ico --config.nsis.artifactName=ADC-Local-Setup-${version}.${ext} --config.extraMetadata.name=adc-local",
     "start": "electron .",
     "preview": "electron-vite preview",
     "lint": "eslint src/",
@@ -23,12 +26,17 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\"",
     "typecheck": "tsc --noEmit",
     "test": "npm run test:unit && npm run test:integration",
+    "pretest:unit": "node scripts/rebuild-sqlite-for-node.mjs",
     "test:unit": "vitest run --config vitest.config.ts",
+    "posttest:unit": "node scripts/rebuild-sqlite-for-electron.mjs",
     "test:unit:watch": "vitest --config vitest.config.ts",
+    "rebuild:sqlite:node": "node scripts/rebuild-sqlite-for-node.mjs",
+    "rebuild:sqlite:electron": "node scripts/rebuild-sqlite-for-electron.mjs",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:integration:watch": "vitest --config vitest.integration.config.ts",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "test:watch": "vitest",
+    "pretest:e2e": "node scripts/rebuild-sqlite-for-electron.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright test && bash scripts/post-e2e-screenshots.sh",
@@ -37,11 +45,17 @@
     "validate:tracker": "node scripts/validate-tracker.mjs",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e && npm run check:docs && npm run validate:tracker",
     "icons:generate": "node scripts/generate-logo-svg.js && svgo resources/icon.svg -o resources/icon-optimized.svg && node scripts/build-icons.js",
+    "icons:channels": "node scripts/build-channel-icons.mjs",
+    "reset:local": "node scripts/reset-channel.mjs local",
+    "reset:dev": "node scripts/reset-channel.mjs dev",
     "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
     "@dagrejs/dagre": "^1.0.4",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/geist": "^5.2.8",
     "@fontsource-variable/geist-mono": "^5.2.7",
     "@git-diff-view/core": "^0.0.39",
@@ -75,6 +89,9 @@
     "@xterm/xterm": "^6.0.0",
     "@xyflow/react": "^12.10.2",
     "better-sqlite3": "^12.8.0",
+    "@peculiar/webcrypto": "^1.5.0",
+    "@peculiar/x509": "^2.0.0",
+    "bonjour-service": "^1.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",
@@ -121,6 +138,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.0.16",
     "autoprefixer": "^10.4.22",
+    "cross-env": "^10.1.0",
     "drizzle-kit": "^0.31.10",
     "electron": "39.2.7",
     "electron-builder": "^26.4.0",
@@ -138,6 +156,7 @@
     "eslint-plugin-react-refresh": "^0.4.26",
     "eslint-plugin-sonarjs": "^3.0.7",
     "eslint-plugin-unicorn": "^58.0.0",
+    "fast-check": "^4.7.0",
     "gif-encoder-2": "^1.0.5",
     "globals": "^16.5.0",
     "icon-gen": "^5.0.0",
@@ -147,6 +166,7 @@
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.6.14",
+    "reflect-metadata": "^0.2.2",
     "svgo": "^4.0.1",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
@@ -165,8 +185,22 @@
       "out/**/*"
     ],
     "extraResources": [
-      "drizzle/**"
+      "drizzle/**",
+      {
+        "from": "resources/icon-16.png",
+        "to": "icon-16.png"
+      },
+      {
+        "from": "resources/icon-32.png",
+        "to": "icon-32.png"
+      }
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "ParkerM2",
+      "repo": "Agentic-Desktop-Command",
+      "releaseType": "draft"
+    },
     "win": {
       "icon": "resources/icon.ico",
       "target": [
@@ -176,11 +210,14 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "artifactName": "ADC-Setup-${version}-${arch}.${ext}"
     },
     "mac": {
       "icon": "resources/icon.icns",
       "category": "public.app-category.developer-tools",
+      "identity": "-",
+      "gatekeeperAssess": false,
       "target": [
         {
           "target": "dmg",
@@ -188,8 +225,16 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
-      ]
+      ],
+      "artifactName": "ADC-${version}-${arch}.${ext}"
     },
     "linux": {
       "icon": "resources/icon.png",

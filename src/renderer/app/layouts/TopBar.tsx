@@ -19,7 +19,7 @@ import { ipc } from '@renderer/shared/lib/ipc';
 import { cn } from '@renderer/shared/lib/utils';
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import { Badge } from '@ui';
+import { Badge, Button } from '@ui';
 
 import { useProjects } from '@features/projects';
 import { HealthIndicator } from '@features/settings';
@@ -33,13 +33,7 @@ import { TitleBarScreenshot } from './TitleBarScreenshot';
 
 const TOOLBAR_CLASSES: Record<ToolbarStyleId, string> = {
   default: 'h-10 bg-card border border-border',
-  compact: 'h-8 bg-card border border-border',
-  spacious: 'h-12 bg-card border border-border',
-  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm',
-  bordered: 'h-10 bg-card border-2 border-border',
-  glass: 'h-10 bg-card/60 backdrop-blur-md border border-border/50',
-  minimal: 'h-8 bg-transparent',
-  inset: 'h-10 bg-muted/40 border border-border',
+  floating: 'h-9 bg-card/90 border border-border rounded-lg shadow-sm overflow-hidden',
 };
 
 export function TopBar() {
@@ -102,31 +96,40 @@ export function TopBar() {
     <div className={cn('electron-drag flex shrink-0 items-stretch', TOOLBAR_CLASSES[toolbarStyle])}>
       {/* Sidebar toggle */}
       <div className="electron-no-drag flex shrink-0 items-stretch">
-        <button
+        <Button
           aria-label="Toggle sidebar"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-r"
-          type="button"
+          className="border-r border-l-0"
+          size="toolbar"
+          variant="toolbar"
           onClick={toggleSidebar}
         >
-          <PanelLeft className="h-3.5 w-3.5" />
-        </button>
+          <PanelLeft />
+        </Button>
       </div>
 
       {/* Project tabs — VSCode-style: right border per tab, horizontal scroll */}
-      <div className="electron-no-drag flex min-w-0 flex-1 items-stretch overflow-x-auto overflow-y-hidden">
+      <div className="electron-no-drag flex min-w-0 items-stretch overflow-x-auto overflow-y-hidden">
         {openProjects.map((project) => {
           if (!project) return null;
           const isActive = project.id === activeProjectId;
           return (
-            <button
+            <div
               key={project.id}
+              role="tab"
+              tabIndex={0}
               className={cn(
-                'border-border group flex h-full shrink-0 items-center gap-1.5 border-r px-3 text-xs transition-colors',
+                'border-border group flex h-full shrink-0 cursor-pointer items-center gap-1.5 border-r px-3 text-xs transition-colors',
                 isActive
                   ? 'bg-background text-foreground'
                   : 'bg-card text-muted-foreground hover:text-foreground',
               )}
               onClick={() => handleSelectProject(project.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelectProject(project.id);
+                }
+              }}
             >
               {isActive ? (
                 <FolderOpen className="text-primary h-3 w-3 shrink-0" />
@@ -134,47 +137,50 @@ export function TopBar() {
                 <Folder className="h-3 w-3 shrink-0" />
               )}
               <span className="max-w-32 truncate">{project.name}</span>
-              <button
+              <Button
                 aria-label={`Close ${project.name} tab`}
-                className="text-muted-foreground hover:text-foreground ml-0.5 flex h-4 w-4 items-center justify-center rounded-sm opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
-                type="button"
+                className="text-muted-foreground hover:text-foreground ml-0.5 h-4 w-4 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100"
+                size="icon"
+                variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeProjectTab(project.id);
                 }}
               >
                 <X className="h-3 w-3" />
-              </button>
-            </button>
+              </Button>
+            </div>
           );
         })}
 
         {/* Add tab — sticky, grows with list until hitting settings */}
-        <button
-          className="border-border text-muted-foreground hover:text-foreground flex h-full shrink-0 items-center border-r px-3 transition-colors"
+        <Button
+          aria-label="Open project"
+          className="border-border text-muted-foreground hover:text-foreground h-full shrink-0 rounded-none border-r px-3"
           title="Open project"
-          type="button"
+          variant="ghost"
           onClick={handleAddProject}
         >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
+          <Plus className="h-4 w-4" />
+        </Button>
 
-        {/* Drag spacer fills remaining space */}
-        <div className="flex-1" />
       </div>
+
+      {/* Drag spacer fills remaining space — must be outside electron-no-drag */}
+      <div className="electron-drag flex-1" />
 
       {/* Utility buttons — same w-10 sizing as window controls */}
       <div className="electron-no-drag flex h-full items-center">
         <Badge display={window.appInfo.devMode} size="sm" value="DEV" variant="warning" />
         <WorkflowStatusBar />
-        <button
+        <Button
           aria-label="Settings"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          size="toolbar"
+          variant="toolbar"
           onClick={() => void navigate({ to: ROUTES.SETTINGS })}
         >
-          <Settings className="h-3.5 w-3.5" />
-        </button>
+          <Settings />
+        </Button>
         <TitleBarScreenshot />
         <div className="border-border flex h-full items-center border-l px-2">
           <HealthIndicator />
@@ -183,24 +189,23 @@ export function TopBar() {
 
       {/* Window controls — left border per button */}
       <div className="electron-no-drag flex h-full items-center">
-        <button
+        <Button
           aria-label="Minimize window"
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          size="toolbar"
+          variant="toolbar"
           onClick={handleMinimize}
         >
-          <Minus className="h-3.5 w-3.5" />
-        </button>
-        <button
+          <Minus />
+        </Button>
+        <Button
           aria-label={isMaximized ? 'Restore window' : 'Maximize window'}
-          className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          size="toolbar"
+          variant="toolbar"
           onClick={handleMaximize}
         >
           {isMaximized ? (
             <svg
               aria-hidden="true"
-              className="h-3 w-3"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.5"
@@ -210,17 +215,18 @@ export function TopBar() {
               <path d="M2.5 2.5V1a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-.5.5H8" />
             </svg>
           ) : (
-            <Square className="h-3 w-3" />
+            <Square />
           )}
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label="Close window"
-          className="border-border text-muted-foreground hover:bg-destructive hover:text-destructive-foreground flex h-full w-10 items-center justify-center border-l"
-          type="button"
+          className="hover:bg-destructive hover:text-destructive-foreground"
+          size="toolbar"
+          variant="toolbar"
           onClick={handleClose}
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
+          <X />
+        </Button>
       </div>
     </div>
   );

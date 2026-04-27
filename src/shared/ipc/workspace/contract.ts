@@ -22,6 +22,10 @@ export const workspaceInvoke = {
     input: z.object({ projectId: z.string(), index: z.number().int().min(1) }),
     output: SuccessResponseSchema,
   },
+  [WORKSPACE.STOP.PROJECT]: {
+    input: z.object({ projectId: z.string() }),
+    output: SuccessResponseSchema,
+  },
   [WORKSPACE.SEND.MESSAGE]: {
     input: z.object({ sessionId: z.string(), message: z.string() }),
     output: SuccessResponseSchema,

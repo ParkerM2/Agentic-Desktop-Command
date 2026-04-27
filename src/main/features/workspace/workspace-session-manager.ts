@@ -75,6 +75,8 @@ export interface WorkspaceSessionManager {
   getSessions: (projectId: string) => WorkspaceSession[];
   spawnTeamLead: (projectId: string, planPath?: string) => Promise<WorkspaceSession>;
   stopTeamLead: (projectId: string, index: number) => Promise<{ success: boolean }>;
+  /** Stop all sessions (primary + all team-leads) for a project and clean up worktrees */
+  stopProject: (projectId: string) => Promise<{ success: boolean }>;
   sendMessage: (sessionId: string, message: string) => Promise<{ success: boolean }>;
   /** Hand off a plan file to an idle team-lead or spawn a new one */
   handOffPlan: (
@@ -95,9 +97,9 @@ export interface WorkspaceSessionManager {
     slug: string,
     teamName: string,
     taskInstructions?: string,
-  ) => { worktreePath: string; branch: string };
+  ) => Promise<{ worktreePath: string; branch: string }>;
   /** Tear down a teammate's worktree */
-  teardownTeammate: (projectId: string, slug: string) => { success: boolean };
+  teardownTeammate: (projectId: string, slug: string) => Promise<{ success: boolean }>;
   dispose: () => void;
 }
 
@@ -174,7 +176,7 @@ export function createWorkspaceSessionManager(
     const keyStr = keyToString(key);
 
     // Provision isolated worktree
-    const { worktreePath } = provisioner.provision({
+    const { worktreePath } = await provisioner.provision({
       projectPath,
       agentType: 'team-lead',
       agentRole: 'team-leader',
@@ -203,8 +205,12 @@ export function createWorkspaceSessionManager(
       });
       return record.id;
     } catch (err) {
-      // Clean up the worktree on spawn failure
-      provisioner.teardown(projectPath, slug);
+      // Clean up the worktree on spawn failure (fire-and-forget, don't block error path)
+      void provisioner.teardown(projectPath, slug).catch((teardownErr: unknown) => {
+        agentLogger.warn('[WorkspaceSessionManager] Teardown after spawn failure failed', {
+          error: teardownErr,
+        });
+      });
       worktreeSlugs.delete(keyStr);
       const message = err instanceof Error ? err.message : String(err);
       throw new Error(`Failed to spawn team lead: ${message}`);
@@ -213,12 +219,15 @@ export function createWorkspaceSessionManager(
 
   /**
    * Clean up a team-lead's worktree when its session ends.
+   * Teardown is fire-and-forget — callers don't need to await.
    */
   function cleanupWorktree(key: SessionKey, projectPath: string): void {
     const keyStr = keyToString(key);
     const slug = worktreeSlugs.get(keyStr);
     if (slug) {
-      provisioner.teardown(projectPath, slug);
+      void provisioner.teardown(projectPath, slug).catch((err: unknown) => {
+        agentLogger.warn('[WorkspaceSessionManager] Worktree cleanup failed', { error: err });
+      });
       worktreeSlugs.delete(keyStr);
     }
   }
@@ -439,6 +448,46 @@ export function createWorkspaceSessionManager(
       return Promise.resolve({ success: stopped });
     },
 
+    stopProject(projectId) {
+      const projectSessions = [...sessions.entries()].filter(
+        ([, s]) => s.key.projectId === projectId,
+      );
+
+      for (const [keyStr, session] of projectSessions) {
+        if (session.agentSessionId) {
+          agentManager.stopSession(session.agentSessionId);
+        }
+        // Clean up worktrees for team-leads (fire-and-forget)
+        if (session.key.type === SESSION_TYPE_TEAM_LEAD) {
+          const slug = worktreeSlugs.get(keyStr);
+          if (slug) {
+            void provisioner.teardown(session.projectPath, slug).catch((err: unknown) => {
+              agentLogger.warn('[WorkspaceSessionManager] Worktree teardown failed', { error: err });
+            });
+            worktreeSlugs.delete(keyStr);
+          }
+        }
+        sessions.delete(keyStr);
+      }
+
+      // Clean up any teammate worktrees for this project (fire-and-forget)
+      for (const [lookupKey, projectPath] of teammateSlugs.entries()) {
+        if (lookupKey.startsWith(`${projectId}:`)) {
+          const slug = lookupKey.split(':').slice(1).join(':');
+          void provisioner.teardown(projectPath, slug).catch((err: unknown) => {
+            agentLogger.warn('[WorkspaceSessionManager] Teammate teardown failed', { error: err });
+          });
+          teammateSlugs.delete(lookupKey);
+        }
+      }
+
+      agentLogger.info(
+        `[WorkspaceSessionManager] All sessions stopped for project ${projectId} (${String(projectSessions.length)} sessions)`,
+      );
+
+      return Promise.resolve({ success: true });
+    },
+
     sendMessage(sessionId, message) {
       const success = agentManager.sendMessage(sessionId, message);
       return Promise.resolve({ success });
@@ -603,10 +652,10 @@ export function createWorkspaceSessionManager(
       };
     },
 
-    provisionTeammate(projectId, agentRole, slug, teamName, taskInstructions) {
+    async provisionTeammate(projectId, agentRole, slug, teamName, taskInstructions) {
       const projectPath = getProjectPath(projectId);
 
-      const { worktreePath, branch } = provisioner.provision({
+      const { worktreePath, branch } = await provisioner.provision({
         projectPath,
         agentType: 'teammate',
         agentRole,
@@ -625,14 +674,14 @@ export function createWorkspaceSessionManager(
       return { worktreePath, branch };
     },
 
-    teardownTeammate(projectId, slug) {
+    async teardownTeammate(projectId, slug) {
       const lookupKey = `${projectId}:${slug}`;
       const projectPath = teammateSlugs.get(lookupKey);
       if (!projectPath) {
         return { success: false };
       }
 
-      provisioner.teardown(projectPath, slug);
+      await provisioner.teardown(projectPath, slug);
       teammateSlugs.delete(lookupKey);
 
       agentLogger.info(`[WorkspaceSessionManager] Teammate ${slug} worktree torn down`);
@@ -640,7 +689,7 @@ export function createWorkspaceSessionManager(
     },
 
     dispose() {
-      // Clean up all sessions
+      // Clean up all sessions (fire-and-forget teardowns; dispose runs on app exit)
       for (const [keyStr, session] of sessions.entries()) {
         if (session.agentSessionId) {
           agentManager.stopSession(session.agentSessionId);
@@ -648,15 +697,15 @@ export function createWorkspaceSessionManager(
         if (session.key.type === SESSION_TYPE_TEAM_LEAD) {
           const slug = worktreeSlugs.get(keyStr);
           if (slug) {
-            provisioner.teardown(session.projectPath, slug);
+            void provisioner.teardown(session.projectPath, slug).catch(() => { /* ignore on dispose */ });
           }
         }
       }
 
-      // Clean up all teammate worktrees
+      // Clean up all teammate worktrees (fire-and-forget)
       for (const [lookupKey, projectPath] of teammateSlugs.entries()) {
         const slug = lookupKey.split(':').slice(1).join(':');
-        provisioner.teardown(projectPath, slug);
+        void provisioner.teardown(projectPath, slug).catch(() => { /* ignore on dispose */ });
       }
 
       sessions.clear();

@@ -12,7 +12,7 @@ import { ROUTES } from '@shared/constants/routes';
 
 import { useLayoutStore } from '@renderer/shared/stores';
 
-import { Button, PageContent, PageHeader, PageLayout, PageHeaderTitle, PageHeaderActions, PageHeaderRow } from '@ui';
+import { Button, PageContent, PageHeader, PageLayout, PageHeaderTitle, PageHeaderActions, PageHeaderRow, Separator } from '@ui';
 
 import { useClearHistory, useSendCommand } from '../api/useAssistant';
 import { useAssistantEvents } from '../hooks/useAssistantEvents';
@@ -31,7 +31,6 @@ export function AssistantPage() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   function getActiveView(path: string): string {
-    if (path.includes('/roadmap')) return 'roadmap';
     if (path.startsWith(ROUTES.PLANNER)) return 'planner';
     if (path.includes('/ideation')) return 'ideation';
     if (path.startsWith(ROUTES.NOTES)) return 'notes';
@@ -73,7 +72,8 @@ export function AssistantPage() {
       <PageContent className="flex flex-col gap-0 overflow-hidden p-0">
         <div className="flex min-h-0 flex-1 flex-col">
           <WidgetMessageArea />
-          <div className="border-border border-t p-3">
+          <Separator />
+          <div className="p-3">
             <AssistantInputBar
               disabled={sendCommand.isPending}
               onSubmit={handleSendCommand}

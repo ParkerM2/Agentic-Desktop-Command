@@ -2,27 +2,21 @@
  * Settings IPC Contract
  *
  * Invoke and event channel definitions for app settings, profiles,
- * OAuth providers, webhooks, agent settings, hotkeys, voice, and
- * screen capture.
+ * OAuth providers, webhooks, agent settings, and screen capture.
  */
 
 import { z } from 'zod';
 
-import { HOTKEYS, SCREEN, SECURITY, SETTINGS, VOICE, VOICE_EVENTS } from './channels';
+import { SECURITY, SETTINGS } from './channels';
 import {
   AppSettingsSchema,
   DataDirInfoSchema,
   LayoutStateSchema,
   LayoutUpdateSchema,
   ProfileSchema,
-  ScreenPermissionStatusSchema,
-  ScreenSourceSchema,
-  ScreenshotSchema,
   SecurityAuditExportSchema,
   SecuritySettingsSchema,
   ValidationCheckSchema,
-  VoiceConfigSchema,
-  VoiceInputModeSchema,
   WebhookConfigSchema,
 } from './schemas';
 
@@ -143,87 +137,6 @@ export const settingsInvoke = {
   [SETTINGS.RESET['DATA-DIR']]: {
     input: z.object({}),
     output: z.object({ requiresRestart: z.boolean() }),
-  },
-} as const;
-
-/** Invoke channels for hotkey operations (absorbed from misc/hotkeys) */
-export const hotkeysInvoke = {
-  [HOTKEYS.GET.CONFIG]: {
-    input: z.object({}),
-    output: z.record(z.string(), z.string()),
-  },
-  [HOTKEYS.UPDATE.CONFIG]: {
-    input: z.object({
-      hotkeys: z.record(z.string(), z.string()),
-    }),
-    output: z.object({ success: z.boolean() }),
-  },
-  [HOTKEYS.RESET.CONFIG]: {
-    input: z.object({}),
-    output: z.record(z.string(), z.string()),
-  },
-} as const;
-
-/** Invoke channels for voice operations (absorbed from misc/voice) */
-export const voiceInvoke = {
-  [VOICE.GET.CONFIG]: {
-    input: z.object({}),
-    output: VoiceConfigSchema,
-  },
-  [VOICE.UPDATE.CONFIG]: {
-    input: z.object({
-      enabled: z.boolean().optional(),
-      language: z.string().optional(),
-      inputMode: VoiceInputModeSchema.optional(),
-    }),
-    output: VoiceConfigSchema,
-  },
-  [VOICE.CHECK.PERMISSION]: {
-    input: z.object({}),
-    output: z.object({
-      granted: z.boolean(),
-      canRequest: z.boolean(),
-    }),
-  },
-} as const;
-
-/** Event channels for voice operations */
-export const voiceEvents = {
-  [VOICE_EVENTS.SPEECH.TRANSCRIPT]: {
-    payload: z.object({
-      transcript: z.string(),
-      isFinal: z.boolean(),
-    }),
-  },
-} as const;
-
-/** Invoke channels for screen capture operations (absorbed from misc/screen) */
-export const screenInvoke = {
-  [SCREEN.LIST.SOURCES]: {
-    input: z.object({
-      types: z.array(z.enum(['screen', 'window'])).optional(),
-      thumbnailSize: z.object({ width: z.number(), height: z.number() }).optional(),
-    }),
-    output: z.array(ScreenSourceSchema),
-  },
-  [SCREEN.CAPTURE.SCREEN]: {
-    input: z.object({
-      sourceId: z.string(),
-      options: z
-        .object({
-          width: z.number().optional(),
-          height: z.number().optional(),
-        })
-        .optional(),
-    }),
-    output: ScreenshotSchema,
-  },
-  [SCREEN.CHECK.PERMISSION]: {
-    input: z.object({}),
-    output: z.object({
-      status: ScreenPermissionStatusSchema,
-      platform: z.string(),
-    }),
   },
 } as const;
 

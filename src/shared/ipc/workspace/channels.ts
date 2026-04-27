@@ -4,7 +4,7 @@ export const WORKSPACE = domain('workspace', {
   INIT: ['project', 'all-projects'],
   GET: ['sessions'],
   SPAWN: ['team-lead'],
-  STOP: ['team-lead'],
+  STOP: ['team-lead', 'project'],
   SEND: ['message'],
   HANDOFF: ['plan'],
   EXECUTE: ['task'],

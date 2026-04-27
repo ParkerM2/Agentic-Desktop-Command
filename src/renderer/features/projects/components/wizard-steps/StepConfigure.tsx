@@ -3,6 +3,7 @@
  */
 
 import {
+  Heading,
   Input,
   Label,
   Select,
@@ -47,7 +48,7 @@ export function StepConfigure({
 }: StepConfigureProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Project Settings</h3>
+      <Heading as="h3" className="text-sm font-medium">Project Settings</Heading>
       <div>
         <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="wizard-name">
           Project Name
@@ -79,14 +80,14 @@ export function StepConfigure({
             Workspace
           </Label>
           <Select
-            value={workspaceId ?? ''}
-            onValueChange={(val) => onWorkspaceChange(val.length > 0 ? val : null)}
+            value={workspaceId ?? '__none__'}
+            onValueChange={(val) => onWorkspaceChange(val === '__none__' ? null : val)}
           >
             <SelectTrigger id="wizard-workspace">
               <SelectValue placeholder="No workspace" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No workspace</SelectItem>
+              <SelectItem value="__none__">No workspace</SelectItem>
               {workspaces.map((ws) => (
                 <SelectItem key={ws.id} value={ws.id}>
                   {ws.name}

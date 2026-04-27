@@ -1,0 +1,103 @@
+/**
+ * TerminalGrid — Multi-terminal view with tabs
+ *
+ * Uses xterm.js for terminal rendering via TerminalInstance.
+ */
+
+import { Loader2, Plus, Terminal as TerminalIcon, X } from 'lucide-react';
+
+import { cn } from '@renderer/shared/lib/utils';
+
+import { Button, EmptyState } from '@ui';
+
+import { TerminalInstance } from '../TerminalInstance';
+
+import { useTerminalGrid } from './useTerminalGrid';
+
+export function TerminalGrid() {
+  const {
+    terminals,
+    isLoading,
+    activeTerminalId,
+    setActiveTerminal,
+    handleCreateTerminal,
+    handleCloseTerminal,
+  } = useTerminalGrid();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      {/* Terminal tabs */}
+      <div className="border-border bg-card flex items-center gap-px border-b px-2">
+        {terminals?.map((term) => (
+          <Button
+            key={term.id}
+            variant="ghost"
+            className={cn(
+              'group flex h-auto items-center gap-2 rounded-none px-3 py-2 text-sm transition-colors',
+              activeTerminalId === term.id
+                ? 'border-primary text-foreground border-b-2'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+            onClick={() => setActiveTerminal(term.id)}
+          >
+            <TerminalIcon className="h-3.5 w-3.5" />
+            <span>{term.name || `Terminal ${term.id.slice(0, 6)}`}</span>
+            <span
+              className="hover:bg-muted rounded p-0.5 opacity-0 group-hover:opacity-100"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => handleCloseTerminal(e, term.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleCloseTerminal(e as unknown as React.MouseEvent, term.id);
+                }
+              }}
+            >
+              <X className="h-3 w-3" />
+            </span>
+          </Button>
+        ))}
+        <Button
+          className="text-muted-foreground hover:bg-accent hover:text-foreground ml-1 rounded p-1.5"
+          size="icon"
+          title="New terminal"
+          variant="ghost"
+          onClick={handleCreateTerminal}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Terminal content area */}
+      <div className="relative flex-1 bg-background">
+        {terminals?.map((term) => (
+          <TerminalInstance key={term.id} isActive={term.id === activeTerminalId} session={term} />
+        ))}
+
+        {/* Empty state */}
+        {(terminals === undefined || terminals.length === 0) ? (
+          <EmptyState
+            className="h-full"
+            icon={TerminalIcon}
+            size="sm"
+            title="No terminal open"
+            action={
+              <Button size="sm" variant="secondary" onClick={handleCreateTerminal}>
+                Create Terminal
+              </Button>
+            }
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}

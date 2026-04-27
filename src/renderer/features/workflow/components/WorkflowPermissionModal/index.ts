@@ -1,0 +1,1 @@
+export { WorkflowPermissionModal } from './WorkflowPermissionModal';

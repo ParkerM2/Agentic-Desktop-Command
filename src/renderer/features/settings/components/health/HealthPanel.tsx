@@ -23,7 +23,7 @@ import type { ErrorEntry, ErrorSeverity } from '@shared/types';
 import { ConfirmDialog } from '@renderer/shared/components/ConfirmDialog';
 import { cn, formatRelativeTime } from '@renderer/shared/lib/utils';
 
-import { Badge, Button, ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
+import { Badge, Button, Heading, ScrollArea, Separator, Tabs, TabsContent, TabsList, TabsTrigger } from '@ui';
 
 import {
   useClearErrorLog,
@@ -138,7 +138,9 @@ function ErrorLogEntry({ entry }: { entry: ErrorEntry }) {
       </div>
 
       {isExpanded ? (
-        <div className="bg-muted/30 border-border border-t px-3 py-2">
+        <>
+          <Separator />
+          <div className="bg-muted/30 px-3 py-2">
           <div className="space-y-1 text-[10px]">
             {entry.context.route ? (
               <p className="text-muted-foreground">
@@ -179,7 +181,8 @@ function ErrorLogEntry({ entry }: { entry: ErrorEntry }) {
               </>
             )}
           </Button>
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
   );
@@ -274,9 +277,9 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
     >
       {/* Header */}
       <div className="border-border flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-foreground text-sm font-semibold">
+        <Heading as="h3" className="text-sm">
           System Health
-        </h3>
+        </Heading>
         <Button
           aria-label="Close health panel"
           size="icon"
@@ -291,9 +294,9 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
       {/* Service Health Table */}
       {services.length > 0 ? (
         <div className="border-border border-b px-4 py-3">
-          <h4 className="text-muted-foreground mb-2 text-[10px] font-semibold uppercase tracking-wide">
+          <Heading as="h4" className="text-muted-foreground mb-2 text-[10px] uppercase tracking-wide">
             Services
-          </h4>
+          </Heading>
           <div className="space-y-1.5">
             {services.map((svc) => {
               const statusConfig = SERVICE_STATUS_CONFIG[svc.status];
@@ -375,7 +378,8 @@ export function HealthPanel({ isOpen, onClose }: HealthPanelProps) {
       </Tabs>
 
       {/* Footer Actions */}
-      <div className="border-border flex items-center justify-end gap-2 border-t px-4 py-2">
+      <Separator />
+      <div className="flex items-center justify-end gap-2 px-4 py-2">
         <Button
           className="h-auto gap-1 px-2 py-1 text-xs"
           type="button"

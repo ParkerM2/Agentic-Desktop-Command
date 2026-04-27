@@ -2,9 +2,14 @@ import { resolve } from 'path';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 
+const BAKED_CHANNEL = process.env.ADC_CHANNEL ?? '';
+
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
+    define: {
+      __ADC_CHANNEL__: JSON.stringify(BAKED_CHANNEL),
+    },
     build: {
       lib: {
         entry: resolve(__dirname, 'src/main/index.ts'),
@@ -33,10 +38,18 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    define: {
+      __ADC_CHANNEL__: JSON.stringify(BAKED_CHANNEL),
+    },
     build: {
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/preload/index.ts'),
+          'test-suite-recorder': resolve(__dirname, 'src/preload/test-suite-recorder.ts'),
+        },
+        output: {
+          format: 'cjs',
+          entryFileNames: '[name].cjs',
         },
       },
     },

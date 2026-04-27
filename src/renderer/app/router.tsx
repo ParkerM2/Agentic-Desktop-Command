@@ -19,14 +19,13 @@ import { ROUTES } from '@shared/constants';
 
 import { RootErrorBoundary } from '@renderer/shared/components/error-boundaries';
 
-import { AuthGuard } from '@features/auth';
+import { Button, Heading } from '@ui';
 
 import { Spinner } from '@ui/spinner';
 
 import { RootLayout } from './layouts/RootLayout';
 import {
   createAssistantRoutes,
-  createAuthRoutes,
   createDashboardRoutes,
   createIntegrationsRoutes,
   createMiscRoutes,
@@ -55,20 +54,19 @@ function DefaultErrorComponent({ error, reset }: ErrorComponentProps) {
         <div className="bg-destructive/10 flex h-12 w-12 items-center justify-center rounded-full">
           <AlertTriangle aria-hidden="true" className="text-destructive h-6 w-6" />
         </div>
-        <h2 className="text-foreground text-lg font-semibold">
+        <Heading as="h2" className="text-lg">
           Failed to load page
-        </h2>
+        </Heading>
         <p className="text-muted-foreground text-sm">
           {error.message || 'An unexpected error occurred.'}
         </p>
-        <button
-          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-          type="button"
+        <Button
+          variant="primary"
           onClick={reset}
         >
-          <RotateCcw aria-hidden="true" className="h-4 w-4" />
+          <RotateCcw aria-hidden="true" className="h-4 w-4 shrink-0" />
           Retry
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -78,14 +76,8 @@ function DefaultErrorComponent({ error, reset }: ErrorComponentProps) {
 
 const rootRoute = createRootRoute();
 
-const authLayoutRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  id: 'auth',
-  component: AuthGuard,
-});
-
 const appLayoutRoute = createRoute({
-  getParentRoute: () => authLayoutRoute,
+  getParentRoute: () => rootRoute,
   id: 'app',
   component: RootLayout,
 });
@@ -101,8 +93,6 @@ const indexRoute = createRoute({
 
 // ─── Route Groups ────────────────────────────────────────────
 
-const { loginRoute, registerRoute, hubSetupRoute } = createAuthRoutes(rootRoute);
-
 const assistantRoutes = createAssistantRoutes(appLayoutRoute);
 const dashboardRoutes = createDashboardRoutes(appLayoutRoute);
 const projectRoutes = createProjectRoutes(appLayoutRoute);
@@ -115,21 +105,16 @@ const miscRoutes = createMiscRoutes(appLayoutRoute);
 // ─── Route Tree ──────────────────────────────────────────────
 
 const routeTree = rootRoute.addChildren([
-  loginRoute,
-  registerRoute,
-  hubSetupRoute,
-  authLayoutRoute.addChildren([
-    appLayoutRoute.addChildren([
-      indexRoute,
-      ...assistantRoutes,
-      ...dashboardRoutes,
-      ...projectRoutes,
-      ...personalRoutes,
-      ...productivityRoutes,
-      ...integrationsRoutes,
-      ...settingsRoutes,
-      ...miscRoutes,
-    ]),
+  appLayoutRoute.addChildren([
+    indexRoute,
+    ...assistantRoutes,
+    ...dashboardRoutes,
+    ...projectRoutes,
+    ...personalRoutes,
+    ...productivityRoutes,
+    ...integrationsRoutes,
+    ...settingsRoutes,
+    ...miscRoutes,
   ]),
 ]);
 

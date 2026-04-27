@@ -6,7 +6,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { MCP } from '@shared/ipc/misc/mcp.channels';
+import { MCP } from '@shared/ipc/mcp';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

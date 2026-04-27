@@ -9,9 +9,11 @@ import { useCallback, useRef, useState } from 'react';
 
 import { Camera, Check } from 'lucide-react';
 
-import { SCREEN } from '@shared/ipc/misc/screen.channels';
+import { SCREEN } from '@shared/ipc/screen';
 
 import { ipc } from '@renderer/shared/lib/ipc';
+
+import { Button } from '@ui';
 
 export function TitleBarScreenshot() {
   // 1. Hooks
@@ -60,18 +62,18 @@ export function TitleBarScreenshot() {
 
   // 3. Render
   return (
-    <button
+    <Button
       aria-label={captured ? 'Screenshot copied' : 'Take screenshot'}
-      className="border-border text-muted-foreground hover:bg-muted hover:text-foreground flex h-full w-10 items-center justify-center border-l"
+      size="toolbar"
       title={captured ? 'Screenshot copied' : 'Take screenshot'}
-      type="button"
+      variant="toolbar"
       onClick={handleClick}
     >
       {captured ? (
-        <Check className="h-3.5 w-3.5 text-success" />
+        <Check className="text-success" />
       ) : (
-        <Camera className="h-3.5 w-3.5" />
+        <Camera />
       )}
-    </button>
+    </Button>
   );
 }

@@ -20,15 +20,11 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  useSidebar,
 } from '@ui/sidebar';
-
-import { UserMenu } from '../UserMenu';
 
 import { LAYOUT_CONFIGS } from './layout-configs';
 import { NavGroup } from './NavGroup';
@@ -41,7 +37,6 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const routerState = useRouterState();
   const { activeProjectId, addProjectTab, sidebarLayout } = useLayoutStore();
-  const { open } = useSidebar();
   const currentPath = routerState.location.pathname;
   const config = LAYOUT_CONFIGS[sidebarLayout];
 
@@ -81,10 +76,6 @@ export function AppSidebar() {
       side={config.side ?? 'left'}
       variant={config.variant}
     >
-      <SidebarHeader>
-        <UserMenu collapsed={!open} />
-      </SidebarHeader>
-
       <SidebarContent>
         <NavGroup
           devSubGroups={config.devSubGroups}
@@ -123,10 +114,6 @@ export function AppSidebar() {
           side={config.dualSidebar.rightSide ?? 'right'}
           variant={config.dualSidebar.rightVariant}
         >
-          <SidebarHeader>
-            <UserMenu collapsed={!open} />
-          </SidebarHeader>
-
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel>Actions</SidebarGroupLabel>

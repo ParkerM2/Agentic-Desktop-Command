@@ -84,3 +84,13 @@ docs/superpowers/
 
 # One-off scripts
 scripts/cdp-screenshot.mjs
+
+# Ephemeral lint/typecheck output
+tsc-out.txt
+eslint-out.txt
+entities.json
+
+# Local session memory (not committed)
+.remember/
+playwright-report/
+test-results/

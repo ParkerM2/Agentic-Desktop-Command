@@ -9,13 +9,11 @@
  * No business logic here — all logic delegates to services.
  */
 
-import { TASKS_EVENTS } from '@shared/ipc/tasks/channels';
 import { WORKFLOW, WORKFLOW_EVENTS } from '@shared/ipc/workflow/channels';
 import { WORKFLOW_ENGINE } from '@shared/ipc/workflow-engine/channels';
 import { WORKFLOW_TEMPLATES, WORKFLOW_TEMPLATES_EVENTS } from '@shared/ipc/workflow-templates/channels';
 
 import { createJsonlWatcher } from "./jsonl-watcher";
-import { createProgressSyncer } from "./progress-syncer";
 import { createProgressWatcher } from "./progress-watcher";
 
 import type { WorkflowEngineService } from './engine';
@@ -24,7 +22,6 @@ import type { ProgressWatcher } from "./progress-watcher";
 import type { WorkflowTemplateService } from './templates';
 import type { BusSessionManager } from '../../bus/session-manager';
 import type { IpcRouter } from '../../ipc/router';
-import type { HubApiClient } from "../hub/hub-api-client";
 
 interface ActiveWatcher {
   jsonl: JsonlWatcher;
@@ -36,7 +33,6 @@ const activeWatchers = new Map<string, ActiveWatcher>();
 
 export function registerWorkflowHandlers(
   router: IpcRouter,
-  hubApiClient: HubApiClient,
   workflowEngineService: WorkflowEngineService,
   workflowTemplateService: WorkflowTemplateService,
   busSessionManager: BusSessionManager,
@@ -52,23 +48,11 @@ export function registerWorkflowHandlers(
       activeWatchers.delete(projectPath);
     }
 
-    // ── Legacy markdown watcher for Hub progress sync ──
+    // ── Legacy markdown watcher (no-op renderer emit since hub-tasks deletion) ──
+    // Watcher remains for parity with stop() lifecycle below; emit removed in Task 5.8
+    // because the TASKS_EVENTS channel was deleted with shared/ipc/hub-tasks. Renderer
+    // hooks that subscribed (useTaskEvents, useWorkflowEvents) were also removed.
     const legacyWatcher = createProgressWatcher(projectPath);
-    const syncer = createProgressSyncer(hubApiClient);
-    legacyWatcher.onProgress((data) => {
-      void syncer.syncProgress(data.taskId, data);
-    });
-    legacyWatcher.onProgress((data) => {
-      router.emit(TASKS_EVENTS.PROGRESS.UPDATED, {
-        taskId: data.taskId,
-        progress: {
-          phase: data.phase as 'idle' | 'planning' | 'coding' | 'testing' | 'reviewing' | 'complete' | 'error',
-          phaseProgress: data.totalPhases > 0 ? Math.round((data.phaseIndex / data.totalPhases) * 100) : 0,
-          overallProgress: data.totalPhases > 0 ? Math.round((data.phaseIndex / data.totalPhases) * 100) : 0,
-          message: `Phase: ${data.phase}`,
-        },
-      });
-    });
     legacyWatcher.start();
 
     // ── New JSONL watcher for milestone/context/permission events ──

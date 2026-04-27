@@ -11,7 +11,7 @@ import type { Suggestion, SuggestionType } from '@shared/types';
 
 import type { BusSessionManager } from '../../bus/session-manager';
 import type { ProgressService } from '../progress/progress-service';
-import type { ProjectService } from '../project/project-service';
+import type { ProjectService } from '../projects/project-service';
 
 const STALE_PROJECT_DAYS = 7;
 

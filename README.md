@@ -39,8 +39,8 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
 | **Renderer** | React Components, TanStack Router, React Query, Zustand | React 19, TypeScript |
 | **Preload Bridge** | Typed IPC Context, window.api | Electron contextBridge |
 | **Main Process** | IPC Router, 29 Services, OAuth, MCP Servers, PTY | Node.js, Electron 39 |
-| **External** | Hub Server, GitHub/Spotify/Calendar APIs, Anthropic SDK | REST, WebSocket, OAuth2 |
-| **Storage** | SQLite (Hub), JSON Files (Local), Task Specs | File system, SQLite |
+| **External** | GitHub/Spotify/Calendar APIs, Anthropic SDK | REST, WebSocket, OAuth2 |
+| **Storage** | SQLite, JSON Files, Task Specs | File system, SQLite |
 
 **Data Flow**: React Query hooks call `ipc()` → Preload bridge → IPC Router → Services → External APIs/Storage
 
@@ -57,7 +57,7 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
 | **Agent Team Management** | Spawn, pause, resume, and terminate multiple Claude CLI agents simultaneously |
 | **Workflow-Driven Task Table** | Sortable, filterable task table with customizable agent workflows and `/implement-feature` skill integration |
 | **Agent Queue** | Queue tasks for sequential agent execution with dependency management |
-| **Progress Watching** | Real-time sync of `docs/progress/*.md` files to Hub for crash-safe tracking |
+| **Progress Watching** | Real-time sync of progress events between paired devices via the P2P transport |
 | **Task Launcher** | Launch Claude CLI sessions directly from task rows with project context |
 
 ### Automated QA Loops & Testing
@@ -75,7 +75,7 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
 |---------|-------------|
 | **Multi-Project Support** | Manage multiple codebases with instant project switching |
 | **Workspaces** | Group related projects with shared settings, max concurrency limits, and device assignment |
-| **Device Sync** | Multi-device support via Hub — workspaces can be hosted on specific devices |
+| **Device Sync** | Multi-device sync via direct peer-to-peer connections (TLS-pinned WebSocket); workspaces can be hosted on specific devices |
 | **Git Worktrees** | Parallel development with visual worktree management |
 | **Branch Merging** | Visual conflict resolution and merge preview |
 
@@ -151,12 +151,44 @@ graph LR
 | Styling | Tailwind CSS 4, Radix UI |
 | Validation | Zod 4 |
 | Terminal | xterm.js 6, @lydell/node-pty |
-| Backend | Fastify 5, SQLite (Hub) |
+| Sync | P2P TLS WebSocket, Ed25519 identity, mDNS discovery |
 | Testing | Vitest, Playwright |
 
 ---
 
-## Quick Start
+## Install (Pre-built)
+
+Download the latest installer from [GitHub Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest).
+
+ADC is currently distributed unsigned. The first launch shows a security warning on both platforms — this is expected. Once bypassed, the OS remembers the choice for future launches.
+
+### Windows
+
+1. Download `ADC-Setup-<version>-x64.exe`
+2. Double-click to run
+3. SmartScreen will show **"Windows protected your PC"** → click **More info** → **Run anyway**
+4. Walk through the installer wizard
+5. Auto-updates work normally after install
+
+### macOS
+
+Run this single command in Terminal — it downloads the latest release, installs it to `/Applications`, and strips the Gatekeeper quarantine attribute so macOS doesn't falsely claim the app is "damaged":
+
+```sh
+curl -sSL https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest/download/install-mac.sh | bash
+```
+
+The script auto-detects arm64 vs x64 and launches ADC when done. After this, double-clicking the app works normally.
+
+> **Why the script?** Browser downloads set `com.apple.quarantine` on the DMG, which on recent macOS (Sonoma 14.5+ / Sequoia) triggers a blanket "damaged" Gatekeeper rejection for any app that isn't Apple-notarized. Notarization requires a paid Apple Developer subscription. Using `curl` bypasses browser quarantine, and the final `xattr -cr` scrubs anything still attached — no paid subscription needed.
+>
+> **Manual install (if you prefer):** Download the DMG from [Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest), drag ADC.app to /Applications, then run `xattr -cr /Applications/ADC.app` in Terminal.
+
+Updates are **manual** on macOS — when a new version is available, ADC shows a notification with a Download button that opens the releases page. Run the install script again to update. Your data persists in `~/Library/Application Support/ADC/`.
+
+---
+
+## Quick Start (Development)
 
 ```bash
 git clone https://github.com/ParkerM2/Agentic-Desktop-Command.git
@@ -181,31 +213,21 @@ npm run dev
 src/
 ├── main/           # Electron main process (29 services)
 ├── preload/        # IPC context bridge
-├── renderer/       # React app (25 features)
+├── renderer/       # React app (31 features)
 └── shared/         # Types + IPC contract (single source of truth)
 
-hub/                # Optional sync server (Fastify + SQLite)
-.claude/agents/     # 27 specialist agent definitions
+.claude/agents/     # 30 specialist agent definitions
 ```
 
 ---
 
-## Hub Server (Optional)
+## Multi-Device Sync
 
-Multi-device sync and real-time collaboration:
+Devices pair via PIN ritual (Settings → Peers) and sync over a direct
+TLS-pinned WebSocket connection. No central server is involved — each
+device discovers paired peers via mDNS and connects directly.
 
-```mermaid
-graph LR
-    Desktop1["Desktop 1"] <--> Hub["Hub Server"]
-    Desktop2["Desktop 2"] <--> Hub
-    Hub --> DB["SQLite"]
-    Hub --> WS["WebSocket"]
-```
-
-```bash
-cd hub && npm install && npm run dev
-# → http://localhost:3200
-```
+See `docs/peers/` for the protocol specification.
 
 ---
 

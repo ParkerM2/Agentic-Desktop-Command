@@ -4,7 +4,7 @@
 
 import { FolderOpen, Loader2 } from 'lucide-react';
 
-import { Button, Input, Label, Textarea } from '@ui';
+import { Button, Heading, Input, Label, Textarea } from '@ui';
 
 interface StepDetailsProps {
   name: string;
@@ -27,7 +27,7 @@ export function StepDetails({
 }: StepDetailsProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Project Details</h3>
+      <Heading as="h3" className="text-sm font-medium">Project Details</Heading>
 
       <div>
         <Label className="text-muted-foreground mb-1 block text-sm" htmlFor="create-wizard-name">

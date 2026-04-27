@@ -87,12 +87,14 @@ export function createBusSessionManager(
           prompt: config.prompt,
           model: config.model,
           teamName: config.teamName ?? config.name,
+          projectId: config.projectId ?? undefined,
         })
       : await agentManager.spawnProjectOwner({
           projectPath: config.projectPath ?? process.cwd(),
           prompt: config.prompt,
           name: config.name,
           model: config.model,
+          projectId: config.projectId ?? undefined,
         });
 
     // SpawnTeamLeadResult is AgentSession | SpawnTeamLeadError

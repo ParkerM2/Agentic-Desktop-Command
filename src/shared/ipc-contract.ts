@@ -27,15 +27,6 @@ export {
   CommandHistoryEntrySchema,
   WebhookCommandSchema,
   WebhookCommandSourceContextSchema,
-  // auth
-  AuthTokensSchema,
-  LoginInputSchema,
-  LoginOutputSchema,
-  RefreshInputSchema,
-  RefreshOutputSchema,
-  RegisterInputSchema,
-  RegisterOutputSchema,
-  UserSchema,
   // briefing
   AgentActivitySummarySchema,
   BriefingConfigSchema,
@@ -93,12 +84,7 @@ export {
   HealthStatusSchema,
   ServiceHealthSchema,
   ServiceHealthStatusSchema,
-  // hub
-  HubConfigOutputSchema,
-  HubConnectionStatusSchema,
-  HubStatusOutputSchema,
-  HubSyncOutputSchema,
-  // misc (alerts, changelog, devices, ideas, insights, merge, milestones, notes, screen, voice, workspaces)
+  // misc (alerts, changelog, devices, ideas, insights, merge, notes, screen, voice, workspaces)
   AlertLinkedToSchema,
   AlertSchema,
   AlertTypeSchema,
@@ -116,9 +102,6 @@ export {
   MergeDiffFileSchema,
   MergeDiffSummarySchema,
   MergeResultSchema,
-  MilestoneSchema,
-  MilestoneStatusSchema,
-  MilestoneTaskSchema,
   NoteSchema,
   ProjectInsightsSchema,
   RecurringConfigSchema,
@@ -169,14 +152,6 @@ export {
   AppSettingsSchema,
   ProfileSchema,
   WebhookConfigSchema,
-  // tasks
-  ExecutionPhaseSchema,
-  ExecutionProgressSchema,
-  HubTaskPrioritySchema,
-  HubTaskProgressSchema,
-  HubTaskSchema,
-  HubTaskStatusSchema,
-  TaskStatusSchema,
   // terminals
   TerminalSessionSchema,
   // agent-dashboard

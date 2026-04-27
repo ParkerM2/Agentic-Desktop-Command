@@ -96,7 +96,7 @@ node scripts/scaffold-features.mjs --fix    # create missing files
 
 ## Common Domains
 
-agent-dashboard, alerts, assistant, auth, briefing, bus, calendar, changelog, claude, dashboard, data-management, device, docker, email, file-tree, fitness, git, github, health, hotkeys, hub, ideas, insights, mcp, merge, milestones, notes, notifications, oauth, planner, progress, project, qa, screen, security, settings, spotify, tasks, terminal, time-parser, tracker, visualization, voice, webhook-settings, window, workflow, workflow-engine, workflow-templates, workspace
+agent-dashboard, alerts, assistant, auth, briefing, bus, calendar, changelog, claude, dashboard, data-management, device, docker, email, file-tree, fitness, git, github, health, hotkeys, hub, ideas, insights, mcp, merge, milestones, notes, notifications, oauth, planner, progress, project, qa, runners, screen, security, settings, spotify, tasks, terminal, time-parser, tracker, visualization, voice, webhook-settings, window, workflow, workflow-engine, workflow-templates, workspace
 
 ## Path Aliases
 

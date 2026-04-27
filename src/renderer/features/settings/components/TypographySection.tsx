@@ -8,7 +8,7 @@ import { Check, ChevronDown } from 'lucide-react';
 
 import { cn } from '@renderer/shared/lib/utils';
 
-import { Button, Input } from '@ui';
+import { Button, Heading, Input } from '@ui';
 
 
 // ── Constants ───────────────────────────────────────────────
@@ -70,9 +70,9 @@ export function TypographySection({
     <>
       {/* ── Font Family ── */}
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Font Family
-        </h2>
+        </Heading>
         <div className="relative">
           <Button
             aria-controls={fontListboxId}
@@ -126,9 +126,9 @@ export function TypographySection({
 
       {/* ── Font Size ── */}
       <section className="mb-8">
-        <h2 className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
+        <Heading as="h2" className="text-muted-foreground mb-3 text-sm font-medium tracking-wider uppercase">
           Font Size
-        </h2>
+        </Heading>
         <div className="flex items-center gap-4">
           <span className="text-muted-foreground w-10 text-sm">{FONT_SIZE_MIN}px</span>
           <Input

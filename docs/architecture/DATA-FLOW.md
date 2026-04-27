@@ -57,7 +57,7 @@ Component re-renders with new data
 |------|------|---------|
 | Domain contracts | `src/shared/ipc/<domain>/contract.ts` | Domain-specific channel definitions with Zod schemas |
 | Domain schemas | `src/shared/ipc/<domain>/schemas.ts` | Zod schemas for the domain |
-| Root barrel | `src/shared/ipc/index.ts` | Merges all 28 domain contracts into unified objects |
+| Root barrel | `src/shared/ipc/index.ts` | Merges all 37 domain contracts into unified objects |
 | Compat re-export | `src/shared/ipc-contract.ts` | Thin re-export from `src/shared/ipc/` (backward compat) |
 | Renderer helper | `src/renderer/shared/lib/ipc.ts` | Typed wrapper: `ipc(channel, input) -> Promise<Output>` |
 | Preload bridge | `src/preload/index.ts` | Context bridge: `api.invoke()`, `api.on()` |

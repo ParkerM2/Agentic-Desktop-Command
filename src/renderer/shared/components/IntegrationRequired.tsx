@@ -10,7 +10,11 @@ import type React from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Settings } from 'lucide-react';
 
+import { ROUTES } from '@shared/constants';
+
 import { useOAuthStatus } from '@renderer/shared/hooks';
+
+import { Button, Heading } from '@ui';
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -48,21 +52,21 @@ export function IntegrationRequired({
       {IconComponent ? (
         <IconComponent className="text-muted-foreground mx-auto mb-3 h-10 w-10" />
       ) : null}
-      <h3 className="text-foreground text-sm font-semibold">{title}</h3>
+      <Heading as="h3" className="text-sm">{title}</Heading>
       <p className="text-muted-foreground mx-auto mt-1 max-w-xs text-xs">{description}</p>
       <p className="text-muted-foreground mt-2 text-xs">
         {isConfigured ? 'Authentication required' : 'Not configured'}
       </p>
-      <button
-        className="bg-primary text-primary-foreground hover:bg-primary/90 mt-3 inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-        type="button"
+      <Button
+        className="mt-3"
+        variant="primary"
         onClick={() => {
-          void navigate({ to: '/settings' });
+          void navigate({ to: ROUTES.SETTINGS });
         }}
       >
-        <Settings className="h-4 w-4" />
+        <Settings className="h-4 w-4 shrink-0" />
         {isConfigured ? 'Connect' : 'Set Up in Settings'}
-      </button>
+      </Button>
     </div>
   );
 }

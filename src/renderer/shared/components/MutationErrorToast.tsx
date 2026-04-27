@@ -12,6 +12,8 @@ import { cn } from '@renderer/shared/lib/utils';
 import type { ToastType } from '@renderer/shared/stores/toast-store';
 import { useToastStore } from '@renderer/shared/stores/toast-store';
 
+import { Button } from '@ui';
+
 // -- Helpers --
 
 interface ToastConfig {
@@ -100,17 +102,18 @@ export function MutationErrorToast() {
               type={toast.type}
             />
             <p className="min-w-0 flex-1 text-sm">{toast.message}</p>
-            <button
+            <Button
               aria-label="Dismiss notification"
-              className="text-muted-foreground hover:text-foreground shrink-0 p-0.5"
-              type="button"
+              className="shrink-0"
+              size="icon-xs"
+              variant="ghost"
               onClick={(e) => {
                 e.stopPropagation();
                 removeToast(toast.id);
               }}
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
+              <X className="h-3.5 w-3.5 shrink-0" />
+            </Button>
           </div>
         );
       })}

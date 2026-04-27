@@ -4,7 +4,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-import { INSIGHTS } from '@shared/ipc/misc/insights.channels';
+import { INSIGHTS } from '@shared/ipc/insights';
 
 import { ipc } from '@renderer/shared/lib/ipc';
 

@@ -19,6 +19,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { WORKSPACE, WORKSPACE_EVENTS } from '@shared/ipc/workspace/channels';
+import type { AgentChatMessage } from '@shared/types/agent-dashboard';
 
 import { useIpcEvent } from '@renderer/shared/hooks';
 import { ipc } from '@renderer/shared/lib/ipc';
@@ -72,9 +73,36 @@ export function useWorkspaceInit(projectId: string | null, projectPath: string |
 
 /** Send a message to a workspace session. */
 export function useWorkspaceSend() {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: ({ sessionId, message }: { sessionId: string; message: string }) =>
       ipc(WORKSPACE.SEND.MESSAGE, { sessionId, message }),
+
+    onMutate: ({ sessionId, message }) => {
+      const optimisticMessage: AgentChatMessage = {
+        id: crypto.randomUUID(),
+        agentId: sessionId,
+        role: 'user',
+        content: [{ type: 'text', text: message }],
+        timestamp: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData<AgentChatMessage[]>(
+        ['agent-dashboard', 'messages', sessionId],
+        (old) => [...(old ?? []), optimisticMessage],
+      );
+
+      return { optimisticId: optimisticMessage.id };
+    },
+
+    onError: (_err, { sessionId }, context) => {
+      if (!context) return;
+      queryClient.setQueryData<AgentChatMessage[]>(
+        ['agent-dashboard', 'messages', sessionId],
+        (old) => (old ?? []).filter((m) => m.id !== context.optimisticId),
+      );
+    },
   });
 }
 

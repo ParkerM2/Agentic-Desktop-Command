@@ -13,13 +13,13 @@ import { AlertCircle, MessageSquare } from 'lucide-react';
 import { cn } from '@renderer/shared/lib/utils';
 import { useAssistantWidgetStore } from '@renderer/shared/stores/assistant-widget-store';
 
-import { ThinkingIndicator } from '@ui';
+import { MarkdownMessage, ThinkingIndicator } from '@ui';
 
 import { useSpeechSynthesis } from '@features/settings';
 
 import { useAssistantStore } from '../store';
 
-import type { ResponseEntry } from '../store';
+import type { ChatEntry, ResponseEntry } from '../store';
 
 const RESPONSE_STYLES: Record<ResponseEntry['type'], string> = {
   text: 'bg-muted/50',
@@ -46,30 +46,27 @@ export function WidgetMessageArea() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [responseHistory.length, isThinking]);
 
-  // Speak new responses when voice output is enabled
+  // Speak new response entries when voice output is enabled
   useEffect(() => {
     if (!voiceOutputEnabled || responseHistory.length === 0) {
       return;
     }
 
     const latest = responseHistory.at(-1);
-    if (!latest || latest.id === lastSpokenIdRef.current) {
+    if (latest?.kind !== 'response' || latest.id === lastSpokenIdRef.current) {
       return;
     }
 
-    // Only speak text and action responses, not errors
     if (latest.type === 'error') {
       return;
     }
 
     lastSpokenIdRef.current = latest.id;
 
-    // Truncate long responses for TTS
     const content = latest.response.length > TTS_MAX_LENGTH
       ? `${latest.response.slice(0, TTS_MAX_LENGTH)}... see full response in chat`
       : latest.response;
 
-    // Cancel any ongoing speech before speaking new response
     cancel();
     speak(content);
   }, [voiceOutputEnabled, responseHistory, speak, cancel]);
@@ -79,7 +76,7 @@ export function WidgetMessageArea() {
       <div
         aria-label="Assistant messages"
         aria-live="polite"
-        className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center"
+        className="text-muted-foreground flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center"
         role="log"
       >
         <MessageSquare className="h-8 w-8 opacity-30" />
@@ -93,33 +90,31 @@ export function WidgetMessageArea() {
       ref={scrollRef}
       aria-label="Assistant messages"
       aria-live="polite"
-      className="flex-1 overflow-y-auto p-3"
+      className="min-h-0 flex-1 overflow-y-auto p-3"
       role="log"
     >
       <div className="space-y-3">
-        {responseHistory.map((entry) => (
-          <div key={entry.id} className="space-y-1.5">
-            {/* User message */}
-            <div className="flex justify-end">
+        {responseHistory.map((entry: ChatEntry) => (
+          entry.kind === 'user' ? (
+            <div key={entry.id} className="flex justify-end">
               <div className="bg-primary text-primary-foreground max-w-[85%] rounded-lg px-2.5 py-1.5 text-xs">
                 {entry.input}
               </div>
             </div>
-
-            {/* Assistant response */}
-            <div className="flex gap-1.5">
+          ) : (
+            <div key={entry.id} className="flex gap-1.5">
               <ResponseIcon type={entry.type} />
               <div
                 className={cn(
                   'max-w-[85%] rounded-lg px-2.5 py-1.5',
-                  'text-foreground text-xs leading-relaxed whitespace-pre-wrap',
+                  'text-foreground',
                   RESPONSE_STYLES[entry.type],
                 )}
               >
-                {entry.response}
+                <MarkdownMessage compact>{entry.response}</MarkdownMessage>
               </div>
             </div>
-          </div>
+          )
         ))}
 
         {isThinking ? (

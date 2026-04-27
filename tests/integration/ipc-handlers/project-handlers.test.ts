@@ -12,9 +12,9 @@ import { PROJECTS } from '@shared/ipc/projects/channels';
 import type { Project, SubProject } from '@shared/types';
 
 import type { IpcRouter } from '@main/ipc/router';
-import type { CodebaseAnalyzerService } from '@main/features/project/codebase-analyzer';
-import type { ProjectService } from '@main/features/project/project-service';
-import type { SetupPipelineService } from '@main/features/project/setup-pipeline';
+import type { CodebaseAnalyzerService } from '@main/features/projects/codebase-analyzer';
+import type { ProjectService } from '@main/features/projects/project-service';
+import type { SetupPipelineService } from '@main/features/projects/setup-pipeline';
 
 // ─── Mock Factory ──────────────────────────────────────────────
 
@@ -175,7 +175,7 @@ describe('Project IPC Handlers', () => {
     ({ router, invoke } = testRouter);
 
     // Dynamically import and register handlers
-    const { registerProjectHandlers } = await import('@main/features/project/project-handlers');
+    const { registerProjectHandlers } = await import('@main/features/projects/project-handlers');
     registerProjectHandlers(router, projectService, codebaseAnalyzer, setupPipeline);
   });
 

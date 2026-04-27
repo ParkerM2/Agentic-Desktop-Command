@@ -15,11 +15,12 @@ interface ThemeState {
   colorTheme: string;
   uiScale: number;
   customThemes: CustomTheme[];
+  layoutGap: number;
   setMode: (mode: ThemeMode) => void;
   setColorTheme: (theme: string) => void;
   setUiScale: (scale: number) => void;
   setCustomThemes: (themes: CustomTheme[]) => void;
-  hydrate: (settings: { theme?: string; colorTheme?: string; uiScale?: number }) => void;
+  setLayoutGap: (gap: number) => void;
 }
 
 function resolveEffectiveMode(mode: ThemeMode): 'light' | 'dark' {
@@ -43,7 +44,6 @@ function applyCustomTokens(
   const root = document.documentElement;
 
   if (themeId === 'default') {
-    // Clear all custom CSS properties and remove data-theme attribute
     for (const key of THEME_TOKEN_KEYS) {
       root.style.removeProperty(`--${key}`);
     }
@@ -53,7 +53,6 @@ function applyCustomTokens(
 
   const theme = customThemes.find((t) => t.id === themeId);
   if (theme === undefined) {
-    // Unknown theme ID — fall back to default behavior
     for (const key of THEME_TOKEN_KEYS) {
       root.style.removeProperty(`--${key}`);
     }
@@ -61,16 +60,13 @@ function applyCustomTokens(
     return;
   }
 
-  // Pick the correct palette based on effective mode
   const effectiveMode = resolveEffectiveMode(mode);
   const palette = effectiveMode === 'dark' ? theme.dark : theme.light;
 
-  // Inject all token values as CSS custom properties
   for (const key of THEME_TOKEN_KEYS) {
     root.style.setProperty(`--${key}`, palette[key]);
   }
 
-  // Set data-theme to signal custom theme is active
   root.setAttribute('data-theme', themeId);
 }
 
@@ -78,15 +74,24 @@ function applyUiScale(scale: number): void {
   document.documentElement.setAttribute('data-ui-scale', String(scale));
 }
 
+function applyLayoutGap(gap: number): void {
+  const root = document.documentElement;
+  root.style.setProperty('--layout-gap', `${gap / 16}rem`);
+  root.style.setProperty('--layout-gap-sm', `${(gap * 0.75) / 16}rem`);
+  root.style.setProperty('--layout-gap-lg', `${(gap * 1.5) / 16}rem`);
+  root.style.setProperty('--layout-pad-x', `${(gap * 3) / 16}rem`);
+  root.style.setProperty('--layout-pad-y', `${(gap * 2) / 16}rem`);
+}
+
 export const useThemeStore = create<ThemeState>((set, get) => ({
   mode: 'dark',
   colorTheme: 'default',
   uiScale: 100,
   customThemes: [],
+  layoutGap: 8,
   setMode: (mode) => {
     set({ mode });
     applyMode(mode);
-    // Re-apply custom tokens if a custom theme is active
     const { colorTheme, customThemes } = get();
     if (colorTheme !== 'default') {
       applyCustomTokens(colorTheme, customThemes, mode);
@@ -104,19 +109,14 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
   setCustomThemes: (customThemes) => {
     set({ customThemes });
-    // Re-apply current theme in case the active theme's tokens changed
     const { colorTheme, mode } = get();
     if (colorTheme !== 'default') {
       applyCustomTokens(colorTheme, customThemes, mode);
     }
   },
-  hydrate: (settings) => {
-    const mode = (settings.theme as ThemeMode | undefined) ?? 'dark';
-    const colorTheme = settings.colorTheme ?? 'default';
-    const uiScale = Math.max(75, Math.min(150, settings.uiScale ?? 100));
-    set({ mode, colorTheme, uiScale });
-    applyMode(mode);
-    applyCustomTokens(colorTheme, get().customThemes, mode);
-    applyUiScale(uiScale);
+  setLayoutGap: (gap) => {
+    const layoutGap = Math.max(0, Math.min(16, gap));
+    set({ layoutGap });
+    applyLayoutGap(layoutGap);
   },
 }));

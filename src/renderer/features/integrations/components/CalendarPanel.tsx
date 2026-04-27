@@ -8,13 +8,15 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Calendar } from 'lucide-react';
 
+import { ROUTES } from '@shared/constants';
+
 import { Button, EmptyState } from '@ui';
 
 export function CalendarPanel() {
   const navigate = useNavigate();
 
   function handleConnect(): void {
-    void navigate({ to: '/settings' });
+    void navigate({ to: ROUTES.SETTINGS });
   }
 
   return (

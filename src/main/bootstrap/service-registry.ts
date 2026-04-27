@@ -9,12 +9,14 @@
  *                    on first property access (first IPC call).
  */
 
-import { hostname } from 'node:os';
+import { existsSync } from 'node:fs';
 
 import { app } from 'electron';
 
 import { APP_EVENTS } from '@shared/ipc/app/channels';
 import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
+import { computeSchemaHash } from '@shared/replication/schema-hash';
+import type { AppChannel } from '@shared/types/channel';
 
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
@@ -26,9 +28,10 @@ import { createTokenStore } from '../auth/token-store';
 import { createCommandBus } from '../bus';
 import { createBusSessionManager } from '../bus/session-manager';
 import { initDatabase } from '../db';
+import { LEGACY_HUB_ID, LOCAL_HUB_ID, migrateLegacyDb, resolveActiveDbPath } from '../db/legacy-migrator';
+import { loadMigrationTags } from '../db/migration-tags';
 import { createAlertService } from '../features/alerts/alert-service';
 import { createAppUpdateService } from '../features/app/app-update-service';
-import { createDockerService } from '../features/app/docker';
 import {
   createErrorCollector,
   createHealthRegistry,
@@ -44,35 +47,6 @@ import { createSuggestionEngine } from '../features/briefing/suggestion-engine';
 import { createChangelogService } from '../features/changelog/changelog-service';
 import { createClaudeClient } from '../features/claude';
 import { createDashboardService } from '../features/dashboard/dashboard-service';
-import { createFileTreeService } from '../features/file-tree/file-tree-service';
-import { createFitnessService } from '../features/fitness/fitness-service';
-import { createGitService } from '../features/git/git-service';
-import { createPolyrepoService } from '../features/git/polyrepo-service';
-import { createWorktreeService } from '../features/git/worktree-service';
-import { createDeviceService } from '../features/hub/device';
-import { createHubApiClient } from '../features/hub/hub-api-client';
-import { createHubAuthService } from '../features/hub/hub-auth-service';
-import { createHubConnectionManager } from '../features/hub/hub-connection';
-import { createHubSyncService } from '../features/hub/hub-sync';
-import { createWebhookRelay } from '../features/hub/webhook-relay';
-import { createIdeasService } from '../features/ideas/ideas-service';
-import { createInsightsService } from '../features/insights/insights-service';
-import { createIntegrationsService } from '../features/integrations/integrations-service';
-import { createMergeService } from '../features/merge/merge-service';
-import { createMilestonesService } from '../features/milestones/milestones-service';
-import { createNotesService } from '../features/notes/notes-service';
-import { createPlannerService } from '../features/planner/planner-service';
-import { createProgressService } from '../features/progress';
-import { createClaudeMdGenerator } from '../features/project/claudemd-generator';
-import { createCodebaseAnalyzer } from '../features/project/codebase-analyzer';
-import { createDocGenerator } from '../features/project/doc-generator';
-import { createGitHubRepoCreator } from '../features/project/github-repo-creator';
-import { createProjectService } from '../features/project/project-service';
-import { createSetupPipeline } from '../features/project/setup-pipeline';
-import { createSkillsResolver } from '../features/project/skills-resolver';
-import { createQaRunner } from '../features/qa/qa-runner';
-import { createQaTrigger } from '../features/qa/qa-trigger';
-import { createQaRecorderService } from '../features/qa/recorder';
 import {
   createCleanupService,
   createConfigReader,
@@ -80,16 +54,47 @@ import {
   createStorageInspector,
   createUserDataMigrator,
   createUserDataResolver,
-} from '../features/settings/data-management';
+} from '../features/data-management';
+import { createDockerService } from '../features/docker';
+import { createFileTreeService } from '../features/files/files-service';
+import { createFitnessService } from '../features/fitness/fitness-service';
+import { createGitService } from '../features/git/git-service';
+import { createPolyrepoService } from '../features/git/polyrepo-service';
+import { createWorktreeService } from '../features/git/worktree-service';
+import { createGitHubService } from '../features/github';
+import { createIdeasService } from '../features/ideas/ideas-service';
+import { createInsightsService } from '../features/insights/insights-service';
+import { createIntegrationsService } from '../features/integrations/integrations-service';
+import { createMergeService } from '../features/merge/merge-service';
+import { createNotesService } from '../features/notes/notes-service';
+import { loadPeerConfig } from '../features/peers/peer-config';
+import { getOrCreatePeerIdentity } from '../features/peers/peer-identity';
+import { createPeerStore } from '../features/peers/peer-store';
+import { createPeersService, type PeersService } from '../features/peers/peers-service';
+import { wrapAsyncPeersService } from '../features/peers/peers-service-async';
+import { createReplicationEngine } from '../features/peers/replication-engine';
+import { createPlannerService } from '../features/planner/planner-service';
+import { createProgressService } from '../features/progress';
+import { createClaudeMdGenerator } from '../features/projects/claudemd-generator';
+import { createCodebaseAnalyzer } from '../features/projects/codebase-analyzer';
+import { createDocGenerator } from '../features/projects/doc-generator';
+import { createGitHubRepoCreator } from '../features/projects/github-repo-creator';
+import { createProjectService } from '../features/projects/project-service';
+import { createSetupPipeline } from '../features/projects/setup-pipeline';
+import { createSkillsResolver } from '../features/projects/skills-resolver';
+import { createQaRunner } from '../features/qa/qa-runner';
+import { createQaTrigger } from '../features/qa/qa-trigger';
+import { createRunnersService } from '../features/runners';
 import { createScreenCaptureService } from '../features/settings/screen';
 import { createSettingsService } from '../features/settings/settings-service';
 import { createVoiceService } from '../features/settings/voice';
-import { createTerminalService } from '../features/terminal/terminal-service';
-import { createTrackerService } from '../features/tracker/tracker-service';
+import { createSpotifyService } from '../features/spotify';
+import { createTerminalService } from '../features/terminals/terminals-service';
+import { createTestSuiteService } from '../features/test-suite';
 import { createVisualizationService } from '../features/visualization';
 import { createWorkflowService } from '../features/workflow/workflow-service';
 import { createWorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
-import { createWorkspacesService } from '../features/workspaces/workspaces-service';
+import { createWorkspacesService } from '../features/workspace/workspaces-service';
 import { IpcRouter } from '../ipc/router';
 import { lazyService } from '../lib/lazy-service';
 import { appLogger } from '../lib/logger';
@@ -108,8 +113,7 @@ import type { CommandBus } from '../bus';
 import type { BusSessionManager } from '../bus/session-manager';
 import type { AdcDatabase } from '../db';
 import type { UserSessionManager } from '../features/auth';
-import type { HubApiClient } from '../features/hub/hub-api-client';
-import type { NotificationManager } from '../features/integrations/notifications';
+import type { NotificationManager } from '../features/notifications';
 import type { WorkspaceSessionManager } from '../features/workspace/workspace-session-manager';
 import type { Services } from '../ipc';
 import type { SessionJSONLReaderService } from '../services/session-jsonl/session-jsonl-reader';
@@ -130,8 +134,6 @@ export interface ServiceRegistryResult {
   healthService: ReturnType<typeof createHealthService>;
   qaTrigger: ReturnType<typeof createQaTrigger>;
   watchEvaluator: ReturnType<typeof createWatchEvaluator>;
-  webhookRelay: ReturnType<typeof createWebhookRelay>;
-  hubConnectionManager: ReturnType<typeof createHubConnectionManager>;
   terminalService: ReturnType<typeof createTerminalService>;
   alertService: ReturnType<typeof createAlertService>;
   notificationManager: NotificationManager;
@@ -142,11 +144,9 @@ export interface ServiceRegistryResult {
   cleanupService: ReturnType<typeof createCleanupService>;
   teamWatcherService: TeamWatcherService;
   sessionJsonlReaderService: SessionJSONLReaderService;
-  hubApiClient: HubApiClient;
   workspacesService: ReturnType<typeof createWorkspacesService>;
-  heartbeatIntervalId: ReturnType<typeof setInterval> | null;
-  registeredDeviceId: string | null;
   userSessionManager: UserSessionManager;
+  disposePeerTransport: () => Promise<void>;
 }
 
 /**
@@ -159,6 +159,7 @@ export interface ServiceRegistryResult {
 export function createServiceRegistry(
   getMainWindow: () => Electron.BrowserWindow | null,
   agentHostClient: AgentHostClient,
+  channel: AppChannel,
 ): ServiceRegistryResult {
   // ─── Tier 0: Eager — Router, DB, Auth, Settings, Error/Health, Project ───
 
@@ -174,7 +175,23 @@ export function createServiceRegistry(
   }
 
   const dataDir = configReader.resolveDataDir();
-  const db = initDatabase(dataDir);
+
+  // Move any pre-existing top-level adc.db into hubs/legacy/adc.db before
+  // the DB opens. Task 16's config-store migrator writes hubId='legacy'
+  // into the v2 blob, so once the DB is open at the new location the
+  // records line up.
+  //
+  // Boot-time hub selection: if a 'legacy' per-hub DB exists (either from
+  // this boot's move or a prior boot), open there; otherwise fall back to
+  // 'local' for fresh installs. activeHubId from the v2 config is only
+  // readable once the DB is open, so a full multi-hub active-hub lookup
+  // lives in Task 23.
+  // TODO: Task 23 switch active hub — read activeHubId from hub-config
+  // and reopen the DB at the selected hub's path on switch.
+  migrateLegacyDb(dataDir);
+  const legacyDbPath = resolveActiveDbPath(dataDir, LEGACY_HUB_ID);
+  const bootHubId = existsSync(legacyDbPath) ? LEGACY_HUB_ID : LOCAL_HUB_ID;
+  const db = initDatabase(dataDir, { activeHubId: bootHubId });
 
   const errorCollector = createErrorCollector(dataDir, {
     onError: (entry) => { router.emit(APP_EVENTS.ERROR.OCCURRED, entry); },
@@ -190,8 +207,8 @@ export function createServiceRegistry(
   const healthService = createHealthService(healthRegistry);
 
   const settingsService = createSettingsService({ db, dataDir });
-  const userSessionManager = createUserSessionManager(router);
-  const projectService = createProjectService({ hubApiClient: lazyService(() => hubApiClient) });
+  const userSessionManager = createUserSessionManager();
+  const projectService = createProjectService({ db });
 
   const commandBus = createCommandBus(db);
   const busSessionManager = createBusSessionManager(db, agentHostClient);
@@ -215,91 +232,6 @@ export function createServiceRegistry(
   const oauthManager = lazyService(() => createOAuthManager({ tokenStore, providers }));
   const mcpRegistry = lazyService(() => createMcpRegistry());
   const mcpManager = lazyService(() => createMcpManager({ registry: mcpRegistry }));
-
-  // ─── Tier 1: Hub domain ───────────────────────────────────────
-
-  const hubConnectionManager = lazyService(() => {
-    const mgr = createHubConnectionManager({ router, db, dataDir });
-    const savedHubConfig = mgr.getConnection();
-    if (savedHubConfig?.enabled) {
-      appLogger.info('[Hub] Auto-connecting to saved Hub:', savedHubConfig.hubUrl);
-      void (async () => {
-        const result = await mgr.connect();
-        if (result.success) {
-          appLogger.info('[Hub] Auto-connect succeeded');
-        } else {
-          appLogger.warn('[Hub] Auto-connect failed:', result.error);
-        }
-      })();
-    }
-    mgr.onWebSocketMessage(() => {
-      healthRegistry.pulse('hubWebSocket');
-      if (registeredDeviceId === null && hubAuthService.isAuthenticated()) {
-        void registerDeviceAndStartHeartbeat(hubApiClient);
-      }
-    });
-    return mgr;
-  });
-
-  const hubAuthService = lazyService(() =>
-    createHubAuthService({
-      tokenStore,
-      getHubUrl: () => hubConnectionManager.getConnection()?.hubUrl ?? null,
-    }),
-  );
-
-  const hubApiClient = lazyService(() =>
-    createHubApiClient(
-      () => hubConnectionManager.getConnection()?.hubUrl ?? null,
-      () => hubAuthService.getAccessToken(),
-    ),
-  );
-
-  const hubSyncService = lazyService(() => createHubSyncService(hubConnectionManager, db));
-
-  // ─── Device + heartbeat (stateful, kept at module scope) ─────
-
-  let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
-  let registeredDeviceId: string | null = null;
-  const HEARTBEAT_INTERVAL_MS = 30_000;
-
-  async function registerDeviceAndStartHeartbeat(client: HubApiClient): Promise<void> {
-    const machineId = hostname();
-    const deviceName = `${hostname()} (Desktop)`;
-    try {
-      const result = await client.registerDevice({
-        machineId,
-        deviceType: 'desktop',
-        deviceName,
-        capabilities: { canExecute: true, repos: [] },
-        appVersion: app.getVersion(),
-      });
-      if (result.ok && result.data) {
-        registeredDeviceId = result.data.id;
-        appLogger.info(`[Hub] Device registered: ${result.data.id}`);
-        if (heartbeatIntervalId !== null) clearInterval(heartbeatIntervalId);
-        heartbeatIntervalId = setInterval(() => {
-          if (registeredDeviceId) {
-            healthRegistry.pulse('hubHeartbeat');
-            void client.heartbeat(registeredDeviceId).then((res) => {
-              if (!res.ok) appLogger.warn('[Hub] Heartbeat failed:', res.error);
-              return res;
-            });
-          }
-        }, HEARTBEAT_INTERVAL_MS);
-        appLogger.info('[Hub] Heartbeat interval started (30s)');
-      } else {
-        appLogger.warn('[Hub] Device registration failed:', result.error);
-      }
-    } catch (error) {
-      appLogger.error('[Hub] Device registration error:', error instanceof Error ? error.message : 'Unknown error');
-    }
-  }
-
-  const deviceService = lazyService(() => createDeviceService({ hubApiClient }));
-
-  healthRegistry.register('hubHeartbeat', 60_000);
-  healthRegistry.register('hubWebSocket', 30_000);
 
   // ─── Tier 1: Workspace / Git domain ──────────────────────────
 
@@ -338,7 +270,6 @@ export function createServiceRegistry(
   const notesService = lazyService(() => createNotesService({ db, dataDir, router }));
   const dashboardService = lazyService(() => createDashboardService({ db, dataDir, router }));
   const plannerService = lazyService(() => createPlannerService({ db, dataDir, router }));
-  const milestonesService = lazyService(() => createMilestonesService({ db, dataDir, router }));
   const ideasService = lazyService(() => createIdeasService({ db, dataDir, router }));
   const changelogService = lazyService(() => createChangelogService({ db, router, dataDir }));
   const fitnessService = lazyService(() => createFitnessService({ db, dataDir, router }));
@@ -349,14 +280,14 @@ export function createServiceRegistry(
   // ─── Tier 1: External integrations (unified) ─────────────────
 
   const integrationsService = lazyService(() =>
-    createIntegrationsService({ db, dataDir, router, oauthManager, githubCliClient }),
+    createIntegrationsService({ db, dataDir, router, oauthManager }),
   );
 
   // Convenience accessors — expose sub-services from the unified service
   const emailService = lazyService(() => integrationsService.email);
   const notificationManager = lazyService(() => integrationsService.notifications);
-  const spotifyService = lazyService(() => integrationsService.spotify);
-  const githubService = lazyService(() => integrationsService.github);
+  const spotifyService = lazyService(() => createSpotifyService({ oauthManager }));
+  const githubService = lazyService(() => createGitHubService({ client: githubCliClient, router }));
   const calendarService = lazyService(() => integrationsService.calendar);
 
   const claudeClient = lazyService(() =>
@@ -409,7 +340,6 @@ export function createServiceRegistry(
   const toolExecutor = lazyService(() =>
     createToolExecutor({
       notesService,
-      milestonesService,
       ideasService,
       plannerService,
       projectService,
@@ -431,19 +361,29 @@ export function createServiceRegistry(
     }),
   );
 
-  const webhookRelay = lazyService(() => createWebhookRelay({ assistantService, router }));
-
   // ─── Tier 1: QA ──────────────────────────────────────────────
 
   const qaRunner = lazyService(() => createQaRunner(busSessionManager, dataDir, notificationManager));
-  const qaRecorderService = lazyService(() => createQaRecorderService(db));
+  const runnersService = createRunnersService({
+    db,
+    router,
+    projectService: {
+      getProjectPath: (id: string) => projectService.getProjectPath(id),
+    },
+  });
+  const testSuiteService = lazyService(() =>
+    createTestSuiteService(db, {
+      getMainWindow,
+      getProjectPath: (id) => projectService.getProjectPath(id),
+    }),
+  );
   const qaTrigger = lazyService(() =>
-    createQaTrigger({ qaRunner, busSessionManager, progressService, router, qaRecorderService }),
+    createQaTrigger({ qaRunner, busSessionManager, progressService, router, testSuiteService }),
   );
 
   // ─── Tier 1: App update + hotkeys ────────────────────────────
 
-  const appUpdateService = lazyService(() => createAppUpdateService(router));
+  const appUpdateService = lazyService(() => createAppUpdateService({ router, channel }));
 
   const quickInput = lazyService(() =>
     createQuickInputWindow({
@@ -491,6 +431,7 @@ export function createServiceRegistry(
       gitService,
       dataDir,
       progressBaseDir: dataDir,
+      replicationEngine,
       onStateChanged: (event: Parameters<typeof router.emit<typeof WORKFLOW_ENGINE_EVENTS.STATE.CHANGED>>[1]) => { router.emit(WORKFLOW_ENGINE_EVENTS.STATE.CHANGED, event); },
       onCompleted: (event: Parameters<typeof router.emit<typeof WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED>>[1]) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.COMPLETED, event); },
       onError: (event: Parameters<typeof router.emit<typeof WORKFLOW_ENGINE_EVENTS.RUN.ERROR>>[1]) => { router.emit(WORKFLOW_ENGINE_EVENTS.RUN.ERROR, event); },
@@ -505,9 +446,94 @@ export function createServiceRegistry(
   const teamWatcherService = lazyService(() => createTeamWatcherService());
   const sessionJsonlReaderService = lazyService(() => createSessionJSONLReaderService());
   const fileTreeService = lazyService(() => createFileTreeService());
-  const trackerService = lazyService(() => createTrackerService(process.cwd()));
   const visualizationService = lazyService(() => createVisualizationService(agentHostClient));
-  const progressService = lazyService(() => createProgressService(process.cwd(), agentHostClient, db));
+  // ─── Peer replication (Phase 3b) ─────────────────────────────
+  //
+  // PeersService owns peer-identity, TLS, peer-server (TLS https hosting both
+  // /pair/* and wss://), mDNS advertise + browse, and the trust store. The
+  // renderer drives pairing via IPC; ADC_PEER_REMOTE remains a dev override.
+  const peerConfig = loadPeerConfig();
+
+  // Audit 04/L3: resolve peer identity once at boot rather than relying on
+  // dev-default fallbacks (`'aaaaaaaa'` / `'peer-a'`) inside the engine deps.
+  // peers-service reuses the same identity instead of resolving its own. The
+  // env-var override in peer-config wins when set; otherwise we derive from
+  // the on-disk Ed25519 keypair (creating it on first boot).
+  const peerIdentity = getOrCreatePeerIdentity(dataDir, {
+    allowPlaintext: process.env.ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY === '1',
+  });
+  const peerIdFull = peerConfig.peerIdFull || peerIdentity.peerIdFull;
+  const peerIdShort = peerConfig.peerIdShort || peerIdentity.peerIdShort;
+  if (peerIdFull === '' || peerIdShort === '') {
+    throw new Error('peers: identity not resolved');
+  }
+  const peerStore = createPeerStore(db);
+
+  const replicationEngine = createReplicationEngine({
+    db,
+    peerIdShort,
+    peerIdFull,
+    peerStore,
+  });
+
+  // PeersService bootstrap is async (TLS material, peer-server.listen, mDNS).
+  // Wrap the in-flight promise in a Proxy so handlers transparently `await`
+  // it — eliminates the IIFE race where IPC calls landing during the boot
+  // window hit a "peers-service not yet initialized" throw, and ensures
+  // disposePeerTransport awaits the same promise so half-constructed
+  // resources (TLS listener, mDNS) cannot leak. See audit 04 C1+C2.
+  // NOTE: peerConfig.listenPort > 0 gating is preserved — when peers is
+  // disabled we hand back a permanently-pending promise that the wrapper
+  // never resolves, so handlers will hang rather than silently no-op.
+  // TODO(audit-04 C1): replace the never-resolving disabled branch with
+  // a proper "peers disabled" stub once the contract supports it.
+  const peersServicePromise: Promise<PeersService> =
+    peerConfig.listenPort > 0
+      ? (async () => {
+          const schemaHash = computeSchemaHash(loadMigrationTags());
+          return await createPeersService({
+            db,
+            dataDir,
+            engine: replicationEngine,
+            listenPort: peerConfig.listenPort,
+            schemaHash,
+            preferMdns: peerConfig.preferMdns,
+            displayName: peerConfig.displayName ?? null,
+            // Audit 04/L3 + M6: reuse identity + peer store from the
+            // registry rather than letting peers-service construct duplicates.
+            identity: peerIdentity,
+            peerStore,
+          });
+        })()
+      : new Promise<PeersService>(() => {
+          // intentionally never resolves: peers feature disabled by config
+        });
+
+  // Guard against unhandled rejection if bootstrap fails. The wrapper
+  // re-uses the same promise and will surface the rejection on the first
+  // method call, so logging here is purely informational.
+  peersServicePromise.catch((err: unknown) => {
+    appLogger.error(`[Bootstrap] PeersService failed to start: ${String(err)}`);
+  });
+
+  let peersDisposed = false;
+  const peersServiceLazy: PeersService = wrapAsyncPeersService(peersServicePromise);
+
+  const disposePeerTransport = async (): Promise<void> => {
+    if (peersDisposed) return;
+    peersDisposed = true;
+    if (peerConfig.listenPort <= 0) return;
+    try {
+      const svc = await peersServicePromise;
+      await svc.dispose();
+    } catch (err) {
+      appLogger.warn(`[Bootstrap] PeersService dispose during bootstrap-error: ${String(err)}`);
+    }
+  };
+
+  const progressService = lazyService(() =>
+    createProgressService(process.cwd(), agentHostClient, db, replicationEngine),
+  );
 
   // ─── User session change handling ────────────────────────────
 
@@ -534,7 +560,6 @@ export function createServiceRegistry(
     terminalService,
     settingsService,
     claudeClient,
-    deviceService,
     alertService,
     assistantService,
     calendarService,
@@ -544,16 +569,14 @@ export function createServiceRegistry(
     fileTreeService,
     fitnessService,
     healthRegistry,
-    hubConnectionManager,
-    hubSyncService,
     ideasService,
     insightsService,
     mcpManager,
-    milestonesService,
     notesService,
     dashboardService,
     dockerService,
     notificationManager,
+    peersService: peersServiceLazy,
     plannerService,
     spotifyService,
     gitService,
@@ -565,17 +588,15 @@ export function createServiceRegistry(
     briefingService,
     hotkeyManager,
     appUpdateService,
-    hubApiClient,
-    hubAuthService,
     qaRunner,
-    qaRecorderService,
+    runnersService,
+    testSuiteService,
     workflowTemplateService,
     cleanupService,
     storageInspector,
     oauthManager,
     codebaseAnalyzer,
     setupPipeline,
-    trackerService,
     visualizationService,
     userSessionManager,
     workspaceSessionManager,
@@ -602,8 +623,6 @@ export function createServiceRegistry(
     healthService,
     qaTrigger,
     watchEvaluator,
-    webhookRelay,
-    hubConnectionManager,
     terminalService,
     alertService,
     notificationManager,
@@ -611,12 +630,10 @@ export function createServiceRegistry(
     hotkeyManager,
     quickInput,
     settingsService,
-    hubApiClient,
     cleanupService,
     teamWatcherService,
     sessionJsonlReaderService,
-    heartbeatIntervalId,
-    registeredDeviceId,
     userSessionManager,
+    disposePeerTransport,
   };
 }

@@ -87,7 +87,7 @@ function PageHeaderRow({ className, ...props }: PageHeaderRowProps) {
     <div
       data-slot="page-header-row"
       className={cn(
-        'flex w-full items-center justify-between gap-4 px-6 py-4',
+        'flex w-full items-center justify-between gap-[var(--layout-pad-md)] px-[var(--layout-pad-x)] py-[var(--layout-pad-y)]',
         className,
       )}
       {...props}
@@ -161,7 +161,7 @@ function PageHeaderTabList({ className, ...props }: PageHeaderTabListProps) {
     <TabsPrimitive.List
       data-slot="page-header-tab-list"
       className={cn(
-        'flex w-full items-center gap-0 px-6',
+        '-mb-px flex w-full items-center gap-1 px-[var(--layout-pad-x)]',
         className,
       )}
       {...props}
@@ -178,8 +178,8 @@ function PageHeaderTab({ className, ...props }: PageHeaderTabProps) {
     <TabsPrimitive.Trigger
       data-slot="page-header-tab"
       className={cn(
-        'text-muted-foreground hover:text-foreground relative inline-flex items-center gap-2 border-b-2 border-transparent px-3 py-2 text-sm font-medium transition-colors',
-        'data-[state=active]:text-foreground data-[state=active]:border-primary',
+        'text-muted-foreground hover:text-foreground hover:bg-muted/50 relative inline-flex items-center gap-2 rounded-t-md px-3 py-2 text-sm font-medium transition-colors',
+        'data-[state=active]:text-foreground data-[state=active]:bg-muted/30',
         className,
       )}
       {...props}
@@ -194,7 +194,7 @@ type PageHeaderTabContentProps = React.ComponentProps<typeof TabsPrimitive.Conte
 function PageHeaderTabContent({ className, ...props }: PageHeaderTabContentProps) {
   return (
     <TabsPrimitive.Content
-      className={cn('flex-1 outline-none', className)}
+      className={cn('flex min-h-0 flex-1 flex-col outline-none', className)}
       data-slot="page-header-tab-content"
       {...props}
     />
@@ -209,7 +209,7 @@ type PageContentProps = React.ComponentProps<'div'>;
 function PageContent({ className, ...props }: PageContentProps) {
   return (
     <div
-      className={cn('min-h-0 w-full flex-1 overflow-auto px-6 py-4', className)}
+      className={cn('min-h-0 w-full flex-1 overflow-auto px-[var(--layout-pad-x)] py-[var(--layout-pad-y)]', className)}
       data-slot="page-content"
       {...props}
     />

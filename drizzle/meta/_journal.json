@@ -106,6 +106,118 @@
       "when": 1775843500000,
       "tag": "0014_add_workspaces_table",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "6",
+      "when": 1775843600000,
+      "tag": "0015_drop_milestones",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1775843700000,
+      "tag": "0016_test_suite",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1775843800000,
+      "tag": "0017_add_baselines_diffs",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1775843900000,
+      "tag": "0018_add_shared_steps",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1775844000000,
+      "tag": "0019_add_schedules",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1776000000000,
+      "tag": "0020_add_runners",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1776100000000,
+      "tag": "0021_add_project_id_to_progress_tasks",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1776200000000,
+      "tag": "0022_test_suite_scripts_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1776300000000,
+      "tag": "0023_test_suite_description",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1776400000000,
+      "tag": "0024_test_suite_runs_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1776500000000,
+      "tag": "0025_test_suite_tags",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1776600000000,
+      "tag": "0026_op_log_and_row_meta",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1777067549736,
+      "tag": "0027_workflow_runs_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1777069738667,
+      "tag": "0028_peer_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1777200000000,
+      "tag": "0029_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1777300000000,
+      "tag": "0030_op_log_hlc_index",
+      "breakpoints": true
     }
   ]
 }

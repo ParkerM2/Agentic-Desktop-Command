@@ -5,9 +5,10 @@
  * Logic lives in bootstrap modules and services — this file orchestrates startup.
  */
 
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { app, BrowserWindow, dialog, MessageChannelMain, shell, session, utilityProcess } from 'electron';
+import { app, BrowserWindow, dialog, MessageChannelMain, protocol, shell, session, utilityProcess } from 'electron';
 
 import { ENV_VARS } from '@shared/constants/env';
 import { ASSISTANT_EVENTS } from '@shared/ipc/assistant/channels';
@@ -19,22 +20,69 @@ import {
   wireEventForwarding,
   wireIpcHandlers,
 } from './bootstrap';
+import { getChannelConfig, resolveChannel } from './lib/channel';
 import { appLogger } from './lib/logger';
+import { inheritShellPath } from './lib/shell-path';
 import { createTrayManager } from './tray/tray-manager';
 
 import type { AgentHostClient } from './agent-host/agent-host-client';
 import type { ErrorCollector } from './features/app/health';
 import type { SettingsService } from './features/settings/settings-service';
 
-// Dev mode: rename app before any app.getPath('userData') calls so data isolates to %APPDATA%/ADC-Dev/
-const isDevMode = process.env[ENV_VARS.ADC_DEV_MODE] === 'true' || !app.isPackaged;
-
-if (isDevMode) {
-  app.setName('ADC-Dev');
+// Resolve channel BEFORE any app.getPath() or app.whenReady() so Electron's
+// path resolution picks up the renamed app. Channels isolate userData,
+// cache, logs, crashDumps, the single-instance lock, and Claude CLI state.
+const envChannelRaw = process.env[ENV_VARS.ADC_CHANNEL] ?? '';
+const bakedChannelRaw = __ADC_CHANNEL__;
+function pickChannelSource(): string | undefined {
+  if (envChannelRaw !== '') return envChannelRaw;
+  if (bakedChannelRaw !== '') return bakedChannelRaw;
+  return undefined;
 }
+const CHANNEL = resolveChannel({
+  envChannel: pickChannelSource(),
+  devMode: process.env[ENV_VARS.ADC_DEV_MODE] === 'true',
+  isPackaged: app.isPackaged,
+});
+const CHANNEL_CFG = getChannelConfig(CHANNEL);
+
+app.setName(CHANNEL_CFG.name);
+app.setAppUserModelId(CHANNEL_CFG.aumid);
+
+// Isolate Claude CLI state per channel. CLAUDE_CONFIG_DIR is honored by the
+// Claude CLI for every ~/.claude/* path (sessions, MCP auth, hooks).
+// process.env propagates to utilityProcess.fork and child_process.spawn
+// automatically — see process-manager.ts buildCleanEnv.
+process.env.CLAUDE_CONFIG_DIR ??= join(app.getPath('userData'), '.claude');
+
+appLogger.info(`[Main] Starting ADC on channel=${CHANNEL} (name=${CHANNEL_CFG.name}, aumid=${CHANNEL_CFG.aumid})`);
+
+// On macOS/Linux, a packaged .app launched from Finder has a minimal PATH.
+// Pull the user's login-shell PATH + common bin dirs so `which claude` (and
+// any other user-installed CLI we spawn) resolves correctly.
+inheritShellPath();
 
 // Enable remote debugging for DevTools MCP integration
 app.commandLine.appendSwitch('remote-debugging-port', '9222');
+
+// Register custom protocol scheme before app is ready (required by Electron)
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'local-file', privileges: { bypassCSP: true, stream: true, supportFetchAPI: true } },
+]);
+
+// Single-instance lock: second invocation exits immediately and focuses the first.
+// Prevents duplicate Electron trees accumulating across `npm run dev` re-runs,
+// stale Ctrl+C orphans, or concurrent agent-spawned dev servers.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  process.exit(0);
+}
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 
 let mainWindow: BrowserWindow | null = null;
 let settingsServiceRef: SettingsService | null = null;
@@ -64,13 +112,19 @@ function createWindow(): void {
     minHeight: 600,
     frame: false,
     show: false,
+    title: CHANNEL_CFG.label,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
+      preload: join(__dirname, '../preload/index.cjs'),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
       webviewTag: true,
     },
+  });
+
+  // Keep title pinned — renderer HTML setting <title> would overwrite it.
+  mainWindow.on('page-title-updated', (event) => {
+    event.preventDefault();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -134,7 +188,7 @@ function createWindow(): void {
     if (rendererCrashCount >= MAX_CONSECUTIVE_CRASHES) {
       const choice = dialog.showMessageBoxSync({
         type: 'error',
-        title: 'ADC — Renderer Crashed',
+        title: `${CHANNEL_CFG.label} — Renderer Crashed`,
         message: 'The app keeps crashing. Would you like to restart or quit?',
         buttons: ['Restart', 'Quit'],
         defaultId: 0,
@@ -230,7 +284,7 @@ function initializeApp(): void {
   agentHostClientRef = agentHostClient;
 
   // ── Initialize services ───────────────────────────────────
-  const registry = createServiceRegistry(getMainWindow, agentHostClient);
+  const registry = createServiceRegistry(getMainWindow, agentHostClient, CHANNEL);
 
   // Store refs for createWindow() settings checks and global error reporting
   settingsServiceRef = registry.settingsService;
@@ -244,20 +298,18 @@ function initializeApp(): void {
   wireEventForwarding({
     router: registry.router,
     watchEvaluator: registry.watchEvaluator,
-    webhookRelay: registry.webhookRelay,
-    hubConnectionManager: registry.hubConnectionManager,
   });
 
   // Register app lifecycle handlers (quit, activate, cleanup)
   setupLifecycle({
     createWindow,
     terminalService: registry.terminalService,
+    runnersService: registry.services.runnersService,
     errorCollector: registry.errorCollector,
     healthRegistry: registry.healthRegistry,
     healthService: registry.healthService,
     qaTrigger: registry.qaTrigger,
     alertService: registry.alertService,
-    hubConnectionManager: registry.hubConnectionManager,
     notificationManager: registry.notificationManager,
     briefingService: registry.briefingService,
     watchEvaluator: registry.watchEvaluator,
@@ -266,7 +318,7 @@ function initializeApp(): void {
     appUpdateService: registry.services.appUpdateService,
     commandBus: registry.commandBus,
     busSessionManager: registry.busSessionManager,
-    getHeartbeatIntervalId: () => registry.heartbeatIntervalId,
+    disposePeerTransport: registry.disposePeerTransport,
   });
 }
 
@@ -303,6 +355,25 @@ void (async () => {
   });
 
   await app.whenReady();
+
+  // Register local-file:// protocol to serve local screenshots securely.
+  // The renderer can't load file:// URLs when served from http://localhost (dev mode),
+  // so we proxy through a custom scheme that Electron allows.
+  protocol.handle('local-file', async (request) => {
+    // URL format: local-file:///C:/Users/.../screenshot.png
+    const filePath = decodeURIComponent(new URL(request.url).pathname);
+    // On Windows the pathname starts with /C:/... — strip the leading slash
+    const normalized = process.platform === 'win32' ? filePath.replace(/^\//, '') : filePath;
+    try {
+      const data = await readFile(normalized);
+      const ext = normalized.split('.').pop()?.toLowerCase() ?? '';
+      const MIME_TYPES: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg' };
+      const mime = MIME_TYPES[ext] ?? 'application/octet-stream';
+      return new Response(data, { headers: { 'Content-Type': mime } });
+    } catch {
+      return new Response('Not found', { status: 404 });
+    }
+  });
 
   // Bypass certificate errors for localhost webview content only
   session.defaultSession.setCertificateVerifyProc((request, callback) => {

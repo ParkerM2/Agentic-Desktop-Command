@@ -1,0 +1,112 @@
+/**
+ * ProfileSection — Profile list with add/edit/delete actions
+ */
+
+import { Plus } from 'lucide-react';
+
+import { Button, Heading, Spinner } from '@ui';
+
+import { ProfileCard } from '../ProfileCard';
+import { ProfileFormModal } from '../ProfileFormModal';
+
+import { useProfileSection } from './useProfileSection';
+
+export function ProfileSection() {
+  const {
+    profiles,
+    isLoading,
+    modalOpen,
+    editingProfile,
+    deleteConfirmId,
+    errorMessage,
+    setErrorMessage,
+    handleAdd,
+    handleEdit,
+    handleDeleteRequest,
+    handleDeleteConfirm,
+    handleDeleteCancel,
+    handleSetDefault,
+    handleSave,
+    handleCloseModal,
+  } = useProfileSection();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Spinner className="text-muted-foreground" size="sm" />
+      </div>
+    );
+  }
+
+  const deleteTarget =
+    deleteConfirmId === null ? undefined : profiles?.find((p) => p.id === deleteConfirmId);
+
+  return (
+    <section className="mb-8">
+      <div className="mb-3 flex items-center justify-between">
+        <Heading as="h2" className="text-muted-foreground text-sm font-medium tracking-wider uppercase">
+          Profiles
+        </Heading>
+        <Button size="sm" variant="ghost" onClick={handleAdd}>
+          <Plus className="h-3.5 w-3.5" />
+          Add Profile
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {profiles?.map((profile) => (
+          <ProfileCard
+            key={profile.id}
+            profile={profile}
+            onDelete={handleDeleteRequest}
+            onEdit={handleEdit}
+            onSetDefault={handleSetDefault}
+          />
+        ))}
+        {profiles?.length === 0 ? (
+          <p className="text-muted-foreground py-4 text-center text-sm">
+            No profiles configured. Add one to get started.
+          </p>
+        ) : null}
+      </div>
+
+      {/* Error message */}
+      {errorMessage === null ? null : (
+        <div className="border-destructive/50 bg-destructive/5 mt-3 flex items-center justify-between rounded-lg border p-3">
+          <p className="text-destructive text-sm">{errorMessage}</p>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setErrorMessage(null)}
+          >
+            Dismiss
+          </Button>
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {deleteTarget ? (
+        <div className="border-destructive/50 bg-destructive/5 mt-3 flex items-center justify-between rounded-lg border p-3">
+          <p className="text-sm">
+            Delete profile <strong>{deleteTarget.name}</strong>?
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={handleDeleteCancel}>
+              Cancel
+            </Button>
+            <Button size="sm" variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <ProfileFormModal
+        open={modalOpen}
+        profile={editingProfile}
+        onClose={handleCloseModal}
+        onSave={handleSave}
+      />
+    </section>
+  );
+}
