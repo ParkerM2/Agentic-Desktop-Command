@@ -9,11 +9,13 @@
  * surfaces as a request `'error'` (not a post-`'end'` check).
  */
 
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';
 
 import { pinnedCheckServerIdentity } from './peer-tls-pin';
 
 import type { ClientRequest, IncomingMessage, RequestOptions } from 'node:http';
+import type { TLSSocket } from 'node:tls';
 
 export interface PostJsonPinnedOpts {
   /**
@@ -35,12 +37,13 @@ export async function postJsonPinned<T>(
 ): Promise<T> {
   const reqFn = opts.requestImpl ?? httpsRequest;
   const u = new URL(url);
-  // Pin the peer's leaf cert at TLS handshake time via `checkServerIdentity`.
-  // Self-signed certs cannot be CA-validated, so we MUST keep
-  // `rejectUnauthorized: false` — otherwise Node rejects with "self-signed
-  // certificate" before `checkServerIdentity` is called. The pin function still
-  // runs at TLS time and rejects the handshake on fingerprint mismatch
-  // (returning an Error fails the connection during `'secureConnect'`).
+  // Self-signed peer certs cannot be CA-validated. We use rejectUnauthorized:
+  // false so the handshake completes, then enforce the fingerprint pin on the
+  // socket's secureConnect event BEFORE writing any application bytes.
+  // checkServerIdentity is also wired (defense-in-depth) but Node only acts on
+  // its Error return when rejectUnauthorized:true, so the post-secureConnect
+  // check is the actual enforcement gate. Audit ref: 01-security.md (TLS pin).
+  const expectedFp = Buffer.from(fingerprintHex, 'hex');
   const agent = new HttpsAgent({
     rejectUnauthorized: false,
     checkServerIdentity: pinnedCheckServerIdentity(fingerprintHex),
@@ -94,6 +97,30 @@ export async function postJsonPinned<T>(
     );
     req.on('error', (err: Error) => {
       settle(() => { reject(err); });
+    });
+    // Enforce fingerprint pin at TLS handshake time (post-handshake but
+    // pre-application-write). Real https.request emits 'socket' synchronously
+    // with a TLSSocket; the test injection seam doesn't, so we guard with
+    // typeof checks.
+    req.on('socket', (socket) => {
+      const tls = socket as TLSSocket;
+      const verify = (): void => {
+        const cert = typeof tls.getPeerCertificate === 'function'
+          ? tls.getPeerCertificate(true)
+          : undefined;
+        const raw = cert && (cert as { raw?: Buffer }).raw;
+        if (!raw || raw.length === 0) return; // mock socket — skip
+        const actual = createHash('sha256').update(raw).digest();
+        if (actual.length !== expectedFp.length || !timingSafeEqual(actual, expectedFp)) {
+          settle(() => { reject(new Error('peer fingerprint mismatch')); });
+          tls.destroy(new Error('peer fingerprint mismatch'));
+        }
+      };
+      if ((tls as { encrypted?: boolean }).encrypted === true) {
+        verify();
+      } else if (typeof tls.once === 'function') {
+        tls.once('secureConnect', verify);
+      }
     });
     req.write(payload);
     req.end();
