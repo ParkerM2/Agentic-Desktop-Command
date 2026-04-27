@@ -431,11 +431,10 @@ export async function createWsTransport(deps: WsTransportDeps): Promise<WsTransp
           return;
         }
         // The socket previously emitted 'open' (we resolved 'OK' already).
-        // Treat the close as a request to re-arm the dialer for the next
-        // attempt — single-flight guard inside the dialer makes re-entrant
-        // start() calls a no-op when not in idle/backoff.
+        // The dialer is in `open` state — call notifyDisconnected so it can
+        // re-enter backoff and retry. start() alone would be a no-op from `open`.
         if (!shuttingDown) {
-          dialer?.start();
+          dialer?.notifyDisconnected();
         }
       });
     });
