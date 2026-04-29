@@ -1,6 +1,6 @@
 {
   "name": "adc",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "type": "module",
   "description": "ADC — Desktop UI for multi-project management with agent team orchestration, automated QA loops, and agentic local software testing",
   "main": "./out/main/index.cjs",
