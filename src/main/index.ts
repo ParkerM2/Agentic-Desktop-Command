@@ -5,6 +5,8 @@
  * Logic lives in bootstrap modules and services — this file orchestrates startup.
  */
 
+import 'reflect-metadata';
+
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
