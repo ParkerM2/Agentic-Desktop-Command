@@ -6,928 +6,453 @@
 ┌──────────────────────────────────────────────────────────────────┐
 │  RENDERER (Browser)                                              │
 │  ┌──────────────┐   ┌───────────────┐   ┌────────────────────┐  │
-│  │ React        │──▷│ React Query   │──▷│ ipc() helper       │  │
+│  │ React 19     │──▷│ React Query   │──▷│ ipc() helper       │  │
 │  │ Components   │   │ hooks         │   │ (window.api.invoke) │  │
 │  └──────────────┘   └───────────────┘   └────────┬───────────┘  │
 │  ┌──────────────┐   ┌───────────────┐            │              │
 │  │ Zustand      │   │ EventBridge   │◁─ events ──┤              │
-│  │ stores       │   │ (invalidation)│            │              │
+│  │ stores (UI)  │   │ (invalidation)│            │              │
 │  └──────────────┘   └───────────────┘            │              │
 │  ┌──────────────┐                    ◁─ MessagePort (streams) ──┤
-│  │ Route Groups │  (8 route group files)         │              │
+│  │ TanStack     │  35 feature slices in src/renderer/features/  │
+│  │ Router       │  8 route group files in app/routes/           │
 │  └──────────────┘                                │              │
 ├──────────────────────────────────────────────────┼──────────────┤
 │  PRELOAD (Context Bridge)                        │              │
 │  ┌─────────────────────────────────────────────┐ │              │
 │  │ api.invoke(channel, input) → Promise<T>     │─┤              │
 │  │ api.on(channel, handler) → unsubscribe      │◁┘              │
+│  │ + selector-builder + test-suite-recorder    │                │
 │  └─────────────────────────────────────────────┘                │
 ├─────────────────────────────────────────────────────────────────┤
 │  MAIN PROCESS (Node.js)                                         │
 │  ┌──────────────┐   ┌───────────────┐   ┌────────────────────┐  │
 │  │ Bootstrap    │──▷│ IPC Router    │──▷│ Services           │  │
-│  │ (5 modules)  │   │ (Zod valid.)  │   │ (business logic)   │  │
+│  │ (4 modules)  │   │ (Zod valid.)  │   │ (factory pattern)  │  │
 │  │              │   │               │   │                    │  │
-│  │ lifecycle    │   │ Handlers      │   │ Each service has   │  │
-│  │ svc-registry │   │ (thin layer)  │   │ focused sub-modules│  │
-│  │ ipc-wiring   │   └───────────────┘   └────────────────────┘  │
-│  │ event-wiring │                        ├─ AgentHostClient     │
-│  └──────────────┘                        │   (proxy to utility) │
-│                                          ├─ AssistantService    │
-│                                          │   ├─ tool-definitions│
-│                                          │   ├─ tool-executor   │
-│                                          │   └─ tool-handlers/  │
-│                                          ├─ HubService (9)     │
-│                                          ├─ ProjectService (6)  │
-│                                          ├─ DataMgmtService (7) │
-│                                          ├─ CommandBus (3)      │
-│                                          ├─ Database (SQLite)    │
-│                                          └─ ... (35 total)      │
-│                                                                  │
+│  │ lifecycle    │   │ Handlers      │   │ Tier 0: 7 eager    │  │
+│  │ svc-registry │   │ (thin layer)  │   │ Tier 1: ~60 lazy   │  │
+│  │ ipc-wiring   │   └───────────────┘   │ via lazyService()  │  │
+│  │ event-wiring │                       └────────────────────┘  │
+│  └──────────────┘                        39 dirs in features/   │
+│                                          4 dirs in services/    │
 ├─────────────────────────────────────────────────────────────────┤
 │  AGENT HOST (Electron utilityProcess)                            │
 │  ┌──────────────┐   ┌───────────────┐   ┌────────────────────┐  │
 │  │ ProcessMgr   │──▷│ StreamJSON    │──▷│ AgentManagerSvc    │  │
-│  │ (spawn PTY)  │   │ Parser        │   │ (session lifecycle) │  │
+│  │ (PTY spawn)  │   │ Parser        │   │ (session lifecycle) │  │
 │  └──────────────┘   └───────────────┘   └────────────────────┘  │
-│  MessagePort RPC (correlation-ID request/response)               │
+│  Correlation-ID RPC over MessagePort (control)                   │
 │  Direct MessagePort to renderer for stream events                │
 │  Auto-restart with exponential backoff (5 retries / 60s)         │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────────┐│
-│  │ IPC Contract: src/shared/ipc/ (37 domain folders)            ││
-│  │ Each folder: contract.ts + schemas.ts + index.ts             ││
-│  │ Root barrel merges all into ipcInvokeContract/ipcEventContract││
+│  │ IPC Contract: src/shared/ipc/ (53 domain folders)            ││
+│  │ Each: channels.ts + contract.ts + schemas.ts + index.ts      ││
+│  │ Root barrel merges all into ipcInvokeContract / ipcEventContract││
 │  └──────────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+## Channels (Multi-Build Isolation)
+
+ADC ships three data-isolated channels that can run side-by-side. See `docs/architecture/channels.md` for the full table.
+
+| Channel | How to run | App name | userData path | AppUserModelID |
+|---------|-----------|----------|---------------|----------------|
+| dev | `npm run dev` | `ADC-Dev` | `%APPDATA%/ADC-Dev/` | `com.adc.app.dev` |
+| local | `npm run build:local` | `ADC-Local` | `%APPDATA%/ADC-Local/` | `com.adc.app.local` |
+| release | Installed from GitHub release | `ADC` | `%APPDATA%/ADC/` | `com.adc.app` |
+
+Resolution lives in `src/main/lib/channel.ts::resolveChannel`. Precedence: `ADC_CHANNEL` env → compile-time `__ADC_CHANNEL__` define → `ADC_DEV_MODE=true` → `!app.isPackaged` → `release`. Channels also isolate Claude CLI state by setting `CLAUDE_CONFIG_DIR=<userData>/.claude`. Auto-update is only enabled on the `release` channel.
 
 ## IPC Flow (Request/Response)
 
 1. **Renderer** calls `ipc('projects.list', {})` via the shared helper
 2. Helper calls `window.api.invoke('projects.list', {})` (preload bridge)
-3. Preload forwards via `ipcRenderer.invoke(channel, input)`
-4. **Main** `IpcRouter.handle()` receives the call:
-   - Validates input against Zod schema from `ipc-contract.ts`
-   - Calls the registered handler function
-   - Wraps result in `{ success: true, data }` or `{ success: false, error }`
-5. Result returns to renderer as `{ success: true, data: T }` or `{ success: false, error }`
+3. Preload allowlist-checks the channel against `ipcInvokeContract`, then forwards via `ipcRenderer.invoke`
+4. **Main** `IpcRouter.handle()` validates input against the Zod schema in the domain `contract.ts`, calls the handler, wraps the result in `{ success, data | error }`
+5. Result returns to renderer
 
 ## IPC Flow (Events — Main → Renderer)
 
 1. **Main** service calls `router.emit('event:terminal.output', payload)`
 2. Router calls `BrowserWindow.webContents.send(channel, payload)`
 3. Preload listener fires via `ipcRenderer.on(channel, listener)`
-4. **Renderer** `useIpcEvent('event:terminal.output', handler)` hook receives payload
-5. Handler typically calls `queryClient.invalidateQueries()` to refetch data
+4. **Renderer** `EventBridge` (mounted once in `RootLayout`) receives the payload
+5. EventBridge calls `queryClient.invalidateQueries()` for affected query keys, OR patches the cache directly via `setQueryData` for `append`-style events (sessions, op-log)
 
 ## Domain-Based IPC Structure
 
-The IPC contract was refactored from a single ~2600-line `ipc-contract.ts` into 37 domain-specific folders under `src/shared/ipc/`. Each domain folder contains:
+The IPC contract is split across 53 domain folders under `src/shared/ipc/`. Each folder contains:
 
+- `channels.ts` — channel constants built via the `domain()` / `events()` helpers in `channel-builder.ts`
 - `schemas.ts` — Zod schemas for the domain
-- `contract.ts` — Invoke and event contract entries using those schemas
-- `index.ts` — Barrel export
+- `contract.ts` — invoke + event contract entries using those schemas
+- `index.ts` — barrel export
 
-The root barrel at `src/shared/ipc/index.ts` spreads all domain contracts into the unified `ipcInvokeContract` and `ipcEventContract` objects. The original `src/shared/ipc-contract.ts` is now a thin re-export that maintains backward compatibility — existing imports from `@shared/ipc-contract` continue to work.
-
-**To add a new IPC channel**: Add it to the appropriate domain folder's `contract.ts` and `schemas.ts`. The root barrel automatically picks it up. The `health` domain folder was the most recent addition (error collection + health monitoring channels).
+The root barrel at `src/shared/ipc/index.ts` spreads every domain contract into the unified `ipcInvokeContract` / `ipcEventContract` objects that the preload allowlist + main router both consume. Channel constants always use `DOMAIN.VERB.NOUN` for invoke and `event:domain.verb.noun` for events — never hardcoded strings.
 
 ## Bootstrap Module Pattern
 
-The main process entry point (`src/main/index.ts`) delegates to 5 bootstrap modules in `src/main/bootstrap/`:
+`src/main/index.ts` resolves the channel, forks the agent-host utility process, then delegates to four bootstrap modules in `src/main/bootstrap/`:
 
 | Module | Responsibility |
 |--------|---------------|
-| `lifecycle.ts` | Electron app lifecycle events, BrowserWindow creation, graceful shutdown (disposes all services including HealthRegistry + ErrorCollector last) |
-| `service-registry.ts` | Instantiates all service factories with dependency injection. Creates ErrorCollector + HealthRegistry early for crash resilience. Wraps non-critical services in `initNonCritical()` for graceful degradation. Initializes CommandBus + SQLite database. Creates `ProgressService` (SQLite-backed task management via `progress_tasks` table). Wires AgentWatchdog (process monitoring), QaTrigger (automatic QA on session completion), and HealthRegistry enrollment (hubHeartbeat, hubWebSocket). Exposes `hubApiClient`, `progressService`, `commandBus`, and `oauthManager` in registry result for use by event-wiring, IPC handlers, and OAuth handler registration. |
-| `ipc-wiring.ts` | Registers all IPC handlers (connects handler files to router). Includes OAuth handlers (`oauth-handlers.ts`) for `oauth.authorize`, `oauth.isAuthenticated`, and `oauth.revoke` channels. |
-| `event-wiring.ts` | Sets up service event → renderer forwarding. Includes planning completion detection: when a planning-phase agent completes, scans the project for plan files and transitions the task to `plan_ready` via `progressService`. |
-| `index.ts` | Barrel re-export |
+| `service-registry.ts` | Instantiates all service factories with dependency injection. Tier 0 (eager): IpcRouter, SQLite DB, CommandBus, BusSessionManager, SettingsService, UserSessionManager, ProjectService, WorkspacesService, ErrorCollector + HealthRegistry, peer identity + replication engine. Tier 1 (~60 lazy via `lazyService()`): everything else, initialized on first IPC call. Also handles legacy DB migration, OAuth provider config loading, and the async PeersService bootstrap (TLS material + listen + mDNS) wrapped in a Proxy via `wrapAsyncPeersService`. |
+| `ipc-wiring.ts` | Registers all IPC handlers — connects each domain's `*-handlers.ts` to the router. Includes OAuth handlers for `oauth.authorize` / `oauth.isAuthenticated` / `oauth.revoke`. |
+| `event-wiring.ts` | Sets up service-event → renderer forwarding. Includes planning-completion detection and watch evaluation. |
+| `lifecycle.ts` | Electron app lifecycle: BrowserWindow creation, before-quit cleanup that disposes services in reverse order including peers transport, runners, command bus, and HealthRegistry/ErrorCollector last. |
+
+`bootstrap/index.ts` is a barrel re-export. There is no separate task system — `ProgressService` (SQLite) is the sole task authority.
 
 ### Bootstrap Resilience Features
 
-- **ErrorCollector** — Created first in `service-registry.ts`. Captures service errors to file-based log with capacity alerts. Reports errors via `event:app.error` IPC event. Used by `initNonCritical()` to record initialization failures.
-- **HealthRegistry** — Created early. Monitors service liveness via periodic pulses. Services call `healthRegistry.pulse(name)` during normal operation; the registry emits `event:app.serviceUnhealthy` when pulses are missed.
-- **initNonCritical()** — Wrapper function in `service-registry.ts`. Non-essential services (milestones, ideas, changelog, fitness, spotify, calendar, voice) are wrapped so that if their factory throws, the app continues running with `null` for that service. Failures are reported to ErrorCollector.
-- **AgentWatchdog** — Created after the command bus. Monitors active agent sessions for dead/stale processes (30s interval, PID checks, heartbeat age thresholds). Alerts are forwarded to the renderer via `event:bus.watchdogAlert`.
-- **QaTrigger** — Created after QA runner. Listens for task status changes to `review` and automatically starts quiet QA sessions. Disposed in `lifecycle.ts` during shutdown.
-
-This replaces the previous monolithic `index.ts` where all initialization lived in a single file.
+- **ErrorCollector** — created in Tier 0. Captures service errors to a file-based log with capacity alerts. Reports via `event:app.error.occurred`.
+- **HealthRegistry** — Tier 0. Services pulse during normal operation; missed pulses emit `event:app.service.unhealthy`.
+- **lazyService()** — wraps Tier 1 factories in a Proxy that delays construction until first property access. Failures surface on first IPC call rather than at boot.
+- **AgentHostClient auto-restart** — `src/main/index.ts::forkAgentHost` reforks the utility process with exponential backoff (5 attempts within a 60s sliding window), re-establishes MessagePort wiring, and re-forwards the renderer event port.
+- **Renderer crash recovery** — up to 3 consecutive renderer crashes within 60s trigger automatic recreation; on the 4th, a dialog offers Restart / Quit.
+- **Single-instance lock** — keyed off `app.getName()` so each channel locks independently. Second invocation focuses the existing window.
 
 ## Data Persistence
 
+### SQLite — Single Source of Truth
+
+All structured data lives in `adc.db` (better-sqlite3 + Drizzle ORM). Migrations live in `drizzle/` (currently 31 migrations, `0000` → `0030`). Schema files are colocated with their service under `src/main/features/<domain>/schema.ts`.
+
+| Data | Table |
+|------|-------|
+| Tasks | `progress_tasks` |
+| Sessions | `sessions` (bus) |
+| Commands | `commands` (bus) |
+| Settings | `settings_kv` |
+| Workspaces | `workspaces` |
+| Projects | `projects` |
+| Test scripts / runs / screenshots / schedules / shared steps / diffs | `test_suite_*` |
+| Runners | `runners` |
+| Peers | `paired_peers` + `peer_state` |
+| Op-log (replication) | `op_log` |
+| Briefings, changelog, planner, OAuth tokens, ideas, fitness | their respective tables |
+
+There is no filesystem task storage (`.adc/specs/` was removed). Settings, projects, OAuth tokens, briefings, planner, changelog, etc. all live in SQLite.
+
 ### User-Scoped vs Global Data
 
-Data is separated into **user-scoped** (per-Hub-account) and **global** (device-level):
-
-```
-{appData}/adc/
-├── settings.json          # Global — device preferences
-├── hub-config.json        # Global — needed before login
-├── oauth-tokens.json      # Global — device OAuth tokens
-├── error-log.json         # Global — diagnostics
-└── users/
-    └── {userId}/          # User-scoped directory
-        ├── notes.json
-        ├── captures.json
-        ├── briefings.json
-        ├── assistant-history.json
-        ├── alerts.json
-        ├── ideas.json
-        ├── milestones.json
-        ├── changelog.json
-        ├── planner/       # Daily plans
-        └── fitness/       # Workouts, measurements, goals
-```
-
-**Session lifecycle:**
-- On login: `UserSessionManager.setSession()` → services reinitialize with user-scoped paths
-- On logout: `UserSessionManager.clearSession()` → services clear state and reset to global paths
-- First login: `UserDataMigrator` copies existing global data to user folder
+A handful of personal artifacts (notes, captures, briefings JSON, fitness, planner, alerts, ideas, milestones, changelog, assistant history) are still kept as JSON under `<userData>/users/<userId>/` for user-isolation. `UserSessionManager` emits session-change events; services implementing `ReinitializableService` swap their data directory on login/logout. `UserDataMigrator` copies pre-existing global data to the user folder on first login.
 
 Key modules:
-- `src/main/services/auth/user-session-manager.ts` — Tracks logged-in user, emits session change events
-- `src/main/services/data-management/user-data-resolver.ts` — Computes user-scoped paths
-- `src/main/services/data-management/user-data-migrator.ts` — Migrates data on first login
-- `src/main/services/data-management/reinitializable-service.ts` — Interface for user-scoped services
-
-### Data Locations
-
-| Data | Storage | Location |
-|------|---------|----------|
-| Projects | JSON file | `{appData}/adc/projects.json` |
-| Settings | SQLite table | `settings_kv` in `adc.db` |
-| Tasks | SQLite table | `progress_tasks` in `adc.db` |
-| Briefings | SQLite table | `briefings` in `adc.db` |
-| Changelog | SQLite table | `changelog_entries` in `adc.db` |
-| Planner | SQLite table | `planner_entries` in `adc.db` |
-| OAuth Tokens | SQLite table | `oauth_tokens` in `adc.db` |
-| Notes | JSON file | `{appData}/adc/users/{userId}/notes.json` |
-| Captures | JSON file | `{appData}/adc/users/{userId}/captures.json` |
-| Terminals | In-memory only | PTY processes managed by TerminalService |
-| Agents | In-memory + utility process | Managed by AgentHostClient → AgentManagerService |
+- `src/main/features/auth/user-session-manager.ts`
+- `src/main/features/data-management/user-data-resolver.ts`
+- `src/main/features/data-management/user-data-migrator.ts`
 
 ### UUID / Client-Generated IDs
 
-Every persistable entity has a UUID `id` column. IDs can be generated on either side:
-
-- **Server-side**: `generateId()` (calls `randomUUID()` from `node:crypto`)
-- **Client-side**: `crypto.randomUUID()` in the renderer (valuable for future offline-first sync)
-- **Bus**: Uses `randomUUID()` for command and session IDs (replaced ULID)
-- All create methods accept an optional client-provided `id` parameter
-
-Tables with UUID `id` columns: `progress_tasks`, `briefings`, `changelog_entries`, `oauth_tokens`, `settings_kv`, `planner_entries`, `sessions`, `commands`.
+Every persistable entity has a UUID `id` column (`crypto.randomUUID()`). Services accept an optional client-provided `id` to enable future optimistic updates; otherwise they fall back to `generateId()`.
 
 ## Service Architecture
 
-All main process services follow the factory pattern:
+All main process services follow the factory pattern in `src/main/features/<domain>/`:
 
 ```typescript
-// Interface defines the public API
 export interface ProjectService {
   listProjects: () => Project[];
   addProject: (path: string) => Project;
-  // ...
 }
 
-// Factory creates the service instance with dependencies
-export function createProjectService(/* deps */): ProjectService {
-  // Private state (closures)
-  return {
-    listProjects() { /* ... */ },
-    addProject(path) { /* ... */ },
-  };
+export function createProjectService(deps): ProjectService {
+  return { /* closures */ };
 }
 ```
 
-Key rules:
-- **Local** services return **synchronous values** (not Promises)
-- **Hub API proxy** services ARE async (they call the Hub REST API via `hubApiClient`)
-- IPC handlers wrap sync returns with `Promise.resolve()`, or directly return the Promise from async Hub calls
-- Electron-specific async exception: `selectDirectory()` uses Electron dialog
-- Services emit events via `router.emit()` for real-time updates
+Rules:
+- Local services return synchronous values — IPC handlers wrap with `Promise.resolve()`.
+- Async exceptions: anything that hits the network (peers, OAuth, GitHub CLI), Electron dialog (`selectDirectory`), Playwright runner, MCP, and the agent-host RPC.
+- Services emit events via `router.emit()` for real-time updates.
 
-### Refactored Multi-File Services
+### Feature Domains (`src/main/features/`)
 
-Large services have been split into focused sub-modules within their directory. The main service file remains the public API; sub-files are internal implementation details.
-
-Key refactored services:
-- **assistant/** — 22 domain executors in `executors/`, 16 intent classifier files in `intent-classifier/`
-- **agent/** — `agent-spawner.ts`, `agent-output-parser.ts`, `agent-queue.ts`, `token-parser.ts`
-- **hub/** — 9 files: api-client, auth, ws-client, connection, sync, events, config, webhook-relay
-- **briefing/** — 6 files: cache, config, generator, summary, suggestion-engine
-- **email/** — 7 files: config, encryption, queue, store, smtp-transport
-- **notifications/** — 7 files: slack-watcher, github-watcher, filter, manager, store
-- **settings/** — 4 files: defaults, encryption, store
-- **project/** — 2 files: detector, codebase-analyzer
-- **progress/** — 4 files: progress-service, task-file-io, schema (Drizzle ORM), progress-handlers
-- **qa/** — 7 files: poller, prompt, report-parser, session-store, trigger, types
-
-## React Query Integration (3-Layer Caching Architecture)
-
-Data freshness follows a 3-layer architecture: **EventBridge → React Query → UI Stores**.
-
-1. **EventBridge** (`src/renderer/shared/components/EventBridge.tsx`) — mounted once in RootLayout. Subscribes to all IPC `event:*` channels and calls `queryClient.invalidateQueries()` with the correct query keys. This is the single place where IPC events drive cache invalidation.
-2. **React Query** — feature hooks in `api/` directories define queries and mutations against `ipc()`. Query key factories enable targeted invalidation by EventBridge.
-3. **Zustand stores** — hold UI-only state (selections, toggles, layout). Never domain data.
-
-For the full recipe (5-step checklist, anti-patterns, examples), see `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
-
-Each feature module provides query hooks that wrap `ipc()`:
-
-```typescript
-export function useTasks(projectId: string | null) {
-  return useQuery({
-    queryKey: taskKeys.list(projectId ?? ''),
-    queryFn: () => ipc('tasks.list', { projectId: projectId ?? '' }),
-    enabled: projectId !== null,
-    staleTime: 30_000,
-  });
-}
-```
-
-Pattern:
-- `queryKeys.ts` defines a factory for cache keys (enables targeted invalidation by EventBridge)
-- `use<Feature>.ts` defines query hooks (read operations)
-- `useTaskMutations.ts` defines mutation hooks (write operations with simple `onSuccess` invalidation)
-- EventBridge handles IPC event → query invalidation centrally (no per-feature event wiring needed)
-
-## Mutation Error Handling
-
-All task and project mutations use `onError` callbacks to show user-facing error toasts:
-
-```typescript
-import { useMutationErrorToast } from '@renderer/shared/hooks/useMutationErrorToast';
-
-export function useCreateTask() {
-  const { onError } = useMutationErrorToast();
-  return useMutation({
-    mutationFn: (input) => ipc('hub.tasks.create', input),
-    onError: onError('create task'),
-  });
-}
-```
-
-The toast system uses a Zustand store (`src/renderer/shared/stores/toast-store.ts`) with auto-dismiss (5s) and max 3 visible toasts. The `MutationErrorToast` component renders in `RootLayout.tsx`.
-
-### Wired Mutations (11 total)
-- **Tasks**: createTask, updateTaskStatus, deleteTask, executeTask, cancelTask
-- **Projects**: addProject, removeProject, updateProject, createSubProject, deleteSubProject, selectDirectory (error only)
-
-## Proactive Token Refresh
-
-The auth system proactively refreshes JWT tokens before expiry rather than waiting for 401 responses:
+39 directories. The full set:
 
 ```
-AuthGuard mounts → useTokenRefresh() starts
-  → Reads expiresAt from auth store
-  → Sets setTimeout for (expiresAt - 2 minutes)
-  → On timer fire: calls useRefreshToken().mutate()
-    → Success: updates expiresAt, timer reschedules via effect
-    → Failure: clearAuth() → redirect to login
-  → Cleanup: clearTimeout on unmount/logout
+agent-dashboard  alerts          app             assistant       auth
+briefing         bus             changelog       claude          dashboard
+data-management  docker          email           files           fitness
+git              github          ideas           insights        integrations
+mcp              merge           notes           notifications   oauth
+peers            planner         progress        projects        qa
+runners          security        settings        spotify         terminals
+test-suite       visualization   workflow        workspace
 ```
 
-Key files:
-- `src/renderer/features/auth/hooks/useTokenRefresh.ts` — Timer hook
-- `src/renderer/features/auth/store.ts` — `expiresAt` field + `setExpiresAt` action
-- `src/renderer/features/auth/components/AuthGuard.tsx` — Calls `useTokenRefresh()`
-
-## Terminal System
-
-- **TerminalService** spawns real PTY processes via `@lydell/node-pty`
-- **TerminalInstance.tsx** renders xterm.js with WebGL renderer
-- Data flows: PTY stdout → `event:terminal.output` IPC event → xterm.write()
-- Input flows: xterm.onData() → `terminals.sendInput` IPC call → PTY stdin
-- Resize syncs between xterm FitAddon and PTY process
+Plus four cross-cutting services in `src/main/services/`:
+- `agent-manager/` — shared `AgentManager` interface
+- `session-jsonl/` — JSONL tail reader for agent output
+- `team-watcher/` — watches `~/.claude/teams/<name>/config.json` for membership changes
+- `worktree-provisioner/` — creates per-task git worktrees
 
 ## Agent Host Utility Process
 
-Agent session management runs in an Electron `utilityProcess` for process isolation:
+Agent session management runs in a dedicated Electron `utilityProcess` for isolation:
 
-- **AgentManagerService** (`src/main/agent-host/index.ts`) — Runs inside the utility process. Manages `ProcessManager` (PTY spawning), `StreamJsonParser` (output parsing), and session lifecycle.
-- **AgentHostClient** (`src/main/agent-host/agent-host-client.ts`) — Main process proxy. Implements the shared `AgentManager` interface backed by MessagePort RPC (correlation-ID request/response).
-- **AgentManager interface** — Shared interface satisfied by both `AgentManagerService` (direct, sync spawn) and `AgentHostClient` (async spawn via RPC). Callers always `await` spawn methods.
-- **Direct MessagePort** — Stream events (agent output, status changes) flow directly from utility process to renderer, bypassing the main process for lower latency.
-- **Crash Recovery** — Auto-restart with exponential backoff (5 retries within a 60-second window). On utility process crash, `AgentHostClient` re-establishes MessagePort connections.
+- **AgentManagerService** (`src/main/agent-host/index.ts`) — runs inside the utility process. Owns `ProcessManager` (PTY spawn via `@lydell/node-pty`), `StreamJsonParser`, and per-session lifecycle.
+- **AgentHostClient** (`src/main/agent-host/agent-host-client.ts`) — main-process proxy. Implements the shared `AgentManager` interface backed by correlation-ID RPC over MessagePort.
+- **Direct MessagePort to renderer** — stream events (agent output, status changes) flow directly from the utility process to the renderer, bypassing the main process for lower latency. The port is forwarded once per window via `agent-host-events` channel.
+- **Crash recovery** — `forkAgentHost()` in `src/main/index.ts` reforks the child on non-zero exit, with sliding-window throttle (5 / 60s) and exponential backoff.
 
-Key files:
-- `src/main/agent-host/agent-host-client.ts` — Main process proxy + `AgentManager` interface definition
-- `src/main/agent-host/index.ts` — Utility process entry point
-- `src/main/agent-host/host-protocol.ts` — MessagePort protocol types (`ControlRequest`, `ControlReply`, `AgentManagerEvent`)
+Agents are headless Claude CLI sessions spawned via `child_process.spawn` — never SDK API calls.
 
-## Command Bus + SQLite Layer (Primary)
+## Command Bus + Bus SessionManager
 
-The Command Bus is the primary system for agent lifecycle and session management.
-It replaces the former Agent Orchestrator with a unified, SQLite-backed architecture.
+`CommandBus` and `BusSessionManager` (`src/main/bus/`) are the unified replacement for the legacy orchestrator:
 
-### Core Components
+- **CommandBus** — accepts commands, routes to handlers, persists state to SQLite (`commands` table).
+- **BusSessionManager** — session lifecycle (spawn/kill/list), boot-time crash recovery from the `sessions` table, delegates spawning to `AgentHostClient`. Recovers interrupted sessions on startup via `recoverInterrupted()`.
 
-- **CommandBus** (`src/main/bus/command-bus.ts`) — Central dispatch: accepts commands, routes to handlers, persists state to SQLite
-- **SessionManager** (`src/main/bus/session-manager.ts`) — Session lifecycle: spawn, kill, list, crash recovery on boot. All sessions stored in SQLite via Drizzle ORM
-- **Dispatcher** (`src/main/bus/dispatcher.ts`) — Command routing and execution coordination
-- **Database** (`src/main/db/`) — SQLite via better-sqlite3 + Drizzle ORM. Schema: `schema.ts`, connection: `connection.ts`
+### IPC channels
 
-### Session Lifecycle
+`bus.dispatch`, `bus.query`, `bus.listSessions`, `bus.getSession`, `bus.killSession`, `bus.subscribe`. Events: `event:bus.session.*`, `event:bus.command.*`.
 
-```
-dispatch(spawn) → 'spawned' → 'active' → 'completed' | 'error' | 'killed'
-```
+## Peer Replication (P2P)
 
-### IPC Channels
+`src/main/features/peers/` implements TLS-pinned WebSocket P2P sync between devices. No central server required — peers discover each other via mDNS and pair via a 6-digit PIN.
 
-- `bus.dispatch` — Dispatch a command to the bus
-- `bus.query` — Query bus state (sessions, commands)
-- `bus.listSessions` — List active/recent sessions
-- `bus.getSession` — Get session details
-- `bus.killSession` — Kill a session by ID
-- `bus.subscribe` — Subscribe to bus events
+### Components
 
-### Event Channels
+- **`peer-identity.ts`** — Ed25519 keypair on disk (`<userData>/peer-identity.json`). Optionally encrypted with `safeStorage`; plaintext only when `ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY=1`. Yields `peerIdFull` (full pubkey hex) + `peerIdShort` (8 hex chars).
+- **`peer-tls.ts`** — generates a self-signed X.509 cert via `@peculiar/x509` keyed to the peer identity. Cert fingerprint becomes the pin.
+- **`peer-server.ts`** — HTTPS server hosting both REST `/pair/*` endpoints and `wss://` for op-log replication.
+- **`peer-mdns.ts`** — `bonjour-service` advertise + browse for `_adc-peer._tcp` services on the LAN.
+- **`peer-pairing.ts`** — `/pair/hello` exchange + 6-digit PIN verification + Ed25519 signed proof. Trust persisted to `paired_peers` table.
+- **`peer-tls-pin.ts` + `peer-http.ts`** — per-peer TLS pin enforcement. Rejects connections whose cert fingerprint doesn't match the pinned value.
+- **`ws-transport.ts` + `outbound-dialer.ts`** — outbound WebSocket dialer that pins TLS post-handshake and notifies disconnects.
+- **`replication-engine.ts`** — op-log replication: append-only `op_log` table with HLC timestamps, LWW merge (`lww-merge.ts`), per-row metadata (`op-log-and-row-meta` migration). GC watermark (`gc-watermark.ts`) based on observed peer ack.
+- **`peer-store.ts`** — paired-peer CRUD against SQLite.
+- **`peers-service.ts`** — top-level service. Bootstrap is async (TLS material → listen → mDNS), wrapped in `wrapAsyncPeersService` so handlers transparently `await` the in-flight promise.
 
-- `event:bus.sessionStarted` — Session spawned
-- `event:bus.sessionCompleted` — Session completed
-- `event:bus.sessionFailed` — Session error
-- `event:bus.commandDispatched` — Command accepted by bus
+### Bootstrap
 
-### Database Schema (SQLite)
+`service-registry.ts` resolves identity once at boot via `getOrCreatePeerIdentity()`, constructs `PeerStore` + `ReplicationEngine` eagerly, then kicks off `createPeersService()` asynchronously. When `peerConfig.listenPort <= 0` peers is disabled (the wrapper hands back a never-resolving promise so handlers hang rather than silent no-op — see audit-04 C1 TODO).
 
-Sessions, commands, and events are persisted to a local SQLite database, enabling crash recovery, session history, and token/tool usage tracking across restarts.
+### Dev harness
 
-### Renderer Integration
+See `docs/peers/phase1-dev-harness.md`.
 
-- **useAgentMutations** — Mutation hooks wired to `bus.dispatch` / `bus.killSession`
-- **useAgentEvents** — Event listeners for `event:bus.*` → cache invalidation
-- **useTaskEvents** — orchestrates useAgentEvents + useQaEvents, called by ProgressTaskGrid
-- **ActionsCell** — context-sensitive buttons wired to mutations
-- **StatusBadgeCell** — supports all statuses including `planning`, `plan_ready` with pulsing indicators
-- **TaskDetailRow** — expandable row with PlanViewer (approve/request changes/reject), PlanFeedbackDialog, QaReportViewer, SubtaskList, ExecutionLog, PRStatusPanel
+## Runners (Long-Running Processes)
 
-## Agent Dashboard — Layer 1: Agent Visibility (ADC v2)
+`src/main/features/runners/` manages long-running per-project processes (dev servers, workers, custom scripts) outside the agent system.
 
-Three services provide Layer 1 agent visibility, independent of workflow tracking (Layer 2) and the dashboard (Layer 3). These services are registered in `service-registry.ts` and returned in `ServiceRegistryResult`.
+- **`runners-service.ts`** — CRUD over the `runners` table. Each runner is keyed by `ScopeRef` (`project | worktree`).
+- **`process-supervisor.ts`** — spawns + supervises child processes, captures stdout/stderr.
+- **`health-check.ts`** — optional HTTP/TCP probe with backoff.
+- Events stream over `event:runners.instance.*` (`started`, `output`, `exited`, `health.changed`).
 
-### TmuxBridge (`src/main/services/tmux-bridge/`)
+Renderer slice: `src/renderer/features/runners/` (RunnersPanel, etc.).
 
-Manages tmux sessions for Team Lead and interactive agents:
-- **tmux-commands.ts** — Low-level tmux CLI wrapper (execSync). Functions: `isTmuxInstalled`, `tmuxNewSession`, `tmuxSendKeys`, `tmuxCapturePane`, `tmuxKillSession`, `tmuxListSessions`, `tmuxHasSession`
-- **tmux-bridge-service.ts** — Factory `createTmuxBridgeService()`. Caches tmux availability check. Methods: `createSession`, `sendKeys`, `capturePane`, `listSessions`, `killSession`, `isAvailable`, `hasSession`
+## Test Suite (Browser Recording + Playwright)
 
-Graceful degradation: If tmux is not installed, `isAvailable()` returns false and `listSessions()` returns empty. Methods that require tmux throw with an install hint.
+`src/main/features/test-suite/` is a full browser-based test recorder + Playwright runner. See `docs/architecture/TEST-SUITE.md` for the table-by-table reference.
 
-### TeamWatcher (`src/main/services/team-watcher/`)
+### Capabilities
 
-Watches `~/.claude/teams/<teamName>/config.json` for membership changes:
-- **team-watcher-service.ts** — Factory `createTeamWatcherService()`. Uses `fs.watch` on the team directory with 300ms debounce. Diffs against known members set to detect joins and leaves.
-- Event handlers: `onTeammateJoined(handler)`, `onTeammateLeft(handler)` — return unsubscribe functions
-- Lifecycle: `startWatching(teamName)`, `stopWatching(teamName)`, `dispose()`
+- **Recording** — `test-suite-recorder.ts` preload runs inside a `WebContentsView`, captures user interactions, generates Playwright-preferred locators (`getByTestId` > `getByLabel` > `getByRole` > `getByText` > CSS fallback).
+- **Spec generation** — `script-writer.ts` emits `.spec.ts` with smart waits.
+- **Runner** — `runner.ts` shells out to `npx playwright test --reporter=json,html`, parses results, persists per-step pass/fail.
+- **Multi-browser / parallel** — chromium / firefox / webkit; 1-16 workers; configurable retries (0-5).
+- **Visual baselines** — `baseline-service.ts` + `diff-engine.ts`; pixel-diff against stored baselines, results in `test_suite_diffs`.
+- **Data-driven** — `data-runner.ts` substitutes `{{key}}` from CSV/JSON.
+- **Shared step groups** — `shared-steps-service.ts`, `test_suite_shared_steps` table.
+- **Scheduling** — `scheduler.ts` polls every 30s, fires `runScript({ triggeredBy: 'scheduled' })`.
+- **CI export** — `workflow-exporter.ts` generates GitHub Actions YAML.
+- **Tags + batch execution** — JSON-array `tags` column, intersection filtering, "Run Tagged" batch mode.
+- **Auth state** — Playwright `storageState` persisted per project for logged-in flows.
+- **Environments** — named URL profiles, runtime switch via `BASE_URL` env var.
+- **Analytics** — letter-grade health score (pass rate / stability / speed), flaky-test sparklines.
 
-### SessionJSONLReader (`src/main/services/session-jsonl/`)
+### Renderer
 
-Tail-follows session JSONL files for structured agent output:
-- **jsonl-parser.ts** — Factory `createJsonlTailReader(filePath, onEvent)`. Tracks byte offset for incremental reads. Handles truncation, partial writes, and rapid appends.
-- **session-jsonl-reader.ts** — Factory `createSessionJSONLReaderService()`. Manages multiple concurrent readers (one per session). Methods: `startReading`, `stopReading`, `isReading`, `getOffset`, `onEvent`, `dispose`
+Single Zustand store (`test-suite-store.ts`), 7-tab page in `src/renderer/features/test-suite/`. HTML report viewer opens the Playwright report via `shell.openPath`. Run completion fires toasts. Save dialog auto-suggests assertions from recorded context. Results integrate with progress pipeline (Create Task / Start Workflow).
 
-Types used by all three: `TmuxSession`, `TeamMember`, `StreamJsonEvent` from `@shared/types/agent-dashboard`.
+## Workspaces
 
-## QA System
+`src/main/features/workspace/` provides multi-session workspaces (a workspace owns multiple agent sessions, often across worktrees).
 
-Two-tier automated QA system that spawns Claude agents via the orchestrator:
-- **Quiet mode**: Fast automated checks (lint, typecheck, tests, build, check:docs)
-- **Full mode**: Interactive Claude-powered review with screenshots and accessibility testing
+- **`workspaces-service.ts`** — CRUD over the `workspaces` table.
+- **`workspace-session-manager.ts`** — session lifecycle scoped to a workspace, integrates with `BusSessionManager` and `WorkspaceProvisioner`.
 
-### Architecture
+Renderer slice: `src/renderer/features/workspace/` (WorkspacePage, PrimarySessionPanel, TeamLeadPanel, TeamLeadPanelList).
 
-- **QaRunner** (`qa-runner.ts`) — Session management, uses `orchestrator.spawn()` with `phase: 'qa'`
-- **QaReportParser** (`qa-report-parser.ts`) — Parses structured JSON report from agent output
-- **QaHandlers** (`qa-handlers.ts`) — 5 IPC channels (startQuiet, startFull, getReport, getSession, cancel)
-- **QaTrigger** (`qa-trigger.ts`) — Auto-starts quiet QA when an execution agent completes; listens for orchestrator session completion events where `phase === 'executing'`, waits 2s for status propagation, then starts quiet QA if task is in 'review' status. Guards against re-triggering via taskId tracking.
+## Renderer Feature Slices
 
-### IPC Event Channels (3 events)
-
-- `event:qa.started` — QA session started (taskId, mode)
-- `event:qa.progress` — QA progress step (taskId, step, total, current)
-- `event:qa.completed` — QA completed (taskId, result, issueCount)
-
-### Renderer Integration
-
-- **useQaMutations** — Query hooks (useQaReport, useQaSession) + mutation hooks (startQuietQa, startFullQa, cancelQa)
-- **useQaEvents** — 3 event listeners → cache invalidation + toast notifications
-- **QaReportViewer** — Displays QA report with trigger buttons, shown in TaskDetailRow for review/done tasks
-
-QA failures trigger `notificationManager.onNotification()` for proactive alerts.
-
-## Assistant Watch System
-
-Persistent subscription system for proactive notifications:
-- **WatchStore** (`watch-store.ts`) — JSON persistence at `userData/assistant-watches.json`
-- **WatchEvaluator** (`watch-evaluator.ts`) — Subscribes to IPC events, matches against active watches
-- **CrossDeviceQuery** (`cross-device-query.ts`) — Queries other ADC instances via Hub API
-
-Watch types: task_status, task_completed, agent_error, qa_result, device_status
-Operators: equals, changes, any
-
-When a watch triggers, the evaluator fires a callback that emits `event:assistant.proactive`
-with source 'watch', enabling the assistant widget to show proactive notifications.
-
-## Task System (SQLite-Backed — Sole Source of Truth)
-
-Tasks are stored exclusively in the `progress_tasks` SQLite table (Drizzle ORM), managed by `ProgressService`. The old filesystem-based `.adc/specs/` task system has been completely removed. There is no `TaskService`, `TaskRepository`, `TaskDecomposer`, or `GithubImporter` — all task operations go through `ProgressService`.
-
-**Key files:**
-- `src/main/features/progress/progress-service.ts` — SQLite-backed task CRUD (sole task authority)
-- `src/main/features/progress/schema.ts` — Drizzle schema (`progress_tasks` table with UUID `id` column)
-- `src/main/features/progress/task-file-io.ts` — File I/O utilities
-- `src/main/features/progress/progress-handlers.ts` — IPC handlers
-- `src/shared/ipc/progress/channels.ts` — `PROGRESS` channel constants
-
-**Consumers (all read from `progress_tasks` via ProgressService):**
-- My Work page — cross-project task view
-- Workflow Pipeline — visual task journey diagram
-- Assistant tool-handlers — task CRUD via natural language
-- Briefing service — daily task summaries
-- QA trigger — auto-starts QA on task status change
-- Insights service — task analytics
-
-**Rules:**
-- All task CRUD (list, get, create, update, delete) goes through `ProgressService` backed by SQLite
-- `TaskStatus` values: `backlog`, `planning`, `plan_ready`, `queued`, `running`, `paused`, `review`, `done`, `error`
-- No filesystem task storage — SQLite is the single source of truth
-
-The Task Table displays tasks in a filterable, sortable TanStack Table view using shadcn Table primitives (`ProgressTaskGrid`).
-
-## Design System & Theme Architecture
+35 slices in `src/renderer/features/`:
 
 ```
-globals.css @theme block
-  ├── Registers CSS vars as Tailwind tokens (--color-primary: var(--primary))
-  ├── Defines fonts, radius scale, animations, keyframes
-  └── Tailwind generates utility classes (bg-primary, text-foreground, etc.)
-
-Theme variable blocks (in globals.css)
-  ├── :root            — Default light theme
-  ├── .dark            — Default dark theme (Oscura Midnight)
-  ├── [data-theme="X"]       — Named theme light variant
-  └── [data-theme="X"].dark  — Named theme dark variant
-
-theme-store.ts (Zustand)
-  ├── setMode('dark')       → adds class="dark" to <html>
-  ├── setColorTheme('ocean') → sets data-theme="ocean" on <html>
-  └── setUiScale(110)       → sets data-ui-scale="110" on <html>
-
-Constants (src/shared/constants/themes.ts)
-  ├── COLOR_THEMES — ['default', 'dusk', 'lime', 'ocean', 'retro', 'neo', 'forest']
-  ├── ColorTheme type
-  └── COLOR_THEME_LABELS — human-readable names
+agent-dashboard  agents          alerts          assistant       briefing
+bus              changelog       dashboard       diff-viewer     files
+fitness          git             ideas           insights        integrations
+merge            my-work         notes           onboarding      peers
+personal         planner         planning        productivity    projects
+runners          settings        tasks           terminals       test-suite
+tools            visualization   workflow        workflow-pipeline workspace
 ```
 
-Key rules:
-- **`color-mix(in srgb, var(--token) XX%, transparent)`** for all semi-transparent theme colors
-- Raw color values ONLY in theme variable definitions, never in utility classes
-- `postcss.config.mjs` is required for Tailwind v4 processing via `@tailwindcss/postcss`
+Each slice follows the Feature Slice Design layout: `api/` (React Query hooks + queryKeys), `components/`, `hooks/` (optional), `lib/` (optional), `store.ts` or `*-store.ts` (Zustand UI-only state), `index.ts` (barrel).
+
+## Routes
+
+8 route group files in `src/renderer/app/routes/`:
+
+- `assistant.routes.ts`
+- `dashboard.routes.ts`
+- `integrations.routes.ts`
+- `misc.routes.ts`
+- `personal.routes.ts`
+- `productivity.routes.ts`
+- `project.routes.ts`
+- `settings.routes.ts`
+
+`index.ts` is the barrel. TanStack Router builds the tree from these creators.
+
+## React Query Integration (3-Layer Caching)
+
+**EventBridge → React Query → UI Stores**
+
+1. **EventBridge** (`src/renderer/shared/components/EventBridge.tsx`) — mounted once in `RootLayout`. Subscribes to all `event:*` channels and either `invalidateQueries` or `setQueryData` (append-style for sessions, op-log).
+2. **React Query** — feature hooks in each slice's `api/` directory wrap `ipc()`. Query key factories enable targeted invalidation.
+3. **Zustand stores** — UI-only state (selections, filters, layout). Never domain data.
+
+Mutations use simple `onSuccess` invalidation (IPC is < 1ms, so optimistic updates are not used). All write hooks call `useMutationErrorToast()` to surface failures via the bottom-right `MutationErrorToast`.
+
+For the full caching recipe see `docs/patterns/CACHING-LAYER-QUICKGUIDE.md`.
+
+## Terminal System
+
+- **TerminalService** spawns real PTY processes via `@lydell/node-pty`.
+- **TerminalInstance** in the renderer renders xterm.js with the WebGL renderer (`@xterm/addon-webgl`), FitAddon, web-links, and serialize addons.
+- Output: PTY stdout → `event:terminal.output` → `xterm.write()`.
+- Input: `xterm.onData()` → `terminals.sendInput` IPC → PTY stdin.
+- Resize: FitAddon → PTY resize.
+
+## Design System
+
+- **All UI uses `@ui` primitives.** Never raw HTML `<button>`, `<input>`, `<label>`, `<select>`, `<textarea>`. The barrel is `src/renderer/shared/components/ui/index.ts` (~85 exports across 6 tiers: form primitives, display, layout/typography, Radix wrappers for dialogs/menus/feedback/sidebar/breadcrumb, TanStack form bindings, app-specific primitives like StatusBadge/Icon/MetricCard/SearchInput/MetadataList/SectionHeader/InlineAlert/ThinkingIndicator).
+- **Tier 5 (composition):** `ActionBar`, `DetailPanel`, `FilterBar`.
+- **Tier 6 (data-display):** `DataGrid`, `LiveIndicator`, `StatusFlow`.
+- Theme tokens registered via Tailwind v4 `@theme` block in `globals.css`. Color themes: `default`, `dusk`, `lime`, `ocean`, `retro`, `neo`, `forest`. Mode + theme + UI scale managed by `theme-store.ts` (Zustand) which sets `class="dark"`, `data-theme="X"`, `data-ui-scale="X"` on `<html>`.
+- Semi-transparent theme colors always use `color-mix(in srgb, var(--token) XX%, transparent)`.
+- Page structure uses `PageLayout` / `PageHeader` / `PageContent`.
+
+## App Layout Components (`src/renderer/app/layouts/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `RootLayout` | Renders `TitleBar` + `react-resizable-panels` (sidebar + content). Hosts `EventBridge`, overlay notifications, and `AssistantWidget`. Layout persists to localStorage via `useDefaultLayout`. |
+| `TitleBar` | Custom 32px frameless title bar with drag region, screenshot/health/hub buttons, separator, then min/max/close via `window.*` IPC. |
+| `Sidebar` | Navigation (fills its panel container). |
+| `TopBar` | CommandBar trigger. |
+| `CommandBar` | Cmd+K palette. |
+| `ProjectTabBar` | Horizontal tab bar for open projects. |
+| `UserMenu` | Avatar + logout dropdown. |
+
+Overlays mounted after the main content, in order: `AppUpdateNotification`, `AuthNotification`, `HubNotification`, `MutationErrorToast` (z-50), `WebhookNotification`, `AssistantWidget` (FAB z-40, panel z-50; Ctrl+J / Cmd+J).
 
 ## Security — Secret Storage
 
-All sensitive credentials are encrypted using Electron's `safeStorage` API, which provides OS-level encryption:
-- **macOS**: Keychain
-- **Windows**: DPAPI (Data Protection API)
-- **Linux**: libsecret
+All sensitive credentials are encrypted via Electron's `safeStorage` (Keychain / DPAPI / libsecret). Plaintext fallback only when `safeStorage.isEncryptionAvailable()` returns false (CI/headless).
 
-### What's Encrypted
+| Secret | Location |
+|--------|----------|
+| OAuth client credentials | `<userData>/oauth-providers.json` |
+| OAuth access/refresh tokens | `oauth_tokens` table (encrypted column) |
+| Webhook secrets (Slack, GitHub) | `settings_kv` (encrypted) |
+| Peer identity private key | `<userData>/peer-identity.json` (encrypted unless `ADC_PEERS_ALLOW_PLAINTEXT_IDENTITY=1`) |
 
-| Secret Type | Storage Location | Service |
-|-------------|-----------------|---------|
-| OAuth client credentials | `<userData>/oauth-providers.json` | `provider-config.ts` |
-| Profile OAuth tokens | `<userData>/settings.json` | `settings-encryption.ts` (via `PROFILE_SECRET_KEYS`) |
-| Webhook secrets (Slack, GitHub) | `<userData>/settings.json` | `settings-service.ts` |
+Both paths auto-migrate plaintext entries on first read; the `useSafeStorage` flag tracks whether real encryption was used.
 
-### Encryption Pattern
+## QA System
 
-```typescript
-import { safeStorage } from 'electron';
+Two-tier automated QA spawning Claude agents via the bus:
+- **Quiet mode** — fast scripted checks (lint, typecheck, tests, build, check:docs).
+- **Full mode** — interactive Claude review with screenshots and accessibility testing.
 
-// Encrypt before saving
-function encryptSecret(value: string): EncryptedSecretEntry {
-  if (safeStorage.isEncryptionAvailable()) {
-    const buffer = safeStorage.encryptString(value);
-    return { encrypted: buffer.toString('base64'), useSafeStorage: true };
-  }
-  // Fallback for CI/testing environments
-  return { encrypted: Buffer.from(value, 'utf-8').toString('base64'), useSafeStorage: false };
-}
+Files: `qa-runner.ts`, `qa-report-parser.ts`, `qa-handlers.ts`, `qa-trigger.ts`. `QaTrigger` listens for bus session completion where `phase === 'executing'` and auto-starts quiet QA after a 2s settle when the task is in `review`. Test-suite integration is wired through `qaTrigger`'s `testSuiteService` dep — failed test runs can promote to QA.
 
-// Decrypt on read
-function decryptSecret(entry: EncryptedSecretEntry): string {
-  if (entry.useSafeStorage) {
-    const buffer = Buffer.from(entry.encrypted, 'base64');
-    return safeStorage.decryptString(buffer);
-  }
-  return Buffer.from(entry.encrypted, 'base64').toString('utf-8');
-}
-```
-
-### Migration
-
-Both services automatically migrate plaintext secrets to encrypted format on first read. The `useSafeStorage` flag tracks whether real encryption was used, enabling graceful fallback in environments where safeStorage is unavailable.
-
-## Security — Hub API
-
-The Hub server (`hub/`) includes security hardening for its REST API.
-
-### Bootstrap Secret
-
-The `POST /api/auth/generate-key` endpoint (used to create the first API key) requires the `HUB_BOOTSTRAP_SECRET` environment variable:
-
-```bash
-# .env
-HUB_BOOTSTRAP_SECRET=your-random-secret-here
-```
-
-Clients must include the secret in the `X-Bootstrap-Secret` header. The server validates using `crypto.timingSafeEqual()` to prevent timing attacks.
-
-### Rate Limiting
-
-All Hub endpoints are protected by `@fastify/rate-limit`:
-
-| Scope | Limit | Window |
-|-------|-------|--------|
-| Global (all endpoints) | 100 requests | 1 minute |
-| Auth routes (`/api/auth/*`) | 10 requests | 1 minute |
-
-Rate limit headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`) are included in responses.
-
-### CORS Validation
-
-CORS is configured via the `HUB_ALLOWED_ORIGINS` environment variable (comma-separated list of allowed origins). If not set, defaults to `origin: true` for development mode.
-
-```bash
-# .env
-HUB_ALLOWED_ORIGINS=https://example.com,http://localhost:5173
-```
-
-### WebSocket First-Message Authentication
-
-WebSocket connections use first-message authentication instead of query parameters (which can be logged by proxies):
-
-1. Client connects to `/ws` without API key in URL
-2. Server expects an auth message within 5 seconds:
-   ```json
-   { "type": "auth", "apiKey": "your-api-key" }
-   ```
-3. Server validates the API key against the database
-4. On success: client is upgraded to `addAuthenticatedClient()` and receives broadcasts
-5. On failure: connection is closed with code 4001 (Unauthorized)
-
-The client implementation (`hub-connection.ts`) sends the auth message immediately upon WebSocket open.
-
----
-
-## Hub Connection Layer
-
-The Electron client connects to a self-hosted Hub server for multi-device sync.
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  ELECTRON CLIENT                                                     │
-│  ┌─────────────────┐   ┌──────────────────┐   ┌──────────────────┐  │
-│  │ React Hooks     │──▷│ IPC Handlers     │──▷│ Hub Services     │  │
-│  │ (useTasks, etc) │   │ (hub-handlers)   │   │                  │  │
-│  └─────────────────┘   └──────────────────┘   │  ┌────────────┐  │  │
-│          ▲                                     │  │ API Client │  │  │
-│          │                                     │  └─────┬──────┘  │  │
-│  ┌───────┴─────────┐                          │        │         │  │
-│  │ useHubEvent     │◁─────── events ──────────│  ┌─────▼──────┐  │  │
-│  │ hub-query-sync  │                          │  │ WebSocket  │  │  │
-│  └─────────────────┘                          │  └─────┬──────┘  │  │
-│                                               │        │         │  │
-│                                               │  ┌─────▼──────┐  │  │
-│                                               │  │ Token Store│  │  │
-│                                               │  │ Auth Svc   │  │  │
-│                                               │  └────────────┘  │  │
-│                                               └──────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
-                              │ REST + WebSocket
-                              ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  HUB SERVER (Docker)                                                 │
-│  ┌─────────────────┐   ┌──────────────────┐   ┌──────────────────┐  │
-│  │ Fastify Routes  │──▷│ SQLite Database  │   │ WS Broadcaster   │  │
-│  │ /api/tasks/*    │   │ (tasks, devices) │   │ (real-time push) │  │
-│  │ /api/auth/*     │   └──────────────────┘   └──────────────────┘  │
-│  └─────────────────┘                                                 │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Services
-
-| Service | Location | Purpose |
-|---------|----------|---------|
-| `hub-api-client.ts` | `src/main/services/hub/` | REST API calls (tasks, auth, devices) |
-| `hub-auth-service.ts` | `src/main/services/hub/` | Login/register/logout + token refresh |
-| `hub-token-store.ts` | `src/main/services/hub/` | safeStorage encrypted token persistence |
-| `hub-websocket.ts` | `src/main/services/hub/` | WebSocket with auto-reconnect |
-
-### IPC Channels
-
-| Channel | Purpose |
-|---------|---------|
-| `hub.tasks.list` | List tasks from Hub |
-| `hub.tasks.get` | Get single task |
-| `hub.tasks.create` | Create task on Hub |
-| `hub.tasks.update` | Update task |
-| `hub.tasks.updateStatus` | Update task status only |
-| `hub.tasks.delete` | Delete task |
-| `hub.tasks.execute` | Start task execution |
-| `hub.tasks.cancel` | Cancel running task |
-
-### Event Channels (WebSocket → Renderer)
-
-| Channel | Payload | When |
-|---------|---------|------|
-| `event:hub.tasks.created` | `{ taskId, projectId }` | Task created on another device |
-| `event:hub.tasks.updated` | `{ taskId, projectId }` | Task updated on another device |
-| `event:hub.tasks.deleted` | `{ taskId, projectId }` | Task deleted on another device |
-| `event:hub.tasks.progress` | `{ taskId, progress, phase }` | Task progress update |
-| `event:hub.tasks.completed` | `{ taskId, projectId, result }` | Task execution completed |
-| `event:hub.devices.online` | `{ deviceId, name }` | Device came online |
-| `event:hub.devices.offline` | `{ deviceId }` | Device went offline |
-
-### Authentication Flow
-
-1. **Login**: `auth.login` → Hub validates → returns access + refresh tokens
-2. **Token Storage**: Tokens encrypted with `safeStorage` in `token-store.ts` (provider: 'hub')
-3. **Session Restore**: `auth.restore` → checks TokenStore for stored refresh token → refreshes via Hub → returns user + tokens (discriminated union: `{ restored: true, user, tokens }` or `{ restored: false }`)
-4. **Proactive Refresh**: `useTokenRefresh()` hook sets timer 2 min before `expiresAt`, refreshes automatically
-5. **Device Registration**: On startup, registers device with Hub + 30s heartbeat
-6. **WebSocket Auth**: First message after connect is `{ type: "auth", apiKey }`, validated within 5s
-
----
-
-## SQLite-Backed Task Operations
-
-Task CRUD operations route through `ProgressService`, which reads/writes the `progress_tasks` SQLite table:
-
-```
-RENDERER                          MAIN PROCESS
-========                          ============
-
-useProgress() hook
-  |
-  v
-ipc(PROGRESS.LIST.ALL, { projectId })
-  |
-  v
-                              progress-handlers.ts
-                                |
-                                v
-                              progressService.listTasks(projectId)
-                                |  queries progress_tasks table (SQLite)
-                                v
-                              Return ProgressTask[] (always works, even offline)
-
---- On mutation (create, update, delete): ---
-
-                              progressService.createTask(draft)
-                                |  inserts into progress_tasks table
-                                v
-                              router.emit('event:progress.task.created', task)
-                                |
-                                v
-                              EventBridge invalidates React Query cache
-```
-
-The renderer uses `PROGRESS.*` channel constants for all task operations.
-
-### WebSocket Event Forwarding (Hub -> Electron -> React)
-
-Real-time updates from the Hub server are forwarded through the Electron main process to React:
-
-```
-HUB SERVER                      MAIN PROCESS                    RENDERER
-==========                      ============                    ========
-
-WebSocket broadcast
-  { type: 'task.updated', ... }
-                              hub-connection.ts receives
-                                |
-                                v
-                              router.emit('event:hub.tasks.updated', payload)
-                                |
-                                v
-                              BrowserWindow.webContents.send(...)
-                                                                  |
-                                                                  v
-                                                              useHubEvent('event:hub.tasks.updated', ...)
-                                                                  |
-                                                                  v
-                                                              queryClient.invalidateQueries()
-                                                                  |
-                                                                  v
-                                                              React Query refetches from Hub
-```
-
-### Device Heartbeat System
-
-Each Electron client registers as a device with the Hub and sends periodic heartbeats:
-
-```
-APP STARTUP                     MAIN PROCESS                    HUB SERVER
-===========                     ============                    ==========
-
-index.ts (app ready)
-  |
-  v
-deviceService.registerDevice()
-  |
-  v
-                              POST /api/devices/register
-                                { machineId, deviceName, ... }
-                                                                  |
-                                                                  v
-                                                              INSERT/UPDATE devices
-                                                              WS broadcast: device.online
-                              <---- { deviceId } ---------------+
-                                |
-                                v
-heartbeatService.start(deviceId)
-  |
-  v
-Every 30s: deviceService.sendHeartbeat(deviceId)
-  |
-  v
-                              POST /api/devices/:id/heartbeat
-                                                                  |
-                                                                  v
-                                                              UPDATE last_seen_at
-```
-
-### Task Table (TanStack Table + shadcn)
-
-The task dashboard uses TanStack Table (`@tanstack/react-table`) with shadcn `Table` primitives from `@ui`:
-
-- **ProgressTaskGrid** — TanStack Table instance with `useReactTable`, column defs with inline cell rendering via `flexRender`, rendered through `Table`/`TableHeader`/`TableBody`/`TableRow`/`TableCell` from `@ui`
-- **Column defs** — Status (Badge), Title, Priority, Progress (inline bar), Cost, Updated (relative time), Expand toggle
-- **Detail rows** — Expandable via store `expandedRowIds` Set, renders `ProgressTaskDetailRow` in a full-width `TableCell`
-- **TaskFiltersToolbar** — Filter controls in the PageHeader actions area
-- **TaskDetailRow** — Expanded row showing subtasks, execution log, PR status, and task controls
-
-### Shared UI Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `AppUpdateNotification` | `src/renderer/shared/components/` | App update available notification banner |
-| `AuthNotification` | `src/renderer/shared/components/` | Auth error/expiry notification |
-| `ConfirmDialog` | `src/renderer/shared/components/` | Reusable destructive-action confirmation (task delete, project delete) |
-| `HubConnectionIndicator` | `src/renderer/shared/components/` | Hub connected/disconnected dot indicator |
-| `HubNotification` | `src/renderer/shared/components/` | Hub connection event notifications |
-| `HubStatus` | `src/renderer/shared/components/` | Hub status display component |
-| `IntegrationRequired` | `src/renderer/shared/components/` | Placeholder for features requiring external integration |
-| `MutationErrorToast` | `src/renderer/shared/components/` | Fixed bottom-right error toast renderer |
-| `WebhookNotification` | `src/renderer/shared/components/` | Webhook execution result notifications |
-
-### App Layout Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `RootLayout` | `src/renderer/app/layouts/RootLayout.tsx` | Root shell: renders TitleBar at top, then `react-resizable-panels` (Group/Panel/Separator) for resizable sidebar + content layout. Sidebar panel is collapsible (syncs with layout store). Layout persists to localStorage via `useDefaultLayout`. |
-| `TitleBar` | `src/renderer/app/layouts/TitleBar.tsx` | Custom frameless window title bar (32px). Drag region for window movement, utility buttons (screenshot, health, hub status) separated by vertical divider from minimize/maximize/close window controls via `window.*` IPC channels. |
-| `Sidebar` | `src/renderer/app/layouts/Sidebar.tsx` | Navigation sidebar (fills its parent panel container) |
-| `TopBar` | `src/renderer/app/layouts/TopBar.tsx` | Top bar with CommandBar trigger |
-| `CommandBar` | `src/renderer/app/layouts/CommandBar.tsx` | Global command palette (Cmd+K) |
-| `ProjectTabBar` | `src/renderer/app/layouts/ProjectTabBar.tsx` | Horizontal tab bar for switching between open projects |
-| `UserMenu` | `src/renderer/app/layouts/UserMenu.tsx` | Avatar + logout dropdown in sidebar footer |
-
-### RootLayout Overlay Mount Order
-
-Components mounted after the main content area, in order:
-
-1. `AppUpdateNotification`
-2. `AuthNotification`
-3. `HubNotification`
-4. `MutationErrorToast` (fixed bottom-right, z-50)
-5. `WebhookNotification`
-6. `AssistantWidget` (FAB z-40 bottom-right, panel z-50)
-
-The `AssistantWidget` provides a floating chat interface accessible from any page via Ctrl+J (or Cmd+J on Mac). It complements the CommandBar (Cmd+K) with persistent conversational history.
+Events: `event:qa.started`, `event:qa.progress`, `event:qa.completed`. Renderer: `useQaMutations`, `useQaEvents`, `QaReportViewer`.
 
 ## Build System
 
-- **electron-vite** handles three separate builds:
-  - Main: CJS output for Electron main process
-  - Preload: ESM output for context bridge
-  - Renderer: Bundled SPA with Vite + React plugin
-- Path aliases are configured in both `tsconfig.json` and `electron.vite.config.ts`
-- Tailwind v4 uses `@theme` directive in `globals.css` to register design tokens
-- PostCSS pipeline: `postcss.config.mjs` → `@tailwindcss/postcss` + `autoprefixer`
+- **electron-vite** drives three builds: main (CJS), preload (ESM), renderer (Vite + React).
+- Path aliases configured in both `tsconfig.json` and `electron.vite.config.ts`: `@shared`, `@main`, `@renderer`, `@features`, `@ui`.
+- Tailwind v4 via `@tailwindcss/postcss` in `postcss.config.mjs`.
+- Compile-time channel baking via `__ADC_CHANNEL__` define; set with `cross-env ADC_CHANNEL=local electron-vite build`.
+- `postinstall` runs `electron-rebuild -f -w better-sqlite3` to match Electron's Node ABI. Test scripts swap ABIs via `scripts/rebuild-sqlite-for-{node,electron}.mjs` so Vitest can use better-sqlite3 directly.
+- Native deps that ship in the bundle: `@lydell/node-pty`, `better-sqlite3`. `reflect-metadata` is forced external — bundling it broke `tsyringe` initialization order in packaged builds.
+
+## Dependency Versions (selected)
+
+| Package | Version |
+|---------|---------|
+| electron | 39.2.7 |
+| react | ^19.2.3 |
+| typescript | ^5.9.3 |
+| vite | ^7.2.7 |
+| vitest | ^4.0.16 |
+| @tanstack/react-query | ^5.62.0 |
+| @tanstack/react-router | ^1.95.0 |
+| @tanstack/react-table | ^8.21.3 |
+| @tanstack/react-form | ^1.28.3 |
+| drizzle-orm | ^0.45.2 |
+| better-sqlite3 | ^12.8.0 |
+| zod | ^4.2.1 |
+| zustand | ^5.0.9 |
+| tailwindcss | ^4.1.17 |
+| @lydell/node-pty | ^1.1.0 |
+| @peculiar/x509 | ^2.0.0 |
+| bonjour-service | ^1.3.0 |
+| @anthropic-ai/sdk | ^0.74.0 |
+| @playwright/test | ^1.58.2 |
 
 ---
 
 ## Testing — MANDATORY VERIFICATION GATE
 
-> **⚠️ ALL code changes require passing the test suite. This is non-negotiable.**
-
-### Verification Commands (ALL MUST PASS)
+> **All code changes require passing the test suite.**
 
 ```bash
-# Run before ANY completion claim. All 6 must pass.
 npm run lint         # Zero violations
 npm run typecheck    # Zero errors
-npm run test         # All tests pass
+npm run test         # Unit + integration
 npm run build        # Builds successfully
-npm run test:e2e     # E2E tests pass (playwright + electron — requires build)
+npm run test:e2e     # Playwright + Electron (requires build)
 npm run check:docs   # Documentation updated for source changes
 ```
 
-**Skipping tests = work rejected. No exceptions.**
-
----
-
-The project uses a 4-layer test pyramid for comprehensive coverage:
+The 4-layer test pyramid:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        ADC TEST PYRAMID                                     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│                         ┌─────────────────┐                                 │
-│                         │   AI QA AGENT   │  ← Claude + MCP Electron        │
-│                         │  (Exploratory)  │    Visual verification          │
-│                         └────────┬────────┘                                 │
-│                                  │                                          │
-│                    ┌─────────────┴─────────────┐                            │
-│                    │      E2E TESTS            │  ← Playwright + Electron   │
-│                    │   (Critical Journeys)     │    Scripted, deterministic │
-│                    └─────────────┬─────────────┘                            │
-│                                  │                                          │
-│          ┌───────────────────────┴───────────────────────┐                  │
-│          │              INTEGRATION TESTS                 │  ← Vitest       │
-│          └───────────────────────┬───────────────────────┘                  │
-│                                  │                                          │
-│  ┌───────────────────────────────┴───────────────────────────────────────┐  │
-│  │                         UNIT TESTS                                     │  │
-│  │        (Services, Utilities, Zod Schemas, Pure Functions)              │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+                  ┌─────────────────┐
+                  │   AI QA AGENT   │  ← Claude + MCP Electron
+                  │  (Exploratory)  │
+                  └────────┬────────┘
+              ┌────────────┴────────────┐
+              │      E2E TESTS          │  ← Playwright + Electron
+              │   (Critical Journeys)   │
+              └────────────┬────────────┘
+        ┌──────────────────┴──────────────────┐
+        │         INTEGRATION TESTS           │  ← Vitest
+        └──────────────────┬──────────────────┘
+┌───────────────────────────┴───────────────────────────────┐
+│                       UNIT TESTS                          │  ← Vitest
+│   (Services, Utilities, Zod Schemas, Pure Functions)      │
+└───────────────────────────────────────────────────────────┘
 ```
 
-### Test Layers
-
-| Layer | Tool | Purpose | When to Run |
-|-------|------|---------|-------------|
+| Layer | Tool | Purpose | When |
+|-------|------|---------|------|
 | Unit | Vitest | Services, utilities, pure functions | Every save, pre-commit |
 | Integration | Vitest | IPC handlers, React Query hooks | Pre-commit |
 | E2E | Playwright + Electron | Critical user journeys | Pre-push, CI |
 | AI QA | Claude + MCP Electron | Exploratory visual testing | PR review |
-
-### Test Directory Structure
-
-```
-tests/
-├── setup/
-│   ├── vitest.setup.ts          # Global test setup
-│   └── mocks/
-│       ├── electron.ts          # Mock app, dialog, safeStorage
-│       ├── node-fs.ts           # Mock file system (memfs)
-│       ├── node-pty.ts          # Mock PTY spawning
-│       └── ipc.ts               # Mock window.api.invoke
-│
-├── unit/                        # Unit tests (vitest.config.ts)
-│   └── services/
-│       ├── project-service.test.ts
-│       ├── hub-token-store.test.ts
-│       └── ... (40+ service test files)
-│
-├── integration/                 # Integration tests (vitest.integration.config.ts)
-│   └── ipc-handlers/
-│       ├── project-handlers.test.ts
-│       └── task-handlers.test.ts
-│
-├── e2e/                         # E2E tests (playwright.config.ts)
-│   ├── electron.setup.ts        # Electron launch fixtures
-│   ├── app-launch.spec.ts
-│   └── navigation.spec.ts
-│
-└── qa-scenarios/                # AI QA agent test scenarios
-    ├── README.md
-    ├── task-creation.md
-    └── project-management.md
-```
-
-### Test Commands
-
-```bash
-npm run test              # Run unit + integration tests
-npm run test:unit         # Unit tests only (fast, <1s)
-npm run test:unit:watch   # Unit tests in watch mode
-npm run test:integration  # Integration tests only (<10s)
-npm run test:e2e          # E2E tests with Playwright (<60s)
-npm run test:e2e:ui       # E2E tests with Playwright UI
-npm run test:coverage     # Unit tests with V8 coverage report
-```
 
 ### Configuration Files
 
@@ -935,15 +460,19 @@ npm run test:coverage     # Unit tests with V8 coverage report
 |------|---------|
 | `vitest.config.ts` | Unit test configuration |
 | `vitest.integration.config.ts` | Integration test configuration |
-| `playwright.config.ts` | E2E test configuration |
+| `playwright.config.ts` | E2E configuration |
 
-### AI QA Agent
+### Native ABI Rebuild Hooks
 
-For exploratory testing, the AI QA agent uses MCP Electron tools to interact with the running app:
+`pretest:unit` and `pretest:e2e` run `scripts/rebuild-sqlite-for-{node,electron}.mjs` so that `better-sqlite3` matches the runtime: Node ABI for Vitest, Electron ABI for Playwright/electron-builder. `posttest:unit` restores Electron ABI so subsequent `npm run dev` works without manual rebuild.
 
-- Takes screenshots for visual verification
-- Navigates UI elements via `send_command_to_electron`
-- Reads console logs for error detection
-- Follows natural language test scenarios in `tests/qa-scenarios/`
+### Test Commands
 
-See the test suite design document for the full testing strategy.
+```bash
+npm run test              # unit + integration
+npm run test:unit         # unit only
+npm run test:integration  # integration only
+npm run test:e2e          # Playwright + Electron
+npm run test:e2e:ui       # Playwright UI mode
+npm run test:coverage     # V8 coverage
+```
