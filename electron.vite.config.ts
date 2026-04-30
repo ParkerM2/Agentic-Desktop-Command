@@ -17,6 +17,11 @@ export default defineConfig({
         fileName: () => 'index.cjs',
       },
       rollupOptions: {
+        // Force reflect-metadata to stay external so its `require()` is hoisted
+        // to the top of the bundle and the polyfill installs onto globalThis.Reflect
+        // BEFORE @peculiar/x509 → tsyringe is required (tsyringe throws at module
+        // top-level if Reflect.defineMetadata isn't already present).
+        external: ['reflect-metadata'],
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
           'agent-host/index': resolve(__dirname, 'src/main/agent-host/index.ts'),
