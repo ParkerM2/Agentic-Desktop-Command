@@ -2,12 +2,13 @@
 
 # ADC — Agentic Desktop Command
 
-### Desktop UI for multi-project management with agent team orchestration, automated QA loops, and agentic local software testing
+### A desktop command center for orchestrating teams of autonomous coding agents across multiple projects
 
 [![Electron](https://img.shields.io/badge/Electron-39-47848F?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-AGPL--3.0-EF4444?style=for-the-badge)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-0.4.2-2dd4bf?style=for-the-badge)](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-EF4444?style=for-the-badge)](#license)
 
 </div>
 
@@ -15,9 +16,11 @@
 
 ## What is ADC?
 
-ADC is a desktop application for orchestrating teams of autonomous coding agents across multiple projects. It provides a unified command center to spawn, monitor, and coordinate AI agent teams — with automated QA review loops, workflow-driven task boards, integrated terminals, git workflows, and productivity tools.
+ADC is a desktop application for managing many software projects and the AI agent teams that work on them. It spawns Claude CLI sessions, watches their output in real time, runs them through automated QA loops, and ties the whole thing together with project-aware tooling — git, terminals, test running, planning, integrations.
 
-**User Story**: *"As a developer managing multiple codebases, I want to delegate tasks to AI agent teams and track their progress visually, so I can ship features faster while maintaining oversight and quality through automated QA."*
+> *"As a developer managing multiple codebases, I want to delegate tasks to AI agent teams and track their progress visually, so I can ship features faster while maintaining oversight and quality through automated QA."*
+
+It is a single-user, local-first application. Agents are real `claude` CLI processes, not API calls — billing happens against your existing Claude subscription. Devices sync directly peer-to-peer over a TLS-pinned WebSocket; there is no central server.
 
 ---
 
@@ -31,132 +34,69 @@ ADC is a desktop application for orchestrating teams of autonomous coding agents
   </picture>
 </div>
 
-<details>
-<summary><strong>Architecture Overview</strong></summary>
+ADC runs as three coordinated processes:
 
-| Layer | Components | Technology |
-|-------|------------|------------|
-| **Renderer** | React Components, TanStack Router, React Query, Zustand | React 19, TypeScript |
-| **Preload Bridge** | Typed IPC Context, window.api | Electron contextBridge |
-| **Main Process** | IPC Router, 29 Services, OAuth, MCP Servers, PTY | Node.js, Electron 39 |
-| **External** | GitHub/Spotify/Calendar APIs, Anthropic SDK | REST, WebSocket, OAuth2 |
-| **Storage** | SQLite, JSON Files, Task Specs | File system, SQLite |
+| Process | Role | Technology |
+|---------|------|------------|
+| **Main** | SQLite, IPC router, services, settings, file watchers | Node.js, Electron 39 |
+| **Agent Host** (utility) | Spawns Claude CLI processes via PTY, parses stream-JSON output | `child_process.spawn`, MessagePort |
+| **Renderer** | React UI with Feature Slice Design, TanStack Query for server state | React 19, TanStack Router/Query/Table |
 
-**Data Flow**: React Query hooks call `ipc()` → Preload bridge → IPC Router → Services → External APIs/Storage
+**Communication paths:**
+- IPC (main ↔ renderer) — Zod-validated request/response via a typed router
+- MessagePort (agent host ↔ renderer) — direct streaming of agent output, bypasses main
+- Correlation-ID RPC (main ↔ agent host) — request/response over MessagePort
+- WebSocket P2P (device ↔ device) — TLS-pinned, Ed25519-authenticated, mDNS-discovered
 
-</details>
+Every domain follows the same eight-layer slice: `channels.ts → contract.ts → schema.ts → service.ts → handlers.ts → hooks.ts → components/ → index.ts`. SQLite is the single source of truth — there is no filesystem task system.
+
+For details, see `docs/architecture/ARCHITECTURE.md` and `docs/architecture/DATA-FLOW.md`.
 
 ---
 
 ## Features
 
-### Agent Team Orchestration & Control
+### Agent orchestration
+Spawn, pause, resume, and terminate multiple Claude CLI agents. Tasks flow through a sortable, filterable table — Backlog → Queue → In Progress → AI Review → Human Review → Done. Launch any task into the `/implement-feature` workflow that runs agents in waves (Schema → Service → IPC → Components), enforces a mandatory test gate, and routes each component through a QA agent before integration.
 
-| Feature | Description |
-|---------|-------------|
-| **Agent Team Management** | Spawn, pause, resume, and terminate multiple Claude CLI agents simultaneously |
-| **Workflow-Driven Task Table** | Sortable, filterable task table with customizable agent workflows and `/implement-feature` skill integration |
-| **Agent Queue** | Queue tasks for sequential agent execution with dependency management |
-| **Progress Watching** | Real-time sync of progress events between paired devices via the P2P transport |
-| **Task Launcher** | Launch Claude CLI sessions directly from task rows with project context |
+### Project management
+Multiple codebases with instant project switching. Per-project tabs for git (status, diff, commit, push), terminals (PTY-backed via node-pty), tasks, planning, tools, GitHub, visualization, and a browser-based test suite. Workspaces group related projects with shared concurrency limits and device assignments.
 
-### Automated QA Loops & Testing
+### Multi-device sync
+Pair devices via PIN ritual (Settings → Peers) and sync over a direct TLS-pinned WebSocket connection. mDNS handles discovery; Ed25519 identity handles authentication; an op-log with last-write-wins merge handles replication. No central server is involved.
 
-| Feature | Description |
-|---------|-------------|
-| **QA Review Pipeline** | Automated quality gates — every task reviewed by QA agents before merge |
-| **Codebase Guardian** | Structural integrity checks for architecture compliance, import health, and type safety |
-| **Test Gate Enforcement** | Mandatory test suite runs before any work is claimed complete |
-| **QA Agents** | AI-powered code review, regression detection, and standards enforcement |
+### Test suite
+Record user interactions in an embedded browser, generate Playwright `.spec.ts` files with smart waits, run them with HTML reports, and track pass/fail per step in SQLite. Supports baselines (pixel-diff), data-driven runs (CSV/JSON substitution), shared step groups, scheduling, multiple environments, and CI export to GitHub Actions YAML.
 
-### Multi-Project Management
+### Productivity & integrations
+Daily planner with drag-and-drop time blocks, AI-generated daily briefings, notes with tags, fitness tracking via Withings, and integrations for Slack, Discord, GitHub, Gmail, and Google Calendar (OAuth2). Persistent built-in Claude assistant for natural-language task creation, voice input/output, and screen capture.
 
-| Feature | Description |
-|---------|-------------|
-| **Multi-Project Support** | Manage multiple codebases with instant project switching |
-| **Workspaces** | Group related projects with shared settings, max concurrency limits, and device assignment |
-| **Device Sync** | Multi-device sync via direct peer-to-peer connections (TLS-pinned WebSocket); workspaces can be hosted on specific devices |
-| **Git Worktrees** | Parallel development with visual worktree management |
-| **Branch Merging** | Visual conflict resolution and merge preview |
+### Long-running processes
+The runners service supervises dev servers, workers, and other long-lived processes per project or per worktree. Health-checks and lifecycle events stream to the UI in real time.
 
-### Productivity & Integrations
-
-| Feature | Description |
-|---------|-------------|
-| **Integrated Terminals** | Multi-pane terminal grid (xterm.js + node-pty) |
-| **Daily Planner** | Time blocking with drag-and-drop scheduling |
-| **Daily Briefing** | AI-generated summaries and task suggestions |
-| **Notes & Ideas** | Quick capture with tags and pinning |
-| **Spotify Controls** | Music playback without leaving the app |
-| **Google Calendar** | View and create calendar events |
-| **GitHub Integration** | PRs, issues, and repo management |
-| **Slack/Discord** | MCP-powered communication tools |
-
-### AI & Automation
-
-| Feature | Description |
-|---------|-------------|
-| **Persistent Assistant** | Built-in Claude assistant with conversation history (Anthropic SDK) |
-| **Smart Task Creation** | Natural language task decomposition |
-| **Chrono Time Parser** | Parse "tomorrow at 3pm" into timestamps |
-| **Voice Interface** | Speech-to-text input and text-to-speech output |
-| **Screen Capture** | Quick screenshots for context sharing |
-| **Email Integration** | SMTP-based notifications |
-| **Notification Watchers** | Background monitoring for Slack/GitHub updates |
+For the full feature health dashboard, open `.claude/progress/adc-codebase-state-2026-04-30.html` in a browser.
 
 ---
 
-## Workflow-Driven Task Table
-
-The Task Table provides sortable, filterable task management with customizable agent workflows:
-
-```mermaid
-graph LR
-    subgraph TaskTable["Task Table"]
-        Backlog["Backlog"] --> Queue["Queue"]
-        Queue --> InProgress["In Progress"]
-        InProgress --> AIReview["AI Review"]
-        AIReview --> HumanReview["Human Review"]
-        HumanReview --> Done["Done"]
-    end
-
-    subgraph AgentWorkflow["/implement-feature Workflow"]
-        Plan["Phase 1: Plan"] --> Spawn["Phase 2: Spawn Agents"]
-        Spawn --> Execute["Phase 3: Execute in Waves"]
-        Execute --> Test["Phase 4: Test Gate"]
-        Test --> QA["Phase 5: QA Verification"]
-        QA --> Merge["Phase 6: Integration"]
-    end
-
-    TaskTable -.-> AgentWorkflow
-```
-
-**How It Works**:
-1. Create a task in the Task Table with requirements and priority
-2. Launch `/implement-feature` skill from the task row actions
-3. Agents are spawned in waves (Schema → Service → IPC → Components)
-4. **Mandatory test suite** runs before any work is claimed complete
-5. Progress syncs to `docs/progress/*.md` for crash recovery
-6. QA agents verify each component before integration
-
----
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology |
 |-------|------------|
-| Desktop | Electron 39 |
+| Desktop shell | Electron 39 |
 | UI | React 19, TanStack Router 1.95 |
-| State | React Query 5, Zustand 5 |
-| Styling | Tailwind CSS 4, Radix UI |
+| Server state | TanStack Query 5 |
+| UI state | Zustand 5 |
+| Styling | Tailwind CSS 4, Radix UI primitives |
 | Validation | Zod 4 |
+| Database | SQLite via Drizzle ORM (31 migrations) |
 | Terminal | xterm.js 6, @lydell/node-pty |
-| Sync | P2P TLS WebSocket, Ed25519 identity, mDNS discovery |
+| AI | Anthropic SDK 0.74, Claude CLI (spawned as child processes) |
+| Multi-device sync | Direct WebSocket, TLS pinning, Ed25519 identity, mDNS discovery |
 | Testing | Vitest, Playwright |
 
 ---
 
-## Install (Pre-built)
+## Install (pre-built)
 
 Download the latest installer from [GitHub Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest).
 
@@ -172,23 +112,21 @@ ADC is currently distributed unsigned. The first launch shows a security warning
 
 ### macOS
 
-Run this single command in Terminal — it downloads the latest release, installs it to `/Applications`, and strips the Gatekeeper quarantine attribute so macOS doesn't falsely claim the app is "damaged":
-
 ```sh
 curl -sSL https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest/download/install-mac.sh | bash
 ```
 
-The script auto-detects arm64 vs x64 and launches ADC when done. After this, double-clicking the app works normally.
+This downloads the latest release, installs it to `/Applications`, and strips the Gatekeeper quarantine attribute so macOS doesn't falsely claim the app is "damaged". The script auto-detects arm64 vs x64 and launches ADC when done.
 
-> **Why the script?** Browser downloads set `com.apple.quarantine` on the DMG, which on recent macOS (Sonoma 14.5+ / Sequoia) triggers a blanket "damaged" Gatekeeper rejection for any app that isn't Apple-notarized. Notarization requires a paid Apple Developer subscription. Using `curl` bypasses browser quarantine, and the final `xattr -cr` scrubs anything still attached — no paid subscription needed.
+> **Why the script?** Browser downloads set `com.apple.quarantine` on the DMG, which on Sonoma 14.5+ / Sequoia triggers a blanket "damaged" Gatekeeper rejection for any app that isn't Apple-notarized. Notarization requires a paid Apple Developer subscription. Using `curl` bypasses browser quarantine, and the final `xattr -cr` scrubs anything still attached.
 >
-> **Manual install (if you prefer):** Download the DMG from [Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest), drag ADC.app to /Applications, then run `xattr -cr /Applications/ADC.app` in Terminal.
+> **Manual install:** Download the DMG from [Releases](https://github.com/ParkerM2/Agentic-Desktop-Command/releases/latest), drag ADC.app to /Applications, then run `xattr -cr /Applications/ADC.app` in Terminal.
 
-Updates are **manual** on macOS — when a new version is available, ADC shows a notification with a Download button that opens the releases page. Run the install script again to update. Your data persists in `~/Library/Application Support/ADC/`.
+Updates are **manual** on macOS — when a new version is available, ADC shows a notification with a Download button. Run the install script again to update. Your data persists in `~/Library/Application Support/ADC/`.
 
 ---
 
-## Quick Start (Development)
+## Quick start (development)
 
 ```bash
 git clone https://github.com/ParkerM2/Agentic-Desktop-Command.git
@@ -197,56 +135,78 @@ npm install
 npm run dev
 ```
 
+Requires Node.js ≥ 22.
+
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development mode |
+| `npm run dev` | Start in development mode (`ADC-Dev` channel) |
 | `npm run build` | Production build |
-| `npm run lint` | ESLint check |
-| `npm run typecheck` | TypeScript check |
-| `npm run test` | Run test suite |
+| `npm run build:local` | Local production smoke test (`ADC-Local` channel, no auto-update) |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript |
+| `npm run test:unit` | Vitest unit tests |
+| `npm run test:integration` | Vitest integration tests |
+| `npm run test:e2e` | Playwright end-to-end tests |
+
+### Channels
+
+ADC supports three data-isolated channels that can run side-by-side on the same machine:
+
+| Channel | How to run | userData path |
+|---------|------------|---------------|
+| `dev` | `npm run dev` | `%APPDATA%/ADC-Dev/` |
+| `local` | `npm run build:local` | `%APPDATA%/ADC-Local/` |
+| `release` | Installed from a GitHub release | `%APPDATA%/ADC/` |
+
+Each channel has its own `adc.db`, settings, auth tokens, logs, and Claude CLI state. See `docs/architecture/channels.md` for the full isolation contract.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 src/
-├── main/           # Electron main process (29 services)
-├── preload/        # IPC context bridge
-├── renderer/       # React app (31 features)
-└── shared/         # Types + IPC contract (single source of truth)
+├── main/           # Electron main process
+│   ├── features/         # 39 service domains (one folder each)
+│   ├── agent-host/       # Utility process for Claude CLI spawning
+│   ├── bootstrap/        # lifecycle, svc-registry, ipc-wiring, event-wiring
+│   └── ipc/              # Router with Zod validation
+├── preload/        # Context bridge — window.api.invoke / window.api.on
+├── renderer/       # React app
+│   ├── features/         # 35 feature slices (Feature Slice Design)
+│   ├── shared/           # @ui primitives, hooks, stores, EventBridge
+│   └── app/              # Routes, layouts, root
+└── shared/         # Cross-process contracts
+    ├── ipc/              # 49 domain contract folders (channels + Zod schemas)
+    ├── types/            # Shared types
+    └── constants/        # Routes, themes, models
 
-.claude/agents/     # 30 specialist agent definitions
+drizzle/            # 31 SQLite migrations
+docs/               # Architecture, patterns, peers protocol, specs
+.claude/agents/     # 30 specialist agent definitions (used by /implement-feature)
+.claude/progress/   # Codebase state dashboards (open the latest .html in a browser)
 ```
 
----
-
-## Multi-Device Sync
-
-Devices pair via PIN ritual (Settings → Peers) and sync over a direct
-TLS-pinned WebSocket connection. No central server is involved — each
-device discovers paired peers via mDNS and connects directly.
-
-See `docs/peers/` for the protocol specification.
+Path aliases: `@shared`, `@main`, `@renderer`, `@features`, `@ui`.
 
 ---
 
-## Stats
+## How agents actually run
 
-| Metric | Value |
-|--------|-------|
-| TypeScript files | ~300 |
-| Feature modules | 25 |
-| Main services | 29 |
-| IPC handlers | 30 |
-| Agent definitions | 27 |
-| Color themes | 7 × 2 modes |
+Agents are headless `claude` CLI sessions spawned as child processes — not Anthropic SDK API calls. The agent host:
+
+1. Spawns `claude` via PTY with project context and a task spec
+2. Streams the stream-JSON output through `StreamJsonParser`
+3. Auto-restarts crashed sessions with exponential backoff (5 retries / 60 s)
+4. Forwards events to the renderer via direct MessagePort (bypassing the main process for low latency)
+
+This means billing flows through whatever Claude subscription the local CLI is logged into. There is no API key configuration in ADC.
 
 ---
 
 ## License
 
-AGPL-3.0 — see [LICENSE](LICENSE)
+AGPL-3.0. Source modifications must be published under the same license; closed-source forks are not permitted.
 
 <div align="center">
 

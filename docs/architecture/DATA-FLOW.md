@@ -31,10 +31,10 @@ ipc(channel, input)               window.api.invoke(ch, input)
                                    |
                                    v
                               Handler function
-                                   |  src/main/ipc/handlers/*
+                                   |  src/main/features/<domain>/<domain>-handlers.ts
                                    v
-                              Service method (sync)
-                                   |  src/main/services/*
+                              Service method (sync or async)
+                                   |  src/main/features/<domain>/<domain>-service.ts
                                    v
                               Return value
                                    |
@@ -55,15 +55,26 @@ Component re-renders with new data
 
 | Step | File | Purpose |
 |------|------|---------|
-| Domain contracts | `src/shared/ipc/<domain>/contract.ts` | Domain-specific channel definitions with Zod schemas |
-| Domain schemas | `src/shared/ipc/<domain>/schemas.ts` | Zod schemas for the domain |
-| Root barrel | `src/shared/ipc/index.ts` | Merges all 37 domain contracts into unified objects |
+| Domain channels | `src/shared/ipc/<domain>/channels.ts` | `domain()` / `events()` channel constants |
+| Domain contracts | `src/shared/ipc/<domain>/contract.ts` | Invoke + event Zod input/output schemas |
+| Domain schemas | `src/shared/ipc/<domain>/schemas.ts` (or `contract.ts`) | Zod payload schemas |
+| Root barrel | `src/shared/ipc/index.ts` | Merges every domain's `*Invoke` and `*Events` into `ipcInvokeContract` / `ipcEventContract` |
 | Compat re-export | `src/shared/ipc-contract.ts` | Thin re-export from `src/shared/ipc/` (backward compat) |
 | Renderer helper | `src/renderer/shared/lib/ipc.ts` | Typed wrapper: `ipc(channel, input) -> Promise<Output>` |
 | Preload bridge | `src/preload/index.ts` | Context bridge: `api.invoke()`, `api.on()` |
-| Router | `src/main/ipc/router.ts` | Routes channel to handler, validates input with Zod |
-| Handlers | `src/main/ipc/handlers/*.ts` | Thin layer: calls service, wraps in `Promise.resolve()` |
-| Services | `src/main/services/*/*.ts` | Business logic, returns sync values |
+| Router | `src/main/ipc/router.ts` | `IpcRouter.handle()` registers handler with Zod validation; optional `CommandBus` dispatch for SQLite tracking |
+| Handlers | `src/main/features/<domain>/<domain>-handlers.ts` | Thin layer: validates input via Zod, calls service, returns `{ success, data }` |
+| Services | `src/main/features/<domain>/<domain>-service.ts` | Business logic, returns sync or async values |
+
+### Router Behavior
+
+`IpcRouter` (`src/main/ipc/router.ts`) wraps every handler with:
+
+1. `ipcInvokeContract[channel].input.parse(rawInput)` — Zod validation before the handler runs
+2. Optional `CommandBus.dispatch()` — when `setBus()` has been called, every invoke is tracked through `src/main/features/bus/` and persisted to SQLite (sessions table)
+3. Uniform response envelope: success path returns `{ success: true, data }`; thrown errors are caught and returned as `{ success: false, error: message }`
+
+`router.emit(channel, payload)` mirrors the bus log (if attached) and calls `webContents.send(channel, payload)` on the active main window.
 
 ### Type Flow (Compile-Time)
 
@@ -105,21 +116,34 @@ BrowserWindow.webContents.send(ch, payload)
                               api.on(ch, handler)
                                    |
                                    v
-                                                          useIpcEvent(ch, handler)
+                                                          EventBridge subscribes once
                                                             |  src/renderer/shared/
-                                                            |  hooks/useIpcEvent.ts
+                                                            |  components/EventBridge.tsx
                                                             v
-                                                          Handler invalidates queries
+                                                          Match channel → EVENT_REGISTRY entry
                                                             |
-                                                            v
-                                                          queryClient.invalidateQueries()
+                                                            +-- handler: 'invalidate' (default)
+                                                            |     queryClient.invalidateQueries({ queryKey: keys })
+                                                            |     React Query refetches → components re-render
                                                             |
-                                                            v
-                                                          React Query refetches
-                                                            |
-                                                            v
-                                                          Components re-render
+                                                            +-- handler: 'append'
+                                                                  queryClient.setQueryData(key, mutator)
+                                                                  Cache patched in-place, no refetch
+                                                                  Components re-render from new cache value
 ```
+
+### EventBridge — single source of truth for IPC → cache wiring
+
+`src/renderer/shared/components/EventBridge.tsx` is mounted once in `RootLayout` and renders `null`. It owns a declarative `EVENT_REGISTRY: Partial<Record<EventChannel, RegistryEntry>>` mapping every IPC event channel that affects cached data to either:
+
+- `keys: [...queryKeys]` with `handler: 'invalidate'` (default) — invalidates each prefix on event, React Query refetches via the IPC handler
+- `handler: 'append'` — routes the payload through `handleAppend(queryClient, event, payload)` which calls `setQueryData` directly, mutating the cached value without a re-fetch
+
+Append handlers exist for:
+
+- `peers.discovery.changed` → overwrites `peerKeys.discovered()` with the latest discovered-peer list
+- `agent-dashboard.message.received` → appends a 200-char preview to `['agent-messages', agentId]` (capped at 50 entries, deduplicated by id)
+- `bus.session.{spawned,active,completed,error,killed}` → patches the matching task node inside `['visualization', 'agents', projectId]` so the visualization tree updates without a full refetch
 
 ### Event Contract
 
@@ -132,12 +156,11 @@ progressEvents['event:progress.task.updated'] = {
   }),
 };
 
-// Emitted from ProgressService
-router.emit('event:progress.task.updated', { taskId, projectId });
+// Emitted from progressService
+router.emit(PROGRESS_EVENTS.TASK.UPDATED, { taskId, projectId });
 
-// Consumed via EventBridge (centralized invalidation — no per-feature event hooks needed)
-// EventBridge registry entry:
-'event:progress.task.updated': { keys: [['progress', 'list'], ['progress', 'detail']] },
+// Consumed via EventBridge registry:
+[PROGRESS_EVENTS.TASK.UPDATED]: { keys: [PROGRESS_LIST, ['progress', 'detail']] },
 ```
 
 ---
@@ -284,188 +307,114 @@ xterm.write(data)                          TerminalInstance.tsx
 
 ---
 
-## 6. Agent Orchestrator Execution Flow
+## 6. Agent Host Execution Flow
 
-Two agent systems coexist: the legacy PTY-based `AgentService` and the newer headless `AgentOrchestrator`.
-The orchestrator is the primary system for task planning and execution.
-
-```
-User clicks "Start Planning" / "Implement Feature" (ActionsCell)
-  |
-  v
-useStartPlanning / useStartExecution mutation     useAgentMutations.ts
-  |
-  v
-ipc('agent.startPlanning', { taskId, projectPath, taskDescription })
-  |
-  v
-hubApiClient.updateTaskStatus(taskId, 'planning')   agent-orchestrator-handlers.ts
-  |
-  v
-agentOrchestrator.spawn({ taskId, projectPath, prompt, phase })
-  |
-  v
-child_process.spawn('claude', ['-p', prompt])     agent-orchestrator.ts
-  |  Detached, stdio: 'pipe', stdout/stderr piped to log files
-  |  Claude hooks config installed for progress tracking
-  v
-Agent runs (writes JSONL progress to {dataDir}/progress/{taskId}.jsonl)
-  |
-  +--> onSessionEvent('spawned')
-  |      |
-  |      v
-  |    router.emit('event:agent.orchestrator.heartbeat')   index.ts
-  |      |
-  |      v
-  |    useAgentEvents → cache invalidation                  useAgentEvents.ts
-  |
-  +--> JSONL entries written by Claude hooks
-  |      |
-  |      v
-  |    jsonlProgressWatcher.onProgress({ taskId, entries })   index.ts
-  |      |
-  |      +--> tool_use → router.emit('event:agent.orchestrator.progress')
-  |      +--> phase_change → router.emit('event:agent.orchestrator.progress')
-  |      +--> plan_ready → router.emit('event:agent.orchestrator.planReady')
-  |      +--> heartbeat → router.emit('event:agent.orchestrator.heartbeat')
-  |      +--> error → router.emit('event:agent.orchestrator.error')
-  |      +--> agent_stopped → router.emit('event:agent.orchestrator.stopped')
-  |
-  +--> agentWatchdog checks every 30s                        agent-watchdog.ts
-  |      |
-  |      +--> PID alive check (process.kill(pid, 0))
-  |      +--> Heartbeat age > 5min → warning alert
-  |      +--> Heartbeat age > 15min → stale alert
-  |      +--> PID dead → dead alert
-  |      |
-  |      v
-  |    router.emit('event:agent.orchestrator.watchdogAlert')   index.ts
-  |      |
-  |      v
-  |    useAgentEvents → invalidate task caches                 useAgentEvents.ts
-  |
-  +--> On completion/error:
-        |
-        v
-      onSessionEvent('completed' | 'error')
-        |
-        v
-      router.emit('event:agent.orchestrator.stopped' | 'error')
-        |
-        v
-      useAgentEvents → full task cache invalidation
-```
-
-### Agent Dashboard Layer 1: Agent Visibility (ADC v2)
-
-Three services provide Layer 1 agent visibility, independent of workflow tracking:
+ADC spawns Claude CLI sessions inside an Electron utility process — not the main process. The utility process is the "agent host." There is no longer a `services/agent-orchestrator/` module — agent lifecycle is owned by `AgentManagerService` running inside the utility process and proxied to the main process via `AgentHostClient`.
 
 ```
-TmuxBridge — tmux session management for team-lead agents
-  createSession(name, { CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1' })
-    |
-    v
-  tmux new-session -d -s <name> -e CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
-    |
-    v
-  sendKeys(sessionName, 'claude --name team-lead --teammate-mode tmux')
-    |
-    v
-  capturePane(paneId) → raw terminal text (fallback only)
+RENDERER                       MAIN PROCESS                    AGENT HOST (utility)
+========                       ============                    =======================
 
-
-TeamWatcher — detect teammate join/leave via config.json watching
-  startWatching(teamName)
-    |
-    v
-  fs.watch(~/.claude/teams/<teamName>/)
-    |
-    +--> on config.json change (debounced 300ms):
-    |      |
-    |      v
-    |    readTeamConfig → parse members array
-    |      |
-    |      v
-    |    diff against known members set
-    |      |
-    |      +--> new member → onTeammateJoined(member)
-    |      +--> missing member → onTeammateLeft(memberId)
-
-
-SessionJSONLReader — tail-follow session JSONL files for structured output
-  startReading(sessionId, ~/.claude/projects/<cwd>/<sessionId>.jsonl)
-    |
-    v
-  fs.watch(jsonlPath) + offset-tracking reads
-    |
-    +--> on file change:
-    |      |
-    |      v
-    |    read from lastOffset → parse NDJSON lines
-    |      |
-    |      v
-    |    validate event type (system | assistant | stream_event | result)
-    |      |
-    |      v
-    |    onEvent(sessionId, StreamJsonEvent)
-    |
-    +--> handles: truncation (offset reset), partial writes (buffered), rapid appends
+useSpawn().mutate({...})
+  |
+  v
+ipc('agent-dashboard.spawnProjectOwner', config)
+                               |
+                               v
+                              agent-dashboard-handlers.ts
+                                src/main/features/
+                                agent-dashboard/
+                                agent-dashboard-handlers.ts
+                               |
+                               v
+                              agentHostClient.spawnProjectOwner(config)
+                                src/main/agent-host/
+                                agent-host-client.ts
+                               |
+                               | ControlRequest { type, id, config }
+                               | (correlation-ID RPC over MessagePort)
+                               |---------------------------------> agent-host/index.ts
+                               |                                        |
+                               |                                        v
+                               |                                   AgentManagerService
+                               |                                   (process-manager +
+                               |                                    stream-json-parser)
+                               |                                        |
+                               |                                        v
+                               |                                   child_process.spawn(
+                               |                                     'claude',
+                               |                                     ['-p',
+                               |                                      '--input-format',
+                               |                                      'stream-json', ...])
+                               |                                        |
+                               |                                        v
+                               |                                   stdout NDJSON →
+                               |                                   StreamJsonParser →
+                               |                                   AgentManagerEvent
+                               |                                        |
+                               | ControlReply { id, result }            |
+                               |<---------------------------------------+
+                               |   (resolves the spawn promise)         |
+                               |                                        |
+                               | AgentManagerEvent (event port)         |
+                               |<---------------------------------------+
+                               |   - session.started
+                               |   - session.ended
+                               |   - status.changed
+                               |   - message.received
+                               |   - stream.event
+                               |
+                               v
+                              Local session cache updated in agent-host-client.ts
+                               |
+                               v
+                              router.emit(AGENT_DASHBOARD_EVENTS.*) for affected events
+                               |
+                               v
+                              webContents.send(...)
+                                                                         RENDERER
+                                                                         ========
+                                                                         EventBridge
+                                                                         invalidates
+                                                                         ['agent-dashboard',
+                                                                          'sessions']
+                                                                         (or appends to
+                                                                          ['agent-messages',
+                                                                           agentId] for
+                                                                          message.received)
 ```
 
-### Agent Host Utility Process Data Flow
+### Channels
 
-```
-MAIN PROCESS                    UTILITY PROCESS                RENDERER
-============                    ===============                ========
+- **MessagePort: main ↔ agent-host** — two ports transferred at fork:
+  - `controlPort`: correlation-ID RPC (`spawn-project-owner`, `spawn-team-lead`, `stop-session`, `send-message`, `list-sessions`, `get-session`, `get-messages`, `get-session-project-path`, `dispose`). `host-protocol.ts` defines the `ControlRequest` / `ControlReply` discriminated unions; `agent-host-client.ts` matches replies to a `pendingRequests` Map keyed by `randomUUID()`.
+  - `eventPort`: one-way push of `AgentManagerEvent` from host to main. `agent-host-client.ts` updates its in-memory caches (`sessions`, `messageStore`, `projectPaths`) and forwards each event to handlers registered via `onEvent()`.
+- **MessagePort bypass to renderer** — `bus` events for sessions and `event:agent-dashboard.*` events flow main → renderer over standard IPC; the renderer never owns the agent-host MessagePort directly.
 
-AgentHostClient                 AgentManagerService
-  |                               (ProcessManager +
-  | ControlRequest                 StreamJsonParser)
-  | (spawn/stop/list)
-  |--- MessagePort RPC --------->|
-  |    correlationId              |
-  |                               v
-  |                             Spawns Claude CLI process
-  |                               |
-  |                               v
-  |                             Parses stream-json output
-  |                               |
-  |    ControlReply               |
-  |<--- MessagePort RPC ---------|
-  |                               |
-  |                               |--- Direct MessagePort --->|
-  |                               |    (stream events:         |
-  |                               |     messages, status,      |
-  |                               |     tool calls)            |
-  |                               |                            v
-  |                               |                     EventBridge
-  |                               |                     invalidates
-  |                               |                     agent queries
-```
+### Two Agent Process Types
 
-Key points:
-- Control commands (spawn, stop, list) use correlation-ID RPC via MessagePort
-- Stream events bypass main process entirely (utility → renderer direct MessagePort)
-- AgentHostClient maintains a local session cache for sync reads
-- Auto-restart: 5 retries within 60s window with exponential backoff
+`AgentManagerService` supports two spawn shapes:
+
+- **Project Owner (headless stream-json)** — `spawn('claude', ['-p', '--input-format', 'stream-json', ...])`. stdin receives JSON user messages from the renderer, stdout emits NDJSON `system`/`assistant`/`stream_event`/`result` events.
+- **Team Lead (tmux interactive)** — `tmux new-session` runs `claude --name team-lead --teammate-mode tmux`. Output is consumed by tailing the session JSONL file under `~/.claude/projects/<cwd>/<sessionId>.jsonl`. Input is sent via `tmux send-keys`.
+
+### Teammate detection
+
+`src/main/ipc/team-watcher/` watches `~/.claude/teams/<teamName>/config.json`. Diffs against the known members set produce `event:agent-dashboard.teammateJoined` / `teammateLeft` events.
 
 ### QA Auto-Trigger Flow
 
 ```
-Agent execution completes (orchestrator session event):
+Task status transitions to 'review' (via progressService.updateTask):
   |
   v
-qaTrigger listens for session completion              qa-trigger.ts
-  where event.type === 'completed'
-  and event.session.phase === 'executing'
+qaTrigger watches PROGRESS_EVENTS.TASK.UPDATED   src/main/features/qa/qa-trigger.ts
   |
   v
-Wait 2 seconds (status propagation delay)
+Check: task.status === 'review' AND not already triggered AND no active QA session
   |
   v
-Check: task status === 'review'?
-  Yes → qaRunner.startQuiet(taskId, context)
-  No  → skip (task may have been manually updated)
+qaRunner.startQuiet(taskId, context)
   |
   (guards: skip if already triggered for this taskId,
    skip if QA session already active)
@@ -474,29 +423,27 @@ Check: task status === 'review'?
 ### QA Runner Flow
 
 ```
-After agent completion (or manual trigger via UI):
+After task review (or manual trigger via UI):
   |
   v
-useStartQuietQa / useStartFullQa mutation         useQaMutations.ts
+useStartQuietQa / useStartFullQa mutation       useQaMutations.ts
   |
   v
-ipc('qa.startQuiet', { taskId })                   qa-handlers.ts
+ipc('qa.startQuiet', { taskId })                src/main/features/qa/qa-handlers.ts
   |
   v
-qaRunner.startQuiet(taskId, context)                qa-runner.ts
+qaRunner.startQuiet(taskId, context)            src/main/features/qa/qa-runner.ts
   |
   v
-orchestrator.spawn({ taskId: 'qa-{taskId}', prompt, phase: 'qa' })
+agentHostClient.spawnProjectOwner({ phase: 'qa', prompt: qaPrompt(...) })
   |
   v
-QA agent runs (lint, typecheck, test, build, check:docs)
+QA agent runs lint, typecheck, test, build via stream-json
   |
-  +--> qaRunner emits session events
+  +--> qaAgentPoller polls session messages    src/main/features/qa/qa-agent-poller.ts
   |      |
   |      v
-  |    router.emit('event:qa.started')              qa-handlers.ts
-  |    router.emit('event:qa.progress')
-  |    router.emit('event:qa.completed')
+  |    router.emit('event:qa.started' | 'event:qa.progress' | 'event:qa.completed')
   |      |
   |      v
   |    useQaEvents → invalidate QA caches + toast   useQaEvents.ts
@@ -504,10 +451,10 @@ QA agent runs (lint, typecheck, test, build, check:docs)
   +--> On completion:
         |
         v
-      Parse QA report JSON from agent log file
+      qa-report-parser.ts parses QA report JSON from agent output
         |
         v
-      Store report in memory (qaRunner.getReportForTask)
+      qa-session-store.ts persists the report
         |
         +--> If fail: notificationManager.onNotification()
 ```
@@ -553,78 +500,119 @@ color-mix() expressions automatically use new values
 
 ---
 
-## 8. Hub Server Data Flow (Phase 2 — Multi-Device)
+## 8. Peer-to-Peer Sync Flow (LAN, TLS-pinned)
+
+ADC peers replicate SQLite state directly between Electron clients on the local network. There is no central hub server — each instance runs a unified TLS server that hosts pairing HTTP endpoints **and** the WebSocket sync transport on a single port advertised over mDNS.
 
 ```
-ELECTRON CLIENT A                 HUB SERVER                    ELECTRON CLIENT B
-(Windows Desktop)                 (Docker Container)            (MacBook)
-=================                 ==============                =================
+ELECTRON CLIENT A                                       ELECTRON CLIENT B
+(Windows Desktop)                                       (MacBook)
+=================                                       =================
 
-User creates task
-  |
-  v
-POST /api/tasks
-  |
-  v
-                              Fastify handler
-                                |
-                                v
-                              SQLite INSERT
-                                |
-                                v
-                              WebSocket broadcast
-                              { type: 'task.created', data: {...} }
-                                |
-                                +--------------------------->
-                                                            |
-                                                            v
-                                                         WebSocket listener
-                                                            |
-                                                            v
-                                                         Update local cache
-                                                            |
-                                                            v
-                                                         React Query invalidation
-                                                            |
-                                                            v
-                                                         UI updates instantly
+mDNS broadcast: _adc-peer._tcp                          mDNS browse → discovers A
+  + TXT { peerId, fingerprint, displayName }              |
+  |                                                       v
+  v                                                     PEERS_EVENTS.DISCOVERY.CHANGED
+peer-mdns.ts → discoveryChanged                           emitted to renderer A
+                                                          (EventBridge: setQueryData
+                                                           on peerKeys.discovered())
+
+Pairing PIN ritual (one-time, out-of-band):
+  A: ipc(PEERS.PAIR.INIT, { host, port, fingerprint })
+     → POST https://B/pair/init {peerId, pubkey, fingerprint}
+     → B: pair-server.ts generates 6-digit PIN + challenge
+     → router.emit(PEERS_EVENTS.PIN.ISSUED) on B (toast on B's screen)
+     → returns { sessionId, challenge }
+  A: shows entry field, user types PIN displayed on B
+  A: ipc(PEERS.PAIR.CONFIRM, { sessionId, pin, challenge, ... })
+     → computes pinHmac = HMAC(pin, challenge)
+     → POST https://B/pair/confirm
+     → B verifies HMAC (timing-safe), max 3 attempts per session, 5min TTL
+     → both sides persist PairedPeer { peerId, pubkey, certFingerprint, ... }
+     → router.emit(PEERS_EVENTS.TRUST.CHANGED) on both sides
+     → EventBridge invalidates peerKeys.paired()
+
+Steady-state replication:
+  A connects out: wss://B:port
+    |
+    v
+  Outbound TLS — node:tls checkServerIdentity overridden by
+  pinnedCheckServerIdentity(expectedFingerprintHex)
+    src/main/features/peers/peer-tls-pin.ts
+    |
+    +-- SHA-256(cert.raw) timing-safe compared to stored certFingerprint
+    +-- mismatch → Error returned from checkServerIdentity → handshake aborted
+    |   BEFORE any application data exchanged
+    |
+    v
+  WebSocket open
+    |
+    v
+  HELLO frame (signed):
+    { type: 'HELLO', peerId, schemaHash, nonce, sig: ed25519(nonce + peerId) }
+    src/main/features/peers/wire-schema.ts (Zod-validated)
+    |
+    v
+  Receiver: hello-verify.ts looks up sender's pubkey in peerStore,
+  verifies Ed25519 signature, then exchanges OPS frames
+    |
+    v
+  OPS frame: { type: 'OPS', ops: Op[] } — replication-engine.ts applies
+  via LWW merge (lww-merge.ts) keyed by HLC timestamps; op-log.ts persists
+    |
+    v
+  Each client emits local entity-changed events that EventBridge
+  routes to query invalidation → UI updates on both peers
 ```
 
-### Hub API Structure
+### Wire Frame Discriminated Union
 
-```
-hub/
-├── src/
-│   ├── server.ts           # Fastify instance + plugin registration
-│   ├── routes/
-│   │   ├── projects.ts     # CRUD /api/projects
-│   │   ├── tasks.ts        # CRUD /api/tasks
-│   │   ├── settings.ts     # GET/PUT /api/settings
-│   │   ├── agents.ts       # Agent management endpoints
-│   │   ├── planner.ts      # Daily planner endpoints
-│   │   ├── health.ts       # GET /api/health
-│   │   └── sync.ts         # Bulk sync endpoint
-│   ├── db/
-│   │   ├── schema.sql      # SQLite table definitions
-│   │   └── connection.ts   # Database connection + migrations
-│   ├── ws/
-│   │   └── broadcaster.ts  # WebSocket event broadcasting
-│   └── auth/
-│       └── api-key.ts      # API key validation middleware
-└── Dockerfile
-```
+`src/main/features/peers/wire-schema.ts` defines:
 
-### Sync Protocol
+| Type | Schema | Purpose |
+|------|--------|---------|
+| `HELLO` | `{ peerId, schemaHash, nonce, sig }` | Identity exchange + Ed25519 nonce sig |
+| `OPS` | `{ ops: unknown[] }` (max 1000 per frame) | Replication ops, schema-validated downstream |
+| `PING` | `{}` | Liveness ping |
 
-```
-Client connects to hub:
-  1. Send last-sync timestamp
-  2. Hub returns all changes since that timestamp
-  3. Client applies changes to local cache
-  4. Client sends any local mutations queued while offline
-  5. Hub applies mutations, broadcasts to other clients
-  6. Steady-state: WebSocket push for real-time updates
-```
+`parseWireFrame()` is the single hostile-boundary parser. On JSON or schema failure, callers close the socket with WS code `4003` (malformed frame).
+
+### Peers IPC Surface
+
+| Channel | Input | Output |
+|---------|-------|--------|
+| `peers.list.paired` | `{}` | `PairedPeer[]` |
+| `peers.list.discovered` | `{}` | `DiscoveredPeer[]` |
+| `peers.identity.get` | `{}` | `SelfIdentity` |
+| `peers.pair.init` | `{ host, port, fingerprint, displayName }` | `{ sessionId, challenge }` |
+| `peers.pair.confirm` | `{ host, port, fingerprint, sessionId, challenge, pin, displayName }` | `{ peerId, pubkey, fingerprint }` |
+| `peers.revoke.peer` | `{ peerId }` | `{ revoked }` |
+
+### Peers Event Surface
+
+| Channel | Payload | Trigger |
+|---------|---------|---------|
+| `event:peers.pin.issued` | `{ sessionId, pin, initiatorPeerId, initiatorDisplayName, issuedAt }` | Inbound `/pair/init` request received |
+| `event:peers.discovery.changed` | `{ peers: DiscoveredPeer[] }` | mDNS browse list mutated |
+| `event:peers.trust.changed` | `{ peerId, action: 'added' \| 'revoked' \| 'updated' }` | Pair confirm / revoke completed |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/main/features/peers/peers-service.ts` | Public façade — owns identity, store, pairing, mDNS, server lifecycle |
+| `src/main/features/peers/peer-server.ts` | Single `https.Server` hosting `/pair/*` + WebSocket upgrade |
+| `src/main/features/peers/peer-tls.ts` | Self-signed cert + key generation, persisted under userData |
+| `src/main/features/peers/peer-tls-pin.ts` | `pinnedCheckServerIdentity` — timing-safe SHA-256 fingerprint comparison |
+| `src/main/features/peers/peer-pairing.ts` | PIN HMAC ritual, 5min TTL, 3-attempt lockout, soft 100-session cap |
+| `src/main/features/peers/pair-server.ts` | Fastify-style `/pair/init` and `/pair/confirm` handlers |
+| `src/main/features/peers/peer-mdns.ts` | mDNS advertise + browse, debounced discovery emit |
+| `src/main/features/peers/ws-transport.ts` | WebSocketServer + outbound dialer + HELLO/OPS handling |
+| `src/main/features/peers/wire-schema.ts` | Zod discriminated union for HELLO / OPS / PING frames |
+| `src/main/features/peers/hello-verify.ts` | Ed25519 sign / verify for HELLO nonce |
+| `src/main/features/peers/replication-engine.ts` | Op application, LWW merge, op-log persistence |
+| `src/main/features/peers/peer-store.ts` | SQLite-backed paired-peer store |
+| `src/main/features/peers/peers-handlers.ts` | IPC handler registration |
 
 ---
 
@@ -741,7 +729,9 @@ Routes are defined across 8 route group files in `src/renderer/app/routes/` and 
 
 ---
 
-## 11. Auth Flow (Login -> JWT -> Refresh -> IPC)
+## 11. Auth Flow (Login -> Local Session Token -> IPC)
+
+> Note: ADC no longer ships a remote Hub auth server. The flow below describes the local session-manager backed by `src/main/features/auth/user-session-manager.ts` and `src/main/auth/oauth-manager.ts`. References to `hubAuthService` / `POST /api/auth/*` describe the legacy remote path that may still be present in some renderer hooks; treat as transitional.
 
 ```
 User submits login form
@@ -904,7 +894,9 @@ BrowserWindow.webContents.send(...)
 
 ---
 
-## 13. Device Heartbeat Flow
+## 13. Device Heartbeat Flow (Legacy — Hub-mode only)
+
+> Note: With peers replacing the Hub (Section 8), device heartbeats are no longer required for steady-state sync. This flow only runs when an ADC instance is configured against a remote Hub server. The peer transport uses mDNS browsing for liveness.
 
 ```
 APP STARTUP
@@ -1271,178 +1263,33 @@ event:assistant.response fires
 
 ---
 
-## 19. Agent Orchestrator Lifecycle Flow
+## 19. Agent Lifecycle (see Section 6)
 
-```
-User triggers agent spawn (via ActionsCell → useAgentMutations)
-  |
-  v
-ipc('agent.startPlanning' | 'agent.startExecution', { taskId, ... })
-  |
-  v
-agent-orchestrator-handlers.ts → taskRepository.updateTaskStatus() → orchestrator.spawn()
-  |  src/main/services/agent-orchestrator/agent-orchestrator.ts
-  v
-child_process.spawn('claude', ['-p', prompt], { detached: true, stdio: 'pipe' })
-  |  Claude hooks config installed (PostToolUse + Stop hooks write JSONL)
-  v
-Session state: 'spawned' → 'active'
-  |
-  +--> onSessionEvent('spawned') fires
-  |     |
-  |     v
-  |   index.ts wiring → router.emit('event:agent.orchestrator.heartbeat')
-  |
-  +--> JSONL Progress Watcher monitors {dataDir}/progress/{taskId}.jsonl
-  |     |  src/main/services/agent-orchestrator/jsonl-progress-watcher.ts
-  |     v
-  |   Debounced tail parser reads new lines (100ms debounce)
-  |     |
-  |     +--> type: 'tool_use' → emit progress + heartbeat events
-  |     +--> type: 'phase_change' → emit progress event
-  |     +--> type: 'plan_ready' → emit planReady event
-  |     +--> type: 'agent_stopped' → emit stopped event
-  |     +--> type: 'error' → emit error event
-  |     +--> type: 'heartbeat' → emit heartbeat event
-  |
-  +--> Agent Watchdog checks every 30s        agent-watchdog.ts
-  |     |
-  |     +--> process.kill(pid, 0) — PID alive check
-  |     +--> heartbeatAge > 5min → 'warning' alert
-  |     +--> heartbeatAge > 15min → 'stale' alert
-  |     +--> PID dead → 'dead' alert
-  |     +--> exitCode 2 + autoRestart → restart from checkpoint
-  |     |
-  |     v
-  |   index.ts wiring → router.emit('event:agent.orchestrator.watchdogAlert')
-  |     → useAgentEvents → invalidate task caches → StatusBadgeCell shows alert
-  |
-  +--> On process exit:
-        |
-        +--> exitCode === 0: session state → 'completed'
-        |     router.emit('event:agent.orchestrator.stopped', { reason: 'completed' })
-        |
-        +--> exitCode !== 0: session state → 'error'
-              router.emit('event:agent.orchestrator.error', { error: '...' })
-```
+The legacy `agent-orchestrator` service has been removed. All Claude CLI sessions are now spawned inside the agent-host utility process via `AgentManagerService` and proxied through `AgentHostClient`. See **Section 6 — Agent Host Execution Flow** for the full lifecycle, including:
 
-### Renderer Event Subscription Chain
+- Spawn / stop via correlation-ID RPC over the control MessagePort
+- `AgentManagerEvent` push over the event MessagePort
+- Local cache mirror in `agent-host-client.ts`
+- `event:agent-dashboard.*` and `event:bus.session.*` projection to the renderer
 
-```
-ProgressTaskGrid mounts
-  → useTaskEvents()
-    → useAgentEvents()    — subscribes to 6 orchestrator event channels
-    → useQaEvents()       — subscribes to 3 QA event channels
-```
-
-### Key Files
-| File | Purpose |
-|------|---------|
-| `src/main/services/agent-orchestrator/agent-orchestrator.ts` | Session lifecycle (spawn, kill, getSession, listActive) |
-| `src/main/services/agent-orchestrator/jsonl-progress-watcher.ts` | Incremental JSONL tail parser (100ms debounce) |
-| `src/main/services/agent-orchestrator/agent-watchdog.ts` | Health monitoring (30s interval, PID + heartbeat checks) |
-| `src/main/services/agent-orchestrator/hooks-template.ts` | Claude hooks config generator (PostToolUse + Stop). Merges hooks into `.claude/settings.local.json` (saves original content for restoration on cleanup) |
-| `src/main/services/agent-orchestrator/types.ts` | AgentSession (incl. `originalSettingsContent`), SpawnOptions, ProgressEntry types |
-| `src/main/ipc/handlers/agent-orchestrator-handlers.ts` | 7 IPC channels (startPlanning/startExecution/replanWithFeedback/kill/restart/get/list) |
-| `src/main/index.ts` | Event forwarding + watchdog wiring |
-| `src/main/bootstrap/event-wiring.ts` | Event forwarding setup; includes plan file detection on planning completion |
-| `src/renderer/features/tasks/hooks/useAgentEvents.ts` | 6 orchestrator event listeners → cache updates |
-| `src/renderer/features/tasks/api/useAgentMutations.ts` | 5 mutation hooks (planning/execution/replanWithFeedback/kill/restart) |
-| `src/renderer/features/tasks/components/detail/PlanFeedbackDialog.tsx` | Feedback dialog for requesting changes to a plan |
-| `src/renderer/features/tasks/components/detail/PlanViewer.tsx` | Plan display with Approve, Request Changes buttons |
-
----
-
-## 19.5. Task Planning Pipeline Flow (Local-First)
-
-The complete planning pipeline: idea → plan → review → approve/reject/request changes → execute.
-All status transitions go through `ProgressService` (SQLite-backed).
-
-```
-User creates task (idea/backlog)
-  |
-  v
-User clicks "Start Planning" (ActionsCell)
-  |
-  v
-useStartPlanning().mutate({ taskId, projectPath, taskDescription })
-  |
-  v
-ipc('agent.startPlanning', { ... })
-  |
-  v
-taskRepository.updateTaskStatus(taskId, 'planning')    ← local + Hub mirror
-  → orchestrator.spawn({ phase: 'planning', prompt: '/plan-feature ...' })
-    → Hooks config merged into .claude/settings.local.json
-    → Agent writes JSONL progress to {dataDir}/progress/{taskId}.jsonl
-  |
-  v
-Agent completes planning (process exits)
-  |
-  v
-event-wiring.ts: onSessionEvent('completed') + phase === 'planning'
-  → Scan project for plan files (PLAN.md, plan.md, etc.)
-  → If plan file found:
-      taskRepository.updateTaskStatus(taskId, 'plan_ready')      ← local + Hub mirror
-      taskRepository.updateTask(taskId, { metadata: { planContent, planFilePath } })
-      router.emit('event:agent.orchestrator.planReady', { taskId, planSummary, planFilePath })
-  → Restore original .claude/settings.local.json content
-  |
-  v
-Renderer: useAgentEvents receives planReady event
-  → Task status shows "plan_ready" with pulsing indicator
-  → TaskDetailRow expands PlanViewer with plan content
-  |
-  v
-User reviews plan in PlanViewer
-  |
-  ├── "Approve & Execute" clicked:
-  |     |
-  |     v
-  |   useStartExecution().mutate({ taskId, projectPath, taskDescription, planRef })
-  |     → planRef points to the plan file path for the execution agent to follow
-  |     → Task transitions: plan_ready → executing
-  |
-  ├── "Request Changes" clicked:
-  |     |
-  |     v
-  |   PlanFeedbackDialog opens
-  |     → User types feedback (what to change in the plan)
-  |     → Submit calls useReplanWithFeedback().mutate({ taskId, feedback, ... })
-  |       |
-  |       v
-  |     ipc('agent.replanWithFeedback', { taskId, feedback, previousPlanPath })
-  |       → Spawns new planning agent with feedback context
-  |       → Task transitions: plan_ready → planning
-  |       → Cycle repeats until approved
-  |
-  └── "Reject" (or manual status change):
-        → Task returns to backlog/todo
-```
-
-### CLI Commands
-
-| Command | File | Purpose |
-|---------|------|---------|
-| `/plan-feature` | `.claude/commands/plan-feature.md` | Planning agent prompt — creates a feature plan file |
-| `/resume-feature` | `.claude/commands/resume-feature.md` | Resume a previously started feature |
+Task-level planning that previously lived under `agent.startPlanning` is now driven by progress workflows (see Section 12) and Workflow Engine runs (see `src/main/features/workflow-engine/` and `src/shared/ipc/workflow-engine/`).
 
 ---
 
 ## 20. QA Runner Flow
 
 ```
-User triggers QA (via QaReportViewer or automatic after agent completion)
+User triggers QA (via QaReportViewer or automatic via qa-trigger.ts)
   |
   v
 useStartQuietQa / useStartFullQa mutation      useQaMutations.ts
   |
   v
-ipc('qa.startQuiet', { taskId })                qa-handlers.ts
+ipc('qa.startQuiet', { taskId })                src/main/features/qa/qa-handlers.ts
   |
   v
-qaRunner.startQuiet(taskId, context)             qa-runner.ts
-  |  Spawns a Claude agent via orchestrator.spawn({ phase: 'qa' })
+qaRunner.startQuiet(taskId, context)             src/main/features/qa/qa-runner.ts
+  |  Spawns a Claude session via agentHostClient.spawnProjectOwner({ phase: 'qa' })
   v
 QA agent runs verification suite:
   |  npm run lint && npm run typecheck && npm run test && npm run build && npm run check:docs
@@ -1469,12 +1316,16 @@ QA agent runs verification suite:
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `src/main/services/qa/qa-runner.ts` | QA session orchestration (quiet + full modes) |
-| `src/main/services/qa/qa-report-parser.ts` | Parse QA report JSON from agent output |
-| `src/main/services/qa/qa-types.ts` | QaRunner, QaSession, QaReport types |
-| `src/main/ipc/handlers/qa-handlers.ts` | 5 IPC channels + event wiring |
+| `src/main/features/qa/qa-runner.ts` | QA session orchestration (quiet + full modes) |
+| `src/main/features/qa/qa-agent-poller.ts` | Polls agent-host session messages for QA progress |
+| `src/main/features/qa/qa-prompt.ts` | QA prompt template generator |
+| `src/main/features/qa/qa-report-parser.ts` | Parse QA report JSON from agent output |
+| `src/main/features/qa/qa-session-store.ts` | Persisted QA session + report storage |
+| `src/main/features/qa/qa-trigger.ts` | Auto-trigger on task transition to `review` |
+| `src/main/features/qa/qa-types.ts` | QaRunner, QaSession, QaReport types |
+| `src/main/features/qa/qa-handlers.ts` | IPC channels + event wiring |
 | `src/renderer/features/tasks/api/useQaMutations.ts` | Query + mutation hooks (report, session, start, cancel) |
-| `src/renderer/features/tasks/hooks/useQaEvents.ts` | 3 QA event listeners → cache + toast updates |
+| `src/renderer/features/tasks/hooks/useQaEvents.ts` | QA event listeners → cache + toast updates |
 | `src/renderer/features/tasks/components/detail/QaReportViewer.tsx` | QA report display + trigger buttons |
 
 ---
@@ -1494,7 +1345,7 @@ Command executor calls watchStore.add({
   condition: { field: 'status', operator: 'equals', value: 'done' },
   action: 'notify'
 })
-  |  src/main/services/assistant/watch-store.ts
+  |  src/main/features/assistant/watch-store.ts
   v
 Watch persisted to userData/assistant-watches.json
   |
@@ -1504,8 +1355,8 @@ WatchEvaluator is already listening to IPC events:
   - event:hub.tasks.completed
   - event:task.statusChanged
   - event:hub.devices.online/offline
-  - event:agent.orchestrator.error/stopped
-  |  src/main/services/assistant/watch-evaluator.ts
+  - event:bus.session.error / event:bus.session.completed
+  |  src/main/features/assistant/watch-evaluator.ts
   v
 When matching event fires:
   |
@@ -1529,9 +1380,9 @@ Renderer: WidgetFab unread badge + WidgetMessageArea proactive entry
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `src/main/services/assistant/watch-store.ts` | JSON persistence for watches |
-| `src/main/services/assistant/watch-evaluator.ts` | IPC event matching engine |
-| `src/main/index.ts` (lines 450-460) | Trigger → proactive event wiring |
+| `src/main/features/assistant/watch-store.ts` | JSON persistence for watches |
+| `src/main/features/assistant/watch-evaluator.ts` | IPC event matching engine |
+| `src/main/bootstrap/event-wiring.ts` | Trigger → `event:assistant.proactive` wiring |
 | `src/shared/types/assistant-watch.ts` | Watch type definitions |
 
 ---
@@ -1546,7 +1397,7 @@ Assistant classifies intent: type='cross_device'
   |
   v
 Command executor calls crossDeviceQuery.query('MacBook')
-  |  src/main/services/assistant/cross-device-query.ts
+  |  src/main/features/assistant/cross-device-query.ts
   v
 hubApiClient.hubGet('/devices')
   |
@@ -1579,7 +1430,7 @@ ipc('insights.getMetrics', { projectId })
   |
   v
 insightsService.getMetrics(projectId)
-  |  src/main/services/insights/insights-service.ts
+  |  src/main/features/insights/insights-service.ts
   v
 ┌───────────────────────────────┐
 │ Aggregate from multiple sources│
@@ -1649,9 +1500,9 @@ ConflictResolver.tsx
 | `src/renderer/features/merge/components/ConflictResolver.tsx` | Inline diff + accept ours/theirs |
 | `src/renderer/features/merge/api/useMerge.ts` | useFileDiff hook |
 | `src/renderer/features/merge/api/queryKeys.ts` | fileDiff cache key |
-| `src/main/services/merge/merge-service.ts` | getFileDiff method |
-| `src/main/ipc/handlers/merge-handlers.ts` | merge.getFileDiff handler |
-| `src/shared/ipc/misc/merge.contract.ts` | merge.getFileDiff contract |
+| `src/main/features/merge/merge-service.ts` | getFileDiff method |
+| `src/main/features/merge/merge-handlers.ts` | merge.getFileDiff handler |
+| `src/shared/ipc/merge/contract.ts` | merge.getFileDiff contract |
 | `src/renderer/styles/globals.css` | .diff-viewer-adc-theme CSS overrides |
 
 ---
@@ -1713,7 +1564,7 @@ OAuthConnectionStatus.tsx (Connect/Disconnect buttons per provider)
 | `src/shared/ipc/oauth/schemas.ts` | Zod schemas for OAuth channels |
 | `src/shared/ipc/oauth/contract.ts` | OAuth IPC contract (3 channels) |
 | `src/shared/ipc/oauth/index.ts` | OAuth barrel export |
-| `src/main/ipc/handlers/oauth-handlers.ts` | OAuth handler registration |
+| `src/main/features/oauth/oauth-handlers.ts` | OAuth handler registration |
 | `src/renderer/features/settings/api/useOAuth.ts` | React Query hooks (useOAuthStatus, useOAuthAuthorize, useOAuthRevoke) |
 | `src/renderer/features/settings/components/OAuthConnectionStatus.tsx` | Connect/Disconnect UI per provider |
 | `src/renderer/features/settings/components/OAuthProviderSettings.tsx` | Provider configuration + OAuthConnectionStatus |
@@ -1729,7 +1580,7 @@ Service throws error (or initNonCritical catches factory failure)
   |
   v
 errorCollector.report({ severity, tier, category, message, stack? })
-  |  src/main/services/health/error-collector.ts
+  |  src/main/features/app/health/error-collector.ts (or health-service.ts)
   v
 Append entry to in-memory log + persist to {userData}/error-log.json
   |
@@ -1756,7 +1607,7 @@ Service performs periodic work (e.g., Hub heartbeat, WebSocket message)
   |
   v
 healthRegistry.pulse('hubHeartbeat')
-  |  src/main/services/health/health-registry.ts
+  |  src/main/features/app/health/health-service.ts
   v
 Updates lastPulse timestamp for the named service
   |
@@ -1786,41 +1637,14 @@ Renderer queries status via ipc('app.getHealthStatus', {})
 Returns HealthStatus: { services: ServiceHealth[], overall: 'healthy' | 'degraded' | 'unhealthy' }
 ```
 
-### Agent Watchdog Flow
+### Agent Process Health
 
-```
-agentWatchdog.start()                      agent-watchdog.ts
-  |  Created in service-registry.ts, started immediately
-  v
-setInterval(checkNow, 30_000)
-  |
-  v (every 30 seconds)
-  +--- For each active session in orchestrator.listActive():
-  |      |
-  |      +--> process.kill(pid, 0) — PID alive check
-  |      |      |
-  |      |      +--> Throws → 'dead' alert (process exited unexpectedly)
-  |      |      |
-  |      |      +--> OK → check heartbeat age
-  |      |             |
-  |      |             +--> heartbeatAge > 15min → 'stale' alert
-  |      |             +--> heartbeatAge > 5min → 'warning' alert
-  |      |             +--> Otherwise → healthy
-  |      |
-  |      +--> exitCode === 2 + autoRestart enabled → restart from checkpoint
-  |
-  v
-onAlert callback fires (registered in service-registry.ts):
-  |
-  v
-router.emit('event:agent.orchestrator.watchdogAlert', {
-  type: 'dead' | 'stale' | 'warning',
-  sessionId, taskId, message, suggestedAction
-})
-  |
-  v
-useAgentEvents → invalidate task caches → StatusBadgeCell shows alert
-```
+The dedicated `agent-watchdog` service has been removed. Agent process health is now observable through:
+
+- `AgentManagerService` inside the agent-host utility process — emits `session.ended` with the child exit code through the event MessagePort.
+- `event:agent-dashboard.sessionEnded` — surfaced to renderer; EventBridge invalidates `['agent-dashboard', 'sessions']`.
+- `event:bus.session.{completed,error,killed}` — emitted by the `bus` feature for any tracked agent session, projected into the visualization tree by EventBridge's append handler.
+- The general `health-service` (`src/main/features/app/health/health-service.ts`) tracks pulses for long-lived services (peer transport, mDNS, etc.) and emits `event:app.serviceUnhealthy` when missed.
 
 ### IPC Invoke Channels
 
@@ -1853,14 +1677,15 @@ Defined in `src/shared/types/health.ts`:
 ### Key Files
 | File | Purpose |
 |------|---------|
-| `src/main/services/health/error-collector.ts` | Error log persistence + pruning + capacity alerts |
-| `src/main/services/health/health-registry.ts` | Service pulse monitoring + unhealthy callbacks |
-| `src/main/services/agent-orchestrator/agent-watchdog.ts` | Agent process health (PID + heartbeat) |
-| `src/main/services/qa/qa-trigger.ts` | Automatic QA on task status change to review |
-| `src/main/bootstrap/service-registry.ts` | Wires all monitoring services + initNonCritical wrapper |
+| `src/main/features/app/health/error-collector.ts` | Error log persistence + pruning + capacity alerts |
+| `src/main/features/app/health/error-handlers.ts` | IPC handlers for error log queries and reports |
+| `src/main/features/app/health/health-service.ts` | Service pulse monitoring + unhealthy callbacks |
+| `src/main/features/app/health.ts` | Wiring barrel for health feature |
+| `src/main/features/qa/qa-trigger.ts` | Automatic QA on task status change to review |
+| `src/main/bootstrap/service-registry.ts` | Wires all monitoring services + `initNonCritical` wrapper |
 | `src/main/bootstrap/lifecycle.ts` | Graceful shutdown (disposes health + error last) |
-| `src/shared/ipc/health/contract.ts` | IPC contract for error/health channels |
-| `src/shared/ipc/health/schemas.ts` | Zod schemas for error/health payloads |
+| `src/shared/ipc/app/contract.ts` | IPC contract for error/health channels (under `app.*` domain) |
+| `src/shared/ipc/app/schemas.ts` | Zod schemas for error/health payloads |
 
 ---
 
@@ -1970,7 +1795,7 @@ Defined in `src/shared/types/data-management.ts`:
 | `src/main/services/data-management/storage-inspector.ts` | Disk usage calculator |
 | `src/main/services/data-management/crash-recovery.ts` | Startup orphan detection |
 | `src/main/services/data-management/data-export.ts` | Export/import archive functions |
-| `src/main/ipc/handlers/data-management-handlers.ts` | IPC handler registration |
+| `src/main/features/data-management/data-management-handlers.ts` | IPC handler registration |
 | `src/shared/ipc/data-management/contract.ts` | IPC contract (8 invoke + 1 event) |
 | `src/shared/ipc/data-management/schemas.ts` | Zod schemas for all payloads |
 | `src/renderer/features/settings/api/useDataManagement.ts` | React Query hooks (8 hooks) |
@@ -1999,7 +1824,7 @@ ipc('git.commit' | 'git.push' | 'git.resolveConflict', input)
                               gitService.commit(projectPath, message, files?)
                               gitService.push(projectPath, remote?, branch?)
                               gitService.resolveConflict(projectPath, filePath, strategy)
-                                |  src/main/services/git/git-service.ts
+                                |  src/main/features/git/git-service.ts
                                 |  Uses simple-git library (async)
                                 v
                               Return { hash, message } | { success, remote, branch } | { success, filePath }
@@ -2025,7 +1850,7 @@ ipc('git.createPr', { projectPath, title, body, baseBranch, headBranch })
                                 |
                                 v
                               gitService.createPr(projectPath, title, body, baseBranch, headBranch)
-                                |  src/main/services/git/git-service.ts
+                                |  src/main/features/git/git-service.ts
                                 |  Uses `gh pr create` CLI command (execFile)
                                 v
                               Return { url, number, title }
@@ -2069,8 +1894,8 @@ GitStatusIndicator renders:
 |------|---------|
 | `src/shared/ipc/git/contract.ts` | Git IPC contract (11 invoke channels + 1 event) |
 | `src/shared/ipc/git/schemas.ts` | Zod schemas for git operations |
-| `src/main/ipc/handlers/git-handlers.ts` | Git handler registration |
-| `src/main/services/git/git-service.ts` | Git operations via simple-git + `gh` CLI |
+| `src/main/features/git/git-handlers.ts` | Git handler registration |
+| `src/main/features/git/git-service.ts` | Git operations via simple-git + `gh` CLI |
 | `src/renderer/features/tasks/components/detail/TaskResultView.tsx` | Execution results display with commit/push/PR action buttons |
 | `src/renderer/features/tasks/components/CreatePrDialog.tsx` | PR creation dialog (title, body, branch selection) |
 | `src/renderer/features/projects/components/ProjectList.tsx` | GitStatusIndicator (branch + clean/changed badge) |
@@ -2078,7 +1903,7 @@ GitStatusIndicator renders:
 
 ---
 
-## 21. Agent Dashboard Data Flow (ADC v2)
+## 29. Agent Dashboard Data Flow (ADC v2)
 
 Three-layer architecture: agent visibility, workflow tracking, and dashboard correlation.
 
@@ -2147,7 +1972,250 @@ Common:
 | `src/shared/ipc/agent-dashboard/schemas.ts` | Zod schemas mirroring the TS types |
 | `src/shared/ipc/agent-dashboard/contract.ts` | 7 invoke + 7 event channel definitions |
 | `src/shared/ipc/agent-dashboard/index.ts` | Domain barrel export |
-| `src/main/services/agent-manager/agent-manager-service.ts` | AgentManager factory — session lifecycle, event emission, message routing |
+| `src/main/services/agent-manager/agent-manager-service.ts` | AgentManager factory — session lifecycle, event emission, message routing (runs **inside the agent-host utility process**) |
 | `src/main/services/agent-manager/stream-json-parser.ts` | NDJSON parser — buffers partial lines, validates event types, extracts chat messages |
 | `src/main/services/agent-manager/process-manager.ts` | Child process spawn/kill — `child_process.spawn('claude', [...stream-json flags])` |
+| `src/main/services/agent-manager/agent-connection-strategy.ts` | Strategy selection between subprocess and tmux modes |
+| `src/main/services/agent-manager/subprocess-strategy.ts` | Headless `-p --input-format stream-json` strategy |
 | `src/main/services/agent-manager/index.ts` | Service barrel export |
+| `src/main/agent-host/index.ts` | Utility-process entry — wires AgentManagerService to control + event MessagePorts |
+| `src/main/agent-host/agent-host-client.ts` | Main-process proxy with local cache + correlation-ID RPC |
+| `src/main/agent-host/host-protocol.ts` | `ControlRequest` / `ControlReply` discriminated unions |
+| `src/main/features/agent-dashboard/agent-dashboard-handlers.ts` | IPC handlers — translates renderer requests into `agentHostClient` calls |
+| `src/main/ipc/team-watcher/` | `fs.watch` for team config.json — emits teammateJoined/teammateLeft |
+| `src/main/ipc/session-jsonl/` | Tail-follow session JSONL files for tmux team-lead output |
+
+---
+
+## 30. Runners Flow (Long-Running Project Processes)
+
+The Runners feature manages long-running project processes (dev servers, watchers, workers). Profiles are persisted in SQLite and instances are scoped by `ScopeRef` (project or worktree).
+
+```
+User opens Runners panel for a project
+  |
+  v
+useRunnerProfiles(projectId) → ipc('runners.profile.list', { projectId })
+  → runners-service.listProfiles(projectId)  → Drizzle select on runner_profiles
+  → returns RunnerProfile[]
+
+User clicks "Start" on a profile
+  |
+  v
+useStartRunner().mutate({ profileId, scope })
+  |
+  v
+ipc('runners.instance.start', { profileId, scope })
+  |
+  v
+runners-service.startInstance(profileId, scope)
+  |  src/main/features/runners/runners-service.ts
+  +-- ProcessSupervisor.spawn(profile.command, profile.args, { cwd, env })
+  |     src/main/features/runners/process-supervisor.ts
+  |
+  +-- Insert into runner_instances (status: 'starting', pid, scope, ...)
+  |
+  +-- router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId, status: 'starting' })
+  |       → EventBridge invalidates runner queries
+  |
+  +-- supervisor.on('output', ({ id, stream, chunk }) =>
+  |       router.emit(RUNNERS_EVENTS.INSTANCE.OUTPUT, { instanceId: id, stream, chunk })
+  |     ) — every stdout/stderr line streams to renderer terminal pane
+  |
+  +-- pollUntilHealthy(profile.healthCheck, abortSignal)
+  |     src/main/features/runners/health-check.ts
+  |     |
+  |     +-- on first healthy response:
+  |     |     router.emit(RUNNERS_EVENTS.INSTANCE.HEALTH, { instanceId, healthy: true, ... })
+  |     |     router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId, status: 'ready' })
+  |     |
+  |     +-- on health failure:
+  |           router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId, status: 'unhealthy' })
+  |
+  +-- supervisor.on('exit', ({ id, code }) =>
+        router.emit(RUNNERS_EVENTS.INSTANCE.STATUS, { instanceId, status: code === 0 ? 'stopped' : 'crashed' })
+      )
+```
+
+### IPC Surface
+
+| Channel | Input | Output |
+|---------|-------|--------|
+| `runners.profile.list` | `{ projectId }` | `RunnerProfile[]` |
+| `runners.profile.save` | `{ profile }` | `RunnerProfile` |
+| `runners.profile.delete` | `{ profileId }` | `{ success }` |
+| `runners.instance.list` | `{ scope: ScopeRef }` | `RunnerInstance[]` |
+| `runners.instance.start` | `{ profileId, scope }` | `RunnerInstance` |
+| `runners.instance.stop` | `{ instanceId }` | `{ success }` |
+| `runners.instance.restart` | `{ instanceId }` | `RunnerInstance` |
+
+### Event Surface
+
+| Channel | Payload |
+|---------|---------|
+| `event:runners.instance.status` | `{ instanceId, status: 'starting' \| 'running' \| 'ready' \| 'stopping' \| 'stopped' \| 'crashed' \| 'unhealthy' }` |
+| `event:runners.instance.output` | `{ instanceId, stream: 'stdout' \| 'stderr', chunk }` |
+| `event:runners.instance.health` | `{ instanceId, healthy, latencyMs?, error? }` |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/shared/ipc/runners/channels.ts` | `RUNNERS` invoke + `RUNNERS_EVENTS` event constants |
+| `src/shared/ipc/runners/contract.ts` | Zod invoke + event contracts |
+| `src/shared/ipc/runners/schemas.ts` | `RunnerProfile`, `RunnerInstance`, `ScopeRef`, event payload schemas |
+| `src/main/features/runners/runners-service.ts` | Profile + instance CRUD, supervisor + health wiring |
+| `src/main/features/runners/process-supervisor.ts` | EventEmitter-based child-process supervisor (spawn/kill, stdout/stderr stream) |
+| `src/main/features/runners/health-check.ts` | `pollUntilHealthy(spec, signal)` — HTTP / port / log-pattern probes |
+| `src/main/features/runners/runners-handlers.ts` | IPC handlers (thin) |
+| `src/main/features/runners/schema.ts` | Drizzle tables: `runner_profiles`, `runner_instances` |
+| `src/renderer/features/runners/api/` | React Query hooks |
+| `src/renderer/features/runners/runners-store.ts` | UI store (selected profile, output buffer) |
+
+---
+
+## 31. Test Suite Flow (Recorder → Generate → Run → Results)
+
+The Test Suite feature is a browser-based test recorder + Playwright runner. Records user interactions inside an embedded WebContentsView, generates `.spec.ts` files using locator preference (`getByTestId` > `getByLabel` > `getByRole` > `getByText` > CSS), runs via `npx playwright test`, persists per-step results in SQLite.
+
+```
+RECORD PHASE
+============
+
+User clicks "Record" → BrowserViewManager creates WebContentsView attached to renderer
+  |  src/main/features/test-suite/browser-view-manager.ts
+  |
+  v
+WebContentsView preload captures DOM events (click, input, navigate, ...)
+  |
+  v
+For each captured action:
+  router.emit(TEST_SUITE_EVENTS.RECORDER.STEP, { step })
+  |  emitted from src/main/features/test-suite/handlers/browser-view-handlers.ts
+  v
+EventBridge → invalidate ['test-suite', 'recorded-steps']
+Renderer renders step list with assertion suggestions
+
+User clicks "Save Script"
+  |
+  v
+ipc(TEST_SUITE.SAVE.SCRIPT, { script: { id, name, projectId, steps, tags, ... } })
+  → script-service.ts persists to test_suite_scripts table
+  → script-writer.ts generates .spec.ts under projectPath/tests/<name>.spec.ts
+
+GENERATE PHASE
+==============
+
+playwright-config-writer.ts ensures playwright.config.ts has the project's
+TestSuiteConfig (browsers, workers, retries, viewport, screenshot mode,
+storageStatePath, environments via BASE_URL env)
+
+readme-writer.ts updates the project's tests/README.md with the script index
+
+RUN PHASE
+=========
+
+User clicks "Run" (single, batch, or by tag)
+  |
+  v
+useRunScript().mutate({ scriptId, env? })
+  |
+  v
+ipc(TEST_SUITE.RUN.SCRIPT, { scriptId, environment? })
+  |
+  v
+src/main/features/test-suite/handlers/run-handlers.ts
+  → router.emit(TEST_SUITE_EVENTS.RUN.STARTED, { runId, scriptId })
+  → src/main/features/test-suite/runner.ts: spawn('npx', ['playwright', 'test', ...])
+    cwd = projectPath
+    env = { ...process.env, BASE_URL: envProfile.baseUrl }
+    --reporter=json,html --workers=N --retries=N
+  |
+  +-- on stdout line:
+  |     router.emit(TEST_SUITE_EVENTS.OUTPUT.LINE, { runId, line, timestamp })
+  |     test-suite-handlers.ts also matches step boundaries → emit RUN.STEP
+  |
+  +-- on screenshot generated:
+  |     router.emit(TEST_SUITE_EVENTS.RUN.SCREENSHOT, { runId, path, stepIndex })
+  |
+  +-- on Playwright HTML report path emitted:
+  |     test_suite_runs row updated with reportPath
+  |
+  +-- on process exit:
+        Parse JSON reporter output → stepsPassed, stepsFailed, durationMs
+        Update test_suite_runs row (status, completedAt, ...)
+        router.emit(TEST_SUITE_EVENTS.RUN.COMPLETED, { runId, status, ... })
+
+ANALYTICS / DIFF / SCHEDULE
+============================
+
+analytics.ts        → run history, top failures, slowest, error patterns, flaky scores
+baseline-service.ts → set/list/delete visual baselines per script step
+diff-engine.ts      → pixel-diff a fresh screenshot against the baseline
+scheduler.ts        → cron-style triggers, fires RUN.STARTED via schedule-handlers.ts
+watcher.ts          → file-system watch for scripts; fires WATCH.TRIGGERED
+data-runner.ts      → CSV/JSON `{{key}}` substitution per row, runs the script N times
+shared-steps-service.ts → reusable step groups, expanded inline at run time
+workflow-exporter.ts    → emit GitHub Actions YAML for CI
+```
+
+### IPC Surface
+
+The `test-suite` domain exposes 24 invoke channel groups (see `src/shared/ipc/test-suite/channels.ts`) covering: LIST, GET, SAVE, DELETE, RUN, TASK, EXPORT, BROWSER-VIEW, CONFIG, SCREENSHOT, ANALYTICS, WATCH, BASELINE, DIFF, SHARED-STEPS, SCHEDULE, DATA-RUN, OPEN, AUTH, BATCH, SETUP. Inputs and outputs are all Zod-validated through `testSuiteInvoke`.
+
+### Event Surface
+
+| Channel | Payload | Trigger |
+|---------|---------|---------|
+| `event:test-suite.output.line` | `{ runId, line, timestamp }` | Each stdout/stderr line from `playwright test` |
+| `event:test-suite.run.started` | `{ runId, scriptId, triggeredBy }` | Run kicked off (manual, scheduled, batch, watcher) |
+| `event:test-suite.run.step` | `{ runId, stepIndex, label, status }` | Step boundary parsed from reporter |
+| `event:test-suite.run.screenshot` | `{ runId, stepIndex, path }` | Screenshot captured |
+| `event:test-suite.run.completed` | `{ runId, status, stepsPassed, stepsFailed, durationMs, reportPath }` | Process exit |
+| `event:test-suite.recorder.step` | `{ step }` | New action captured by the recorder preload |
+| `event:test-suite.recorder.stopped` | `{ scriptDraft }` | Recording session ended |
+| `event:test-suite.config.changed` | `{ config }` | Active TestSuiteConfig updated |
+| `event:test-suite.watch.triggered` | `{ scriptId, file }` | File watcher fired a re-run |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/shared/ipc/test-suite/channels.ts` | All `TEST_SUITE.*` and `TEST_SUITE_EVENTS.*` constants |
+| `src/shared/ipc/test-suite/contract.ts` | Zod invoke + event contracts |
+| `src/main/features/test-suite/test-suite-service.ts` | Orchestrator façade |
+| `src/main/features/test-suite/test-suite-handlers.ts` | Top-level run-event projection |
+| `src/main/features/test-suite/handlers/` | Per-domain IPC handler modules (analytics, auth, baseline, browser-view, config, data-run, export, run, schedule, screenshot, script, setup, shared-steps, watch) |
+| `src/main/features/test-suite/runner.ts` | `spawn('npx', ['playwright', 'test', ...])` lifecycle |
+| `src/main/features/test-suite/script-service.ts` | Script CRUD against `test_suite_scripts` |
+| `src/main/features/test-suite/script-writer.ts` | Generates `.spec.ts` from recorded steps |
+| `src/main/features/test-suite/browser-view-manager.ts` | WebContentsView for the recorder |
+| `src/main/features/test-suite/playwright-config-writer.ts` | Writes/updates `playwright.config.ts` from TestSuiteConfig |
+| `src/main/features/test-suite/readme-writer.ts` | Maintains `tests/README.md` script index |
+| `src/main/features/test-suite/baseline-service.ts` | Visual baseline storage |
+| `src/main/features/test-suite/diff-engine.ts` | Pixel-diff against baseline |
+| `src/main/features/test-suite/analytics.ts` | Aggregations: top failures, slowest, flaky |
+| `src/main/features/test-suite/scheduler.ts` | Cron-style run scheduler |
+| `src/main/features/test-suite/watcher.ts` | File-watch triggered re-runs |
+| `src/main/features/test-suite/data-runner.ts` | CSV/JSON parameterized batch runs |
+| `src/main/features/test-suite/shared-steps-service.ts` | Reusable step groups |
+| `src/main/features/test-suite/workflow-exporter.ts` | GitHub Actions YAML export |
+| `src/main/features/test-suite/screenshot-service.ts` | Screenshot indexing + zip export |
+| `src/main/features/test-suite/config-service.ts` | Per-project TestSuiteConfig CRUD |
+| `src/main/features/test-suite/schema.ts` | Drizzle tables (`test_suite_scripts`, `test_suite_runs` declared in `db/schema.ts`) |
+| `src/renderer/features/test-suite/test-suite-store.ts` | Single Zustand store for the 7-tab page |
+| `src/renderer/features/test-suite/api/` | React Query hooks per domain group |
+
+---
+
+## 32. CommandBus + Sessions Tracking (bus feature)
+
+`IpcRouter.setBus(bus)` attaches the optional `CommandBus` (`src/main/features/bus/`). Once attached, every invoke is dispatched through `bus.dispatch(channel, parsed, { type: 'ui' })` which records a `SessionRecord` to SQLite and emits `event:bus.session.{spawned,active,completed,error,killed}` events. Those events are consumed by EventBridge's append handler to update visualization data without a refetch (see Section 2).
+
+The bus also logs `router.emit(...)` calls when configured, providing a unified audit trail of every IPC interaction in the app.
+
+| File | Purpose |
+|------|---------|
+| `src/main/features/bus/` | CommandBus implementation + SQLite session tracking |
+| `src/shared/ipc/bus/channels.ts` | `BUS_EVENTS` constants for session lifecycle events |
+| `src/shared/ipc/bus/schemas.ts` | `sessionRecordSchema` |
