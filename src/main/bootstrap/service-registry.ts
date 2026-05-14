@@ -18,6 +18,7 @@ import { WORKFLOW_ENGINE_EVENTS } from '@shared/ipc/workflow-engine/channels';
 import { computeSchemaHash } from '@shared/replication/schema-hash';
 import type { AppChannel } from '@shared/types/channel';
 
+import { wireAgentDashboardBridge } from '../agent-host/agent-dashboard-bridge';
 import { createOAuthManager } from '../auth/oauth-manager';
 import { GITHUB_OAUTH_CONFIG } from '../auth/providers/github';
 import { GOOGLE_OAUTH_CONFIG } from '../auth/providers/google';
@@ -209,6 +210,11 @@ export function createServiceRegistry(
   const settingsService = createSettingsService({ db, dataDir });
   const userSessionManager = createUserSessionManager();
   const projectService = createProjectService({ db });
+
+  // Wire agent-host events onto the renderer-facing IPC router.
+  // Must run before any other agentHostClient.onEvent() subscriber so the
+  // renderer receives session lifecycle + chat + stream events.
+  wireAgentDashboardBridge(agentHostClient, router);
 
   const commandBus = createCommandBus(db);
   const busSessionManager = createBusSessionManager(db, agentHostClient);
