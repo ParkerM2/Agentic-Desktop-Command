@@ -41,7 +41,8 @@ export function wireAgentDashboardBridge(
   agentManager: AgentManagerLike,
   router: RouterLike,
 ): () => void {
+  const emit = router.emit.bind(router);
   return agentManager.onEvent((event) => {
-    forwardAgentManagerEvent(event, router.emit.bind(router));
+    forwardAgentManagerEvent(event, emit);
   });
 }
