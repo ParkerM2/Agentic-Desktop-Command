@@ -5,9 +5,10 @@
  * No business logic — just delegates to service methods and forwards events.
  *
  * Note: Agent manager events (session.started, message.received, etc.) are
- * emitted directly by the AgentManagerService via the router it receives
- * at construction. Only teammate events need forwarding here since the
- * TeamWatcher service does not have a router reference.
+ * forwarded from the utility-process agent host onto the renderer-facing
+ * router by `wireAgentDashboardBridge` in `src/main/agent-host/agent-dashboard-bridge.ts`
+ * (wired in service-registry). Only teammate and QA events are emitted from
+ * this file.
  */
 
 import { readFileSync } from 'node:fs';
