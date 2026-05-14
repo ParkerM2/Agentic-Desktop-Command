@@ -17,7 +17,6 @@ import type {
   ControlRequest,
   ControlResponse,
 } from './host-protocol';
-import type { IpcRouter } from '../ipc/router';
 import type {
   AgentManagerEvent,
   AgentManagerService,
@@ -30,37 +29,6 @@ let controlPort: Electron.MessagePortMain | null = null;
 let eventPort: Electron.MessagePortMain | null = null;
 let agentManager: AgentManagerService | null = null;
 
-// ── Router Shim ─────────────────────────────────────────────
-
-/**
- * Creates a minimal IpcRouter shim for the utility process.
- *
- * The AgentManagerService calls `router.emit(channel, payload)` to
- * send events to the renderer. In the utility process there is no
- * BrowserWindow, so the shim is a no-op — event forwarding is handled
- * separately via `agentManager.onEvent()` which posts to the eventPort.
- *
- * `handle` and `setBus` are stubs since no IPC handlers or command bus
- * exist in the utility process.
- */
-function createRouterShim(): IpcRouter {
-  // The AgentManagerService also emits events via its own emitEvent()
-  // which we subscribe to via onEvent(). That path forwards to eventPort.
-  // The router.emit() calls are therefore redundant here — we make them
-  // no-ops to avoid double-sending.
-  return {
-    emit: (_channel: string, _payload: unknown) => {
-      // No-op: events are forwarded via agentManager.onEvent() instead
-    },
-    handle: () => {
-      // No-op: utility process does not register IPC handlers
-    },
-    setBus: () => {
-      // No-op: no command bus in utility process
-    },
-  } as unknown as IpcRouter;
-}
-
 // ── Bootstrap ───────────────────────────────────────────────
 
 function bootstrap(): void {
@@ -68,9 +36,7 @@ function bootstrap(): void {
     throw new Error('Cannot bootstrap: ports not received');
   }
 
-  const routerShim = createRouterShim();
-
-  agentManager = createAgentManagerService({ router: routerShim });
+  agentManager = createAgentManagerService({});
 
   // Capture eventPort in a local const so the closure doesn't need
   // a non-null assertion on every call.
