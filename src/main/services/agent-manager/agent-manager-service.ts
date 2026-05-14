@@ -125,8 +125,10 @@ export interface AgentManagerDeps {
 /**
  * Create an AgentManagerService instance.
  *
- * Follows the ADC factory pattern: returns synchronous values,
- * emits events via IPC router for renderer updates.
+ * Follows the ADC factory pattern: returns synchronous values.
+ * Emits AgentManagerEvents to internal subscribers via `eventHandlers`.
+ * The renderer-facing IPC bridge is wired separately — see
+ * `agent-host/agent-dashboard-bridge.ts`.
  */
 export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerService {
   const processManager = createProcessManager();
@@ -494,7 +496,7 @@ export function createAgentManagerService(deps: AgentManagerDeps): AgentManagerS
           sessionId: internal.session.id,
           status: 'completed' as const,
           exitCode: undefined,
-          signal: null,
+          signal: undefined,
         },
       });
 
